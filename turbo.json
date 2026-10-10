@@ -1,6 +1,7 @@
 {
   "$schema": "https://turborepo.dev/schema.json",
   "ui": "stream",
+  "agentGuidance": false,
   "globalPassThroughEnv": ["DOCKER_*", "TESTCONTAINERS_*", "CI"],
   "tasks": {
     "build": {
