@@ -15,6 +15,20 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  // O navegador fala com a API sempre na mesma origem, em /api (ADR 0015): cookies first-party,
+  // sem CORS. Em produção o Cloudflare Tunnel manda /api/* direto para a API e isto nunca é
+  // usado; em desenvolvimento e no E2E, o Next repassa /api/* para a API (lido no build).
+  // Em beforeFiles, nenhuma página do web pode encobrir uma rota da API.
+  rewrites: async () => ({
+    beforeFiles: [
+      {
+        source: '/api/:path*',
+        destination: `${(process.env.API_URL ?? 'http://localhost:3333').replace(/\/+$/, '')}/api/:path*`,
+      },
+    ],
+    afterFiles: [],
+    fallback: [],
+  }),
 };
 
 export default withNextIntl(nextConfig);
