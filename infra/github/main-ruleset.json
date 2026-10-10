@@ -30,7 +30,8 @@
         "required_status_checks": [
           { "context": "node", "integration_id": 15368 },
           { "context": "dotnet", "integration_id": 15368 },
-          { "context": "api-image", "integration_id": 15368 }
+          { "context": "api-image", "integration_id": 15368 },
+          { "context": "web-image", "integration_id": 15368 }
         ]
       }
     }
