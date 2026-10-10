@@ -20,3 +20,5 @@ allowBuilds:
   cpu-features: false
   ssh2: false
   protobufjs: false
+  # Watcher nativo do extrator do next-intl (não usamos): dispensável.
+  "@parcel/watcher": false
