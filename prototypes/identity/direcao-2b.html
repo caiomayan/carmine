@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark" data-wm="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Carmine — Direção 2b</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;550;600;650;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="shared/d2.css">
+<link rel="stylesheet" href="shared/d2b.css">
+</head>
+<body>
+<script src="shared/app.js"></script>
+<script>
+let sealN = 0;
+function seal(size, full) {
+  const id = 'ring' + (++sealN);
+  const body = full
+    ? `<circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent-ink)" stroke-width="1.3" opacity=".75"/>
+       <circle cx="50" cy="50" r="27.5" fill="none" stroke="var(--accent-ink)" stroke-width=".9" opacity=".55"/>
+       <path id="${id}" d="M17,50 a33,33 0 1,1 66,0 a33,33 0 1,1 -66,0" fill="none"/>
+       <text class="tiny" font-size="6.6" fill="var(--accent-ink)" opacity=".92" letter-spacing="1.4"><textPath href="#${id}" textLength="202" lengthAdjust="spacing">SAINT · CARMINE · SAINT · CARMINE ·</textPath></text>
+       <text x="50" y="61.5" text-anchor="middle" font-size="34" fill="var(--accent-ink)">C</text>`
+    : `<circle cx="50" cy="50" r="42.5" fill="none" stroke="var(--accent-ink)" stroke-width="${size <= 16 ? 0 : 2.5}" opacity=".8"/>
+       <text x="50" y="${size <= 16 ? 72 : 71}" text-anchor="middle" font-size="${size <= 16 ? 78 : 64}" fill="var(--accent-ink)">C</text>`;
+  return `<svg class="seal" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-label="Monograma Carmine"><circle cx="50" cy="50" r="49" fill="var(--accent)"/>${body}</svg>`;
+}
+const NAVM = '<nav aria-label="exemplo"><b>Servidores</b><span>Loadout</span><span>Partidas</span><span>Ranking</span></nav>';
+function column(cls, name, note) {
+  const panel = (t) => `<div class="cmp-panel" data-theme="${t}">
+    <span class="tn">${t === 'dark' ? 'Escuro quente' : 'Papel creme'}</span>
+    <div class="cmp-row"><div><span class="wm big">Carmine</span><span class="cap">Principal</span></div></div>
+    <div class="cmp-row">
+      <div><span class="wm vs wm-saint"><small>Saint</small><span>Carmine</span></span><span class="cap">Saint Carmine</span></div>
+      <div><span class="wm vs wm-st"><em>St.</em>Carmine</span><span class="cap">St. Carmine</span></div></div>
+    <div class="cmp-row">
+      <div><span class="wm" style="font-size:24px">Carmine</span><span class="cap">24 px · header</span></div>
+      <div><span class="wm" style="font-size:20px">Carmine</span><span class="cap">20 px · mínimo</span></div>
+      <div><span class="wm" style="font-size:16px">Carmine</span><span class="cap">16 px · rodapé</span></div></div>
+    <div class="mini-hdr"><span class="wm" style="font-size:24px">Carmine</span>${NAVM}</div>
+    <div class="seals">
+      <figure>${seal(96, true)}<figcaption>96 · selo</figcaption></figure>
+      <figure>${seal(64, true)}<figcaption>64</figcaption></figure>
+      <figure>${seal(32, false)}<figcaption>32 · favicon</figcaption></figure>
+      <figure>${seal(16, false)}<figcaption>16 · aba</figcaption></figure>
+      <figure><div class="tab">${seal(16, false)}<span>Servidores · Carmine</span></div><figcaption>aba do navegador</figcaption></figure>
+    </div></div>`;
+  return `<div class="cmp-col ${cls}"><h3>${name}<span>${note}</span></h3><div class="cmp-themes">${panel('dark')}${panel('light')}</div></div>`;
+}
+const brandHTML = `
+  <div class="spec-block"><h2 class="sec">Wordmark · Instrument Serif × DM Serif Display</h2>
+  <div class="cmp"><div class="cmp-fonts">
+    ${column('f-is', 'Instrument Serif', 'condensada, hairlines finas, itálico próprio')}
+    ${column('f-dm', 'DM Serif Display', 'peso médio-alto, x-height maior, mais larga')}
+  </div>
+  <div class="cmp-note">
+    <div class="card2"><h4>Instrument Serif</h4><ul>
+      <li>Personalidade: cara de alta-costura e cinema italiano dos anos 60; o itálico dá voz própria aos títulos.</li>
+      <li>Pequeno: as hairlines do “a” e do “e” começam a sumir abaixo de 22 px, sobretudo no tema escuro com grão.</li>
+      <li>Risco de ficar genérica: moderado. Está em alta em landing pages de startups desde 2023.</li></ul></div>
+    <div class="card2"><h4>DM Serif Display</h4><ul>
+      <li>Personalidade: didone de transição, robusta e cálida; lembra cartaz e manchete de jornal, bem de máfia/imprensa.</li>
+      <li>Pequeno: mais legível a 16–20 px e como favicon, porque as hastes finas são mais grossas.</li>
+      <li>Risco de ficar genérica: alto. É a serifada-display padrão de templates do Google Fonts.</li></ul></div>
+  </div>
+  <div class="reco"><h4>Recomendação</h4>
+    <p><b>Instrument Serif</b> no wordmark, com piso de <b>24 px</b> no header (aplicado nesta direção: 34 px) e o selo usando um “C” mais encorpado no favicon. É a que mais carrega Itália com sutileza e a menos óbvia; o preço é a finura em tamanho pequeno, que o piso de tamanho e o grão leve (só 4,5% de opacidade) mantêm sob controle. DM Serif Display fica como plano B se o teste real com usuários mostrar dificuldade de leitura do wordmark em 20 px ou menos. Use o botão “Wordmark” na barra do protótipo para ver as duas nas telas reais.</p></div>
+  </div></div>`;
+
+Carmine.mount({
+  n: '2b', name: 'Neo-grotesca contida · iteração', noKicker: true, noGlyph: true,
+  headline: 'Ferramenta primeiro, com um sotaque de bairro italiano.',
+  rationale: 'Mesma base da direção 2, agora com o preto mais fundo e quente, grão de filme levíssimo, filetes duplos e colchetes de inspiração art déco, rótulos em versalete, itálico serifado só em títulos de seção e miniaturas de mapa em sépia. A interface continua densa e legível.',
+  searchIcon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.7"/><path d="M10.6 10.6 14 14"/></svg>',
+  fonts: { display: { name: 'Instrument Serif · DM Serif Display', sample: 'Carmine', use: 'Wordmark, selo e itálico pontual em títulos de seção. Títulos de página seguem em Inter Bold.' },
+           ui: { name: 'Inter', use: 'Toda a interface. Numerais tabulares (tnum) ligados por padrão.' } },
+  brandHTML,
+  protoExtra: '<button type="button" id="wmBtn">Wordmark: Instrument Serif</button>',
+  onMount() {
+    const b = document.getElementById('wmBtn'), h = document.documentElement;
+    b.addEventListener('click', () => {
+      h.dataset.wm = h.dataset.wm === 'is' ? 'dm' : 'is';
+      b.textContent = 'Wordmark: ' + (h.dataset.wm === 'is' ? 'Instrument Serif' : 'DM Serif Display');
+    });
+  }
+});
+</script>
+</body>
+</html>

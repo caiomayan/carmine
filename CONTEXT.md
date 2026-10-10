@@ -1,0 +1,103 @@
+# Carmine
+
+Plataforma brasileira de servidores comunitários de Counter-Strike 2 com skins simuladas. O jogador entra num servidor Carmine para jogar e usa o site para gerenciar a sua identidade, o seu loadout e o VIP.
+
+Termos em **PT-BR** são os da interface; o nome entre parênteses é o usado no código.
+
+## Jogador e conta
+
+**Conta** (`Account`):
+O registro de uma pessoa na plataforma, identificado pelo SteamID64. Nasce automaticamente no primeiro connect a um Servidor Carmine.
+_Evitar_: usuário, perfil, cadastro
+
+**Conta não reivindicada** (`unclaimed`):
+Conta que só existe porque a pessoa jogou; ela nunca fez login no site.
+_Evitar_: conta fantasma, conta temporária
+
+**Conta reivindicada** (`claimed`):
+Conta cuja pessoa já fez login Steam no site ao menos uma vez. É a mesma Conta, nunca uma nova.
+_Evitar_: conta registrada, conta ativada
+
+**ID público** (`publicId`):
+Número curto, imutável e único que identifica a Conta na plataforma; números menores pertencem a Contas mais antigas.
+_Evitar_: username, apelido, handle
+
+**Nome de exibição** (`displayName`):
+O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único.
+_Evitar_: nick, apelido, username
+
+**Perfil** (`Profile`):
+A página pública de uma Conta, com Loadout em vitrine e Estatísticas.
+
+**Perfil privado**:
+Perfil cuja Conta reivindicada optou por esconder as Estatísticas e aparecer anônima no Ranking.
+
+## Itens e loadout
+
+**Item** (`Item`):
+Uma peça cosmética de CS2 simulada pela plataforma (skin de arma, faca, luvas, agente, music kit, sticker, charm), com seus atributos.
+_Evitar_: skin (quando se fala de qualquer item)
+
+**Atributos do item**:
+Float (desgaste), seed (padrão), StatTrak, nametag, stickers e charms aplicados.
+
+**Loadout** (`Loadout`):
+O conjunto de Itens que uma Conta usa, separado por lado (CT e TR).
+_Evitar_: inventário, setup
+
+**Preset** (`Preset`):
+Um Loadout salvo com nome, que pode ser ativado de uma vez.
+
+## Jogo
+
+**Servidor Carmine** (`GameServer`):
+Uma instância de servidor dedicado de CS2 operada pela plataforma, de um único Modo.
+_Evitar_: sala, lobby
+
+**Modo** (`Mode`):
+O tipo de jogo de um Servidor Carmine: Retake, Deathmatch e, depois, 5v5 casual.
+_Evitar_: modalidade, game mode
+
+**Sessão de jogo** (`PlaySession`):
+O período contínuo em que uma Conta fica conectada a um Servidor Carmine.
+_Evitar_: partida (no Retake e no Deathmatch não há partida)
+
+**Partida** (`Match`):
+Um jogo com início e fim definidos; só existe no 5v5.
+
+**Estatísticas** (`Stats`):
+Números de desempenho de uma Conta, por Modo e no total.
+
+**Ranking** (`Leaderboard`):
+A classificação semanal das Contas por Modo.
+
+## VIP e pagamento
+
+**VIP**:
+O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis.
+_Evitar_: premium, gold
+
+**Período VIP** (`VipPeriod`):
+O intervalo de tempo em que uma Conta tem VIP ativo.
+
+**Pacote VIP** (`VipPackage`):
+Compra avulsa via Pix que adiciona 1, 3 ou 6 meses ao Período VIP.
+
+**Assinatura VIP** (`VipSubscription`):
+Cobrança recorrente mensal no cartão que renova o Período VIP.
+
+**Pagador**:
+A pessoa maior de idade que paga o VIP; pode não ser o dono da Conta.
+
+## Moderação
+
+**Staff**:
+As Contas com papel de Dono, Admin ou Moderador.
+
+**Punição** (`Sanction`):
+Uma restrição aplicada a uma Conta em todos os Servidores Carmine: ban, mute (voz) ou gag (chat).
+_Evitar_: penalidade, castigo
+
+**Denúncia** (`Report`):
+Um aviso de um jogador sobre outro, feito dentro do jogo e enviado à fila da Staff.
+_Evitar_: report, reclamação

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Carmine — Direção 2c</title>
+<script>
+/* tema aplicado antes da primeira pintura: sem flash */
+try { var t = localStorage.getItem('carmine-proto-theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="brand/favicon-16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="brand/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;550;600;650;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="shared/d2.css">
+<link rel="stylesheet" href="shared/d2b.css">
+<link rel="stylesheet" href="shared/d2c.css">
+</head>
+<body>
+<script src="shared/brand.js"></script>
+<script src="shared/app.js"></script>
+<script>
+(function () {
+  const B = CarmineBrand, html = document.documentElement;
+  const mq = matchMedia('(prefers-reduced-motion: reduce)');
+  const reduced = () => mq.matches || html.dataset.motion === 'reduced';
+  const cssv = (n) => getComputedStyle(html).getPropertyValue(n).trim();
+  const ms = (n) => parseFloat(cssv(n)) || 0;
+  const fmt = (n) => n.toLocaleString('pt-BR');
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => [...(r || document).querySelectorAll(s)];
+
+  /* ---------------- movimento: utilitários ---------------- */
+  function enter(els) {
+    els.forEach((el, i) => {
+      el.style.setProperty('--i', i);
+      el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter');
+      el.addEventListener('animationend', (e) => { if (e.target === el) el.classList.remove('enter'); }, { once: true });
+    });
+  }
+  function roll(el, to, dir) {
+    const from = el.dataset.v ?? el.textContent; to = String(to);
+    el.dataset.v = to;
+    if (from === to) return;
+    if (reduced()) { el.textContent = to; return; }
+    const d = ms('--dur-base'), ease = cssv('--ease-out'), up = dir > 0;
+    el.innerHTML = `<span>${from}</span><span>${to}</span>`;
+    const [a, b] = el.children;
+    a.animate([{ transform: 'none', opacity: 1 }, { transform: `translateY(${up ? '-60%' : '60%'})`, opacity: 0 }], { duration: d, easing: ease, fill: 'forwards' });
+    b.animate([{ transform: `translateY(${up ? '60%' : '-60%'})`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: d, easing: ease, fill: 'both' })
+      .onfinish = () => { if (el.dataset.v === to) el.textContent = to; };
+  }
+  function tween(el, to) {
+    const from = (el._v ?? parseInt(el.textContent.replace(/\D/g, ''), 10)) || 0, dur = ms('--dur-count');
+    el._v = to; cancelAnimationFrame(el._raf);
+    if (!dur || from === to) { el.textContent = fmt(to); return; }
+    const t0 = performance.now();
+    const step = (t) => {
+      const k = Math.min(1, (t - t0) / dur), e = k === 1 ? 1 : 1 - Math.pow(2, -10 * k);
+      el.textContent = fmt(Math.round(from + (to - from) * e));
+      if (k < 1) el._raf = requestAnimationFrame(step);
+    };
+    el._raf = requestAnimationFrame(step);
+  }
+  function initSegs(root) {
+    $$('.seg', root).forEach((seg) => {
+      if ($('.thumb', seg)) return;
+      const t = document.createElement('i'); t.className = 'thumb'; t.setAttribute('aria-hidden', 'true'); seg.prepend(t);
+      const place = () => {
+        const b = $('[aria-pressed=true]', seg); if (!b || !b.offsetWidth) return;
+        seg.style.setProperty('--x', b.offsetLeft + 'px'); seg.style.setProperty('--sx', b.offsetWidth / 100);
+      };
+      place(); seg.classList.add('has-thumb');
+      requestAnimationFrame(() => requestAnimationFrame(() => seg.classList.add('thumb-ready')));
+      new MutationObserver(place).observe(seg, { subtree: true, attributes: true, attributeFilter: ['aria-pressed'] });
+      new ResizeObserver(place).observe(seg);
+      if (document.fonts) document.fonts.ready.then(place);
+    });
+  }
+
+  /* ---------------- folha de marca ---------------- */
+  const crop = (k) => `<svg viewBox="420 0 190 300" aria-hidden="true"><path fill="currentColor" d="${B.raw[k].d}"/></svg>`;
+  const pane = (t, inner, cap) => `<div class="wm-pane" data-theme="${t}"><span class="tn">${t === 'dark' ? 'Escuro quente' : 'Papel creme'}</span>${inner}${cap ? `<span class="cap">${cap}</span>` : ''}</div>`;
+  const variant = (svg, cls, cap) => `<div class="var-pane ${cls || ''}" ${cls === 'inv' ? '' : `data-theme="${cls}"`}>${svg}<span class="cap">${cap}</span></div>`;
+  const varsRow = (svg, name) => ['dark', 'light'].map((t) => variant(svg, t, `${name} · ${t === 'dark' ? 'escuro' : 'papel creme'}`)).join('') + `<div class="var-pane inv">${svg}<span class="cap">${name} · sobre carmim</span></div>`;
+  const sealPane = (t) => `<div class="wm-pane" data-theme="${t}"><span class="tn">${t === 'dark' ? 'Escuro quente' : 'Papel creme'}</span>
+      <div class="sealgrid">
+        <figure>${B.seal(160, 'full')}<figcaption>160 · selo completo</figcaption></figure>
+        <figure>${B.seal(96, 'full')}<figcaption>96 · avatar</figcaption></figure>
+        <figure>${B.seal(48, 'compact')}<figcaption>48</figcaption></figure>
+        <figure>${B.seal(32, 'compact')}<figcaption>32 · favicon</figcaption></figure>
+        <figure>${B.seal(16, 'tiny')}<figcaption>16 · aba</figcaption></figure>
+        <figure><div class="tab">${B.seal(16, 'tiny')}<span>Servidores · Carmine</span></div><figcaption>aba do navegador</figcaption></figure>
+      </div></div>`;
+  const files = ['carmine-wordmark.svg', 'carmine-wordmark-pure.svg', 'carmine-wordmark-cream.svg', 'carmine-wordmark-ink.svg', 'saint-carmine.svg', 'st-carmine.svg', 'carmine-seal.svg', 'carmine-seal-32.svg', 'carmine-seal-16.svg', 'favicon.svg', 'favicon-32.png', 'favicon-16.png', 'apple-touch-icon.png'];
+
+  const brandHTML = `
+  <div class="spec-block"><h2 class="sec">Wordmark definitivo · DM Serif Display em contornos</h2>
+    <div class="wm-duo">
+      <div style="display:grid;gap:16px">
+        ${pane('dark', B.pure().replace('wm-svg', 'wm-svg'), 'Pura: a fonte como vem, com o kerning nativo.')}
+        ${pane('light', B.pure(), '')}
+      </div>
+      <div style="display:grid;gap:16px">
+        ${pane('dark', B.refined(), 'Lapidada: kerning óptico e bico do C afiado.')}
+        ${pane('light', B.refined(), '')}
+      </div>
+    </div>
+    <div class="cmp-facts">
+      <div class="card2"><h4>Detalhe próprio · bico do C</h4>
+        <div class="zoom"><div style="display:flex;gap:10px"><div title="Pura">${crop('pure')}</div><div title="Lapidada" style="color:var(--text)">${crop('refined')}</div></div>
+        <div><p>O terminal superior do C, que na fonte é um bico curto e rombudo, ganha uma ponta de lâmina: o corte alonga de 123 para 199 unidades e termina afiado. O terminal inferior fica intacto, então a letra ganha uma assimetria quase imperceptível.</p><p>Só aparece acima de uns 48 px, nunca atrapalha a leitura, e vira a assinatura do selo e do favicon.</p></div></div></div>
+      <div class="card2"><h4>Kerning óptico · milésimos de em</h4>
+        <table><tr><td>C · a</td><td>−16</td></tr><tr><td>r · m</td><td>−10</td></tr><tr><td>n · e</td><td>−6</td></tr><tr><td>a · r, m · i, i · n</td><td>nativo</td></tr></table>
+        <p style="margin-top:12px">C e r têm aberturas que deixavam buracos no ritmo; o ajuste fecha só o suficiente para a palavra ler como um bloco, mesmo pequena. Em texto corrido nunca abaixo de 20 px de altura de caixa.</p></div>
+    </div>
+  </div>
+  <div class="spec-block"><h2 class="sec">Saint Carmine e St. Carmine</h2>
+    <div class="vars">${varsRow(B.saint(), 'Saint Carmine')}${varsRow(B.st(), 'St. Carmine')}</div></div>
+  <div class="spec-block"><h2 class="sec">Selo, monograma e favicon</h2>
+    <div class="wm-duo">${sealPane('dark')}${sealPane('light')}</div>
+    <p class="spec-lead" style="margin-top:16px;font-size:14px">O selo completo (anel com SAINT · CARMINE) vale de 64 px para cima; abaixo disso entra a versão compacta, e a 16 px só o C sobre o carmim. Contornos reais: nenhuma depende de fonte instalada.</p>
+    <div class="files">${files.map((f) => `<a href="brand/${f}" download>${f}</a>`).join('')}</div></div>`;
+
+  const TOK = [
+    ['--dur-instant', '90 ms', 'press de botão e card'],
+    ['--dur-fast', '140 ms', 'hover, cor, borda'],
+    ['--dur-base', '220 ms', 'seletor, toggle, rolagem de número, seleção'],
+    ['--dur-slow', '360 ms', 'troca de painel, barra de jogadores, tema'],
+    ['--dur-enter', '520 ms', 'entrada de lista (com escalonamento)'],
+    ['--dur-count', '700 ms', 'contador dos totais'],
+    ['--dur-pulse', '2400 ms', 'pulso do “ao vivo”'],
+    ['--ease-out', 'cubic-bezier(.16,1,.3,1)', 'chegadas e respostas'],
+    ['--ease-in', 'cubic-bezier(.7,0,.84,0)', 'saídas'],
+    ['--ease-inout', 'cubic-bezier(.65,0,.35,1)', 'tema e crossfades'],
+    ['--ease-std', 'cubic-bezier(.2,0,0,1)', 'cor e borda'],
+    ['--stagger', '32 ms × máx. 8', 'atraso entre itens, teto de 256 ms']
+  ];
+  const extraSpec = `
+  <div class="spec-block"><h2 class="sec">Movimento · tokens e regras</h2>
+    <p class="spec-lead">Uma interface de uso, não de vitrine: o movimento só confirma ações e mostra mudança de estado. O único momento autoral é o número de jogadores ao vivo, que rola e conta em vez de piscar. Tudo anima transform e opacity; o único blur fica restrito ao SVG do visualizador.</p>
+    <div class="mo-tab-wrap" style="margin-top:20px"><table class="mo-tab"><tr><th>Token</th><th>Valor</th><th>Uso</th></tr>${TOK.map((r) => `<tr><td>${r[0]}</td><td class="num">${r[1]}</td><td>${r[2]}</td></tr>`).join('')}
+      <tr><td>reduced-motion</td><td>sem deslocamento</td><td>some o movimento (rise, escala, blur, pulso, shimmer) e o contador pula direto; ficam fades de 140–180 ms e as mudanças de cor</td></tr></table></div>
+    <div class="mo-grid">
+      <div class="mo-demo"><h4>Ao vivo</h4><div class="stage"><span class="live"><i class="live-dot"></i>Ao vivo</span><span class="online"><span class="dot"></span><span class="num">2.431</span> online</span></div><p>Pulso discreto de 2,4 s; pausa quando sai da tela.</p></div>
+      <div class="mo-demo"><h4>Contador</h4><div class="stage"><span class="bignum num" id="demoCount">2.431</span><button class="btn btn-sm" id="demoTick" type="button">Simular entradas</button></div><p>Tween de 700 ms com desaceleração exponencial.</p></div>
+      <div class="mo-demo"><h4>Entrada escalonada</h4><div class="stage" style="display:grid;gap:6px;width:100%" id="demoList">${[0, 1, 2, 3, 4].map((i) => `<span class="shim" style="height:14px;width:${90 - i * 12}%"></span>`).join('')}</div><button class="btn btn-sm" id="demoEnter" type="button" style="justify-self:start">Repetir</button></div>
+      <div class="mo-demo"><h4>Seletor e botões</h4><div class="stage"><div class="seg" role="group" aria-label="Demonstração"><button type="button" aria-pressed="true">Retake</button><button type="button" aria-pressed="false">Deathmatch</button><button type="button" aria-pressed="false">5v5</button></div></div><div class="stage"><button class="btn btn-primary" type="button">Conectar</button><button class="btn" type="button">Entrar</button></div><p>O indicador desliza; o botão afunda 1 px no press.</p></div>
+    </div>
+  </div>`;
+
+  /* ---------------- skeletons ---------------- */
+  const srvSkel = () => `<div class="srv skel"><div class="srv-main"><span class="shim chip-shim"></span><div><span class="shim l1"></span><span class="shim l2"></span></div></div>
+    <div class="srv-map"><span class="shim th"></span><div style="flex:1"><span class="shim l1" style="width:72px"></span><span class="shim l2"></span></div></div>
+    <div class="srv-pl"><span class="shim l1" style="width:44px"></span><span class="shim bar-shim"></span></div>
+    <div class="srv-ping"><span class="shim" style="width:58px;height:13px"></span></div><span class="shim btn-shim"></span></div>`;
+  const frSkel = () => `<div class="fr skel"><span class="shim av"></span><div class="fr-info"><span class="shim l1"></span><span class="shim l2"></span></div></div>`;
+  const wSkel = () => [0, 1, 2].map(() => `<div class="cat"><div class="cat-h"><span class="shim"></span></div><div class="wgrid">${'<div class="shim shim-card"></div>'.repeat(4)}</div></div>`).join('');
+  const pSkel = () => `<div class="psk" aria-hidden="true"><div class="shim p-viewer" style="border-radius:var(--radius) var(--radius) 0 0"></div><div class="p-body"><span class="shim l1"></span><span class="shim l2"></span><span class="shim l3"></span><span class="shim l4"></span><span class="l5 row"><span class="shim"></span><span class="shim"></span><span class="shim"></span><span class="shim"></span></span></div></div>`;
+
+  /* ---------------- app ---------------- */
+  function boot() {
+    const servers = $('.servers'), friends = $('.friends'), list = $('#srvList'), wsk = $('#wsk'), wlist = $('#wlist'), panel = $('#panel');
+    list.insertAdjacentHTML('beforebegin', `<div class="skel-wrap" aria-hidden="true">${srvSkel().repeat(6)}</div>`);
+    $('.friends-h', friends).insertAdjacentHTML('afterend', frSkel().repeat(4));
+    wsk.innerHTML = wSkel();
+    // barras de jogadores: largura vira escala (anima transform, não layout)
+    $$('.bar i', list).forEach((i) => { i.style.setProperty('--p', (parseFloat(i.style.width) || 100) / 100); i.style.width = ''; });
+    $$('.cur', list).forEach((c) => { c.dataset.v = c.textContent; });
+    // ordenar por ping como indicado no controle
+    sortRows('Ping');
+    list.insertAdjacentHTML('afterend', '<div class="empty" id="srvEmpty" hidden><span><b>Nenhum servidor com esses filtros.</b></span><button class="btn btn-sm" type="button" id="clearF">Limpar filtros</button></div>');
+
+    function setLoading(on) {
+      servers.classList.toggle('loading', on); friends.classList.toggle('loading', on);
+      servers.setAttribute('aria-busy', on); friends.setAttribute('aria-busy', on);
+    }
+    function setLoadout(on) {
+      wsk.hidden = !on; wlist.classList.toggle('loading', on); panel.classList.toggle('loading', on);
+      panel.setAttribute('aria-busy', on);
+      const had = $('.psk', panel);
+      if (on && !had) panel.insertAdjacentHTML('beforeend', pSkel()); if (!on && had) had.remove();
+    }
+    const vis = () => $$('.srv', list).filter((r) => !r.hidden && r.dataset.rhide !== '1');
+    function updateEmpty() { $('#srvEmpty').hidden = vis().length > 0; }
+    function resolveS1() {
+      setLoading(false); updateEmpty();
+      enter(vis()); enter($$('.fr:not(.skel)', friends));
+    }
+    function resolveS2() {
+      setLoadout(false);
+      enter($$('.cat-h', wlist).concat($$('.wcard', wlist)));
+      swapPanel();
+    }
+    const delay = () => (reduced() ? 220 : 760);
+    let done1 = false, done2 = false;
+    const go1 = () => { if (done1) return; done1 = true; setTimeout(resolveS1, delay()); };
+    const go2 = () => { if (done2) return; done2 = true; setTimeout(resolveS2, delay() + 120); };
+    setLoading(true); setLoadout(true);
+    const io = new IntersectionObserver((es) => es.forEach((e) => {
+      if (!e.isIntersecting) return;
+      if (e.target.id === 's1') go1(); if (e.target.id === 's2') go2();
+    }), { threshold: 0.12 });
+    io.observe($('#s1')); io.observe($('#s2'));
+    setTimeout(() => { go1(); go2(); }, 6000); // rede de segurança: nunca deixa o skeleton para sempre
+
+    function swapPanel() {
+      panel.classList.remove('swap'); void panel.offsetWidth; panel.classList.add('swap');
+      clearTimeout(swapPanel.t); swapPanel.t = setTimeout(() => panel.classList.remove('swap'), 800);
+    }
+    window.__swap = { enter, swapPanel, resolveS2 };
+
+    /* filtros reais: modo, região e ordenação */
+    const REG = { Brasil: null, Sudeste: ['São Paulo', 'Rio de Janeiro'], Sul: ['Porto Alegre'] };
+    function sortRows(by) {
+      const rows = $$('.srv', list), key = (r) => by === 'Ping' ? parseInt($('.srv-ping .num', r).textContent, 10) : -parseInt(($('.cur', r).dataset.v || $('.cur', r).textContent), 10);
+      rows.sort((a, b) => key(a) - key(b)).forEach((r) => list.appendChild(r));
+    }
+    function applyRegion() {
+      const reg = $('.filters .seg:nth-of-type(1) [aria-pressed=true]') || $('.filters .seg [aria-pressed=true]');
+      const set = REG[reg ? reg.textContent.trim() : 'Brasil'];
+      $$('.srv', list).forEach((r) => { const city = $('.meta', r).textContent.split(' · ')[0]; r.dataset.rhide = set && !set.includes(city) ? '1' : '0'; });
+    }
+    function refetch() {
+      if (servers.classList.contains('loading')) return;
+      setLoading(true);
+      setTimeout(() => {
+        const ord = $$('.filters .seg')[1]; sortRows($('[aria-pressed=true]', ord).textContent.trim());
+        applyRegion(); resolveS1();
+      }, reduced() ? 120 : 380);
+    }
+    $$('.filters .seg').forEach((s) => s.addEventListener('click', (e) => { if (e.target.closest('button')) refetch(); }));
+    $('#modeSeg').addEventListener('click', () => { updateEmpty(); enter(vis()); });
+    $('#clearF').addEventListener('click', () => {
+      $$('.seg', $('#s1')).forEach((s) => { const b = $$('button', s)[0]; b && b.click(); });
+    });
+
+    /* ao vivo: contagem de jogadores com transição numérica */
+    let total = 2431, liveOn = true;
+    function tick() {
+      if (!document.hidden && liveOn && !servers.classList.contains('loading')) {
+        const rows = $$('.srv', list), n = Math.random() < 0.4 ? 2 : 1;
+        for (let k = 0; k < n; k++) {
+          const r = rows[Math.floor(Math.random() * rows.length)], c = $('.cur', r), max = +r.dataset.max, cur = +(c.dataset.v || c.textContent);
+          const dir = Math.random() < (cur < max / 2 ? 0.66 : 0.42) ? 1 : -1, next = Math.max(0, Math.min(max, cur + dir));
+          if (next === cur) continue;
+          roll(c, next, dir); total += next - cur;
+          const bar = $('.bar i', r); bar.style.setProperty('--p', next / max); bar.classList.toggle('full', next >= max);
+          const b = $('.btn', r); if (b) b.textContent = next >= max ? 'Fila' : 'Conectar';
+        }
+        $$('[data-total=players]').forEach((el) => tween(el, total));
+      }
+      setTimeout(tick, 2600 + Math.random() * 2600);
+    }
+    setTimeout(tick, 3200);
+    new IntersectionObserver((es) => es.forEach((e) => { if (e.target.id === 's1') liveOn = e.isIntersecting; e.target.classList.toggle('is-offscreen', !e.isIntersecting); }), { threshold: 0 }).observe($('#s1'));
+    // pulsos pausam fora da tela
+    const pio = new IntersectionObserver((es) => es.forEach((e) => e.target.classList.toggle('is-offscreen', !e.isIntersecting)));
+    $$('.live,.online').forEach((el) => pio.observe(el));
+
+    /* barra do protótipo */
+    $('#moBtn').addEventListener('click', (e) => {
+      const r = html.dataset.motion === 'reduced'; html.dataset.motion = r ? 'normal' : 'reduced';
+      e.currentTarget.textContent = 'Movimento: ' + (r ? 'normal' : 'reduzido');
+    });
+    $('#reBtn').addEventListener('click', () => {
+      done1 = done2 = false; setLoading(true); setLoadout(true); go1(); go2();
+    });
+
+    /* demos da folha de marca */
+    let dv = 2431; const dc = $('#demoCount');
+    $('#demoTick').addEventListener('click', () => { dv += 7 + Math.floor(Math.random() * 40); tween(dc, dv); });
+    $('#demoEnter').addEventListener('click', () => enter($$('#demoList .shim')));
+    initSegs(document);
+  }
+
+  Carmine.mount({
+    n: '2c', name: 'Identidade final', noKicker: true, noGlyph: true, live: true, motion: true,
+    headline: 'Ferramenta primeiro, com um sotaque de bairro italiano.',
+    rationale: 'Identidade final: wordmark e selo desenhados em contornos a partir da DM Serif Display, títulos de seção em Inter versalete (uma só serifada no sistema) e movimento mínimo e funcional, com tokens e caminho para reduced-motion.',
+    wordmarkSVG: B.refined(),
+    searchIcon: '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="7" cy="7" r="4.7"/><path d="M10.6 10.6 14 14"/></svg>',
+    fonts: { display: { name: 'DM Serif Display', sample: 'Carmine', use: 'Apenas wordmark, selo e favicon, sempre como SVG em contornos. Nenhum título da interface usa serifada.' },
+             ui: { name: 'Inter', use: 'Toda a interface, inclusive os títulos de seção em versalete com tracking largo. Numerais tabulares ligados.' } },
+    brandHTML, extraSpec,
+    protoExtra: '<button type="button" id="moBtn">Movimento: normal</button><button type="button" id="reBtn">Rever carregamento</button>',
+    themeSwap(apply) {
+      if (reduced() || !document.startViewTransition) {
+        html.classList.add('no-tx'); apply();
+        requestAnimationFrame(() => requestAnimationFrame(() => html.classList.remove('no-tx')));
+        return;
+      }
+      document.startViewTransition(apply);
+    },
+    onS2Draw(reason) {
+      if (!window.__swap) return;
+      if (reason === 'select') window.__swap.swapPanel();
+      if (reason === 'side') {
+        const l = $('#wlist'); window.__swap.enter($$('.cat-h', l).concat($$('.wcard', l))); window.__swap.swapPanel();
+      }
+    },
+    onMount: boot
+  });
+})();
+</script>
+</body>
+</html>

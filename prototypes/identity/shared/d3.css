@@ -1,0 +1,96 @@
+/* Direção 3 — Noir de alto contraste: Gloock + Geist / Geist Mono */
+:root,[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#0a0807;--surface:#131010;--surface-2:#1d1816;--line:#2e2623;--line-strong:#f7f0e4;
+  --text:#f7f0e4;--muted:#a79b8f;--accent:#e5222f;--accent-hover:#ff3a47;--accent-ink:#ffffff;
+  --leather:#7a4f2e;--ok:#8bc34a;--warn:#f0b43c;
+  --c-retake:#ff7a6b;--c-dm:#f0b43c;--c-casual:#7fd1ae;
+  --proto-bg:#000;--proto-fg:#f7f0e4;
+}
+[data-theme=light]{
+  color-scheme:light;
+  --bg:#efe6d1;--surface:#f7efdc;--surface-2:#e3d8bf;--line:#cfc2a3;--line-strong:#120c0a;
+  --text:#120c0a;--muted:#5f5348;--accent:#b50f1c;--accent-hover:#8f0a15;--accent-ink:#ffffff;
+  --leather:#7a4f2e;--ok:#2f6b1a;--warn:#855a00;
+  --c-retake:#a3281a;--c-dm:#7a5000;--c-casual:#1f6048;
+  --proto-bg:#120c0a;--proto-fg:#efe6d1;
+}
+:root{
+  --font-display:"Gloock","Playfair Display",serif;--font-ui:"Geist",system-ui,sans-serif;--font-num:"Geist Mono",ui-monospace,monospace;--font-mono:"Geist Mono",monospace;
+  --container:1160px;--gutter:24px;--radius:0;--radius-btn:0;--radius-chip:0;--mono-radius:0;--avatar-r:0;
+  --wm-weight:400;--wm-ls:-.005em;--hdr-h:64px;--hdr-wm:32px;--gap:24px;
+  --h1-font:var(--font-ui);--h1-weight:700;--h1-size:30px;--h1-ls:-.03em;--h2-font:var(--font-ui);--h2-size:13px;--h2-weight:700;--h2-size-lg:24px
+}
+body{font-size:14px}
+.spec{border-bottom:2px solid var(--line-strong)}
+.spec-title{font-family:var(--font-display);letter-spacing:0}
+.spec h2.sec,.label{font-family:var(--font-num);font-weight:500;letter-spacing:.14em}
+.wm-card,.type-card,.pal{border:1px solid var(--line-strong)}
+.wm-card.inv{border-color:var(--accent)}
+.sw i{border-color:var(--line-strong)}
+.mono{clip-path:polygon(0 0,100% 0,100% 72%,72% 100%,0 100%)}
+.mono.alt{clip-path:none;box-shadow:inset 0 0 0 2px var(--line-strong)}
+.screen-label{background:var(--accent);color:var(--accent-ink);border:0}
+.screen-label b{color:inherit}
+/* header: filete vermelho, nav com barra inferior */
+.app-header{border-bottom:2px solid var(--accent)}
+.hdr{gap:32px}
+.nav a{font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;height:var(--hdr-h);display:flex;align-items:center;padding-inline:14px;border-radius:0}
+.nav a[aria-current]::after{content:"";position:absolute;left:0;right:0;bottom:-2px;height:4px;background:var(--accent)}
+.search{border-color:var(--line-strong);background:transparent;font-family:var(--font-num);font-size:12px}
+.avatar{border-color:var(--line-strong);font-family:var(--font-num)}
+.btn{text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:700;border-color:var(--line-strong);background:transparent}
+.btn:hover{background:var(--text);color:var(--bg);border-color:var(--text)}
+.btn-primary{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.btn-primary:hover{background:var(--text);border-color:var(--text);color:var(--bg)}
+.seg{border:1px solid var(--line-strong);padding:0;gap:0;background:transparent}
+.seg button{border-radius:0;padding:9px 16px;font-size:12px;text-transform:uppercase;letter-spacing:.08em;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--text);color:var(--bg)}
+.page-head{border-bottom:2px solid var(--line-strong);margin-bottom:20px;padding-block:28px 16px}
+.page-head h1{text-transform:uppercase}
+.page-head .sub{font-family:var(--font-num);font-size:12px}
+.chip{border-color:currentColor;font-family:var(--font-num);font-weight:500;letter-spacing:.08em}
+/* servidores: números grandes, grade de cartões 2 colunas */
+.srv-cols{border-bottom:1px solid var(--line-strong);font-family:var(--font-num)}
+.srv{border-bottom:1px solid var(--line);padding-block:16px}
+.srv:hover{background:var(--surface-2)}
+.srv h3{font-weight:650;letter-spacing:-.01em}
+.srv .meta,.srv-map span{font-family:var(--font-num);font-size:11.5px}
+.srv-map b{font-family:var(--font-num);font-weight:500;font-size:12.5px}
+.mapthumb{border-radius:0;width:40px;height:40px;border:1px solid var(--line-strong)}
+.srv-pl .num b{font-size:22px;font-weight:600;letter-spacing:-.04em}
+.srv-ping .num{font-size:13px}
+.bar{height:6px;border-radius:0;background:var(--surface-2);border:1px solid var(--line)}
+.bar i{background:var(--accent);opacity:1}
+.bar i.full{background:var(--warn)}
+.friends{border:1px solid var(--line-strong);background:transparent}
+.friends-h{border-bottom:2px solid var(--accent);padding-bottom:12px}
+.friends-h h2{text-transform:uppercase;letter-spacing:.08em;font-size:12px}
+.fr{border-top:1px solid var(--line)}
+.fr:nth-of-type(1){border-top:0}
+.fr .avatar .dot{border-color:var(--bg);border-radius:0}
+.dot{border-radius:0}
+.fr-info span{font-family:var(--font-num);font-size:11.5px}
+.fr-off{font-family:var(--font-num)}
+.cat-h{border-bottom:2px solid var(--line-strong)}
+.cat-h .label b{font-family:var(--font-display);font-size:20px;letter-spacing:0;text-transform:none;font-weight:400}
+.wcard{background:transparent;border-color:var(--line)}
+.wcard:hover{border-color:var(--text);background:var(--surface)}
+.wcard[aria-pressed=true]{border-color:var(--accent);box-shadow:inset 0 -4px 0 var(--accent);background:var(--surface)}
+.wcard b{font-weight:650}
+.wcard span.sk{font-family:var(--font-num);font-size:11px}
+.panel{border:1px solid var(--line-strong);background:var(--bg)}
+.viewer{background:repeating-linear-gradient(0deg,transparent 0 23px,var(--line) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,var(--line) 23px 24px),var(--surface);border-bottom:1px solid var(--line-strong)}
+.ptitle h2{font-family:var(--font-display);font-weight:400;letter-spacing:-.01em}
+.inp,.toggle{border-color:var(--line-strong);background:transparent}
+.slot{border-color:var(--muted);background:transparent}
+.slot.on{border-color:var(--line-strong)}
+.pfoot{border-top:1px solid var(--line-strong)}
+.presets .btn[aria-pressed=true]{background:var(--text);color:var(--bg)}
+@media (max-width:760px){
+  :root{--gutter:16px;--hdr-h:56px}
+  .nav a{height:46px}
+  .seg button{padding-inline:8px}
+  .srv-pl .num b{font-size:20px}
+}

@@ -1,0 +1,29 @@
+# Dependências e builds
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+build/
+out/
+coverage/
+
+# .NET
+bin/
+obj/
+*.user
+
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Ferramentas locais
+.maestri/
+.playwright-mcp/
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
