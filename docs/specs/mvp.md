@@ -112,7 +112,17 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 - **Retake:** 9 vagas (5 TR × 4 CT) com o cs2-retakes; alocador de armas por tipo de round (pistola, meia compra, compra cheia, sorteados) e 1 AWP por time com chance; plantio automático; balanceamento de times entre rounds.
 - **Deathmatch:** FFA com 16 vagas, menu de armas, proteção de spawn de 1 s, pontos de spawn por mapa e mapa de 15 minutos.
 - **Mapas:** pool Active Duty nos dois modos, votação ao fim do mapa e `!rtv`; DM com rotação curta de mapas de ação rápida.
-- Plugins de gameplay escolhidos por pesquisa (maturidade, compatibilidade com o `cs2-css-inventory-simulator`) e fixados em versão.
+- Plugins de gameplay fixados em versão (pesquisa de 2026-10-10):
+
+  | Função | Plugin | Licença |
+  |---|---|---|
+  | Base | Metamod + CounterStrikeSharp 1.0.376 (.NET 10) | — |
+  | Skins | ianlucas/cs2-css-inventory-simulator 3.5.2 (`invsim_fallback_team true` no DM) | MIT |
+  | Retake | B3none/cs2-retakes 3.1.1 (`EnableFallbackAllocation=false`) | GPL-3.0 |
+  | Alocador de armas | Micka2302/cs2-retakes-allocator-2.0 (`AutoUpdateSignatures=true`, `CapabilityWeaponPaints=true`) | GPL-3.0 |
+  | Deathmatch | NockyCZ/CS2-Deathmatch 1.3.6 (agora mantido por mrc4tt) | MIT |
+  | Votação de mapa e `!rtv` | M-archand/RockTheVote-CSS 2.4.0 + CS2MenuManager | Sem licença: usar sem modificar nem redistribuir |
+  | Vaga reservada | Própria, dentro do Carmine.Core (nenhuma existente lê permissões externas nem retira "o último que entrou") | — |
 - Configuração dos servidores versionada em `infra/`.
 
 **Aceite**
@@ -313,7 +323,8 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 - O VIP só é concedido depois que o webhook é validado (assinatura do Mercado Pago) e o pagamento é consultado na API dele; o processamento é idempotente.
 - Pacotes se somam: comprar com VIP ativo estende a data de fim.
 - Lembrete 3 dias antes do fim, no site e no chat do jogo.
-- **Vagas reservadas:** quando o servidor está lotado e um VIP conecta, um jogador sem VIP é retirado para abrir a vaga. As salvaguardas estão em "Pontos em aberto".
+- **Vagas reservadas no Retake:** quando o servidor está lotado e um VIP conecta, um jogador sem VIP é retirado para abrir a vaga, nesta ordem: espectadores, depois AFK, depois o último que entrou. A retirada só acontece entre rounds. Quem foi retirado fica protegido por 30 minutos. A mensagem diz: "Vaga liberada para um VIP. Há vaga em: [outro servidor]. Com o VIP, sua vaga é garantida."
+- **Vagas reservadas no Deathmatch:** 2 vagas extras acima das 16 públicas, só para VIP, sem retirar ninguém.
 - **Indisponibilidade** (banimento de GSLT, update do CS2 que quebre plugins, queda de host): aviso no site e no Discord; com mais de 24 h, os dias de VIP são congelados e devolvidos automaticamente; com mais de 7 dias, reembolso proporcional sob pedido. Tudo descrito nos Termos.
 - **Direito de arrependimento de 7 dias:** reembolso feito pela Staff no painel do Mercado Pago, com revogação do VIP registrada no log de auditoria.
 - Política de Reembolso publicada e Termos atualizados com VIP, vagas reservadas e indisponibilidade.
@@ -325,7 +336,8 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 - O mesmo webhook entregue duas vezes concede o VIP uma vez só; um webhook com assinatura inválida é rejeitado e registrado.
 - Comprar 3 meses com 10 dias de VIP restantes resulta em 90 + 10 dias.
 - Um reembolso de teste remove os dias e registra a ação.
-- Servidor lotado com um VIP conectando: a vaga é aberta conforme a política, e o jogador retirado recebe a mensagem combinada.
+- Retake lotado com um VIP conectando: no fim do round sai o último a ter entrado (ou um espectador/AFK, se houver), que recebe a mensagem combinada e não é retirado de novo por 30 minutos.
+- DM com 16 jogadores: um VIP entra numa vaga extra sem ninguém sair; um jogador sem VIP não consegue usar as vagas extras.
 - Depois de restaurar um backup, os Períodos VIP são reconciliados com os pagamentos reais do Mercado Pago.
 
 ---
@@ -351,7 +363,6 @@ Retake e Deathmatch em produção; login Steam; Inventário com 3D aplicado no j
 
 ## Pontos em aberto
 
-- **Vaga reservada (S14):** salvaguardas da retirada de quem não é VIP (ordem de escolha, momento, proteção contra retiradas repetidas) e se o Deathmatch usa a mesma política.
-- Escolha dos plugins de Deathmatch, alocador de Retake, votação de mapa e vaga reservada (pesquisa em andamento).
+- Validar no servidor local: `invsim_fallback_team` no DM FFA e se o `GiveNamedItem2` do alocador mantém as skins.
 - Confirmar se a `cs2-lib` traz nomes de Itens em PT-BR.
 - Limites reais e termos do viewer 3D (dependem da resposta do Ian Lucas). Sem partner key, a abertura usa o embed público com fallback 2D.
