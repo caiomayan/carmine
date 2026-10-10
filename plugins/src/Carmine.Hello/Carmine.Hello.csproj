@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Plugin de verificação da S00: ao carregar, chama o health check da API e loga o resultado.
+    Saída para o servidor: bin/<Configuração>/net10.0/ → addons/counterstrikesharp/plugins/Carmine.Hello/
+  -->
+  <PropertyGroup>
+    <!-- O CounterStrikeSharp carrega as dependências a partir da pasta do plugin. -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Fornecido pelo próprio CounterStrikeSharp no servidor: não vai para a pasta do plugin. -->
+    <PackageReference Include="CounterStrikeSharp.API" ExcludeAssets="runtime" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Carmine.Api.Client/Carmine.Api.Client.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Carmine.Api.Client/Carmine.Api.Client.csproj" />
+    <Project Path="src/Carmine.Hello/Carmine.Hello.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Carmine.Hello.Tests/Carmine.Hello.Tests.csproj" />
+  </Folder>
+</Solution>
