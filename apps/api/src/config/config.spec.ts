@@ -16,6 +16,22 @@ describe('loadConfig', () => {
       databaseUrl: 'postgres://carmine:carmine@localhost:5432/carmine',
       valkeyUrl: 'redis://localhost:6379',
       healthCheckTimeoutMs: 2000,
+      steamWebApi: { key: null, url: 'https://api.steampowered.com', timeoutMs: 5000 },
+      equippedRateLimitPerMinute: 120,
+    });
+  });
+
+  it('lê a chave da Steam Web API e ignora a barra final da URL', () => {
+    const config = loadConfig({
+      ...validEnv,
+      STEAM_WEB_API_KEY: ' abc123 ',
+      STEAM_WEB_API_URL: 'http://localhost:9999/',
+    });
+
+    expect(config.steamWebApi).toEqual({
+      key: 'abc123',
+      url: 'http://localhost:9999',
+      timeoutMs: 5000,
     });
   });
 

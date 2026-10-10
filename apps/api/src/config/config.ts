@@ -13,6 +13,11 @@ const envSchema = z.object({
   DATABASE_URL: urlWithProtocol(['postgres:', 'postgresql:']),
   VALKEY_URL: urlWithProtocol(['redis:', 'rediss:']),
   HEALTH_CHECK_TIMEOUT_MS: z.coerce.number().int().positive().default(2000),
+  // Vazia desliga a busca de avatares (as Contas ficam com o avatar neutro).
+  STEAM_WEB_API_KEY: z.string().trim().default(''),
+  STEAM_WEB_API_URL: urlWithProtocol(['https:', 'http:']).default('https://api.steampowered.com'),
+  STEAM_WEB_API_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
+  EQUIPPED_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
 });
 
 export interface AppConfig {
@@ -23,6 +28,9 @@ export interface AppConfig {
   databaseUrl: string;
   valkeyUrl: string;
   healthCheckTimeoutMs: number;
+  steamWebApi: { key: string | null; url: string; timeoutMs: number };
+  /** Requisições por minuto, por IP, ao `equipped/v5` (o servidor de jogo pede por todos). */
+  equippedRateLimitPerMinute: number;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -47,5 +55,11 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     databaseUrl: e.DATABASE_URL,
     valkeyUrl: e.VALKEY_URL,
     healthCheckTimeoutMs: e.HEALTH_CHECK_TIMEOUT_MS,
+    steamWebApi: {
+      key: e.STEAM_WEB_API_KEY === '' ? null : e.STEAM_WEB_API_KEY,
+      url: e.STEAM_WEB_API_URL.replace(/\/+$/, ''),
+      timeoutMs: e.STEAM_WEB_API_TIMEOUT_MS,
+    },
+    equippedRateLimitPerMinute: e.EQUIPPED_RATE_LIMIT_PER_MINUTE,
   };
 }

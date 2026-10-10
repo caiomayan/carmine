@@ -1,8 +1,10 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
+import { AccountsModule } from './accounts/accounts.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import type { AppConfig } from './config/config.js';
 import { DatabaseModule } from './database/database.module.js';
+import { GameServersModule } from './game-servers/game-servers.module.js';
 import { HealthModule } from './health/health.module.js';
 import { loggerParams } from './logging.js';
 import { ValkeyModule } from './valkey/valkey.module.js';
@@ -18,6 +20,8 @@ export class AppModule {
         DatabaseModule,
         ValkeyModule,
         HealthModule,
+        GameServersModule,
+        AccountsModule,
       ],
     };
   }
