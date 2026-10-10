@@ -19,6 +19,8 @@ export default defineConfig({
     command: `pnpm exec next start --port ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
+    // A vitrine interna de componentes (/dev/componentes) só existe com esta variável.
+    env: { CARMINE_UI_GALLERY: '1' },
     timeout: 60_000,
   },
 });

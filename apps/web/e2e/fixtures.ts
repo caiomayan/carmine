@@ -3,13 +3,22 @@ import { test as base, expect, type Page } from '@playwright/test';
 
 export type Theme = 'dark' | 'light';
 
-export const ROUTES = ['/', '/inventario', '/termos', '/privacidade', '/nao-existe'] as const;
-export const WIDTHS = [390, 820, 1440] as const;
+export const ROUTES = [
+  '/',
+  '/inventario',
+  '/termos',
+  '/privacidade',
+  '/regras',
+  '/contato',
+  '/nao-existe',
+  '/dev/componentes',
+] as const;
+export const WIDTHS = [390, 820, 1100, 1440] as const;
 
-/** Cor de fundo (--bg) de cada tema, como o navegador a calcula. */
+/** Cor de fundo (--bg) de cada tema da Liberty, como o navegador a calcula. */
 export const BG: Record<Theme, string> = {
-  dark: 'rgb(15, 13, 11)',
-  light: 'rgb(242, 235, 220)',
+  dark: 'rgb(17, 16, 13)',
+  light: 'rgb(248, 237, 209)',
 };
 
 /** O Chrome registra a resposta 404 do próprio documento como erro de console. */
@@ -49,19 +58,33 @@ export async function saveTheme(page: Page, theme: Theme) {
   }, theme);
 }
 
-/** Espera as animações finitas (entradas, fades) terminarem. */
+/**
+ * Espera as animações finitas no tempo (entradas, fades) terminarem. As ligadas à rolagem
+ * (o rodapé) só terminam rolando a página, então ficam de fora.
+ */
 export async function settle(page: Page) {
   await page.evaluate(() =>
     Promise.all(
       document
         .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY)
+        .filter(
+          (a) =>
+            a.timeline === document.timeline &&
+            a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
+        )
         .map((a) => a.finished),
     ),
   );
 }
 
+/** Rola até o fim real da página, onde o rodapé termina de entrar. */
+export async function scrollToEnd(page: Page) {
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
+}
+
 export async function axeViolations(page: Page) {
+  // O rodapé só fica opaco quando entra na tela: rola até o fim para o axe medir o contraste dele.
+  await scrollToEnd(page);
   await settle(page);
   const { violations } = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
