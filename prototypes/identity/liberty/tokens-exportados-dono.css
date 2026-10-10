@@ -1,0 +1,57 @@
+/* Exportado pelo dono no Liberty Lab em 2026-10-10 (preset base: Negativo, ajustado à mão). */
+/* Escala neutra: nenhuma cor de acento. --accent é o próprio --text (ação primária = preenchido invertido). */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #070603;
+  --surface: #0C0B08;
+  --surface-2: #12110D;
+  --line: #1D1B16;
+  --line-strong: #625C50;
+  --text: #EEE4C9;
+  --muted: #9A927F;
+  --faint: #5F5A4E;
+  --accent: #EEE4C9;
+  --accent-hover: #C9C0A9;
+  --accent-ink: #070603;
+  --leather: #625C50;
+  --ok: #EEE4C9;
+  --warn: #EEE4C9;
+  --danger: #EEE4C9;
+  --c-retake: #EEE4C9;
+  --c-dm: #EEE4C9;
+  --c-casual: #EEE4C9;
+  --proto-bg: #010000;
+  --proto-fg: #CFC5AE;
+  --grain-op: 0.084;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #FAEFD4;
+  --surface: #F5EAD0;
+  --surface-2: #EFE4CA;
+  --line: #E5DAC1;
+  --line-strong: #908977;
+  --text: #13110E;
+  --muted: #696356;
+  --faint: #A49C88;
+  --accent: #13110E;
+  --accent-hover: #38352E;
+  --accent-ink: #FAEFD4;
+  --leather: #908977;
+  --ok: #13110E;
+  --warn: #13110E;
+  --danger: #13110E;
+  --c-retake: #13110E;
+  --c-dm: #13110E;
+  --c-casual: #13110E;
+  --proto-bg: #070603;
+  --proto-fg: #F4EDDA;
+  --grain-op: 0.098;
+}
+/* Parâmetros: preto 5/255 · calor 3.0% · creme 90% · contraste 100% · tons médios 60% · grão 70% */
+:root {
+  --container: 1120px;
+  --margin: 36px; /* no mobile: 16px + 25% do excedente */
+}
+.container { width: min(var(--container), calc(100% - 2 * var(--margin))); margin-inline: auto; }

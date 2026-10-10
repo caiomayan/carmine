@@ -1,6 +1,6 @@
 # Spec do MVP · v2
 
-> Linguagem do domínio: [`CONTEXT.md`](../../CONTEXT.md). Decisões: [`docs/adr/`](../adr/). Identidade visual de referência: [`prototypes/identity/direcao-2c.html`](../../prototypes/identity/direcao-2c.html).
+> Linguagem do domínio: [`CONTEXT.md`](../../CONTEXT.md). Decisões: [`docs/adr/`](../adr/). Identidade visual de referência: [`prototypes/identity/liberty-final.html`](../../prototypes/identity/liberty-final.html), com os tokens em [`prototypes/identity/liberty/tokens-exportados-dono-v2.css`](../../prototypes/identity/liberty/tokens-exportados-dono-v2.css) e as cores de contexto em [`prototypes/identity/shared/liberty-status.css`](../../prototypes/identity/shared/liberty-status.css). A direção 2c foi substituída.
 >
 > v2 incorpora a revisão do Product Owner (2026-10-10): núcleo jogável antes de cobrança, regras de gameplay, estados de pagamento, comportamento em falhas e critérios de saída do beta.
 
@@ -34,7 +34,8 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 
 ## Princípios transversais
 
-- **Interface:** app-first, sem landing page. Barra superior com container global de ~1280 px. Tema escuro quente padrão e claro papel creme, com os tokens e o motion da direção 2c. Animações sutis em toda interação, respeitando `prefers-reduced-motion`. Polimento visual com a skill impeccable.
+- **Interface:** app-first, sem landing page. Barra superior com container global de 1080 px e margem lateral mínima de 36 px. Identidade **Liberty**: só neutros (preto quente e creme, escala de cinzas), sem cor de acento de marca; ação primária = preenchido invertido. Arredondamento nível shadcn; botões, abas e filtros sem borda, com fundo mais claro no hover e no ativo; poucas linhas. Rodapé só no fim real da página. Cores de contexto (online, lotado, erro, sucesso, info, VIP) apenas em sinais pequenos. Animações sutis em toda interação, respeitando `prefers-reduced-motion`. Polimento visual com a skill impeccable.
+- **Stack de UI:** Tailwind CSS v4 + shadcn/ui + Animate UI, ícones Lucide (animados via lucide-animated) e marcas via Simple Icons (ADR 0014).
 - **Texto:** PT-BR, tom sóbrio tratando por "você", com tempero da marca só em momentos leves e nunca em erros, pagamentos ou moderação. Todas as strings externalizadas (i18n desde o dia 1).
 - **Acessibilidade:** WCAG 2.2 AA, navegação completa por teclado, foco visível, alvos de 44 px no mobile. Todo controle que existe por arrasto (stickers, charms) também existe por formulário.
 - **Responsivo:** 390 px a 1440 px+ sem scroll horizontal.

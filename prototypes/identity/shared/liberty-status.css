@@ -1,0 +1,23 @@
+/* Cores de contexto (status): NÃO fazem parte da identidade da marca.
+   Só para sinais pequenos: pontos, barras finas, ícones de ping, ícones de mensagem e selo VIP.
+   Nunca em botões, navegação ou superfícies grandes. Dessaturadas e quentes para conviver com a paleta P&B.
+   Contraste >= 4,5:1 sobre --bg, --surface e --surface-2 (exceto offline, que é o próprio --faint e sempre vem com rótulo). */
+:root,
+[data-theme="dark"] {
+  --status-online: #8FB174;
+  --status-success: var(--status-online);
+  --status-warn: #D8A64E;
+  --status-danger: #DB8274;
+  --status-info: #82A6C2;
+  --status-vip: #CDAA62;
+  --status-offline: var(--faint);
+}
+[data-theme="light"] {
+  --status-online: #3F6930;
+  --status-success: var(--status-online);
+  --status-warn: #7C560C;
+  --status-danger: #A3382C;
+  --status-info: #386287;
+  --status-vip: #765C1A;
+  --status-offline: var(--faint);
+}

@@ -1,0 +1,45 @@
+/* Exportado pelo dono no Liberty Lab em 2026-10-10 — v2 (substitui a v1). */
+/* Escala neutra da marca. Cores de contexto (status) são definidas à parte, fora da identidade. */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #11100D;
+  --surface: #191714;
+  --surface-2: #23211C;
+  --line: #34312A;
+  --line-strong: #655F53;
+  --text: #EDE2C7;
+  --muted: #9D9582;
+  --faint: #655F53;
+  --accent: #EDE2C7;
+  --accent-hover: #CAC0A9;
+  --accent-ink: #11100D;
+  --leather: #655F53;
+  --proto-bg: #010000;
+  --proto-fg: #CFC5AD;
+  --grain-op: 0.000;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F8EDD1;
+  --surface: #F0E5CA;
+  --surface-2: #E6DCC1;
+  --line: #D6CCB3;
+  --line-strong: #8F8776;
+  --text: #1C1B17;
+  --muted: #655F53;
+  --faint: #A69E89;
+  --accent: #1C1B17;
+  --accent-hover: #3F3D35;
+  --accent-ink: #F8EDD1;
+  --leather: #8F8776;
+  --proto-bg: #11100D;
+  --proto-fg: #F3EBD6;
+  --grain-op: 0.000;
+}
+/* Parâmetros: preto 15/255 · calor 2.5% · creme 100% · contraste 100% · tons médios 100% · grão 0% */
+:root {
+  --container: 1080px;
+  --margin: 36px; /* no mobile: 16px + 25% do excedente */
+}
+.container { width: min(var(--container), calc(100% - 2 * var(--margin))); margin-inline: auto; }
