@@ -1,0 +1,3 @@
+[*.cs]
+# Nomes de teste em frase, separados por sublinhado.
+dotnet_diagnostic.CA1707.severity = none

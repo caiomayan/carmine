@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Cliente HTTP da API, gerado no build pelo NSwag a partir de apps/api/openapi.json (ADR 0004).
+    Para atualizar: `pnpm openapi:generate` em apps/api e recompilar esta solution.
+  -->
+  <PropertyGroup>
+    <OpenApiDocument>$(MSBuildThisFileDirectory)../../../apps/api/openapi.json</OpenApiDocument>
+    <GeneratedClientFile>$(BaseIntermediateOutputPath)generated/CarmineApiClient.g.cs</GeneratedClientFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSwag.MSBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Target Name="GenerateCarmineApiClient"
+          BeforeTargets="CoreCompile"
+          Inputs="$(OpenApiDocument);$(MSBuildProjectFullPath)"
+          Outputs="$(GeneratedClientFile)">
+    <Exec Command="$(NSwagExe_Net100) openapi2csclient /input:&quot;$(OpenApiDocument)&quot; /output:&quot;$(GeneratedClientFile)&quot; /namespace:Carmine.Api.Client /className:CarmineApiClient /operationGenerationMode:SingleClientFromOperationId /jsonLibrary:SystemTextJson /generateClientInterfaces:true /useBaseUrl:false /generateNullableReferenceTypes:true /generateOptionalPropertiesAsNullable:true" />
+  </Target>
+
+  <Target Name="IncludeCarmineApiClient" BeforeTargets="CoreCompile" DependsOnTargets="GenerateCarmineApiClient">
+    <ItemGroup>
+      <Compile Include="$(GeneratedClientFile)" />
+      <FileWrites Include="$(GeneratedClientFile)" />
+    </ItemGroup>
+  </Target>
+</Project>

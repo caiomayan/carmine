@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/.turbo
+**/.env
+**/.env.*
+!**/.env.example
+**/bin
+**/obj
+.git
+.github
+.maestri
+.playwright-mcp
+docs
+plugins
+prototypes

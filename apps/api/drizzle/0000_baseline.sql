@@ -1,0 +1,2 @@
+-- Linha de base do esquema: banco ainda vazio. A S01 cria as primeiras tabelas.
+-- Existe para que o fluxo de migrações (gerar, revisar, aplicar) funcione desde a S00.
