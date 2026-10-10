@@ -3,6 +3,10 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist",
+    "drizzle"
+  ],
   "scripts": {
     "build": "nest build -p tsconfig.build.json",
     "dev": "nest build -p tsconfig.build.json && pnpm db:migrate && nest start -p tsconfig.build.json --watch --preserveWatchOutput --exec \"node --env-file=.env.example --env-file-if-exists=.env\"",
