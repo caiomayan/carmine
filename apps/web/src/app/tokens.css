@@ -1,0 +1,126 @@
+/*
+ * Tokens da identidade 2c (prototypes/identity/direcao-2c.html + shared/d2*.css).
+ * Os valores vêm do protótipo; só os nomes de tipografia e espaçamento foram organizados.
+ * Escuro quente é o padrão; o claro papel creme entra com html[data-theme=light].
+ */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f0d0b;
+  --surface: #171410;
+  --surface-2: #211c17;
+  --line: #302920;
+  --text: #eee5d4;
+  --muted: #a39787;
+  --accent: #c8323b;
+  /* a 2c usava #dc434b: o texto do botão caía para 3,99:1; este fica em 4,62:1 (AA) */
+  --accent-hover: #cf3741;
+  --accent-ink: #fff7ea;
+  --leather: #8c6c49;
+  --ok: #88b06c;
+  --warn: #d8a54b;
+  --c-retake: #e58c7e;
+  --c-dm: #d8a54b;
+  --shadow-press: rgb(0 0 0 / 0.35);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 .96  0 0 0 0 .88  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-op: 0.045;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f2ebdc;
+  --surface: #faf6ea;
+  --surface-2: #e9dfca;
+  --line: #d6c9b0;
+  --text: #1e1913;
+  --muted: #6a5f50;
+  --accent: #a9232c;
+  --accent-hover: #8e1b24;
+  --accent-ink: #fff7ea;
+  --leather: #7d5f3f;
+  --ok: #3f7432;
+  --warn: #8a5e0e;
+  --c-retake: #a63a2c;
+  --c-dm: #85580a;
+  --shadow-press: rgb(60 40 20 / 0.22);
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2  0 0 0 0 .12  0 0 0 0 .05  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grain-op: 0.06;
+}
+
+:root {
+  /* tipografia: Inter em toda a UI; a serifada só existe no wordmark, em contornos */
+  --font-ui: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-xs: 10.5px; /* rótulos em versalete */
+  --text-sm: 12.5px;
+  --text-base: 14px;
+  --text-md: 15px;
+  --text-lg: 18px;
+  --h1-size: 26px;
+  --h1-weight: 700;
+  --h1-ls: -0.02em;
+  --label-ls: 0.2em;
+
+  /* espaçamento: escala de 4 px */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* forma e layout */
+  --radius: 10px;
+  --radius-btn: 8px;
+  --radius-chip: 999px;
+  --container: 1280px;
+  --gutter: 24px;
+  --hdr-h: 58px;
+  --wm-h: 22px;
+  --tap: 36px;
+
+  /* movimento: durações e curvas da 2c */
+  --dur-instant: 90ms; /* press */
+  --dur-fast: 140ms; /* hover, cor, borda */
+  --dur-base: 220ms; /* troca de estado */
+  --dur-slow: 360ms; /* troca de painel, tema */
+  --dur-enter: 520ms; /* entrada de lista */
+  --dur-count: 700ms; /* contador numérico */
+  --dur-pulse: 2400ms; /* pulso do "ao vivo" */
+  --dur-skel: 1500ms; /* varredura do skeleton */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* chegadas */
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0); /* saídas */
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1); /* tema, crossfade */
+  --ease-std: cubic-bezier(0.2, 0, 0, 1); /* cor e borda */
+  --stagger: 32ms;
+  --stagger-max: 8; /* teto: 8 × 32 = 256 ms de atraso */
+  --rise: 8px;
+  --swap-scale: 0.97;
+  --swap-blur: 4px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    --gutter: 16px;
+    --wm-h: 20px;
+    --tap: 44px; /* alvos de 44 px no mobile */
+  }
+}
+
+/* reduced-motion: some o deslocamento, a escala, o blur, o pulso e o shimmer; ficam fades curtos */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rise: 0px;
+    --stagger: 0ms;
+    --swap-scale: 1;
+    --swap-blur: 0px;
+    --dur-enter: 180ms;
+    --dur-slow: 160ms;
+    --dur-count: 0ms;
+    --dur-base: 140ms;
+  }
+}

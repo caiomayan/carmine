@@ -1,0 +1,152 @@
+/* grade da lista da 2c: servidor, mapa, jogadores, estado, ação */
+.cols,
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.6fr) minmax(0, 1.2fr) minmax(0, 1.1fr) 80px 108px;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.cols {
+  padding: 0 var(--space-4) 6px;
+}
+
+.row {
+  min-height: 64px;
+  margin-bottom: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--text) 2.5%, var(--surface)),
+    var(--surface)
+  );
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 98px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: center;
+  min-width: 0;
+}
+
+.map {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.lines {
+  display: grid;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.players,
+.status {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* silhueta estática (estado vazio) */
+.ghost {
+  display: block;
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.chip {
+  width: 84px;
+  height: 22px;
+  border-radius: var(--radius-chip);
+}
+
+.l1 {
+  height: 13px;
+  width: min(180px, 80%);
+}
+
+.l2 {
+  height: 10px;
+  width: min(110px, 55%);
+}
+
+.short {
+  width: 72px;
+}
+
+.tiny {
+  width: 44px;
+}
+
+.thumb {
+  width: 44px;
+  height: 30px;
+  flex: none;
+  border-radius: 5px;
+}
+
+.bar {
+  height: 4px;
+  width: 100%;
+}
+
+.btn {
+  height: 36px;
+  border-radius: var(--radius-btn);
+}
+
+@media (min-width: 761px) and (max-width: 1000px) {
+  .main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 6px;
+  }
+
+  .thumb {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .cols {
+    display: none;
+  }
+
+  .row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "main main"
+      "map players"
+      "status btn";
+    gap: var(--space-3) var(--space-4);
+    padding: 14px;
+  }
+
+  .main {
+    grid-area: main;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: var(--space-2);
+  }
+
+  .map {
+    grid-area: map;
+  }
+
+  .players {
+    grid-area: players;
+  }
+
+  .status {
+    grid-area: status;
+  }
+
+  .btn {
+    grid-area: btn;
+    height: 44px;
+  }
+}
