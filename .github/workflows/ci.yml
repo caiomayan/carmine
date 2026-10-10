@@ -1,4 +1,4 @@
-# CI do monorepo. Os nomes dos jobs (node, dotnet, api-image) são os checks exigidos
+# CI do monorepo. Os nomes dos jobs (node, dotnet, api-image, web-image) são os checks exigidos
 # pelo ruleset do main; não renomeie sem atualizar o ruleset (infra/github/main-ruleset.json).
 # web-image ainda não é exigido pelo ruleset.
 name: CI
