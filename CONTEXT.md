@@ -98,7 +98,10 @@ O intervalo de tempo em que uma Conta tem VIP ativo.
 Compra avulsa via Pix que adiciona 1, 3 ou 6 meses ao Período VIP.
 
 **Assinatura VIP** (`VipSubscription`):
-Cobrança recorrente mensal no cartão que renova o Período VIP.
+Cobrança recorrente mensal no cartão que renova o Período VIP. Não existe no MVP.
+
+**Vaga reservada**:
+O direito de um VIP entrar num Servidor Carmine lotado, abrindo vaga com a retirada de um jogador sem VIP.
 
 **Pagador**:
 A pessoa maior de idade que paga o VIP; pode não ser o dono da Conta.

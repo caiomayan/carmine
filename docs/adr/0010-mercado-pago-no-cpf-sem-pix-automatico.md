@@ -1,6 +1,6 @@
 # Mercado Pago no CPF, com Pacotes VIP via Pix em vez de Pix Automático
 
-O VIP é vendido pelo Mercado Pago em nome de pessoa física: Pix a 0,99% com crédito imediato, SDK oficial em TypeScript e chave de idempotência. Pix Automático exige CNPJ ativo há 6 meses ou mais (Res. BCB 482/2025), então o Pix é vendido como Pacote VIP pré-pago (1, 3 ou 6 meses) e a recorrência fica só no cartão. Benefícios só são concedidos depois que o webhook é confirmado consultando o pagamento.
+O VIP é vendido pelo Mercado Pago em nome de pessoa física: Pix a 0,99% com crédito imediato, SDK oficial em TypeScript e chave de idempotência. Pix Automático exige CNPJ ativo há 6 meses ou mais (Res. BCB 482/2025), então o Pix é vendido como Pacote VIP pré-pago (1, 3 ou 6 meses). No MVP não há cartão nem recorrência: a Assinatura VIP no cartão multiplica estados (renovação, falha, cancelamento, sobreposição com Pix, chargeback) e fica para depois. Benefícios só são concedidos depois que o webhook é confirmado consultando o pagamento.
 
 ## Considered Options
 
