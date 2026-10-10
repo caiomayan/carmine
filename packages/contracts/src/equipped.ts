@@ -52,7 +52,8 @@ export const meleeEconItemSchema = z
     paint: z.int(),
     seed: z.int(),
     stattrak: z.int(),
-    stickers: z.array(z.never()),
+    // Facas não levam stickers; o plugin espera sempre a lista vazia.
+    stickers: z.array(z.unknown()).max(0),
     uid: z.int(),
     wear: z.number(),
   })

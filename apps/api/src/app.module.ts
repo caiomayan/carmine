@@ -4,6 +4,7 @@ import { AccountsModule } from './accounts/accounts.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import type { AppConfig } from './config/config.js';
 import { DatabaseModule } from './database/database.module.js';
+import { EquippedModule } from './equipped/equipped.module.js';
 import { GameServersModule } from './game-servers/game-servers.module.js';
 import { HealthModule } from './health/health.module.js';
 import { loggerParams } from './logging.js';
@@ -22,6 +23,7 @@ export class AppModule {
         HealthModule,
         GameServersModule,
         AccountsModule,
+        EquippedModule,
       ],
     };
   }
