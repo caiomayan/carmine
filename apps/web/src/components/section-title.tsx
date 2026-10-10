@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
-import styles from './section-title.module.css';
 
-/** Título de seção da 2c: Inter em versalete, losango carmim e filete duplo. */
+/** Título de seção da Liberty: Inter em versalete com tracking largo e um losango no texto. */
 export function SectionTitle({
   id,
   children,
@@ -12,8 +11,12 @@ export function SectionTitle({
   aside?: ReactNode;
 }) {
   return (
-    <div className={styles.row}>
-      <h2 id={id} className={styles.title}>
+    <div className="flex items-center justify-between gap-4 pb-3">
+      <h2
+        id={id}
+        className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
+      >
+        <span aria-hidden="true" className="size-1.5 rotate-45 bg-foreground" />
         {children}
       </h2>
       {aside}

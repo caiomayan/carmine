@@ -1,8 +1,16 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/animate-ui/components/radix/tooltip';
+import { MoonIcon } from '@/components/icons/animated/moon';
+import { SunIcon } from '@/components/icons/animated/sun';
+import { AnimatedIcon } from '@/components/icons/animated-icon';
+import { Button } from '@/components/ui/button';
 import { oppositeTheme, parseTheme, THEME_STORAGE_KEY, type Theme } from '@/lib/theme';
-import styles from './theme-toggle.module.css';
 
 function subscribe(onChange: () => void) {
   const observer = new MutationObserver(onChange);
@@ -36,26 +44,29 @@ function swapTheme(theme: Theme) {
   requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('no-tx')));
 }
 
+/** Alterna escuro e claro. O ícone mostra o destino da troca: sol no escuro, lua no claro. */
 export function ThemeToggle({ labels }: { labels: { light: string; dark: string } }) {
   const theme = useSyncExternalStore(subscribe, readTheme, readServerTheme);
   const label = theme === 'light' ? labels.dark : labels.light;
 
   return (
-    <button
-      type="button"
-      className={styles.toggle}
-      aria-label={label}
-      title={label}
-      data-testid="theme-toggle"
-      onClick={() => swapTheme(oppositeTheme(readTheme()))}
-    >
-      <svg className={`${styles.icon} ${styles.sun}`} viewBox="0 0 20 20" aria-hidden="true">
-        <circle cx="10" cy="10" r="3.6" />
-        <path d="M10 1.8v2M10 16.2v2M1.8 10h2M16.2 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" />
-      </svg>
-      <svg className={`${styles.icon} ${styles.moon}`} viewBox="0 0 20 20" aria-hidden="true">
-        <path d="M16.4 12.6A6.8 6.8 0 0 1 7.4 3.6a6.8 6.8 0 1 0 9 9Z" />
-      </svg>
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="quiet"
+          size="icon"
+          aria-label={label}
+          data-testid="theme-toggle"
+          onClick={() => swapTheme(oppositeTheme(readTheme()))}
+        >
+          <AnimatedIcon icon={SunIcon} size={18} className="light:hidden" />
+          <AnimatedIcon icon={MoonIcon} size={18} className="dark:hidden" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent side="bottom" sideOffset={6}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 }

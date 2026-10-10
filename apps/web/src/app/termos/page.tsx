@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { PageHead } from '@/components/page-head';
+import { DraftDocument } from '@/components/draft-document';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('terms');
@@ -9,11 +9,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function TermsPage() {
   const t = await getTranslations('terms');
-
-  return (
-    <div className="container page">
-      <PageHead title={t('title')} />
-      <p className="prose">{t('body')}</p>
-    </div>
-  );
+  return <DraftDocument title={t('title')} status={t('status')} body={t('body')} />;
 }

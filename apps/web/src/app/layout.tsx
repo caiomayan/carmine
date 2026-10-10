@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { MotionProvider } from '@/components/motion-provider';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { locale } from '@/i18n/request';
@@ -26,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const viewport: Viewport = {
   colorScheme: 'dark light',
-  themeColor: '#0f0d0b',
+  themeColor: '#11100d',
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -45,14 +47,25 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body>
-        <a className="skip-link" href={`#${MAIN_CONTENT_ID}`}>
-          {t('skipToContent')}
-        </a>
-        <SiteHeader />
-        <main id={MAIN_CONTENT_ID} tabIndex={-1} className="site-main">
-          {children}
-        </main>
-        <SiteFooter />
+        {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
+        <NextIntlClientProvider messages={null}>
+          <MotionProvider>
+            <a
+              href={`#${MAIN_CONTENT_ID}`}
+              className="fixed top-3 left-3 z-100 -translate-y-[calc(100%+1.5rem)] rounded-md bg-primary px-4 py-3 font-semibold text-primary-foreground transition-transform duration-(--dur-base) ease-out focus-visible:translate-y-0 focus-visible:outline-foreground"
+            >
+              {t('skipToContent')}
+            </a>
+            {/* Cabeçalho e conteúdo ocupam ao menos a tela inteira: o rodapé só aparece no fim real da página. */}
+            <div className="flex min-h-dvh flex-col">
+              <SiteHeader />
+              <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
+                {children}
+              </main>
+            </div>
+            <SiteFooter />
+          </MotionProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

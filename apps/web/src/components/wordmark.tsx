@@ -1,5 +1,5 @@
 /**
- * Wordmark definitivo da 2c: DM Serif Display em contornos, com o bico do C lapidado.
+ * Wordmark da Liberty ("refined"): DM Serif Display em contornos, com o bico do C lapidado.
  * Contorno copiado de src/brand/carmine-wordmark.svg (origem: prototypes/identity/brand/);
  * por ser SVG, não depende da fonte e herda a cor do texto (currentColor).
  */
