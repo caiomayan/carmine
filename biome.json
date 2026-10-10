@@ -48,11 +48,33 @@
           }
         }
       }
+    },
+    {
+      "includes": [
+        "apps/web/src/components/animate-ui/**",
+        "apps/web/src/components/icons/animated/**",
+        "apps/web/src/hooks/**",
+        "apps/web/src/lib/get-strict-context.tsx"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off",
+            "noArrayIndexKey": "off"
+          },
+          "correctness": {
+            "useExhaustiveDependencies": "off"
+          },
+          "a11y": {
+            "noStaticElementInteractions": "off"
+          }
+        }
+      }
     }
   ],
   "css": {
     "parser": {
-      "cssModules": true
+      "tailwindDirectives": true
     }
   }
 }

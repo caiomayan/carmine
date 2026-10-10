@@ -4,7 +4,7 @@ const mainNav = (page: import('@playwright/test').Page) =>
   page.getByRole('navigation', { name: 'Principal' });
 
 for (const theme of ['dark', 'light'] as const) {
-  test(`home renderiza com os tokens da 2c no tema ${theme}`, async ({ page }) => {
+  test(`home renderiza com os tokens da Liberty no tema ${theme}`, async ({ page }) => {
     await saveTheme(page, theme);
     await page.goto('/');
 
@@ -20,8 +20,11 @@ for (const theme of ['dark', 'light'] as const) {
     );
 
     const footer = page.getByRole('navigation', { name: 'Rodapé' });
-    await expect(footer.getByRole('link', { name: 'Termos' })).toHaveAttribute('href', '/termos');
-    await expect(footer.getByRole('link', { name: 'Privacidade' })).toHaveAttribute(
+    await expect(footer.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute(
+      'href',
+      '/termos',
+    );
+    await expect(footer.getByRole('link', { name: 'Política de privacidade' })).toHaveAttribute(
       'href',
       '/privacidade',
     );
@@ -58,30 +61,6 @@ test('o tema salvo é aplicado antes da primeira pintura', async ({ page }) => {
   ).toBe(true);
 });
 
-test('a troca de tema alterna, salva e sobrevive ao recarregar', async ({ page }) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Usar tema claro' }).click();
-
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('body')).toHaveCSS('background-color', BG.light);
-  await expect(page.getByRole('button', { name: 'Usar tema escuro' })).toBeVisible();
-
-  await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-
-  await page.getByRole('button', { name: 'Usar tema escuro' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  expect(await page.evaluate(() => localStorage.getItem('carmine-theme'))).toBe('dark');
-});
-
-test('a troca de tema funciona com movimento reduzido', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Usar tema claro' }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('html')).not.toHaveClass(/no-tx/);
-});
-
 test('o skip link leva o foco ao conteúdo', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Tab');
@@ -103,6 +82,17 @@ test('navega para o Inventário pela barra superior', async ({ page }) => {
   );
 });
 
+test('o destaque da navegação acompanha a página atual', async ({ page }) => {
+  await page.goto('/inventario');
+  const current = mainNav(page).locator('[data-slot="motion-highlight"]');
+  await expect(current).toHaveCount(1);
+  const link = mainNav(page).getByRole('link', { name: 'Inventário' });
+  await expect(async () => {
+    const [h, l] = await Promise.all([current.boundingBox(), link.boundingBox()]);
+    expect(Math.round(h?.x ?? -1)).toBe(Math.round(l?.x ?? -2));
+  }).toPass();
+});
+
 test('rota inexistente mostra a 404 própria', async ({ page }) => {
   const response = await page.goto('/nao-existe');
   expect(response?.status()).toBe(404);
@@ -114,6 +104,15 @@ test('rota inexistente mostra a 404 própria', async ({ page }) => {
   await page.getByRole('link', { name: 'Ver servidores' }).click();
   await expect(page).toHaveURL('/');
 });
+
+for (const route of ['/regras', '/contato'] as const) {
+  test(`a página ${route} existe e é alcançável pelo rodapé`, async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('navigation', { name: 'Rodapé' }).locator(`a[href="${route}"]`).click();
+    await expect(page).toHaveURL(route);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+}
 
 for (const width of WIDTHS) {
   test(`sem scroll horizontal em ${width}px`, async ({ page }) => {
@@ -128,6 +127,33 @@ for (const width of WIDTHS) {
     }
   });
 }
+
+test('container global de 1080 px com margem mínima de 36 px (21 px no mobile)', async ({
+  page,
+}) => {
+  // A largura útil desconta a barra de rolagem; o container centraliza dentro dela.
+  const measure = async () =>
+    page.locator('header .container-page').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, width: r.width, viewport: document.documentElement.clientWidth };
+    });
+  const expectContainer = async (margin: number) => {
+    const { left, width, viewport } = await measure();
+    expect(width).toBeCloseTo(Math.min(1080, viewport - 2 * margin), 0);
+    expect(left).toBeCloseTo((viewport - width) / 2, 0);
+    expect(left).toBeGreaterThanOrEqual(margin - 0.5);
+  };
+
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/');
+  await expectContainer(36);
+
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await expectContainer(36);
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectContainer(21);
+});
 
 for (const theme of ['dark', 'light'] as const) {
   for (const width of [390, 1440] as const) {

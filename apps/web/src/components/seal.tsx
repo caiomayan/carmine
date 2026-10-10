@@ -1,0 +1,34 @@
+import { cn } from '@/lib/utils';
+
+/**
+ * Selo compacto da Carmine (monograma C em DM Serif Display, em contornos), de
+ * prototypes/identity/shared/brand.js (seal.compact). Na Liberty o disco é o próprio texto e
+ * o C é o fundo: inverte sozinho com o tema.
+ */
+export function Seal({ size = 44, className }: { size?: number; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      width={size}
+      height={size}
+      aria-hidden="true"
+      focusable="false"
+      className={cn('shrink-0', className)}
+    >
+      <circle cx="50" cy="50" r="49" fill="var(--text)" />
+      <circle
+        cx="50"
+        cy="50"
+        r="42.5"
+        fill="none"
+        stroke="var(--bg)"
+        strokeWidth="2.5"
+        opacity=".8"
+      />
+      <path
+        fill="var(--bg)"
+        d="M54.2 71.6Q48.2 71.6 43.3 69.1Q38.4 66.7 35.6 61.8Q32.7 57 32.7 50Q32.7 44.7 34.5 40.6Q36.2 36.6 39.2 33.9Q42.2 31.2 46.2 29.8Q50.1 28.4 54.5 28.4Q58 28.4 61 29.2Q64 30 66.6 31.5L67.1 43.8L66.2 40.2L63.1 34.1Q62.5 33 61.7 32Q61 31 59.9 30.5Q59 30.1 58.1 29.9Q57.2 29.7 55.8 29.7Q52.2 29.7 49.3 31.6Q46.3 33.5 44.5 37.9Q42.8 42.4 42.8 50.1Q42.8 57.7 44.5 62.1Q46.1 66.6 49 68.4Q51.9 70.3 55.5 70.3Q57.5 70.3 58.6 70.1Q59.8 69.8 61 69.2Q62.2 68.7 62.8 67.8Q63.4 66.8 63.9 65.7L66.6 59.6H67.3L67.1 68.5Q64.5 69.8 61.3 70.7Q58 71.6 54.2 71.6Z"
+      />
+    </svg>
+  );
+}

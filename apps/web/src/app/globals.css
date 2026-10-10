@@ -1,198 +1,156 @@
+@import "tailwindcss";
+@import "tw-animate-css";
 @import "./tokens.css";
 
-/* ---------- reset e base ---------- */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* O tema vem de html[data-theme], aplicado antes da primeira pintura (lib/theme.ts). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+/* Tokens Liberty expostos ao Tailwind e aos componentes do shadcn/ui e do Animate UI. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  /* no shadcn "muted" é fundo; na Liberty --muted é o texto secundário (muted-foreground) */
+  --color-muted: var(--surface);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* escala neutra completa, para quando o nome semântico não basta */
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-faint: var(--faint);
+  --color-hover: var(--hover);
+  --color-primary-hover: var(--accent-hover);
+
+  /* cores de contexto: só sinais pequenos */
+  --color-status-online: var(--status-online);
+  --color-status-success: var(--status-success);
+  --color-status-warn: var(--status-warn);
+  --color-status-danger: var(--status-danger);
+  --color-status-info: var(--status-info);
+  --color-status-vip: var(--status-vip);
+  --color-status-offline: var(--status-offline);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+
+  --font-sans: var(--font-ui);
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
-  background: var(--bg);
-  scroll-padding-top: calc(var(--hdr-h) + var(--space-4));
-  scrollbar-color: var(--line) var(--bg);
-  accent-color: var(--accent);
+@theme {
+  /* os mesmos cortes da referência: mobile até 760, tablet até 1000, desktop largo a partir de 1181 */
+  --breakpoint-md: 761px;
+  --breakpoint-lg: 1001px;
+  --breakpoint-xl: 1181px;
+
+  /* escala tipográfica da Liberty (Inter) */
+  --text-label: 10.5px;
+  --text-label--line-height: 1;
+  --text-label--letter-spacing: 0.2em;
+  --text-label--font-weight: 650;
+  --text-xs: 12px;
+  --text-xs--line-height: 1.45;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.45;
+  --text-base: 14px;
+  --text-base--line-height: 1.45;
+  --text-md: 15px;
+  --text-md--line-height: 1.6;
+  --text-lg: 18px;
+  --text-lg--line-height: 1.5;
+  --text-display: 30px;
+  --text-display--line-height: 1.1;
+  --text-display--letter-spacing: -0.028em;
+  --text-display--font-weight: 620;
+
+  /* curvas de movimento */
+  --ease-std: cubic-bezier(0.2, 0, 0, 1); /* cor e fundo */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* chegadas */
+  --ease-in: cubic-bezier(0.7, 0, 0.84, 0); /* saídas */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* tema, crossfade */
+
+  --animate-rise: rise var(--dur-enter) var(--ease-out) backwards;
+  --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
+  --animate-shimmer: shimmer var(--dur-skel) linear infinite;
+  --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(var(--rise));
+    }
+  }
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(calc(var(--rise) * 0.5));
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 120% 0;
+    }
+    to {
+      background-position: -120% 0;
+    }
+  }
+
+  @keyframes pulse-dot {
+    0% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    70%,
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
 }
 
-body {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  color: var(--text);
-  font: 400 var(--text-base) / 1.45 var(--font-ui);
-  font-feature-settings: "cv11", "ss03";
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  overflow-x: clip;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
-
-button {
-  cursor: pointer;
-  background: none;
-  border: 0;
-  -webkit-tap-highlight-color: transparent;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-svg {
-  display: block;
-}
-
-h1,
-h2,
-h3 {
-  text-wrap: balance;
-}
-
-p {
-  text-wrap: pretty;
-}
-
-[hidden] {
-  /* biome-ignore lint/complexity/noImportantStyles: [hidden] vence qualquer display de componente */
-  display: none !important;
-}
-
-/* ---------- superfícies do navegador ---------- */
-::selection {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-input,
-textarea {
-  caret-color: var(--accent);
-}
-
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--line);
-  border: 3px solid var(--bg);
-  border-radius: 8px;
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-/* grão de filme levíssimo sobre tudo; não intercepta cliques */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 90;
-  pointer-events: none;
-  background-image: var(--grain);
-  opacity: var(--grain-op);
-}
-
-/* ---------- layout ---------- */
-.container {
-  width: 100%;
-  max-width: var(--container);
+/* container global: min(1080 px, viewport − 2 × margem) */
+@utility container-page {
+  width: min(var(--page-max), 100% - 2 * var(--mx));
   margin-inline: auto;
-  padding-inline: var(--gutter);
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
 }
 
 /* rótulo em versalete com tracking largo */
-.label {
-  font: 600 var(--text-xs) / 1 var(--font-ui);
-  letter-spacing: var(--label-ls);
+@utility label-caps {
+  font-size: var(--text-label);
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: var(--muted);
 }
 
-/* ---------- botões ---------- */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: var(--tap);
-  padding: 0 var(--space-4);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-btn);
-  background: var(--surface-2);
-  font-weight: 600;
-  white-space: nowrap;
-  transition:
-    background-color var(--dur-fast) var(--ease-std),
-    border-color var(--dur-fast) var(--ease-std),
-    color var(--dur-fast) var(--ease-std),
-    box-shadow var(--dur-base) var(--ease-out),
-    transform var(--dur-instant) var(--ease-out);
+/* entrada escalonada: o atraso vem de --i (índice do item), com teto */
+@utility enter-stagger {
+  animation: var(--animate-rise);
+  animation-delay: calc(min(var(--i, 0), var(--stagger-max)) * var(--stagger));
 }
 
-.btn:hover {
-  border-color: var(--muted);
-}
-
-.btn:active {
-  transform: translateY(1px) scale(0.985);
-}
-
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
-  box-shadow:
-    0 1px 0 color-mix(in srgb, #fff 16%, transparent) inset,
-    0 1px 2px var(--shadow-press);
-}
-
-.btn-primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-  box-shadow:
-    0 8px 16px -10px var(--shadow-press),
-    0 1px 0 color-mix(in srgb, #fff 16%, transparent) inset;
-}
-
-.btn-primary:active {
-  box-shadow: 0 1px 0 color-mix(in srgb, #000 25%, transparent) inset;
-}
-
-/* ---------- skeleton ---------- */
-.shim {
-  display: block;
-  border-radius: 6px;
+/* silhueta de carregamento com varredura */
+@utility shimmer {
   background:
     linear-gradient(
       90deg,
@@ -201,51 +159,107 @@ body::before {
       var(--surface-2) 100%
     )
     0 0 / 240% 100%;
-  animation: shimmer var(--dur-skel) linear infinite;
+  animation: var(--animate-shimmer);
 }
 
-@keyframes shimmer {
-  from {
-    background-position: 120% 0;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    background: var(--bg);
+    scroll-padding-top: var(--space-scroll, 24px);
+    scrollbar-color: var(--line-strong) var(--bg);
+    accent-color: var(--text);
   }
-  to {
-    background-position: -120% 0;
+
+  body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+    background: var(--background);
+    color: var(--foreground);
+    font: 400 var(--text-base) / 1.45 var(--font-ui);
+    font-feature-settings: "cv11", "ss03", "tnum";
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
+  }
+
+  /* o preflight do Tailwind v4 volta o cursor dos botões para o padrão do sistema */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  a,
+  button {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--text);
+    color: var(--bg);
+  }
+
+  input,
+  textarea {
+    caret-color: var(--text);
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid var(--bg);
+    border-radius: 8px;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 
-/* ---------- entrada escalonada (lista) e chegada de página ---------- */
-@keyframes rise {
+/* ---------- rodapé: sobe suave conforme entra na tela (só CSS, ligado à rolagem) ---------- */
+@keyframes footer-rise {
   from {
     opacity: 0;
-    transform: translateY(var(--rise));
-  }
-  to {
-    opacity: 1;
-    transform: none;
+    transform: translateY(16px);
   }
 }
 
-@keyframes fadeup {
-  from {
-    opacity: 0;
-    transform: translateY(calc(var(--rise) * 0.5));
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .footer-reveal {
+      animation: footer-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 70%;
+    }
   }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.enter {
-  animation: rise var(--dur-enter) var(--ease-out) backwards;
-  animation-delay: calc(min(var(--i, 0), var(--stagger-max)) * var(--stagger));
 }
 
 /* ---------- troca de tema ---------- */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: var(--dur-slow);
-  animation-timing-function: var(--ease-inout);
+  animation-timing-function: var(--ease-in-out);
 }
 
 /* sem view transitions (ou com movimento reduzido) a troca é instantânea e sem transições parciais */
@@ -257,119 +271,16 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shim {
-    animation: none;
-  }
-
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
     /* biome-ignore lint/complexity/noImportantStyles: movimento reduzido vence as animações do navegador */
     animation: none !important;
   }
-}
 
-/* ---------- casca ---------- */
-.skip-link {
-  position: fixed;
-  top: var(--space-3);
-  left: var(--space-3);
-  z-index: 100;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-btn);
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 600;
-  transform: translateY(calc(-100% - var(--space-6)));
-  transition: transform var(--dur-base) var(--ease-out);
-}
-
-.skip-link:focus-visible {
-  transform: none;
-  outline-color: var(--text);
-}
-
-.site-main {
-  flex: 1;
-  outline: none;
-}
-
-/* chegada da página: confirma a navegação sem chamar atenção */
-.page {
-  animation: fadeup var(--dur-slow) var(--ease-out) backwards;
-}
-
-.prose {
-  max-width: 65ch;
-  font-size: var(--text-md);
-  line-height: 1.6;
-}
-
-/* ---------- 404 ---------- */
-/* no CSS global: um CSS Module da not-found seria pré-carregado (e não usado) em toda página */
-.nf-wrap {
-  display: grid;
-  min-height: min(60vh, 520px);
-  place-items: center;
-  padding-block: var(--space-12);
-}
-
-.nf-card {
-  position: relative;
-  display: grid;
-  gap: var(--space-3);
-  max-width: 520px;
-  width: 100%;
-  padding-left: var(--space-6);
-}
-
-/* filete duplo vertical com losango: o mesmo vocabulário dos títulos de seção */
-.nf-card::before,
-.nf-card::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--line);
-}
-
-.nf-card::before {
-  left: 0;
-}
-
-.nf-card::after {
-  left: 4px;
-  opacity: 0.5;
-}
-
-.nf-title {
-  position: relative;
-  font: var(--h1-weight) var(--h1-size) / 1.1 var(--font-ui);
-  letter-spacing: var(--h1-ls);
-}
-
-.nf-title::before {
-  content: "";
-  position: absolute;
-  top: 0.45em;
-  left: calc(-1 * var(--space-6) - 1px);
-  width: 7px;
-  height: 7px;
-  background: var(--accent);
-  transform: translateX(-2px) rotate(45deg);
-}
-
-.nf-body {
-  color: var(--muted);
-  font-size: var(--text-md);
-  max-width: 48ch;
-}
-
-.nf-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-4);
-  margin-top: var(--space-3);
+  /* o skeleton e o pulso do "ao vivo" param; o resto já encurta pelos tokens */
+  .shimmer,
+  .animate-pulse-dot {
+    animation: none;
+  }
 }

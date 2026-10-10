@@ -9,9 +9,9 @@ export default async function ServersLoading() {
   const t = await getTranslations('servers');
 
   return (
-    <div className="container page">
+    <div className="container-page">
       <PageHead title={t('title')} subtitle={t('subtitle')} />
-      <section aria-labelledby="regiao-sao-paulo" aria-busy="true">
+      <section aria-labelledby="regiao-sao-paulo" aria-busy="true" className="pt-2">
         <SectionTitle id="regiao-sao-paulo">{t('region')}</SectionTitle>
         <p className="sr-only" role="status">
           {t('loading')}
@@ -21,7 +21,7 @@ export default async function ServersLoading() {
             server: t('columns.server'),
             map: t('columns.map'),
             players: t('columns.players'),
-            status: t('columns.status'),
+            ping: t('columns.ping'),
           }}
         />
         <div aria-hidden="true">

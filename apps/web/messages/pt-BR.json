@@ -4,6 +4,9 @@
     "titleTemplate": "%s · Carmine",
     "description": "Servidores comunitários de Counter-Strike 2. Entre, equipe e veja o seu Loadout no jogo."
   },
+  "common": {
+    "close": "Fechar"
+  },
   "shell": {
     "skipToContent": "Pular para o conteúdo",
     "homeLink": "Carmine, ir para Servidores",
@@ -17,26 +20,61 @@
       "useDark": "Usar tema escuro"
     },
     "footer": {
+      "homeLink": "Carmine, ir para Servidores",
+      "tagline": "Servidores comunitários de Counter-Strike 2 no Brasil. Retake e Deathmatch com o seu Loadout em todos eles.",
       "nav": "Rodapé",
-      "terms": "Termos",
-      "privacy": "Privacidade",
-      "copyright": "© {year} Carmine",
-      "region": "Servidores em São Paulo"
+      "columns": {
+        "play": "Jogar",
+        "community": "Comunidade",
+        "legal": "Legal"
+      },
+      "links": {
+        "servers": "Servidores",
+        "inventory": "Inventário",
+        "rules": "Regras de conduta",
+        "discord": "Discord",
+        "terms": "Termos de uso",
+        "privacy": "Política de privacidade",
+        "contact": "Contato e exclusão de dados"
+      },
+      "social": {
+        "label": "Redes da Carmine",
+        "discord": "Carmine no Discord",
+        "instagram": "Carmine no Instagram",
+        "x": "Carmine no X",
+        "youtube": "Carmine no YouTube"
+      },
+      "status": {
+        "label": "Estado dos servidores",
+        "live": "Ao vivo",
+        "soon": "Em breve",
+        "servers": "{count, plural, =0 {<n>#</n> servidores online} one {<n>#</n> servidor online} other {<n>#</n> servidores online}}",
+        "players": "{count, plural, =0 {<n>#</n> jogadores} one {<n>#</n> jogador} other {<n>#</n> jogadores}}",
+        "region": "Servidores em São Paulo"
+      },
+      "copyright": "© {year} Carmine. Todos os direitos reservados.",
+      "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela."
     }
   },
   "servers": {
     "title": "Servidores",
     "subtitle": "Retake e Deathmatch com o seu Loadout, hospedados em São Paulo.",
-    "listLabel": "Lista de servidores",
     "loading": "Carregando servidores",
+    "modeFilter": "Modo",
+    "modes": {
+      "all": "Todos",
+      "retake": "Retake",
+      "deathmatch": "Deathmatch"
+    },
     "columns": {
       "server": "Servidor",
       "map": "Mapa",
       "players": "Jogadores",
-      "status": "Estado"
+      "ping": "Ping"
     },
     "empty": {
       "title": "Nenhum servidor no ar ainda",
+      "titleMode": "Nenhum servidor de {mode} no ar ainda",
       "body": "Assim que os Servidores Carmine entrarem no ar, eles aparecem aqui com o mapa, os jogadores e o botão de conectar."
     },
     "region": "São Paulo"
@@ -51,12 +89,74 @@
     "section": "Seus Itens"
   },
   "terms": {
-    "title": "Termos de Uso",
-    "body": "Estamos redigindo os Termos de Uso, que incluem as regras de conduta dos Servidores Carmine. Eles serão publicados aqui antes do beta fechado."
+    "title": "Termos de uso",
+    "status": "Em redação · publicação antes do beta fechado",
+    "body": "Estamos redigindo os Termos de uso, que incluem as regras de conduta dos Servidores Carmine. Eles serão publicados aqui antes do beta fechado."
   },
   "privacy": {
-    "title": "Política de Privacidade",
-    "body": "Estamos redigindo a Política de Privacidade, que explica, conforme a LGPD, quais dados guardamos e como pedir a exclusão. Ela será publicada aqui antes do beta fechado."
+    "title": "Política de privacidade",
+    "status": "Em redação · publicação antes do beta fechado",
+    "body": "Estamos redigindo a Política de privacidade, que explica, conforme a LGPD, quais dados guardamos e como pedir a exclusão. Ela será publicada aqui antes do beta fechado."
+  },
+  "rules": {
+    "title": "Regras de conduta",
+    "status": "Em redação · publicação antes do beta fechado",
+    "body": "As regras de conduta valem em todos os Servidores Carmine: respeito entre jogadores, jogo limpo e o que acontece com quem não cumpre. Elas serão publicadas aqui, junto dos Termos de uso, antes do beta fechado."
+  },
+  "contact": {
+    "title": "Contato e exclusão de dados",
+    "status": "Em preparação · disponível antes do beta fechado",
+    "body": "Por aqui você vai poder falar com a equipe da Carmine e pedir a exclusão dos seus dados, conforme a LGPD. O canal será aberto antes do beta fechado."
+  },
+  "gallery": {
+    "title": "Componentes",
+    "subtitle": "Vitrine interna dos componentes animados nos tokens Liberty.",
+    "buttons": {
+      "title": "Botões",
+      "primary": "Salvar Loadout",
+      "ghost": "Ver detalhes",
+      "quiet": "Cancelar",
+      "disabled": "Indisponível"
+    },
+    "switch": {
+      "title": "Interruptor",
+      "label": "Mostrar só servidores com vaga"
+    },
+    "menu": {
+      "title": "Menu",
+      "open": "Escolher Modo",
+      "heading": "Modo",
+      "items": {
+        "retake": "Retake",
+        "deathmatch": "Deathmatch",
+        "all": "Todos os Modos"
+      }
+    },
+    "dialog": {
+      "title": "Diálogo e painel",
+      "open": "Abrir diálogo",
+      "heading": "Ativar Preset?",
+      "body": "O Loadout atual vai ser trocado pelo do Preset a partir do próximo round.",
+      "confirm": "Ativar"
+    },
+    "sheet": {
+      "open": "Abrir painel",
+      "title": "Painel",
+      "heading": "Filtros",
+      "body": "Painéis laterais servem para filtros e detalhes sem sair da página."
+    },
+    "counter": {
+      "title": "Contador",
+      "add": "Somar jogadores",
+      "label": "jogadores"
+    },
+    "status": {
+      "title": "Cores de contexto",
+      "online": "Online",
+      "warn": "Lotado",
+      "danger": "Erro",
+      "offline": "Offline"
+    }
   },
   "notFound": {
     "metaTitle": "Página não encontrada",

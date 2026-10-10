@@ -1,126 +1,137 @@
 /*
- * Tokens da identidade 2c (prototypes/identity/direcao-2c.html + shared/d2*.css).
- * Os valores vêm do protótipo; só os nomes de tipografia e espaçamento foram organizados.
- * Escuro quente é o padrão; o claro papel creme entra com html[data-theme=light].
+ * Tokens da identidade Liberty: fonte única das cores, da forma e do movimento.
+ * Escala neutra exportada pelo dono (prototypes/identity/liberty/tokens-exportados-dono-v2.css),
+ * cores de contexto de prototypes/identity/shared/liberty-status.css e raio/hover da
+ * liberty-final.css. O globals.css expõe estes nomes ao Tailwind e ao shadcn/ui via @theme.
+ *
+ * Só neutros (preto quente e creme): não há cor de acento de marca. A ação primária é o
+ * preenchido invertido (texto e fundo trocados). Escuro é o padrão; o claro "papel" entra
+ * com html[data-theme=light].
  */
 
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f0d0b;
-  --surface: #171410;
-  --surface-2: #211c17;
-  --line: #302920;
-  --text: #eee5d4;
-  --muted: #a39787;
-  --accent: #c8323b;
-  /* a 2c usava #dc434b: o texto do botão caía para 3,99:1; este fica em 4,62:1 (AA) */
-  --accent-hover: #cf3741;
-  --accent-ink: #fff7ea;
-  --leather: #8c6c49;
-  --ok: #88b06c;
-  --warn: #d8a54b;
-  --c-retake: #e58c7e;
-  --c-dm: #d8a54b;
-  --shadow-press: rgb(0 0 0 / 0.35);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 .96  0 0 0 0 .88  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-op: 0.045;
+  --bg: #11100d;
+  --surface: #191714;
+  --surface-2: #23211c;
+  --line: #34312a;
+  --line-strong: #655f53;
+  --text: #ede2c7;
+  --muted: #9d9582;
+  --faint: #655f53;
+  --accent-hover: #cac0a9;
+  /* menus e popovers sobem um degrau acima das superfícies */
+  --raised: var(--surface-2);
+  --shadow: rgb(0 0 0 / 0.5);
+
+  /*
+   * Cores de contexto: NÃO fazem parte da identidade. Só em sinais pequenos (pontos, barras
+   * finas, ícones de ping e de mensagem, selo VIP); nunca em botões, navegação ou superfícies.
+   * Contraste >= 4,5:1 sobre --bg, --surface e --surface-2 (offline é o próprio --faint e
+   * sempre vem com rótulo).
+   */
+  --status-online: #8fb174;
+  --status-warn: #d8a64e;
+  --status-danger: #db8274;
+  --status-info: #82a6c2;
+  --status-vip: #cdaa62;
 }
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg: #f2ebdc;
-  --surface: #faf6ea;
-  --surface-2: #e9dfca;
-  --line: #d6c9b0;
-  --text: #1e1913;
-  --muted: #6a5f50;
-  --accent: #a9232c;
-  --accent-hover: #8e1b24;
-  --accent-ink: #fff7ea;
-  --leather: #7d5f3f;
-  --ok: #3f7432;
-  --warn: #8a5e0e;
-  --c-retake: #a63a2c;
-  --c-dm: #85580a;
-  --shadow-press: rgb(60 40 20 / 0.22);
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .2  0 0 0 0 .12  0 0 0 0 .05  0 0 0 .9 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  --grain-op: 0.06;
+  --bg: #f8edd1;
+  --surface: #f0e5ca;
+  --surface-2: #e6dcc1;
+  --line: #d6ccb3;
+  --line-strong: #8f8776;
+  --text: #1c1b17;
+  --muted: #655f53;
+  --faint: #a69e89;
+  --accent-hover: #3f3d35;
+  --raised: var(--bg);
+  --shadow: rgb(60 45 20 / 0.2);
+
+  --status-online: #3f6930;
+  --status-warn: #7c560c;
+  --status-danger: #a3382c;
+  --status-info: #386287;
+  --status-vip: #765c1a;
+}
+
+/*
+ * Nomes semânticos do shadcn/ui, derivados da escala acima. Ficam no mesmo seletor dos temas
+ * para que um trecho com data-theme próprio resolva as próprias cores.
+ */
+:root,
+[data-theme] {
+  /* hover e ativo de controles sem borda: fundo um pouco mais claro que o de baixo */
+  --hover: color-mix(in srgb, var(--text) 9%, transparent);
+  --status-success: var(--status-online);
+  --status-offline: var(--faint);
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--raised);
+  --popover-foreground: var(--text);
+  --primary: var(--text);
+  --primary-foreground: var(--bg);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted-foreground: var(--muted);
+  --accent: var(--hover);
+  --accent-foreground: var(--text);
+  --destructive: var(--status-danger);
+  --border: var(--line);
+  --input: var(--surface);
+  --ring: var(--text);
 }
 
 :root {
-  /* tipografia: Inter em toda a UI; a serifada só existe no wordmark, em contornos */
+  /* tipografia: Inter em toda a UI; a DM Serif Display só existe no wordmark, em contornos */
   --font-ui: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --text-xs: 10.5px; /* rótulos em versalete */
-  --text-sm: 12.5px;
-  --text-base: 14px;
-  --text-md: 15px;
-  --text-lg: 18px;
-  --h1-size: 26px;
-  --h1-weight: 700;
-  --h1-ls: -0.02em;
-  --label-ls: 0.2em;
 
-  /* espaçamento: escala de 4 px */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --space-10: 40px;
-  --space-12: 48px;
-  --space-16: 64px;
+  /* forma: arredondamento nível shadcn (sm 6 · md 8 · lg 10 · xl 14 px) */
+  --radius: 0.625rem;
 
-  /* forma e layout */
-  --radius: 10px;
-  --radius-btn: 8px;
-  --radius-chip: 999px;
-  --container: 1280px;
-  --gutter: 24px;
-  --hdr-h: 58px;
+  /* layout: container global de 1080 px com margem lateral mínima de 36 px */
+  --page-max: 1080px;
+  --mx: 36px;
+  --hdr-h: 60px;
   --wm-h: 22px;
   --tap: 36px;
 
-  /* movimento: durações e curvas da 2c */
+  /* movimento */
   --dur-instant: 90ms; /* press */
-  --dur-fast: 140ms; /* hover, cor, borda */
+  --dur-fast: 140ms; /* hover, cor */
   --dur-base: 220ms; /* troca de estado */
   --dur-slow: 360ms; /* troca de painel, tema */
   --dur-enter: 520ms; /* entrada de lista */
-  --dur-count: 700ms; /* contador numérico */
   --dur-pulse: 2400ms; /* pulso do "ao vivo" */
   --dur-skel: 1500ms; /* varredura do skeleton */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* chegadas */
-  --ease-in: cubic-bezier(0.7, 0, 0.84, 0); /* saídas */
-  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1); /* tema, crossfade */
-  --ease-std: cubic-bezier(0.2, 0, 0, 1); /* cor e borda */
   --stagger: 32ms;
   --stagger-max: 8; /* teto: 8 × 32 = 256 ms de atraso */
   --rise: 8px;
-  --swap-scale: 0.97;
-  --swap-blur: 4px;
 }
 
 @media (max-width: 760px) {
   :root {
-    --gutter: 16px;
+    /* no mobile a margem é 16 px + 25% do excedente sobre 16 px (21 px) */
+    --mx: calc(16px + (36px - 16px) * 0.25);
     --wm-h: 20px;
     --tap: 44px; /* alvos de 44 px no mobile */
   }
 }
 
-/* reduced-motion: some o deslocamento, a escala, o blur, o pulso e o shimmer; ficam fades curtos */
+/* movimento reduzido: some o deslocamento e o escalonamento; ficam fades curtos */
 @media (prefers-reduced-motion: reduce) {
   :root {
     --rise: 0px;
     --stagger: 0ms;
-    --swap-scale: 1;
-    --swap-blur: 0px;
     --dur-enter: 180ms;
     --dur-slow: 160ms;
-    --dur-count: 0ms;
     --dur-base: 140ms;
   }
 }

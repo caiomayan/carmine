@@ -1,0 +1,54 @@
+import { cva, type VariantProps } from 'class-variance-authority';
+import { Slot } from 'radix-ui';
+import type { ComponentProps } from 'react';
+import { cn } from '@/lib/utils';
+
+/**
+ * Botão no padrão do shadcn/ui com a linguagem Liberty: sem borda, ação primária no preenchido
+ * invertido e os demais com fundo transparente que clareia no hover e no estado ativo.
+ */
+const buttonVariants = cva(
+  [
+    'inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-semibold whitespace-nowrap select-none',
+    'transition-[background-color,color,transform] duration-(--dur-fast) ease-std',
+    'active:translate-y-px active:scale-[0.985] motion-reduce:active:transform-none',
+    'disabled:pointer-events-none disabled:bg-transparent disabled:text-faint',
+    '[&_svg]:pointer-events-none [&_svg]:shrink-0',
+  ],
+  {
+    variants: {
+      variant: {
+        primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
+        ghost:
+          'bg-transparent text-foreground hover:bg-hover aria-pressed:bg-hover aria-expanded:bg-hover',
+        quiet:
+          'bg-transparent font-medium text-muted-foreground hover:bg-hover hover:text-foreground aria-expanded:bg-hover aria-expanded:text-foreground',
+      },
+      size: {
+        default: 'min-h-(--tap) px-4 text-sm',
+        sm: 'min-h-8 px-3 text-sm max-md:min-h-(--tap)',
+        icon: 'size-(--tap)',
+      },
+    },
+    defaultVariants: { variant: 'primary', size: 'default' },
+  },
+);
+
+function Button({
+  className,
+  variant,
+  size,
+  asChild = false,
+  ...props
+}: ComponentProps<'button'> & VariantProps<typeof buttonVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot.Root : 'button';
+  return (
+    <Comp
+      data-slot="button"
+      className={cn(buttonVariants({ variant, size }), className)}
+      {...props}
+    />
+  );
+}
+
+export { Button, buttonVariants };
