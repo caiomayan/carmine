@@ -26,7 +26,11 @@ export class FakeSteam {
       const players = (url.searchParams.get('steamids') ?? '')
         .split(',')
         .filter(Boolean)
-        .map((steamid) => ({ steamid, avatarfull: FakeSteam.avatarUrlFor(steamid) }));
+        .map((steamid) => ({
+          steamid,
+          personaname: FakeSteam.personaNameFor(steamid),
+          avatarfull: FakeSteam.avatarUrlFor(steamid),
+        }));
       res
         .writeHead(200, { 'content-type': 'application/json' })
         .end(JSON.stringify({ response: { players } }));
@@ -37,6 +41,10 @@ export class FakeSteam {
     const fake = new FakeSteam();
     await new Promise<void>((resolve) => fake.server.listen(0, '127.0.0.1', resolve));
     return fake;
+  }
+
+  static personaNameFor(steamId: string): string {
+    return `steam-${steamId.slice(-4)}`;
   }
 
   static avatarUrlFor(steamId: string): string {

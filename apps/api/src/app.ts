@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import cookie from '@fastify/cookie';
 import rateLimit from '@fastify/rate-limit';
 import { HttpException, HttpStatus, StandardSchemaValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
@@ -26,6 +27,8 @@ export async function createApp(
     new FastifyAdapter(),
     { bufferLogs: !preview, preview, ...(preview && { logger: ['error'] }) },
   );
+  // Cookies da sessão do site (S03); nenhum é assinado: o id da sessão já é aleatório e opaco.
+  await app.register(cookie);
   if (!preview) {
     app.useLogger(app.get(Logger));
     // Só nas rotas com @RouteConfig({ rateLimit }); contagem no Valkey, compartilhada entre

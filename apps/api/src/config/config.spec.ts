@@ -18,7 +18,43 @@ describe('loadConfig', () => {
       healthCheckTimeoutMs: 2000,
       steamWebApi: { key: null, url: 'https://api.steampowered.com', timeoutMs: 5000 },
       equippedRateLimitPerMinute: 120,
+      publicWebUrl: 'http://localhost:3000',
+      steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
+      session: { idleTtlSeconds: 1_209_600, absoluteTtlSeconds: 7_776_000 },
     });
+  });
+
+  it('lê a origem pública do web sem a barra final', () => {
+    const config = loadConfig({ ...validEnv, PUBLIC_WEB_URL: 'https://stcarmine.com/' });
+
+    expect(config.publicWebUrl).toBe('https://stcarmine.com');
+  });
+
+  it('rejeita uma origem pública do web com caminho', () => {
+    expect(() => loadConfig({ ...validEnv, PUBLIC_WEB_URL: 'https://stcarmine.com/app' })).toThrow(
+      /PUBLIC_WEB_URL/,
+    );
+  });
+
+  it('exige HTTPS na origem pública e na Steam OpenID em produção', () => {
+    expect(() =>
+      loadConfig({
+        ...validEnv,
+        NODE_ENV: 'production',
+        PUBLIC_WEB_URL: 'http://stcarmine.com',
+        STEAM_OPENID_URL: 'http://127.0.0.1:9999/openid/login',
+      }),
+    ).toThrow(/PUBLIC_WEB_URL[\s\S]*STEAM_OPENID_URL/);
+  });
+
+  it('rejeita uma sessão absoluta mais curta que a ociosa', () => {
+    expect(() =>
+      loadConfig({
+        ...validEnv,
+        SESSION_IDLE_TTL_SECONDS: '100',
+        SESSION_ABSOLUTE_TTL_SECONDS: '50',
+      }),
+    ).toThrow(/SESSION_ABSOLUTE_TTL_SECONDS/);
   });
 
   it('lê a chave da Steam Web API e ignora a barra final da URL', () => {
