@@ -48,10 +48,31 @@ Mudou um contrato da API? Rode `pnpm --filter @carmine/api openapi:generate` e f
 ./infra/scripts/install-cs2-server.ps1 -DownloadCs2 -Steps SteamCmd,Cs2,Metamod
 ```
 
-Com a API no ar (`pnpm dev`), suba o servidor e procure no console a linha `Carmine.Hello: API no ar (...)`:
+### Cadastrar o servidor na API
+
+Cada Servidor Carmine se autentica na API com uma chave própria (`Authorization: Bearer <chave>`). A API guarda só o hash; a chave aparece **uma única vez**, ao ser gerada:
+
+```sh
+pnpm --filter @carmine/api build
+pnpm --filter @carmine/api servers create --name local --mode retake --address 127.0.0.1:27015
+pnpm --filter @carmine/api servers rotate-key --name local   # gera outra; a anterior para na hora
+pnpm --filter @carmine/api servers list
+```
+
+Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/game-servers/servers.cli.js create ...`.
+
+Cole a chave em `ApiKey` no `game\csgo\addons\counterstrikesharp\configs\plugins\Carmine.Core\Carmine.Core.json` (o script cria o arquivo com a URL da API).
+
+### Subir
+
+Com a API no ar (`pnpm dev`), suba o servidor e procure no console a linha `Carmine.Core: API no ar (...)`:
 
 ```powershell
 & 'C:\carmine\cs2-server\game\bin\win64\cs2.exe' -dedicated -console +sv_lan 1 +game_type 0 +game_mode 1 +map de_dust2
 ```
 
-`css_plugins list` no console confirma que o `Carmine.Hello` carregou. A URL e a chave da API ficam em `game\csgo\addons\counterstrikesharp\configs\plugins\Carmine.Hello\Carmine.Hello.json`.
+`css_plugins list` no console confirma que o `Carmine.Core` carregou. Com a API fora do ar, os connects ficam em `addons\counterstrikesharp\data\Carmine.Core\pending-connects.json` e são reenviados a cada `RetryIntervalSeconds` (padrão 15 s).
+
+## Steam Web API
+
+Os avatares das Contas vêm da Steam Web API. Crie a chave em https://steamcommunity.com/dev/apikey e coloque-a só no `apps/api/.env` local (`STEAM_WEB_API_KEY=...`), nunca no repositório. Sem a chave, as Contas ficam com o avatar neutro.

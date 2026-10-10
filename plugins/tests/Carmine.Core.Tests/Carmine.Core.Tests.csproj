@@ -5,8 +5,9 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/Carmine.Hello/Carmine.Hello.csproj" />
+    <ProjectReference Include="../../src/Carmine.Core/Carmine.Core.csproj" />
   </ItemGroup>
 </Project>
