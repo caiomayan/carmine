@@ -5,11 +5,12 @@ import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { AccountsService } from './accounts.service.js';
 import { AvatarRefresher } from './avatar-refresher.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
+import { ProfilesController } from './profiles.controller.js';
 import { SteamWebApi } from './steam-profiles.js';
 
 @Module({
   imports: [GameServersModule],
-  controllers: [PlayerConnectsController],
+  controllers: [PlayerConnectsController, ProfilesController],
   providers: [
     {
       provide: AvatarRefresher,
