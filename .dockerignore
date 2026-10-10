@@ -1,6 +1,9 @@
 **/node_modules
 **/dist
 **/.turbo
+**/.next
+**/test-results
+**/playwright-report
 **/.env
 **/.env.*
 !**/.env.example

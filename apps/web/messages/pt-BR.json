@@ -1,0 +1,68 @@
+{
+  "metadata": {
+    "title": "Carmine",
+    "titleTemplate": "%s · Carmine",
+    "description": "Servidores comunitários de Counter-Strike 2. Entre, equipe e veja o seu Loadout no jogo."
+  },
+  "shell": {
+    "skipToContent": "Pular para o conteúdo",
+    "homeLink": "Carmine, ir para Servidores",
+    "mainNav": "Principal",
+    "nav": {
+      "servers": "Servidores",
+      "inventory": "Inventário"
+    },
+    "theme": {
+      "useLight": "Usar tema claro",
+      "useDark": "Usar tema escuro"
+    },
+    "footer": {
+      "nav": "Rodapé",
+      "terms": "Termos",
+      "privacy": "Privacidade",
+      "copyright": "© {year} Carmine",
+      "region": "Servidores em São Paulo"
+    }
+  },
+  "servers": {
+    "title": "Servidores",
+    "subtitle": "Retake e Deathmatch com o seu Loadout, hospedados em São Paulo.",
+    "listLabel": "Lista de servidores",
+    "loading": "Carregando servidores",
+    "columns": {
+      "server": "Servidor",
+      "map": "Mapa",
+      "players": "Jogadores",
+      "status": "Estado"
+    },
+    "empty": {
+      "title": "Nenhum servidor no ar ainda",
+      "body": "Assim que os Servidores Carmine entrarem no ar, eles aparecem aqui com o mapa, os jogadores e o botão de conectar."
+    },
+    "region": "São Paulo"
+  },
+  "inventory": {
+    "title": "Inventário",
+    "subtitle": "Os Itens que você montar aqui valem em todos os Servidores Carmine.",
+    "empty": {
+      "title": "O Inventário abre em breve",
+      "body": "Você vai entrar com a Steam, montar os seus Itens com visualização 3D e equipar o Loadout que aparece no jogo."
+    },
+    "section": "Seus Itens"
+  },
+  "terms": {
+    "title": "Termos de Uso",
+    "body": "Estamos redigindo os Termos de Uso, que incluem as regras de conduta dos Servidores Carmine. Eles serão publicados aqui antes do beta fechado."
+  },
+  "privacy": {
+    "title": "Política de Privacidade",
+    "body": "Estamos redigindo a Política de Privacidade, que explica, conforme a LGPD, quais dados guardamos e como pedir a exclusão. Ela será publicada aqui antes do beta fechado."
+  },
+  "notFound": {
+    "metaTitle": "Página não encontrada",
+    "code": "Erro 404",
+    "title": "Página não encontrada",
+    "body": "O endereço pode ter mudado ou estar digitado errado. Confira o link ou volte para a lista de servidores.",
+    "back": "Ver servidores"
+  }
+}
