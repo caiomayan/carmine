@@ -29,6 +29,17 @@ describe('HealthService', () => {
     expect(report.checks.valkey).toMatchObject({ status: 'up' });
   });
 
+  it('usa o código do erro quando a mensagem vem vazia (conexão recusada no pg)', async () => {
+    const refused = async () => {
+      throw Object.assign(new AggregateError([], ''), { code: 'ECONNREFUSED' });
+    };
+    const health = new HealthService({ database: refused, valkey: up }, 1000);
+
+    const report = await health.check();
+
+    expect(report.checks.database).toMatchObject({ status: 'down', error: 'ECONNREFUSED' });
+  });
+
   it('considera fora do ar a dependência que não responde dentro do limite', async () => {
     const health = new HealthService({ database: up, valkey: never }, 50);
 

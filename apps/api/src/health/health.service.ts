@@ -35,10 +35,18 @@ export class HealthService {
       await Promise.race([probe(), timeout]);
       return { status: 'up', latencyMs: latencyMs() };
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return { status: 'down', latencyMs: latencyMs(), error: message };
+      return { status: 'down', latencyMs: latencyMs(), error: describeError(error) };
     } finally {
       clearTimeout(timer);
     }
   }
+}
+
+// O pg rejeita conexões recusadas com um AggregateError sem mensagem, só com `code`.
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return String(error);
+  }
+  const code = (error as { code?: unknown }).code;
+  return error.message || (typeof code === 'string' ? code : error.name);
 }
