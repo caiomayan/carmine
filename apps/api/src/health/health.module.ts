@@ -3,12 +3,14 @@ import { sql } from 'drizzle-orm';
 import type { Redis } from 'ioredis';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
+import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
-import { HealthController } from './health.controller.js';
+import { HealthController, ServerHealthController } from './health.controller.js';
 import { HealthService } from './health.service.js';
 
 @Module({
-  controllers: [HealthController],
+  imports: [GameServersModule],
+  controllers: [HealthController, ServerHealthController],
   providers: [
     {
       provide: HealthService,

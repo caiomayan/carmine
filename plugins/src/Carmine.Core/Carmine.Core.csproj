@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <!--
-    Plugin de verificação da S00: ao carregar, chama o health check da API e loga o resultado.
-    Saída para o servidor: bin/<Configuração>/net10.0/ → addons/counterstrikesharp/plugins/Carmine.Hello/
+    Plugin próprio dos Servidores Carmine (Conta, Nome de exibição, integração com a API).
+    Saída para o servidor: bin/<Configuração>/net10.0/ → addons/counterstrikesharp/plugins/Carmine.Core/
   -->
   <PropertyGroup>
     <!-- O CounterStrikeSharp carrega as dependências a partir da pasta do plugin. -->

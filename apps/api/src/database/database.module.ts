@@ -6,15 +6,14 @@ import {
   type OnApplicationShutdown,
   type Provider,
 } from '@nestjs/common';
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
-import * as schema from './schema.js';
+import { createDatabase, type Database } from './database.js';
+
+export type { Database } from './database.js';
 
 export const DATABASE = Symbol('DATABASE');
 const PG_POOL = Symbol('PG_POOL');
-
-export type Database = NodePgDatabase<typeof schema>;
 
 const providers: Provider[] = [
   {
@@ -30,7 +29,7 @@ const providers: Provider[] = [
   {
     provide: DATABASE,
     inject: [PG_POOL],
-    useFactory: (pool: Pool): Database => drizzle({ client: pool, schema, casing: 'snake_case' }),
+    useFactory: (pool: Pool): Database => createDatabase(pool),
   },
 ];
 

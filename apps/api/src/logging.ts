@@ -10,7 +10,8 @@ export function loggerParams(config: AppConfig): Params {
         config.nodeEnv === 'development'
           ? { target: 'pino-pretty', options: { singleLine: true } }
           : undefined,
-      redact: ['req.headers.authorization', 'req.headers.cookie', 'req.headers["x-server-key"]'],
+      // A chave dos Servidores Carmine vai no Authorization (Bearer).
+      redact: ['req.headers.authorization', 'req.headers.cookie'],
       // O health check é chamado a cada poucos segundos pelo Docker; as falhas são logadas pelo controller.
       // Sob o Fastify o middleware recebe a URL relativa ao ponto de montagem; a original fica em originalUrl.
       autoLogging: {

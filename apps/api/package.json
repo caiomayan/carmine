@@ -18,10 +18,12 @@
     "test:integration": "vitest run --project integration",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file=.env.example --env-file-if-exists=.env dist/database/migrate.cli.js",
+    "servers": "node --env-file=.env.example --env-file-if-exists=.env dist/game-servers/servers.cli.js",
     "openapi:generate": "nest build -p tsconfig.build.json && node dist/openapi/generate.cli.js"
   },
   "dependencies": {
     "@carmine/contracts": "workspace:*",
+    "@fastify/rate-limit": "11.2.0",
     "@fastify/static": "10.1.6",
     "@nestjs/common": "12.1.2",
     "@nestjs/core": "12.1.2",

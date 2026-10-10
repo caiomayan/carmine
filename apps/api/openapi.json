@@ -11,10 +11,45 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Alguma dependência está fora do ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthStatus"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Verifica se a API e as suas dependências estão no ar (só o status geral)",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/server/health": {
+      "get": {
+        "operationId": "getServerHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Tudo no ar",
+            "content": {
+              "application/json": {
+                "schema": {
                   "$ref": "#/components/schemas/HealthReport"
                 }
               }
             }
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
           },
           "503": {
             "description": "Alguma dependência está fora do ar",
@@ -27,9 +62,94 @@
             }
           }
         },
-        "summary": "Verifica se a API e as suas dependências (Postgres, Valkey) estão no ar",
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Detalhe de cada dependência da API (Postgres, Valkey)",
         "tags": [
-          "health"
+          "server"
+        ]
+      }
+    },
+    "/api/server/player-connects": {
+      "post": {
+        "operationId": "registerPlayerConnect",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerConnect"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Nome de exibição e ID público a aplicar no jogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerConnectResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registra o connect de um jogador; cria a Conta no primeiro connect",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/equipped/v5/{steamId}.json": {
+      "get": {
+        "operationId": "getEquippedV5",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Itens equipados; slot ausente usa a Arma padrão",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EquippedV5"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido"
+          }
+        },
+        "summary": "Loadout equipado da Conta no formato do cs2-css-inventory-simulator",
+        "tags": [
+          "equipped"
         ]
       }
     }
@@ -37,13 +157,37 @@
   "info": {
     "title": "Carmine API",
     "description": "API da plataforma Carmine, usada pelo web e pelos plugins dos Servidores Carmine.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "contact": {}
   },
   "tags": [],
   "servers": [],
   "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Chave do Servidor Carmine"
+      }
+    },
     "schemas": {
+      "HealthStatus": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "unavailable"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false
+      },
       "HealthReport": {
         "type": "object",
         "properties": {
@@ -99,6 +243,393 @@
         "required": [
           "status",
           "latencyMs"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerConnect": {
+        "type": "object",
+        "properties": {
+          "steamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "steamName": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "connectedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "steamId",
+          "steamName"
+        ]
+      },
+      "SteamId64": {
+        "type": "string",
+        "pattern": "^\\d{17}$",
+        "example": "76561198000000000"
+      },
+      "PlayerConnectResult": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "isFirstConnect": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "publicId",
+          "displayName",
+          "isFirstConnect"
+        ],
+        "additionalProperties": false
+      },
+      "EquippedV5": {
+        "type": "object",
+        "properties": {
+          "agents": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AgentEconItem"
+            }
+          },
+          "ctWeapons": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WeaponEconItem"
+            }
+          },
+          "gloves": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/GlovesEconItem"
+            }
+          },
+          "knives": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/MeleeEconItem"
+            }
+          },
+          "musicKit": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MusicKitEconItem"
+              }
+            ]
+          },
+          "tWeapons": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WeaponEconItem"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AgentEconItem": {
+        "type": "object",
+        "properties": {
+          "def": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "hash": {
+            "type": "string"
+          },
+          "stickers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "def": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "slot": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "def",
+                "slot"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "def",
+          "hash",
+          "stickers"
+        ],
+        "additionalProperties": false
+      },
+      "WeaponEconItem": {
+        "type": "object",
+        "properties": {
+          "def": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "hash": {
+            "type": "string"
+          },
+          "nametag": {
+            "type": "string"
+          },
+          "paint": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stattrak": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stickers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "def": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "rotation": {
+                  "type": "number"
+                },
+                "schema": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "slot": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "wear": {
+                  "type": "number"
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "def",
+                "slot",
+                "wear"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "keychains": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "def": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "seed": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "slot": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "sticker": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "x": {
+                  "type": "number"
+                },
+                "y": {
+                  "type": "number"
+                },
+                "z": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "def",
+                "seed",
+                "slot"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "uid": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "wear": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "def",
+          "hash",
+          "nametag",
+          "paint",
+          "seed",
+          "stattrak",
+          "stickers",
+          "keychains",
+          "uid",
+          "wear"
+        ],
+        "additionalProperties": false
+      },
+      "GlovesEconItem": {
+        "type": "object",
+        "properties": {
+          "def": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "hash": {
+            "type": "string"
+          },
+          "paint": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "wear": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "def",
+          "hash",
+          "paint",
+          "seed",
+          "wear"
+        ],
+        "additionalProperties": false
+      },
+      "MeleeEconItem": {
+        "type": "object",
+        "properties": {
+          "def": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "hash": {
+            "type": "string"
+          },
+          "nametag": {
+            "type": "string"
+          },
+          "paint": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stattrak": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stickers": {
+            "maxItems": 0,
+            "type": "array",
+            "items": {}
+          },
+          "uid": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "wear": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "def",
+          "hash",
+          "nametag",
+          "paint",
+          "seed",
+          "stattrak",
+          "stickers",
+          "uid",
+          "wear"
+        ],
+        "additionalProperties": false
+      },
+      "MusicKitEconItem": {
+        "type": "object",
+        "properties": {
+          "musicId": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "stattrak": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "uid": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "musicId",
+          "stattrak",
+          "uid"
         ],
         "additionalProperties": false
       }

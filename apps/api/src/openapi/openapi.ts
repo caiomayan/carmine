@@ -8,7 +8,9 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setDescription(
       'API da plataforma Carmine, usada pelo web e pelos plugins dos Servidores Carmine.',
     )
-    .setVersion('0.1.0')
+    .setVersion('0.2.0')
+    // Rotas /api/server/*: a chave do Servidor Carmine (ADR 0005).
+    .addBearerAuth({ type: 'http', scheme: 'bearer', description: 'Chave do Servidor Carmine' })
     .build();
   return SwaggerModule.createDocument(app, config);
 }

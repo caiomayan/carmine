@@ -1,17 +1,20 @@
 using Carmine.Api.Client;
 
-namespace Carmine.Hello;
+namespace Carmine.Core;
 
 public sealed record HealthProbeResult(bool Healthy, string Summary);
 
-/// <summary>Chama o health check da API e resume o resultado numa linha de log. Nunca lança.</summary>
+/// <summary>
+/// Chama o health check de servidor da API (com o detalhe de cada dependência) e resume o
+/// resultado numa linha de log. Nunca lança.
+/// </summary>
 public sealed class ApiHealthProbe(CarmineApiClient client)
 {
     public async Task<HealthProbeResult> ProbeAsync(CancellationToken cancellationToken)
     {
         try
         {
-            var report = await client.GetHealthAsync(cancellationToken).ConfigureAwait(false);
+            var report = await client.GetServerHealthAsync(cancellationToken).ConfigureAwait(false);
             var checks = report.Checks;
             return new(true,
                 $"API no ar (Postgres {checks.Database.LatencyMs} ms, Valkey {checks.Valkey.LatencyMs} ms)");
@@ -19,6 +22,10 @@ public sealed class ApiHealthProbe(CarmineApiClient client)
         catch (ApiException<HealthReport> unavailable)
         {
             return new(false, $"API com dependência fora do ar: {DescribeDown(unavailable.Result.Checks)}");
+        }
+        catch (ApiException error) when (error.StatusCode == 401)
+        {
+            return new(false, "API recusou a chave deste servidor: confira ApiKey na config do Carmine.Core");
         }
         catch (ApiException error)
         {

@@ -53,7 +53,7 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
 $GameDir = Join-Path $ServerDir 'game\csgo'
 $AddonsDir = Join-Path $GameDir 'addons'
 $CssDir = Join-Path $AddonsDir 'counterstrikesharp'
-$Plugins = @('Carmine.Hello')
+$Plugins = @('Carmine.Core')
 $TempDirs = [System.Collections.Generic.List[string]]::new()
 
 function Write-Step([string] $Message) {
@@ -158,6 +158,13 @@ function Install-Plugins {
         throw "dotnet build falhou (código $LASTEXITCODE)"
     }
 
+    # O Carmine.Hello (S00) foi substituído pelo Carmine.Core na S01.
+    $retired = Join-Path $CssDir 'plugins\Carmine.Hello'
+    if (Test-Path $retired) {
+        Remove-Item -Path $retired -Recurse -Force
+        Write-Host "    Carmine.Hello removido (substituído pelo Carmine.Core)"
+    }
+
     foreach ($plugin in $Plugins) {
         $output = Join-Path $RepoRoot "plugins\src\$plugin\bin\$Configuration\net10.0"
         $target = Join-Path $CssDir "plugins\$plugin"
@@ -172,9 +179,10 @@ function Install-Plugins {
         $configFile = Join-Path $configDir "$plugin.json"
         if (-not (Test-Path $configFile)) {
             New-Item -ItemType Directory -Force -Path $configDir | Out-Null
-            [ordered]@{ ApiBaseUrl = $ApiBaseUrl; ApiKey = ''; TimeoutSeconds = 5; ConfigVersion = 1 } |
+            [ordered]@{ ApiBaseUrl = $ApiBaseUrl; ApiKey = ''; TimeoutSeconds = 5; RetryIntervalSeconds = 15; ConfigVersion = 1 } |
                 ConvertTo-Json | Set-Content -Path $configFile -Encoding utf8
             Write-Host "    config criada em $configFile"
+            Write-Host "    cole em ApiKey a chave de 'pnpm --filter @carmine/api servers create' (veja o README)"
         }
     }
 }
@@ -201,4 +209,4 @@ finally {
 
 Write-Step 'Pronto. Para subir o servidor local (com a API no ar, via pnpm dev):'
 Write-Host "    & '$ServerDir\game\bin\win64\cs2.exe' -dedicated -console +sv_lan 1 +game_type 0 +game_mode 1 +map de_dust2"
-Write-Host "    No console do servidor, procure: 'Carmine.Hello: API no ar (...)'"
+Write-Host "    No console do servidor, procure: 'Carmine.Core: API no ar (...)'"
