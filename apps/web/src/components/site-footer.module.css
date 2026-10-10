@@ -1,0 +1,68 @@
+/* filete duplo espelhando o do cabeçalho */
+.footer {
+  position: relative;
+  margin-top: var(--space-16);
+  border-top: 1px solid var(--line);
+}
+
+.footer::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: -5px;
+  height: 1px;
+  background: var(--line);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  padding-block: var(--space-5);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+.sep {
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+
+.links {
+  display: flex;
+  gap: var(--space-1);
+  list-style: none;
+  margin-inline: calc(-1 * var(--space-2));
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding-inline: var(--space-2);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition:
+    color var(--dur-fast) var(--ease-std),
+    text-decoration-color var(--dur-fast) var(--ease-std);
+}
+
+.link:hover {
+  color: var(--text);
+  text-decoration-color: var(--accent);
+}

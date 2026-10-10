@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cria (ou atualiza) o ruleset que protege o main: merge só por PR e com os checks
-# node, dotnet e api-image verdes. Altera a configuração do repositório: rodar só com
+# node, dotnet, api-image e web-image verdes. Altera a configuração do repositório: rodar só com
 # o ok do dono. Requer `gh` autenticado com permissão de admin no repositório.
 #
 #   infra/github/apply-main-ruleset.sh [owner/repo]

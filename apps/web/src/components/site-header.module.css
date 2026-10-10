@@ -1,0 +1,146 @@
+/* cabeçalho com o filete duplo art déco da 2c */
+.header {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 5px;
+}
+
+.header::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -5px;
+  height: 1px;
+  background: var(--line);
+}
+
+.bar {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-6);
+  height: var(--hdr-h);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  margin-right: var(--space-2);
+  color: var(--text);
+  border-radius: 2px;
+  transition: opacity var(--dur-fast) var(--ease-std);
+}
+
+.brand:hover {
+  opacity: 0.86;
+}
+
+.brand:focus-visible {
+  outline-offset: 6px;
+}
+
+.wordmark {
+  height: var(--wm-h);
+  width: auto;
+  overflow: visible;
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+}
+
+.navList {
+  display: flex;
+  gap: 2px;
+  list-style: none;
+}
+
+.navList li {
+  display: flex;
+}
+
+.navLink {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--space-3);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: color var(--dur-fast) var(--ease-std);
+}
+
+/* indicador carmim: cresce da esquerda no hover, fica cheio na página atual */
+.navLink::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--space-3);
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0.5;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-std);
+}
+
+.navLink:hover {
+  color: var(--text);
+}
+
+.navLink:hover::after {
+  transform: scaleX(1);
+}
+
+.navLink[aria-current="page"] {
+  color: var(--text);
+}
+
+.navLink[aria-current="page"]::after {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+.navLink:focus-visible {
+  outline-offset: -2px;
+}
+
+.end {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: auto;
+}
+
+@media (max-width: 760px) {
+  .bar {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 0 var(--space-3);
+    padding-top: var(--space-2);
+  }
+
+  .brand {
+    order: 1;
+  }
+
+  .end {
+    order: 2;
+  }
+
+  .nav {
+    order: 3;
+    flex: none;
+    width: calc(100% + 2 * var(--space-3));
+    margin-inline: calc(-1 * var(--space-3));
+  }
+
+  .navLink {
+    min-height: 44px;
+  }
+}

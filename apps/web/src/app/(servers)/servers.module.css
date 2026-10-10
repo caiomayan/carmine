@@ -1,0 +1,26 @@
+/* a silhueta da lista e o aviso ocupam a mesma célula: o aviso fica sobre as linhas */
+.stage {
+  display: grid;
+}
+
+.ghosts,
+.empty {
+  grid-area: 1 / 1;
+}
+
+.ghosts {
+  mask-image: linear-gradient(180deg, #000 0%, rgb(0 0 0 / 0.55) 45%, transparent 100%);
+}
+
+.empty {
+  align-self: center;
+  width: calc(100% - 2 * var(--space-4));
+  animation: fadeup var(--dur-enter) var(--ease-out) 180ms backwards;
+}
+
+@media (max-width: 760px) {
+  .empty {
+    align-self: start;
+    margin-top: var(--space-12);
+  }
+}

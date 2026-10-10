@@ -14,7 +14,10 @@ pnpm install
 pnpm dev
 ```
 
-`pnpm dev` sobe o Postgres e o Valkey (`infra/docker-compose.yml`), aplica as migrações e roda a API em modo watch em http://localhost:3333 (health check em `/api/health`, documentação em `/api/docs`).
+`pnpm dev` sobe o Postgres e o Valkey (`infra/docker-compose.yml`), aplica as migrações e roda em modo watch:
+
+- o web em http://localhost:3000 (Next.js, `apps/web`);
+- a API em http://localhost:3333 (health check em `/api/health`, documentação em `/api/docs`).
 
 - A API lê `apps/api/.env.example`; para mudar algo, crie `apps/api/.env` só com as variáveis que mudam.
 - Só a infraestrutura: `pnpm infra:up` / `pnpm infra:down` (ou `docker compose -f infra/docker-compose.yml up -d`).
@@ -28,8 +31,14 @@ pnpm typecheck
 pnpm test        # unitários + integração (Testcontainers; precisa do Docker rodando)
 pnpm build
 
+# E2E do web (Playwright + axe) contra o build de produção; na primeira vez, instale o Chromium:
+pnpm --filter @carmine/web exec playwright install chromium
+pnpm --filter @carmine/web test:e2e
+
 dotnet test --solution plugins/Carmine.Plugins.slnx
 ```
+
+Web: textos da interface só em `apps/web/messages/pt-BR.json` (next-intl); tokens da identidade 2c em `apps/web/src/app/tokens.css`. Imagem: `docker buildx build -f infra/docker/web.Dockerfile --platform linux/amd64,linux/arm64 .`.
 
 Mudou um contrato da API? Rode `pnpm --filter @carmine/api openapi:generate` e faça commit do `apps/api/openapi.json`: o cliente C# dos plugins é gerado dele e a CI falha se estiver desatualizado.
 

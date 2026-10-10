@@ -27,3 +27,11 @@ obj/
 # Sistema
 .DS_Store
 Thumbs.db
+
+# Next.js
+next-env.d.ts
+*.tsbuildinfo
+
+# Playwright
+test-results/
+playwright-report/
