@@ -1,0 +1,44 @@
+<!doctype html>
+<!--
+  Liberty Final · referência do frontend.
+  Ícones: Lucide 0.469.0 (https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js), traço padrão 2.
+  Onde cada um é usado (nome Lucide):
+  - sun / moon ........ botão de tema no cabeçalho (mostra o destino da troca)
+  - search ............ campo de busca do cabeçalho
+  - map-pin ........... cidade na linha de servidor; "Servidores em São Paulo" no rodapé
+  - signal-high / signal-medium / signal-low ... ping bom / médio / ruim na linha de servidor
+  - crown ............. selo VIP (amigos, seção Cores de contexto)
+  - check ............. mensagem de sucesso ("Loadout salvo")
+  - triangle-alert .... mensagem de erro (seção Cores de contexto)
+  - info .............. mensagem informativa (seção Cores de contexto)
+  - clock ............. nota de versão em Regras de conduta
+  Para o site real: lucide-react / lucide-static com os mesmos nomes; versão fixada no CDN.
+  Cores de contexto: shared/liberty-status.css (tokens --status-*, fora da identidade da marca).
+-->
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Carmine · Liberty Final</title>
+<script>try{var t=localStorage.getItem('carmine-proto-theme');document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:'dark'}catch(e){}</script>
+<link rel="icon" href="brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;550;600;650;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/base.css">
+<link rel="stylesheet" href="shared/d2.css">
+<link rel="stylesheet" href="shared/d2b.css">
+<link rel="stylesheet" href="shared/d2c.css">
+<link rel="stylesheet" href="shared/liberty.css?v=9">
+<link rel="stylesheet" href="liberty/tokens-exportados-dono-v2.css">
+<link rel="stylesheet" href="shared/liberty-status.css">
+<link rel="stylesheet" href="shared/liberty-final.css?v=8">
+</head>
+<body>
+<script src="https://unpkg.com/lucide@0.469.0/dist/umd/lucide.min.js"></script>
+<script src="shared/brand.js"></script>
+<script src="shared/app.js"></script>
+<script src="shared/liberty-final.js?v=2"></script>
+</body>
+</html>

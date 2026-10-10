@@ -66,6 +66,7 @@
   /* ---------------- componentes ---------------- */
   const NAV = ['Servidores', 'Loadout', 'Partidas', 'Ranking', 'Comunidade'];
   function header(active, cfg) {
+    if (cfg && cfg.headerHTML) return cfg.headerHTML(active);
     return `<header class="app-header"><div class="container hdr">
       <a class="wm${cfg && cfg.wordmarkSVG ? ' wm-img' : ''}" href="#" aria-label="Carmine">${cfg && cfg.wordmarkSVG ? cfg.wordmarkSVG : 'Carmine'}</a>
       <nav class="nav" aria-label="Principal">${NAV.map((n) => `<a href="#"${n === active ? ' aria-current="page"' : ''}>${n}</a>`).join('')}</nav>
@@ -234,13 +235,13 @@
       let theme = 'dark';
       try { theme = localStorage.getItem('carmine-proto-theme') || 'dark'; } catch (e) {}
       document.documentElement.dataset.theme = theme;
-      document.body.innerHTML = `
+      document.body.innerHTML = cfg.shell ? cfg.shell({ s1: screen1(cfg), s2: screen2(cfg) }) : `
         <div class="proto"><div class="container"><a href="index.html">← Comparativo</a><a href="#marca">Marca</a><a href="#tela1">Tela 1 · Servidores</a><a href="#tela2">Tela 2 · Loadout</a><span class="sp"></span><span class="tag">Direção ${cfg.n}</span>${cfg.protoExtra || ''}<button type="button" id="themeBtn" aria-pressed="false"></button></div></div>
         ${brand(cfg)}
         <div class="screen-label" id="tela1"><div class="container"><b>Tela 1</b> · Lista de servidores ao vivo</div></div>${screen1(cfg)}
         <div class="screen-label" id="tela2"><div class="container"><b>Tela 2</b> · Editor de loadout</div></div>${screen2(cfg)}`;
       const btn = document.getElementById('themeBtn');
-      const paint = () => { const d = document.documentElement.dataset.theme === 'dark'; btn.textContent = cfg.noGlyph ? (d ? 'Tema papel creme' : 'Tema escuro quente') : (d ? '☀ Tema papel creme' : '☾ Tema escuro quente'); btn.setAttribute('aria-pressed', !d); };
+      const paint = () => { const d = document.documentElement.dataset.theme === 'dark'; if (cfg.paintTheme) { cfg.paintTheme(btn, d); return; } btn.textContent = cfg.noGlyph ? (d ? 'Tema papel creme' : 'Tema escuro quente') : (d ? '☀ Tema papel creme' : '☾ Tema escuro quente'); btn.setAttribute('aria-pressed', !d); };
       btn.addEventListener('click', () => {
         const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
         const apply = () => {
