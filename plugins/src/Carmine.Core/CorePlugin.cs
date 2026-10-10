@@ -3,6 +3,7 @@ using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.Utils;
 
 namespace Carmine.Core;
 
@@ -10,6 +11,8 @@ namespace Carmine.Core;
 /// Plugin próprio dos Servidores Carmine. Na S01: no connect, avisa a API (que cria a Conta no
 /// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e dá as boas-vindas no primeiro
 /// connect. Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois.
+/// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
+/// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
 /// </summary>
 [MinimumApiVersion(376)]
@@ -23,9 +26,10 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private readonly Dictionary<int, (ulong SteamId, string Name)> _displayNames = [];
     private HttpClient? _http;
     private AccountSync? _sync;
+    private PendingWelcomes? _welcomes;
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.2.0";
+    public override string ModuleVersion => "0.3.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -62,9 +66,11 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Log.PendingLoaded(Logger, pending.Count);
         }
         _sync = new AccountSync(client, pending, TimeProvider.System);
+        _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
+        RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
 
@@ -98,6 +104,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http?.Dispose();
         _http = null;
         _sync = null;
+        _welcomes = null;
     }
 
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -121,6 +128,27 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 if (current is not null && _displayNames.TryGetValue(slot, out var applied) && current.SteamID == applied.SteamId)
                 {
                     ApplyName(current, applied.Name);
+                }
+            });
+        }
+        return HookResult.Continue;
+    }
+
+    /// <summary>
+    /// O player_spawn também dispara quando o pawn é criado no connect, ainda sem time; por isso
+    /// a checagem fica para o próximo frame e exige um jogador vivo num time.
+    /// </summary>
+    private HookResult OnPlayerSpawn(EventPlayerSpawn @event, GameEventInfo info)
+    {
+        if (@event.Userid is { } player && IsHuman(player))
+        {
+            var slot = player.Slot;
+            Server.NextFrame(() =>
+            {
+                var current = Utilities.GetPlayerFromSlot(slot);
+                if (current is not null && IsHuman(current) && IsPlaying(current) && _welcomes?.TakeOnSpawn(current.SteamID) == true)
+                {
+                    current.PrintToChat($" {WelcomeMessage}");
                 }
             });
         }
@@ -197,21 +225,29 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         });
     }
 
-    /// <summary>Na thread do jogo: aplica o nome e as boas-vindas se o jogador ainda está no servidor.</summary>
+    /// <summary>
+    /// Na thread do jogo: aplica o nome se o jogador ainda está no servidor e entrega ou guarda
+    /// as boas-vindas (se ele já saiu, ela espera o próximo connect).
+    /// </summary>
     private void ApplyResult(ulong steamId, PlayerConnectResult result)
     {
         var player = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
+        var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: player is not null && IsPlaying(player)) == true;
         if (player is null)
         {
             return;
         }
         _displayNames[player.Slot] = (steamId, result.DisplayName);
         ApplyName(player, result.DisplayName);
-        if (result.IsFirstConnect)
+        if (sendNow)
         {
             player.PrintToChat($" {WelcomeMessage}");
         }
     }
+
+    /// <summary>Vivo num time: já saiu da escolha de time e vê o chat.</summary>
+    private static bool IsPlaying(CCSPlayerController player) =>
+        player.PawnIsAlive && player.Team is CsTeam.Terrorist or CsTeam.CounterTerrorist;
 
     /// <summary>Placar, chat e kill feed leem o nome do controller (ADR 0008).</summary>
     private static void ApplyName(CCSPlayerController player, string name)
