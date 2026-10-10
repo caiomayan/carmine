@@ -1,0 +1,31 @@
+{
+  "name": "@carmine/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Schemas Zod compartilhados entre web, API e (via OpenAPI) plugins.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsc -p tsconfig.build.json --watch --preserveWatchOutput",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

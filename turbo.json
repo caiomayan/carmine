@@ -1,0 +1,24 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "ui": "stream",
+  "globalPassThroughEnv": ["DOCKER_*", "TESTCONTAINERS_*", "CI"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**", "!.next/dev/**"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "lint": {},
+    "test": {
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
+    },
+    "dev": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

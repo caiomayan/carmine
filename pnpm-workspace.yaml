@@ -1,0 +1,16 @@
+packages:
+  - apps/*
+  - packages/*
+
+# Versões compartilhadas entre os pacotes (usadas como "catalog:").
+catalog:
+  "@types/node": 24.19.1
+  typescript: 6.0.3
+  vitest: 5.0.3
+  zod: 4.6.5
+
+# Só estes pacotes podem rodar scripts de instalação.
+allowBuilds:
+  "@biomejs/biome": true
+  "@swc/core": true
+  esbuild: true
