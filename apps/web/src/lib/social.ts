@@ -34,9 +34,12 @@ export function socialLinks(env: Env): SocialLink[] {
   });
 }
 
+/** Convite oficial do Discord da Carmine; a variável de ambiente sobrescreve. */
+const DEFAULT_DISCORD_URL = 'https://discord.gg/3zu3MXFWWV';
+
 /** As redes do build atual. O Next só embute NEXT_PUBLIC_* lidas por nome literal. */
 export const SOCIAL_LINKS = socialLinks({
-  NEXT_PUBLIC_DISCORD_URL: process.env.NEXT_PUBLIC_DISCORD_URL,
+  NEXT_PUBLIC_DISCORD_URL: process.env.NEXT_PUBLIC_DISCORD_URL || DEFAULT_DISCORD_URL,
   NEXT_PUBLIC_INSTAGRAM_URL: process.env.NEXT_PUBLIC_INSTAGRAM_URL,
   NEXT_PUBLIC_X_URL: process.env.NEXT_PUBLIC_X_URL,
   NEXT_PUBLIC_YOUTUBE_URL: process.env.NEXT_PUBLIC_YOUTUBE_URL,
