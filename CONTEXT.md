@@ -22,6 +22,9 @@ _Evitar_: conta registrada, conta ativada
 Número curto, imutável e único que identifica a Conta na plataforma; números menores pertencem a Contas mais antigas.
 _Evitar_: username, apelido, handle
 
+**ID reservado**:
+ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff).
+
 **Nome de exibição** (`displayName`):
 O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único.
 _Evitar_: nick, apelido, username
@@ -41,12 +44,23 @@ _Evitar_: skin (quando se fala de qualquer item)
 **Atributos do item**:
 Float (desgaste), seed (padrão), StatTrak, nametag, stickers e charms aplicados.
 
+**Arma padrão**:
+A arma sem skin, como vem no jogo. Não é um Item e nunca aparece no Inventário; é o que o jogador usa num slot sem Item equipado.
+_Evitar_: skin vanilla, item padrão
+
+**Inventário** (`Inventory`):
+A coleção de Itens que uma Conta montou na plataforma, podendo ter vários Itens para a mesma arma.
+_Evitar_: coleção, mochila
+
+**Equipar** (`equip`):
+Colocar um Item do Inventário num slot de arma, de um lado (CT, TR ou ambos).
+
 **Loadout** (`Loadout`):
-O conjunto de Itens que uma Conta usa, separado por lado (CT e TR).
-_Evitar_: inventário, setup
+O que está equipado agora em cada slot e lado; é o que o jogador vê no jogo.
+_Evitar_: setup
 
 **Preset** (`Preset`):
-Um Loadout salvo com nome, que pode ser ativado de uma vez.
+Um Loadout salvo com nome, que referencia Itens do Inventário e pode ser ativado de uma vez.
 
 ## Jogo
 
