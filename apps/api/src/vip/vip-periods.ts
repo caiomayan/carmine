@@ -15,10 +15,11 @@ export class VipPeriods {
 
   /** O VIP da Conta agora: ativo e até quando, somando os Períodos encadeados. */
   async statusOf(accountId: string, now = new Date()): Promise<VipStatusAt> {
+    // Todos os Períodos: os encerrados dão o `endedAt`. São poucos por Conta.
     const periods = await this.db
       .select({ startsAt: vipPeriods.startsAt, endsAt: vipPeriods.endsAt })
       .from(vipPeriods)
-      .where(and(eq(vipPeriods.accountId, accountId), gt(vipPeriods.endsAt, now)));
+      .where(eq(vipPeriods.accountId, accountId));
     return vipStatusAt(periods, now);
   }
 

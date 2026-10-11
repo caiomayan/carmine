@@ -35,7 +35,7 @@ describe('Períodos VIP', () => {
   it('uma Conta nova não tem VIP', async () => {
     const { id } = await newAccount();
 
-    expect(await vip.statusOf(id)).toEqual({ active: false, endsAt: null });
+    expect(await vip.statusOf(id)).toEqual({ active: false, endsAt: null, endedAt: null });
   });
 
   it('conceder com VIP ativo soma os dias ao fim do Período', async () => {
@@ -45,7 +45,11 @@ describe('Períodos VIP', () => {
     await vip.grant(id, 10, now);
     const status = await vip.grant(id, 90, now);
 
-    expect(status).toEqual({ active: true, endsAt: new Date(now.getTime() + 100 * DAY_MS) });
+    expect(status).toEqual({
+      active: true,
+      endsAt: new Date(now.getTime() + 100 * DAY_MS),
+      endedAt: null,
+    });
   });
 
   it('concessões simultâneas não se sobrepõem', async () => {
