@@ -219,9 +219,7 @@ describe('Inventário', () => {
         })),
       );
 
-      const results = await Promise.all(
-        Array.from({ length: 8 }, () => p.add({ id: AK_REDLINE })),
-      );
+      const results = await Promise.all(Array.from({ length: 8 }, () => p.add({ id: AK_REDLINE })));
 
       expect(results.filter((r) => r.statusCode === 201)).toHaveLength(1);
       expect(results.filter((r) => r.statusCode === 409)).toHaveLength(7);
