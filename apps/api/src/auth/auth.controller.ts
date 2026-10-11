@@ -2,7 +2,6 @@ import {
   type CurrentSession as CurrentSessionBody,
   currentSessionSchema,
   DEFAULT_RETURN_PATH,
-  LOGIN_ERROR_PATH,
   type LoginError,
 } from '@carmine/contracts';
 import {
@@ -17,6 +16,7 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -38,6 +38,7 @@ import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { VipPeriods } from '../vip/vip-periods.js';
+import { LoginRateLimitFilter, loginErrorUrl } from './login-errors.js';
 import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
   clearSessionCookies,
@@ -76,6 +77,7 @@ export class AuthController {
 
   @Get('auth/steam/login')
   @RateLimit('login')
+  @UseFilters(LoginRateLimitFilter)
   @ApiOperation({
     operationId: 'startSteamLogin',
     summary: 'Começa o login Steam: redireciona para a Steam',
@@ -85,7 +87,9 @@ export class AuthController {
     required: false,
     description: 'Caminho interno do web para onde voltar depois do login (padrão: /)',
   })
-  @ApiFoundResponse({ description: 'Para a Steam (ou para /entrar?erro=indisponivel)' })
+  @ApiFoundResponse({
+    description: 'Para a Steam (ou para /entrar?erro=indisponivel, ou erro=limite acima do limite)',
+  })
   async start(
     @Query('returnTo') returnTo: string | undefined,
     @Res() reply: FastifyReply,
@@ -108,6 +112,7 @@ export class AuthController {
 
   @Get('auth/steam/callback')
   @RateLimit('login')
+  @UseFilters(LoginRateLimitFilter)
   @ApiOperation({
     operationId: 'completeSteamLogin',
     summary: 'Volta da Steam: verifica a asserção, reivindica a Conta e abre a sessão',
@@ -196,11 +201,6 @@ export class AuthController {
   }
 
   private errorUrl(error: LoginError, returnTo: string): string {
-    const url = new URL(LOGIN_ERROR_PATH, this.config.publicWebUrl);
-    url.searchParams.set('erro', error);
-    if (returnTo !== DEFAULT_RETURN_PATH) {
-      url.searchParams.set('voltar', returnTo);
-    }
-    return url.toString();
+    return loginErrorUrl(this.config.publicWebUrl, error, returnTo);
   }
 }
