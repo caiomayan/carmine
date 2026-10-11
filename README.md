@@ -36,6 +36,8 @@ pnpm build
 # Postgres e do Valkey no ar (pnpm infra:up); o que já estiver rodando nessas portas é reaproveitado.
 pnpm --filter @carmine/web exec playwright install chromium
 pnpm --filter @carmine/web test:e2e
+# Também contra o next dev (pega erros do servidor que só o dev mostra no console):
+E2E_DEV=1 pnpm --filter @carmine/web test:e2e
 
 dotnet test --solution plugins/Carmine.Plugins.slnx
 ```

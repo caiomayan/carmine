@@ -31,6 +31,14 @@ function Switch(props: SwitchProps) {
     defaultValue: props.defaultChecked,
     onChange: props.onCheckedChange,
   });
+  // Carmine: as props de estado são do Radix; o <button> só recebe as de elemento (senão o
+  // React acusa "Unknown event handler property onCheckedChange" em desenvolvimento).
+  const {
+    checked: _checked,
+    defaultChecked: _defaultChecked,
+    onCheckedChange: _onChange,
+    ...buttonProps
+  } = props;
 
   return (
     <SwitchProvider value={{ isChecked, setIsChecked, isPressed, setIsPressed }}>
@@ -42,7 +50,7 @@ function Switch(props: SwitchProps) {
           onTapStart={() => setIsPressed(true)}
           onTapCancel={() => setIsPressed(false)}
           onTap={() => setIsPressed(false)}
-          {...props}
+          {...buttonProps}
         />
       </SwitchPrimitives.Root>
     </SwitchProvider>

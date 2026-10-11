@@ -276,43 +276,65 @@ function SlidingNumber({
       }}
       {...props}
     >
-      {isInView && Number(number) < 0 && <span style={{ marginRight: '0.25rem' }}>-</span>}
+      {/* Carmine: o leitor de tela ouve só o valor final; os rolos de 0 a 9 são decorativos. */}
+      <span className="sr-only">
+        {accessibleNumber(number, decimalPlaces, decimalSeparator, thousandSeparator)}
+      </span>
+      <span aria-hidden="true" style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {isInView && Number(number) < 0 && <span style={{ marginRight: '0.25rem' }}>-</span>}
 
-      {intPlaces.map((place, idx) => {
-        const digitsToRight = intPlaces.length - idx - 1;
-        const isSeparatorPosition =
-          typeof thousandSeparator !== 'undefined' && digitsToRight > 0 && digitsToRight % 3 === 0;
+        {intPlaces.map((place, idx) => {
+          const digitsToRight = intPlaces.length - idx - 1;
+          const isSeparatorPosition =
+            typeof thousandSeparator !== 'undefined' &&
+            digitsToRight > 0 &&
+            digitsToRight % 3 === 0;
 
-        return (
-          <React.Fragment key={`int-${place}`}>
-            <SlidingNumberRoller
-              prevValue={parseInt(adjustedPrevInt, 10)}
-              value={parseInt(newIntStr ?? '0', 10)}
-              place={place}
-              transition={transition}
-            />
-            {isSeparatorPosition && <span>{thousandSeparator}</span>}
-          </React.Fragment>
-        );
-      })}
+          return (
+            <React.Fragment key={`int-${place}`}>
+              <SlidingNumberRoller
+                prevValue={parseInt(adjustedPrevInt, 10)}
+                value={parseInt(newIntStr ?? '0', 10)}
+                place={place}
+                transition={transition}
+              />
+              {isSeparatorPosition && <span>{thousandSeparator}</span>}
+            </React.Fragment>
+          );
+        })}
 
-      {newDecStrRaw && (
-        <>
-          <span>{decimalSeparator}</span>
-          {decPlaces.map((place) => (
-            <SlidingNumberRoller
-              key={`dec-${place}`}
-              prevValue={prevDecValue}
-              value={newDecValue}
-              place={place}
-              transition={transition}
-              delay={delay}
-            />
-          ))}
-        </>
-      )}
+        {newDecStrRaw && (
+          <>
+            <span>{decimalSeparator}</span>
+            {decPlaces.map((place) => (
+              <SlidingNumberRoller
+                key={`dec-${place}`}
+                prevValue={prevDecValue}
+                value={newDecValue}
+                place={place}
+                transition={transition}
+                delay={delay}
+              />
+            ))}
+          </>
+        )}
+      </span>
     </motion.span>
   );
+}
+
+/** O número como texto, com os mesmos separadores que os rolos mostram. */
+function accessibleNumber(
+  number: number | string,
+  decimalPlaces: number,
+  decimalSeparator: string,
+  thousandSeparator: string | undefined,
+): string {
+  const value = Number(number);
+  const [int = '0', dec] = Math.abs(value).toFixed(decimalPlaces).split('.');
+  const grouped =
+    thousandSeparator === undefined ? int : int.replace(/\B(?=(\d{3})+(?!\d))/g, thousandSeparator);
+  return `${value < 0 ? '-' : ''}${grouped}${dec ? `${decimalSeparator}${dec}` : ''}`;
 }
 
 export { SlidingNumber, type SlidingNumberProps };

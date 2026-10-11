@@ -167,3 +167,17 @@ for (const theme of ['dark', 'light'] as const) {
     });
   }
 }
+
+test('os contadores animados expõem só o valor ao leitor de tela', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
+  const status = page.getByRole('status', { name: 'Estado dos servidores' });
+  const tree = await status.ariaSnapshot();
+  // Os rolos de dígitos (0 a 9 de cada casa) nunca aparecem na árvore de acessibilidade.
+  expect(tree).not.toMatch(/\d \d \d \d/);
+  expect(tree).toMatch(/0 servidores online/);
+
+  await page.goto('/dev/componentes');
+  const gallery = await page.locator('main').ariaSnapshot();
+  expect(gallery).not.toMatch(/\d \d \d \d/);
+});

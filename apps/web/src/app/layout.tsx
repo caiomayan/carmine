@@ -9,10 +9,11 @@ import { FirstSteps } from '@/components/session/first-steps';
 import { SessionProvider } from '@/components/session/session-provider';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
+import { ThemeScript } from '@/components/theme-script';
 import { locale } from '@/i18n/request';
 import { getServerSession } from '@/lib/api-server';
 import { FIRST_STEPS_COOKIE, hasDismissedFirstSteps } from '@/lib/first-steps';
-import { DEFAULT_THEME, themeInitScript } from '@/lib/theme';
+import { DEFAULT_THEME } from '@/lib/theme';
 import './globals.css';
 
 const inter = Inter({
@@ -66,8 +67,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: string constante, aplica o tema salvo antes da primeira pintura */}
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <ThemeScript />
       </head>
       <body>
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
@@ -90,7 +90,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
                   <FirstSteps
                     labels={{
-                      title: tSteps('title'),
+                      // Modelo com {name}: o nome vem da sessão no cliente, então vai sem formatar.
+                      title: tSteps.raw('title'),
                       intro: tSteps('intro'),
                       close: tSteps('close'),
                       done: tSteps('done'),

@@ -21,6 +21,8 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // O `next dev` compila cada rota na primeira visita.
+  ...(process.env.E2E_DEV === '1' ? { timeout: 90_000, expect: { timeout: 15_000 } } : {}),
   // A stack inteira do login (S03): a Steam OpenID falsa, a API (com Postgres e Valkey do
   // `pnpm infra:up`) e o web, todos dos builds de produção (rode `pnpm build` antes).
   // Localmente reaproveita o que já estiver no ar.
@@ -49,11 +51,18 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      command: `pnpm exec next start --port ${PORT}`,
+      // E2E_DEV=1 roda contra o `next dev`: lá os erros do servidor (i18n, React) também
+      // chegam ao console do navegador, e a fixture de console os pega.
+      command: `pnpm exec next ${process.env.E2E_DEV === '1' ? 'dev' : 'start'} --port ${PORT}`,
       url: baseURL,
       reuseExistingServer: !process.env.CI,
       // A vitrine interna de componentes (/dev/*) só existe com esta variável.
-      env: { CARMINE_UI_GALLERY: '1', API_URL: `http://localhost:${API_PORT}` },
+      env: {
+        CARMINE_UI_GALLERY: '1',
+        API_URL: `http://localhost:${API_PORT}`,
+        // Qualquer erro de i18n derruba a página (src/i18n/request.ts).
+        CARMINE_STRICT_I18N: '1',
+      },
       timeout: 60_000,
     },
   ],
