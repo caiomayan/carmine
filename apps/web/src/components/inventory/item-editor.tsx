@@ -27,6 +27,7 @@ import {
   formToItem,
   type ItemForm,
   issueFromApiError,
+  positionsFromViewer,
   validateForm,
 } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
@@ -93,6 +94,11 @@ export function ItemEditor(props: EditorProps) {
   const [saving, setSaving] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [removing, setRemoving] = useState(false);
+  // Arrasto no 3D (última tarefa da S04): um sticker ou o charm por vez, só com o 3D pronto.
+  const [viewerReady, setViewerReady] = useState(false);
+  const [dragging, setDragging] = useState<
+    { kind: 'sticker'; index: number } | { kind: 'keychain'; index: 0 } | null
+  >(null);
   const formRef = useRef<HTMLFormElement>(null);
   const hydrated = useHydrated();
 
@@ -193,6 +199,12 @@ export function ItemEditor(props: EditorProps) {
           always2d={spec.viewer === '2d'}
           stickers={form.stickers}
           charm={form.charm}
+          selection={viewerReady ? dragging : null}
+          onReadyChange={setViewerReady}
+          onMove={(moved) => {
+            const next = positionsFromViewer(formSpec, form, moved);
+            if (next) change(next);
+          }}
         />
       </div>
 
@@ -329,6 +341,11 @@ export function ItemEditor(props: EditorProps) {
             issues={issues}
             errorText={errorText}
             onChange={(stickers) => change({ stickers })}
+            drag={{
+              available: viewerReady,
+              active: dragging?.kind === 'sticker' ? dragging.index : null,
+              set: (index) => setDragging(index === null ? null : { kind: 'sticker', index }),
+            }}
           />
         ) : null}
 
@@ -339,6 +356,11 @@ export function ItemEditor(props: EditorProps) {
             issue={issueOf('charm.seed') ?? issues.find((i) => i.field.startsWith('charm'))}
             errorText={errorText}
             onChange={(charm) => change({ charm })}
+            drag={{
+              available: viewerReady,
+              active: dragging?.kind === 'keychain' ? 0 : null,
+              set: (index) => setDragging(index === null ? null : { kind: 'keychain', index: 0 }),
+            }}
           />
         ) : null}
 
@@ -360,12 +382,12 @@ export function ItemEditor(props: EditorProps) {
                   : t('issues', { count: visibleIssues.length })}
             </p>
           ) : null}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-2 max-md:flex-wrap">
             {signedIn || session.status === 'unknown' ? (
               <Button
                 type="submit"
                 disabled={saving || lockedItem || (mode === 'edit' && !dirty)}
-                className="min-w-44 max-md:flex-1"
+                className="min-w-44 max-md:min-w-0 max-md:flex-1"
                 data-testid="save-item"
               >
                 {saving ? t('saving') : mode === 'edit' ? t('save') : t('add')}
@@ -387,7 +409,7 @@ export function ItemEditor(props: EditorProps) {
               <Button
                 type="button"
                 variant="quiet"
-                className="ml-auto max-md:ml-0"
+                className="ml-auto"
                 onClick={() => setRemoving(true)}
                 data-testid="remove-item"
               >

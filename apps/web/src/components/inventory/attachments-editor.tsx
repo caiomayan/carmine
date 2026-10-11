@@ -46,6 +46,7 @@ export function StickersEditor({
   issues,
   errorText,
   onChange,
+  drag,
 }: {
   stickers: StickerForm[];
   slots: number;
@@ -53,6 +54,7 @@ export function StickersEditor({
   issues: FormIssue[];
   errorText: (issue: FormIssue) => string;
   onChange: (stickers: StickerForm[]) => void;
+  drag: DragControl;
 }) {
   const t = useTranslations('itemEditor');
   const [picking, setPicking] = useState(false);
@@ -95,7 +97,14 @@ export function StickersEditor({
                 issue={issues.find((issue) => issue.field.startsWith(`stickers.${index}.`))}
                 errorText={errorText}
                 onChange={(patch) => update(index, patch)}
-                onRemove={() => onChange(stickers.filter((_, i) => i !== index))}
+                onRemove={() => {
+                  if (drag.active !== null) drag.set(null);
+                  onChange(stickers.filter((_, i) => i !== index));
+                }}
+                dragging={drag.active === index}
+                onDrag={
+                  drag.available ? () => drag.set(drag.active === index ? null : index) : null
+                }
               />
             </motion.li>
           ))}
@@ -129,6 +138,8 @@ function StickerRow({
   errorText,
   onChange,
   onRemove,
+  dragging,
+  onDrag,
 }: {
   index: number;
   sticker: StickerForm;
@@ -138,6 +149,9 @@ function StickerRow({
   errorText: (issue: FormIssue) => string;
   onChange: (patch: Partial<StickerForm>) => void;
   onRemove: () => void;
+  dragging: boolean;
+  /** Liga ou desliga o arrasto deste sticker no 3D; nulo quando o 3D não está pronto. */
+  onDrag: (() => void) | null;
 }) {
   const t = useTranslations('itemEditor');
   const slotId = useId();
@@ -159,6 +173,16 @@ function StickerRow({
         <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium" title={sticker.name}>
           {name}
         </span>
+        {onDrag ? (
+          <DragButton
+            active={dragging}
+            label={t('drag3dLabel', { name: sticker.name })}
+            onClick={onDrag}
+            testId={`drag-sticker-${index}`}
+          >
+            {t('drag3d')}
+          </DragButton>
+        ) : null}
         <Button
           type="button"
           variant="quiet"
@@ -209,7 +233,7 @@ function StickerRow({
       </div>
 
       {offset && hasBounds(offset.x) && hasBounds(offset.y) ? (
-        <details className="group/fine">
+        <details className="group/fine" open={dragging || undefined}>
           <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 -ml-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-hover hover:text-foreground max-md:min-h-(--tap)">
             <svg
               aria-hidden="true"
@@ -323,15 +347,18 @@ export function CharmEditor({
   issue,
   errorText,
   onChange,
+  drag,
 }: {
   charm: CharmForm | null;
   spec: NonNullable<ItemSpec['charm']>;
   issue: FormIssue | undefined;
   errorText: (issue: FormIssue) => string;
   onChange: (charm: CharmForm | null) => void;
+  drag: DragControl;
 }) {
   const t = useTranslations('itemEditor');
   const [picking, setPicking] = useState(false);
+  const dragging = drag.active === 0;
   const seedId = useId();
   const error = issue ? errorText(issue) : undefined;
   const { x, y, z } = spec.position;
@@ -364,11 +391,24 @@ export function CharmEditor({
             <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium" title={charm.name}>
               {charm.name.replace(/^Chaveiro \| /, '')}
             </span>
+            {drag.available ? (
+              <DragButton
+                active={dragging}
+                label={t('drag3dLabel', { name: charm.name })}
+                onClick={() => drag.set(dragging ? null : 0)}
+                testId="drag-charm"
+              >
+                {t('drag3d')}
+              </DragButton>
+            ) : null}
             <Button
               type="button"
               variant="quiet"
               size="icon"
-              onClick={() => onChange(null)}
+              onClick={() => {
+                if (dragging) drag.set(null);
+                onChange(null);
+              }}
               aria-label={t('removeCharm', { name: charm.name })}
             >
               <AnimatedIcon icon={DeleteIcon} size={16} />
@@ -466,3 +506,49 @@ export function CharmEditor({
 }
 
 const mid = (b: Bounds) => (b.min !== undefined && b.max !== undefined ? (b.min + b.max) / 2 : 0);
+
+/** O arrasto no 3D: qual índice está ativo, se o 3D está pronto e como trocar. */
+export type DragControl = {
+  active: number | null;
+  available: boolean;
+  set: (index: number | null) => void;
+};
+
+function DragButton({
+  active,
+  label,
+  onClick,
+  testId,
+  children,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+  testId: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      aria-label={label}
+      onClick={onClick}
+      data-testid={testId}
+      className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-foreground aria-pressed:text-background max-md:min-h-(--tap)"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="size-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20" />
+      </svg>
+      {children}
+    </button>
+  );
+}

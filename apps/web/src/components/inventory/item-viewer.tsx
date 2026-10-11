@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { imageForWear } from '@/lib/catalog/wear';
 import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
-import { ViewerApi } from '@/lib/viewer/viewer-api.client';
+import { ViewerApi, type ViewerSelection } from '@/lib/viewer/viewer-api.client';
 import { buildViewerSrc, stringifyViewerItem, VIEWER_ORIGIN } from '@/lib/viewer/viewer-src';
 import {
   hasWebGL,
@@ -35,6 +35,9 @@ export function ItemViewer({
   always2d,
   stickers,
   charm,
+  selection = null,
+  onMove,
+  onReadyChange,
 }: {
   item: Cs2Item;
   name: string;
@@ -42,6 +45,12 @@ export function ItemViewer({
   always2d: boolean;
   stickers: AttachmentLabel[];
   charm: AttachmentLabel | null;
+  /** Sticker ou charm que a pessoa está arrastando no 3D (o resto fica parado). */
+  selection?: ViewerSelection;
+  /** O Item depois de um arrasto no 3D (o evento `change` do viewer). */
+  onMove?: (item: Cs2Item) => void;
+  /** O 3D ficou pronto ou deixou de estar (o arrasto só existe com ele). */
+  onReadyChange?: (ready: boolean) => void;
 }) {
   const t = useTranslations('itemEditor.viewer');
   const [state, dispatch] = useReducer(
@@ -56,6 +65,8 @@ export function ItemViewer({
   const itemKey = stringifyViewerItem(item);
   const itemRef = useRef(item);
   itemRef.current = item;
+  const onMoveRef = useRef(onMove);
+  onMoveRef.current = onMove;
 
   // WebGL só dá para saber no navegador. O iframe também só entra depois da hidratação: o
   // viewer mede o tamanho dele ao carregar, e assim não disputa a banda da primeira carga.
@@ -78,6 +89,7 @@ export function ItemViewer({
       api.on('ready', () => dispatch({ type: 'ready' })),
       api.on('loading', ({ busy }) => dispatch({ type: 'loading', busy })),
       api.on('rendered', () => dispatch({ type: 'rendered' })),
+      api.on('change', (state) => onMoveRef.current?.(state.item as Cs2Item)),
       api.on('unsupported', ({ reason }) => dispatch({ type: 'unsupported', reason })),
       api.on('rateLimited', ({ retryAfterMs }) =>
         dispatch({ type: 'rateLimited', retryAfterMs, now: Date.now() }),
@@ -107,6 +119,16 @@ export function ItemViewer({
   }, [itemKey]);
 
   const ready = state.mode === '3d' && state.phase === 'ready';
+
+  useEffect(() => {
+    onReadyChange?.(ready);
+  }, [ready, onReadyChange]);
+
+  const selectionKey = JSON.stringify(selection);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selectionKey resume a seleção.
+  useEffect(() => {
+    if (ready) apiRef.current?.setSelection({ selection });
+  }, [selectionKey, ready]);
   const reason = state.mode === '2d' && state.reason !== 'always' ? state.reason : null;
   const retryable = reason !== null && reason !== 'no-webgl';
 
@@ -190,7 +212,7 @@ export function ItemViewer({
             {t('loading')}
           </span>
         ) : ready ? (
-          <span>{t('hint')}</span>
+          <span>{selection ? t('dragHint') : t('hint')}</span>
         ) : (
           <span />
         )}

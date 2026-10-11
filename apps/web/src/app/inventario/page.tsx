@@ -116,6 +116,7 @@ export default async function InventoryPage() {
               vipLabel={tc('vip')}
               vipHint={tc('vipHint')}
               tileClassName="bg-surface-2/60 hover:bg-surface-2"
+              className="grid-cols-3"
             />
             <Button asChild variant="ghost" className="justify-self-start">
               <Link href="/inventario/adicionar">{t('empty.browse')}</Link>
@@ -139,7 +140,7 @@ export default async function InventoryPage() {
                   <span>
                     {t.rich(`empty.${step}`, {
                       cmd: (chunks) => (
-                        <code className="rounded-sm bg-background px-1.5 py-0.5 font-mono text-[12.5px]">
+                        <code className="rounded-sm bg-background px-1.5 py-0.5 font-mono text-[0.95em] font-semibold">
                           {chunks}
                         </code>
                       ),

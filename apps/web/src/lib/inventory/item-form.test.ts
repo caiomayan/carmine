@@ -8,6 +8,7 @@ import {
   type ItemForm,
   issueFromApiError,
   MAX_STICKERS,
+  positionsFromViewer,
   validateForm,
 } from './item-form';
 
@@ -217,5 +218,47 @@ describe('erros da API', () => {
         field: 'keychains.0.seed',
       }),
     ).toEqual({ field: 'charm.seed', code: 'invalid_keychain' });
+  });
+});
+
+describe('posições arrastadas no 3D', () => {
+  const base = (): ItemForm => {
+    let form = addSticker(addSticker(emptyForm(AK), AK, sticker(1)), AK, sticker(2));
+    form = { ...form, charm: { ...sticker(13113), seed: 3 } };
+    return form;
+  };
+
+  it('copia o x/y dos stickers e o x/y/z do charm que o viewer devolveu', () => {
+    const moved = positionsFromViewer(AK, base(), {
+      id: 222,
+      stickers: {
+        '0': { id: 1, schema: 0, x: 0.123456, y: -0.2 },
+        '1': { id: 2, schema: 1 },
+      },
+      keychains: { '0': { id: 13113, seed: 3, x: 1.5, y: 0.3, z: -1 } },
+    });
+    expect(moved?.stickers[0]).toMatchObject({ x: 0.1235, y: -0.2 });
+    expect(moved?.stickers[1]).not.toHaveProperty('x');
+    expect(moved?.charm).toMatchObject({ x: 1.5, y: 0.3, z: -1 });
+  });
+
+  it('nada mudou: devolve null (sem laço entre o editor e o viewer)', () => {
+    expect(positionsFromViewer(AK, base(), { id: 222 })).toBeNull();
+    const form = { ...base(), stickers: base().stickers.map((s) => ({ ...s, x: 0.1, y: 0.2 })) };
+    expect(
+      positionsFromViewer(AK, form, {
+        id: 222,
+        stickers: { '0': { id: 1, x: 0.1, y: 0.2 }, '1': { id: 2, x: 0.1, y: 0.2 } },
+      }),
+    ).toBeNull();
+  });
+
+  it('ignora um estado velho do viewer (outro Item ou outros stickers)', () => {
+    expect(
+      positionsFromViewer(AK, base(), { id: 306, stickers: { '0': { id: 1, x: 1, y: 1 } } }),
+    ).toBeNull();
+    expect(
+      positionsFromViewer(AK, base(), { id: 222, stickers: { '0': { id: 99, x: 1, y: 1 } } }),
+    ).toBeNull();
   });
 });

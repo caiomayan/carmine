@@ -185,6 +185,29 @@ test('o erro de validação da API vira mensagem no campo', async ({
   await expect(page.getByTestId('field-wear')).toHaveAttribute('aria-invalid', 'true');
 });
 
+test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await addSticker(page, 'furia');
+  await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+
+  const drag = page.getByTestId('drag-sticker-0');
+  await drag.click();
+  await expect(drag).toHaveAttribute('aria-pressed', 'true');
+  // O ajuste fino abre e acompanha a posição que veio do 3D.
+  await expect(
+    page.getByTestId('sticker-0').getByRole('slider', { name: 'Ajuste horizontal' }),
+  ).toHaveAttribute('aria-valuetext', '0,25');
+  await expect
+    .poll(() => viewerItem(page))
+    .toMatchObject({ stickers: { '0': { x: 0.25, y: 0.1 } } });
+
+  await page.getByTestId('save-item').click();
+  await expect(page).toHaveURL('/inventario');
+  const inventory = await (await page.request.get('/api/inventory')).json();
+  expect(inventory.items[0].item.stickers['0']).toMatchObject({ x: 0.25, y: 0.1 });
+});
+
 test.describe('com o 3D bloqueado', () => {
   test.use({ viewer: 'blocked' });
 

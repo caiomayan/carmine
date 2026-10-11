@@ -219,3 +219,48 @@ export function issueFromApiError(error: InventoryError): FormIssue {
   const field = error.field?.replace(/^keychains\.\d+/, 'charm') ?? 'item';
   return { field, code: error.code, ...(error.range ? { range: error.range } : {}) };
 }
+
+/** O Item como o viewer 3D devolve no evento `change` (depois de um arrasto). */
+type ViewerItemLike = Pick<Cs2Item, 'id' | 'stickers' | 'keychains'>;
+
+const moved = (a: number | undefined, b: number | undefined) =>
+  a !== b && (a === undefined || b === undefined || Math.abs(a - b) >= 10 ** -POSITION_DECIMALS);
+const roundPosition = (value: number | undefined) =>
+  value === undefined ? undefined : round(value, POSITION_DECIMALS);
+
+/**
+ * As posições que a pessoa arrastou no 3D (stickers e charm), aplicadas ao formulário. `null`
+ * quando nada mudou ou quando o estado do viewer é de outro Item ou de outros stickers (uma
+ * resposta atrasada): assim o editor e o viewer não entram em laço.
+ */
+export function positionsFromViewer(
+  spec: FormSpec,
+  form: ItemForm,
+  viewer: ViewerItemLike,
+): ItemForm | null {
+  if (viewer.id !== spec.id) return null;
+  const applied = Object.entries(viewer.stickers ?? {}).sort(([a], [b]) => Number(a) - Number(b));
+  if (applied.some(([key, sticker]) => form.stickers[Number(key)]?.id !== sticker.id)) return null;
+  let changed = false;
+  const stickers = form.stickers.map((sticker, index) => {
+    const from = viewer.stickers?.[String(index)];
+    if (!from || (from.x === undefined && from.y === undefined)) return sticker;
+    if (!moved(sticker.x, from.x) && !moved(sticker.y, from.y)) return sticker;
+    changed = true;
+    return { ...sticker, x: roundPosition(from.x), y: roundPosition(from.y) };
+  });
+  let charm = form.charm;
+  const keychain = viewer.keychains?.['0'];
+  if (charm && keychain && keychain.id === charm.id && keychain.x !== undefined) {
+    if (moved(charm.x, keychain.x) || moved(charm.y, keychain.y) || moved(charm.z, keychain.z)) {
+      changed = true;
+      charm = {
+        ...charm,
+        x: roundPosition(keychain.x),
+        y: roundPosition(keychain.y),
+        z: roundPosition(keychain.z),
+      };
+    }
+  }
+  return changed ? { ...form, stickers, charm } : null;
+}

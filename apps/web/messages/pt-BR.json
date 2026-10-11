@@ -122,7 +122,7 @@
       "remove": "Remover",
       "statTrak": "StatTrak™",
       "stickers": "{count, plural, one {# sticker} other {# stickers}}",
-      "charm": "charm",
+      "charm": "1 charm",
       "vip": "VIP"
     },
     "added": "{name} entrou no seu Inventário.",
@@ -484,7 +484,11 @@
         "unsupported": "Esta combinação ainda não tem 3D; mostrando a imagem.",
         "rate-limited": "O 3D atingiu o limite de uso por agora; mostrando a imagem."
       },
-      "retry": "Tentar o 3D de novo"
-    }
+      "retry": "Tentar o 3D de novo",
+      "dragHint": "Arraste o item selecionado na prévia"
+    },
+    "drag3d": "Arrastar no 3D",
+    "drag3dLabel": "Arrastar {name} na prévia 3D",
+    "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado."
   }
 }
