@@ -155,16 +155,17 @@ test('container global de 1080 px com margem mínima de 36 px (21 px no mobile)'
   await expectContainer(21);
 });
 
+// Uma rota por teste: todas juntas passavam dos 30 s num runner mais lento.
 for (const theme of ['dark', 'light'] as const) {
   for (const width of [390, 1440] as const) {
-    test(`axe sem violações WCAG 2.2 AA (${theme}, ${width}px)`, async ({ page }) => {
-      await saveTheme(page, theme);
-      await page.setViewportSize({ width, height: 900 });
-      for (const route of ROUTES) {
+    for (const route of ROUTES) {
+      test(`axe sem violações WCAG 2.2 AA em ${route} (${theme}, ${width}px)`, async ({ page }) => {
+        await saveTheme(page, theme);
+        await page.setViewportSize({ width, height: 900 });
         await page.goto(route);
-        expect(await axeViolations(page), `${route} (${theme}, ${width}px)`).toEqual([]);
-      }
-    });
+        expect(await axeViolations(page)).toEqual([]);
+      });
+    }
   }
 }
 
