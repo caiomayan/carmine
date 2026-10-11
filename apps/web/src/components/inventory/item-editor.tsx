@@ -101,6 +101,8 @@ export function ItemEditor(props: EditorProps) {
   >(null);
   const formRef = useRef<HTMLFormElement>(null);
   const hydrated = useHydrated();
+  const barEnd = useRef<HTMLDivElement>(null);
+  const barStuck = useStuck(barEnd);
 
   const issues = useMemo(() => {
     const local = validateForm(formSpec, form, { vip });
@@ -212,7 +214,8 @@ export function ItemEditor(props: EditorProps) {
         ref={formRef}
         onSubmit={submit}
         noValidate
-        className="grid gap-6"
+        // Um campo que recebe foco rola acima da barra fixa de salvar, com o texto de ajuda dele.
+        className="grid gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
         {draft.restored ? (
@@ -364,7 +367,16 @@ export function ItemEditor(props: EditorProps) {
           />
         ) : null}
 
-        <div className="sticky bottom-0 z-10 -mx-1 grid gap-3 bg-background px-1 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] [mask-image:linear-gradient(to_bottom,transparent,#000_12px)]">
+        <div
+          data-stuck={barStuck || undefined}
+          data-testid="editor-actions"
+          className={cn(
+            'sticky bottom-0 z-10 -mx-1 grid gap-3 bg-background px-1 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]',
+            // Flutuando sobre os campos, a barra ganha uma linha e uma sombra: lê como camada.
+            'transition-shadow duration-(--dur-fast) ease-std',
+            'data-stuck:shadow-[0_-1px_0_var(--line),0_-18px_24px_-20px_var(--shadow)]',
+          )}
+        >
           {failure || (attempted && visibleIssues.length > 0) || (itemIssue && !lockedItem) ? (
             <p
               role="alert"
@@ -418,6 +430,8 @@ export function ItemEditor(props: EditorProps) {
             ) : null}
           </div>
         </div>
+        {/* Fim real do formulário: fora da tela, a barra está flutuando sobre os campos. */}
+        <div ref={barEnd} aria-hidden="true" className="-mt-6 h-px" />
       </form>
 
       {mode === 'edit' && removing ? (
@@ -439,6 +453,21 @@ export function ItemEditor(props: EditorProps) {
 
 const formatRange = (value: number | undefined) =>
   value === undefined ? '' : formatDecimal(value, value >= 10 ? 0 : 2, { fixed: value < 10 });
+
+/** Verdadeiro enquanto o marcador está abaixo da tela (a barra fixa cobre o conteúdo). */
+function useStuck(marker: React.RefObject<HTMLElement | null>) {
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const element = marker.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry) setStuck(!entry.isIntersecting && entry.boundingClientRect.top > 0);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [marker]);
+  return stuck;
+}
 
 /** Verdadeiro depois da hidratação: o E2E de desempenho mede até o editor responder. */
 function useHydrated() {
