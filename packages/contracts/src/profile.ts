@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { steamId64Schema } from './steam.js';
+import { vipStatusSchema } from './vip.js';
 
 /**
  * Perfil (`Profile`) básico da S03: a página pública de uma Conta em `stcarmine.com/<publicId>`.
@@ -38,6 +39,8 @@ export const currentSessionSchema = z
      * mostra os Primeiros passos sozinho só nela. Vale enquanto a sessão durar.
      */
     firstLogin: z.boolean(),
+    /** Período VIP da Conta: decide o cadeado dos Itens VIP no editor (S04). */
+    vip: vipStatusSchema,
   })
   .meta({ id: 'CurrentSession' });
 

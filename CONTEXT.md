@@ -38,11 +38,18 @@ Perfil cuja Conta reivindicada optou por esconder as Estatísticas e aparecer an
 ## Itens e loadout
 
 **Item** (`Item`):
-Uma peça cosmética de CS2 simulada pela plataforma (skin de arma, faca, luvas, agente, music kit, sticker, charm), com seus atributos.
+Uma peça cosmética de CS2 simulada pela plataforma (skin de arma, faca, luvas, agente ou music kit), com seus atributos.
 _Evitar_: skin (quando se fala de qualquer item)
 
 **Atributos do item**:
 Float (desgaste), seed (padrão), StatTrak, nametag, stickers e charms aplicados.
+
+**Sticker** (`sticker`):
+Adesivo aplicado numa skin de arma (até 5, com posição, rotação e desgaste). Não é um Item: não existe solto no Inventário.
+
+**Charm** (`keychain`):
+Chaveiro aplicado numa skin de arma (até 1, com posição e seed). Não é um Item: não existe solto no Inventário.
+_Evitar_: chaveiro (na interface, "charm" é o termo do jogo)
 
 **Arma padrão**:
 A arma sem skin, como vem no jogo. Não é um Item e nunca aparece no Inventário; é o que o jogador usa num slot sem Item equipado.

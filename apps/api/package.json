@@ -26,6 +26,7 @@
     "@carmine/contracts": "workspace:*",
     "@fastify/cookie": "11.1.2",
     "@fastify/static": "10.1.6",
+    "@ianlucas/cs2-lib": "catalog:",
     "@nestjs/common": "12.1.2",
     "@nestjs/core": "12.1.2",
     "@nestjs/platform-fastify": "12.1.2",

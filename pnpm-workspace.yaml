@@ -4,6 +4,8 @@ packages:
 
 # Versões compartilhadas entre os pacotes (usadas como "catalog:").
 catalog:
+  # cs2-lib: mesma versão no web (catálogo) e na API (validação), para os dois verem o mesmo catálogo.
+  "@ianlucas/cs2-lib": 9.5.0
   "@types/node": 24.19.1
   typescript: 6.0.3
   vitest: 5.0.3

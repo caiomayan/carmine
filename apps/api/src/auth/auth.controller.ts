@@ -188,6 +188,8 @@ export class AuthController {
       account: toProfile(account),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
+      // Período VIP (S04): lido de vip_periods no próximo commit.
+      vip: { active: false, endsAt: null },
     };
   }
 

@@ -17,12 +17,13 @@ export const DEFAULT_RETURN_PATH = '/';
 
 /**
  * Página do web para onde o login volta quando falha, com o motivo em `?erro=`:
- * `cancelado` (a pessoa desistiu na Steam), `invalido` (asserção recusada ou fluxo expirado) e
- * `indisponivel` (a Steam ou a nossa infraestrutura falhou).
+ * `cancelado` (a pessoa desistiu na Steam), `invalido` (asserção recusada ou fluxo expirado),
+ * `indisponivel` (a Steam ou a nossa infraestrutura falhou) e `limite` (tentativas demais em pouco
+ * tempo: o rate limit do login redireciona em vez de responder 429, porque é navegação).
  */
 export const LOGIN_ERROR_PATH = '/entrar';
 
-export type LoginError = 'cancelado' | 'invalido' | 'indisponivel';
+export type LoginError = 'cancelado' | 'invalido' | 'indisponivel' | 'limite';
 
 const MAX_RETURN_PATH_LENGTH = 512;
 
