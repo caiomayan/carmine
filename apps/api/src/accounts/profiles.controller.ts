@@ -14,6 +14,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { Loadouts } from '../loadout/loadouts.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { type Account, AccountsService } from './accounts.service.js';
 import { toProfile } from './profile.js';
@@ -25,7 +26,10 @@ const PUBLIC_ID = /^[1-9]\d{0,14}$/;
 @ApiTags('profiles')
 @Controller('profiles')
 export class ProfilesController {
-  constructor(@Inject(AccountsService) private readonly accounts: AccountsService) {}
+  constructor(
+    @Inject(AccountsService) private readonly accounts: AccountsService,
+    @Inject(Loadouts) private readonly loadouts: Loadouts,
+  ) {}
 
   @Get('by-steam-id/:steamId')
   @RateLimit('public')
@@ -54,7 +58,8 @@ export class ProfilesController {
     const account = PUBLIC_ID.test(publicId)
       ? await this.accounts.findByPublicId(Number(publicId))
       : null;
-    return toProfile(found(account));
+    const owner = found(account);
+    return toProfile(owner, await this.loadouts.showcase(owner.id));
   }
 }
 

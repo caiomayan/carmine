@@ -467,7 +467,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Itens equipados; slot ausente usa a Arma padrão",
+            "description": "Itens equipados do Preset ativo; slot ausente usa a Arma padrão. Sem Período VIP ativo, agentes e music kits ficam fora e o StatTrak e a nametag saem dos Itens",
             "content": {
               "application/json": {
                 "schema": {
@@ -1036,6 +1036,831 @@
           "inventory"
         ]
       }
+    },
+    "/api/loadout": {
+      "get": {
+        "operationId": "getLoadout",
+        "parameters": [
+          {
+            "name": "presetId",
+            "required": false,
+            "in": "query",
+            "description": "Ausente = o Preset ativo",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O Loadout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Loadout"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "Preset não encontrado (preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "O Loadout (Preset ativo) ou outro Preset, com todos os slots",
+        "tags": [
+          "loadout"
+        ]
+      }
+    },
+    "/api/loadout/equip": {
+      "post": {
+        "operationId": "equipItem",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EquipInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O Loadout e o que mudou",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Preset somente leitura sem VIP (preset_read_only), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item ou Preset não encontrado (item_not_found, preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Slot ou lado que não existe para o Item (invalid_slot, side_not_allowed)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Equipa um Item no slot dele, nos lados pedidos; devolve o que foi substituído",
+        "tags": [
+          "loadout"
+        ]
+      }
+    },
+    "/api/loadout/unequip": {
+      "post": {
+        "operationId": "unequipSlot",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnequipInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O Loadout e o que mudou",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Preset somente leitura sem VIP (preset_read_only), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item ou Preset não encontrado (item_not_found, preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Slot ou lado que não existe para o Item (invalid_slot, side_not_allowed)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "O slot volta à Arma padrão nos lados pedidos",
+        "tags": [
+          "loadout"
+        ]
+      }
+    },
+    "/api/loadout/assign": {
+      "post": {
+        "operationId": "assignLoadoutSlots",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssignInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O Loadout e o que mudou",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutChange"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Preset somente leitura sem VIP (preset_read_only), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Item ou Preset não encontrado (item_not_found, preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Slot ou lado que não existe para o Item (invalid_slot, side_not_allowed)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Define exatamente estes slots (o Desfazer: mande o previous de equip/unequip)",
+        "tags": [
+          "loadout"
+        ]
+      }
+    },
+    "/api/presets": {
+      "get": {
+        "operationId": "getPresets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Os Presets e o limite atual",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresetList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Os Presets, o principal primeiro",
+        "tags": [
+          "presets"
+        ]
+      },
+      "post": {
+        "operationId": "createPreset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePresetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "O Preset criado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Exige VIP (vip_required), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Já há 20 Presets (preset_limit)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Cria um Preset (VIP), cópia do Loadout atual ou vazio; não ativa",
+        "tags": [
+          "presets"
+        ]
+      }
+    },
+    "/api/presets/{id}": {
+      "patch": {
+        "operationId": "renamePreset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "id do Preset",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenamePresetInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O Preset renomeado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Preset somente leitura sem VIP (preset_read_only), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preset não encontrado (preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Renomeia um Preset",
+        "tags": [
+          "presets"
+        ]
+      },
+      "delete": {
+        "operationId": "deletePreset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "id do Preset",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Os Presets depois",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresetList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Preset somente leitura sem VIP (preset_read_only), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preset não encontrado (preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "O Preset principal não é apagado (preset_main)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Apaga um Preset extra; se era o ativo, o principal volta a ser o Loadout",
+        "tags": [
+          "presets"
+        ]
+      }
+    },
+    "/api/presets/{id}/activate": {
+      "post": {
+        "operationId": "activatePreset",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "id do Preset",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Os Presets depois",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PresetList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Preset somente leitura sem VIP (preset_read_only), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Preset não encontrado (preset_not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoadoutError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Ativa o Preset: ele passa a ser o Loadout (no jogo, no próximo connect ou !ws)",
+        "tags": [
+          "presets"
+        ]
+      }
     }
   },
   "info": {
@@ -1248,13 +2073,162 @@
         "type": "object",
         "properties": {
           "items": {
-            "maxItems": 0,
             "type": "array",
-            "items": {}
+            "items": {
+              "$ref": "#/components/schemas/ShowcaseItem"
+            }
           }
         },
         "required": [
           "items"
+        ],
+        "additionalProperties": false
+      },
+      "ShowcaseItem": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/LoadoutSlot"
+          },
+          "side": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LoadoutSide"
+              }
+            ]
+          },
+          "item": {
+            "$ref": "#/components/schemas/CS2BaseInventoryItem"
+          }
+        },
+        "required": [
+          "slot",
+          "side",
+          "item"
+        ],
+        "additionalProperties": false
+      },
+      "LoadoutSlot": {
+        "type": "string",
+        "pattern": "^(weapon_[a-z0-9_]+|knife|gloves|agent|musicKit)$"
+      },
+      "LoadoutSide": {
+        "type": "string",
+        "enum": [
+          "ct",
+          "t"
+        ]
+      },
+      "CS2BaseInventoryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "wear": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "statTrak": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999999
+          },
+          "nameTag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "stickers": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AppliedSticker"
+            }
+          },
+          "keychains": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/AppliedCharm"
+            }
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "AppliedSticker": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "schema": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "wear": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "rotation": {
+            "type": "number",
+            "minimum": -180,
+            "maximum": 180
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "AppliedCharm": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "seed": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id"
         ],
         "additionalProperties": false
       },
@@ -1294,11 +2268,18 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
           }
         },
         "required": [
           "active",
-          "endsAt"
+          "endsAt",
+          "endedAt"
         ],
         "additionalProperties": false
       },
@@ -1692,118 +2673,6 @@
         ],
         "additionalProperties": false
       },
-      "CS2BaseInventoryItem": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "maximum": 9007199254740991
-          },
-          "wear": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          },
-          "seed": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "statTrak": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 999999
-          },
-          "nameTag": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 64
-          },
-          "stickers": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/AppliedSticker"
-            }
-          },
-          "keychains": {
-            "type": "object",
-            "additionalProperties": {
-              "$ref": "#/components/schemas/AppliedCharm"
-            }
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      },
-      "AppliedSticker": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "maximum": 9007199254740991
-          },
-          "schema": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 9007199254740991
-          },
-          "wear": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          },
-          "rotation": {
-            "type": "number",
-            "minimum": -180,
-            "maximum": 180
-          },
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      },
-      "AppliedCharm": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "maximum": 9007199254740991
-          },
-          "seed": {
-            "type": "integer",
-            "minimum": -9007199254740991,
-            "maximum": 9007199254740991
-          },
-          "x": {
-            "type": "number"
-          },
-          "y": {
-            "type": "number"
-          },
-          "z": {
-            "type": "number"
-          }
-        },
-        "required": [
-          "id"
-        ],
-        "additionalProperties": false
-      },
       "InventoryItemInput": {
         "type": "object",
         "properties": {
@@ -1887,10 +2756,15 @@
               "type": "object",
               "properties": {
                 "slot": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/LoadoutSlot"
                 },
                 "side": {
-                  "$ref": "#/components/schemas/LoadoutSide"
+                  "nullable": true,
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/LoadoutSide"
+                    }
+                  ]
                 }
               },
               "required": [
@@ -1912,11 +2786,36 @@
                 },
                 "name": {
                   "type": "string"
+                },
+                "slots": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "slot": {
+                        "$ref": "#/components/schemas/LoadoutSlot"
+                      },
+                      "side": {
+                        "nullable": true,
+                        "allOf": [
+                          {
+                            "$ref": "#/components/schemas/LoadoutSide"
+                          }
+                        ]
+                      }
+                    },
+                    "required": [
+                      "slot",
+                      "side"
+                    ],
+                    "additionalProperties": false
+                  }
                 }
               },
               "required": [
                 "id",
-                "name"
+                "name",
+                "slots"
               ],
               "additionalProperties": false
             }
@@ -1927,13 +2826,6 @@
           "presets"
         ],
         "additionalProperties": false
-      },
-      "LoadoutSide": {
-        "type": "string",
-        "enum": [
-          "ct",
-          "t"
-        ]
       },
       "RemovedInventoryItem": {
         "type": "object",
@@ -1958,6 +2850,395 @@
           "restorableUntil"
         ],
         "additionalProperties": false
+      },
+      "Loadout": {
+        "type": "object",
+        "properties": {
+          "presetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "presetName": {
+            "type": "string"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "readOnly": {
+            "type": "boolean"
+          },
+          "readOnlyReason": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "vip_inactive"
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadoutEntry"
+            }
+          }
+        },
+        "required": [
+          "presetId",
+          "presetName",
+          "active",
+          "readOnly",
+          "readOnlyReason",
+          "entries"
+        ],
+        "additionalProperties": false
+      },
+      "LoadoutEntry": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/LoadoutSlot"
+          },
+          "side": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LoadoutSide"
+              }
+            ]
+          },
+          "group": {
+            "type": "string",
+            "enum": [
+              "knife",
+              "gloves",
+              "secondary",
+              "smg",
+              "rifle",
+              "heavy",
+              "equipment",
+              "agent",
+              "musicKit"
+            ]
+          },
+          "def": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "uid": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "notInGame": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "vip_inactive",
+              "plugin_unsupported"
+            ]
+          },
+          "strippedInGame": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "statTrak",
+                "nameTag"
+              ]
+            }
+          }
+        },
+        "required": [
+          "slot",
+          "side",
+          "group",
+          "def",
+          "uid",
+          "notInGame",
+          "strippedInGame"
+        ],
+        "additionalProperties": false
+      },
+      "LoadoutError": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "invalid_body",
+              "item_not_found",
+              "preset_not_found",
+              "invalid_slot",
+              "side_not_allowed",
+              "vip_required",
+              "preset_read_only",
+              "preset_main",
+              "preset_limit"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "EquipInput": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "sides": {
+            "minItems": 1,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadoutSide"
+            }
+          },
+          "presetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "uid"
+        ]
+      },
+      "LoadoutChange": {
+        "type": "object",
+        "properties": {
+          "loadout": {
+            "$ref": "#/components/schemas/Loadout"
+          },
+          "previous": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadoutAssignment"
+            }
+          }
+        },
+        "required": [
+          "loadout",
+          "previous"
+        ],
+        "additionalProperties": false
+      },
+      "LoadoutAssignment": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/LoadoutSlot"
+          },
+          "side": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LoadoutSide"
+              }
+            ]
+          },
+          "uid": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "slot",
+          "side",
+          "uid"
+        ],
+        "additionalProperties": false
+      },
+      "UnequipInput": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/LoadoutSlot"
+          },
+          "sides": {
+            "minItems": 1,
+            "maxItems": 2,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadoutSide"
+            }
+          },
+          "presetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "slot"
+        ]
+      },
+      "AssignInput": {
+        "type": "object",
+        "properties": {
+          "assignments": {
+            "minItems": 1,
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadoutAssignment"
+            }
+          },
+          "presetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "assignments"
+        ]
+      },
+      "PresetList": {
+        "type": "object",
+        "properties": {
+          "presets": {
+            "minItems": 1,
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Preset"
+            }
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  1
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  20
+                ]
+              }
+            ]
+          }
+        },
+        "required": [
+          "presets",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "Preset": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "main": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "readOnly": {
+            "type": "boolean"
+          },
+          "readOnlyReason": {
+            "nullable": true,
+            "type": "string",
+            "enum": [
+              "vip_inactive"
+            ]
+          },
+          "equippedCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "main",
+          "active",
+          "readOnly",
+          "readOnlyReason",
+          "equippedCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CreatePresetInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          },
+          "from": {
+            "default": "current",
+            "type": "string",
+            "enum": [
+              "current",
+              "empty"
+            ]
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "RenamePresetInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "name"
+        ]
       }
     }
   }
