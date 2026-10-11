@@ -1,13 +1,15 @@
 import { cn } from '@/lib/utils';
 
+/** Iniciais das duas primeiras palavras que começam com letra ("Jogador #10123" vira "J"). */
 function initials(name: string): string {
   const letters = name
     .trim()
     .split(/\s+/)
-    .slice(0, 2)
     .map((word) => Array.from(word)[0] ?? '')
+    .filter((char) => /\p{L}/u.test(char))
+    .slice(0, 2)
     .join('');
-  return letters.toLocaleUpperCase('pt-BR') || '?';
+  return letters.toLocaleUpperCase('pt-BR') || (Array.from(name.trim())[0] ?? '?');
 }
 
 /**

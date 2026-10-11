@@ -56,7 +56,13 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
   if (status === 'anonymous' || !account) {
     if (pathname === SIGN_IN_PATH) return null;
     return (
-      <Button asChild size="sm" className="animate-fade-up">
+      // Discreto na barra: o preenchido invertido fica para a ação principal de cada página.
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        className="animate-fade-up bg-surface-2 hover:bg-line"
+      >
         <Link href={signInHref(pathname) as Route} data-testid="sign-in">
           {labels.signIn}
         </Link>

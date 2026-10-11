@@ -1,7 +1,7 @@
 'use client';
 
 import { BoxIcon, ServerIcon, SquareTerminalIcon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useRef } from 'react';
@@ -34,6 +34,9 @@ const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 export function FirstSteps({ labels }: { labels: FirstStepsLabels }) {
   const { firstSteps, account } = useSession();
   const pathname = usePathname();
+  // Movimento reduzido: sem encolher a altura (o conteúdo abaixo pularia); só um fade curto.
+  const reduce = useReducedMotion();
+  const hidden = reduce ? { opacity: 0 } : { height: 0, opacity: 0 };
   const headingRef = useRef<HTMLHeadingElement>(null);
   const wasClosed = useRef(false);
 
@@ -64,10 +67,10 @@ export function FirstSteps({ labels }: { labels: FirstStepsLabels }) {
       {firstSteps.open && account ? (
         <motion.div
           key="first-steps"
-          initial={{ height: 0, opacity: 0 }}
+          initial={hidden}
           animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.36, ease: EASE_OUT }}
+          exit={hidden}
+          transition={{ duration: reduce ? 0.16 : 0.36, ease: EASE_OUT }}
           className="overflow-hidden"
         >
           <section

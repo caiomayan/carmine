@@ -38,7 +38,10 @@ jobs:
       - run: pnpm build
       # Integração com Postgres e Valkey reais via Testcontainers (Docker do runner).
       - run: pnpm test
-      # E2E do web contra o build de produção do passo anterior (smoke, temas, 404, axe).
+      # E2E do web contra os builds de produção do passo anterior (smoke, temas, 404, axe e o
+      # login Steam completo da S03): o Playwright sobe a Steam OpenID falsa, a API e o web; a
+      # API precisa do Postgres e do Valkey do Compose.
+      - run: pnpm infra:up
       - run: pnpm --filter @carmine/web exec playwright install --with-deps chromium
       - run: pnpm --filter @carmine/web test:e2e
       - name: OpenAPI versionado está atualizado

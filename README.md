@@ -31,7 +31,9 @@ pnpm typecheck
 pnpm test        # unitários + integração (Testcontainers; precisa do Docker rodando)
 pnpm build
 
-# E2E do web (Playwright + axe) contra o build de produção; na primeira vez, instale o Chromium:
+# E2E do web (Playwright + axe) contra os builds de produção; na primeira vez, instale o Chromium.
+# O Playwright sobe a Steam OpenID falsa (:4555), a API (:3333) e o web (:3000) e precisa do
+# Postgres e do Valkey no ar (pnpm infra:up); o que já estiver rodando nessas portas é reaproveitado.
 pnpm --filter @carmine/web exec playwright install chromium
 pnpm --filter @carmine/web test:e2e
 
@@ -94,7 +96,7 @@ pnpm --filter @carmine/api fake-steam 76561198000000001   # escuta em http://127
 # no apps/api/.env: STEAM_OPENID_URL=http://127.0.0.1:4555/openid/login
 ```
 
-Depois, `http://localhost:3000/api/auth/steam/login?returnTo=/` faz o login completo. Mutações com sessão exigem o cabeçalho `x-csrf-token` com o valor do cookie `carmine_csrf` (ou do `csrfToken` de `GET /api/me`).
+Depois, "Entrar" na barra superior (ou `http://localhost:3000/entrar`) faz o login completo. Para entrar como outra Conta sem reiniciar a Steam falsa, crie no navegador o cookie `fake_steam_id=<SteamID64>` no host `127.0.0.1`; `fake_steam_action=cancel` simula a desistência na Steam. Mutações com sessão exigem o cabeçalho `x-csrf-token` com o valor do cookie `carmine_csrf` (ou do `csrfToken` de `GET /api/me`).
 
 ## Steam Web API
 
