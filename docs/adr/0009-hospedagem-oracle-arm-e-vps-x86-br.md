@@ -4,5 +4,8 @@ Web, API, Postgres e Valkey rodam em Docker Compose na instância Oracle Always 
 
 ## Consequences
 
+- A instalação do servidor dedicado do CS2 ocupa cerca de 69 GB (medido em 2026-10-10). A VPS precisa de no mínimo 100 GB de disco (120 GB ou mais para folga de updates); planos de 50–60 GB não servem.
+- Até a VPS de produção ser contratada (previsão: fim de 2026, por orçamento), o CS2 roda no PC do autor e testes pela internet usam créditos da AWS numa instância ligada só durante as sessões.
+
 - A Oracle recolhe instâncias Always Free ociosas (menos de 20% de uso por 7 dias): manter alerta.
 - O desenvolvimento usa um servidor CS2 local no Windows do autor, que também serve de staging para cada update do CS2.
