@@ -73,7 +73,8 @@ const TYPE_OF_LIB: Partial<Record<string, CatalogType>> = {
 };
 
 let loaded = false;
-function economy() {
+/** A economia da cs2-lib carregada com os nomes em PT-BR (só no servidor). */
+export function economy() {
   if (!loaded) {
     CS2Economy.load({ items: CS2_ITEMS, language: brazilian });
     loaded = true;

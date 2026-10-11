@@ -13,6 +13,7 @@
     "mainNav": "Principal",
     "nav": {
       "servers": "Servidores",
+      "loadout": "Loadout",
       "inventory": "Inventário"
     },
     "theme": {
@@ -113,8 +114,10 @@
       "suggestions": "Sugestões para começar",
       "pathTitle": "Da escolha ao jogo",
       "step1": "Adicione uma skin ao Inventário, com float, seed e stickers do seu jeito.",
-      "step2": "Equipe no Loadout. Isso chega aqui no site em breve.",
-      "step3": "No servidor, digite <cmd>!ws</cmd> ou reconecte para ver no jogo."
+      "step2": "Equipe no Loadout, em CT, TR ou nos dois lados.",
+      "step3": "No servidor, digite <cmd>!ws</cmd> ou reconecte para ver no jogo.",
+      "quickEquip": "Adicionar e equipar",
+      "quickEquipLabel": "Adicionar e equipar {name}"
     },
     "card": {
       "actions": "Ações de {name}",
@@ -123,7 +126,14 @@
       "statTrak": "StatTrak™",
       "stickers": "{count, plural, one {# sticker} other {# stickers}}",
       "charm": "1 charm",
-      "vip": "VIP"
+      "vip": "VIP",
+      "equipped": "Equipado: {sides}",
+      "equipIn": {
+        "ct": "Equipar em CT",
+        "t": "Equipar em TR",
+        "both": "Equipar nos dois lados",
+        "musicKit": "Equipar"
+      }
     },
     "added": "{name} entrou no seu Inventário.",
     "saved": "Alterações em {name} salvas.",
@@ -263,7 +273,13 @@
       "emptyTitle": "Nenhum Item equipado ainda",
       "emptyVisitor": "Quando {name} equipar Itens, o Loadout aparece aqui do jeito que fica no jogo.",
       "emptyOwner": "Monte o Inventário e equipe Itens: o Loadout aparece aqui do jeito que fica no jogo.",
-      "toInventory": "Ir para o Inventário"
+      "toInventory": "Ir para o Inventário",
+      "sides": {
+        "ct": "CT",
+        "t": "TR",
+        "both": "CT e TR"
+      },
+      "toLoadout": "Editar o Loadout"
     },
     "unavailable": {
       "title": "Não conseguimos carregar este Perfil agora",
@@ -490,6 +506,154 @@
     },
     "drag3d": "Arrastar no 3D",
     "drag3dLabel": "Arrastar {name} na prévia 3D",
-    "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado."
+    "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado.",
+    "addAndEquip": "Adicionar e equipar",
+    "gameLimitations": {
+      "stattrak_not_counted": "No jogo, o contador StatTrak aparece, mas não conta abates: a cada connect ou !ws ele volta ao valor salvo."
+    }
+  },
+  "loadout": {
+    "title": "Loadout",
+    "subtitle": "O que você usa nos Servidores Carmine. Vale no próximo connect ou quando você digita <cmd>!ws</cmd> no servidor.",
+    "sidesLabel": "Lado",
+    "sides": {
+      "ct": "Contra-Terroristas",
+      "t": "Terroristas"
+    },
+    "sidesShort": {
+      "ct": "CT",
+      "t": "TR",
+      "both": "CT e TR"
+    },
+    "groups": {
+      "gear": "Faca, luvas e personagem",
+      "secondary": "Pistolas",
+      "smg": "Submetralhadoras",
+      "rifle": "Rifles",
+      "heavy": "Pesadas",
+      "equipment": "Equipamento"
+    },
+    "slots": {
+      "knife": "Faca",
+      "gloves": "Luvas",
+      "agent": "Agente",
+      "musicKit": "Music kit"
+    },
+    "defaultWeapon": "Arma padrão",
+    "defaultGear": "Padrão do jogo",
+    "defaultAgent": "Agente do mapa",
+    "notInGame": {
+      "short": "Fora do jogo",
+      "vip_inactive": "Agentes e music kits são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
+      "plugin_unsupported": "O servidor ainda não consegue aplicar este Item no jogo. Ele continua equipado e no seu Inventário."
+    },
+    "stripped": {
+      "short": "Parte fora do jogo",
+      "statTrak": "StatTrak",
+      "nameTag": "nametag",
+      "body": "Sem Período VIP ativo, {attributes} não vão para o jogo. O Item vai, e eles voltam com o VIP."
+    },
+    "panel": {
+      "label": "Slot selecionado",
+      "empty": "Nada equipado: no jogo você usa a Arma padrão.",
+      "emptyGear": "Nada equipado: no jogo você usa o padrão do jogo.",
+      "choose": "Do seu Inventário",
+      "none": "Você não tem Itens para este slot.",
+      "addFromCatalog": "Adicionar do catálogo",
+      "bothSides": "Equipar também em {side}",
+      "current": "Equipado",
+      "equip": "Equipar {name}",
+      "unequip": "Desequipar",
+      "edit": "Editar Item",
+      "readOnly": "Este Preset está somente leitura: sem VIP ativo, só o Principal pode ser editado."
+    },
+    "notices": {
+      "equipped": "{item} equipado em {sides}.",
+      "replaced": "{item} substituiu {previous} em {sides}.",
+      "unequipped": "{slot} voltou ao padrão em {sides}.",
+      "undo": "Desfazer",
+      "undoing": "Desfazendo",
+      "undone": "Desfeito. O Loadout voltou ao que era.",
+      "undoFailed": "Não deu para desfazer agora. Confira o Loadout e tente de novo.",
+      "failed": "Não deu para mudar o Loadout agora. Tente de novo.",
+      "inGame": "{item} equipado em {sides}. No servidor, digite !ws ou reconecte para ver no jogo."
+    },
+    "vip": {
+      "ending_soon": "Seu VIP acaba {date}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ended_today": "Seu VIP acabou hoje. Os Itens VIP continuam no seu Inventário, mas não vão para o jogo, e os Presets extras ficaram somente leitura."
+    },
+    "presets": {
+      "title": "Presets",
+      "count": "{count} de {limit}",
+      "label": "Presets",
+      "active": "Ativo",
+      "activate": "Ativar {name}",
+      "activated": "{name} é o seu Loadout agora.",
+      "equippedCount": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
+      "readOnly": "Somente leitura",
+      "readOnlyBody": "Sem Período VIP ativo, os Presets extras ficam somente leitura: dá para ver, mas não editar, renomear, ativar nem apagar. Nada foi apagado; com o VIP de volta, tudo volta a funcionar.",
+      "activeReadOnly": "O Preset ativo, {name}, ficou somente leitura sem VIP. Ele continua valendo no jogo, sem os Itens VIP. Para mudar o Loadout, ative o Principal.",
+      "activateMain": "Ativar o Principal",
+      "new": "Novo Preset",
+      "freeLimit": "No plano grátis você tem 1 Preset, o Principal. Com VIP, são até {limit}, ativáveis de uma vez.",
+      "limitReached": "Você chegou a {limit} Presets. Apague um para criar outro.",
+      "actions": "Ações de {name}",
+      "rename": "Renomear",
+      "delete": "Apagar",
+      "view": "Ver Itens",
+      "create": {
+        "title": "Novo Preset",
+        "body": "Um Loadout salvo com nome, para trocar tudo de uma vez.",
+        "name": "Nome",
+        "namePlaceholder": "Ex.: Retake de sexta",
+        "nameHint": "Até {max} caracteres.",
+        "from": "Começar com",
+        "fromCurrent": "Uma cópia do Loadout atual",
+        "fromEmpty": "Tudo no padrão do jogo",
+        "submit": "Criar Preset",
+        "created": "Preset {name} criado. Ative quando quiser usá-lo."
+      },
+      "renameDialog": {
+        "title": "Renomear {name}",
+        "submit": "Salvar nome",
+        "renamed": "Agora o Preset se chama {name}."
+      },
+      "deleteDialog": {
+        "title": "Apagar {name}?",
+        "body": "Os Itens continuam no Inventário; só este Preset deixa de existir.",
+        "bodyActive": "Os Itens continuam no Inventário. Este é o Preset ativo: o Principal passa a ser o seu Loadout.",
+        "submit": "Apagar Preset",
+        "deleted": "Preset {name} apagado."
+      },
+      "saving": "Salvando",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "name": "Dê um nome de 1 a {max} caracteres.",
+      "invalid_body": "Algo não está no formato esperado. Recarregue a página e tente de novo.",
+      "item_not_found": "Este Item não está mais no seu Inventário.",
+      "preset_not_found": "Este Preset não existe mais. Recarregue a página.",
+      "invalid_slot": "Este Item não vai neste slot.",
+      "side_not_allowed": "Este Item não existe nesse lado.",
+      "vip_required": "Presets extras exigem um Período VIP ativo.",
+      "preset_read_only": "Este Preset está somente leitura sem VIP ativo.",
+      "preset_main": "O Preset Principal não pode ser apagado.",
+      "preset_limit": "Você chegou ao limite de Presets.",
+      "network": "Não conseguimos falar com o servidor. Tente de novo."
+    },
+    "signedOut": {
+      "title": "Entre para montar o seu Loadout",
+      "body": "O Loadout é o que você usa no jogo e pertence à sua Conta. Entre com a Steam para equipar Itens.",
+      "action": "Entrar com a Steam"
+    },
+    "unavailable": {
+      "title": "Não conseguimos carregar o seu Loadout agora",
+      "body": "Nada mudou no que está equipado. Tente de novo em alguns instantes."
+    },
+    "emptyInventory": {
+      "body": "Seu Inventário ainda está vazio. Adicione uma skin para equipar aqui e ver no jogo.",
+      "action": "Ir para o Inventário"
+    }
   }
 }

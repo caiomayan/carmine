@@ -3,7 +3,11 @@ import {
   currentSessionSchema,
   type Inventory,
   inventorySchema,
+  type Loadout,
+  loadoutSchema,
+  type PresetList,
   type Profile,
+  presetListSchema,
   profileSchema,
 } from '@carmine/contracts';
 import { cookies, headers } from 'next/headers';
@@ -61,18 +65,36 @@ export type InventoryResult =
   | { status: 'anonymous' }
   | { status: 'unavailable' };
 
-export const getInventory = cache(async (): Promise<InventoryResult> => {
+/** Leitura da Conta da sessão: sem sessão, `anonymous`; com a API fora, `unavailable`. */
+type AccountRead<T> = { status: 'ok'; data: T } | { status: 'anonymous' } | { status: 'unavailable' };
+
+async function readAccount<T>(path: string, schema: { parse: (value: unknown) => T }): Promise<AccountRead<T>> {
   const cookie = await sessionCookie();
   if (!cookie) return { status: 'anonymous' };
   try {
-    const response = await apiGet('/inventory', { cookie, visitorIp: await visitorIp() });
+    const response = await apiGet(path, { cookie, visitorIp: await visitorIp() });
     if (response.status === 401) return { status: 'anonymous' };
     if (!response.ok) return { status: 'unavailable' };
-    return { status: 'ok', inventory: inventorySchema.parse(await response.json()) };
+    return { status: 'ok', data: schema.parse(await response.json()) };
   } catch {
     return { status: 'unavailable' };
   }
+}
+
+export const getInventory = cache(async (): Promise<InventoryResult> => {
+  const result = await readAccount('/inventory', inventorySchema);
+  return result.status === 'ok' ? { status: 'ok', inventory: result.data } : result;
 });
+
+/** O Loadout (o Preset ativo) da Conta da sessão (S05). */
+export const getLoadout = cache(
+  (): Promise<AccountRead<Loadout>> => readAccount('/loadout', loadoutSchema),
+);
+
+/** Os Presets da Conta da sessão e o limite do plano (S05). */
+export const getPresets = cache(
+  (): Promise<AccountRead<PresetList>> => readAccount('/presets', presetListSchema),
+);
 
 export type ProfileResult =
   | { status: 'found'; profile: Profile }
