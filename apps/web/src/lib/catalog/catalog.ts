@@ -118,7 +118,6 @@ function toEntry(item: CS2EconomyItem, type: CatalogType): CatalogEntry {
 
 const collator = new Intl.Collator('pt-BR', { sensitivity: 'base', numeric: true });
 const TYPE_ORDER = new Map(CATALOG_TYPES.map((type, index) => [type, index]));
-const RARITY_ORDER = new Map(RARITIES.map((rarity, index) => [rarity, index]));
 
 let index: CatalogEntry[] | null = null;
 let byId: Map<number, CatalogEntry> | null = null;
