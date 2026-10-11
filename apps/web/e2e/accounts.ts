@@ -48,9 +48,12 @@ export async function signInFromHeader(page: Page, steamId: string) {
   await page.getByTestId('steam-login').click();
 }
 
+/** SteamID64 da "Staff" que assina as concessões de VIP dos E2E no log de auditoria. */
+const E2E_STAFF_STEAM_ID = '76561197960265729';
+
 /**
- * Concede um Período VIP pelo CLI de operação da API (a concessão com auditoria da Staff é da
- * S05). A Conta precisa existir: entre com a Steam falsa antes.
+ * Concede um Período VIP pelo CLI de operação da API, como a Staff (com registro no log de
+ * auditoria). A Conta precisa existir: entre com a Steam falsa antes.
  */
 export function grantVip(steamId: string, days = 1) {
   execFileSync(
@@ -64,6 +67,10 @@ export function grantVip(steamId: string, days = 1) {
       steamId,
       '--days',
       String(days),
+      '--by',
+      E2E_STAFF_STEAM_ID,
+      '--reason',
+      'E2E',
     ],
     { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
   );
