@@ -1,11 +1,27 @@
 import { z } from 'zod';
+import { cs2ItemSchema } from './inventory.js';
+import { loadoutSlotSchema, loadoutSlotSideSchema } from './loadout.js';
 import { steamId64Schema } from './steam.js';
 import { vipStatusSchema } from './vip.js';
 
 /**
- * Perfil (`Profile`) básico da S03: a página pública de uma Conta em `stcarmine.com/<publicId>`.
- * `avatarUrl` nulo vale o avatar neutro (a Steam ainda não respondeu). O Loadout em vitrine
- * fica vazio até existir Loadout (S05).
+ * Um Item do Loadout em vitrine: só o que vai para o jogo, já sem os atributos VIP quando a
+ * Conta não tem Período VIP ativo (a mesma regra do `equipped/v5`).
+ */
+export const showcaseItemSchema = z
+  .object({
+    slot: loadoutSlotSchema,
+    side: loadoutSlotSideSchema,
+    item: cs2ItemSchema,
+  })
+  .meta({ id: 'ShowcaseItem' });
+
+export type ShowcaseItem = z.infer<typeof showcaseItemSchema>;
+
+/**
+ * Perfil (`Profile`) da S03: a página pública de uma Conta em `stcarmine.com/<publicId>`.
+ * `avatarUrl` nulo vale o avatar neutro (a Steam ainda não respondeu). O Loadout em vitrine é o
+ * Preset ativo (S05), na ordem dos slots do Loadout.
  */
 export const profileSchema = z
   .object({
@@ -19,8 +35,7 @@ export const profileSchema = z
     claimed: z.boolean(),
     loadoutShowcase: z
       .object({
-        /** Sempre vazio até a S05. */
-        items: z.array(z.unknown()).max(0),
+        items: z.array(showcaseItemSchema),
       })
       .meta({ id: 'LoadoutShowcase' }),
   })

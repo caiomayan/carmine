@@ -135,7 +135,8 @@
       "preset": "Preset {name}",
       "sides": {
         "ct": "CT",
-        "t": "TR"
+        "t": "TR",
+        "all": "CT e TR"
       },
       "affected": "Ao remover, esses lugares voltam à Arma padrão.",
       "notInUse": "Ele não está equipado nem em Presets.",

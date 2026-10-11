@@ -38,6 +38,7 @@ import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { VipPeriods } from '../vip/vip-periods.js';
+import { toVipStatus } from '../vip/vip-status.js';
 import { LoginRateLimitFilter, loginErrorUrl } from './login-errors.js';
 import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
@@ -196,7 +197,7 @@ export class AuthController {
       account: toProfile(account),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
-      vip: { active: vip.active, endsAt: vip.endsAt?.toISOString() ?? null },
+      vip: toVipStatus(vip),
     };
   }
 

@@ -273,10 +273,12 @@ describe('Inventário', () => {
       expect(currentSessionSchema.parse(freeMe.json()).vip).toEqual({
         active: false,
         endsAt: null,
+        endedAt: null,
       });
       expect(currentSessionSchema.parse(vipMe.json()).vip).toEqual({
         active: true,
         endsAt: new Date(endsAt).toISOString(),
+        endedAt: null,
       });
     });
   });
