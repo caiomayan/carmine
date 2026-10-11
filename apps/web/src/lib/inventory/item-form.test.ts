@@ -169,9 +169,11 @@ describe('validação no navegador (a API confere de novo)', () => {
     expect(issues).toEqual([{ field: 'nameTag', code: 'invalid_nametag' }]);
   });
 
-  it('dois stickers no mesmo slot', () => {
+  it('dois stickers podem dividir um slot, mas não um slot que a arma não tem', () => {
     let form = addSticker(addSticker(ok, AK, sticker(1)), AK, sticker(2));
     form = { ...form, stickers: form.stickers.map((s) => ({ ...s, schema: 1 })) };
+    expect(validateForm(AK, form, { vip: true })).toEqual([]);
+    form = { ...form, stickers: form.stickers.map((s, i) => ({ ...s, schema: i === 1 ? 4 : 1 })) };
     expect(validateForm(AK, form, { vip: true })).toEqual([
       { field: 'stickers.1.schema', code: 'invalid_sticker' },
     ]);

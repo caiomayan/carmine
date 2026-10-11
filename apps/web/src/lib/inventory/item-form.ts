@@ -197,12 +197,16 @@ export function validateForm(
     if (!vip) issues.push({ field: 'nameTag', code: 'vip_required' });
     else if (!NAMETAG_RE.test(nameTag)) issues.push({ field: 'nameTag', code: 'invalid_nametag' });
   }
-  const seen = new Set<number>();
+  // Dois stickers podem dividir um slot (é assim que o 5º cabe numa arma de 4): só o slot
+  // fora do modelo é inválido.
   form.stickers.forEach((sticker, index) => {
-    if (sticker.schema >= spec.stickerSlots || seen.has(sticker.schema)) {
+    if (
+      !Number.isInteger(sticker.schema) ||
+      sticker.schema < 0 ||
+      sticker.schema >= spec.stickerSlots
+    ) {
       issues.push({ field: `stickers.${index}.schema`, code: 'invalid_sticker' });
     }
-    seen.add(sticker.schema);
   });
   if (spec.charm && form.charm && !inRange(form.charm.seed, spec.charm.seed)) {
     issues.push({ field: 'charm.seed', code: 'invalid_keychain', range: spec.charm.seed });

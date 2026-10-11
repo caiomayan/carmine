@@ -1,0 +1,298 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { LockIcon } from '@/components/icons/animated/lock';
+import { AnimatedIcon } from '@/components/icons/animated-icon';
+import { WEAR_TIER_MAX, WEAR_TIERS, wearTier } from '@/lib/catalog/wear';
+import { formatDecimal, parseDecimal } from '@/lib/decimal';
+import { cn } from '@/lib/utils';
+
+/**
+ * Campos do editor de Item. Tudo é formulário nativo (texto, slider, interruptor), então tudo
+ * funciona com teclado e leitor de tela; o arrasto no 3D é só um atalho (Princípios
+ * transversais). Cada campo liga o rótulo, a dica e o erro por `aria-describedby`.
+ */
+
+export function FieldShell({
+  id,
+  label,
+  aside,
+  hint,
+  error,
+  locked,
+  children,
+  className,
+}: {
+  id: string;
+  label: ReactNode;
+  aside?: ReactNode;
+  hint?: ReactNode;
+  error?: ReactNode;
+  locked?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn('grid gap-2', className)} data-field={id}>
+      <div className="flex min-h-4 items-baseline justify-between gap-3">
+        <label htmlFor={id} className="inline-flex items-center gap-1.5 label-caps text-[10.5px]">
+          {label}
+          {locked ? (
+            <span data-icon-trigger className="inline-flex text-status-vip">
+              <AnimatedIcon icon={LockIcon} size={11} />
+            </span>
+          ) : null}
+        </label>
+        {aside ? <span className="text-[13px] font-semibold tabular-nums">{aside}</span> : null}
+      </div>
+      {children}
+      {error ? (
+        <p id={`${id}-error`} className="flex items-start gap-1.5 text-[12.5px] text-foreground">
+          <span
+            aria-hidden="true"
+            className="mt-1.5 size-1.5 shrink-0 rounded-full bg-status-danger"
+          />
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={`${id}-hint`} className="text-[12.5px] text-muted-foreground">
+          {hint}
+        </p>
+      ) : null}
+      {locked ? (
+        <p id={`${id}-locked`} className="text-[12.5px] text-muted-foreground">
+          {locked}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+export const describedBy = (
+  id: string,
+  { error, hint, locked }: { error?: unknown; hint?: unknown; locked?: unknown },
+) =>
+  [error ? `${id}-error` : hint ? `${id}-hint` : null, locked ? `${id}-locked` : null]
+    .filter(Boolean)
+    .join(' ') || undefined;
+
+const inputClass =
+  'min-h-(--tap) w-full rounded-md bg-surface-2 px-3 text-[14px] tabular-nums transition-[background-color,box-shadow] duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-[color-mix(in_srgb,var(--text)_12%,var(--surface))] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] disabled:text-faint';
+
+/**
+ * Número digitado (aceita "0,15" e "0.15"). Guarda o texto enquanto a pessoa digita; o valor
+ * só muda quando o texto é um número. Fora de foco, mostra o valor formatado.
+ */
+export function DecimalInput({
+  id,
+  value,
+  onChange,
+  decimals,
+  invalid,
+  describedBy: described,
+  testId,
+  className,
+  disabled,
+}: {
+  id: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+  decimals: number;
+  invalid?: boolean;
+  describedBy?: string;
+  testId?: string;
+  className?: string;
+  disabled?: boolean;
+}) {
+  const format = (n: number | null) => (n === null ? '' : formatDecimal(n, decimals));
+  const [text, setText] = useState(() => format(value));
+  const focused = useRef(false);
+
+  useEffect(() => {
+    if (!focused.current) setText(value === null ? '' : formatDecimal(value, decimals));
+  }, [value, decimals]);
+
+  return (
+    <input
+      id={id}
+      type="text"
+      inputMode={decimals > 0 ? 'decimal' : 'numeric'}
+      autoComplete="off"
+      spellCheck={false}
+      value={text}
+      disabled={disabled}
+      data-testid={testId}
+      aria-invalid={invalid || undefined}
+      aria-describedby={described}
+      onFocus={() => {
+        focused.current = true;
+      }}
+      onBlur={() => {
+        focused.current = false;
+        setText(format(value));
+      }}
+      onChange={(event) => {
+        setText(event.target.value);
+        onChange(parseDecimal(event.target.value));
+      }}
+      className={cn(inputClass, className)}
+    />
+  );
+}
+
+export function TextInput({ className, ...props }: React.ComponentProps<'input'>) {
+  return <input type="text" className={cn(inputClass, className)} {...props} />;
+}
+
+/** Slider nativo com a parte preenchida acompanhando o valor. */
+export function RangeInput({
+  min,
+  max,
+  step,
+  value,
+  onChange,
+  label,
+  valueText,
+  testId,
+  disabled,
+}: {
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onChange: (value: number) => void;
+  label: string;
+  valueText?: string;
+  testId?: string;
+  disabled?: boolean;
+}) {
+  const span = max - min || 1;
+  const percent = Math.min(Math.max(((value - min) / span) * 100, 0), 100);
+  return (
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={Number.isFinite(value) ? value : min}
+      disabled={disabled}
+      aria-label={label}
+      aria-valuetext={valueText}
+      data-testid={testId}
+      onChange={(event) => onChange(Number(event.target.value))}
+      style={{ '--p': `${percent}%` } as CSSProperties}
+      className="range"
+    />
+  );
+}
+
+/**
+ * O float: valor digitado, slider dentro da faixa da skin e a régua das faixas de desgaste
+ * (NF a VG) recortada nessa faixa, para ver em que desgaste o valor cai.
+ */
+export function FloatField({
+  range,
+  value,
+  onChange,
+  error,
+}: {
+  range: { min: number; max: number };
+  value: number | null;
+  onChange: (value: number | null) => void;
+  error?: string;
+}) {
+  const t = useTranslations('itemEditor');
+  const id = useId();
+  const current = value ?? range.min;
+  const tier = wearTier(Math.min(Math.max(current, 0), 1));
+  const hint = t('floatRange', {
+    min: formatDecimal(range.min, 2, { fixed: true }),
+    max: formatDecimal(range.max, 2, { fixed: true }),
+  });
+  const span = range.max - range.min || 1;
+  const segments = WEAR_TIERS.map((key, index) => {
+    const start = index === 0 ? 0 : WEAR_TIER_MAX[WEAR_TIERS[index - 1] ?? 'fn'];
+    const from = Math.max(start, range.min);
+    const to = Math.min(WEAR_TIER_MAX[key], range.max);
+    return { key, width: to > from ? ((to - from) / span) * 100 : 0 };
+  }).filter((segment) => segment.width > 0);
+
+  return (
+    <FieldShell
+      id={id}
+      label={t('float')}
+      aside={<span data-testid="wear-tier">{t(`wear.${tier}`)}</span>}
+      hint={hint}
+      error={error}
+    >
+      <div className="grid grid-cols-[minmax(0,1fr)_7.5rem] items-center gap-3 max-md:grid-cols-[minmax(0,1fr)_6.5rem]">
+        <div className="grid gap-1">
+          <RangeInput
+            min={range.min}
+            max={range.max}
+            step={0.0001}
+            value={current}
+            onChange={(next) => onChange(Number(next.toFixed(6)))}
+            label={t('float')}
+            valueText={`${formatDecimal(current, 6)} · ${t(`wear.${tier}`)}`}
+          />
+          <div
+            aria-hidden="true"
+            className="flex text-[10px] font-semibold tracking-[0.08em] text-muted-foreground"
+          >
+            {segments.map((segment) => (
+              <span
+                key={segment.key}
+                style={{ width: `${segment.width}%` }}
+                className={cn(
+                  'truncate border-l border-line pl-1 first:border-l-0 first:pl-0',
+                  segment.key === tier && 'text-foreground',
+                )}
+              >
+                {segment.width > 7 ? t(`wearShort.${segment.key}`) : ''}
+              </span>
+            ))}
+          </div>
+        </div>
+        <DecimalInput
+          id={id}
+          value={value}
+          onChange={onChange}
+          decimals={6}
+          invalid={!!error}
+          describedBy={describedBy(id, { error, hint })}
+          testId="field-wear"
+          className="text-right"
+        />
+      </div>
+    </FieldShell>
+  );
+}
+
+/** Linha de opção com interruptor (StatTrak), com cadeado VIP quando for o caso. */
+export function ToggleRow({
+  id,
+  label,
+  checked,
+  onLabel,
+  offLabel,
+  children,
+}: {
+  id: string;
+  label: ReactNode;
+  checked: boolean;
+  onLabel: string;
+  offLabel: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex min-h-(--tap) items-center justify-between gap-3 rounded-md bg-surface-2 px-3">
+      <span id={`${id}-state`} className="text-[14px]">
+        {checked ? onLabel : offLabel}
+      </span>
+      <span className="sr-only">{label}</span>
+      {children}
+    </div>
+  );
+}

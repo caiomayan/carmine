@@ -22,3 +22,6 @@ export const RARITIES = [
   'contraband',
 ] as const;
 export type Rarity = (typeof RARITIES)[number];
+
+/** Itens por página no catálogo e nas buscas de stickers e charms. */
+export const CATALOG_PAGE_SIZE = 48;

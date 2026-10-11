@@ -2,6 +2,7 @@ import { CS2_ITEMS, CS2Economy, type CS2EconomyItem } from '@ianlucas/cs2-lib';
 import { brazilian } from '@ianlucas/cs2-lib/translations/brazilian';
 import {
   type AttachmentType,
+  CATALOG_PAGE_SIZE,
   CATALOG_TYPES,
   type CatalogType,
   RARITIES,
@@ -17,7 +18,8 @@ import {
  * (CONTEXT.md). Stickers e charms não são Itens: aparecem só para aplicar numa skin de arma.
  */
 
-export const CATALOG_PAGE_SIZE = 48;
+export { CATALOG_PAGE_SIZE };
+
 const MAX_PAGES = 10;
 
 /** Uma entrada do catálogo, só com o que a grade e os filtros usam. */

@@ -6,6 +6,7 @@ import {
   type CurrentSession,
   currentSessionSchema,
   type Profile,
+  type VipStatus,
 } from '@carmine/contracts';
 import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
@@ -28,6 +29,8 @@ type SessionState = {
   status: SessionStatus;
   account: Profile | null;
   csrfToken: string | null;
+  /** Período VIP da Conta; nulo sem sessão. Decide o cadeado dos Itens VIP (S04). */
+  vip: VipStatus | null;
 };
 
 type SessionContextValue = SessionState & {
@@ -49,7 +52,12 @@ function readCookie(name: string): string | undefined {
 }
 
 function stateFrom(session: CurrentSession | null, status: SessionStatus): SessionState {
-  return { status, account: session?.account ?? null, csrfToken: session?.csrfToken ?? null };
+  return {
+    status,
+    account: session?.account ?? null,
+    csrfToken: session?.csrfToken ?? null,
+    vip: session?.vip ?? null,
+  };
 }
 
 /**

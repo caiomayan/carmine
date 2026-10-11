@@ -1,6 +1,8 @@
 import {
   type CurrentSession,
   currentSessionSchema,
+  type Inventory,
+  inventorySchema,
   type Profile,
   profileSchema,
 } from '@carmine/contracts';
@@ -31,20 +33,44 @@ export type ServerSession =
   | { status: 'anonymous' }
   | { status: 'unknown' };
 
+/** O cookie da sessão para repassar à API; nulo sem sessão. */
+async function sessionCookie(): Promise<string | null> {
+  const sessionId = (await cookies()).get(SESSION_COOKIE)?.value;
+  return sessionId ? `${SESSION_COOKIE}=${encodeURIComponent(sessionId)}` : null;
+}
+
 export const getServerSession = cache(async (): Promise<ServerSession> => {
-  const jar = await cookies();
-  const sessionId = jar.get(SESSION_COOKIE)?.value;
-  if (!sessionId) return { status: 'anonymous' };
+  const cookie = await sessionCookie();
+  if (!cookie) return { status: 'anonymous' };
   try {
-    const response = await apiGet('/me', {
-      cookie: `${SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
-      visitorIp: await visitorIp(),
-    });
+    const response = await apiGet('/me', { cookie, visitorIp: await visitorIp() });
     if (response.status === 401) return { status: 'anonymous' };
     if (!response.ok) return { status: 'unknown' };
     return { status: 'authenticated', session: currentSessionSchema.parse(await response.json()) };
   } catch {
     return { status: 'unknown' };
+  }
+});
+
+/**
+ * O Inventário da Conta da sessão. `unavailable` quando a API falhou: a página mostra o aviso,
+ * nunca um Inventário vazio (Princípios transversais).
+ */
+export type InventoryResult =
+  | { status: 'ok'; inventory: Inventory }
+  | { status: 'anonymous' }
+  | { status: 'unavailable' };
+
+export const getInventory = cache(async (): Promise<InventoryResult> => {
+  const cookie = await sessionCookie();
+  if (!cookie) return { status: 'anonymous' };
+  try {
+    const response = await apiGet('/inventory', { cookie, visitorIp: await visitorIp() });
+    if (response.status === 401) return { status: 'anonymous' };
+    if (!response.ok) return { status: 'unavailable' };
+    return { status: 'ok', inventory: inventorySchema.parse(await response.json()) };
+  } catch {
+    return { status: 'unavailable' };
   }
 });
 
