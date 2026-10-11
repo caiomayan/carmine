@@ -9,7 +9,12 @@ import {
 import type { FastifyRequest } from 'fastify';
 import { type GameServer, GameServerRegistry } from './game-server-registry.js';
 
-type RequestWithGameServer = FastifyRequest & { gameServer?: GameServer };
+declare module 'fastify' {
+  interface FastifyRequest {
+    /** Servidor Carmine autenticado pelo {@link ServerKeyGuard}. */
+    gameServer?: GameServer;
+  }
+}
 
 /**
  * Só deixa passar Servidores Carmine, autenticados pela chave no cabeçalho
@@ -20,7 +25,7 @@ export class ServerKeyGuard implements CanActivate {
   constructor(@Inject(GameServerRegistry) private readonly registry: GameServerRegistry) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<RequestWithGameServer>();
+    const request = context.switchToHttp().getRequest<FastifyRequest>();
     const [scheme, key] = (request.headers.authorization ?? '').split(' ');
     const server =
       scheme?.toLowerCase() === 'bearer' && key ? await this.registry.authenticate(key) : null;
@@ -35,7 +40,7 @@ export class ServerKeyGuard implements CanActivate {
 /** O Servidor Carmine autenticado pelo `ServerKeyGuard`. */
 export const CurrentGameServer = createParamDecorator(
   (_: unknown, context: ExecutionContext): GameServer => {
-    const server = context.switchToHttp().getRequest<RequestWithGameServer>().gameServer;
+    const server = context.switchToHttp().getRequest<FastifyRequest>().gameServer;
     if (!server) {
       throw new Error('CurrentGameServer usado numa rota sem o ServerKeyGuard');
     }

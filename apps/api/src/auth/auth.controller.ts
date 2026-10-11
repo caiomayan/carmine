@@ -36,6 +36,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AccountsService } from '../accounts/accounts.service.js';
 import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
+import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
   clearSessionCookies,
@@ -72,6 +73,7 @@ export class AuthController {
   ) {}
 
   @Get('auth/steam/login')
+  @RateLimit('login')
   @ApiOperation({
     operationId: 'startSteamLogin',
     summary: 'Começa o login Steam: redireciona para a Steam',
@@ -103,6 +105,7 @@ export class AuthController {
   }
 
   @Get('auth/steam/callback')
+  @RateLimit('login')
   @ApiOperation({
     operationId: 'completeSteamLogin',
     summary: 'Volta da Steam: verifica a asserção, reivindica a Conta e abre a sessão',
@@ -141,6 +144,7 @@ export class AuthController {
 
   @Post('auth/logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RateLimit('mutations')
   @ApiCookieAuth()
   @ApiOperation({
     operationId: 'logout',
@@ -160,6 +164,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthenticatedGuard)
+  // Abaixo do AuthenticatedGuard: conta antes dele, inclusive quem não tem sessão.
+  @RateLimit('public')
   @ApiCookieAuth()
   @ApiOperation({
     operationId: 'getCurrentSession',

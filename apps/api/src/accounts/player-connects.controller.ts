@@ -14,6 +14,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ServerKeyGuard } from '../game-servers/server-key.guard.js';
+import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { AccountsService } from './accounts.service.js';
 
 @ApiTags('server')
@@ -25,6 +26,7 @@ export class PlayerConnectsController {
 
   @Post()
   @HttpCode(HttpStatus.OK)
+  @RateLimit('server')
   @ApiOperation({
     operationId: 'registerPlayerConnect',
     summary: 'Registra o connect de um jogador; cria a Conta no primeiro connect',
