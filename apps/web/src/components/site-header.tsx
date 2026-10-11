@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { MainNav } from './main-nav';
+import { AccountControl } from './session/account-control';
 import { ThemeToggle } from './theme-toggle';
 import { Wordmark } from './wordmark';
 
@@ -27,6 +28,17 @@ export async function SiteHeader() {
         />
         <div className="ml-auto flex items-center gap-2.5">
           <ThemeToggle labels={{ light: t('theme.useLight'), dark: t('theme.useDark') }} />
+          <AccountControl
+            labels={{
+              signIn: t('account.signIn'),
+              loading: t('account.loading'),
+              menu: t('account.menu'),
+              profile: t('account.profile'),
+              firstSteps: t('account.firstSteps'),
+              signOut: t('account.signOut'),
+              signOutFailed: t('account.signOutFailed'),
+            }}
+          />
         </div>
       </div>
     </header>

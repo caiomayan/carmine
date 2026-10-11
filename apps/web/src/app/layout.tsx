@@ -1,12 +1,17 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { cookies } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { MotionProvider } from '@/components/motion-provider';
+import { FirstSteps } from '@/components/session/first-steps';
+import { SessionProvider } from '@/components/session/session-provider';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { locale } from '@/i18n/request';
+import { getServerSession } from '@/lib/api-server';
+import { FIRST_STEPS_COOKIE, hasDismissedFirstSteps } from '@/lib/first-steps';
 import { DEFAULT_THEME, themeInitScript } from '@/lib/theme';
 import './globals.css';
 
@@ -33,6 +38,24 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('shell');
+  const tSteps = await getTranslations('firstSteps');
+  // A sessão é lida no servidor: quem entrou já recebe a página com o avatar, sem piscar
+  // "Entrar"; o navegador confirma depois em /api/me (e renova a sessão).
+  const server = await getServerSession();
+  const session = server.status === 'authenticated' ? server.session : null;
+  const dismissed = (await cookies()).get(FIRST_STEPS_COOKIE)?.value;
+  const firstStepsOpen =
+    session !== null && !hasDismissedFirstSteps(dismissed, session.account.publicId);
+  const step = (key: 'what' | 'steam' | 'equip' | 'ingame') => ({
+    title: tSteps(`steps.${key}.title`),
+    body: tSteps.rich(`steps.${key}.body`, {
+      cmd: (chunks) => (
+        <code className="rounded-sm bg-surface-2 px-1 py-px font-semibold text-foreground">
+          {chunks}
+        </code>
+      ),
+    }),
+  });
 
   return (
     // O script do <head> troca data-theme antes da hidratação; a diferença é esperada.
@@ -50,20 +73,42 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
         <NextIntlClientProvider messages={null}>
           <MotionProvider>
-            <a
-              href={`#${MAIN_CONTENT_ID}`}
-              className="fixed top-3 left-3 z-100 -translate-y-[calc(100%+1.5rem)] rounded-md bg-primary px-4 py-3 font-semibold text-primary-foreground transition-transform duration-(--dur-base) ease-out focus-visible:translate-y-0 focus-visible:outline-foreground"
+            <SessionProvider
+              initialSession={session}
+              initialStatus={server.status}
+              firstStepsOpen={firstStepsOpen}
             >
-              {t('skipToContent')}
-            </a>
-            {/* Cabeçalho e conteúdo ocupam ao menos a tela inteira: o rodapé só aparece no fim real da página. */}
-            <div className="flex min-h-dvh flex-col">
-              <SiteHeader />
-              <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
-                {children}
-              </main>
-            </div>
-            <SiteFooter />
+              <a
+                href={`#${MAIN_CONTENT_ID}`}
+                className="fixed top-3 left-3 z-100 -translate-y-[calc(100%+1.5rem)] rounded-md bg-primary px-4 py-3 font-semibold text-primary-foreground transition-transform duration-(--dur-base) ease-out focus-visible:translate-y-0 focus-visible:outline-foreground"
+              >
+                {t('skipToContent')}
+              </a>
+              {/* Cabeçalho e conteúdo ocupam ao menos a tela inteira: o rodapé só aparece no fim real da página. */}
+              <div className="flex min-h-dvh flex-col">
+                <SiteHeader />
+                <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
+                  <FirstSteps
+                    labels={{
+                      title: tSteps('title'),
+                      intro: tSteps('intro'),
+                      close: tSteps('close'),
+                      done: tSteps('done'),
+                      toInventory: tSteps('toInventory'),
+                      reopenHint: tSteps('reopenHint'),
+                      steps: {
+                        what: step('what'),
+                        steam: step('steam'),
+                        equip: step('equip'),
+                        ingame: step('ingame'),
+                      },
+                    }}
+                  />
+                  {children}
+                </main>
+              </div>
+              <SiteFooter />
+            </SessionProvider>
           </MotionProvider>
         </NextIntlClientProvider>
       </body>

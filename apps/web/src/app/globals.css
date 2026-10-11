@@ -255,6 +255,19 @@
   }
 }
 
+/* ---------- /entrar: o traço do vínculo com a Steam se desenha na chegada ---------- */
+@keyframes link-draw {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .link-draw {
+    animation: link-draw 700ms var(--ease-out) 120ms backwards;
+  }
+}
+
 /* ---------- troca de tema ---------- */
 ::view-transition-old(root),
 ::view-transition-new(root) {

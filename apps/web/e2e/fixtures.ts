@@ -11,6 +11,8 @@ export const ROUTES = [
   '/regras',
   '/contato',
   '/nao-existe',
+  '/entrar',
+  '/entrar?erro=indisponivel&motivo=sessao-expirada',
   '/dev/componentes',
 ] as const;
 export const WIDTHS = [390, 820, 1100, 1440] as const;
@@ -27,11 +29,20 @@ const EXPECTED_ERRORS = [/status of 404 \(Not Found\)/];
 type Fixtures = {
   /** Erros de console e exceções da página; o teste falha se sobrar algum inesperado. */
   consoleErrors: string[];
+  /**
+   * Erros de console que o teste provoca de propósito (ex.: o 404 de um Perfil inexistente,
+   * o 401 de uma sessão expirada). O teste acrescenta os padrões aqui.
+   */
+  expectedConsoleErrors: RegExp[];
 };
 
 export const test = base.extend<Fixtures>({
+  // biome-ignore lint/correctness/noEmptyPattern: o Playwright exige a desestruturação, mesmo vazia.
+  expectedConsoleErrors: async ({}, use) => {
+    await use([]);
+  },
   consoleErrors: [
-    async ({ page }, use) => {
+    async ({ page, expectedConsoleErrors }, use) => {
       const errors: string[] = [];
       page.on('console', (msg) => {
         if (msg.type() === 'error') errors.push(`${msg.text()} @ ${msg.location().url}`);
@@ -39,7 +50,9 @@ export const test = base.extend<Fixtures>({
       page.on('pageerror', (err) => errors.push(err.message));
       await use(errors);
       const unexpected = errors.filter(
-        (e) => !(e.includes('/nao-existe') && EXPECTED_ERRORS.some((re) => re.test(e))),
+        (e) =>
+          !(e.includes('/nao-existe') && EXPECTED_ERRORS.some((re) => re.test(e))) &&
+          !expectedConsoleErrors.some((re) => re.test(e)),
       );
       expect(unexpected, 'erros de console').toEqual([]);
     },

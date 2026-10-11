@@ -54,6 +54,15 @@
       },
       "copyright": "© {year} Carmine. Todos os direitos reservados.",
       "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela."
+    },
+    "account": {
+      "signIn": "Entrar",
+      "loading": "Verificando a sua sessão",
+      "menu": "Menu da Conta de {name}",
+      "profile": "Meu perfil",
+      "firstSteps": "Primeiros passos",
+      "signOut": "Sair",
+      "signOutFailed": "Não deu para sair agora. Tente de novo em instantes."
     }
   },
   "servers": {
@@ -164,5 +173,90 @@
     "title": "Página não encontrada",
     "body": "O endereço pode ter mudado ou estar digitado errado. Confira o link ou volte para a lista de servidores.",
     "back": "Ver servidores"
+  },
+  "signIn": {
+    "metaTitle": "Entrar",
+    "title": "Entrar na Carmine",
+    "subtitle": "A sua Conta é a mesma dos Servidores Carmine. Entre com a Steam para montar o Inventário e equipar o Loadout que aparece no jogo.",
+    "steamButton": "Entrar com a Steam",
+    "steamNote": "A Steam é a única forma de entrar: não existe senha da Carmine. Recebemos o seu SteamID e os dados públicos do perfil, nunca a sua senha da Steam.",
+    "claimNote": "Se você já jogou num Servidor Carmine, o login abre a mesma Conta, com o mesmo ID público.",
+    "back": "Voltar sem entrar",
+    "errors": {
+      "cancelado": "Você cancelou o login na Steam. Quando quiser, é só tentar de novo.",
+      "invalido": "Não conseguimos confirmar o login com a Steam. Ele pode ter demorado demais; tente de novo.",
+      "indisponivel": "A Steam não respondeu agora, então o login não terminou. Tente de novo em alguns minutos."
+    },
+    "sessionExpired": "A sua sessão expirou. O que você estava editando ficou guardado neste navegador e volta quando você entrar de novo."
+  },
+  "profile": {
+    "metaDescription": "Perfil de {name} na Carmine: o Loadout que aparece nos Servidores Carmine.",
+    "publicId": "ID público",
+    "steamLink": "Perfil na Steam",
+    "steamLinkLabel": "Perfil de {name} na Steam (abre em outra aba)",
+    "avatarAlt": "Avatar de {name}",
+    "own": "Este é o seu Perfil.",
+    "unclaimed": "Conta criada no jogo; ainda não entrou no site.",
+    "claimInvite": {
+      "title": "É você? Entre com a Steam para personalizar.",
+      "body": "A Conta já existe porque você jogou num Servidor Carmine. Entrar não cria outra: é esta mesma, com o mesmo ID.",
+      "action": "Entrar com a Steam"
+    },
+    "loadout": {
+      "title": "Loadout",
+      "emptyTitle": "Nenhum Item equipado ainda",
+      "emptyVisitor": "Quando {name} equipar Itens, o Loadout aparece aqui do jeito que fica no jogo.",
+      "emptyOwner": "Monte o Inventário e equipe Itens: o Loadout aparece aqui do jeito que fica no jogo.",
+      "toInventory": "Ir para o Inventário"
+    },
+    "unavailable": {
+      "title": "Não conseguimos carregar este Perfil agora",
+      "body": "A Carmine está com instabilidade. O Perfil continua aqui; tente de novo em instantes.",
+      "retry": "Tentar de novo"
+    },
+    "notFound": {
+      "metaTitle": "Perfil não encontrado",
+      "title": "Nenhum Perfil com esse ID",
+      "body": "Confira o número no link. Um Perfil só existe depois que a pessoa joga num Servidor Carmine ou entra no site.",
+      "back": "Ver servidores"
+    }
+  },
+  "firstSteps": {
+    "title": "Boas-vindas à Carmine, {name}",
+    "intro": "Sua Conta é a mesma dos Servidores Carmine: o que você montar aqui vai junto para o jogo.",
+    "close": "Fechar primeiros passos",
+    "done": "Entendi",
+    "toInventory": "Ir para o Inventário",
+    "reopenHint": "Para rever, abra o menu da sua Conta e escolha Primeiros passos.",
+    "steps": {
+      "what": {
+        "title": "O que é a Carmine",
+        "body": "Servidores comunitários de CS2 com skins simuladas. Você entra pelo IP, joga Retake ou Deathmatch e usa o site para montar o Loadout."
+      },
+      "steam": {
+        "title": "Vínculo com a Steam",
+        "body": "Você entra pela Steam, e só por ela. A Carmine recebe o seu SteamID e os dados públicos do perfil, nunca a sua senha."
+      },
+      "equip": {
+        "title": "Adicionar não é equipar",
+        "body": "Adicionar guarda o Item no Inventário, com float, seed e stickers. Equipar coloca o Item num slot, de CT, de TR ou dos dois: é isso que aparece no jogo."
+      },
+      "ingame": {
+        "title": "Ver no jogo",
+        "body": "Já está num servidor? Digite <cmd>!ws</cmd> no chat para aplicar o Loadout, ou reconecte."
+      }
+    }
+  },
+  "drafts": {
+    "restored": "Restauramos as alterações que você não tinha salvado.",
+    "discard": "Descartar"
+  },
+  "devDraft": {
+    "title": "Rascunho",
+    "subtitle": "Vitrine interna do rascunho local que sobrevive à expiração da sessão (S03).",
+    "field": "Nametag",
+    "save": "Salvar",
+    "saved": "Salvo.",
+    "signInFirst": "Entre para testar o rascunho."
   }
 }

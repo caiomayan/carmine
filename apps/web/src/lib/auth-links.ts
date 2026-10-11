@@ -42,6 +42,9 @@ export function parseLoginError(value: string | string[] | undefined): LoginErro
   return LOGIN_ERRORS.find((error) => error === first) ?? null;
 }
 
+/** O proxy marca com isto as requisições de caminhos numéricos: são endereços de Perfil. */
+export const PROFILE_PATH_HEADER = 'x-carmine-profile-path';
+
 export type ProfileSegment =
   | { kind: 'publicId'; publicId: number }
   | { kind: 'steamId'; steamId: string }

@@ -15,6 +15,11 @@ const SIGNED_FIELDS = [
 
 export type FakeSteamOpenIdBehavior = 'ok' | 'error' | 'hang';
 
+/** Cookie (no host da Steam falsa) com o SteamID64 que entra nesse navegador. */
+export const FAKE_STEAM_ID_COOKIE = 'fake_steam_id';
+/** Cookie (no host da Steam falsa): `cancel` faz a pessoa "desistir" na Steam. */
+export const FAKE_STEAM_ACTION_COOKIE = 'fake_steam_action';
+
 /**
  * Imita o provedor OpenID 2.0 da Steam (`https://steamcommunity.com/openid/login`) com uma
  * chave HMAC própria, para os testes não dependerem da Steam real:
@@ -28,7 +33,7 @@ export type FakeSteamOpenIdBehavior = 'ok' | 'error' | 'hang';
  */
 export class FakeSteamOpenId {
   behavior: FakeSteamOpenIdBehavior = 'ok';
-  /** Quem "entra" na próxima visita a `GET /openid/login`. */
+  /** Quem "entra" na próxima visita a `GET /openid/login` (sem o cookie {@link FAKE_STEAM_ID_COOKIE}). */
   steamId = '76561198000000001';
   /** Pedidos de check_authentication recebidos. */
   readonly verifications: URLSearchParams[] = [];
@@ -51,7 +56,25 @@ export class FakeSteamOpenId {
           res.writeHead(400).end();
           return;
         }
-        res.writeHead(302, { location: this.positiveAssertionUrl(returnTo) }).end();
+        // O navegador pode escolher quem entra (e se desiste) por cookies no host da Steam
+        // falsa: o E2E do web loga Contas diferentes em paralelo sem reiniciar o processo.
+        const cookies = parseCookies(req.headers.cookie);
+        if (cookies[FAKE_STEAM_ACTION_COOKIE] === 'cancel') {
+          const cancel = new URL(returnTo);
+          cancel.searchParams.set('openid.ns', OPENID_NS);
+          cancel.searchParams.set('openid.mode', 'cancel');
+          res.writeHead(302, { location: cancel.toString() }).end();
+          return;
+        }
+        const steamId = cookies[FAKE_STEAM_ID_COOKIE];
+        res
+          .writeHead(302, {
+            location: this.positiveAssertionUrl(
+              returnTo,
+              steamId && /^\d{17}$/.test(steamId) ? { steamId } : undefined,
+            ),
+          })
+          .end();
         return;
       }
 
@@ -152,6 +175,15 @@ export class FakeSteamOpenId {
     const actual = Buffer.from(fields.sig ?? '');
     return expected.length === actual.length && timingSafeEqual(expected, actual);
   }
+}
+
+function parseCookies(header: string | undefined): Record<string, string> {
+  const cookies: Record<string, string> = {};
+  for (const part of (header ?? '').split(';')) {
+    const [name, ...value] = part.trim().split('=');
+    if (name) cookies[name] = decodeURIComponent(value.join('='));
+  }
+  return cookies;
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {
