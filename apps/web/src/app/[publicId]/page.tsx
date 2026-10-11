@@ -14,7 +14,7 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
 import { findPublicIdBySteamId } from '@/lib/api-base';
-import { getProfile, getServerSession, type ProfileResult } from '@/lib/api-server';
+import { getProfile, getServerSession, type ProfileResult, visitorIp } from '@/lib/api-server';
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
 import { cn } from '@/lib/utils';
 
@@ -30,7 +30,7 @@ async function loadProfile(
   const parsed = parseProfileSegment(segment);
   if (parsed.kind === 'invalid') notFound();
   if (parsed.kind === 'steamId') {
-    const publicId = await findPublicIdBySteamId(parsed.steamId);
+    const publicId = await findPublicIdBySteamId(parsed.steamId, await visitorIp());
     if (publicId === null) notFound();
     if (publicId === undefined) return { status: 'unavailable' };
     permanentRedirect(`/${publicId}` as Route);

@@ -47,6 +47,12 @@ export default defineConfig({
         STEAM_OPENID_URL: `http://127.0.0.1:${FAKE_STEAM_PORT}/openid/login`,
         // Sem Steam Web API no E2E: as Contas novas ficam com o avatar neutro.
         STEAM_WEB_API_KEY: '',
+        // Todo pedido do E2E chega à API do mesmo IP (o Next repassa /api/*): sem limite real.
+        RATE_LIMIT_LOGIN_PER_MINUTE: '100000',
+        RATE_LIMIT_PUBLIC_PER_MINUTE: '100000',
+        RATE_LIMIT_EQUIPPED_PER_MINUTE: '100000',
+        RATE_LIMIT_MUTATIONS_PER_MINUTE: '100000',
+        RATE_LIMIT_SERVER_PER_MINUTE: '100000',
       },
       timeout: 60_000,
     },
