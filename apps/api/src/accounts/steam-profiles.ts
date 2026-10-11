@@ -1,14 +1,24 @@
 import { z } from 'zod';
 
+/** O que a Steam diz publicamente de um perfil. */
+export interface SteamSummary {
+  /** Nome Steam atual. */
+  personaName: string;
+  /** URL do avatar (o maior). */
+  avatarUrl: string;
+}
+
 /** Perfis públicos da Steam. */
 export interface SteamProfiles {
-  /** URL do avatar (o maior), `null` se o perfil não existe; rejeita se a Steam falhar. */
-  avatarUrlOf(steamId: string): Promise<string | null>;
+  /** Resumo do perfil, `null` se ele não existe; rejeita se a Steam falhar. */
+  summaryOf(steamId: string): Promise<SteamSummary | null>;
 }
 
 const playerSummariesSchema = z.object({
   response: z.object({
-    players: z.array(z.object({ steamid: z.string(), avatarfull: z.url() })),
+    players: z.array(
+      z.object({ steamid: z.string(), personaname: z.string(), avatarfull: z.url() }),
+    ),
   }),
 });
 
@@ -22,7 +32,7 @@ export interface SteamWebApiOptions {
 export class SteamWebApi implements SteamProfiles {
   constructor(private readonly options: SteamWebApiOptions) {}
 
-  async avatarUrlOf(steamId: string): Promise<string | null> {
+  async summaryOf(steamId: string): Promise<SteamSummary | null> {
     const url = new URL(`${this.options.url}/ISteamUser/GetPlayerSummaries/v2/`);
     url.searchParams.set('key', this.options.key);
     url.searchParams.set('steamids', steamId);
@@ -33,6 +43,7 @@ export class SteamWebApi implements SteamProfiles {
       throw new Error(`Steam Web API respondeu HTTP ${response.status}`);
     }
     const body = playerSummariesSchema.parse(await response.json());
-    return body.response.players.find((player) => player.steamid === steamId)?.avatarfull ?? null;
+    const player = body.response.players.find((p) => p.steamid === steamId);
+    return player ? { personaName: player.personaname, avatarUrl: player.avatarfull } : null;
   }
 }

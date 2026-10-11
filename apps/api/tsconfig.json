@@ -6,6 +6,8 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "strictPropertyInitialization": false,
+    // Os scripts de test/ rodam direto no Node (type stripping), que exige o ".ts" no import.
+    "rewriteRelativeImportExtensions": true,
     "types": ["node"]
   },
   "include": ["src", "test", "vitest.config.ts", "drizzle.config.ts"]

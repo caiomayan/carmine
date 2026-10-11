@@ -6,6 +6,7 @@ import { accounts, publicIdCounter } from '../database/schema.js';
 import type { AvatarRefresher } from './avatar-refresher.js';
 import { displayNameFor } from './display-name.js';
 import { allocatePublicId, type BlockDraw } from './public-id.js';
+import type { SteamSummary } from './steam-profiles.js';
 
 /** Conta (`Account`) como o resto da API a vê. */
 export interface Account {
@@ -63,11 +64,43 @@ export class AccountsService {
     throw new Error(`Conflito persistente ao criar a Conta de ${connect.steamId}`);
   }
 
+  /**
+   * Login Steam no site (S03): o primeiro reivindica a Conta. Se a pessoa nunca jogou, a Conta
+   * nasce já reivindicada, com nome e avatar da Steam Web API (sem resposta, "Jogador #ID" e o
+   * avatar neutro até o próximo login ou connect). É sempre a mesma Conta do SteamID: nunca há
+   * fusão.
+   */
+  async claimOnLogin(steamId: string): Promise<Account> {
+    const known = await this.findBySteamId(steamId);
+    const summary = known ? null : await this.avatars.lookup(steamId);
+    // Na segunda volta, a Conta criada por um connect concorrente já está visível.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const account = await this.db.transaction((tx) =>
+        this.claimInTransaction(tx, BigInt(steamId), summary, new Date()),
+      );
+      if (account) {
+        this.avatars.refreshInBackground(account);
+        return account;
+      }
+    }
+    throw new Error(`Conflito persistente ao reivindicar a Conta de ${steamId}`);
+  }
+
   async findBySteamId(steamId: string): Promise<Account | null> {
     const [row] = await this.db
       .select()
       .from(accounts)
       .where(eq(accounts.steamId, BigInt(steamId)));
+    return row ? toAccount(row) : null;
+  }
+
+  async findById(id: string): Promise<Account | null> {
+    const [row] = await this.db.select().from(accounts).where(eq(accounts.id, id));
+    return row ? toAccount(row) : null;
+  }
+
+  async findByPublicId(publicId: number): Promise<Account | null> {
+    const [row] = await this.db.select().from(accounts).where(eq(accounts.publicId, publicId));
     return row ? toAccount(row) : null;
   }
 
@@ -101,24 +134,70 @@ export class AccountsService {
       };
     }
 
-    const publicId = await allocatePublicId(
-      () => nextCounter(tx),
-      () => randomInt(3) as BlockDraw,
-    );
-    const [created] = await tx
-      .insert(accounts)
-      .values({
-        steamId,
-        publicId,
-        steamName: connect.steamName,
-        displayName: displayNameFor(connect.steamName, publicId),
-        firstConnectedAt: connectedAt,
-        lastConnectedAt: connectedAt,
-      })
-      .onConflictDoNothing({ target: accounts.steamId })
-      .returning();
-    return created ? { account: toAccount(created), isFirstConnect: true } : null;
+    const created = await insertAccount(tx, steamId, connect.steamName, {
+      firstConnectedAt: connectedAt,
+      lastConnectedAt: connectedAt,
+    });
+    return created ? { account: created, isFirstConnect: true } : null;
   }
+
+  /** `null` quando um connect do mesmo jogador criou a Conta no meio do caminho. */
+  private async claimInTransaction(
+    tx: Transaction,
+    steamId: bigint,
+    summary: SteamSummary | null,
+    now: Date,
+  ): Promise<Account | null> {
+    const [existing] = await tx
+      .select()
+      .from(accounts)
+      .where(eq(accounts.steamId, steamId))
+      .for('update');
+    if (existing) {
+      if (existing.claimedAt !== null) {
+        return toAccount(existing);
+      }
+      const [claimed] = await tx
+        .update(accounts)
+        .set({ claimedAt: now })
+        .where(eq(accounts.id, existing.id))
+        .returning();
+      return toAccount(claimed as AccountRow);
+    }
+    return insertAccount(tx, steamId, summary?.personaName ?? '', {
+      claimedAt: now,
+      avatarUrl: summary?.avatarUrl ?? null,
+      avatarFetchedAt: summary ? now : null,
+    });
+  }
+}
+
+/**
+ * Cria a Conta com um ID público novo (ADR 0013); `null` se outra transação criou a do mesmo
+ * SteamID primeiro.
+ */
+async function insertAccount(
+  tx: Transaction,
+  steamId: bigint,
+  steamName: string,
+  fields: Partial<typeof accounts.$inferInsert>,
+): Promise<Account | null> {
+  const publicId = await allocatePublicId(
+    () => nextCounter(tx),
+    () => randomInt(3) as BlockDraw,
+  );
+  const [created] = await tx
+    .insert(accounts)
+    .values({
+      ...fields,
+      steamId,
+      publicId,
+      steamName,
+      displayName: displayNameFor(steamName, publicId),
+    })
+    .onConflictDoNothing({ target: accounts.steamId })
+    .returning();
+  return created ? toAccount(created) : null;
 }
 
 /** Próximo `n` da sequência do Postgres: único mesmo entre transações simultâneas. */

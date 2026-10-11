@@ -2,7 +2,7 @@ import { type BeforeApplicationShutdown, Logger } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts } from '../database/schema.js';
-import type { SteamProfiles } from './steam-profiles.js';
+import type { SteamProfiles, SteamSummary } from './steam-profiles.js';
 
 /** Avatares mudam; um buscado há mais que isso é atualizado no próximo connect. */
 const STALE_AFTER_MS = 24 * 60 * 60 * 1000;
@@ -44,14 +44,30 @@ export class AvatarRefresher implements BeforeApplicationShutdown {
     this.inFlight.set(account.steamId, task);
   }
 
+  /**
+   * Resumo do perfil Steam na hora, para quem pode esperar (a criação da Conta no login).
+   * Nunca rejeita: sem chave, sem resposta ou com a Steam fora, `null` (vale o avatar neutro).
+   */
+  async lookup(steamId: string): Promise<SteamSummary | null> {
+    if (this.profiles === null) {
+      return null;
+    }
+    try {
+      return await this.profiles.summaryOf(steamId);
+    } catch (error) {
+      this.logger.warn(`Perfil Steam de ${steamId} indisponível: ${(error as Error).message}`);
+      return null;
+    }
+  }
+
   private async refresh(profiles: SteamProfiles, steamId: string): Promise<void> {
-    const avatarUrl = await profiles.avatarUrlOf(steamId);
-    if (avatarUrl === null) {
+    const summary = await profiles.summaryOf(steamId);
+    if (summary === null) {
       return;
     }
     await this.db
       .update(accounts)
-      .set({ avatarUrl, avatarFetchedAt: new Date() })
+      .set({ avatarUrl: summary.avatarUrl, avatarFetchedAt: new Date() })
       .where(eq(accounts.steamId, BigInt(steamId)));
   }
 

@@ -116,6 +116,172 @@
         ]
       }
     },
+    "/api/profiles/by-steam-id/{steamId}": {
+      "get": {
+        "operationId": "getProfileLocation",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A Conta existe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileLocation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          }
+        },
+        "summary": "ID público da Conta de um SteamID64, para o web redirecionar (301) ao Perfil",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/profiles/{publicId}": {
+      "get": {
+        "operationId": "getProfile",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O Perfil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Profile"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse ID público"
+          }
+        },
+        "summary": "Perfil público de uma Conta",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/auth/steam/login": {
+      "get": {
+        "operationId": "startSteamLogin",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "description": "Caminho interno do web para onde voltar depois do login (padrão: /)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Para a Steam (ou para /entrar?erro=indisponivel)"
+          }
+        },
+        "summary": "Começa o login Steam: redireciona para a Steam",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/steam/callback": {
+      "get": {
+        "operationId": "completeSteamLogin",
+        "parameters": [],
+        "responses": {
+          "303": {
+            "description": "Para a página de origem (sessão aberta) ou para /entrar?erro=<motivo>"
+          }
+        },
+        "summary": "Volta da Steam: verifica a asserção, reivindica a Conta e abre a sessão",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Sessão encerrada (ou já não havia sessão)"
+          },
+          "403": {
+            "description": "Token CSRF ausente ou inválido"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Encerra a sessão no servidor e apaga os cookies (exige x-csrf-token)",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/me": {
+      "get": {
+        "operationId": "getCurrentSession",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sessão ativa",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentSession"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "503": {
+            "description": "Sessões indisponíveis no momento"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "A Conta da sessão atual e o token CSRF das mutações",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/equipped/v5/{steamId}.json": {
       "get": {
         "operationId": "getEquippedV5",
@@ -157,7 +323,7 @@
   "info": {
     "title": "Carmine API",
     "description": "API da plataforma Carmine, usada pelo web e pelos plugins dos Servidores Carmine.",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "contact": {}
   },
   "tags": [],
@@ -169,6 +335,12 @@
         "bearerFormat": "JWT",
         "type": "http",
         "description": "Chave do Servidor Carmine"
+      },
+      "cookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "__Host-carmine_session",
+        "description": "Sessão do login Steam (mesma origem do web, ADR 0015)"
       }
     },
     "schemas": {
@@ -293,6 +465,95 @@
           "publicId",
           "displayName",
           "isFirstConnect"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileLocation": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "publicId"
+        ],
+        "additionalProperties": false
+      },
+      "Profile": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "avatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          },
+          "steamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "steamProfileUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "claimed": {
+            "type": "boolean"
+          },
+          "loadoutShowcase": {
+            "$ref": "#/components/schemas/LoadoutShowcase"
+          }
+        },
+        "required": [
+          "publicId",
+          "displayName",
+          "avatarUrl",
+          "steamId",
+          "steamProfileUrl",
+          "claimed",
+          "loadoutShowcase"
+        ],
+        "additionalProperties": false
+      },
+      "LoadoutShowcase": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "maxItems": 0,
+            "type": "array",
+            "items": {}
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "additionalProperties": false
+      },
+      "CurrentSession": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "csrfToken": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "account",
+          "csrfToken"
         ],
         "additionalProperties": false
       },
