@@ -24,6 +24,7 @@ import {
   SLOT_VIEW_GROUPS,
   type SlotView,
 } from '@/lib/loadout/view';
+import { cn } from '@/lib/utils';
 import { SlotPanel } from './slot-panel';
 import { SlotTile } from './slot-tile';
 
@@ -142,7 +143,13 @@ export function LoadoutScreen({
                 return (
                   <section key={group} aria-labelledby={id}>
                     <SectionTitle id={id}>{t(`groups.${group}`)}</SectionTitle>
-                    <ul className="grid grid-cols-4 gap-2.5 max-xl:grid-cols-3 max-lg:grid-cols-4 max-md:grid-cols-2">
+                    <ul
+                      className={cn(
+                        'grid grid-cols-4 gap-2.5 max-md:gap-2',
+                        // No celular, faca e luvas ficam grandes; as armas, em 3 colunas.
+                        group === 'gear' ? 'max-md:grid-cols-2' : 'max-md:grid-cols-3',
+                      )}
+                    >
                       {groupSlots.map((slot, index) => (
                         <li key={slot.key} className="grid">
                           <SlotTile

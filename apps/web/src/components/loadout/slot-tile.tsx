@@ -48,7 +48,7 @@ export function SlotTile({
       data-equipped={item ? item.uid : undefined}
       style={{ '--i': index } as CSSProperties}
       className={cn(
-        'group/slot relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5 text-left',
+        'group/slot relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5 text-left max-md:p-2.5',
         'transition-[background-color,box-shadow] duration-(--dur-fast) ease-std hover:bg-surface-2',
         'aria-pressed:bg-surface-2 aria-pressed:shadow-[inset_0_0_0_1.5px_var(--text)]',
         highlighted && 'animate-[slot-flash_1.2s_var(--ease-out)_1] motion-reduce:animate-none',
