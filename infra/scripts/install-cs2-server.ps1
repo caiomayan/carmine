@@ -11,6 +11,9 @@
       CounterStrikeSharp instala o CounterStrikeSharp (com o runtime .NET) na versão de -CssVersion.
       Plugins            compila plugins/Carmine.Plugins.slnx e copia os plugins para o servidor,
                          criando a config de cada um (URL da API) se ainda não existir.
+      InventorySimulator instala o cs2-css-inventory-simulator (sem modificação, ADR 0006) na versão
+                         de -InvSimVersion e grava cfg/carmine/inventory-simulator.cfg apontando o
+                         plugin para a API (-ApiBaseUrl), executado pelo server.cfg a cada mapa.
 
     Toda atualização do CS2 sobrescreve o gameinfo.gi: depois de atualizar, rode de novo a etapa Metamod.
 
@@ -27,8 +30,8 @@ param(
     [string] $ServerDir = 'C:\carmine\cs2-server',
     [string] $SteamCmdDir = 'C:\carmine\steamcmd',
 
-    [ValidateSet('SteamCmd', 'Cs2', 'Metamod', 'CounterStrikeSharp', 'Plugins')]
-    [string[]] $Steps = @('SteamCmd', 'Cs2', 'Metamod', 'CounterStrikeSharp', 'Plugins'),
+    [ValidateSet('SteamCmd', 'Cs2', 'Metamod', 'CounterStrikeSharp', 'Plugins', 'InventorySimulator')]
+    [string[]] $Steps = @('SteamCmd', 'Cs2', 'Metamod', 'CounterStrikeSharp', 'Plugins', 'InventorySimulator'),
 
     # Sem esta opção a etapa Cs2 é pulada: o download tem ~60 GB.
     [switch] $DownloadCs2,
@@ -40,6 +43,12 @@ param(
     [string] $MetamodBuild = 'mmsource-2.0.0-git1474-windows.zip',
 
     [string] $ApiBaseUrl = 'http://localhost:3333',
+
+    # Versão do cs2-css-inventory-simulator (https://github.com/ianlucas/cs2-css-inventory-simulator/releases).
+    [string] $InvSimVersion = '3.5.2',
+
+    # O que o !ws mostra como endereço do site (o plugin imprime o texto como está).
+    [string] $WebDisplayUrl = 'localhost:3000',
 
     [ValidateSet('Debug', 'Release')]
     [string] $Configuration = 'Release'
@@ -187,12 +196,64 @@ function Install-Plugins {
     }
 }
 
+function Install-InventorySimulator {
+    Write-Step "cs2-css-inventory-simulator $InvSimVersion"
+    Assert-GameInstalled
+    if (-not (Test-Path $CssDir)) {
+        throw 'CounterStrikeSharp não instalado. Inclua a etapa CounterStrikeSharp.'
+    }
+    $url = "https://github.com/ianlucas/cs2-css-inventory-simulator/releases/download/$InvSimVersion/InventorySimulator-v$InvSimVersion.zip"
+    $extracted = Get-Archive $url 'inventory-simulator'
+    $target = Join-Path $CssDir 'plugins\InventorySimulator'
+    if (Test-Path $target) {
+        Remove-Item -Path $target -Recurse -Force
+    }
+    # O zip traz addons/counterstrikesharp/plugins/InventorySimulator e o gamedata do plugin.
+    Copy-Item -Path (Join-Path $extracted 'addons') -Destination $GameDir -Recurse -Force
+    Write-Host "    InventorySimulator -> $target"
+
+    # Os convars do plugin só existem depois que ele carrega: o server.cfg (executado a cada mapa)
+    # chama o nosso cfg. invsim_require_inventory 0: com a API fora, o connect segue com as Armas
+    # padrão. O StatTrak não é gravado pela Carmine, então o plugin não manda incrementos.
+    $cfgDir = Join-Path $GameDir 'cfg\carmine'
+    New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
+    @(
+        '// Gerado por infra/scripts/install-cs2-server.ps1 (etapa InventorySimulator). Não edite: rode de novo.'
+        "invsim_url `"$ApiBaseUrl`""
+        'invsim_apikey ""'
+        'invsim_ws_enabled 1'
+        'invsim_ws_cooldown 30'
+        'invsim_ws_immediately 0'
+        "invsim_ws_url_print_format `"$WebDisplayUrl`""
+        'invsim_wslogin 0'
+        'invsim_require_inventory 0'
+        'invsim_persist_inventory 0'
+        'invsim_fallback_team 0'
+        'invsim_minmodels 0'
+        'invsim_public_api_stattrak_increment 0'
+        'invsim_public_api_spray_consume 0'
+        'invsim_spray_enabled 0'
+        'invsim_spraychanger_enabled 0'
+        'invsim_pet_enabled 0'
+    ) | Set-Content -Path (Join-Path $cfgDir 'inventory-simulator.cfg') -Encoding ascii
+    Write-Host "    config gravada em $(Join-Path $cfgDir 'inventory-simulator.cfg')"
+
+    $serverCfg = Join-Path $GameDir 'cfg\server.cfg'
+    $execLine = 'exec carmine/inventory-simulator.cfg'
+    $current = if (Test-Path $serverCfg) { Get-Content -Path $serverCfg } else { @() }
+    if ($current -notcontains $execLine) {
+        Add-Content -Path $serverCfg -Value $execLine -Encoding ascii
+        Write-Host "    '$execLine' adicionado ao $serverCfg"
+    }
+}
+
 $actions = [ordered]@{
     SteamCmd           = { Install-SteamCmd }
     Cs2                = { Install-Cs2 }
     Metamod            = { Install-Metamod }
     CounterStrikeSharp = { Install-CounterStrikeSharp }
     Plugins            = { Install-Plugins }
+    InventorySimulator = { Install-InventorySimulator }
 }
 try {
     foreach ($step in $actions.Keys) {
@@ -210,3 +271,4 @@ finally {
 Write-Step 'Pronto. Para subir o servidor local (com a API no ar, via pnpm dev):'
 Write-Host "    & '$ServerDir\game\bin\win64\cs2.exe' -dedicated -console +sv_lan 1 +game_type 0 +game_mode 1 +map de_dust2"
 Write-Host "    No console do servidor, procure: 'Carmine.Core: API no ar (...)'"
+Write-Host "    'css_plugins list' deve listar Carmine.Core e InventorySimulator; no jogo, !ws recarrega o Loadout."
