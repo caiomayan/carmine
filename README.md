@@ -20,6 +20,7 @@ pnpm dev
 - a API em http://localhost:3333 (health check em `/api/health`, documentação em `/api/docs`).
 
 - A API lê `apps/api/.env.example`; para mudar algo, crie `apps/api/.env` só com as variáveis que mudam.
+- Um Ctrl+C encerra tudo (turbo, watchers e as portas 3000/3333). No Windows, `infra/scripts/dev.mjs` põe o `pnpm.exe` antes do `pnpm.cmd` no PATH do turbo: com o shim em lotes, o cmd.exe parava em "Deseja finalizar o arquivo em lotes (S/N)?" e o turbo ficava em "3 tasks shutting down...".
 - Só a infraestrutura: `pnpm infra:up` / `pnpm infra:down` (ou `docker compose -f infra/docker-compose.yml up -d`).
 - Portas ocupadas: `POSTGRES_PORT` e `VALKEY_PORT` mudam as portas do Compose (ajuste as URLs no `.env`).
 
