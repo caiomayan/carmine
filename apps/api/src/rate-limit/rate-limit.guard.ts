@@ -24,6 +24,16 @@ import { RateLimiter } from './rate-limiter.js';
 
 export const RATE_LIMIT_POLICY = Symbol('RATE_LIMIT_POLICY');
 
+/** O 429 do rate limit; rotas de navegação (o login) o trocam por um redirecionamento. */
+export class RateLimitExceeded extends HttpException {
+  constructor(readonly retryAfterSeconds: number) {
+    super(
+      `Muitas requisições; tente de novo em ${retryAfterSeconds} s`,
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+}
+
 /** Com o Valkey fora, um aviso a cada tanto, não um por requisição. */
 const UNAVAILABLE_LOG_EVERY_MS = 30_000;
 
@@ -78,10 +88,7 @@ export class RateLimitGuard implements CanActivate {
     const retryAfter = decision.retryAfterSeconds;
     reply.header('RateLimit', `"${name}";r=0;t=${retryAfter}`);
     reply.header('Retry-After', String(retryAfter));
-    throw new HttpException(
-      `Muitas requisições; tente de novo em ${retryAfter} s`,
-      HttpStatus.TOO_MANY_REQUESTS,
-    );
+    throw new RateLimitExceeded(retryAfter);
   }
 
   private subjectOf(subject: RateLimitSubject, request: FastifyRequest): string {

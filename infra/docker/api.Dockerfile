@@ -25,8 +25,11 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 COPY tsconfig.base.json ./
 COPY packages/contracts packages/contracts
 COPY apps/api apps/api
+# As traduções da cs2-lib (~220 MB) só servem ao web: a API valida pelo catálogo, sem nomes.
 RUN pnpm --filter "@carmine/api..." run build \
- && pnpm --filter @carmine/api deploy --prod /out
+ && pnpm --filter @carmine/api deploy --prod /out \
+ && find /out/node_modules -type d -path '*/@ianlucas/cs2-lib/dist/translations' -prune \
+      -exec rm -rf {} +
 
 FROM ${NODE_IMAGE} AS runtime
 ENV NODE_ENV=production \

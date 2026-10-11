@@ -101,6 +101,20 @@ pnpm --filter @carmine/api fake-steam 76561198000000001   # escuta em http://127
 
 Depois, "Entrar" na barra superior (ou `http://localhost:3000/entrar`) faz o login completo. Para entrar como outra Conta sem reiniciar a Steam falsa, crie no navegador o cookie `fake_steam_id=<SteamID64>` no host `127.0.0.1`; `fake_steam_action=cancel` simula a desistência na Steam. Mutações com sessão exigem o cabeçalho `x-csrf-token` com o valor do cookie `carmine_csrf` (ou do `csrfToken` de `GET /api/me`).
 
+## Inventário e VIP
+
+O Inventário (S04) fica em `/api/inventory` (documentação em `/api/docs`), sempre da Conta da sessão; as mutações exigem `x-csrf-token`. O Item vai no formato `CS2BaseInventoryItem` da `@ianlucas/cs2-lib` e é validado na API contra o catálogo da mesma versão que o web usa (`catalog:` do `pnpm-workspace.yaml`): para atualizar a lib, mude a versão lá e rode `pnpm install`. Os erros têm código estável (`INVENTORY_ERROR_CODES` em `packages/contracts/src/inventory.ts`).
+
+Agentes, music kits, StatTrak e nametag exigem um Período VIP ativo. Até a Staff conceder VIP pelo site (S05), use o CLI (a Conta precisa existir: jogue ou faça login antes):
+
+```sh
+pnpm --filter @carmine/api build
+pnpm --filter @carmine/api vip grant --steam-id 76561198000000001 --days 30   # soma ao Período ativo
+pnpm --filter @carmine/api vip status --steam-id 76561198000000001
+```
+
+Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/vip/vip.cli.js grant ...`.
+
 ## Rate limit e IP real
 
 As rotas da API são limitadas por política (`@RateLimit`), com contagem no Valkey; os limites mudam por `RATE_LIMIT_*_PER_MINUTE`. Atrás do Cloudflare Tunnel, o IP do visitante vem de `CF-Connecting-IP`, aceito só de `TRUSTED_PROXIES` (vazio em desenvolvimento). Políticas, falha segura e a configuração da S09: [docs/operacao/rate-limit-e-ip-real.md](docs/operacao/rate-limit-e-ip-real.md).

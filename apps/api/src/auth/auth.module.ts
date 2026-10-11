@@ -4,6 +4,7 @@ import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { VALKEY } from '../valkey/valkey.module.js';
+import { VipModule } from '../vip/vip.module.js';
 import { AuthController } from './auth.controller.js';
 import { SessionGuard } from './session.guard.js';
 import { SessionStore } from './sessions.js';
@@ -19,7 +20,7 @@ const DEFAULT_STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login';
 
 /** Login Steam, sessões do site e proteção CSRF (S03). */
 @Module({
-  imports: [AccountsModule],
+  imports: [AccountsModule, VipModule],
   controllers: [AuthController],
   providers: [
     {

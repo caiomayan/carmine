@@ -12,7 +12,7 @@ export const SIGN_IN_PATH = LOGIN_ERROR_PATH;
 /** Por que a pessoa foi mandada para entrar, além de ter clicado em "Entrar". */
 export type SignInReason = 'sessao-expirada';
 
-const LOGIN_ERRORS: readonly LoginError[] = ['cancelado', 'invalido', 'indisponivel'];
+const LOGIN_ERRORS: readonly LoginError[] = ['cancelado', 'invalido', 'indisponivel', 'limite'];
 
 /** O caminho interno para onde voltar depois do login; nunca a própria página de entrar. */
 function returnPath(input: string | null | undefined): string {
