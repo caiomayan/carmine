@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
+import { LoadoutModule } from '../loadout/loadout.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { VipModule } from '../vip/vip.module.js';
 import { AuthController } from './auth.controller.js';
@@ -20,7 +21,7 @@ const DEFAULT_STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login';
 
 /** Login Steam, sessões do site e proteção CSRF (S03). */
 @Module({
-  imports: [AccountsModule, VipModule],
+  imports: [AccountsModule, VipModule, LoadoutModule],
   controllers: [AuthController],
   providers: [
     {
