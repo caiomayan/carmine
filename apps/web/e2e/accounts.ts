@@ -82,3 +82,23 @@ export async function csrfToken(context: BrowserContext): Promise<string> {
   if (!cookie) throw new Error('sem cookie CSRF: a sessão não começou');
   return decodeURIComponent(cookie.value);
 }
+
+/** Revoga o Período VIP pelo CLI de operação da API, como a Staff (com registro no log de auditoria). */
+export function revokeVip(steamId: string) {
+  execFileSync(
+    process.execPath,
+    [
+      '--env-file=.env.example',
+      '--env-file-if-exists=.env',
+      'dist/vip/vip.cli.js',
+      'revoke',
+      '--steam-id',
+      steamId,
+      '--by',
+      E2E_STAFF_STEAM_ID,
+      '--reason',
+      'E2E',
+    ],
+    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
+  );
+}

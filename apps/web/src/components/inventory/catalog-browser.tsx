@@ -51,6 +51,9 @@ export function CatalogBrowser({
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState(params.get('q') ?? '');
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A última URL pedida e ainda não aplicada: o `router.replace` só muda a URL no fim da
+  // transição, e um filtro escolhido antes disso não pode partir da URL velha.
+  const requested = useRef<string | null>(null);
   const searchId = useId();
 
   const type = (params.get('tipo') ?? '') as CatalogType | '';
@@ -62,6 +65,7 @@ export function CatalogBrowser({
   // Voltar e avançar no navegador trazem outra busca.
   useEffect(() => {
     setQuery(params.get('q') ?? '');
+    if (requested.current === params.toString()) requested.current = null;
   }, [params]);
 
   useEffect(
@@ -72,9 +76,9 @@ export function CatalogBrowser({
   );
 
   function navigate(changes: Record<string, string | null>) {
-    // Lê a URL da hora, não a da renderização: a busca com atraso não pode desfazer um filtro
-    // escolhido enquanto ela esperava.
-    const next = new URLSearchParams(window.location.search);
+    // Parte da última URL pedida (ou da URL da hora), não da renderização: a busca com atraso
+    // não pode desfazer um filtro escolhido enquanto ela esperava, nem um filtro desfazer outro.
+    const next = new URLSearchParams(requested.current ?? window.location.search);
     for (const [key, value] of Object.entries(changes)) {
       if (value) next.set(key, value);
       else next.delete(key);
@@ -82,6 +86,7 @@ export function CatalogBrowser({
     // Qualquer filtro novo volta à primeira página.
     next.delete('mostrar');
     const search = next.toString();
+    requested.current = search;
     startTransition(() => {
       router.replace(`${pathname}${search ? `?${search}` : ''}` as Route, { scroll: false });
     });

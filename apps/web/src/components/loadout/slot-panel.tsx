@@ -66,7 +66,7 @@ export function SlotPanel({
     setError(null);
     try {
       const sides: LoadoutSide[] | undefined = slot.side
-        ? otherSide && bothSides
+        ? otherSide && bothSides && candidate.sides?.includes(otherSide)
           ? [slot.side, otherSide]
           : [slot.side]
         : undefined;
@@ -182,7 +182,8 @@ export function SlotPanel({
             <h3 id={`${bothId}-title`} className="label-caps text-[10.5px]">
               {t('panel.choose')}
             </h3>
-            {otherSide && candidates.length > 0 ? (
+            {/* Só quando algum Item cabe nos dois lados (um agente é de um time só). */}
+            {otherSide && candidates.some((c) => c.sides?.includes(otherSide)) ? (
               <Button
                 type="button"
                 variant="quiet"

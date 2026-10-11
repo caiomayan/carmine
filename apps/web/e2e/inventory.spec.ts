@@ -190,6 +190,8 @@ test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ pag
   await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
   await addSticker(page, 'furia');
   await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+  // O 3D precisa ter recebido o sticker antes de arrastá-lo.
+  await expect.poll(() => viewerItem(page)).toMatchObject({ stickers: { '0': {} } });
 
   const drag = page.getByTestId('drag-sticker-0');
   await drag.click();
