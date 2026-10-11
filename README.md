@@ -82,6 +82,20 @@ Com a API no ar (`pnpm dev`), suba o servidor e procure no console a linha `Carm
 
 `css_plugins list` no console confirma que o `Carmine.Core` carregou. Com a API fora do ar, os connects ficam em `addons\counterstrikesharp\data\Carmine.Core\pending-connects.json` e são reenviados a cada `RetryIntervalSeconds` (padrão 15 s).
 
+## Login Steam no site
+
+O web e a API ficam na mesma origem: o navegador chama sempre `/api/*` (ADR 0015). Em desenvolvimento o Next repassa `/api/*` para a API (`API_URL` no `apps/web/.env`, padrão `http://localhost:3333`); em produção quem separa é o Cloudflare Tunnel. A API precisa saber a origem pública do web em `PUBLIC_WEB_URL` (padrão `http://localhost:3000`).
+
+Para entrar sem a Steam real (e sem internet), use a Steam OpenID falsa, que aprova todo login como o SteamID escolhido:
+
+```sh
+pnpm --filter @carmine/contracts build
+pnpm --filter @carmine/api fake-steam 76561198000000001   # escuta em http://127.0.0.1:4555
+# no apps/api/.env: STEAM_OPENID_URL=http://127.0.0.1:4555/openid/login
+```
+
+Depois, `http://localhost:3000/api/auth/steam/login?returnTo=/` faz o login completo. Mutações com sessão exigem o cabeçalho `x-csrf-token` com o valor do cookie `carmine_csrf` (ou do `csrfToken` de `GET /api/me`).
+
 ## Steam Web API
 
 Os avatares das Contas vêm da Steam Web API. Crie a chave em https://steamcommunity.com/dev/apikey e coloque-a só no `apps/api/.env` local (`STEAM_WEB_API_KEY=...`), nunca no repositório. Sem a chave, as Contas ficam com o avatar neutro.
