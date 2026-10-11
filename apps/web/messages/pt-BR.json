@@ -91,11 +91,65 @@
   "inventory": {
     "title": "Inventário",
     "subtitle": "Os Itens que você montar aqui valem em todos os Servidores Carmine.",
-    "empty": {
-      "title": "O Inventário abre em breve",
-      "body": "Você vai entrar com a Steam, montar os seus Itens com visualização 3D e equipar o Loadout que aparece no jogo."
+    "section": "Seus Itens",
+    "count": "{count, plural, one {# Item} other {# Itens}} de {limit}",
+    "add": "Adicionar Item",
+    "full": "Seu Inventário chegou ao limite de {limit} Itens. Remova um para adicionar outro.",
+    "signedOut": {
+      "title": "Entre para montar o seu Inventário",
+      "body": "O Inventário pertence à sua Conta. Entre com a Steam para adicionar Itens e vê-los nos Servidores Carmine.",
+      "action": "Entrar com a Steam",
+      "browse": "Ver o catálogo"
     },
-    "section": "Seus Itens"
+    "unavailable": {
+      "title": "Não conseguimos carregar o seu Inventário agora",
+      "body": "Os seus Itens continuam guardados. Tente de novo em alguns instantes.",
+      "retry": "Tentar de novo"
+    },
+    "empty": {
+      "title": "Seu Inventário está vazio",
+      "body": "Escolha uma skin, ajuste do seu jeito e veja no jogo. Comece por uma das mais usadas:",
+      "browse": "Ver o catálogo inteiro",
+      "suggestions": "Sugestões para começar",
+      "pathTitle": "Da escolha ao jogo",
+      "step1": "Adicione uma skin ao Inventário, com float, seed e stickers do seu jeito.",
+      "step2": "Equipe no Loadout. Isso chega aqui no site em breve.",
+      "step3": "No servidor, digite <cmd>!ws</cmd> ou reconecte para ver no jogo."
+    },
+    "card": {
+      "actions": "Ações de {name}",
+      "edit": "Editar",
+      "remove": "Remover",
+      "statTrak": "StatTrak™",
+      "stickers": "{count, plural, one {# sticker} other {# stickers}}",
+      "charm": "1 charm",
+      "vip": "VIP"
+    },
+    "added": "{name} entrou no seu Inventário.",
+    "saved": "Alterações em {name} salvas.",
+    "remove": {
+      "title": "Remover {name}?",
+      "checking": "Verificando onde este Item está em uso",
+      "inUse": "Este Item está em uso:",
+      "loadout": "Loadout: {slot}, {side}",
+      "preset": "Preset {name}",
+      "sides": {
+        "ct": "CT",
+        "t": "TR"
+      },
+      "affected": "Ao remover, esses lugares voltam à Arma padrão.",
+      "notInUse": "Ele não está equipado nem em Presets.",
+      "usagesFailed": "Não deu para verificar onde ele está em uso agora.",
+      "undoHint": "Você pode desfazer logo depois.",
+      "confirm": "Remover",
+      "cancel": "Cancelar",
+      "removed": "{name} saiu do Inventário.",
+      "undo": "Desfazer",
+      "undoing": "Desfazendo",
+      "undone": "{name} voltou ao Inventário.",
+      "failed": "Não deu para remover agora. Tente de novo.",
+      "undoFailed": "Não deu para desfazer: o prazo acabou ou a conexão caiu."
+    }
   },
   "terms": {
     "title": "Termos de uso",
@@ -186,7 +240,7 @@
       "cancelado": "Você cancelou o login na Steam. Quando quiser, é só tentar de novo.",
       "invalido": "Não conseguimos confirmar o login com a Steam. Ele pode ter demorado demais; tente de novo.",
       "indisponivel": "A Steam não respondeu agora, então o login não terminou. Tente de novo em alguns minutos.",
-      "limite": "Foram muitas tentativas de login em pouco tempo. Espere um minuto e tente de novo."
+      "limite": "Muitas tentativas de login seguidas a partir desta conexão. Espere um minuto e tente de novo."
     },
     "sessionExpired": "A sua sessão expirou. O que você estava editando ficou guardado neste navegador e volta quando você entrar de novo."
   },
@@ -259,5 +313,182 @@
     "save": "Salvar",
     "saved": "Salvo.",
     "signInFirst": "Entre para testar o rascunho."
+  },
+  "catalog": {
+    "title": "Adicionar Item",
+    "subtitle": "Escolha a skin. Depois você ajusta float, seed, stickers e o resto.",
+    "back": "Inventário",
+    "search": "Buscar no catálogo",
+    "searchPlaceholder": "Skin, arma ou coleção",
+    "filters": "Filtros",
+    "type": "Tipo",
+    "allTypes": "Todos",
+    "weapon": "Arma",
+    "allWeapons": "Todas",
+    "rarity": "Raridade",
+    "allRarities": "Todas",
+    "collection": "Coleção",
+    "allCollections": "Todas",
+    "clear": "Limpar filtros",
+    "types": {
+      "weapon": "Armas",
+      "knife": "Facas",
+      "glove": "Luvas",
+      "agent": "Agentes",
+      "musickit": "Music kits"
+    },
+    "rarities": {
+      "consumer": "Nível Consumidor",
+      "industrial": "Nível Industrial",
+      "milspec": "Nível Militar",
+      "restricted": "Restrito",
+      "classified": "Confidencial",
+      "covert": "Secreto",
+      "contraband": "Contrabando"
+    },
+    "results": "{total, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
+    "showing": "Mostrando {shown} de {total}",
+    "showMore": "Mostrar mais",
+    "loading": "Atualizando os resultados",
+    "empty": {
+      "title": "Nada encontrado",
+      "body": "Nenhum Item combina com a busca e os filtros. Tente outra palavra ou limpe os filtros."
+    },
+    "vip": "VIP",
+    "vipHint": "Exige Período VIP"
+  },
+  "itemEditor": {
+    "metaNew": "Adicionar {name}",
+    "metaEdit": "Editar {name}",
+    "backToCatalog": "Catálogo",
+    "backToInventory": "Inventário",
+    "notFound": {
+      "title": "Este Item não está no catálogo",
+      "body": "Ele pode ter saído da lista de Itens ou ser uma Arma padrão, que não é um Item.",
+      "action": "Ver o catálogo"
+    },
+    "itemNotFound": {
+      "title": "Este Item não está no seu Inventário",
+      "body": "Ele pode ter sido removido. Os Itens que você tem estão no Inventário.",
+      "action": "Ir para o Inventário"
+    },
+    "attributes": "Atributos do item",
+    "float": "Float",
+    "floatRange": "Faixa desta skin: {min} a {max}",
+    "wear": {
+      "fn": "Nova de Fábrica",
+      "mw": "Pouco Usada",
+      "ft": "Testada em Campo",
+      "ww": "Bem Desgastada",
+      "bs": "Veterana de Guerra"
+    },
+    "wearShort": {
+      "fn": "NF",
+      "mw": "PU",
+      "ft": "TC",
+      "ww": "BD",
+      "bs": "VG"
+    },
+    "seed": "Seed do padrão",
+    "seedRange": "De {min} a {max}",
+    "statTrak": "StatTrak™",
+    "statTrakOn": "Ligado",
+    "statTrakOff": "Desligado",
+    "nameTag": "Nametag",
+    "nameTagPlaceholder": "Sem nametag",
+    "nameTagHint": "Até 20 caracteres.",
+    "vipLocked": "Exclusivo do VIP",
+    "vipAttributes": "StatTrak e nametag fazem parte do VIP. Você pode ver como ficam, mas só salva com um Período VIP ativo.",
+    "vipItem": "Agentes e music kits fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
+    "noAttributes": "Este Item não tem float, seed nem stickers: é só adicionar.",
+    "stickers": "Stickers",
+    "stickersCount": "{count} de {max}",
+    "addSticker": "Adicionar sticker",
+    "stickerLabel": "Sticker {n}: {name}",
+    "slot": "Posição na arma",
+    "slotN": "Slot {n}",
+    "rotation": "Rotação",
+    "rotationValue": "{value}°",
+    "stickerWear": "Desgaste",
+    "offsetX": "Ajuste horizontal",
+    "offsetY": "Ajuste vertical",
+    "removeSticker": "Tirar {name}",
+    "moreOptions": "Ajuste fino",
+    "charm": "Charm",
+    "addCharm": "Adicionar charm",
+    "charmSeed": "Padrão do charm",
+    "charmPosition": "Posição do charm",
+    "positionDefault": "Padrão da arma",
+    "positionCustom": "Personalizada",
+    "axisX": "X",
+    "axisY": "Y",
+    "axisZ": "Z",
+    "removeCharm": "Tirar {name}",
+    "picker": {
+      "sticker": "Escolher sticker",
+      "charm": "Escolher charm",
+      "search": "Buscar",
+      "searchPlaceholderSticker": "Nome, time ou campeonato",
+      "searchPlaceholderCharm": "Nome do charm",
+      "category": "Campeonato ou coleção",
+      "allCategories": "Todos",
+      "results": "{total, plural, =0 {Nada encontrado} one {# resultado} other {# resultados}}",
+      "empty": "Nada encontrado com essa busca.",
+      "loading": "Buscando",
+      "failed": "Não conseguimos buscar agora. Tente de novo.",
+      "retry": "Tentar de novo",
+      "choose": "Escolher {name}",
+      "more": "Mostrar mais"
+    },
+    "add": "Adicionar ao Inventário",
+    "save": "Salvar alterações",
+    "saving": "Salvando",
+    "signInToAdd": "Entrar com a Steam para adicionar",
+    "discard": "Descartar alterações",
+    "remove": "Remover do Inventário",
+    "restored": "Voltamos com a edição que você não tinha salvado.",
+    "issues": "{count, plural, one {Corrija # campo para salvar.} other {Corrija # campos para salvar.}}",
+    "errors": {
+      "invalid_body": "Algo neste Item não está no formato esperado. Recarregue a página e tente de novo.",
+      "invalid_item": "Este Item não existe mais no catálogo.",
+      "default_weapon": "Armas padrão não são Itens: escolha uma skin.",
+      "wear_out_of_range": "O float desta skin vai de {min} a {max}.",
+      "seed_out_of_range": "O seed vai de {min} a {max}.",
+      "attribute_not_allowed": "Este Item não tem esse atributo.",
+      "stattrak_not_allowed": "Este Item não aceita StatTrak.",
+      "nametag_not_allowed": "Este Item não aceita nametag.",
+      "invalid_nametag": "A nametag aceita até 20 caracteres, sem espaço no começo nem no fim.",
+      "stickers_not_allowed": "Só skins de arma aceitam stickers.",
+      "too_many_stickers": "Cabem até 5 stickers.",
+      "invalid_sticker": "Confira este sticker: cada um precisa de uma posição diferente na arma.",
+      "keychains_not_allowed": "Só skins de arma aceitam charm.",
+      "too_many_keychains": "Cabe só 1 charm.",
+      "invalid_keychain": "Confira o charm: o padrão vai de 1 a 100.000.",
+      "item_id_immutable": "Não dá para trocar a skin de um Item. Remova este e adicione outro.",
+      "vip_required": "Isto exige um Período VIP ativo.",
+      "inventory_full": "Seu Inventário chegou a 300 Itens. Remova um para adicionar outro.",
+      "not_found": "Este Item não está mais no seu Inventário.",
+      "restore_expired": "O prazo para desfazer acabou.",
+      "network": "Não conseguimos falar com o servidor. As suas alterações continuam aqui; tente de novo.",
+      "unexpected": "Algo deu errado ao salvar. As suas alterações continuam aqui; tente de novo."
+    },
+    "viewer": {
+      "label": "Prévia de {name}",
+      "loading": "Carregando o 3D",
+      "hint": "Arraste para girar",
+      "frame": "Visualizador 3D de {name}",
+      "reasons": {
+        "no-webgl": "Este navegador não desenha 3D; mostrando a imagem.",
+        "timeout": "O 3D não respondeu; mostrando a imagem. Tudo continua editável.",
+        "network": "O 3D não conseguiu carregar; mostrando a imagem.",
+        "unsupported": "Esta combinação ainda não tem 3D; mostrando a imagem.",
+        "rate-limited": "O 3D atingiu o limite de uso por agora; mostrando a imagem."
+      },
+      "retry": "Tentar o 3D de novo",
+      "dragHint": "Arraste o item selecionado na prévia"
+    },
+    "drag3d": "Arrastar no 3D",
+    "drag3dLabel": "Arrastar {name} na prévia 3D",
+    "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado."
   }
 }

@@ -293,6 +293,9 @@ importers:
       '@carmine/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
+      '@ianlucas/cs2-lib':
+        specifier: 'catalog:'
+        version: 9.5.0
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
