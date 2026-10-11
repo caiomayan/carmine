@@ -5,6 +5,7 @@ import {
   type FormSpec,
   formFromItem,
   formToItem,
+  type ItemForm,
   issueFromApiError,
   MAX_STICKERS,
   validateForm,
@@ -50,7 +51,7 @@ describe('formulário de um Item novo', () => {
 
 describe('formulário -> Item do contrato', () => {
   it('monta a AK do aceite: float 0,15, seed 661, StatTrak e 2 stickers', () => {
-    let form = { ...emptyForm(AK), wear: 0.15, seed: 661, statTrak: true };
+    let form: ItemForm = { ...emptyForm(AK), wear: 0.15, seed: 661, statTrak: true };
     form = addSticker(form, AK, sticker(5001));
     form = addSticker(form, AK, sticker(5002));
     expect(formToItem(AK, form)).toEqual({
@@ -121,7 +122,6 @@ describe('stickers', () => {
   it('cada sticker novo vai para o primeiro slot livre', () => {
     let form = emptyForm(AK);
     form = addSticker(form, AK, sticker(1));
-    form = { ...form, stickers: [{ ...form.stickers[0], schema: 0 }] };
     form = addSticker(form, AK, sticker(2));
     expect(form.stickers.map((s) => s.schema)).toEqual([0, 1]);
   });

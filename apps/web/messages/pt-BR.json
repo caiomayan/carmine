@@ -185,7 +185,8 @@
     "errors": {
       "cancelado": "Você cancelou o login na Steam. Quando quiser, é só tentar de novo.",
       "invalido": "Não conseguimos confirmar o login com a Steam. Ele pode ter demorado demais; tente de novo.",
-      "indisponivel": "A Steam não respondeu agora, então o login não terminou. Tente de novo em alguns minutos."
+      "indisponivel": "A Steam não respondeu agora, então o login não terminou. Tente de novo em alguns minutos.",
+      "limite": "Muitas tentativas de login seguidas a partir desta conexão. Espere um minuto e tente de novo."
     },
     "sessionExpired": "A sua sessão expirou. O que você estava editando ficou guardado neste navegador e volta quando você entrar de novo."
   },

@@ -46,6 +46,7 @@ describe('parseLoginError', () => {
     expect(parseLoginError('cancelado')).toBe('cancelado');
     expect(parseLoginError('invalido')).toBe('invalido');
     expect(parseLoginError('indisponivel')).toBe('indisponivel');
+    expect(parseLoginError('limite')).toBe('limite');
   });
 
   it('ignora o resto', () => {

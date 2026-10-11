@@ -79,7 +79,7 @@ describe('busca no catálogo', () => {
     expect(classifiedAk.items.every((entry) => entry.rarity === 'classified')).toBe(true);
     expect(ids(classifiedAk)).toContain(AK_REDLINE);
 
-    const collection = catalogEntry(AWP_ASIIMOV)?.collection;
+    const collection = catalogEntry(AWP_ASIIMOV)?.collection ?? undefined;
     expect(collection).toBeTruthy();
     const phoenix = searchCatalog({ collection, limit: 1000 });
     expect(ids(phoenix)).toContain(AWP_ASIIMOV);
@@ -110,7 +110,7 @@ describe('stickers e charms para aplicar', () => {
     const found = searchAttachments('sticker', { q: 'atirador dreamhack' });
     expect(found.items.map((s) => s.id)).toContain(FIRST_STICKER);
     expect(found.items[0]).toMatchObject({ type: 'sticker', image: expect.any(String) });
-    const category = found.items.find((s) => s.id === FIRST_STICKER)?.category;
+    const category = found.items.find((s) => s.id === FIRST_STICKER)?.category ?? undefined;
     expect(category).toBe('DreamHack Winter 2013');
     const byCategory = searchAttachments('sticker', { category, limit: 1000 });
     expect(byCategory.items.every((s) => s.category === category)).toBe(true);
