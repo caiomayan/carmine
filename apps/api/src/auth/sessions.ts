@@ -11,6 +11,8 @@ export interface Session {
   csrfToken: string;
   /** Até quando a sessão vale, renovada a cada uso (deslizante), mas nunca além do limite absoluto. */
   expiresAt: Date;
+  /** A sessão nasceu do login que reivindicou a Conta (o primeiro login dela). */
+  firstLogin: boolean;
 }
 
 export interface SessionOptions {
@@ -25,6 +27,8 @@ const recordSchema = z.object({
   csrfToken: z.string().min(1),
   createdAt: z.number(),
   renewedAt: z.number(),
+  // Sessões gravadas antes do campo existir não são de primeiro login.
+  firstLogin: z.boolean().default(false),
 });
 
 type SessionRecord = z.infer<typeof recordSchema>;
@@ -46,7 +50,7 @@ export class SessionStore {
     private readonly now: () => Date = () => new Date(),
   ) {}
 
-  async create(accountId: string): Promise<Session> {
+  async create(accountId: string, options: { firstLogin?: boolean } = {}): Promise<Session> {
     const id = randomToken();
     const now = this.now().getTime();
     const record: SessionRecord = {
@@ -54,6 +58,7 @@ export class SessionStore {
       csrfToken: randomToken(),
       createdAt: now,
       renewedAt: now,
+      firstLogin: options.firstLogin ?? false,
     };
     const ttl = this.ttlMs(record, now);
     await this.valkey.set(keyOf(id), JSON.stringify(record), 'PX', ttl);
@@ -118,6 +123,7 @@ function toSession(id: string, record: SessionRecord, now: number, ttlMs: number
     accountId: record.accountId,
     csrfToken: record.csrfToken,
     expiresAt: new Date(now + ttlMs),
+    firstLogin: record.firstLogin,
   };
 }
 

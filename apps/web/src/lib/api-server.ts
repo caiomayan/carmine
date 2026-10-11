@@ -4,15 +4,20 @@ import {
   type Profile,
   profileSchema,
 } from '@carmine/contracts';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
-import { apiGet } from './api-base';
+import { apiGet, VISITOR_IP_HEADER } from './api-base';
 
 /**
  * Sessão e Perfil lidos pelos Server Components, repassando o cookie da sessão (ADR 0015). Um
  * `Set-Cookie` de renovação que a API mande aqui não chega ao navegador: quem renova a sessão
  * é o `/api/me` do navegador.
  */
+
+/** O IP do visitante que o cloudflared entregou ao web (ver `VISITOR_IP_HEADER`). */
+export async function visitorIp(): Promise<string | null> {
+  return (await headers()).get(VISITOR_IP_HEADER);
+}
 
 /** Nome do cookie da sessão na API (`__Host-`, httpOnly); o web só o repassa. */
 export const SESSION_COOKIE = '__Host-carmine_session';
@@ -33,6 +38,7 @@ export const getServerSession = cache(async (): Promise<ServerSession> => {
   try {
     const response = await apiGet('/me', {
       cookie: `${SESSION_COOKIE}=${encodeURIComponent(sessionId)}`,
+      visitorIp: await visitorIp(),
     });
     if (response.status === 401) return { status: 'anonymous' };
     if (!response.ok) return { status: 'unknown' };
@@ -49,7 +55,7 @@ export type ProfileResult =
 
 export const getProfile = cache(async (publicId: number): Promise<ProfileResult> => {
   try {
-    const response = await apiGet(`/profiles/${publicId}`);
+    const response = await apiGet(`/profiles/${publicId}`, { visitorIp: await visitorIp() });
     if (response.status === 404) return { status: 'not-found' };
     if (!response.ok) return { status: 'unavailable' };
     return { status: 'found', profile: profileSchema.parse(await response.json()) };

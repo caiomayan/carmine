@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { findPublicIdBySteamId } from '@/lib/api-base';
+import { findPublicIdBySteamId, VISITOR_IP_HEADER } from '@/lib/api-base';
 import { PROFILE_PATH_HEADER, parseProfileSegment } from '@/lib/auth-links';
 
 /**
@@ -19,7 +19,10 @@ export async function proxy(request: NextRequest) {
   const parsed = parseProfileSegment(request.nextUrl.pathname.slice(1));
   if (parsed.kind !== 'steamId') return next();
 
-  const publicId = await findPublicIdBySteamId(parsed.steamId);
+  const publicId = await findPublicIdBySteamId(
+    parsed.steamId,
+    request.headers.get(VISITOR_IP_HEADER),
+  );
   if (typeof publicId !== 'number') return next();
 
   const target = request.nextUrl.clone();

@@ -131,6 +131,26 @@ test('primeiros passos: aparecem depois do login, fecham, ficam fechados e reabr
   await expect(guide.getByRole('heading', { level: 2 })).toBeFocused();
 });
 
+test('primeiros passos só abrem sozinhos no primeiro login; depois, só pelo menu', async ({
+  page,
+}) => {
+  const steamId = newSteamId();
+  await page.goto('/');
+  await signInFromHeader(page, steamId);
+  // Sem fechar: o que decide é o primeiro login, não o cookie de quem fechou.
+  await expect(page.getByTestId('first-steps')).toBeVisible();
+
+  await accountMenu(page).click();
+  await page.getByRole('menuitem', { name: 'Sair' }).click();
+  await signInFromHeader(page, steamId);
+  await expect(accountMenu(page)).toBeVisible();
+  await expect(page.getByTestId('first-steps')).toHaveCount(0);
+
+  await accountMenu(page).click();
+  await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
+  await expect(page.getByTestId('first-steps')).toBeVisible();
+});
+
 test('primeiros passos são por Conta: outra Conta no mesmo navegador ainda os vê', async ({
   page,
 }) => {

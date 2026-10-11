@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { parseTrustedProxies } from '../client-ip/client-ip.js';
+import type { RateLimitPolicyName } from '../rate-limit/policies.js';
 
 const urlWithProtocol = (protocols: string[]) =>
   z.url().refine((value) => protocols.includes(new URL(value).protocol), {
@@ -13,6 +15,8 @@ const origin = () =>
 
 const DAY_SECONDS = 24 * 60 * 60;
 
+const perMinute = (fallback: number) => z.coerce.number().int().positive().default(fallback);
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -26,7 +30,26 @@ const envSchema = z
     STEAM_WEB_API_KEY: z.string().trim().default(''),
     STEAM_WEB_API_URL: urlWithProtocol(['https:', 'http:']).default('https://api.steampowered.com'),
     STEAM_WEB_API_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
-    EQUIPPED_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(120),
+    // Proxies cujo CF-Connecting-IP vale como IP do visitante: o cloudflared (e o web, que o
+    // repassa nas chamadas dos Server Components). IPs ou redes CIDR, separados por vírgula;
+    // vazio (padrão) confia só no IP do socket.
+    TRUSTED_PROXIES: z
+      .string()
+      .default('')
+      .transform((value, ctx) => {
+        try {
+          return parseTrustedProxies(value);
+        } catch (error) {
+          ctx.addIssue({ code: 'custom', message: (error as Error).message });
+          return z.NEVER;
+        }
+      }),
+    // Requisições por minuto de cada política de rate limit (src/rate-limit/policies.ts).
+    RATE_LIMIT_LOGIN_PER_MINUTE: perMinute(20),
+    RATE_LIMIT_PUBLIC_PER_MINUTE: perMinute(240),
+    RATE_LIMIT_EQUIPPED_PER_MINUTE: perMinute(120),
+    RATE_LIMIT_MUTATIONS_PER_MINUTE: perMinute(60),
+    RATE_LIMIT_SERVER_PER_MINUTE: perMinute(600),
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
     PUBLIC_WEB_URL: origin().default('http://localhost:3000'),
@@ -73,8 +96,10 @@ export interface AppConfig {
   valkeyUrl: string;
   healthCheckTimeoutMs: number;
   steamWebApi: { key: string | null; url: string; timeoutMs: number };
-  /** Requisições por minuto, por IP, ao `equipped/v5` (o servidor de jogo pede por todos). */
-  equippedRateLimitPerMinute: number;
+  /** Proxies confiáveis (IPs e redes CIDR) para o `CF-Connecting-IP`; vazio: só o socket. */
+  trustedProxies: string[];
+  /** Requisições por minuto de cada política de rate limit. */
+  rateLimitsPerMinute: Record<RateLimitPolicyName, number>;
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
   publicWebUrl: string;
   steamOpenIdUrl: string;
@@ -108,7 +133,14 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       url: e.STEAM_WEB_API_URL.replace(/\/+$/, ''),
       timeoutMs: e.STEAM_WEB_API_TIMEOUT_MS,
     },
-    equippedRateLimitPerMinute: e.EQUIPPED_RATE_LIMIT_PER_MINUTE,
+    trustedProxies: e.TRUSTED_PROXIES,
+    rateLimitsPerMinute: {
+      login: e.RATE_LIMIT_LOGIN_PER_MINUTE,
+      public: e.RATE_LIMIT_PUBLIC_PER_MINUTE,
+      equipped: e.RATE_LIMIT_EQUIPPED_PER_MINUTE,
+      mutations: e.RATE_LIMIT_MUTATIONS_PER_MINUTE,
+      server: e.RATE_LIMIT_SERVER_PER_MINUTE,
+    },
     publicWebUrl: e.PUBLIC_WEB_URL.replace(/\/+$/, ''),
     steamOpenIdUrl: e.STEAM_OPENID_URL,
     session: {

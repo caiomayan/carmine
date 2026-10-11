@@ -28,7 +28,7 @@ const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 /**
  * Primeiros passos depois do primeiro login (S03): uma orientação curta no topo da página,
- * fechável e reabrível pelo menu da Conta. Fecha encolhendo no lugar, sem empurrar o foco
+ * que abre sozinha só na sessão do primeiro login, fechável e reabrível pelo menu da Conta. Fecha encolhendo no lugar, sem empurrar o foco
  * para o nada: ele volta ao conteúdo.
  */
 export function FirstSteps({ labels }: { labels: FirstStepsLabels }) {

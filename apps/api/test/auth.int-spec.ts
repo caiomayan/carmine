@@ -152,6 +152,50 @@ describe('Login Steam (OpenID 2.0)', () => {
     });
   });
 
+  describe('primeiro login (para os Primeiros passos)', () => {
+    it('a sessão do login que reivindicou a Conta é o primeiro login; as seguintes não', async () => {
+      const steamId = steamIdFor(5);
+      await connect(steamId);
+
+      await loginViaSteam(steamId);
+      expect((await me()).firstLogin).toBe(true);
+      // Continua sendo o primeiro login enquanto a sessão durar (outras cargas de página).
+      expect((await me()).firstLogin).toBe(true);
+
+      await loginViaSteam(steamId);
+      expect((await me()).firstLogin).toBe(false);
+    });
+
+    it('quem nunca jogou e entra pelo site também tem o primeiro login', async () => {
+      await loginViaSteam(steamIdFor(6));
+
+      expect((await me()).firstLogin).toBe(true);
+    });
+
+    it('outro navegador da mesma Conta, depois, não é primeiro login', async () => {
+      const steamId = steamIdFor(7);
+      await loginViaSteam(steamId);
+      browser = new Browser(t.app);
+
+      await loginViaSteam(steamId);
+
+      expect((await me()).firstLogin).toBe(false);
+    });
+
+    it('dois primeiros logins simultâneos: só uma sessão fica marcada', async () => {
+      const steamId = steamIdFor(8);
+      await connect(steamId);
+      const browsers = [new Browser(t.app), new Browser(t.app)];
+
+      await Promise.all(browsers.map((b) => login(b, openId, steamId)));
+
+      const flags = await Promise.all(
+        browsers.map(async (b) => currentSessionSchema.parse((await b.get('/api/me')).json())),
+      );
+      expect(flags.map((s) => s.firstLogin).sort()).toEqual([false, true]);
+    });
+  });
+
   describe('sessão', () => {
     it('vai num cookie httpOnly, Secure e SameSite=Lax; o token CSRF num cookie legível', async () => {
       const steamUrl = await startLogin();

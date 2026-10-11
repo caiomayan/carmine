@@ -14,6 +14,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { type Account, AccountsService } from './accounts.service.js';
 import { toProfile } from './profile.js';
 
@@ -27,6 +28,7 @@ export class ProfilesController {
   constructor(@Inject(AccountsService) private readonly accounts: AccountsService) {}
 
   @Get('by-steam-id/:steamId')
+  @RateLimit('public')
   @ApiOperation({
     operationId: 'getProfileLocation',
     summary: 'ID público da Conta de um SteamID64, para o web redirecionar (301) ao Perfil',
@@ -42,6 +44,7 @@ export class ProfilesController {
   }
 
   @Get(':publicId')
+  @RateLimit('public')
   @ApiOperation({ operationId: 'getProfile', summary: 'Perfil público de uma Conta' })
   @ApiParam({ name: 'publicId', type: 'integer', example: 10_016 })
   @ApiOkResponse({ description: 'O Perfil', standardSchema: profileSchema })

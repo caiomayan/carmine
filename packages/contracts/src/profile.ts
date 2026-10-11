@@ -33,6 +33,11 @@ export const currentSessionSchema = z
     account: profileSchema,
     /** Vai no cabeçalho `x-csrf-token` de toda mutação (também no cookie `carmine_csrf`). */
     csrfToken: z.string().min(1),
+    /**
+     * Esta sessão nasceu do login que reivindicou a Conta (o primeiro login dela): o web
+     * mostra os Primeiros passos sozinho só nela. Vale enquanto a sessão durar.
+     */
+    firstLogin: z.boolean(),
   })
   .meta({ id: 'CurrentSession' });
 

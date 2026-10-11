@@ -17,11 +17,34 @@ describe('loadConfig', () => {
       valkeyUrl: 'redis://localhost:6379',
       healthCheckTimeoutMs: 2000,
       steamWebApi: { key: null, url: 'https://api.steampowered.com', timeoutMs: 5000 },
-      equippedRateLimitPerMinute: 120,
+      trustedProxies: [],
+      rateLimitsPerMinute: { login: 20, public: 240, equipped: 120, mutations: 60, server: 600 },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
       session: { idleTtlSeconds: 1_209_600, absoluteTtlSeconds: 7_776_000 },
     });
+  });
+
+  it('lê os proxies confiáveis e recusa um que não é IP nem rede', () => {
+    expect(loadConfig({ ...validEnv, TRUSTED_PROXIES: '172.30.0.10, 10.8.0.0/16' })).toMatchObject({
+      trustedProxies: ['172.30.0.10', '10.8.0.0/16'],
+    });
+    expect(() => loadConfig({ ...validEnv, TRUSTED_PROXIES: 'cloudflared' })).toThrow(
+      /TRUSTED_PROXIES: proxy confiável inválido: "cloudflared"/,
+    );
+  });
+
+  it('lê os limites de cada política de rate limit', () => {
+    const config = loadConfig({
+      ...validEnv,
+      RATE_LIMIT_LOGIN_PER_MINUTE: '5',
+      RATE_LIMIT_SERVER_PER_MINUTE: '1000',
+    });
+
+    expect(config.rateLimitsPerMinute).toMatchObject({ login: 5, server: 1000 });
+    expect(() => loadConfig({ ...validEnv, RATE_LIMIT_PUBLIC_PER_MINUTE: '0' })).toThrow(
+      /RATE_LIMIT_PUBLIC_PER_MINUTE/,
+    );
   });
 
   it('lê a origem pública do web sem a barra final', () => {

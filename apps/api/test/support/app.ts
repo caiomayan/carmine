@@ -29,6 +29,12 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
     DATABASE_URL: postgres.url,
     VALKEY_URL: valkey.getConnectionUrl(),
     HEALTH_CHECK_TIMEOUT_MS: '1000',
+    // Os testes fazem muitas requisições do mesmo IP; quem testa o limite passa os seus.
+    RATE_LIMIT_LOGIN_PER_MINUTE: '10000',
+    RATE_LIMIT_PUBLIC_PER_MINUTE: '10000',
+    RATE_LIMIT_EQUIPPED_PER_MINUTE: '10000',
+    RATE_LIMIT_MUTATIONS_PER_MINUTE: '10000',
+    RATE_LIMIT_SERVER_PER_MINUTE: '10000',
     ...env,
   });
   const app = await createApp(config);

@@ -36,6 +36,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AccountsService } from '../accounts/accounts.service.js';
 import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
+import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
   clearSessionCookies,
@@ -72,6 +73,7 @@ export class AuthController {
   ) {}
 
   @Get('auth/steam/login')
+  @RateLimit('login')
   @ApiOperation({
     operationId: 'startSteamLogin',
     summary: 'Começa o login Steam: redireciona para a Steam',
@@ -103,6 +105,7 @@ export class AuthController {
   }
 
   @Get('auth/steam/callback')
+  @RateLimit('login')
   @ApiOperation({
     operationId: 'completeSteamLogin',
     summary: 'Volta da Steam: verifica a asserção, reivindica a Conta e abre a sessão',
@@ -124,13 +127,13 @@ export class AuthController {
         return;
       }
 
-      const account = await this.accounts.claimOnLogin(result.steamId);
+      const { account, firstLogin } = await this.accounts.claimOnLogin(result.steamId);
       // Rotação: a sessão de antes do login (se havia) morre; o id novo nunca foi visto por ninguém.
       const previous = request.cookies[SESSION_COOKIE];
       if (previous) {
         await this.sessions.destroy(previous);
       }
-      setSessionCookies(reply, await this.sessions.create(account.id));
+      setSessionCookies(reply, await this.sessions.create(account.id, { firstLogin }));
       this.logger.log(`Login Steam de ${result.steamId} (#${account.publicId})`);
       reply.redirect(`${this.config.publicWebUrl}${result.returnTo}`, HttpStatus.SEE_OTHER);
     } catch (error) {
@@ -141,6 +144,7 @@ export class AuthController {
 
   @Post('auth/logout')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @RateLimit('mutations')
   @ApiCookieAuth()
   @ApiOperation({
     operationId: 'logout',
@@ -160,10 +164,12 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthenticatedGuard)
+  // Abaixo do AuthenticatedGuard: conta antes dele, inclusive quem não tem sessão.
+  @RateLimit('public')
   @ApiCookieAuth()
   @ApiOperation({
     operationId: 'getCurrentSession',
-    summary: 'A Conta da sessão atual e o token CSRF das mutações',
+    summary: 'A Conta da sessão atual, o token CSRF das mutações e se é o primeiro login',
   })
   @ApiOkResponse({ description: 'Sessão ativa', standardSchema: currentSessionSchema })
   @ApiUnauthorizedResponse({ description: 'Sem sessão, ou ela expirou' })
@@ -178,7 +184,11 @@ export class AuthController {
       clearSessionCookies(reply);
       throw new UnauthorizedException('Sessão ausente ou expirada; entre de novo');
     }
-    return { account: toProfile(account), csrfToken: session.csrfToken };
+    return {
+      account: toProfile(account),
+      csrfToken: session.csrfToken,
+      firstLogin: session.firstLogin,
+    };
   }
 
   private errorUrl(error: LoginError, returnTo: string): string {

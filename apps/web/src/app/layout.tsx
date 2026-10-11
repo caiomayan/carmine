@@ -45,8 +45,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const server = await getServerSession();
   const session = server.status === 'authenticated' ? server.session : null;
   const dismissed = (await cookies()).get(FIRST_STEPS_COOKIE)?.value;
+  // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
   const firstStepsOpen =
-    session !== null && !hasDismissedFirstSteps(dismissed, session.account.publicId);
+    session?.firstLogin === true && !hasDismissedFirstSteps(dismissed, session.account.publicId);
   const step = (key: 'what' | 'steam' | 'equip' | 'ingame') => ({
     title: tSteps(`steps.${key}.title`),
     body: tSteps.rich(`steps.${key}.body`, {

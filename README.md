@@ -20,6 +20,7 @@ pnpm dev
 - a API em http://localhost:3333 (health check em `/api/health`, documentação em `/api/docs`).
 
 - A API lê `apps/api/.env.example`; para mudar algo, crie `apps/api/.env` só com as variáveis que mudam.
+- Um Ctrl+C encerra tudo (turbo, watchers e as portas 3000/3333). No Windows, `infra/scripts/dev.mjs` põe o `pnpm.exe` antes do `pnpm.cmd` no PATH do turbo: com o shim em lotes, o cmd.exe parava em "Deseja finalizar o arquivo em lotes (S/N)?" e o turbo ficava em "3 tasks shutting down...".
 - Só a infraestrutura: `pnpm infra:up` / `pnpm infra:down` (ou `docker compose -f infra/docker-compose.yml up -d`).
 - Portas ocupadas: `POSTGRES_PORT` e `VALKEY_PORT` mudam as portas do Compose (ajuste as URLs no `.env`).
 
@@ -99,6 +100,10 @@ pnpm --filter @carmine/api fake-steam 76561198000000001   # escuta em http://127
 ```
 
 Depois, "Entrar" na barra superior (ou `http://localhost:3000/entrar`) faz o login completo. Para entrar como outra Conta sem reiniciar a Steam falsa, crie no navegador o cookie `fake_steam_id=<SteamID64>` no host `127.0.0.1`; `fake_steam_action=cancel` simula a desistência na Steam. Mutações com sessão exigem o cabeçalho `x-csrf-token` com o valor do cookie `carmine_csrf` (ou do `csrfToken` de `GET /api/me`).
+
+## Rate limit e IP real
+
+As rotas da API são limitadas por política (`@RateLimit`), com contagem no Valkey; os limites mudam por `RATE_LIMIT_*_PER_MINUTE`. Atrás do Cloudflare Tunnel, o IP do visitante vem de `CF-Connecting-IP`, aceito só de `TRUSTED_PROXIES` (vazio em desenvolvimento). Políticas, falha segura e a configuração da S09: [docs/operacao/rate-limit-e-ip-real.md](docs/operacao/rate-limit-e-ip-real.md).
 
 ## Steam Web API
 

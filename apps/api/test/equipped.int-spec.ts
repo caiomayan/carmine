@@ -8,7 +8,7 @@ describe('GET /api/equipped/v5/{steamId}.json', () => {
   let t: TestApp;
 
   beforeAll(async () => {
-    t = await startTestApp({ EQUIPPED_RATE_LIMIT_PER_MINUTE: '5' });
+    t = await startTestApp({ RATE_LIMIT_EQUIPPED_PER_MINUTE: '5' });
   });
 
   afterAll(async () => {
