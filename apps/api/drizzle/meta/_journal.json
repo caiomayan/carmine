@@ -15,6 +15,13 @@
       "when": 1791654636990,
       "tag": "0001_s01_conta_e_servidores",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791716340097,
+      "tag": "0002_s04_inventario_e_vip",
+      "breakpoints": true
     }
   ]
 }

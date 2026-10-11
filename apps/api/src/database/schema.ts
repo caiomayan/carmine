@@ -1,7 +1,10 @@
+import type { Cs2Item } from '@carmine/contracts';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
   check,
+  index,
+  jsonb,
   pgEnum,
   pgSequence,
   pgTable,
@@ -53,4 +56,50 @@ export const accounts = pgTable(
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [check('accounts_public_id_positive', sql`${table.publicId} > 0`)],
+);
+
+/**
+ * Item (`Item`) do Inventário de uma Conta (S04). O Item fica inteiro em `item`, no formato
+ * `CS2BaseInventoryItem` da cs2-lib (ADR 0006) já validado pela API: é o formato que o viewer, a
+ * validação e a conversão para o `equipped/v5` usam, e nenhuma consulta precisa dos atributos
+ * em colunas. O `id` é estável: Loadout e Presets (S05) o referenciam.
+ *
+ * Remover é soft delete (`deletedAt`): o Desfazer devolve o mesmo `id` (e, na S05, os mesmos
+ * slots) sem recriar nada. Passada a janela do Desfazer, a linha só espera a limpeza.
+ */
+export const inventoryItems = pgTable(
+  'inventory_items',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    item: jsonb().$type<Cs2Item>().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+    /** Removido em; nulo enquanto o Item está no Inventário. */
+    deletedAt: timestamptz(),
+  },
+  (table) => [index('inventory_items_account_idx').on(table.accountId, table.createdAt)],
+);
+
+/**
+ * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. Só leitura
+ * na S04; a concessão pela Staff (S05) e os Pacotes VIP (S14) criam Períodos.
+ */
+export const vipPeriods = pgTable(
+  'vip_periods',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    startsAt: timestamptz().notNull(),
+    endsAt: timestamptz().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    index('vip_periods_account_idx').on(table.accountId, table.endsAt),
+    check('vip_periods_ends_after_start', sql`${table.endsAt} > ${table.startsAt}`),
+  ],
 );

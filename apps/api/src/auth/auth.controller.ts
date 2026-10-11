@@ -37,6 +37,7 @@ import { AccountsService } from '../accounts/accounts.service.js';
 import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { VipPeriods } from '../vip/vip-periods.js';
 import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
   clearSessionCookies,
@@ -70,6 +71,7 @@ export class AuthController {
     @Inject(SteamLogin) private readonly login: SteamLogin,
     @Inject(SessionStore) private readonly sessions: SessionStore,
     @Inject(AccountsService) private readonly accounts: AccountsService,
+    @Inject(VipPeriods) private readonly vipPeriods: VipPeriods,
   ) {}
 
   @Get('auth/steam/login')
@@ -169,7 +171,7 @@ export class AuthController {
   @ApiCookieAuth()
   @ApiOperation({
     operationId: 'getCurrentSession',
-    summary: 'A Conta da sessão atual, o token CSRF das mutações e se é o primeiro login',
+    summary: 'A Conta da sessão atual, o token CSRF das mutações, se é o primeiro login e o VIP',
   })
   @ApiOkResponse({ description: 'Sessão ativa', standardSchema: currentSessionSchema })
   @ApiUnauthorizedResponse({ description: 'Sem sessão, ou ela expirou' })
@@ -184,12 +186,12 @@ export class AuthController {
       clearSessionCookies(reply);
       throw new UnauthorizedException('Sessão ausente ou expirada; entre de novo');
     }
+    const vip = await this.vipPeriods.statusOf(account.id);
     return {
       account: toProfile(account),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
-      // Período VIP (S04): lido de vip_periods no próximo commit.
-      vip: { active: false, endsAt: null },
+      vip: { active: vip.active, endsAt: vip.endsAt?.toISOString() ?? null },
     };
   }
 
