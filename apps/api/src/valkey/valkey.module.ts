@@ -2,6 +2,9 @@ import { Global, Inject, Logger, Module, type OnApplicationShutdown } from '@nes
 import { Redis } from 'ioredis';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 
+/** Tempo máximo de um comando ao Valkey. */
+export const VALKEY_COMMAND_TIMEOUT_MS = 2000;
+
 /** Cliente do Valkey (compatível com o protocolo Redis). */
 export const VALKEY = Symbol('VALKEY');
 
@@ -13,7 +16,12 @@ export const VALKEY = Symbol('VALKEY');
       inject: [APP_CONFIG],
       useFactory: (config: AppConfig) => {
         const logger = new Logger('Valkey');
-        const client = new Redis(config.valkeyUrl, { maxRetriesPerRequest: 1 });
+        // Com o Valkey fora, um comando falha em até 2 s (as sessões respondem 503) em vez de
+        // esperar na fila de reconexão e travar a requisição.
+        const client = new Redis(config.valkeyUrl, {
+          maxRetriesPerRequest: 1,
+          commandTimeout: VALKEY_COMMAND_TIMEOUT_MS,
+        });
         // O ioredis reconecta sozinho; o listener evita o "Unhandled error event".
         client.on('error', (error) => logger.warn(`Conexão com o Valkey falhou: ${error.message}`));
         return client;

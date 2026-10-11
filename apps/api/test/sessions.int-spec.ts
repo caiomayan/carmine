@@ -10,6 +10,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AuthenticatedGuard, CurrentSession, SessionGuard } from '../src/auth/session.guard.js';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
 import { type Session, SessionStore } from '../src/auth/sessions.js';
+import { VALKEY_COMMAND_TIMEOUT_MS } from '../src/valkey/valkey.module.js';
 import { VALKEY_IMAGE } from './images.js';
 import { Browser, setCookiesOf } from './support/browser.js';
 
@@ -57,7 +58,11 @@ describe('Sessão do site', () => {
 
   beforeAll(async () => {
     valkeyContainer = await new ValkeyContainer(VALKEY_IMAGE).start();
-    valkey = new Redis(valkeyContainer.getConnectionUrl(), { maxRetriesPerRequest: 0 });
+    // Como o cliente da API (ValkeyModule): falha rápido com o Valkey fora.
+    valkey = new Redis(valkeyContainer.getConnectionUrl(), {
+      maxRetriesPerRequest: 1,
+      commandTimeout: VALKEY_COMMAND_TIMEOUT_MS,
+    });
     valkey.on('error', () => {});
     store = new SessionStore(valkey, {
       idleTtlSeconds: IDLE_SECONDS,
