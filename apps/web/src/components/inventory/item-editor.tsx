@@ -1,6 +1,11 @@
 'use client';
 
-import { type Cs2Item, inventoryErrorSchema, inventoryItemSchema } from '@carmine/contracts';
+import {
+  type Cs2Item,
+  gameLimitationsOf,
+  inventoryErrorSchema,
+  inventoryItemSchema,
+} from '@carmine/contracts';
 import type { Route } from 'next';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,10 +13,12 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { siSteam } from 'simple-icons';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
+import { CircleHelpIcon } from '@/components/icons/animated/circle-help';
 import { HistoryIcon } from '@/components/icons/animated/history';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
+import { useEquip } from '@/components/loadout/use-equip';
 import { useSession } from '@/components/session/session-provider';
 import { useDraft } from '@/components/session/use-draft';
 import { Button } from '@/components/ui/button';
@@ -24,6 +31,7 @@ import {
   type FormIssue,
   type FormSpec,
   formFromItem,
+  formSpecOf,
   formToItem,
   type ItemForm,
   issueFromApiError,
@@ -43,7 +51,15 @@ const RemoveItemDialog = dynamic(
 );
 
 type EditorProps =
-  | { mode: 'new'; spec: ItemSpec; labels?: undefined; uid?: undefined; saved?: undefined }
+  | {
+      mode: 'new';
+      spec: ItemSpec;
+      /** O Item tem slot no Loadout: oferece "Adicionar e equipar" (S05). */
+      equippable: boolean;
+      labels?: undefined;
+      uid?: undefined;
+      saved?: undefined;
+    }
   | { mode: 'edit'; spec: ItemSpec; labels: AttachmentLabel[]; uid: string; saved: Cs2Item };
 
 /**
@@ -60,23 +76,12 @@ export function ItemEditor(props: EditorProps) {
   const pathname = usePathname();
   const session = useSession();
   const inventory = useInventory();
+  const { equip } = useEquip();
   const vip = session.vip?.active ?? false;
   const signedIn = session.status === 'authenticated';
   const { entry } = spec;
 
-  const formSpec: FormSpec = useMemo(
-    () => ({
-      id: entry.id,
-      wear: spec.wear,
-      seed: spec.seed,
-      statTrak: spec.statTrak,
-      nameTag: spec.nameTag,
-      stickerSlots: spec.stickerSlots,
-      charm: spec.charm ? { seed: spec.charm.seed } : null,
-      vipItem: entry.vip,
-    }),
-    [entry, spec],
-  );
+  const formSpec: FormSpec = useMemo(() => formSpecOf(spec), [spec]);
 
   // O ponto de partida é o que veio do servidor nesta visita.
   const [initial] = useState(() =>
@@ -133,8 +138,12 @@ export function ItemEditor(props: EditorProps) {
     draft.set({ ...form, ...patch });
   }
 
-  async function submit(event: FormEvent) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // "Adicionar e equipar" é o mesmo envio, com o equipar logo depois (S05).
+    const andEquip =
+      mode === 'new' &&
+      (event.nativeEvent as SubmitEvent).submitter?.getAttribute('data-equip') === 'true';
     setAttempted(true);
     if (issues.length > 0) {
       requestAnimationFrame(() =>
@@ -164,6 +173,21 @@ export function ItemEditor(props: EditorProps) {
       }
       const saved = inventoryItemSchema.parse(await response.json());
       draft.commit();
+      if (andEquip) {
+        try {
+          await equip({
+            uid: saved.uid,
+            name: entry.name,
+            names: () => undefined,
+            inGameHint: true,
+          });
+          router.push('/loadout');
+          router.refresh();
+          return;
+        } catch {
+          // O Item entrou; só o equipar falhou: segue para o Inventário, de onde dá para equipar.
+        }
+      }
       inventory.notify(
         mode === 'edit' ? ti('saved', { name: entry.name }) : ti('added', { name: entry.name }),
         saved.uid,
@@ -306,6 +330,12 @@ export function ItemEditor(props: EditorProps) {
           </div>
         ) : null}
 
+        {gameLimitationsOf(entry.type, item).map((limitation) => (
+          <Banner key={limitation.code} icon={CircleHelpIcon} tone="info" testId="game-limitation">
+            <span>{t(`gameLimitations.${limitation.code}`)}</span>
+          </Banner>
+        ))}
+
         {spec.nameTag ? (
           <FieldShell
             id={nameTagId}
@@ -404,7 +434,20 @@ export function ItemEditor(props: EditorProps) {
               >
                 {saving ? t('saving') : mode === 'edit' ? t('save') : t('add')}
               </Button>
-            ) : (
+            ) : null}
+            {mode === 'new' && props.equippable && signedIn ? (
+              <Button
+                type="submit"
+                variant="ghost"
+                data-equip="true"
+                disabled={saving || lockedItem}
+                className="max-md:flex-1"
+                data-testid="add-and-equip"
+              >
+                {t('addAndEquip')}
+              </Button>
+            ) : null}
+            {signedIn || session.status === 'unknown' ? null : (
               <Button asChild className="max-md:flex-1">
                 <a href={signInHref(pathname)} data-testid="sign-in-to-add">
                   <BrandIcon icon={siSteam} size={16} />
@@ -438,6 +481,7 @@ export function ItemEditor(props: EditorProps) {
         <RemoveItemDialog
           uid={props.uid}
           name={entry.name}
+          weaponName={entry.weapon ?? entry.title}
           open={removing}
           onOpenChange={setRemoving}
           onRemoved={() => {

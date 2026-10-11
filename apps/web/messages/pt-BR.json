@@ -117,7 +117,8 @@
       "step2": "Equipe no Loadout, em CT, TR ou nos dois lados.",
       "step3": "No servidor, digite <cmd>!ws</cmd> ou reconecte para ver no jogo.",
       "quickEquip": "Adicionar e equipar",
-      "quickEquipLabel": "Adicionar e equipar {name}"
+      "quickEquipLabel": "Adicionar e equipar {name}",
+      "quickEquipPending": "Equipando"
     },
     "card": {
       "actions": "Ações de {name}",

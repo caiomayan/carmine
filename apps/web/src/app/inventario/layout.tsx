@@ -8,9 +8,9 @@ import { InventoryProvider } from '@/components/inventory/inventory-provider';
  * recebem só as mensagens de que precisam; o resto do site segue sem mensagens no cliente.
  */
 export default async function InventoryLayout({ children }: { children: ReactNode }) {
-  const { common, inventory, itemEditor } = await getMessages();
+  const { common, inventory, itemEditor, loadout } = await getMessages();
   return (
-    <NextIntlClientProvider messages={{ common, inventory, itemEditor }}>
+    <NextIntlClientProvider messages={{ common, inventory, itemEditor, loadout }}>
       <InventoryProvider>{children}</InventoryProvider>
     </NextIntlClientProvider>
   );

@@ -1,4 +1,11 @@
-import type { InventoryItem, Loadout, LoadoutSlotGroup } from '@carmine/contracts';
+import type {
+  InventoryItem,
+  Loadout,
+  LoadoutSide,
+  LoadoutSlotGroup,
+  ShowcaseItem,
+} from '@carmine/contracts';
+import type { Rarity } from '../catalog/types';
 import { toCard } from '../inventory/cards';
 import { slotDefault, slotOfItem } from './slots';
 import { type CandidateView, type LoadoutView, type SlotViewGroup, slotKey } from './view';
@@ -62,4 +69,44 @@ export function buildCandidates(items: InventoryItem[]): CandidateView[] {
     const where = slotOfItem(owned.item.id);
     return { ...toCard(owned), slot: where?.slot ?? null, sides: where?.sides ?? null };
   });
+}
+
+/** Um Item da vitrine do Perfil, com os lados em que está equipado (vazio no music kit). */
+export type ShowcaseView = {
+  key: string;
+  name: string;
+  title: string;
+  subtitle: string | null;
+  image: string;
+  rarity: Rarity;
+  statTrak: boolean;
+  sides: LoadoutSide[];
+};
+
+/**
+ * A vitrine do Loadout no Perfil: o mesmo Item no mesmo slot dos dois lados aparece uma vez só,
+ * com "CT e TR"; a ordem é a dos slots que a API manda.
+ */
+export function buildShowcase(items: ShowcaseItem[]): ShowcaseView[] {
+  const byKey = new Map<string, ShowcaseView>();
+  for (const { slot, side, item } of items) {
+    const key = `${slot}:${JSON.stringify(item)}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      if (side) existing.sides.push(side);
+      continue;
+    }
+    const card = toCard({ uid: key, item, createdAt: '', updatedAt: '' });
+    byKey.set(key, {
+      key,
+      name: card.name,
+      title: card.title,
+      subtitle: card.subtitle,
+      image: card.image,
+      rarity: card.rarity,
+      statTrak: card.statTrak,
+      sides: side ? [side] : [],
+    });
+  }
+  return [...byKey.values()];
 }

@@ -1,6 +1,6 @@
 import type { InventoryItem, Loadout, LoadoutEntry } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
-import { buildCandidates, buildLoadoutView } from './build';
+import { buildCandidates, buildLoadoutView, buildShowcase } from './build';
 
 // Ids da @ianlucas/cs2-lib 9.5.0 (fixada no package.json).
 const AK_REDLINE = 222;
@@ -110,5 +110,34 @@ describe('Itens que dá para equipar', () => {
       [KNIFE_UID, 'knife', ['ct', 't']],
       [AGENT_UID, 'agent', ['t']],
     ]);
+  });
+});
+
+describe('vitrine do Loadout no Perfil', () => {
+  it('o mesmo Item nos dois lados aparece uma vez, com os dois lados', () => {
+    const knife = { id: KARAMBIT_FADE };
+    const showcase = buildShowcase([
+      { slot: 'knife', side: 'ct', item: knife },
+      { slot: 'knife', side: 't', item: knife },
+      { slot: 'weapon_ak47', side: 't', item: { id: AK_REDLINE, wear: 0.15, statTrak: 3 } },
+    ]);
+    expect(showcase.map((entry) => [entry.title, entry.subtitle, entry.sides])).toEqual([
+      ['Karambit', 'Degradê', ['ct', 't']],
+      ['AK-47', 'Linhas Vermelhas', ['t']],
+    ]);
+    expect(showcase[1]?.statTrak).toBe(true);
+  });
+
+  it('Itens diferentes no mesmo slot ficam separados, cada um no seu lado', () => {
+    const showcase = buildShowcase([
+      { slot: 'knife', side: 'ct', item: { id: KARAMBIT_FADE } },
+      { slot: 'knife', side: 't', item: { id: KARAMBIT_FADE, wear: 0.01 } },
+    ]);
+    expect(showcase.map((entry) => entry.sides)).toEqual([['ct'], ['t']]);
+  });
+
+  it('o music kit não tem lado', () => {
+    const showcase = buildShowcase([{ slot: 'musicKit', side: null, item: { id: 1781 } }]);
+    expect(showcase[0]?.sides).toEqual([]);
   });
 });

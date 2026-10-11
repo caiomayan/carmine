@@ -10,14 +10,17 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { CatalogGrid } from '@/components/inventory/catalog-grid';
 import { InventoryGrid } from '@/components/inventory/inventory-grid';
 import { InventoryUnavailable } from '@/components/inventory/inventory-unavailable';
+import { QuickEquipButton } from '@/components/inventory/quick-equip';
 import { PageHead } from '@/components/page-head';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
-import { getInventory, getServerSession } from '@/lib/api-server';
+import { getInventory, getLoadout, getServerSession } from '@/lib/api-server';
 import { signInHref } from '@/lib/auth-links';
-import { type CatalogEntry, catalogEntry } from '@/lib/catalog/catalog';
+import { type CatalogEntry, catalogEntry, itemSpec } from '@/lib/catalog/catalog';
 import { RARITIES } from '@/lib/catalog/types';
-import { toCard } from '@/lib/inventory/cards';
+import { defaultItem } from '@/lib/inventory/item-form';
+import { buildCandidates, buildLoadoutView } from '@/lib/loadout/build';
+import { equippedSides } from '@/lib/loadout/view';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('inventory');
@@ -36,7 +39,11 @@ export default async function InventoryPage() {
   const t = await getTranslations('inventory');
   const tc = await getTranslations('catalog');
   const rarityLabels = Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]));
-  const [result, session] = await Promise.all([getInventory(), getServerSession()]);
+  const [result, session, loadout] = await Promise.all([
+    getInventory(),
+    getServerSession(),
+    getLoadout(),
+  ]);
 
   if (result.status === 'anonymous') {
     return (
@@ -117,6 +124,12 @@ export default async function InventoryPage() {
               vipHint={tc('vipHint')}
               tileClassName="bg-surface-2/60 hover:bg-surface-2"
               className="grid-cols-3"
+              action={(entry) => {
+                const spec = itemSpec(entry.id);
+                return spec ? (
+                  <QuickEquipButton item={defaultItem(spec)} name={entry.name} />
+                ) : null;
+              }}
             />
             <Button asChild variant="ghost" className="justify-self-start">
               <Link href="/inventario/adicionar">{t('empty.browse')}</Link>
@@ -178,7 +191,12 @@ export default async function InventoryPage() {
           </p>
         ) : null}
         <InventoryGrid
-          cards={items.map(toCard)}
+          cards={buildCandidates(items)}
+          equipped={
+            loadout.status === 'ok'
+              ? Object.fromEntries(equippedSides(buildLoadoutView(loadout.data, items).slots))
+              : {}
+          }
           rarityLabels={rarityLabels}
           vip={{ label: tc('vip'), hint: tc('vipHint'), active: vipActive }}
         />

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { itemSpec } from '../catalog/catalog';
 import {
   addSticker,
+  defaultItem,
   emptyForm,
   type FormSpec,
   formFromItem,
@@ -260,5 +262,19 @@ describe('posições arrastadas no 3D', () => {
     expect(
       positionsFromViewer(AK, base(), { id: 222, stickers: { '0': { id: 99, x: 1, y: 1 } } }),
     ).toBeNull();
+  });
+});
+
+describe('Item de partida (adicionar e equipar em um passo)', () => {
+  it('leva o float e o seed mínimos da skin, sem StatTrak nem extras', () => {
+    const spec = itemSpec(222);
+    if (!spec) throw new Error('AK Linhas Vermelhas fora do catálogo');
+    expect(defaultItem(spec)).toEqual({ id: 222, wear: 0.1, seed: 1 });
+  });
+
+  it('um Item sem atributos vai só com o id', () => {
+    const knife = itemSpec(41 /* Karambit sem pintura */);
+    if (!knife) throw new Error('Karambit fora do catálogo');
+    expect(defaultItem(knife)).toEqual({ id: 41 });
   });
 });

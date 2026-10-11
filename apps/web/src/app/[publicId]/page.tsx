@@ -11,11 +11,14 @@ import { BoxIcon } from '@/components/icons/animated/box';
 import { ExternalLinkIcon } from '@/components/icons/animated/external-link';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
+import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
 import { findPublicIdBySteamId } from '@/lib/api-base';
 import { getProfile, getServerSession, type ProfileResult, visitorIp } from '@/lib/api-server';
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
+import { RARITIES } from '@/lib/catalog/types';
+import { buildShowcase } from '@/lib/loadout/build';
 import { cn } from '@/lib/utils';
 
 type Params = Promise<{ publicId: string }>;
@@ -81,6 +84,8 @@ export default async function ProfilePage({ params }: { params: Params }) {
   const isOwner = viewer?.publicId === profile.publicId;
   // Não dá para saber se um visitante sem sessão é o dono: o convite é uma pergunta.
   const invite = !profile.claimed && server.status !== 'authenticated';
+  const showcase = buildShowcase(profile.loadoutShowcase.items);
+  const tc = await getTranslations('catalog');
 
   return (
     <div className="container-page pb-16">
@@ -89,26 +94,50 @@ export default async function ProfilePage({ params }: { params: Params }) {
       {invite ? <ClaimInvite profile={profile} /> : null}
 
       <section aria-labelledby="loadout" className="animate-fade-up pt-8 [animation-delay:80ms]">
-        <SectionTitle id="loadout">{t('loadout.title')}</SectionTitle>
-        {/* Sem Loadout até a S05: a vitrine mostra o estado vazio. */}
-        <div className="rounded-xl bg-surface" data-testid="loadout-showcase">
-          <EmptyState
-            icon={BoxIcon}
-            title={t('loadout.emptyTitle')}
-            body={
-              isOwner
-                ? t('loadout.emptyOwner')
-                : t('loadout.emptyVisitor', { name: profile.displayName })
-            }
-            action={
-              isOwner ? (
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/inventario">{t('loadout.toInventory')}</Link>
-                </Button>
-              ) : null
-            }
-          />
-        </div>
+        <SectionTitle
+          id="loadout"
+          aside={
+            isOwner ? (
+              <Button asChild variant="quiet" size="sm" className="-my-1">
+                <Link href="/loadout">{t('loadout.toLoadout')}</Link>
+              </Button>
+            ) : null
+          }
+        >
+          {t('loadout.title')}
+        </SectionTitle>
+        {showcase.length > 0 ? (
+          <div data-testid="loadout-showcase">
+            <ShowcaseGrid
+              items={showcase}
+              rarityLabels={Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]))}
+              sideLabels={{
+                ct: t('loadout.sides.ct'),
+                t: t('loadout.sides.t'),
+                both: t('loadout.sides.both'),
+              }}
+            />
+          </div>
+        ) : (
+          <div className="rounded-xl bg-surface" data-testid="loadout-showcase">
+            <EmptyState
+              icon={BoxIcon}
+              title={t('loadout.emptyTitle')}
+              body={
+                isOwner
+                  ? t('loadout.emptyOwner')
+                  : t('loadout.emptyVisitor', { name: profile.displayName })
+              }
+              action={
+                isOwner ? (
+                  <Button asChild variant="ghost" size="sm">
+                    <Link href="/inventario">{t('loadout.toInventory')}</Link>
+                  </Button>
+                ) : null
+              }
+            />
+          </div>
+        )}
       </section>
     </div>
   );
