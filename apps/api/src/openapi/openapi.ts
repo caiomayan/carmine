@@ -9,7 +9,7 @@ export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
     .setDescription(
       'API da plataforma Carmine, usada pelo web e pelos plugins dos Servidores Carmine.',
     )
-    .setVersion('0.3.0')
+    .setVersion('0.4.0')
     // Rotas /api/server/*: a chave do Servidor Carmine (ADR 0005).
     .addBearerAuth({ type: 'http', scheme: 'bearer', description: 'Chave do Servidor Carmine' })
     // Rotas do site: a sessão do login Steam; mutações também exigem o cabeçalho x-csrf-token.

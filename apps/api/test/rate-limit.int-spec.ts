@@ -119,11 +119,17 @@ describe('Rate limit nas rotas da API', () => {
         await get('/api/auth/steam/login', ip),
         await get('/api/auth/steam/callback', ip),
         await get('/api/auth/steam/login', ip),
-        await get('/api/auth/steam/login', ip),
+        await get('/api/auth/steam/login?returnTo=%2Finventario', ip),
+        await get('/api/auth/steam/callback', ip),
       ];
 
-      expect(results.map((r) => r.statusCode)).toEqual([302, 303, 302, 429]);
+      // Acima do limite, o login é navegação: volta a /entrar?erro=limite, não um 429 em JSON.
+      expect(results.map((r) => r.statusCode)).toEqual([302, 303, 302, 302, 302]);
+      expect(results[3]?.headers.location).toBe(
+        'http://localhost:3000/entrar?erro=limite&voltar=%2Finventario',
+      );
       expect(results[3]?.headers['retry-after']).toBe('20');
+      expect(results[4]?.headers.location).toBe('http://localhost:3000/entrar?erro=limite');
       // O limite do login não gasta o das rotas públicas.
       expect((await get('/api/profiles/10000', ip)).statusCode).toBe(404);
     });
