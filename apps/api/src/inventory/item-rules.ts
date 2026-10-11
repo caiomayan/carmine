@@ -7,16 +7,16 @@ import {
 } from '@carmine/contracts';
 import {
   CS2_INVENTORY_RULES,
-  CS2_ITEMS,
   CS2_MAX_KEYCHAINS,
   CS2_MAX_STICKERS,
   CS2_NAMETAG_RE,
-  CS2EconomyInstance,
+  type CS2EconomyInstance,
   type CS2EconomyItem,
   checkAddable,
   checkAttachable,
   checkInventoryItem,
 } from '@ianlucas/cs2-lib';
+import { Catalog } from '../catalog/catalog.js';
 
 const ITEM_TYPES: ReadonlySet<string> = new Set(INVENTORY_ITEM_TYPES);
 
@@ -44,10 +44,10 @@ export function normalizeItem({ stickers, keychains, ...item }: Cs2Item): Cs2Ite
  * As regras do jogo para um Item do Inventário, a partir do catálogo da cs2-lib (ADR 0006).
  */
 export class ItemRules {
-  private readonly economy = new CS2EconomyInstance();
+  private readonly economy: CS2EconomyInstance;
 
-  constructor() {
-    this.economy.load({ items: CS2_ITEMS });
+  constructor(catalog: Catalog = new Catalog()) {
+    this.economy = catalog.economy;
   }
 
   /**
