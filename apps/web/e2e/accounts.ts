@@ -1,4 +1,6 @@
+import { execFileSync } from 'node:child_process';
 import { randomInt } from 'node:crypto';
+import path from 'node:path';
 import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
 
 const FAKE_STEAM_HOST = '127.0.0.1';
@@ -44,4 +46,32 @@ export async function signInFromHeader(page: Page, steamId: string) {
   await chooseSteamAccount(page.context(), steamId);
   await page.getByTestId('sign-in').click();
   await page.getByTestId('steam-login').click();
+}
+
+/**
+ * Concede um Período VIP pelo CLI de operação da API (a concessão com auditoria da Staff é da
+ * S05). A Conta precisa existir: entre com a Steam falsa antes.
+ */
+export function grantVip(steamId: string, days = 1) {
+  execFileSync(
+    process.execPath,
+    [
+      '--env-file=.env.example',
+      '--env-file-if-exists=.env',
+      'dist/vip/vip.cli.js',
+      'grant',
+      '--steam-id',
+      steamId,
+      '--days',
+      String(days),
+    ],
+    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
+  );
+}
+
+/** O token CSRF da sessão deste navegador, para mutações feitas direto na API. */
+export async function csrfToken(context: BrowserContext): Promise<string> {
+  const cookie = (await context.cookies()).find((c) => c.name === 'carmine_csrf');
+  if (!cookie) throw new Error('sem cookie CSRF: a sessão não começou');
+  return decodeURIComponent(cookie.value);
 }

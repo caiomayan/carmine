@@ -17,7 +17,9 @@ import { DEFAULT_THEME } from '@/lib/theme';
 import './globals.css';
 
 const inter = Inter({
-  subsets: ['latin', 'latin-ext'],
+  // Só o latin é pré-carregado: cobre todos os acentos do PT-BR. O latin-ext continua no CSS e
+  // baixa sob demanda (nomes de exibição com outros caracteres), sem disputar banda no 4G lento.
+  subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
 });

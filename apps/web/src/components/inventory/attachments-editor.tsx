@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { DeleteIcon } from '@/components/icons/animated/delete';
@@ -17,7 +18,15 @@ import {
   type StickerForm,
 } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
-import { AttachmentPicker } from './attachment-picker';
+
+// O seletor (diálogo, busca) só baixa quando a pessoa abre: não pesa na primeira carga do editor.
+const AttachmentPicker = dynamic(
+  () => import('./attachment-picker').then((m) => m.AttachmentPicker),
+  {
+    ssr: false,
+  },
+);
+
 import { DecimalInput, describedBy, FieldShell, RangeInput } from './editor-fields';
 
 type Bounds = { min: number | undefined; max: number | undefined };
@@ -104,7 +113,9 @@ export function StickersEditor({
         <AnimatedIcon icon={PlusIcon} size={15} />
         {t('addSticker')}
       </Button>
-      <AttachmentPicker type="sticker" open={picking} onOpenChange={setPicking} onPick={add} />
+      {picking ? (
+        <AttachmentPicker type="sticker" open onOpenChange={setPicking} onPick={add} />
+      ) : null}
     </section>
   );
 }
@@ -442,12 +453,14 @@ export function CharmEditor({
           {t('addCharm')}
         </Button>
       )}
-      <AttachmentPicker
-        type="charm"
-        open={picking}
-        onOpenChange={setPicking}
-        onPick={(label) => onChange({ ...label, seed: spec.seed.min })}
-      />
+      {picking ? (
+        <AttachmentPicker
+          type="charm"
+          open
+          onOpenChange={setPicking}
+          onPick={(label) => onChange({ ...label, seed: spec.seed.min })}
+        />
+      ) : null}
     </section>
   );
 }

@@ -269,30 +269,3 @@ export function FloatField({
     </FieldShell>
   );
 }
-
-/** Linha de opção com interruptor (StatTrak), com cadeado VIP quando for o caso. */
-export function ToggleRow({
-  id,
-  label,
-  checked,
-  onLabel,
-  offLabel,
-  children,
-}: {
-  id: string;
-  label: ReactNode;
-  checked: boolean;
-  onLabel: string;
-  offLabel: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex min-h-(--tap) items-center justify-between gap-3 rounded-md bg-surface-2 px-3">
-      <span id={`${id}-state`} className="text-[14px]">
-        {checked ? onLabel : offLabel}
-      </span>
-      <span className="sr-only">{label}</span>
-      {children}
-    </div>
-  );
-}

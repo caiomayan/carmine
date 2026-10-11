@@ -72,7 +72,9 @@ export function CatalogBrowser({
   );
 
   function navigate(changes: Record<string, string | null>) {
-    const next = new URLSearchParams(params);
+    // Lê a URL da hora, não a da renderização: a busca com atraso não pode desfazer um filtro
+    // escolhido enquanto ela esperava.
+    const next = new URLSearchParams(window.location.search);
     for (const [key, value] of Object.entries(changes)) {
       if (value) next.set(key, value);
       else next.delete(key);

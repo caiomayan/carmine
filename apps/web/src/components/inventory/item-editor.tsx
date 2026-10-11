@@ -2,6 +2,7 @@
 
 import { type Cs2Item, inventoryErrorSchema, inventoryItemSchema } from '@carmine/contracts';
 import type { Route } from 'next';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -33,7 +34,12 @@ import { CharmEditor, StickersEditor } from './attachments-editor';
 import { DecimalInput, describedBy, FieldShell, FloatField, TextInput } from './editor-fields';
 import { useInventory } from './inventory-provider';
 import { ItemViewer } from './item-viewer';
-import { RemoveItemDialog } from './remove-item-dialog';
+
+// Remover só baixa o diálogo quando a pessoa pede.
+const RemoveItemDialog = dynamic(
+  () => import('./remove-item-dialog').then((m) => m.RemoveItemDialog),
+  { ssr: false },
+);
 
 type EditorProps =
   | { mode: 'new'; spec: ItemSpec; labels?: undefined; uid?: undefined; saved?: undefined }
@@ -392,7 +398,7 @@ export function ItemEditor(props: EditorProps) {
         </div>
       </form>
 
-      {mode === 'edit' ? (
+      {mode === 'edit' && removing ? (
         <RemoveItemDialog
           uid={props.uid}
           name={entry.name}

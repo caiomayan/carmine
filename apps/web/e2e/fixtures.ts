@@ -1,11 +1,17 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test as base, expect, type Page } from '@playwright/test';
+import { routeViewer, type ViewerMode } from './fake-viewer';
 
 export type Theme = 'dark' | 'light';
 
 export const ROUTES = [
   '/',
   '/inventario',
+  '/inventario/adicionar',
+  '/inventario/adicionar?tipo=weapon&arma=AK-47',
+  '/inventario/adicionar?q=nada-disso-existe',
+  '/inventario/adicionar/222',
+  '/inventario/adicionar/1781',
   '/termos',
   '/privacidade',
   '/regras',
@@ -13,6 +19,7 @@ export const ROUTES = [
   '/nao-existe',
   '/entrar',
   '/entrar?erro=indisponivel&motivo=sessao-expirada',
+  '/entrar?erro=limite',
   '/dev/componentes',
 ] as const;
 export const WIDTHS = [390, 820, 1100, 1440] as const;
@@ -34,9 +41,19 @@ type Fixtures = {
    * o 401 de uma sessão expirada). O teste acrescenta os padrões aqui.
    */
   expectedConsoleErrors: RegExp[];
+  /**
+   * O viewer 3D do teste: `fake` (padrão) responde ao protocolo postMessage sem rede externa;
+   * `blocked` recusa o iframe, como um bloqueador ou o serviço fora do ar.
+   */
+  viewer: ViewerMode;
 };
 
 export const test = base.extend<Fixtures>({
+  viewer: ['fake', { option: true }],
+  page: async ({ page, viewer }, use) => {
+    await routeViewer(page.context(), viewer);
+    await use(page);
+  },
   // biome-ignore lint/correctness/noEmptyPattern: o Playwright exige a desestruturação, mesmo vazia.
   expectedConsoleErrors: async ({}, use) => {
     await use([]);
