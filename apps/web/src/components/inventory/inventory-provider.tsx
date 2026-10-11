@@ -23,15 +23,35 @@ import { Button } from '@/components/ui/button';
 export const UNDO_WINDOW_MS = 8000;
 const NOTICE_MS = 5000;
 
+/** O resultado de desfazer: a mensagem que substitui o aviso e o cartão a destacar. */
+export type UndoOutcome = { message: string; highlight?: string };
+
 type Notice =
   | { kind: 'info'; id: number; message: string }
-  | { kind: 'undo'; id: number; message: string; uid: string; name: string };
+  | {
+      kind: 'undo';
+      id: number;
+      message: string;
+      undo: () => Promise<UndoOutcome>;
+      label: string;
+      pending: string;
+    };
 
 type InventoryContextValue = {
   /** Aviso curto (Item adicionado, alterações salvas). `highlight` marca o cartão na grade. */
   notify: (message: string, highlight?: string) => void;
   /** Oferece "Desfazer" por 8 s para um Item que acabou de sair do Inventário. */
   offerUndo: (uid: string, name: string) => void;
+  /**
+   * Oferece "Desfazer" por 8 s para uma mudança qualquer (equipar, desequipar). `undo` lança
+   * em caso de falha; a mensagem de falha é `failure`.
+   */
+  offerAction: (action: {
+    message: string;
+    undo: () => Promise<UndoOutcome>;
+    failure: string;
+    labels?: { undo: string; undoing: string };
+  }) => void;
   /** O cartão que acabou de mudar (para a grade destacar uma vez). */
   highlight: string | null;
 };
@@ -60,13 +80,40 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     setHighlight(uid ?? null);
   }, []);
 
-  const offerUndo = useCallback(
-    (uid: string, name: string) => {
+  const failureMessage = useRef('');
+
+  const offerAction = useCallback<InventoryContextValue['offerAction']>(
+    ({ message, undo, failure, labels }) => {
       remaining.current = UNDO_WINDOW_MS;
+      failureMessage.current = failure;
       setPaused(false);
-      setNotice({ kind: 'undo', id: nextId.current++, uid, name, message: t('removed', { name }) });
+      setHighlight(null);
+      setNotice({
+        kind: 'undo',
+        id: nextId.current++,
+        message,
+        undo,
+        label: labels?.undo ?? t('undo'),
+        pending: labels?.undoing ?? t('undoing'),
+      });
     },
     [t],
+  );
+
+  const offerUndo = useCallback(
+    (uid: string, name: string) =>
+      offerAction({
+        message: t('removed', { name }),
+        failure: t('undoFailed'),
+        undo: async () => {
+          const response = await mutate(`/api/inventory/items/${uid}/restore`, {
+            method: 'POST',
+          });
+          if (!response.ok) throw new Error(String(response.status));
+          return { message: t('undone', { name }), highlight: uid };
+        },
+      }),
+    [mutate, offerAction, t],
   );
 
   // O relógio do aviso: corre enquanto não estiver pausado.
@@ -87,26 +134,21 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     if (notice?.kind !== 'undo') return;
     setUndoing(true);
     try {
-      const response = await mutate(`/api/inventory/items/${notice.uid}/restore`, {
-        method: 'POST',
-      });
-      if (response.status === 401) return;
-      if (!response.ok) throw new Error(String(response.status));
-      setNotice({
-        kind: 'info',
-        id: nextId.current++,
-        message: t('undone', { name: notice.name }),
-      });
-      setHighlight(notice.uid);
+      const outcome = await notice.undo();
+      setNotice({ kind: 'info', id: nextId.current++, message: outcome.message });
+      setHighlight(outcome.highlight ?? null);
       router.refresh();
     } catch {
-      setNotice({ kind: 'info', id: nextId.current++, message: t('undoFailed') });
+      setNotice({ kind: 'info', id: nextId.current++, message: failureMessage.current });
     } finally {
       setUndoing(false);
     }
-  }, [mutate, notice, router, t]);
+  }, [notice, router]);
 
-  const value = useMemo(() => ({ notify, offerUndo, highlight }), [notify, offerUndo, highlight]);
+  const value = useMemo(
+    () => ({ notify, offerUndo, offerAction, highlight }),
+    [notify, offerUndo, offerAction, highlight],
+  );
 
   return (
     <InventoryContext.Provider value={value}>
@@ -144,9 +186,9 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
                   size="sm"
                   onClick={undo}
                   disabled={undoing}
-                  data-testid="undo-remove"
+                  data-testid="undo-action"
                 >
-                  {undoing ? t('undoing') : t('undo')}
+                  {undoing ? notice.pending : notice.label}
                 </Button>
               ) : null}
               {notice.kind === 'undo' ? (

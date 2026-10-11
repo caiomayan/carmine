@@ -66,9 +66,15 @@ export type InventoryResult =
   | { status: 'unavailable' };
 
 /** Leitura da Conta da sessão: sem sessão, `anonymous`; com a API fora, `unavailable`. */
-type AccountRead<T> = { status: 'ok'; data: T } | { status: 'anonymous' } | { status: 'unavailable' };
+type AccountRead<T> =
+  | { status: 'ok'; data: T }
+  | { status: 'anonymous' }
+  | { status: 'unavailable' };
 
-async function readAccount<T>(path: string, schema: { parse: (value: unknown) => T }): Promise<AccountRead<T>> {
+async function readAccount<T>(
+  path: string,
+  schema: { parse: (value: unknown) => T },
+): Promise<AccountRead<T>> {
   const cookie = await sessionCookie();
   if (!cookie) return { status: 'anonymous' };
   try {

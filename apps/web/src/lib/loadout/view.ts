@@ -13,7 +13,14 @@ import type { InventoryCardData } from '../inventory/cards';
  */
 
 /** Grupos da tela: faca, luvas, agente e music kit ficam juntos no alto (`gear`). */
-export const SLOT_VIEW_GROUPS = ['gear', 'secondary', 'smg', 'rifle', 'heavy', 'equipment'] as const;
+export const SLOT_VIEW_GROUPS = [
+  'gear',
+  'secondary',
+  'smg',
+  'rifle',
+  'heavy',
+  'equipment',
+] as const;
 export type SlotViewGroup = (typeof SLOT_VIEW_GROUPS)[number];
 
 export type EquippedView = {

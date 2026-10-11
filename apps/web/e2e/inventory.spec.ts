@@ -258,7 +258,7 @@ test('remover mostra onde o Item está em uso e "Desfazer" o devolve', async ({ 
 
   await expect(page.getByTestId('undo-toast')).toContainText('saiu do Inventário');
   await expect(page.getByTestId('inventory-empty')).toBeVisible();
-  await page.getByTestId('undo-remove').click();
+  await page.getByTestId('undo-action').click();
   await expect(page.getByTestId('notice-toast')).toContainText('voltou ao Inventário');
   await expect(page.locator(`[data-uid="${uid}"]`)).toBeVisible();
 });

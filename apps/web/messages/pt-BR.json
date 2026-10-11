@@ -579,7 +579,7 @@
       "inGame": "{item} equipado em {sides}. No servidor, digite !ws ou reconecte para ver no jogo."
     },
     "vip": {
-      "ending_soon": "Seu VIP acaba {date}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
       "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
       "ended_today": "Seu VIP acabou hoje. Os Itens VIP continuam no seu Inventário, mas não vão para o jogo, e os Presets extras ficaram somente leitura."
     },

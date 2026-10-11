@@ -1,8 +1,4 @@
-import {
-  type LoadoutSide,
-  type LoadoutSlot,
-  loadoutSlotOf,
-} from '@carmine/contracts';
+import { type LoadoutSide, type LoadoutSlot, loadoutSlotOf } from '@carmine/contracts';
 import { CS2Team } from '@ianlucas/cs2-lib';
 import { catalogEntry, economy } from '../catalog/catalog';
 
@@ -19,7 +15,7 @@ export function slotOfItem(
   return loadoutSlotOf(economy().getById(catalogId));
 }
 
-const TEAM: Record<LoadoutSide, number> = { ct: CS2Team.CT, t: CS2Team.T };
+const TEAM: Record<LoadoutSide, CS2Team> = { ct: CS2Team.CT, t: CS2Team.T };
 
 export type SlotDefault = { name: string | null; image: string | null };
 
