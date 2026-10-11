@@ -99,7 +99,10 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
 
     // Contador: o leitor de tela ouve só o número; com movimento reduzido não há rolos.
     await page.getByRole('button', { name: 'Somar jogadores' }).click();
-    await expect(page.locator('.sr-only', { hasText: '2.448' })).toHaveCount(1);
+    await expect(page.getByText('2.448', { exact: true })).toBeAttached();
+    const tree = await page.locator('main').ariaSnapshot();
+    expect(tree).toContain('2.448');
+    expect(tree, 'rolos de dígitos fora da árvore de acessibilidade').not.toMatch(/\d \d \d \d/);
     const rollers = page.locator('main [data-slot="sliding-number"]');
     await expect(rollers).toHaveCount(reducedMotion === 'reduce' ? 0 : 1);
   });

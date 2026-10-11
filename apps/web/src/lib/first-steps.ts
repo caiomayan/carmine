@@ -1,0 +1,29 @@
+/**
+ * Primeiros passos (S03): a orientação aparece sozinha depois do login até a pessoa fechá-la.
+ * Quem fechou fica num cookie (lido no servidor, então a página já chega sem a orientação,
+ * sem piscar), por Conta: outra Conta no mesmo navegador ainda a vê.
+ */
+export const FIRST_STEPS_COOKIE = 'carmine_primeiros_passos';
+
+const MAX_ACCOUNTS = 20;
+const ONE_YEAR_SECONDS = 365 * 24 * 60 * 60;
+
+function dismissedIds(value: string | undefined): number[] {
+  if (!value) return [];
+  return value
+    .split('.')
+    .filter((part) => /^[1-9]\d{0,14}$/.test(part))
+    .map(Number);
+}
+
+export function hasDismissedFirstSteps(value: string | undefined, publicId: number): boolean {
+  return dismissedIds(value).includes(publicId);
+}
+
+/** O `document.cookie` que lembra que esta Conta fechou a orientação. */
+export function firstStepsCookie(value: string | undefined, publicId: number): string {
+  const ids = [...dismissedIds(value).filter((id) => id !== publicId), publicId].slice(
+    -MAX_ACCOUNTS,
+  );
+  return `${FIRST_STEPS_COOKIE}=${ids.join('.')}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+}

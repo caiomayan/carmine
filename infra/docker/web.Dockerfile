@@ -19,13 +19,16 @@ WORKDIR /repo
 # Manifestos primeiro, para a camada de dependências ficar em cache entre builds.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/
+COPY packages/contracts/package.json packages/contracts/
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --filter "@carmine/web..."
 
 COPY tsconfig.base.json ./
+COPY packages/contracts packages/contracts
 COPY apps/web apps/web
 # next/font baixa a Inter no build e a serve do próprio domínio (sem Google em runtime).
-RUN NEXT_OUTPUT=standalone pnpm --filter @carmine/web run build \
+# Os contratos (@carmine/contracts) são compilados antes, como dependência do web.
+RUN pnpm --filter @carmine/contracts run build  && NEXT_OUTPUT=standalone pnpm --filter @carmine/web run build \
  && cd apps/web/.next/standalone \
  && find . \( -path '*/@img/*' -o -path '*/node_modules/sharp' \) -prune -exec rm -rf {} + \
  && cp -r ../static apps/web/.next/static \
