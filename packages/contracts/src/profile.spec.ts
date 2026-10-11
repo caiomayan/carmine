@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { profileSchema } from './profile.js';
+import { currentSessionSchema, profileSchema } from './profile.js';
 
 const profile = {
   publicId: 10_016,
@@ -20,5 +20,16 @@ describe('profileSchema', () => {
     const withItem = { ...profile, loadoutShowcase: { items: [{ def: 7 }] } };
 
     expect(profileSchema.safeParse(withItem).success).toBe(false);
+  });
+});
+
+describe('currentSessionSchema', () => {
+  it('diz se a sessão é a do primeiro login da Conta', () => {
+    const session = { account: profile, csrfToken: 'token', firstLogin: true };
+
+    expect(currentSessionSchema.parse(session)).toEqual(session);
+    expect(currentSessionSchema.safeParse({ account: profile, csrfToken: 'token' }).success).toBe(
+      false,
+    );
   });
 });

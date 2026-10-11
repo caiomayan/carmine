@@ -1,7 +1,8 @@
 /**
- * Primeiros passos (S03): a orientação aparece sozinha depois do login até a pessoa fechá-la.
- * Quem fechou fica num cookie (lido no servidor, então a página já chega sem a orientação,
- * sem piscar), por Conta: outra Conta no mesmo navegador ainda a vê.
+ * Primeiros passos (S03): a orientação aparece sozinha na sessão do primeiro login da Conta
+ * (`firstLogin` do `/api/me`) até a pessoa fechá-la; depois, só reabre pelo menu. Quem fechou
+ * fica num cookie (lido no servidor, então a página já chega sem a orientação, sem piscar),
+ * por Conta: o primeiro login de outra Conta no mesmo navegador ainda a mostra.
  */
 export const FIRST_STEPS_COOKIE = 'carmine_primeiros_passos';
 

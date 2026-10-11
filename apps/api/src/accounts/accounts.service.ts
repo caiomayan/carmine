@@ -68,19 +68,20 @@ export class AccountsService {
    * Login Steam no site (S03): o primeiro reivindica a Conta. Se a pessoa nunca jogou, a Conta
    * nasce já reivindicada, com nome e avatar da Steam Web API (sem resposta, "Jogador #ID" e o
    * avatar neutro até o próximo login ou connect). É sempre a mesma Conta do SteamID: nunca há
-   * fusão.
+   * fusão. `firstLogin` diz se foi este login que reivindicou a Conta; sob logins simultâneos,
+   * só um deles.
    */
-  async claimOnLogin(steamId: string): Promise<Account> {
+  async claimOnLogin(steamId: string): Promise<{ account: Account; firstLogin: boolean }> {
     const known = await this.findBySteamId(steamId);
     const summary = known ? null : await this.avatars.lookup(steamId);
     // Na segunda volta, a Conta criada por um connect concorrente já está visível.
     for (let attempt = 0; attempt < 2; attempt++) {
-      const account = await this.db.transaction((tx) =>
+      const claim = await this.db.transaction((tx) =>
         this.claimInTransaction(tx, BigInt(steamId), summary, new Date()),
       );
-      if (account) {
-        this.avatars.refreshInBackground(account);
-        return account;
+      if (claim) {
+        this.avatars.refreshInBackground(claim.account);
+        return claim;
       }
     }
     throw new Error(`Conflito persistente ao reivindicar a Conta de ${steamId}`);
@@ -147,7 +148,7 @@ export class AccountsService {
     steamId: bigint,
     summary: SteamSummary | null,
     now: Date,
-  ): Promise<Account | null> {
+  ): Promise<{ account: Account; firstLogin: boolean } | null> {
     const [existing] = await tx
       .select()
       .from(accounts)
@@ -155,20 +156,21 @@ export class AccountsService {
       .for('update');
     if (existing) {
       if (existing.claimedAt !== null) {
-        return toAccount(existing);
+        return { account: toAccount(existing), firstLogin: false };
       }
       const [claimed] = await tx
         .update(accounts)
         .set({ claimedAt: now })
         .where(eq(accounts.id, existing.id))
         .returning();
-      return toAccount(claimed as AccountRow);
+      return { account: toAccount(claimed as AccountRow), firstLogin: true };
     }
-    return insertAccount(tx, steamId, summary?.personaName ?? '', {
+    const created = await insertAccount(tx, steamId, summary?.personaName ?? '', {
       claimedAt: now,
       avatarUrl: summary?.avatarUrl ?? null,
       avatarFetchedAt: summary ? now : null,
     });
+    return created ? { account: created, firstLogin: true } : null;
   }
 }
 

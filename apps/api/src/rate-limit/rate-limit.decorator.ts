@@ -31,11 +31,11 @@ export function RateLimit(name: RateLimitPolicyName): MethodDecorator {
           schema: { type: 'integer' },
         },
         RateLimit: {
-          description: 'Vagas restantes (r) e segundos até repor (t), ex.: "public";r=0;t=15',
+          description: `Vagas restantes (r) e segundos até repor (t), ex.: "${name}";r=0;t=15`,
           schema: { type: 'string' },
         },
         'RateLimit-Policy': {
-          description: 'Cota (q) por janela em segundos (w), ex.: "public";q=240;w=60',
+          description: `Cota (q) por janela em segundos (w), ex.: "${name}";q=240;w=60`,
           schema: { type: 'string' },
         },
       },
