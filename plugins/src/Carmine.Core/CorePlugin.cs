@@ -10,7 +10,9 @@ namespace Carmine.Core;
 /// <summary>
 /// Plugin próprio dos Servidores Carmine. Na S01: no connect, avisa a API (que cria a Conta no
 /// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e dá as boas-vindas no primeiro
-/// connect. Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois.
+/// connect. Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois; na
+/// S05, ele também é avisado de que o Loadout não carregou (o cs2-css-inventory-simulator, sem
+/// modificação, aplica o Loadout e não tem esse aviso).
 /// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
 /// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
@@ -27,9 +29,10 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HttpClient? _http;
     private AccountSync? _sync;
     private PendingWelcomes? _welcomes;
+    private readonly LoadoutNotices _loadoutNotices = new();
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.3.0";
+    public override string ModuleVersion => "0.4.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -146,9 +149,17 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Server.NextFrame(() =>
             {
                 var current = Utilities.GetPlayerFromSlot(slot);
-                if (current is not null && IsHuman(current) && IsPlaying(current) && _welcomes?.TakeOnSpawn(current.SteamID) == true)
+                if (current is null || !IsHuman(current) || !IsPlaying(current))
+                {
+                    return;
+                }
+                if (_welcomes?.TakeOnSpawn(current.SteamID) == true)
                 {
                     current.PrintToChat($" {WelcomeMessage}");
+                }
+                if (_loadoutNotices.TakeOnSpawn(current.SteamID))
+                {
+                    current.PrintToChat($" {LoadoutNotices.Message}");
                 }
             });
         }
@@ -160,6 +171,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (@event.Userid is { } player)
         {
             _displayNames.Remove(player.Slot);
+            _loadoutNotices.OnDisconnect(player.SteamID);
         }
         return HookResult.Continue;
     }
@@ -178,6 +190,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             switch (await sync.ConnectAsync(steamId, steamName, token))
             {
                 case ConnectOutcome.Synced synced:
+                    _loadoutNotices.OnConnect(steamId, apiReachable: true);
                     Log.ConnectSynced(Logger, steamId, synced.Result.DisplayName, synced.Result.PublicId, synced.Result.IsFirstConnect);
                     Server.NextFrame(() => ApplyResult(steamId, synced.Result));
                     // A API respondeu: se havia connects guardados, é hora de reenviá-los.
@@ -187,6 +200,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                     }
                     break;
                 case ConnectOutcome.Queued queued:
+                    _loadoutNotices.OnConnect(steamId, apiReachable: false);
                     Log.ConnectQueued(Logger, steamId, queued.Reason, sync.PendingCount);
                     break;
                 case ConnectOutcome.Rejected rejected:
