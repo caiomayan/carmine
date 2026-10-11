@@ -286,7 +286,7 @@ export function ItemEditor(props: EditorProps) {
                     : undefined
                 }
               >
-                <div className="flex min-h-(--tap) items-center justify-between gap-3 rounded-md bg-surface-2 px-3">
+                <div className="flex h-(--tap) items-center justify-between gap-3 rounded-md bg-surface-2 px-3">
                   <span aria-hidden="true" className="text-[14px]">
                     {form.statTrak ? t('statTrakOn') : t('statTrakOff')}
                   </span>
