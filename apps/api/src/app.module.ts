@@ -8,6 +8,7 @@ import { AppConfigModule } from './config/app-config.module.js';
 import type { AppConfig } from './config/config.js';
 import { DatabaseModule } from './database/database.module.js';
 import { EquippedModule } from './equipped/equipped.module.js';
+import { FriendsModule } from './friends/friends.module.js';
 import { GameServersModule } from './game-servers/game-servers.module.js';
 import { HealthModule } from './health/health.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
@@ -38,6 +39,7 @@ export class AppModule {
         InventoryModule,
         LoadoutModule,
         LiveServersModule,
+        FriendsModule,
       ],
     };
   }
