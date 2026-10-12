@@ -3,6 +3,8 @@ import {
   type LiveServerList,
   liveServerListSchema,
   type ServerHeartbeat,
+  type ServerHeartbeatResult,
+  serverHeartbeatResultSchema,
   serverHeartbeatSchema,
 } from '@carmine/contracts';
 import {
@@ -20,7 +22,6 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiNoContentResponse,
   ApiOkResponse,
   ApiOperation,
   ApiProduces,
@@ -29,39 +30,55 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
-import type { GameServer } from '../game-servers/game-server-registry.js';
+import { type GameServer, hostnameOf } from '../game-servers/game-server-registry.js';
 import { CurrentGameServer, ServerKeyGuard } from '../game-servers/server-key.guard.js';
+import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { LiveServerStreams } from './live-server-streams.js';
 import { LiveServers } from './live-servers.js';
 
 const UNAVAILABLE = 'Servidores ao vivo indisponíveis no momento; tente de novo';
 
-/** Batimento dos Servidores Carmine (S06), mandado pelo Carmine.Core a cada ~10 s. */
+/**
+ * Batimento dos Servidores Carmine (S06), mandado pelo Carmine.Core a cada ~10 s. A resposta
+ * (S07) leva o hostname e as Punições dos jogadores conectados: é assim que um ban, mute ou gag
+ * aplicado no site chega ao jogo em até ~10 s, sem canal à parte.
+ */
 @ApiTags('server')
 @ApiBearerAuth()
 @UseGuards(ServerKeyGuard)
 @Controller('server/heartbeat')
 export class HeartbeatController {
-  constructor(@Inject(LiveServers) private readonly live: LiveServers) {}
+  constructor(
+    @Inject(LiveServers) private readonly live: LiveServers,
+    @Inject(Sanctions) private readonly sanctions: Sanctions,
+  ) {}
 
   @Post()
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @RateLimit('server')
   @ApiOperation({
     operationId: 'sendHeartbeat',
-    summary: 'Batimento do servidor: mapa, jogadores conectados e vagas públicas',
+    summary:
+      'Batimento do servidor: mapa, jogadores e vagas; responde o hostname e as Punições a aplicar',
   })
-  @ApiNoContentResponse({ description: 'Presença atualizada' })
+  @ApiOkResponse({
+    description: 'Presença atualizada; o que aplicar no jogo agora',
+    standardSchema: serverHeartbeatResultSchema,
+  })
   @ApiBadRequestResponse({ description: 'Corpo inválido' })
   @ApiUnauthorizedResponse({ description: 'Chave de Servidor Carmine ausente ou inválida' })
   @ApiServiceUnavailableResponse({ description: 'Presença indisponível (Valkey fora)' })
   async heartbeat(
     @CurrentGameServer() server: GameServer,
     @Body({ schema: serverHeartbeatSchema }) heartbeat: ServerHeartbeat,
-  ): Promise<void> {
+  ): Promise<ServerHeartbeatResult> {
     try {
       await this.live.recordHeartbeat(server.id, heartbeat);
+      return {
+        hostname: hostnameOf(server),
+        sanctions: await this.sanctions.forGame(heartbeat.players),
+      };
     } catch {
       throw new ServiceUnavailableException(UNAVAILABLE);
     }

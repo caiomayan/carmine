@@ -56,6 +56,7 @@ describe('POST /api/server/player-connects', () => {
       publicId: first.publicId,
       displayName: 'FalleN',
       isFirstConnect: false,
+      sanctions: [],
     });
   });
 

@@ -70,7 +70,8 @@ describe('Servidores ao vivo (S06)', () => {
       maxPlayers: 9,
     });
 
-    expect(response.statusCode, response.body).toBe(204);
+    expect(response.statusCode, response.body).toBe(200);
+    expect(response.json()).toEqual({ hostname: null, sanctions: [] });
     const listed = (await list()).servers.find((s) => s.id === server.id);
     expect(listed).toMatchObject({
       name: 'retake-lista',

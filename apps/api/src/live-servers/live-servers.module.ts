@@ -3,6 +3,7 @@ import type { Redis } from 'ioredis';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { GameServerRegistry } from '../game-servers/game-server-registry.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
+import { ModerationModule } from '../moderation/moderation.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { LiveServerStreams } from './live-server-streams.js';
 import { HeartbeatController, LiveServersController } from './live-servers.controller.js';
@@ -11,7 +12,7 @@ import { ServerPresenceStore } from './server-presence-store.js';
 
 /** Servidores ao vivo (S06): batimento, presença no Valkey, lista pública e SSE. */
 @Module({
-  imports: [GameServersModule],
+  imports: [GameServersModule, ModerationModule],
   controllers: [HeartbeatController, LiveServersController],
   providers: [
     {

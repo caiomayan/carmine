@@ -21,4 +21,9 @@ describe('displayNameFor', () => {
   it('corta nomes acima de 32 caracteres (limite da Steam)', () => {
     expect(displayNameFor('a'.repeat(40), 10_016)).toBe('a'.repeat(32));
   });
+
+  it('mostra "Jogador #ID" enquanto o nome Steam for o que a Staff resetou', () => {
+    expect(displayNameFor('nome ruim', 10_016, 'nome ruim')).toBe('Jogador #10016');
+    expect(displayNameFor('nome novo', 10_016, 'nome ruim')).toBe('nome novo');
+  });
 });
