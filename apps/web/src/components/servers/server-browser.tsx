@@ -52,7 +52,7 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
           </TabsList>
         }
       />
-      <div className="grid gap-x-8 gap-y-10 pt-2 pb-4 lg:grid-cols-[minmax(0,1fr)_288px]">
+      <div className="grid gap-x-8 gap-y-10 pt-2 pb-4 xl:grid-cols-[minmax(0,1fr)_288px]">
         <section aria-labelledby="regiao-sao-paulo" className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pb-3">
             <h2
@@ -134,17 +134,18 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
 function LiveStatus({ state }: { state: LiveState }) {
   const t = useTranslations('servers.live');
   const seconds = useSecondsAgo(state);
+  const connection = useShownConnection(state.connection);
   const [announcement, setAnnouncement] = useState('');
-  const previous = useRef(state.connection);
+  const previous = useRef(connection);
 
   useEffect(() => {
-    if (previous.current === state.connection) return;
-    if (state.connection === 'lost') setAnnouncement(t('lostAnnounce'));
-    else if (state.connection === 'live' && previous.current === 'lost') {
+    if (previous.current === connection) return;
+    if (connection === 'lost') setAnnouncement(t('lostAnnounce'));
+    else if (connection === 'live' && previous.current === 'lost') {
       setAnnouncement(t('backAnnounce'));
     }
-    previous.current = state.connection;
-  }, [state.connection, t]);
+    previous.current = connection;
+  }, [connection, t]);
 
   const summary = state.list?.summary;
   const strong = (chunks: ReactNode) => <b className="font-semibold text-foreground">{chunks}</b>;
@@ -152,23 +153,17 @@ function LiveStatus({ state }: { state: LiveState }) {
   return (
     <div
       data-testid="live-status"
-      data-connection={state.connection}
+      data-connection={connection}
       className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground"
     >
       <span className="inline-flex items-center gap-2 label-caps text-[10.5px] text-foreground">
         <StatusDot
-          tone={
-            state.connection === 'live'
-              ? 'online'
-              : state.connection === 'lost'
-                ? 'warn'
-                : 'offline'
-          }
-          pulse={state.connection === 'live'}
+          tone={connection === 'live' ? 'online' : connection === 'lost' ? 'warn' : 'offline'}
+          pulse={connection === 'live'}
         />
-        {t(state.connection)}
+        {t(connection)}
       </span>
-      {state.connection === 'lost' && seconds !== null ? (
+      {connection === 'lost' && seconds !== null ? (
         <span data-testid="live-updated" className="tabular-nums">
           {t('updated', { seconds })}
         </span>
@@ -267,4 +262,24 @@ function Unavailable({ connecting, onRetry }: { connecting: boolean; onRetry: ()
       />
     </div>
   );
+}
+
+/** Uma queda mais curta do que isso (o EventSource reconectando sozinho) não vira aviso. */
+const LOST_GRACE_MS = 2000;
+
+/**
+ * A conexão como a tela mostra: a queda só aparece depois de {@link LOST_GRACE_MS}, para uma
+ * reconexão normal (o túnel fechando um stream ocioso) não piscar "Reconectando".
+ */
+function useShownConnection(connection: LiveState['connection']): LiveState['connection'] {
+  const [shown, setShown] = useState(connection);
+  useEffect(() => {
+    if (connection !== 'lost') {
+      setShown(connection);
+      return;
+    }
+    const timer = setTimeout(() => setShown('lost'), LOST_GRACE_MS);
+    return () => clearTimeout(timer);
+  }, [connection]);
+  return shown;
 }

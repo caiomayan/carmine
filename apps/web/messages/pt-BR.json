@@ -96,7 +96,7 @@
       "currentMap": "Mapa atual",
       "noMap": "Sem mapa",
       "seen": "Visto {ago}",
-      "neverSeen": "Ainda não entrou no ar",
+      "neverSeen": "Nunca esteve no ar",
       "players": "{players} de {max} jogadores",
       "fullHint": "Lotado: com VIP você entra pela Vaga reservada."
     },
@@ -145,6 +145,8 @@
       "serverOffline": "Servidor offline",
       "serverUnknown": "Num Servidor Carmine",
       "profile": "Ver o Perfil de {name}",
+      "showAll": "{count, plural, one {Ver mais # amigo} other {Ver mais # amigos}}",
+      "showLess": "Mostrar menos",
       "none": {
         "title": "Nenhum amigo jogando agora",
         "body": "Quando um amigo seu da Steam entrar num Servidor Carmine, ele aparece aqui com o botão para entrar junto."

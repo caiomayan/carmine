@@ -27,6 +27,9 @@ const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
 
 const SKELETON = ['f-1', 'f-2', 'f-3'];
 
+/** Quantos amigos aparecem antes do "Ver todos": o bloco não empurra a página. */
+const VISIBLE_FRIENDS = 6;
+
 /**
  * "Seus amigos jogando agora" (S06): os amigos Steam da Conta que estão num Servidor Carmine,
  * com "Entrar" no mesmo servidor. Três estados distintos além da lista: nenhum amigo jogando,
@@ -38,6 +41,10 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
   const { view, refresh } = useFriendsPlaying();
   const titleId = useId();
   const playing = view.status === 'ok' ? friendsWithServers(view.friends, servers) : [];
+  const [expanded, setExpanded] = useState(false);
+  const listId = useId();
+  const hidden = Math.max(0, playing.length - VISIBLE_FRIENDS);
+  const shown = expanded ? playing : playing.slice(0, VISIBLE_FRIENDS);
 
   return (
     <section
@@ -45,12 +52,12 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
       aria-busy={view.status === 'loading'}
       data-testid="friends-playing"
       data-status={view.status}
-      className="self-start rounded-xl bg-surface p-1.5 lg:sticky lg:top-24"
+      className="self-start rounded-xl bg-surface p-1.5 xl:sticky xl:top-24"
     >
-      <div className="flex items-center justify-between gap-3 px-3 pt-3 pb-2.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pt-3 pb-2.5">
         <h2
           id={titleId}
-          className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
+          className="inline-flex items-center gap-2.5 label-caps text-[11px] tracking-[0.14em] text-foreground"
         >
           <span aria-hidden="true" className="size-1.5 shrink-0 rotate-45 bg-foreground" />
           {t('title')}
@@ -95,11 +102,23 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
         <Notice icon={UsersIcon} title={t('none.title')} body={t('none.body')} />
       ) : (
         <>
-          <ul className="grid">
-            {playing.map((entry, i) => (
+          <ul id={listId} className="grid">
+            {shown.map((entry, i) => (
               <FriendRow key={entry.friend.steamId} entry={entry} index={i} />
             ))}
           </ul>
+          {hidden > 0 ? (
+            <Button
+              variant="quiet"
+              size="sm"
+              className="mx-1.5 mb-1"
+              aria-expanded={expanded}
+              aria-controls={listId}
+              onClick={() => setExpanded((v) => !v)}
+            >
+              {expanded ? t('showLess') : t('showAll', { count: hidden })}
+            </Button>
+          ) : null}
           {view.stale ? (
             <p role="status" className="px-3 pt-1 pb-2.5 text-[12px] text-muted-foreground">
               {t('unavailable.stale')}

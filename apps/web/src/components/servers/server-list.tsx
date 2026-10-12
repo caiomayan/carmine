@@ -9,7 +9,7 @@ type Columns = { server: string; map: string; players: string; state: string };
  */
 export const SERVER_GRID = cn(
   'md:grid md:items-center md:gap-4',
-  'md:grid-cols-[minmax(0,2.3fr)_minmax(0,1.2fr)_minmax(0,1.1fr)_84px_152px]',
+  'md:grid-cols-[minmax(0,2.5fr)_minmax(0,1fr)_minmax(0,1fr)_80px_148px]',
 );
 
 export function ServerListColumns({ labels }: { labels: Columns }) {

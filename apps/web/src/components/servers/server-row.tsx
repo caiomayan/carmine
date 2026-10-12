@@ -151,12 +151,12 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
 
         <div className="flex items-center justify-end gap-1 [grid-area:btn] md:[grid-area:auto]">
           {offline ? (
-            <Button disabled className="pointer-coarse:hidden">
+            <Button disabled className="max-md:flex-1 pointer-coarse:hidden">
               {t('connect.button')}
             </Button>
           ) : (
             <>
-              <Button asChild className="pointer-coarse:hidden">
+              <Button asChild className="max-md:flex-1 pointer-coarse:hidden">
                 <a
                   href={steamConnectUrl(server.address)}
                   aria-label={t('connect.aria', { server: server.name })}
@@ -187,7 +187,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
                 variant="ghost"
                 aria-label={t('connect.copyAria', { server: server.name })}
                 onClick={copyAddress}
-                className="hidden pointer-coarse:inline-flex"
+                className="hidden max-md:flex-1 pointer-coarse:inline-flex"
               >
                 <CopyGlyph copied={copyStatus === 'copied'} />
                 {copyStatus === 'copied' ? t('connect.copied') : t('connect.copy')}
@@ -255,7 +255,11 @@ function ConnectHelp({
   const t = useTranslations('servers');
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 pb-3.5 md:flex-nowrap">
-      <div id={id} role="status" className="min-w-0 flex-1 text-[13px] text-muted-foreground">
+      <div
+        id={id}
+        role="status"
+        className="min-w-0 flex-1 text-[13px] text-muted-foreground max-md:basis-full"
+      >
         {opening ? <span className="text-foreground">{t('connect.opening')} </span> : null}
         {t.rich('connect.hint', { address, cmd })}
         {full ? <span className="block pt-1">{t('row.fullHint')}</span> : null}

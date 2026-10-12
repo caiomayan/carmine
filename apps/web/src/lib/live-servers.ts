@@ -8,9 +8,16 @@ import type { ModeFilter } from './modes';
 /** Abre o CS2 já conectando ao Servidor Carmine. */
 export const steamConnectUrl = (address: string) => `steam://connect/${address}`;
 
-/** Os servidores de um filtro de Modo, na ordem da API (por Modo e nome). */
+/**
+ * Os servidores de um filtro de Modo, na ordem da API (por Modo e nome), com os offline no
+ * fim: quem abre a home vê primeiro onde dá para jogar.
+ */
 export function serversOfMode(servers: LiveServer[], mode: ModeFilter): LiveServer[] {
-  return mode === 'all' ? servers : servers.filter((s) => s.mode === mode);
+  const ofMode = mode === 'all' ? servers : servers.filter((s) => s.mode === mode);
+  return [
+    ...ofMode.filter((s) => s.state !== 'offline'),
+    ...ofMode.filter((s) => s.state === 'offline'),
+  ];
 }
 
 /** A partir daqui a barra de lotação avisa que está quase cheio. */

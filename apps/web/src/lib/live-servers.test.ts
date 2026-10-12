@@ -40,6 +40,13 @@ describe('filtro por Modo', () => {
     expect(serversOfMode([dm, retake], 'all')).toEqual([dm, retake]);
   });
 
+  it('os servidores offline vão para o fim, sem mudar a ordem dos outros', () => {
+    const off = server({ id: '00000000-0000-4000-8000-00000000000c', state: 'offline' });
+    const full = server({ id: '00000000-0000-4000-8000-00000000000d', state: 'full' });
+    expect(serversOfMode([off, dm, full, retake], 'all')).toEqual([dm, full, retake, off]);
+    expect(serversOfMode([off, retake], 'retake')).toEqual([retake, off]);
+  });
+
   it('um Modo mostra só os servidores dele (vazio quando não há nenhum)', () => {
     expect(serversOfMode([dm, retake], 'retake')).toEqual([retake]);
     expect(serversOfMode([retake], 'deathmatch')).toEqual([]);
