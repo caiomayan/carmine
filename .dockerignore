@@ -13,6 +13,7 @@
 .github
 .maestri
 .playwright-mcp
-docs
+docs/*
+!docs/legal
 plugins
 prototypes

@@ -26,6 +26,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
 COPY tsconfig.base.json ./
 COPY packages/contracts packages/contracts
 COPY apps/web apps/web
+# Documentos legais (Regras de conduta, Termos, Privacidade) lidos pelo web: docs/legal/*.md.
+COPY docs/legal docs/legal
 # next/font baixa a Inter no build e a serve do próprio domínio (sem Google em runtime).
 # Os contratos (@carmine/contracts) são compilados antes, como dependência do web.
 RUN pnpm --filter @carmine/contracts run build  && NEXT_OUTPUT=standalone pnpm --filter @carmine/web run build \
