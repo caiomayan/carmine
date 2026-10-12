@@ -213,6 +213,21 @@ function Install-InventorySimulator {
     Copy-Item -Path (Join-Path $extracted 'addons') -Destination $GameDir -Recurse -Force
     Write-Host "    InventorySimulator -> $target"
 
+    # O CounterStrikeSharp vem com FollowCS2ServerGuidelines ligado, que bloqueia os campos de item
+    # que o plugin precisa (m_bInitialized, m_iItemDefinitionIndex...). Desligar é o risco de GSLT
+    # assumido no ADR 0002; sem isso nenhuma skin é aplicada.
+    $cssCore = Join-Path $CssDir 'configs\core.json'
+    if (Test-Path $cssCore) {
+        $raw = Get-Content -Path $cssCore -Raw
+        $patched = $raw -replace '"FollowCS2ServerGuidelines"\s*:\s*true', '"FollowCS2ServerGuidelines": false'
+        if ($patched -ne $raw) {
+            Set-Content -Path $cssCore -Value $patched -NoNewline -Encoding utf8
+        }
+        Write-Host "    FollowCS2ServerGuidelines desligado em $cssCore"
+    } else {
+        Write-Warning "Sem $cssCore (o CounterStrikeSharp cria no primeiro boot): suba o servidor uma vez e rode de novo -Steps InventorySimulator."
+    }
+
     # Os convars do plugin só existem depois que ele carrega: o server.cfg (executado a cada mapa)
     # chama o nosso cfg. invsim_require_inventory 0: com a API fora, o connect segue com as Armas
     # padrão. invsim_apikey é a chave do Servidor Carmine (a mesma do Carmine.Core): com ela, o
