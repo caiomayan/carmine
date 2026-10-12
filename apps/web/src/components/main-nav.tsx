@@ -24,7 +24,11 @@ export function MainNav({
   className?: string;
 }) {
   const pathname = usePathname();
-  const current = items.find((item) => isCurrentPath(pathname, item.href))?.href ?? null;
+  // O item mais específico ganha: em /staff/auditoria, "Auditoria" e não "Contas" (/staff).
+  const current =
+    items
+      .filter((item) => isCurrentPath(pathname, item.href))
+      .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (

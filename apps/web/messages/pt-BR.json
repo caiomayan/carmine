@@ -63,6 +63,7 @@
       "menu": "Menu da Conta de {name}",
       "profile": "Meu perfil",
       "firstSteps": "Primeiros passos",
+      "staffPanel": "Painel da Staff",
       "signOut": "Sair",
       "signOutFailed": "Não deu para sair agora. Tente de novo em instantes."
     }
@@ -260,7 +261,17 @@
   "rules": {
     "title": "Regras de conduta",
     "status": "Em redação · publicação antes do beta fechado",
-    "body": "As regras de conduta valem em todos os Servidores Carmine: respeito entre jogadores, jogo limpo e o que acontece com quem não cumpre. Elas serão publicadas aqui, junto dos Termos de uso, antes do beta fechado."
+    "body": "As regras de conduta valem em todos os Servidores Carmine: respeito entre jogadores, jogo limpo e o que acontece com quem não cumpre. Elas serão publicadas aqui, junto dos Termos de uso, antes do beta fechado.",
+    "appeal": {
+      "title": "Recurso",
+      "steps": {
+        "ticket": "Abra um ticket no Discord da Carmine.",
+        "details": "Informe o seu ID público (o número do seu Perfil), a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.",
+        "answer": "A Staff responde em até {hours} h."
+      },
+      "notes": "A punição continua valendo enquanto o recurso é analisado. Cada ban permanente tem direito a um recurso. Recurso aceito retira a punição do seu Perfil.",
+      "discord": "Abrir o Discord"
+    }
   },
   "contact": {
     "title": "Contato e exclusão de dados",
@@ -737,5 +748,322 @@
       "body": "Seu Inventário ainda está vazio. Adicione uma skin para equipar aqui e ver no jogo.",
       "action": "Ir para o Inventário"
     }
+  },
+  "legal": {
+    "updated": "Atualizado em {date} · versão {version}",
+    "draftNotice": "Rascunho em revisão. Este texto ainda pode mudar antes da versão final; os trechos destacados são pendências que ainda serão preenchidas.",
+    "toc": "Nesta página",
+    "gap": "Pendência"
+  },
+  "moderation": {
+    "types": {
+      "ban": "Ban",
+      "mute": "Mute",
+      "gag": "Gag",
+      "kick": "Kick",
+      "warning": "Aviso"
+    },
+    "typeHints": {
+      "ban": "Não entra nos Servidores Carmine",
+      "mute": "Sem voz no jogo",
+      "gag": "Sem chat no jogo",
+      "kick": "Tirado do servidor uma vez",
+      "warning": "Só registra e avisa"
+    },
+    "categories": {
+      "offensive_chat": "Conduta no chat",
+      "offensive_voice": "Conduta na voz",
+      "griefing": "Griefing",
+      "exploit": "Abuso de bug",
+      "discrimination": "Discriminação",
+      "cheat": "Cheat",
+      "threat": "Ameaça",
+      "doxxing": "Exposição de dados pessoais",
+      "ban_evasion": "Fuga de ban"
+    },
+    "staffCategories": {
+      "offensive_chat": "Chat ofensivo pessoal",
+      "offensive_voice": "Voz ofensiva",
+      "griefing": "Griefing, AFK ou TK proposital",
+      "exploit": "Abuso de bug ou exploit",
+      "discrimination": "Discriminação",
+      "cheat": "Cheat",
+      "threat": "Ameaça",
+      "doxxing": "Doxxing",
+      "ban_evasion": "Conta alternativa para fugir de ban"
+    },
+    "duration": {
+      "minute": "{value} min",
+      "hour": "{value} h",
+      "day": "{value, plural, one {# dia} other {# dias}}",
+      "permanent": "Permanente",
+      "instant": "Na hora"
+    },
+    "measure": {
+      "lasting": "{type} de {duration}",
+      "permanent": "{type} permanente",
+      "instant": "{type}"
+    },
+    "badge": {
+      "ban": {
+        "time": "Banido até {at}",
+        "date": "Banido até {at}",
+        "permanent": "Banido permanentemente"
+      },
+      "gag": {
+        "time": "Silenciado no chat até {at}",
+        "date": "Silenciado no chat até {at}",
+        "permanent": "Silenciado no chat permanentemente"
+      },
+      "mute": {
+        "time": "Silenciado na voz até {at}",
+        "date": "Silenciado na voz até {at}",
+        "permanent": "Silenciado na voz permanentemente"
+      }
+    },
+    "notice": {
+      "label": "Punição na sua Conta",
+      "title": {
+        "ban": "Sua Conta está banida dos Servidores Carmine",
+        "gag": "Você está sem chat nos Servidores Carmine",
+        "mute": "Você está sem voz nos Servidores Carmine"
+      },
+      "until": {
+        "time": "até hoje, {at}",
+        "date": "até {at}",
+        "permanent": "permanente"
+      },
+      "reason": "Motivo: {category}",
+      "bannedSite": "Enquanto o ban durar, o site fica só para leitura: você não consegue mudar o Inventário nem o Loadout.",
+      "appeal": "Achou injusto? Recorra pelo Discord; a Staff responde em até {hours} h.",
+      "appealLink": "Como recorrer",
+      "discord": "Abrir o Discord"
+    },
+    "banned": "Sua Conta está banida: o site fica só para leitura até o fim do ban."
+  },
+  "profileSanctions": {
+    "title": "Punições",
+    "subtitle": "Últimos 12 meses, sem avisos. O motivo escrito pela Staff não aparece aqui.",
+    "active": "Em vigor",
+    "revoked": "Encerrada antes do prazo",
+    "columns": {
+      "type": "Punição",
+      "category": "Categoria",
+      "date": "Data",
+      "duration": "Duração"
+    },
+    "badgesLabel": "Punições em vigor"
+  },
+  "staff": {
+    "title": "Painel da Staff",
+    "subtitle": "Você entra como {role}. Toda ação fica no log de auditoria.",
+    "metaTitle": "Painel da Staff",
+    "nav": {
+      "label": "Seções do painel da Staff",
+      "accounts": "Contas",
+      "audit": "Auditoria",
+      "servers": "Servidores"
+    },
+    "roles": {
+      "owner": "Dono",
+      "admin": "Admin",
+      "moderator": "Moderador",
+      "none": "Sem papel"
+    },
+    "unavailable": "A API não respondeu. Tente de novo em instantes.",
+    "search": {
+      "label": "Buscar Conta",
+      "placeholder": "ID público, SteamID64, link da Steam ou nome",
+      "submit": "Buscar",
+      "hint": "Pelo menos {min} caracteres. Mostramos até {limit} Contas.",
+      "tooShort": "Digite pelo menos {min} caracteres.",
+      "results": "{count, plural, =0 {Nenhuma Conta encontrada} one {# Conta} other {# Contas}}",
+      "emptyTitle": "Nenhuma Conta com esse termo",
+      "emptyBody": "Tente o ID público (#10016), o SteamID64 ou o link do perfil Steam.",
+      "lastSeen": "Jogou {ago}",
+      "neverPlayed": "Nunca jogou",
+      "unclaimed": "Não reivindicada",
+      "open": "Abrir ficha de {name}"
+    },
+    "members": {
+      "title": "Staff",
+      "since": "desde {date}"
+    },
+    "account": {
+      "back": "Voltar à busca",
+      "notFound": "Nenhuma Conta com esse ID público.",
+      "steamName": "Nome Steam: {name}",
+      "steamId": "SteamID64",
+      "copySteamId": "Copiar SteamID64",
+      "copied": "Copiado",
+      "publicProfile": "Perfil público",
+      "steamProfile": "Steam",
+      "claimed": "Reivindicada",
+      "unclaimed": "Não reivindicada",
+      "lastSeen": "Último connect {ago}",
+      "neverPlayed": "Nunca conectou",
+      "activeNone": "Nenhuma punição em vigor",
+      "vipActive": "VIP até {date}",
+      "vipNone": "Sem VIP",
+      "protected": "Esta Conta é da Staff com papel igual ou maior que o seu: você não pode puni-la.",
+      "self": "Esta é a sua Conta: você não pode se punir."
+    },
+    "reason": {
+      "label": "Motivo",
+      "hint": "Interno da Staff: vai para o log de auditoria e nunca aparece no Perfil.",
+      "placeholder": "O que aconteceu, onde e a evidência (clipe, print, log do chat)",
+      "count": "{count}/{max}",
+      "tooShort": "Escreva o motivo (pelo menos {min} caracteres)."
+    },
+    "apply": {
+      "title": "Aplicar punição",
+      "category": "Categoria da infração",
+      "chooseCategory": "Escolha a categoria",
+      "offenses": "{count, plural, =0 {nenhuma ocorrência} one {# ocorrência} other {# ocorrências}} em {days} dias",
+      "suggestion": "{offense}ª ocorrência em {days} dias. A tabela sugere:",
+      "suggested": "Segue a tabela",
+      "adjusted": "Ajustado pela Staff",
+      "useSuggestion": "Voltar à sugestão",
+      "measures": "Medidas",
+      "type": "Tipo",
+      "duration": "Duração",
+      "durationValue": "Quantidade",
+      "durationUnit": "Unidade",
+      "units": {
+        "minute": "minutos",
+        "hour": "horas",
+        "day": "dias"
+      },
+      "permanent": "Permanente",
+      "permanentNotAllowed": "Só Admin e Dono aplicam punição permanente.",
+      "addMeasure": "Adicionar medida",
+      "removeMeasure": "Tirar esta medida",
+      "submit": "Aplicar",
+      "review": "Revisar e aplicar",
+      "confirmTitle": "Confirme a punição",
+      "confirm": "Confirmar e aplicar",
+      "cancel": "Voltar",
+      "confirmBody": "{name} recebe: {measures}. Categoria: {category}.",
+      "banEffect": "O ban derruba o jogador do servidor em até 15 s e encerra as sessões dele no site.",
+      "done": "Punição aplicada."
+    },
+    "history": {
+      "title": "Histórico de punições",
+      "empty": "Nenhuma punição registrada.",
+      "appliedBy": "por {name}",
+      "states": {
+        "active": "Em vigor",
+        "expired": "Encerrada",
+        "instant": "Registrada",
+        "revoked": "Revogada",
+        "appeal": "Recurso aceito"
+      },
+      "revokedBy": "Revogada por {name} {when}: {reason}",
+      "permanent": "sem fim",
+      "until": "até {date}",
+      "revoke": "Revogar",
+      "revokeTitle": "Revogar {measure}",
+      "appealAccepted": "Recurso aceito",
+      "appealHint": "Some do Perfil público e não conta na reincidência.",
+      "revokeSubmit": "Revogar punição",
+      "revokeNotAllowed": "Só Admin e Dono revogam punições aplicadas por outra pessoa.",
+      "done": "Punição revogada."
+    },
+    "vip": {
+      "title": "VIP",
+      "grant": "Conceder dias",
+      "days": "Dias",
+      "grantSubmit": "Conceder VIP",
+      "grantHint": "Soma ao Período VIP ativo.",
+      "revoke": "Revogar VIP",
+      "revokeSubmit": "Revogar VIP agora",
+      "readOnly": "Só Admin e Dono mexem no VIP.",
+      "grantDone": "VIP concedido.",
+      "revokeDone": "VIP revogado."
+    },
+    "displayName": {
+      "title": "Nome de exibição",
+      "current": "Atual: {name}",
+      "hint": "Volta para \"Jogador #{publicId}\" enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
+      "submit": "Resetar nome",
+      "done": "Nome de exibição resetado."
+    },
+    "role": {
+      "title": "Papel na Staff",
+      "current": "Papel atual: {role}",
+      "label": "Novo papel",
+      "submit": "Salvar papel",
+      "ownerOnly": "Só o Dono altera papéis de Staff.",
+      "unclaimed": "Só Contas reivindicadas (que já entraram no site) podem ter papel.",
+      "done": "Papel atualizado."
+    },
+    "audit": {
+      "title": "Log de auditoria",
+      "accountTitle": "Ações da Staff nesta Conta",
+      "subtitle": "Toda ação da Staff, da mais recente para a mais antiga.",
+      "empty": "Nenhuma ação registrada.",
+      "filter": "Ação",
+      "allActions": "Todas as ações",
+      "apply": "Filtrar",
+      "loadMore": "Carregar mais",
+      "loadFailed": "Não deu para carregar mais agora.",
+      "end": "Fim do log.",
+      "actor": "Autor (SteamID64)",
+      "action": "Ação",
+      "target": "Alvo (SteamID64)",
+      "reasonCol": "Motivo",
+      "when": "Quando",
+      "deleted": "Conta apagada",
+      "actions": {
+        "vip_grant": "Concedeu VIP",
+        "vip_revoke": "Revogou VIP",
+        "sanction_apply": "Aplicou punição",
+        "sanction_revoke": "Revogou punição",
+        "role_grant": "Deu papel",
+        "role_revoke": "Tirou papel",
+        "display_name_reset": "Resetou o nome",
+        "server_update": "Editou servidor"
+      },
+      "filters": "Filtros do log",
+      "steamIdPlaceholder": "7656119…",
+      "steamIdInvalid": "Use um SteamID64 (17 dígitos, começa com 7656119).",
+      "viewLog": "Ver tudo no log"
+    },
+    "servers": {
+      "title": "Servidores Carmine",
+      "subtitle": "Nome de vitrine e código aparecem na home, no Conectar e no hostname do jogo (aplicado no próximo batimento, em até 10 s).",
+      "showcaseName": "Nome de vitrine",
+      "showcaseHint": "Descreve a variante, ex.: Retake · Rotação",
+      "code": "Código",
+      "codeHint": "Região·número, ex.: SP·1",
+      "hostname": "No jogo",
+      "hostnamePending": "Defina nome e código para o hostname mudar.",
+      "submit": "Salvar",
+      "saved": "Salvo.",
+      "empty": "Nenhum Servidor Carmine cadastrado.",
+      "mode_retake": "Retake",
+      "mode_deathmatch": "Deathmatch"
+    },
+    "errors": {
+      "invalid_body": "Algum campo está fora do formato. Confira e tente de novo.",
+      "forbidden": "O seu papel não permite esta ação.",
+      "account_not_found": "Essa Conta não existe mais.",
+      "sanction_not_found": "Essa punição não existe mais.",
+      "server_not_found": "Esse servidor não existe mais.",
+      "sanction_not_active": "Essa punição já foi revogada ou já terminou.",
+      "target_protected": "Você não pode punir a si mesmo nem alguém da Staff com papel igual ou maior.",
+      "permanent_not_allowed": "O seu papel não aplica punição permanente.",
+      "revoke_not_allowed": "Só Admin e Dono revogam punições aplicadas por outra pessoa.",
+      "no_vip_to_revoke": "Esta Conta não tem VIP ativo.",
+      "account_not_claimed": "A Conta precisa ter entrado no site ao menos uma vez.",
+      "last_owner": "A Carmine precisa de pelo menos um Dono.",
+      "server_code_taken": "Outro servidor já usa esse código.",
+      "unknown": "Não deu certo agora. Tente de novo em instantes."
+    }
+  },
+  "refund": {
+    "title": "Política de reembolso",
+    "status": "Em redação · publicação antes do VIP",
+    "body": "Aqui vai ficar como funcionam o arrependimento e o reembolso do VIP, conforme o Código de Defesa do Consumidor. A política será publicada antes de o VIP ser vendido."
   }
 }

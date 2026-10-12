@@ -5,7 +5,9 @@ import {
   CSRF_HEADER,
   type CurrentSession,
   currentSessionSchema,
+  type OwnSanction,
   type Profile,
+  type StaffRole,
   type VipStatus,
 } from '@carmine/contracts';
 import type { Route } from 'next';
@@ -31,6 +33,10 @@ type SessionState = {
   csrfToken: string | null;
   /** Período VIP da Conta; nulo sem sessão. Decide o cadeado dos Itens VIP (S04). */
   vip: VipStatus | null;
+  /** Papel de Staff da Conta (S07); nulo para quem não é da Staff ou sem sessão. */
+  staffRole: StaffRole | null;
+  /** Punições em vigor na própria Conta, com o motivo (S07): o aviso no alto do site. */
+  sanctions: OwnSanction[];
 };
 
 type SessionContextValue = SessionState & {
@@ -40,6 +46,9 @@ type SessionContextValue = SessionState & {
   mutate: (path: `/api/${string}`, init?: RequestInit) => Promise<Response>;
   firstSteps: { open: boolean; show: () => void; dismiss: () => void };
 };
+
+/** Intervalo mínimo entre as conferências de `/api/me` ao voltar para a aba. */
+const SESSION_RECHECK_MS = 15_000;
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
@@ -57,6 +66,8 @@ function stateFrom(session: CurrentSession | null, status: SessionStatus): Sessi
     account: session?.account ?? null,
     csrfToken: session?.csrfToken ?? null,
     vip: session?.vip ?? null,
+    staffRole: session?.staffRole ?? null,
+    sanctions: session?.sanctions ?? [],
   };
 }
 
@@ -83,28 +94,52 @@ export function SessionProvider({
   const [guideOpen, setGuideOpen] = useState(firstStepsOpen);
   const pathRef = useRef(pathname);
   pathRef.current = pathname;
+  const statusRef = useRef(state.status);
+  statusRef.current = state.status;
 
   useEffect(() => {
-    if (!readCookie(CSRF_COOKIE)) {
-      setState((current) =>
-        current.status === 'anonymous' ? current : stateFrom(null, 'anonymous'),
-      );
-      return;
-    }
-    const controller = new AbortController();
-    fetch('/api/me', { cache: 'no-store', signal: controller.signal })
-      .then(async (response) => {
-        if (response.status === 401) {
-          setState(stateFrom(null, 'anonymous'));
-          return;
-        }
-        // API fora do ar: fica o último estado conhecido, nunca "saiu".
-        if (!response.ok) return;
-        setState(stateFrom(currentSessionSchema.parse(await response.json()), 'authenticated'));
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
+    let controller: AbortController | null = null;
+    let checkedAt = 0;
+    const check = () => {
+      if (!readCookie(CSRF_COOKIE)) {
+        setState((current) =>
+          current.status === 'anonymous' ? current : stateFrom(null, 'anonymous'),
+        );
+        return;
+      }
+      controller?.abort();
+      const request = new AbortController();
+      controller = request;
+      checkedAt = Date.now();
+      fetch('/api/me', { cache: 'no-store', signal: request.signal })
+        .then(async (response) => {
+          if (response.status === 401) {
+            // A sessão acabou fora daqui (um ban derruba todas): a página volta como visitante.
+            const wasSignedIn = statusRef.current === 'authenticated';
+            setState(stateFrom(null, 'anonymous'));
+            if (wasSignedIn) router.refresh();
+            return;
+          }
+          // API fora do ar: fica o último estado conhecido, nunca "saiu".
+          if (!response.ok) return;
+          setState(stateFrom(currentSessionSchema.parse(await response.json()), 'authenticated'));
+        })
+        .catch(() => {});
+    };
+    check();
+    // Ao voltar para a aba, confere de novo (no máximo a cada 15 s): uma Punição aplicada
+    // enquanto a aba estava aberta aparece sem recarregar.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && Date.now() - checkedAt > SESSION_RECHECK_MS) {
+        check();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      controller?.abort();
+    };
+  }, [router]);
 
   const csrfToken = state.csrfToken;
 
