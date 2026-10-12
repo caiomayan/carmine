@@ -1,7 +1,7 @@
 ---
 title: Regras de conduta
 updatedAt: 2026-10-12
-version: 0.1.0
+version: 0.2.0
 ---
 
 Estas regras valem em todos os Servidores Carmine, no site stcarmine.com e no Discord do Carmine. Elas fazem parte dos [Termos de Uso](/termos): ao jogar num Servidor Carmine, você concorda com elas.
@@ -16,7 +16,7 @@ A ideia é simples: competir pesado e zoar faz parte do CS. Atacar uma pessoa, n
 - Cheat, ameaça e doxxing dão ban permanente já na primeira vez.
 - Quem decide uma punição é sempre uma pessoa da Staff, nunca um robô.
 - Você pode recorrer de qualquer punição pelo Discord, com resposta em até 72 h.
-- A punição ativa e o histórico dos últimos 12 meses aparecem no seu Perfil.
+- A punição ativa aparece no seu Perfil; o histórico dos últimos 12 meses só aparece para quem está logado no site.
 
 ## O que pode
 
@@ -51,6 +51,8 @@ As duas dão ban permanente já na primeira vez.
 
 Cheat é qualquer programa, script, macro ou modificação que dê vantagem: aimbot, wallhack, triggerbot, bhop por script, entre outros. Cheat comprovado pela Staff dá **ban permanente em todos os Servidores Carmine já na primeira vez**.
 
+Para aplicar um ban por cheat, a Staff precisa de pelo menos uma destas coisas, ou das duas: uma **testemunha identificada** (alguém que viu, seja jogador do Carmine ou não) ou uma **evidência anexada**, como um clipe ou uma gravação de tela.
+
 Contas com banimento VAC já são barradas pela própria Steam nos servidores com VAC; o Carmine não precisa verificar isso.
 
 ### Griefing, AFK proposital e TK proposital
@@ -77,7 +79,7 @@ Nomes ofensivos são bloqueados por um filtro, e a Staff pode resetar o Nome de 
 
 ### Denúncia falsa
 
-Denunciar alguém sabendo que é mentira, ou combinar denúncias em massa para perseguir uma pessoa, é tratado como ofensa pessoal. Quem abusa das denúncias pode perder o acesso a elas. [VALIDAR COM ADVOGADO]
+Denunciar alguém sabendo que é mentira, ou combinar denúncias em massa para perseguir uma pessoa, é tratado como ofensa pessoal e segue a linha de ofensa pessoal da tabela. Quem abusa das denúncias também pode perder o acesso a elas.
 
 ## Punições
 
@@ -96,7 +98,7 @@ Toda punição vale em todos os Servidores Carmine ao mesmo tempo e acaba sozinh
 
 ### Tabela por reincidência
 
-A punição aumenta conforme quantas vezes você cometeu a mesma infração nos últimos 30 dias.
+A punição aumenta conforme quantas vezes você cometeu a mesma infração nos últimos 30 dias. A conta é feita por linha da tabela: uma ofensa no chat não soma com um TK proposital. Cada infração deixa de contar 30 dias depois de cometida.
 
 | Infração | 1ª vez | 2ª vez | 3ª vez | 4ª vez ou mais |
 |---|---|---|---|---|
@@ -113,13 +115,13 @@ Quem aplica a punição é uma pessoa da Staff. O sistema mostra o seu históric
 ### Punições e VIP
 
 - Ban temporário **não** pausa o seu Período VIP: os dias continuam correndo.
-- Ban permanente por cheat, fraude ou contestação indevida de pagamento encerra o VIP sem reembolso. Os detalhes estão nos [Termos de Uso](/termos). [VALIDAR COM ADVOGADO]
+- Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida de pagamento encerra o VIP sem reembolso. Os detalhes estão nos [Termos de Uso](/termos). [VALIDAR COM ADVOGADO]
 
 ## Como a Staff analisa
 
 - **Chat de texto:** a Staff consegue ver o que foi escrito nos servidores. Guardamos o chat por até 30 dias.
 - **Chat de voz:** o Carmine **não grava** a voz. Uma denúncia de voz só vira punição se quem denunciou enviar uma gravação (um clipe) ao suporte no Discord.
-- **Cheat:** não gravamos demos. Uma denúncia de cheat precisa de evidência, como um clipe, e é analisada por uma pessoa da Staff.
+- **Cheat:** não gravamos demos. Uma denúncia de cheat precisa de uma testemunha identificada, de uma evidência (como um clipe) ou das duas, e é analisada por uma pessoa da Staff.
 
 Para denunciar, use `!report` no jogo ou abra um ticket no Discord. A Staff analisa em até 72 h e conta a quem denunciou se houve punição (sem expor os detalhes da outra pessoa). Não prometemos moderação imediata.
 
@@ -142,10 +144,10 @@ Algumas regras do recurso:
 
 ## Punições no Perfil
 
-O Carmine não tem lista pública de banidos. A informação aparece só no Perfil de cada Conta:
+O Carmine não tem lista pública de banidos. A informação aparece só no Perfil de cada Conta, e os Perfis não aparecem em buscadores como o Google:
 
-- **Punição ativa:** um selo como "Banido até 20/10" ou "Silenciado no chat até 14h".
-- **Histórico dos últimos 12 meses:** tipo da punição, categoria genérica ("Conduta no chat", "Griefing", "Cheat"...), data e duração. Avisos não aparecem.
+- **Punição ativa (visível para todos):** um selo como "Banido até 20/10" ou "Silenciado no chat até 14h".
+- **Histórico dos últimos 12 meses (visível só para quem está logado no site):** tipo da punição, categoria genérica ("Conduta no chat", "Griefing", "Cheat"...), data e duração. Avisos não aparecem.
 - **O motivo escrito pela Staff nunca aparece no Perfil.** Só você vê esse texto.
 - **Ban permanente por cheat** fica sempre visível no Perfil.
 - **O Perfil privado não esconde punições.** Ele esconde as Estatísticas e a sua identidade no Ranking, não o histórico de conduta.
@@ -157,7 +159,7 @@ Fazemos isso para que a comunidade saiba com quem está jogando, e para que uma 
 
 - Nunca passe seu nome completo, endereço, escola, telefone ou fotos para quem você conheceu no jogo.
 - Se alguém insistir, ameaçar ou deixar você desconfortável, saia do servidor, denuncie com `!report` e conte para um adulto de confiança.
-- Você pode silenciar qualquer jogador pelo placar do CS2 (Tab) e desligar o chat de voz ou de texto nas configurações do jogo.
+- Você pode silenciar qualquer jogador pelo placar do CS2 (Tab) e desligar o chat de voz ou de texto nas configurações do jogo. Nos Servidores Carmine, `!chat off` esconde o chat de texto só para você, e `!chat on` traz de volta.
 - Para casos graves, você ou seus pais também podem falar direto com a Staff pela página de [contato](/contato). Esse canal pede identificação de quem denuncia; denúncias anônimas não são aceitas para esse tipo de pedido.
 
 ## Discord
