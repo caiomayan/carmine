@@ -96,6 +96,8 @@ export function SessionProvider({
   pathRef.current = pathname;
   const statusRef = useRef(state.status);
   statusRef.current = state.status;
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   useEffect(() => {
     let controller: AbortController | null = null;
@@ -117,7 +119,7 @@ export function SessionProvider({
             // A sessão acabou fora daqui (um ban derruba todas): a página volta como visitante.
             const wasSignedIn = statusRef.current === 'authenticated';
             setState(stateFrom(null, 'anonymous'));
-            if (wasSignedIn) router.refresh();
+            if (wasSignedIn) routerRef.current.refresh();
             return;
           }
           // API fora do ar: fica o último estado conhecido, nunca "saiu".
@@ -139,7 +141,7 @@ export function SessionProvider({
       document.removeEventListener('visibilitychange', onVisible);
       controller?.abort();
     };
-  }, [router]);
+  }, []);
 
   const csrfToken = state.csrfToken;
 

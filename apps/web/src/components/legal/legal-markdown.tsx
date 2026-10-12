@@ -25,7 +25,7 @@ function DocLink({ href = '', children, gapLabel }: ComponentProps<'a'> & { gapL
     return (
       <mark
         data-testid="legal-gap"
-        className="rounded-xs bg-status-warn/18 px-1 py-px font-medium text-foreground [box-decoration-break:clone]"
+        className="relative rounded-xs bg-status-warn/18 px-1 py-px font-medium text-foreground [box-decoration-break:clone]"
       >
         <span className="sr-only">{gapLabel}: </span>
         {children}
@@ -100,7 +100,7 @@ function componentsFor(gapLabel: string): Components {
     // Tabela larga rola dentro do próprio bloco, nunca a página (390 px sem scroll horizontal).
     table: ({ children }) => (
       // biome-ignore lint/a11y/noNoninteractiveTabindex: a área rolável precisa receber foco para rolar pelo teclado.
-      <div className="-mx-1 mt-5 overflow-x-auto px-1 pb-1" tabIndex={0}>
+      <div className="relative -mx-1 mt-5 overflow-x-auto px-1 pb-1" tabIndex={0}>
         <table className="w-full min-w-[520px] border-collapse text-left text-sm">{children}</table>
       </div>
     ),
