@@ -261,9 +261,13 @@ function Install-InventorySimulator {
 
     $serverCfg = Join-Path $GameDir 'cfg\server.cfg'
     $execLine = 'exec carmine/inventory-simulator.cfg'
-    $current = if (Test-Path $serverCfg) { Get-Content -Path $serverCfg } else { @() }
+    $current = if (Test-Path $serverCfg) { @(Get-Content -Path $serverCfg) } else { @() }
     if ($current -notcontains $execLine) {
-        Add-Content -Path $serverCfg -Value $execLine -Encoding ascii
+        # O server.cfg padrão do CS2 termina sem quebra de linha: um Add-Content direto colava o exec
+        # no fim do comentário da última linha, e ele nunca rodava. Também conserta instalações
+        # antigas que ficaram com o exec colado num comentário.
+        $lines = @($current | ForEach-Object { $_.Replace($execLine, '').TrimEnd() }) + $execLine
+        Set-Content -Path $serverCfg -Value $lines -Encoding ascii
         Write-Host "    '$execLine' adicionado ao $serverCfg"
     }
 }
