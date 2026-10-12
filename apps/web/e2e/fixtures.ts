@@ -16,6 +16,7 @@ export const ROUTES = [
   '/termos',
   '/privacidade',
   '/regras',
+  '/reembolso',
   '/contato',
   '/nao-existe',
   '/entrar',

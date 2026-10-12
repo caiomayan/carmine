@@ -102,3 +102,28 @@ export function revokeVip(steamId: string) {
     { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
   );
 }
+
+/**
+ * Dá um papel de Staff pelo CLI de operação da API (S07), como o dono faz. A Conta precisa
+ * existir e estar reivindicada: entre com a Steam falsa antes.
+ */
+export function grantStaffRole(steamId: string, role: 'owner' | 'admin' | 'moderator') {
+  execFileSync(
+    process.execPath,
+    [
+      '--env-file=.env.example',
+      '--env-file-if-exists=.env',
+      'dist/staff/staff.cli.js',
+      'grant',
+      '--steam-id',
+      steamId,
+      '--role',
+      role,
+      '--by',
+      E2E_STAFF_STEAM_ID,
+      '--reason',
+      'E2E',
+    ],
+    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
+  );
+}
