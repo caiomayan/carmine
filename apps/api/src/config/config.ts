@@ -50,6 +50,11 @@ const envSchema = z
     RATE_LIMIT_EQUIPPED_PER_MINUTE: perMinute(120),
     RATE_LIMIT_MUTATIONS_PER_MINUTE: perMinute(60),
     RATE_LIMIT_SERVER_PER_MINUTE: perMinute(600),
+    // Servidores ao vivo (S06): sem batimento por esse tempo, o servidor fica offline; a varredura
+    // que percebe isso (e avisa a home ao vivo) roda nesse intervalo. Os dois somados ficam em até
+    // 60 s (critério da S06).
+    SERVER_OFFLINE_AFTER_SECONDS: z.coerce.number().int().positive().default(45),
+    LIVE_SERVERS_SWEEP_SECONDS: z.coerce.number().int().positive().default(5),
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
     PUBLIC_WEB_URL: origin().default('http://localhost:3000'),
@@ -100,6 +105,8 @@ export interface AppConfig {
   trustedProxies: string[];
   /** Requisições por minuto de cada política de rate limit. */
   rateLimitsPerMinute: Record<RateLimitPolicyName, number>;
+  /** Servidores ao vivo (S06). */
+  liveServers: { offlineAfterMs: number; sweepMs: number };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
   publicWebUrl: string;
   steamOpenIdUrl: string;
@@ -140,6 +147,10 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       equipped: e.RATE_LIMIT_EQUIPPED_PER_MINUTE,
       mutations: e.RATE_LIMIT_MUTATIONS_PER_MINUTE,
       server: e.RATE_LIMIT_SERVER_PER_MINUTE,
+    },
+    liveServers: {
+      offlineAfterMs: e.SERVER_OFFLINE_AFTER_SECONDS * 1000,
+      sweepMs: e.LIVE_SERVERS_SWEEP_SECONDS * 1000,
     },
     publicWebUrl: e.PUBLIC_WEB_URL.replace(/\/+$/, ''),
     steamOpenIdUrl: e.STEAM_OPENID_URL,

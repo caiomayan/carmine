@@ -1,5 +1,5 @@
 import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { createServer, type IncomingMessage, type Server } from 'node:http';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 const OPENID_NS = 'http://specs.openid.net/auth/2.0';
@@ -39,6 +39,11 @@ export class FakeSteamOpenId {
   readonly verifications: URLSearchParams[] = [];
   /** Pedidos de checkid_setup recebidos (o redirecionamento do login). */
   readonly logins: URL[] = [];
+  /**
+   * Quem atende os outros caminhos (a Steam Web API, no E2E); sem ele, 404. Assim uma porta só
+   * faz as duas Steams.
+   */
+  otherRequests: ((req: IncomingMessage, res: ServerResponse) => void) | null = null;
   private readonly key = randomBytes(32);
   private readonly server: Server;
 
@@ -46,7 +51,8 @@ export class FakeSteamOpenId {
     this.server = createServer(async (req, res) => {
       const url = new URL(req.url ?? '/', 'http://fake-steam');
       if (url.pathname !== '/openid/login') {
-        res.writeHead(404).end();
+        if (this.otherRequests) this.otherRequests(req, res);
+        else res.writeHead(404).end();
         return;
       }
       if (req.method === 'GET') {
