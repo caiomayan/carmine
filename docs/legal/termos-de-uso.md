@@ -1,7 +1,7 @@
 ---
 title: Termos de Uso
 updatedAt: 2026-10-12
-version: 0.2.0
+version: 0.3.0
 ---
 
 Estes Termos explicam como funciona o Carmine, o que você pode esperar de nós e o que esperamos de você. Escrevemos em linguagem direta de propósito: se algo não ficar claro, fale com a gente pela página de [contato](/contato).
@@ -128,8 +128,9 @@ As [Regras de conduta](/regras) fazem parte destes Termos. Quem as descumpre pod
 ### Punições e VIP
 
 - **Ban temporário não congela o VIP:** os dias continuam correndo durante o ban.
-- **Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida do pagamento encerra o VIP sem reembolso** dos dias restantes. Essa regra aparece em destaque na tela de compra, antes do pagamento. "Contestação indevida" é pedir ao banco ou ao Mercado Pago a devolução de um pagamento legítimo (por exemplo, pelo MED do Pix ou por chargeback) sem antes pedir o reembolso para nós. Esse ban pode ser contestado uma vez pelo recurso descrito nas regras; se o recurso for aceito, o VIP volta com os dias restantes. [VALIDAR COM ADVOGADO]
-- Um ban permanente por outro motivo (discriminação reincidente, conta alternativa para fugir de punição, assédio sexual ou risco a menores) também encerra o acesso aos servidores. [DONO: decidir se, nesses casos, há reembolso proporcional dos dias restantes] [VALIDAR COM ADVOGADO]
+- **Ban permanente encerra o VIP, sem reembolso dos dias restantes.** Vale para todo ban permanente, qualquer que seja o motivo: cheat, ameaça, doxxing, discriminação reincidente, conta alternativa para fugir de punição, assédio sexual ou risco a menores, abuso de bug reincidente, fraude ou contestação indevida do pagamento. Essa regra aparece em destaque na tela de compra, antes do pagamento. [VALIDAR COM ADVOGADO]
+- "Contestação indevida" é pedir ao banco ou ao Mercado Pago a devolução de um pagamento legítimo (por exemplo, pelo MED do Pix ou por chargeback) sem antes pedir o reembolso para nós.
+- Cada ban permanente pode ser contestado uma vez pelo recurso descrito nas regras. Se o recurso for aceito, o VIP volta com os dias restantes.
 
 ## 11. O que você não pode fazer
 
