@@ -30,4 +30,11 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: {Count} connect(s) guardado(s) de antes do restart")]
     public static partial void PendingLoaded(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Carmine.Core: batimento não chegou à API ({Reason}); o site mostra o servidor offline em 45 s, o jogo segue normal")]
+    public static partial void HeartbeatDown(ILogger logger, string reason);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: batimento de volta; o site mostra o servidor ao vivo")]
+    public static partial void HeartbeatBack(ILogger logger);
 }

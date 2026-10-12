@@ -8,9 +8,11 @@ import { AppConfigModule } from './config/app-config.module.js';
 import type { AppConfig } from './config/config.js';
 import { DatabaseModule } from './database/database.module.js';
 import { EquippedModule } from './equipped/equipped.module.js';
+import { FriendsModule } from './friends/friends.module.js';
 import { GameServersModule } from './game-servers/game-servers.module.js';
 import { HealthModule } from './health/health.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
+import { LiveServersModule } from './live-servers/live-servers.module.js';
 import { LoadoutModule } from './loadout/loadout.module.js';
 import { loggerParams } from './logging.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
@@ -36,6 +38,8 @@ export class AppModule {
         EquippedModule,
         InventoryModule,
         LoadoutModule,
+        LiveServersModule,
+        FriendsModule,
       ],
     };
   }

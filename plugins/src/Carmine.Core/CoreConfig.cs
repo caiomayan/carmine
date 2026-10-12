@@ -25,4 +25,16 @@ public sealed class CoreConfig : BasePluginConfig
     /// <summary>De quanto em quanto tempo os connects guardados com a API fora são reenviados.</summary>
     [JsonPropertyName("RetryIntervalSeconds")]
     public int RetryIntervalSeconds { get; set; } = 15;
+
+    /// <summary>De quanto em quanto tempo o batimento vai à API (S06); sem batimento por 45 s, o servidor fica offline.</summary>
+    [JsonPropertyName("HeartbeatIntervalSeconds")]
+    public int HeartbeatIntervalSeconds { get; set; } = 10;
+
+    /// <summary>
+    /// Vagas públicas mostradas no site (o servidor fica lotado com essa quantidade de jogadores).
+    /// 0 usa o maxplayers do servidor. No Retake, 9 (as do cs2-retakes): o maxplayers tem a folga
+    /// da Vaga reservada.
+    /// </summary>
+    [JsonPropertyName("PublicSlots")]
+    public int PublicSlots { get; set; }
 }

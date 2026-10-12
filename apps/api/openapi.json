@@ -1979,6 +1979,211 @@
           "presets"
         ]
       }
+    },
+    "/api/server/heartbeat": {
+      "post": {
+        "operationId": "sendHeartbeat",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ServerHeartbeat"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Presença atualizada"
+          },
+          "400": {
+            "description": "Corpo inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Presença indisponível (Valkey fora)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Batimento do servidor: mapa, jogadores conectados e vagas públicas",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/servers": {
+      "get": {
+        "operationId": "listLiveServers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A lista agora",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LiveServerList"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servidores ao vivo indisponíveis no momento; tente de novo"
+          }
+        },
+        "summary": "Servidores Carmine com estado, mapa e jogadores, e o resumo do rodapé",
+        "tags": [
+          "servers"
+        ]
+      }
+    },
+    "/api/servers/live": {
+      "get": {
+        "description": "Stream `text/event-stream`: um evento `servers` com o `LiveServerList` inteiro em JSON logo ao conectar e a cada mudança, e um comentário `: keepalive` a cada 15 s.",
+        "operationId": "streamLiveServers",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Stream aberto"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "A mesma lista ao vivo, por SSE (ADR 0016)",
+        "tags": [
+          "servers"
+        ]
+      }
+    },
+    "/api/me/friends-playing": {
+      "get": {
+        "operationId": "getFriendsPlaying",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Amigos jogando (ok), lista de amigos privada ou Steam indisponível",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FriendsPlaying"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Presença indisponível no momento"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Amigos Steam da Conta jogando agora num Servidor Carmine",
+        "tags": [
+          "friends"
+        ]
+      }
     }
   },
   "info": {
@@ -3378,6 +3583,252 @@
         "required": [
           "name"
         ]
+      },
+      "ServerHeartbeat": {
+        "type": "object",
+        "properties": {
+          "map": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "players": {
+            "maxItems": 128,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          },
+          "maxPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 128
+          }
+        },
+        "required": [
+          "map",
+          "players",
+          "maxPlayers"
+        ]
+      },
+      "LiveServerList": {
+        "type": "object",
+        "properties": {
+          "servers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiveServer"
+            }
+          },
+          "summary": {
+            "$ref": "#/components/schemas/LiveServerSummary"
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "servers",
+          "summary",
+          "generatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "LiveServer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "address": {
+            "type": "string",
+            "minLength": 1
+          },
+          "region": {
+            "$ref": "#/components/schemas/ServerRegion"
+          },
+          "map": {
+            "nullable": true,
+            "type": "string",
+            "minLength": 1
+          },
+          "players": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "maxPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "$ref": "#/components/schemas/LiveServerState"
+          },
+          "lastHeartbeatAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mode",
+          "address",
+          "region",
+          "map",
+          "players",
+          "maxPlayers",
+          "state",
+          "lastHeartbeatAt"
+        ],
+        "additionalProperties": false
+      },
+      "GameMode": {
+        "type": "string",
+        "enum": [
+          "retake",
+          "deathmatch"
+        ]
+      },
+      "ServerRegion": {
+        "type": "string",
+        "enum": [
+          "sao-paulo"
+        ]
+      },
+      "LiveServerState": {
+        "type": "string",
+        "enum": [
+          "online",
+          "full",
+          "offline"
+        ]
+      },
+      "LiveServerSummary": {
+        "type": "object",
+        "properties": {
+          "online": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "players": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "online",
+          "players"
+        ],
+        "additionalProperties": false
+      },
+      "FriendsPlaying": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ok"
+                ]
+              },
+              "friends": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PlayingFriend"
+                }
+              }
+            },
+            "required": [
+              "status",
+              "friends"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "private"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "unavailable"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      },
+      "PlayingFriend": {
+        "type": "object",
+        "properties": {
+          "steamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "avatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          },
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          }
+        },
+        "required": [
+          "steamId",
+          "publicId",
+          "displayName",
+          "avatarUrl",
+          "serverId"
+        ],
+        "additionalProperties": false
       }
     }
   }
