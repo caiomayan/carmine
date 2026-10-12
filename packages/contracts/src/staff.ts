@@ -250,7 +250,10 @@ export const revokeSanctionSchema = z
 
 export type RevokeSanction = z.infer<typeof revokeSanctionSchema>;
 
-/** `POST /api/staff/accounts/{publicId}/vip/grant` (`vip.manage`): soma ao Período ativo. */
+/**
+ * `POST /api/staff/accounts/{publicId}/vip/grant` (`vip.manage`): soma ao Período ativo. Como
+ * toda mutação sobre uma Conta no painel, responde com o `StaffAccountDetail` atualizado.
+ */
 export const staffVipGrantSchema = z
   .strictObject({ days: z.int().min(1).max(3650), reason: staffReasonSchema })
   .meta({ id: 'StaffVipGrant' });

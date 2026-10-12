@@ -169,6 +169,24 @@ export const publicSanctionSchema = z
 
 export type PublicSanction = z.infer<typeof publicSanctionSchema>;
 
+/**
+ * Uma Punição valendo agora, como a própria Conta a vê em `GET /api/me` (S07): com o motivo
+ * escrito pela Staff, que só a pessoa punida vê (nunca sai no Perfil público).
+ */
+export const ownSanctionSchema = z
+  .object({
+    id: z.uuid(),
+    type: sanctionTypeSchema,
+    category: sanctionCategorySchema,
+    reason: z.string().min(1),
+    startsAt: z.iso.datetime({ offset: true }),
+    /** Nulo: permanente. */
+    endsAt: z.iso.datetime({ offset: true }).nullable(),
+  })
+  .meta({ id: 'OwnSanction' });
+
+export type OwnSanction = z.infer<typeof ownSanctionSchema>;
+
 /** Meses de histórico de Punições no Perfil público (o ban permanente por cheat fica sempre). */
 export const PROFILE_SANCTION_HISTORY_MONTHS = 12;
 

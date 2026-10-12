@@ -44,6 +44,7 @@ describe('currentSessionSchema', () => {
       firstLogin: true,
       vip,
       staffRole: null,
+      sanctions: [],
     };
 
     expect(currentSessionSchema.parse(session)).toEqual(session);
@@ -53,7 +54,13 @@ describe('currentSessionSchema', () => {
   });
 
   it('traz o Período VIP da Conta', () => {
-    const session = { account: profile, csrfToken: 'token', firstLogin: false, staffRole: null };
+    const session = {
+      account: profile,
+      csrfToken: 'token',
+      firstLogin: false,
+      staffRole: null,
+      sanctions: [],
+    };
     const active = { active: true, endsAt: '2026-11-10T12:00:00.000Z', endedAt: null };
 
     expect(currentSessionSchema.parse({ ...session, vip: active }).vip).toEqual(active);
