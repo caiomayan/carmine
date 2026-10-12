@@ -6,7 +6,7 @@ import {
   type ItemUsages,
   type RemovedInventoryItem,
 } from '@carmine/contracts';
-import { and, count, desc, eq, isNotNull, isNull, lt } from 'drizzle-orm';
+import { and, count, desc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, inventoryItems } from '../database/schema.js';
 import type { LoadoutChangeListener } from '../equipped/equipped-cache.js';
@@ -35,6 +35,13 @@ const RESTORE_WINDOW_MS = INVENTORY_RESTORE_WINDOW_SECONDS * 1000;
 
 type Row = typeof inventoryItems.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
+
+/**
+ * O contador do StatTrak é do servidor (só os abates no jogo o mudam): ao ligar o StatTrak ele
+ * começa em 0, e o valor enviado pelo cliente é ignorado.
+ */
+const withCounterAtZero = (item: Cs2Item): Cs2Item =>
+  item.statTrak === undefined ? item : { ...item, statTrak: 0 };
 
 const toInventoryItem = (row: Row): InventoryItem => ({
   uid: row.id,
@@ -77,22 +84,31 @@ export class Inventory {
       await this.assertRoom(tx, accountId);
       const [row] = await tx
         .insert(inventoryItems)
-        .values({ accountId, item: valid, createdAt: now, updatedAt: now })
+        .values({ accountId, item: withCounterAtZero(valid), createdAt: now, updatedAt: now })
         .returning();
       return toInventoryItem(row as Row);
     });
   }
 
-  /** Substitui todos os atributos do Item; o `id` do catálogo não muda. */
+  /**
+   * Substitui todos os atributos do Item; o `id` do catálogo não muda. O contador do StatTrak
+   * não vem do cliente: com o StatTrak ligado, fica o da linha no instante da escrita (num só
+   * UPDATE, então um abate gravado ao mesmo tempo não se perde); recém-ligado, começa em 0;
+   * desligado, o contador some (religar começa de novo em 0).
+   */
   async replace(accountId: string, uid: string, item: Cs2Item): Promise<InventoryItem> {
     const current = await this.findActive(this.db, accountId, uid);
     if (current.item.id !== item.id) {
       throw rejection('item_id_immutable', 'O Item do catálogo não muda numa edição');
     }
-    const valid = await this.validate(accountId, item);
+    const valid = withCounterAtZero(await this.validate(accountId, item));
+    const next =
+      valid.statTrak === undefined
+        ? valid
+        : sql`${JSON.stringify(valid)}::jsonb || (case when ${inventoryItems.item} ? 'statTrak' then jsonb_build_object('statTrak', ${inventoryItems.item}->'statTrak') else '{}'::jsonb end)`;
     const [row] = await this.db
       .update(inventoryItems)
-      .set({ item: valid, updatedAt: this.clock() })
+      .set({ item: next, updatedAt: this.clock() })
       .where(
         and(
           eq(inventoryItems.id, uid),

@@ -180,14 +180,14 @@ describe('GET /api/equipped/v5/{steamId}.json', () => {
     it('no fim do Período VIP, o agente sai sem ninguém invalidar o cache', async () => {
       const p = await signedInPlayer(t, nextPlayer++, { vipUntil: Date.now() + 1500 });
       await p.equip(await p.add({ id: AGENT_T }));
-      await p.equip(await p.add({ id: AK_REDLINE, statTrak: 7, nameTag: 'Carmine' }));
+      await p.equip(await p.add({ id: AK_REDLINE, statTrak: 0, nameTag: 'Carmine' }));
 
       const during = equippedV5Schema.parse((await equipped(p.steamId)).json());
       await new Promise((resolve) => setTimeout(resolve, 2000));
       const after = equippedV5Schema.parse((await equipped(p.steamId)).json());
 
       expect(during.agents?.['2']?.def).toBe(5105);
-      expect(during.tWeapons?.['7']).toMatchObject({ stattrak: 7, nametag: 'Carmine' });
+      expect(during.tWeapons?.['7']).toMatchObject({ stattrak: 0, nametag: 'Carmine' });
       expect(after.agents).toEqual({});
       expect(after.tWeapons?.['7']).toMatchObject({ stattrak: -1, nametag: '', paint: 282 });
     });

@@ -98,7 +98,13 @@ export const cs2ItemSchema = z
       .optional(),
     /** Seed (padrão), de 1 a 1000. */
     seed: z.int().optional(),
-    /** Presente = StatTrak; o valor é a contagem (começa em 0). Exige VIP. */
+    /**
+     * Presente = StatTrak ligado. Exige VIP. O valor é o contador de abates, que é do servidor:
+     * o web só liga (manda qualquer número, ex.: 0) ou desliga (omite). Ao ligar, começa em 0;
+     * numa edição com o StatTrak ligado, o valor enviado é ignorado e fica o atual; ao desligar,
+     * o contador é zerado (religar começa de novo em 0). Restaurar e os Presets mantêm o
+     * contador, que é um só por Item.
+     */
     statTrak: z.int().min(0).max(999_999).optional(),
     /** Nametag, até 20 caracteres (regra da cs2-lib, validada pela API). Exige VIP. */
     nameTag: z.string().min(1).max(64).optional(),
