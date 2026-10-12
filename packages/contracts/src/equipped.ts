@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { steamId64Schema } from './steam.js';
 
 /**
  * Formato `equipped/v5` do cs2-css-inventory-simulator (ADR 0006), copiado de
@@ -94,3 +95,19 @@ export const equippedV5Schema = z
   .meta({ id: 'EquippedV5' });
 
 export type EquippedV5 = z.infer<typeof equippedV5Schema>;
+
+/**
+ * Corpo de `POST /api/increment-item-stattrak` e `POST /api/consume-item-spray`, como o
+ * cs2-css-inventory-simulator manda (`StatTrakIncrementRequest`, `ConsumeItemSprayRequest`):
+ * `apiKey` é a chave do Servidor Carmine (`invsim_apikey`), `targetUid` o `uid` do Item no
+ * `equipped/v5` e `userId` o SteamID64 de quem jogou.
+ */
+export const invsimItemRequestSchema = z
+  .object({
+    apiKey: z.string().optional(),
+    targetUid: z.int().positive(),
+    userId: steamId64Schema,
+  })
+  .meta({ id: 'InvsimItemRequest' });
+
+export type InvsimItemRequest = z.infer<typeof invsimItemRequestSchema>;

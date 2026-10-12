@@ -13,7 +13,8 @@
                          criando a config de cada um (URL da API) se ainda não existir.
       InventorySimulator instala o cs2-css-inventory-simulator (sem modificação, ADR 0006) na versão
                          de -InvSimVersion e grava cfg/carmine/inventory-simulator.cfg apontando o
-                         plugin para a API (-ApiBaseUrl), executado pelo server.cfg a cada mapa.
+                         plugin para a API (-ApiBaseUrl) com a chave do Carmine.Core, executado pelo
+                         server.cfg a cada mapa. Rode depois de colar a ApiKey do Carmine.Core.
 
     Toda atualização do CS2 sobrescreve o gameinfo.gi: depois de atualizar, rode de novo a etapa Metamod.
 
@@ -214,13 +215,19 @@ function Install-InventorySimulator {
 
     # Os convars do plugin só existem depois que ele carrega: o server.cfg (executado a cada mapa)
     # chama o nosso cfg. invsim_require_inventory 0: com a API fora, o connect segue com as Armas
-    # padrão. O StatTrak não é gravado pela Carmine, então o plugin não manda incrementos.
+    # padrão. invsim_apikey é a chave do Servidor Carmine (a mesma do Carmine.Core): com ela, o
+    # plugin grava cada abate no StatTrak em /api/increment-item-stattrak.
+    $coreConfig = Join-Path $CssDir 'configs\plugins\Carmine.Core\Carmine.Core.json'
+    $apiKey = if (Test-Path $coreConfig) { (Get-Content -Path $coreConfig -Raw | ConvertFrom-Json).ApiKey } else { '' }
+    if (-not $apiKey) {
+        Write-Warning "Sem ApiKey em ${coreConfig}: o StatTrak não será gravado. Cole a chave lá e rode de novo -Steps InventorySimulator."
+    }
     $cfgDir = Join-Path $GameDir 'cfg\carmine'
     New-Item -ItemType Directory -Force -Path $cfgDir | Out-Null
     @(
         '// Gerado por infra/scripts/install-cs2-server.ps1 (etapa InventorySimulator). Não edite: rode de novo.'
         "invsim_url `"$ApiBaseUrl`""
-        'invsim_apikey ""'
+        "invsim_apikey `"$apiKey`""
         'invsim_ws_enabled 1'
         'invsim_ws_cooldown 30'
         'invsim_ws_immediately 0'
@@ -230,12 +237,11 @@ function Install-InventorySimulator {
         'invsim_persist_inventory 0'
         'invsim_fallback_team 0'
         'invsim_minmodels 0'
-        'invsim_public_api_stattrak_increment 0'
-        'invsim_public_api_spray_consume 0'
         'invsim_spray_enabled 0'
         'invsim_spraychanger_enabled 0'
         'invsim_pet_enabled 0'
     ) | Set-Content -Path (Join-Path $cfgDir 'inventory-simulator.cfg') -Encoding ascii
+    # O cfg leva a chave do servidor: fica só na máquina do servidor, nunca no repositório.
     Write-Host "    config gravada em $(Join-Path $cfgDir 'inventory-simulator.cfg')"
 
     $serverCfg = Join-Path $GameDir 'cfg\server.cfg'
