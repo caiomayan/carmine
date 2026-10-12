@@ -1,7 +1,7 @@
 import type { Cs2Item, InventoryItem } from '@carmine/contracts';
-import { type AttachmentEntry, attachmentEntry, catalogEntry } from '@/lib/catalog/catalog';
-import type { CatalogType, Rarity } from '@/lib/catalog/types';
-import { imageForWear } from '@/lib/catalog/wear';
+import { type AttachmentEntry, attachmentEntry, catalogEntry } from '../catalog/catalog';
+import type { CatalogType, Rarity } from '../catalog/types';
+import { imageForWear } from '../catalog/wear';
 import type { AttachmentLabel } from './item-form';
 
 /**

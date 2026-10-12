@@ -12,6 +12,7 @@ import { HistoryIcon } from '@/components/icons/animated/history';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
+import { useEquip } from '@/components/loadout/use-equip';
 import { useSession } from '@/components/session/session-provider';
 import { useDraft } from '@/components/session/use-draft';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import {
   type FormIssue,
   type FormSpec,
   formFromItem,
+  formSpecOf,
   formToItem,
   type ItemForm,
   issueFromApiError,
@@ -43,7 +45,15 @@ const RemoveItemDialog = dynamic(
 );
 
 type EditorProps =
-  | { mode: 'new'; spec: ItemSpec; labels?: undefined; uid?: undefined; saved?: undefined }
+  | {
+      mode: 'new';
+      spec: ItemSpec;
+      /** O Item tem slot no Loadout: oferece "Adicionar e equipar" (S05). */
+      equippable: boolean;
+      labels?: undefined;
+      uid?: undefined;
+      saved?: undefined;
+    }
   | { mode: 'edit'; spec: ItemSpec; labels: AttachmentLabel[]; uid: string; saved: Cs2Item };
 
 /**
@@ -60,23 +70,12 @@ export function ItemEditor(props: EditorProps) {
   const pathname = usePathname();
   const session = useSession();
   const inventory = useInventory();
+  const { equip } = useEquip();
   const vip = session.vip?.active ?? false;
   const signedIn = session.status === 'authenticated';
   const { entry } = spec;
 
-  const formSpec: FormSpec = useMemo(
-    () => ({
-      id: entry.id,
-      wear: spec.wear,
-      seed: spec.seed,
-      statTrak: spec.statTrak,
-      nameTag: spec.nameTag,
-      stickerSlots: spec.stickerSlots,
-      charm: spec.charm ? { seed: spec.charm.seed } : null,
-      vipItem: entry.vip,
-    }),
-    [entry, spec],
-  );
+  const formSpec: FormSpec = useMemo(() => formSpecOf(spec), [spec]);
 
   // O ponto de partida é o que veio do servidor nesta visita.
   const [initial] = useState(() =>
@@ -101,6 +100,8 @@ export function ItemEditor(props: EditorProps) {
   >(null);
   const formRef = useRef<HTMLFormElement>(null);
   const hydrated = useHydrated();
+  const barEnd = useRef<HTMLDivElement>(null);
+  const barStuck = useStuck(barEnd);
 
   const issues = useMemo(() => {
     const local = validateForm(formSpec, form, { vip });
@@ -131,8 +132,12 @@ export function ItemEditor(props: EditorProps) {
     draft.set({ ...form, ...patch });
   }
 
-  async function submit(event: FormEvent) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // "Adicionar e equipar" é o mesmo envio, com o equipar logo depois (S05).
+    const andEquip =
+      mode === 'new' &&
+      (event.nativeEvent as SubmitEvent).submitter?.getAttribute('data-equip') === 'true';
     setAttempted(true);
     if (issues.length > 0) {
       requestAnimationFrame(() =>
@@ -162,6 +167,21 @@ export function ItemEditor(props: EditorProps) {
       }
       const saved = inventoryItemSchema.parse(await response.json());
       draft.commit();
+      if (andEquip) {
+        try {
+          await equip({
+            uid: saved.uid,
+            name: entry.name,
+            names: () => undefined,
+            inGameHint: true,
+          });
+          router.push('/loadout');
+          router.refresh();
+          return;
+        } catch {
+          // O Item entrou; só o equipar falhou: segue para o Inventário, de onde dá para equipar.
+        }
+      }
       inventory.notify(
         mode === 'edit' ? ti('saved', { name: entry.name }) : ti('added', { name: entry.name }),
         saved.uid,
@@ -212,7 +232,8 @@ export function ItemEditor(props: EditorProps) {
         ref={formRef}
         onSubmit={submit}
         noValidate
-        className="grid gap-6"
+        // Um campo que recebe foco rola acima da barra fixa de salvar, com o texto de ajuda dele.
+        className="grid gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
         {draft.restored ? (
@@ -364,7 +385,16 @@ export function ItemEditor(props: EditorProps) {
           />
         ) : null}
 
-        <div className="sticky bottom-0 z-10 -mx-1 grid gap-3 bg-background px-1 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] [mask-image:linear-gradient(to_bottom,transparent,#000_12px)]">
+        <div
+          data-stuck={barStuck || undefined}
+          data-testid="editor-actions"
+          className={cn(
+            'sticky bottom-0 z-10 -mx-1 grid gap-3 bg-background px-1 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]',
+            // Flutuando sobre os campos, a barra ganha uma linha e uma sombra: lê como camada.
+            'transition-shadow duration-(--dur-fast) ease-std',
+            'data-stuck:shadow-[0_-1px_0_var(--line),0_-18px_24px_-20px_var(--shadow)]',
+          )}
+        >
           {failure || (attempted && visibleIssues.length > 0) || (itemIssue && !lockedItem) ? (
             <p
               role="alert"
@@ -392,7 +422,20 @@ export function ItemEditor(props: EditorProps) {
               >
                 {saving ? t('saving') : mode === 'edit' ? t('save') : t('add')}
               </Button>
-            ) : (
+            ) : null}
+            {mode === 'new' && props.equippable && signedIn ? (
+              <Button
+                type="submit"
+                variant="ghost"
+                data-equip="true"
+                disabled={saving || lockedItem}
+                className="max-md:flex-1"
+                data-testid="add-and-equip"
+              >
+                {t('addAndEquip')}
+              </Button>
+            ) : null}
+            {signedIn || session.status === 'unknown' ? null : (
               <Button asChild className="max-md:flex-1">
                 <a href={signInHref(pathname)} data-testid="sign-in-to-add">
                   <BrandIcon icon={siSteam} size={16} />
@@ -418,12 +461,15 @@ export function ItemEditor(props: EditorProps) {
             ) : null}
           </div>
         </div>
+        {/* Fim real do formulário: fora da tela, a barra está flutuando sobre os campos. */}
+        <div ref={barEnd} aria-hidden="true" className="-mt-6 h-px" />
       </form>
 
       {mode === 'edit' && removing ? (
         <RemoveItemDialog
           uid={props.uid}
           name={entry.name}
+          weaponName={entry.weapon ?? entry.title}
           open={removing}
           onOpenChange={setRemoving}
           onRemoved={() => {
@@ -439,6 +485,21 @@ export function ItemEditor(props: EditorProps) {
 
 const formatRange = (value: number | undefined) =>
   value === undefined ? '' : formatDecimal(value, value >= 10 ? 0 : 2, { fixed: value < 10 });
+
+/** Verdadeiro enquanto o marcador está abaixo da tela (a barra fixa cobre o conteúdo). */
+function useStuck(marker: React.RefObject<HTMLElement | null>) {
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    const element = marker.current;
+    if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry) setStuck(!entry.isIntersecting && entry.boundingClientRect.top > 0);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [marker]);
+  return stuck;
+}
 
 /** Verdadeiro depois da hidratação: o E2E de desempenho mede até o editor responder. */
 function useHydrated() {

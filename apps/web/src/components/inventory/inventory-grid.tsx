@@ -1,5 +1,6 @@
 'use client';
 
+import type { LoadoutSide } from '@carmine/contracts';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -9,29 +10,47 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/animate-ui/components/radix/dropdown-menu';
-import type { InventoryCardData } from '@/lib/inventory/cards';
+import { LoadoutApiError, useEquip } from '@/components/loadout/use-equip';
+import type { CandidateView } from '@/lib/loadout/view';
 import { VipBadge } from './catalog-grid';
 import { useInventory } from './inventory-provider';
 import { ItemTile, TileBadge } from './item-tile';
 import { RemoveItemDialog } from './remove-item-dialog';
 
 /**
- * A grade do Inventário: cada cartão abre o editor; o menu do cartão também remove (com os
- * usos antes de confirmar e o "Desfazer" depois). O cartão que acabou de mudar fica marcado.
+ * A grade do Inventário: cada cartão abre o editor; o menu do cartão equipa (nos lados em que
+ * o Item existe) e remove (com os usos antes de confirmar e o "Desfazer" depois). O cartão que
+ * acabou de mudar fica marcado.
  */
 export function InventoryGrid({
   cards,
   rarityLabels,
   vip,
+  equipped,
 }: {
-  cards: InventoryCardData[];
+  cards: CandidateView[];
   rarityLabels: Record<string, string>;
   vip: { label: string; hint: string; active: boolean };
+  /** Onde cada Item está equipado no Loadout: `uid` -> lados (`null` = music kit). */
+  equipped: Record<string, (LoadoutSide | null)[]>;
 }) {
   const t = useTranslations('inventory.card');
+  const tl = useTranslations('loadout');
   const router = useRouter();
-  const { highlight } = useInventory();
-  const [removing, setRemoving] = useState<InventoryCardData | null>(null);
+  const { highlight, notify } = useInventory();
+  const { equip, sidesText } = useEquip();
+  const [removing, setRemoving] = useState<CandidateView | null>(null);
+  const names = (uid: string) => cards.find((card) => card.uid === uid)?.name;
+
+  async function equipCard(card: CandidateView, sides?: LoadoutSide[]) {
+    try {
+      await equip({ uid: card.uid, name: card.name, sides, names });
+    } catch (caught) {
+      const code = caught instanceof LoadoutApiError ? caught.code : 'network';
+      if (code !== 'session')
+        notify(code === 'unexpected' ? tl('notices.failed') : tl(`errors.${code}`));
+    }
+  }
 
   return (
     <>
@@ -67,8 +86,11 @@ export function InventoryGrid({
                 ) : null
               }
               meta={
-                card.stickers || card.charm
+                card.stickers || card.charm || equipped[card.uid]
                   ? [
+                      equipped[card.uid]
+                        ? t('equipped', { sides: sidesText(equipped[card.uid] ?? []) })
+                        : null,
                       card.stickers ? t('stickers', { count: card.stickers }) : null,
                       card.charm ? t('charm') : null,
                     ]
@@ -89,7 +111,32 @@ export function InventoryGrid({
                   <circle cx="19" cy="12" r="1.6" />
                 </svg>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-36">
+              <DropdownMenuContent align="end" className="min-w-44">
+                {card.slot === null ? null : card.sides === null ? (
+                  <DropdownMenuItem onSelect={() => equipCard(card)} data-testid="menu-equip">
+                    {t('equipIn.musicKit')}
+                  </DropdownMenuItem>
+                ) : (
+                  <>
+                    {card.sides.map((side) => (
+                      <DropdownMenuItem
+                        key={side}
+                        onSelect={() => equipCard(card, [side])}
+                        data-testid={`menu-equip-${side}`}
+                      >
+                        {t(`equipIn.${side}`)}
+                      </DropdownMenuItem>
+                    ))}
+                    {card.sides.length > 1 ? (
+                      <DropdownMenuItem
+                        onSelect={() => equipCard(card, card.sides ?? undefined)}
+                        data-testid="menu-equip-both"
+                      >
+                        {t('equipIn.both')}
+                      </DropdownMenuItem>
+                    ) : null}
+                  </>
+                )}
                 <DropdownMenuItem onSelect={() => router.push(`/inventario/${card.uid}`)}>
                   {t('edit')}
                 </DropdownMenuItem>
@@ -105,6 +152,7 @@ export function InventoryGrid({
         <RemoveItemDialog
           uid={removing.uid}
           name={removing.name}
+          weaponName={removing.title}
           open
           onOpenChange={(open) => {
             if (!open) setRemoving(null);

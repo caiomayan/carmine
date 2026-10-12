@@ -26,17 +26,23 @@ type Usages =
 export function RemoveItemDialog({
   uid,
   name,
+  weaponName,
   open,
   onOpenChange,
   onRemoved,
 }: {
   uid: string;
   name: string;
+  /** Nome da arma do Item ("AK-47"), para dizer o slot do Loadout em uso. */
+  weaponName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRemoved?: () => void;
 }) {
   const t = useTranslations('inventory.remove');
+  const tl = useTranslations('loadout.slots');
+  const slotLabel = (slot: string) =>
+    slot.startsWith('weapon_') ? weaponName : tl(slot as 'knife' | 'gloves' | 'agent' | 'musicKit');
   const tc = useTranslations('common');
   const { mutate } = useSession();
   const { offerUndo } = useInventory();
@@ -105,7 +111,10 @@ export function RemoveItemDialog({
                     {ready.loadout.map((use) => (
                       <li key={`${use.slot}-${use.side}`} className="flex items-center gap-2">
                         <span aria-hidden="true" className="size-1 rounded-full bg-foreground" />
-                        {t('loadout', { slot: use.slot, side: t(`sides.${use.side ?? 'all'}`) })}
+                        {t('loadout', {
+                          slot: slotLabel(use.slot),
+                          side: t(`sides.${use.side ?? 'all'}`),
+                        })}
                       </li>
                     ))}
                     {ready.presets.map((preset) => (

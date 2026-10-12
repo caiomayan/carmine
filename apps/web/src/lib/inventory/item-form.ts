@@ -1,4 +1,5 @@
 import type { Cs2Item, InventoryError, InventoryErrorCode } from '@carmine/contracts';
+import type { ItemSpec } from '../catalog/catalog';
 
 /**
  * O estado do editor de Item (S04) e a conversão de e para o Item do contrato
@@ -60,6 +61,26 @@ export type FormIssue = { field: string; code: InventoryErrorCode; range?: Range
 
 const round = (value: number, decimals: number) => Number(value.toFixed(decimals));
 const roundToStep = (value: number, step: number) => round(Math.round(value / step) * step, 4);
+
+/** O que o formulário precisa da especificação do catálogo. */
+export function formSpecOf(spec: ItemSpec): FormSpec {
+  return {
+    id: spec.entry.id,
+    wear: spec.wear,
+    seed: spec.seed,
+    statTrak: spec.statTrak,
+    nameTag: spec.nameTag,
+    stickerSlots: spec.stickerSlots,
+    charm: spec.charm ? { seed: spec.charm.seed } : null,
+    vipItem: spec.entry.vip,
+  };
+}
+
+/** O Item com os atributos de partida do editor: o de "adicionar e equipar" em um passo (S05). */
+export function defaultItem(spec: ItemSpec): Cs2Item {
+  const form = formSpecOf(spec);
+  return formToItem(form, emptyForm(form));
+}
 
 export function emptyForm(spec: FormSpec): ItemForm {
   return {

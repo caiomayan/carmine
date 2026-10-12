@@ -7,6 +7,7 @@ export type Theme = 'dark' | 'light';
 export const ROUTES = [
   '/',
   '/inventario',
+  '/loadout',
   '/inventario/adicionar',
   '/inventario/adicionar?tipo=weapon&arma=AK-47',
   '/inventario/adicionar?q=nada-disso-existe',

@@ -7,6 +7,7 @@ import { EditorHeader } from '@/components/inventory/editor-header';
 import { ItemEditor } from '@/components/inventory/item-editor';
 import { Button } from '@/components/ui/button';
 import { itemSpec } from '@/lib/catalog/catalog';
+import { slotOfItem } from '@/lib/loadout/slots';
 
 type Params = Promise<{ itemId: string }>;
 
@@ -52,7 +53,7 @@ export default async function NewItemPage({ params }: { params: Params }) {
         rarityLabel={tc(`rarities.${spec.entry.rarity}`)}
         typeLabel={tc(`types.${spec.entry.type}`)}
       />
-      <ItemEditor mode="new" spec={spec} />
+      <ItemEditor mode="new" spec={spec} equippable={slotOfItem(spec.entry.id) !== null} />
     </div>
   );
 }

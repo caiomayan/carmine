@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import type { CatalogEntry } from '@/lib/catalog/catalog';
@@ -12,6 +13,7 @@ export function CatalogGrid({
   vipHint,
   tileClassName,
   className,
+  action,
 }: {
   entries: CatalogEntry[];
   rarityLabels: Record<string, string>;
@@ -19,11 +21,13 @@ export function CatalogGrid({
   vipHint: string;
   tileClassName?: string;
   className?: string;
+  /** Ação sob cada cartão (ex.: "Adicionar e equipar" nas sugestões do Inventário vazio). */
+  action?: (entry: CatalogEntry) => ReactNode;
 }) {
   return (
     <ul className={cn('grid grid-cols-4 gap-2.5 max-lg:grid-cols-3 max-md:grid-cols-2', className)}>
       {entries.map((entry, index) => (
-        <li key={entry.id} className="grid">
+        <li key={entry.id} className="grid content-start gap-1.5">
           <ItemTile
             href={`/inventario/adicionar/${entry.id}`}
             testId={`catalog-item-${entry.id}`}
@@ -36,6 +40,7 @@ export function CatalogGrid({
             className={tileClassName}
             badges={entry.vip ? <VipBadge label={vipLabel} hint={vipHint} /> : null}
           />
+          {action?.(entry)}
         </li>
       ))}
     </ul>

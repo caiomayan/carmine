@@ -13,7 +13,7 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.locator('body')).toHaveCSS('background-color', BG[theme]);
     await expect(page.getByText('Nenhum servidor no ar ainda')).toBeVisible();
 
-    await expect(mainNav(page).getByRole('link')).toHaveCount(2);
+    await expect(mainNav(page).getByRole('link')).toHaveCount(3);
     await expect(mainNav(page).getByRole('link', { name: 'Servidores' })).toHaveAttribute(
       'aria-current',
       'page',
