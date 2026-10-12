@@ -3,6 +3,7 @@ export * from './equipped.js';
 export * from './game-server.js';
 export * from './health.js';
 export * from './inventory.js';
+export * from './live-servers.js';
 export * from './loadout.js';
 export * from './profile.js';
 export * from './steam.js';
