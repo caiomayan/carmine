@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  type Cs2Item,
-  gameLimitationsOf,
-  inventoryErrorSchema,
-  inventoryItemSchema,
-} from '@carmine/contracts';
+import { type Cs2Item, inventoryErrorSchema, inventoryItemSchema } from '@carmine/contracts';
 import type { Route } from 'next';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
@@ -13,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { siSteam } from 'simple-icons';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
-import { CircleHelpIcon } from '@/components/icons/animated/circle-help';
 import { HistoryIcon } from '@/components/icons/animated/history';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
@@ -329,12 +323,6 @@ export function ItemEditor(props: EditorProps) {
             ) : null}
           </div>
         ) : null}
-
-        {gameLimitationsOf(entry.type, item).map((limitation) => (
-          <Banner key={limitation.code} icon={CircleHelpIcon} tone="info" testId="game-limitation">
-            <span>{t(`gameLimitations.${limitation.code}`)}</span>
-          </Banner>
-        ))}
 
         {spec.nameTag ? (
           <FieldShell

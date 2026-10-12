@@ -3,7 +3,6 @@ import { csrfToken, grantVip, newSteamId, revokeVip, signInFromHeader } from './
 import { axeViolations, expect, saveTheme, test } from './fixtures';
 
 // Ids da @ianlucas/cs2-lib 9.5.0.
-const AK_REDLINE = 222;
 const AWP_ASIIMOV = 306;
 const USP_KILL_CONFIRMED = 1139;
 const KARAMBIT_FADE = 1327;
@@ -206,16 +205,6 @@ test('sem VIP, um agente equipado aparece como fora do jogo, com a explicação'
   await expect(panel(page).getByTestId('not-in-game-note')).toContainText(
     'não vai para o jogo sem um Período VIP ativo',
   );
-});
-
-test('o editor avisa, antes de salvar, que o StatTrak não conta abates no jogo', async ({
-  page,
-}) => {
-  await signIn(page, { vip: true, start: '/inventario' });
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
-  await expect(page.getByTestId('game-limitation')).toHaveCount(0);
-  await page.getByTestId('field-stattrak').click();
-  await expect(page.getByTestId('game-limitation')).toContainText('não conta abates');
 });
 
 test('no celular, o slot abre numa folha e equipa dali', async ({ page }) => {

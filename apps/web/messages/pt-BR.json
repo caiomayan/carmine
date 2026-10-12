@@ -508,10 +508,7 @@
     "drag3d": "Arrastar no 3D",
     "drag3dLabel": "Arrastar {name} na prévia 3D",
     "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado.",
-    "addAndEquip": "Adicionar e equipar",
-    "gameLimitations": {
-      "stattrak_not_counted": "No jogo, o contador StatTrak aparece, mas não conta abates: a cada connect ou !ws ele volta ao valor salvo."
-    }
+    "addAndEquip": "Adicionar e equipar"
   },
   "loadout": {
     "title": "Loadout",
@@ -566,7 +563,7 @@
       "equip": "Equipar {name}",
       "unequip": "Desequipar",
       "edit": "Editar Item",
-      "readOnly": "Este Preset está somente leitura: sem VIP ativo, só o Principal pode ser editado."
+      "readOnly": "Este Preset está somente leitura: sem VIP ativo, só o Preset principal pode ser editado."
     },
     "notices": {
       "equipped": "{item} equipado em {sides}.",
@@ -594,10 +591,10 @@
       "equippedCount": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
       "readOnly": "Somente leitura",
       "readOnlyBody": "Sem Período VIP ativo, os Presets extras ficam somente leitura: dá para ver, mas não editar, renomear, ativar nem apagar. Nada foi apagado; com o VIP de volta, tudo volta a funcionar.",
-      "activeReadOnly": "O Preset ativo, {name}, ficou somente leitura sem VIP. Ele continua valendo no jogo, sem os Itens VIP. Para mudar o Loadout, ative o Principal.",
-      "activateMain": "Ativar o Principal",
+      "activeReadOnly": "O Preset ativo, {name}, ficou somente leitura sem VIP. Ele continua valendo no jogo, sem os Itens VIP. Para mudar o Loadout, ative o Preset principal.",
+      "activateMain": "Ativar o Preset principal",
       "new": "Novo Preset",
-      "freeLimit": "No plano grátis você tem 1 Preset, o Principal. Com VIP, são até {limit}, ativáveis de uma vez.",
+      "freeLimit": "No plano grátis você tem 1 Preset, o Preset principal. Com VIP, são até {limit}, ativáveis de uma vez.",
       "limitReached": "Você chegou a {limit} Presets. Apague um para criar outro.",
       "actions": "Ações de {name}",
       "rename": "Renomear",
@@ -623,7 +620,7 @@
       "deleteDialog": {
         "title": "Apagar {name}?",
         "body": "Os Itens continuam no Inventário; só este Preset deixa de existir.",
-        "bodyActive": "Os Itens continuam no Inventário. Este é o Preset ativo: o Principal passa a ser o seu Loadout.",
+        "bodyActive": "Os Itens continuam no Inventário. Este é o Preset ativo: o Preset principal passa a ser o seu Loadout.",
         "submit": "Apagar Preset",
         "deleted": "Preset {name} apagado."
       },
@@ -639,7 +636,7 @@
       "side_not_allowed": "Este Item não existe nesse lado.",
       "vip_required": "Presets extras exigem um Período VIP ativo.",
       "preset_read_only": "Este Preset está somente leitura sem VIP ativo.",
-      "preset_main": "O Preset Principal não pode ser apagado.",
+      "preset_main": "O Preset principal não pode ser apagado.",
       "preset_limit": "Você chegou ao limite de Presets.",
       "network": "Não conseguimos falar com o servidor. Tente de novo."
     },
