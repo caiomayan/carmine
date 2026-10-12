@@ -83,6 +83,14 @@ _Evitar_: sala, lobby
 O tipo de jogo de um Servidor Carmine: Retake, Deathmatch e, depois, 5v5 casual.
 _Evitar_: modalidade, game mode
 
+**Batimento** (`Heartbeat`):
+O sinal periódico de um Servidor Carmine com mapa e jogadores conectados.
+_Evitar_: ping, keepalive, status do servidor
+
+**Presença** (`Presence`):
+O estado ao vivo de um Servidor Carmine e de quem está nele, derivado dos Batimentos.
+_Evitar_: status do servidor, online/offline (são estados da Presença, não ela)
+
 **Sessão de jogo** (`PlaySession`):
 O período contínuo em que uma Conta fica conectada a um Servidor Carmine.
 _Evitar_: partida (no Retake e no Deathmatch não há partida)
