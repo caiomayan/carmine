@@ -21,7 +21,11 @@ export async function signedInPlayer(t: TestApp, n: number, options: { vipUntil?
     });
   }
   const session = await t.app.get(SessionStore).create(account.id);
-  const call = (method: 'GET' | 'POST' | 'PUT' | 'DELETE', url: string, payload?: object) =>
+  const call = (
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    url: string,
+    payload?: object,
+  ) =>
     t.app.inject({
       method,
       url,

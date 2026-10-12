@@ -7,6 +7,8 @@ const secondsAgo = (seconds: number) => new Date(now.getTime() - seconds * 1000)
 const retake: ListedServer = {
   id: '0b9f8c1e-7a4d-4e2b-9c3a-5d6e7f809102',
   name: 'retake-1',
+  showcaseName: 'Retake · Rotação',
+  code: 'SP·1',
   mode: 'retake',
   address: '203.0.113.10:27015',
   region: 'sao-paulo',
@@ -14,6 +16,8 @@ const retake: ListedServer = {
 const deathmatch: ListedServer = {
   id: '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
   name: 'dm-1',
+  showcaseName: null,
+  code: null,
   mode: 'deathmatch',
   address: '203.0.113.10:27016',
   region: 'sao-paulo',

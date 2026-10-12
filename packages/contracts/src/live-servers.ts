@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
+import { gameSanctionSchema } from './moderation.js';
 import { steamId64Schema } from './steam.js';
 
 /**
@@ -30,6 +31,22 @@ export const serverHeartbeatSchema = z
 
 export type ServerHeartbeat = z.infer<typeof serverHeartbeatSchema>;
 
+/**
+ * Resposta do batimento (S07): o que o Carmine.Core aplica agora.
+ * - `hostname`: `Carmine | <nome de vitrine> | <código>`; nulo enquanto a Staff não definiu os
+ *   dois (o plugin mantém o hostname atual);
+ * - `sanctions`: as Punições dos jogadores do batimento (ver `GameSanction`). Ban e kick tiram o
+ *   jogador; mute e gag valem até `endsAt` ou até sumirem da lista (revogadas).
+ */
+export const serverHeartbeatResultSchema = z
+  .object({
+    hostname: z.string().min(1).nullable(),
+    sanctions: z.array(gameSanctionSchema),
+  })
+  .meta({ id: 'ServerHeartbeatResult' });
+
+export type ServerHeartbeatResult = z.infer<typeof serverHeartbeatResultSchema>;
+
 /** Onde o Servidor Carmine roda; no MVP, todos na VPS de São Paulo (ADR 0009). */
 export const serverRegionSchema = z.enum(['sao-paulo']).meta({ id: 'ServerRegion' });
 
@@ -55,6 +72,10 @@ export const liveServerSchema = z
     id: z.uuid(),
     /** Identificador curto da Staff (ex.: `retake-1`). */
     name: z.string().min(1),
+    /** Nome de vitrine (S07), ex.: "Retake · Rotação"; nulo enquanto a Staff não definiu. */
+    showcaseName: z.string().min(1).nullable(),
+    /** Código do servidor (S07), região·número, ex.: "SP·2"; mostrado pequeno ao lado do IP. */
+    code: z.string().min(1).nullable(),
     mode: gameModeSchema,
     /** `host:porta` público: vai no `steam://connect/<address>` e no `connect <address>`. */
     address: z.string().min(1),

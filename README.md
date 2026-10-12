@@ -108,7 +108,7 @@ Depois, "Entrar" na barra superior (ou `http://localhost:3000/entrar`) faz o log
 
 O Inventário (S04) fica em `/api/inventory` (documentação em `/api/docs`), sempre da Conta da sessão; as mutações exigem `x-csrf-token`. O Item vai no formato `CS2BaseInventoryItem` da `@ianlucas/cs2-lib` e é validado na API contra o catálogo da mesma versão que o web usa (`catalog:` do `pnpm-workspace.yaml`): para atualizar a lib, mude a versão lá e rode `pnpm install`. Os erros têm código estável (`INVENTORY_ERROR_CODES` em `packages/contracts/src/inventory.ts`).
 
-Agentes, music kits, StatTrak e nametag exigem um Período VIP ativo. Até o painel da Staff (S07), a Staff concede e revoga VIP pelo CLI; toda ação vai para o log de auditoria (`staff_audit_log`: autor, ação, alvo, motivo e horário) e invalida o `equipped/v5` da Conta. A Conta precisa existir: jogue ou faça login antes.
+Agentes, music kits, StatTrak e nametag exigem um Período VIP ativo. A Staff concede e revoga VIP pelo painel (S07) ou pelo CLI; toda ação vai para o log de auditoria (`staff_audit_log`: autor, ação, alvo, motivo e horário) e invalida o `equipped/v5` da Conta. A Conta precisa existir: jogue ou faça login antes.
 
 ```sh
 pnpm --filter @carmine/api build
@@ -139,6 +139,26 @@ curl -X POST http://localhost:3333/api/server/heartbeat -H "Authorization: Beare
   -H "Content-Type: application/json" -d '{"map":"de_mirage","players":["76561198000000002"],"maxPlayers":9}'
 curl -N http://localhost:3333/api/servers/live   # Ctrl+C para sair
 ```
+
+## Moderação e painel da Staff
+
+A S07 traz os papéis da Staff (Dono, Admin, Moderador), as Punições (ban, mute, gag, kick e aviso, com Categoria de infração e motivo interno) e o painel em `/api/staff/*` (documentação em `/api/docs`, permissões em `STAFF_PERMISSIONS` de `packages/contracts/src/staff.ts`). Toda ação de Staff vai para o `staff_audit_log`, consultável em `GET /api/staff/audit`.
+
+O primeiro Dono nasce pelo CLI (no painel, só um Dono altera papéis). A Conta precisa ter feito login no site:
+
+```sh
+pnpm --filter @carmine/api build
+pnpm --filter @carmine/api staff grant --steam-id 76561198000000001 --role owner --by 76561198000000001 --reason "fundador"
+pnpm --filter @carmine/api staff revoke --steam-id 76561198000000002 --by 76561198000000001 --reason "saiu da Staff"
+pnpm --filter @carmine/api staff list
+```
+
+Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/staff/staff.cli.js grant ...`.
+
+- O Carmine.Core recebe as Punições na resposta do batimento e do connect (ADR 0017): ban e kick mostram o motivo no chat, no centro e no console e tiram o jogador em 5 s; mute desliga a voz; gag bloqueia o chat (comandos de uma palavra, como `!ws`, passam); aviso vai no chat.
+- O ban derruba as sessões do site da Conta; num novo login, o site fica só leitura (403 `account_banned`).
+- O hostname vira `Carmine | <nome de vitrine> | <código>` quando a Staff define os dois em `PATCH /api/staff/servers/{id}`.
+- As mensagens do jogo apontam para `<host do PUBLIC_WEB_URL>/regras#recurso`.
 
 ## Rate limit e IP real
 

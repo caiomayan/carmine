@@ -41,6 +41,8 @@ describe('liveServerListSchema', () => {
         {
           id: SERVER_ID,
           name: 'retake-1',
+          showcaseName: 'Retake · Rotação',
+          code: 'SP·1',
           mode: 'retake',
           address: '203.0.113.10:27015',
           region: 'sao-paulo',
@@ -53,6 +55,8 @@ describe('liveServerListSchema', () => {
         {
           id: '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
           name: 'dm-1',
+          showcaseName: null,
+          code: null,
           mode: 'deathmatch',
           address: '203.0.113.10:27016',
           region: 'sao-paulo',

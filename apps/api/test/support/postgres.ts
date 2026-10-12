@@ -17,6 +17,9 @@ export async function startPostgres(): Promise<TestPostgres> {
   const url = container.getConnectionUri();
   await runMigrations(url);
   const pool = new Pool({ connectionString: url, max: 5 });
+  // Ao parar o container, uma conexão ociosa ainda fechando recebe "terminating connection"
+  // (57P01); sem listener, o pg a lança como erro não tratado e o Vitest falha a execução.
+  pool.on('error', () => {});
   return {
     container,
     url,

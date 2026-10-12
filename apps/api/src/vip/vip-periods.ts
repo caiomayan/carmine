@@ -1,24 +1,18 @@
 import { and, desc, eq, gt, lte } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, staffAuditLog, vipPeriods } from '../database/schema.js';
+import { recordStaffAudit, type StaffAction, type Transaction } from '../staff/audit-log.js';
 import { type VipStatusAt, vipStatusAt } from './vip-status.js';
+
+export type { StaffAction } from '../staff/audit-log.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
-
-/** Quem da Staff fez e por quê: vai para o log de auditoria. */
-export interface StaffAction {
-  /** SteamID64 de quem fez. */
-  actorSteamId: string;
-  reason: string;
-}
-
-/** Uma linha do log de auditoria da Staff. */
+/** Uma linha do log de auditoria da Staff (a visão do CLI). */
 export interface StaffAuditEntry {
   actorSteamId: string;
-  action: 'vip_grant' | 'vip_revoke';
-  targetSteamId: string;
+  action: (typeof staffAuditLog.$inferSelect)['action'];
+  targetSteamId: string | null;
   reason: string;
   details: Record<string, unknown>;
   createdAt: Date;
@@ -112,7 +106,7 @@ export class VipPeriods {
     return rows.map((row) => ({
       actorSteamId: row.actorSteamId.toString(),
       action: row.action,
-      targetSteamId: row.targetSteamId.toString(),
+      targetSteamId: row.targetSteamId?.toString() ?? null,
       reason: row.reason,
       details: row.details,
       createdAt: row.createdAt,
@@ -143,21 +137,19 @@ export class VipPeriods {
 
   private async audit(
     tx: Transaction,
-    action: StaffAuditEntry['action'],
+    action: 'vip_grant' | 'vip_revoke',
     accountId: string,
     steamId: bigint,
     staff: StaffAction,
     now: Date,
     details: Record<string, unknown>,
   ): Promise<void> {
-    await tx.insert(staffAuditLog).values({
-      actorSteamId: BigInt(staff.actorSteamId),
+    await recordStaffAudit(tx, {
       action,
-      targetAccountId: accountId,
-      targetSteamId: steamId,
-      reason: staff.reason,
+      staff,
+      target: { accountId, steamId },
       details,
-      createdAt: now,
+      at: now,
     });
   }
 }

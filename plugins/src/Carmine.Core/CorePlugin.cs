@@ -2,8 +2,11 @@ using Carmine.Api.Client;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Modules.Commands;
+using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Timers;
 using CounterStrikeSharp.API.Modules.Utils;
+using CounterStrikeSharp.API.ValveConstants.Protobuf;
 
 namespace Carmine.Core;
 
@@ -14,7 +17,9 @@ namespace Carmine.Core;
 /// S05, ele também é avisado de que o Loadout não carregou (o cs2-css-inventory-simulator, sem
 /// modificação, aplica o Loadout e não tem esse aviso). Na S06, manda o batimento (mapa, jogadores
 /// e vagas públicas) a cada HeartbeatIntervalSeconds e logo depois de cada connect e disconnect,
-/// para a home do site mudar em segundos.
+/// para a home do site mudar em segundos. Na S07, aplica as Punições que a API devolve no connect e
+/// em cada batimento (ban e kick tiram do servidor, mute tira a voz, gag bloqueia o chat, aviso vai
+/// no chat) e o hostname "Carmine | nome de vitrine | código".
 /// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
 /// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
@@ -34,9 +39,16 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HeartbeatReporter? _heartbeat;
     private bool _heartbeatScheduled;
     private readonly LoadoutNotices _loadoutNotices = new();
+    private readonly SanctionEnforcer _sanctions = new(TimeProvider.System);
+    /// <summary>Jogadores com a saída já agendada (o ban vem em vários batimentos seguidos).</summary>
+    private readonly HashSet<ulong> _kicking = [];
+    private string? _hostname;
+
+    /// <summary>Tempo para ler a mensagem antes de sair do servidor.</summary>
+    private const float KickDelaySeconds = 5.0f;
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.5.0";
+    public override string ModuleVersion => "0.7.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -84,6 +96,8 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
         RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
+        AddCommandListener("say", OnSay, HookMode.Pre);
+        AddCommandListener("say_team", OnSay, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
@@ -185,6 +199,8 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
+            _sanctions.Forget(player.SteamID);
+            _kicking.Remove(player.SteamID);
             ScheduleHeartbeat();
         }
         return HookResult.Continue;
@@ -257,6 +273,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             .Select(p => p.SteamID)
             .Distinct()
             .ToList();
+        IReadOnlyCollection<ulong> present = players;
         var snapshot = new ServerSnapshot(
             Server.MapName,
             players,
@@ -264,6 +281,14 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         RunInBackground(async token =>
         {
             var report = await heartbeat.SendAsync(snapshot, token);
+            if (report.Result is { } result)
+            {
+                Server.NextFrame(() =>
+                {
+                    ApplyHostname(result.Hostname);
+                    Enforce(result.Sanctions, present);
+                });
+            }
             switch (report.Kind)
             {
                 case HeartbeatReportKind.WentDown:
@@ -317,11 +342,95 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             return;
         }
+        Enforce(result.Sanctions, [steamId]);
+        if (_kicking.Contains(steamId))
+        {
+            return;
+        }
         _displayNames[player.Slot] = (steamId, result.DisplayName);
         ApplyName(player, result.DisplayName);
         if (sendNow)
         {
             player.PrintToChat($" {WelcomeMessage}");
+        }
+    }
+
+    /// <summary>Gag: a mensagem não sai (comandos de uma palavra, como !ws, passam).</summary>
+    private HookResult OnSay(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player is null || !IsHuman(player) || _sanctions.GagMessage(player.SteamID) is not { } message)
+        {
+            return HookResult.Continue;
+        }
+        if (SanctionEnforcer.IsChatCommand(info.GetArg(1).Trim()))
+        {
+            return HookResult.Continue;
+        }
+        player.PrintToChat($" {message}");
+        return HookResult.Handled;
+    }
+
+    /// <summary>Na thread do jogo: aplica as Punições da API aos jogadores informados.</summary>
+    private void Enforce(IEnumerable<GameSanction> sanctions, IReadOnlyCollection<ulong> players)
+    {
+        foreach (var action in _sanctions.Apply(sanctions, players))
+        {
+            var player = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == action.SteamId);
+            if (player is null)
+            {
+                continue;
+            }
+            switch (action)
+            {
+                case SanctionAction.Kick kick:
+                    Kick(player, kick);
+                    break;
+                case SanctionAction.Notify notify:
+                    player.PrintToChat($" {notify.Message}");
+                    break;
+                case SanctionAction.SetMuted mute:
+                    player.VoiceFlags = mute.Muted ? VoiceFlags.Muted : VoiceFlags.Normal;
+                    break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Mostra o motivo no chat, no centro da tela e no console (que continua lá depois de sair) e
+    /// tira o jogador alguns segundos depois.
+    /// </summary>
+    private void Kick(CCSPlayerController player, SanctionAction.Kick kick)
+    {
+        if (!_kicking.Add(kick.SteamId))
+        {
+            return;
+        }
+        player.PrintToChat($" {kick.Message}");
+        player.PrintToCenter(kick.Message);
+        player.PrintToConsole($"[Carmine] {kick.Message}");
+        Log.SanctionKick(Logger, kick.SteamId, kick.Ban);
+        AddTimer(KickDelaySeconds, () =>
+        {
+            _kicking.Remove(kick.SteamId);
+            var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == kick.SteamId);
+            current?.Disconnect(kick.Ban
+                ? NetworkDisconnectionReason.NETWORK_DISCONNECT_KICKBANADDED
+                : NetworkDisconnectionReason.NETWORK_DISCONNECT_KICKED);
+        });
+    }
+
+    /// <summary>"Carmine | nome de vitrine | código"; sem nome definido no painel, fica o atual.</summary>
+    private void ApplyHostname(string? hostname)
+    {
+        if (string.IsNullOrWhiteSpace(hostname) || hostname == _hostname)
+        {
+            return;
+        }
+        if (ConVar.Find("hostname") is { } convar)
+        {
+            convar.StringValue = hostname;
+            _hostname = hostname;
+            Log.HostnameApplied(Logger, hostname);
         }
     }
 

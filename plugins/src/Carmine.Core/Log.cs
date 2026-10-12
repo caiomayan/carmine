@@ -37,4 +37,10 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: batimento de volta; o site mostra o servidor ao vivo")]
     public static partial void HeartbeatBack(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: {SteamId} sai do servidor por Punição (ban: {Ban})")]
+    public static partial void SanctionKick(ILogger logger, ulong steamId, bool ban);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: hostname agora é \"{Hostname}\"")]
+    public static partial void HostnameApplied(ILogger logger, string hostname);
 }

@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { cs2ItemSchema } from './inventory.js';
 import { loadoutSlotSchema, loadoutSlotSideSchema } from './loadout.js';
+import { ownSanctionSchema, profileSanctionsSchema } from './moderation.js';
+import { staffRoleSchema } from './staff.js';
 import { steamId64Schema } from './steam.js';
 import { vipStatusSchema } from './vip.js';
 
@@ -38,6 +40,8 @@ export const profileSchema = z
         items: z.array(showcaseItemSchema),
       })
       .meta({ id: 'LoadoutShowcase' }),
+    /** Punições ativas e o histórico público (S07); o Perfil privado não as esconde. */
+    sanctions: profileSanctionsSchema,
   })
   .meta({ id: 'Profile' });
 
@@ -56,6 +60,13 @@ export const currentSessionSchema = z
     firstLogin: z.boolean(),
     /** Período VIP da Conta: decide o cadeado dos Itens VIP no editor (S04). */
     vip: vipStatusSchema,
+    /** Papel de Staff da Conta (S07); nulo para quem não é da Staff. */
+    staffRole: staffRoleSchema.nullable(),
+    /**
+     * Punições valendo agora (ban, mute, gag) com o motivo da Staff, só para a própria Conta: o
+     * aviso do jogador punido no site (o Perfil público mostra só a Categoria).
+     */
+    sanctions: z.array(ownSanctionSchema),
   })
   .meta({ id: 'CurrentSession' });
 

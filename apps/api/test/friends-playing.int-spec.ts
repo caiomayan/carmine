@@ -46,7 +46,7 @@ describe('Seus amigos jogando agora (S06)', () => {
       headers: { authorization: `Bearer ${serverKey}` },
       payload: { map: 'de_mirage', players: steamIds, maxPlayers: 9 },
     });
-    expect(heartbeat.statusCode, heartbeat.body).toBe(204);
+    expect(heartbeat.statusCode, heartbeat.body).toBe(200);
   }
 
   async function friendsPlaying(player: Awaited<ReturnType<typeof signedInPlayer>>) {
