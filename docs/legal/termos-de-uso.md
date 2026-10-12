@@ -1,21 +1,21 @@
 ---
 title: Termos de Uso
 updatedAt: 2026-10-12
-version: 0.1.0
+version: 0.2.0
 ---
 
 Estes Termos explicam como funciona o Carmine, o que você pode esperar de nós e o que esperamos de você. Escrevemos em linguagem direta de propósito: se algo não ficar claro, fale com a gente pela página de [contato](/contato).
 
 ## 1. Quem somos
 
-O Carmine (stcarmine.com) é uma plataforma brasileira de servidores comunitários de Counter-Strike 2. Ele é operado por uma pessoa física:
+O Carmine (stcarmine.com) é uma plataforma brasileira de servidores comunitários de Counter-Strike 2, operada por uma pessoa física:
 
-- **Responsável:** [DONO: nome completo]
-- **CPF:** [DONO: número do CPF]
-- **Endereço para contato:** [DONO: endereço físico]
+- **Responsável:** [DONO: nome completo, antes de ligar a cobrança]
+- **CPF:** [DONO: número do CPF, antes de ligar a cobrança]
+- **Endereço:** [DONO: endereço do escritório virtual, antes de ligar a cobrança]
 - **Contato eletrônico:** página de [contato](/contato)
 
-A lei de comércio eletrônico exige que essas informações fiquem visíveis no site (Decreto 7.962/2013, art. 2º). [VALIDAR COM ADVOGADO]
+A lei de comércio eletrônico exige que essas informações fiquem visíveis no site onde algo é vendido (Decreto 7.962/2013, art. 2º). Elas aparecem aqui a partir do início das vendas do VIP. O endereço informado é de escritório virtual, que recebe correspondência em nome do responsável. [VALIDAR COM ADVOGADO]
 
 Nestes Termos, "Carmine", "nós" e "a Staff" se referem ao operador e às pessoas que ele autoriza a moderar. "Você" é quem joga, usa o site ou paga o VIP.
 
@@ -29,9 +29,9 @@ Se não concordar, não use o Carmine. Você pode pedir a exclusão dos seus dad
 
 ## 3. Idade e responsáveis
 
-- O Carmine segue a idade mínima da Steam: só usa o Carmine quem pode ter conta Steam no Brasil (13 anos ou mais, pelo Steam Subscriber Agreement).
-- O Counter-Strike 2 tem classificação indicativa própria, definida pelo Ministério da Justiça: [CONFIRMAR: faixa do CS2 no ClassInd; fontes divergem entre 10 e 16 anos]. O Carmine roda o mesmo jogo, com as mesmas cenas de violência, e acrescenta chat de texto e de voz entre jogadores. [VALIDAR COM ADVOGADO]
-- Se você tem menos de 18 anos, leia estes Termos com seus pais ou responsáveis. Eles podem falar com a gente pela página de [contato](/contato) para tirar dúvidas, pedir os seus dados ou pedir a exclusão da sua Conta.
+- **Classificação indicativa:** o Counter-Strike 2 é classificado pelo Ministério da Justiça (ClassInd) como **não recomendado para menores de 16 anos**, por violência. O Carmine roda o mesmo jogo e acrescenta chat de texto e de voz entre jogadores. [VALIDAR COM ADVOGADO]
+- **O Carmine não bloqueia ninguém por idade para jogar.** Para jogar é preciso ter uma conta Steam, que tem as próprias regras de idade (13 anos ou mais, pelo Steam Subscriber Agreement).
+- **O papel dos responsáveis:** a classificação indicativa é uma orientação, e a lei diz que cabe aos pais e responsáveis acompanhar o uso da internet por crianças e adolescentes (Lei 15.211/2025, art. 3º, parágrafo único). Se você tem menos de 18 anos, leia estes Termos e as [Regras de conduta](/regras) com seus pais ou responsáveis. Eles podem falar com a gente pela página de [contato](/contato) para tirar dúvidas, pedir os seus dados ou pedir a exclusão da sua Conta.
 - **Só maiores de 18 anos podem pagar o VIP** (seção 8). Jogar e montar o Loadout são grátis e não exigem pagamento.
 
 ## 4. O que é o Carmine
@@ -128,8 +128,8 @@ As [Regras de conduta](/regras) fazem parte destes Termos. Quem as descumpre pod
 ### Punições e VIP
 
 - **Ban temporário não congela o VIP:** os dias continuam correndo durante o ban.
-- **Ban permanente por cheat, fraude ou contestação indevida do pagamento encerra o VIP sem reembolso** dos dias restantes. "Contestação indevida" é pedir ao banco ou ao Mercado Pago a devolução de um pagamento legítimo (por exemplo, pelo MED do Pix ou por chargeback) sem antes pedir o reembolso para nós. Esse ban pode ser contestado uma vez pelo recurso descrito nas regras; se o recurso for aceito, o VIP volta com os dias restantes. [VALIDAR COM ADVOGADO]
-- Um ban permanente por outro motivo (por exemplo, ameaça ou doxxing) também encerra o acesso aos servidores. [DONO: decidir se, nesses casos, há reembolso proporcional dos dias restantes] [VALIDAR COM ADVOGADO]
+- **Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida do pagamento encerra o VIP sem reembolso** dos dias restantes. Essa regra aparece em destaque na tela de compra, antes do pagamento. "Contestação indevida" é pedir ao banco ou ao Mercado Pago a devolução de um pagamento legítimo (por exemplo, pelo MED do Pix ou por chargeback) sem antes pedir o reembolso para nós. Esse ban pode ser contestado uma vez pelo recurso descrito nas regras; se o recurso for aceito, o VIP volta com os dias restantes. [VALIDAR COM ADVOGADO]
+- Um ban permanente por outro motivo (discriminação reincidente, conta alternativa para fugir de punição, assédio sexual ou risco a menores) também encerra o acesso aos servidores. [DONO: decidir se, nesses casos, há reembolso proporcional dos dias restantes] [VALIDAR COM ADVOGADO]
 
 ## 11. O que você não pode fazer
 
@@ -178,6 +178,7 @@ Estes Termos seguem a lei brasileira. Se houver disputa, você pode entrar com a
 - Lei nº 14.852/2024 (Marco Legal dos Games), arts. 16 e 17: <https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l14852.htm>
 - Lei nº 10.406/2002 (Código Civil), arts. 3º, 4º e 5º (capacidade civil): <https://www.planalto.gov.br/ccivil_03/leis/2002/l10406compilada.htm>
 - Lei nº 12.965/2014 (Marco Civil da Internet): <https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2014/lei/l12965.htm>
+- Classificação indicativa do CS2 (selo DEJUS/ClassInd "16", descritor "Violência"), como exibida na loja Steam brasileira em 12/10/2026: <https://store.steampowered.com/app/730/CounterStrike_2/?l=brazilian&cc=BR>
 - Steam Subscriber Agreement (atualizado em 10/09/2026), seções 1 e 2: <https://store.steampowered.com/subscriber_agreement/>
 - Steam Web API Terms of Use: <https://steamcommunity.com/dev/apiterms>
 - Steam Support, "CS2 - GSLT Bans": <https://help.steampowered.com/en/faqs/view/07AF-502E-A104-BD4B>
