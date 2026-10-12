@@ -6,9 +6,11 @@ import {
   type ItemUsages,
   type RemovedInventoryItem,
 } from '@carmine/contracts';
-import { and, count, desc, eq, isNotNull, isNull, lt } from 'drizzle-orm';
+import { and, count, desc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, inventoryItems } from '../database/schema.js';
+import type { LoadoutChangeListener } from '../equipped/equipped-cache.js';
+import { itemUsagesOf } from '../loadout/item-usages.js';
 import type { VipPeriods } from '../vip/vip-periods.js';
 import { type ItemRules, type ItemRuleViolation, normalizeItem } from './item-rules.js';
 
@@ -34,6 +36,13 @@ const RESTORE_WINDOW_MS = INVENTORY_RESTORE_WINDOW_SECONDS * 1000;
 type Row = typeof inventoryItems.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
+/**
+ * O contador do StatTrak é do servidor (só os abates no jogo o mudam): ao ligar o StatTrak ele
+ * começa em 0, e o valor enviado pelo cliente é ignorado.
+ */
+const withCounterAtZero = (item: Cs2Item): Cs2Item =>
+  item.statTrak === undefined ? item : { ...item, statTrak: 0 };
+
 const toInventoryItem = (row: Row): InventoryItem => ({
   uid: row.id,
   item: row.item,
@@ -41,19 +50,18 @@ const toInventoryItem = (row: Row): InventoryItem => ({
   updatedAt: row.updatedAt.toISOString(),
 });
 
-/** Sem Loadout nem Presets ainda (S05), nenhum Item está em uso. */
-const NO_USAGES: ItemUsages = { loadout: [], presets: [] };
-
 /**
  * O Inventário (`Inventory`) de cada Conta: até {@link INVENTORY_MAX_ITEMS} Itens validados
  * pelas {@link ItemRules}, com remoção desfazível por {@link INVENTORY_RESTORE_WINDOW_SECONDS} s.
- * Toda recusa é uma {@link InventoryRejection}.
+ * Toda recusa é uma {@link InventoryRejection}. Editar, remover e restaurar avisam o
+ * {@link LoadoutChangeListener}: o Item pode estar equipado.
  */
 export class Inventory {
   constructor(
     private readonly db: Database,
     private readonly rules: ItemRules,
     private readonly vipPeriods: VipPeriods,
+    private readonly listener: LoadoutChangeListener,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -76,22 +84,31 @@ export class Inventory {
       await this.assertRoom(tx, accountId);
       const [row] = await tx
         .insert(inventoryItems)
-        .values({ accountId, item: valid, createdAt: now, updatedAt: now })
+        .values({ accountId, item: withCounterAtZero(valid), createdAt: now, updatedAt: now })
         .returning();
       return toInventoryItem(row as Row);
     });
   }
 
-  /** Substitui todos os atributos do Item; o `id` do catálogo não muda. */
+  /**
+   * Substitui todos os atributos do Item; o `id` do catálogo não muda. O contador do StatTrak
+   * não vem do cliente: com o StatTrak ligado, fica o da linha no instante da escrita (num só
+   * UPDATE, então um abate gravado ao mesmo tempo não se perde); recém-ligado, começa em 0;
+   * desligado, o contador some (religar começa de novo em 0).
+   */
   async replace(accountId: string, uid: string, item: Cs2Item): Promise<InventoryItem> {
     const current = await this.findActive(this.db, accountId, uid);
     if (current.item.id !== item.id) {
       throw rejection('item_id_immutable', 'O Item do catálogo não muda numa edição');
     }
-    const valid = await this.validate(accountId, item);
+    const valid = withCounterAtZero(await this.validate(accountId, item));
+    const next =
+      valid.statTrak === undefined
+        ? valid
+        : sql`${JSON.stringify(valid)}::jsonb || (case when ${inventoryItems.item} ? 'statTrak' then jsonb_build_object('statTrak', ${inventoryItems.item}->'statTrak') else '{}'::jsonb end)`;
     const [row] = await this.db
       .update(inventoryItems)
-      .set({ item: valid, updatedAt: this.clock() })
+      .set({ item: next, updatedAt: this.clock() })
       .where(
         and(
           eq(inventoryItems.id, uid),
@@ -102,41 +119,47 @@ export class Inventory {
       .returning();
     // Removido entre a leitura e a escrita.
     if (!row) throw notFound();
+    await this.listener.loadoutChanged(accountId);
     return toInventoryItem(row);
   }
 
   /** Onde o Item está em uso (Loadout atual, Presets). */
   async usages(accountId: string, uid: string): Promise<ItemUsages> {
     await this.findActive(this.db, accountId, uid);
-    return NO_USAGES;
+    return itemUsagesOf(this.db, uid);
   }
 
   /**
    * Tira o Item do Inventário (soft delete). Até `restorableUntil`, {@link restore} o devolve
-   * com o mesmo `uid`. Na S05, os slots e Presets em uso voltam à Arma padrão aqui.
+   * com o mesmo `uid`. Os slots continuam apontando para ele, mas as leituras ignoram Itens
+   * removidos: os slots e Presets em uso voltam à Arma padrão.
    */
   async remove(accountId: string, uid: string): Promise<RemovedInventoryItem> {
     const now = this.clock();
-    return this.db.transaction(async (tx) => {
+    const removed = await this.db.transaction(async (tx) => {
       await this.findActive(tx, accountId, uid);
+      const usages = await itemUsagesOf(tx, uid);
       await tx.update(inventoryItems).set({ deletedAt: now }).where(eq(inventoryItems.id, uid));
       await this.purge(tx, accountId, now);
       return {
         uid,
-        usages: NO_USAGES,
+        usages,
         restorableUntil: new Date(now.getTime() + RESTORE_WINDOW_MS).toISOString(),
       };
     });
+    await this.listener.loadoutChanged(accountId);
+    return removed;
   }
 
   /**
-   * Desfaz a remoção: o Item volta com o mesmo `uid`. Restaurar um Item que já está no
-   * Inventário (um clique repetido) só o devolve. Não pede VIP de novo: Itens VIP continuam
-   * no Inventário mesmo depois do fim do Período VIP.
+   * Desfaz a remoção: o Item volta com o mesmo `uid` e aos mesmos slots (menos aqueles em que
+   * outro Item foi equipado nesse meio-tempo). Restaurar um Item que já está no Inventário (um
+   * clique repetido) só o devolve. Não pede VIP de novo: Itens VIP continuam no Inventário
+   * mesmo depois do fim do Período VIP.
    */
   async restore(accountId: string, uid: string): Promise<InventoryItem> {
     const now = this.clock();
-    return this.db.transaction(async (tx) => {
+    const restored = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       const row = await this.findOwned(tx, accountId, uid);
       if (row.deletedAt === null) return toInventoryItem(row);
@@ -144,13 +167,15 @@ export class Inventory {
         throw rejection('restore_expired', 'O prazo para desfazer a remoção acabou');
       }
       await this.assertRoom(tx, accountId);
-      const [restored] = await tx
+      const [back] = await tx
         .update(inventoryItems)
         .set({ deletedAt: null })
         .where(eq(inventoryItems.id, uid))
         .returning();
-      return toInventoryItem(restored as Row);
+      return toInventoryItem(back as Row);
     });
+    await this.listener.loadoutChanged(accountId);
+    return restored;
   }
 
   private async validate(accountId: string, item: Cs2Item): Promise<Cs2Item> {

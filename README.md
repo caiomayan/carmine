@@ -49,7 +49,7 @@ Mudou um contrato da API? Rode `pnpm --filter @carmine/api openapi:generate` e f
 
 ## Servidor CS2 local
 
-`infra/scripts/install-cs2-server.ps1` instala SteamCMD, o servidor dedicado do CS2, Metamod:Source e CounterStrikeSharp, compila os plugins e os copia com a config apontando para a API local. Padrões: `C:\carmine\cs2-server` e `C:\carmine\steamcmd` (mude com `-ServerDir` e `-SteamCmdDir`).
+`infra/scripts/install-cs2-server.ps1` instala SteamCMD, o servidor dedicado do CS2, Metamod:Source e CounterStrikeSharp, compila os plugins e os copia com a config apontando para a API local, e instala o `cs2-css-inventory-simulator` (sem modificação, ADR 0006), que lê o Loadout em `/api/equipped/v5` (convars em `game\csgo\cfg\carmine\inventory-simulator.cfg`, executado pelo `server.cfg`; o arquivo leva a chave do servidor, então rode a etapa depois de colar a `ApiKey` do `Carmine.Core`). Padrões: `C:\carmine\cs2-server` e `C:\carmine\steamcmd` (mude com `-ServerDir` e `-SteamCmdDir`).
 
 ```powershell
 # Primeira vez: baixa ~60 GB do CS2 (só com -DownloadCs2).
@@ -57,6 +57,9 @@ Mudou um contrato da API? Rode `pnpm --filter @carmine/api openapi:generate` e f
 
 # Depois de mudar um plugin: recompila e copia.
 ./infra/scripts/install-cs2-server.ps1 -Steps Plugins
+
+# Só o inventory-simulator (S05; -InvSimVersion muda a versão, -ApiBaseUrl a API):
+./infra/scripts/install-cs2-server.ps1 -Steps InventorySimulator
 
 # Depois de um update do CS2 (que sobrescreve o gameinfo.gi):
 ./infra/scripts/install-cs2-server.ps1 -DownloadCs2 -Steps SteamCmd,Cs2,Metamod
@@ -85,7 +88,7 @@ Com a API no ar (`pnpm dev`), suba o servidor e procure no console a linha `Carm
 & 'C:\carmine\cs2-server\game\bin\win64\cs2.exe' -dedicated -console +sv_lan 1 +game_type 0 +game_mode 1 +map de_dust2
 ```
 
-`css_plugins list` no console confirma que o `Carmine.Core` carregou. Com a API fora do ar, os connects ficam em `addons\counterstrikesharp\data\Carmine.Core\pending-connects.json` e são reenviados a cada `RetryIntervalSeconds` (padrão 15 s).
+`css_plugins list` no console confirma que o `Carmine.Core` e o `InventorySimulator` carregaram. O Loadout é aplicado no connect e com `!ws` (cooldown de 30 s); a API guarda a resposta em cache e a invalida a cada mudança. Com a API fora do ar, os connects ficam em `addons\counterstrikesharp\data\Carmine.Core\pending-connects.json` e são reenviados a cada `RetryIntervalSeconds` (padrão 15 s), e o jogador entra com as Armas padrão e o aviso "Não conseguimos carregar seu Loadout agora; tente !ws em alguns minutos".
 
 ## Login Steam no site
 
@@ -105,13 +108,19 @@ Depois, "Entrar" na barra superior (ou `http://localhost:3000/entrar`) faz o log
 
 O Inventário (S04) fica em `/api/inventory` (documentação em `/api/docs`), sempre da Conta da sessão; as mutações exigem `x-csrf-token`. O Item vai no formato `CS2BaseInventoryItem` da `@ianlucas/cs2-lib` e é validado na API contra o catálogo da mesma versão que o web usa (`catalog:` do `pnpm-workspace.yaml`): para atualizar a lib, mude a versão lá e rode `pnpm install`. Os erros têm código estável (`INVENTORY_ERROR_CODES` em `packages/contracts/src/inventory.ts`).
 
-Agentes, music kits, StatTrak e nametag exigem um Período VIP ativo. Até a Staff conceder VIP pelo site (S05), use o CLI (a Conta precisa existir: jogue ou faça login antes):
+Agentes, music kits, StatTrak e nametag exigem um Período VIP ativo. Até o painel da Staff (S07), a Staff concede e revoga VIP pelo CLI; toda ação vai para o log de auditoria (`staff_audit_log`: autor, ação, alvo, motivo e horário) e invalida o `equipped/v5` da Conta. A Conta precisa existir: jogue ou faça login antes.
 
 ```sh
 pnpm --filter @carmine/api build
-pnpm --filter @carmine/api vip grant --steam-id 76561198000000001 --days 30   # soma ao Período ativo
-pnpm --filter @carmine/api vip status --steam-id 76561198000000001
+# --by: o SteamID64 de quem da Staff está fazendo; --reason: o motivo (obrigatório)
+pnpm --filter @carmine/api vip grant --steam-id 76561198000000001 --days 30 --by 76561198000000002 --reason "beta"   # soma ao Período ativo
+pnpm --filter @carmine/api vip revoke --steam-id 76561198000000001 --by 76561198000000002 --reason "fim do teste"  # acaba agora
+pnpm --filter @carmine/api vip status --steam-id 76561198000000001   # VIP e as últimas ações da Staff
 ```
+
+## Loadout e Presets
+
+O Loadout (S05) é o Preset ativo: `GET /api/loadout` traz todos os slots (`weapon_<modelo>`, `knife`, `gloves` e `agent` por lado; `musicKit` sem lado) e `POST /api/loadout/{equip,unequip,assign}` o mudam (o `assign` com o `previous` da resposta é o Desfazer). `/api/presets` cria (VIP, até 20), renomeia, ativa e apaga Presets; sem VIP, os extras ficam somente leitura. O `equipped/v5` aplica a regra do VIP na resposta: sem Período ativo, agentes e music kits ficam fora e StatTrak e nametag saem dos Itens. A cada abate, o plugin chama `POST /api/increment-item-stattrak` com a chave do Servidor Carmine (`invsim_apikey`, gravada pela etapa `InventorySimulator` a partir da `ApiKey` do `Carmine.Core`): o StatTrak do Item do Loadout sobe 1 se a Conta tem VIP; senão, a chamada é ignorada.
 
 Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/vip/vip.cli.js grant ...`.
 

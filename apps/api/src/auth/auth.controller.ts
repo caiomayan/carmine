@@ -36,8 +36,10 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AccountsService } from '../accounts/accounts.service.js';
 import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
+import { Loadouts } from '../loadout/loadouts.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { VipPeriods } from '../vip/vip-periods.js';
+import { toVipStatus } from '../vip/vip-status.js';
 import { LoginRateLimitFilter, loginErrorUrl } from './login-errors.js';
 import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
@@ -73,6 +75,7 @@ export class AuthController {
     @Inject(SessionStore) private readonly sessions: SessionStore,
     @Inject(AccountsService) private readonly accounts: AccountsService,
     @Inject(VipPeriods) private readonly vipPeriods: VipPeriods,
+    @Inject(Loadouts) private readonly loadouts: Loadouts,
   ) {}
 
   @Get('auth/steam/login')
@@ -193,10 +196,10 @@ export class AuthController {
     }
     const vip = await this.vipPeriods.statusOf(account.id);
     return {
-      account: toProfile(account),
+      account: toProfile(account, await this.loadouts.showcase(account.id)),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
-      vip: { active: vip.active, endsAt: vip.endsAt?.toISOString() ?? null },
+      vip: toVipStatus(vip),
     };
   }
 

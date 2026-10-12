@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { loadoutSlotSchema, loadoutSlotSideSchema } from './loadout.js';
 
 /**
  * Contratos do Inventário (S04). O Item vai no formato `CS2BaseInventoryItem` da
@@ -97,7 +98,13 @@ export const cs2ItemSchema = z
       .optional(),
     /** Seed (padrão), de 1 a 1000. */
     seed: z.int().optional(),
-    /** Presente = StatTrak; o valor é a contagem (começa em 0). Exige VIP. */
+    /**
+     * Presente = StatTrak ligado. Exige VIP. O valor é o contador de abates, que é do servidor:
+     * o web só liga (manda qualquer número, ex.: 0) ou desliga (omite). Ao ligar, começa em 0;
+     * numa edição com o StatTrak ligado, o valor enviado é ignorado e fica o atual; ao desligar,
+     * o contador é zerado (religar começa de novo em 0). Restaurar e os Presets mantêm o
+     * contador, que é um só por Item.
+     */
     statTrak: z.int().min(0).max(999_999).optional(),
     /** Nametag, até 20 caracteres (regra da cs2-lib, validada pela API). Exige VIP. */
     nameTag: z.string().min(1).max(64).optional(),
@@ -143,28 +150,29 @@ export const inventoryItemInputSchema = z
 
 export type InventoryItemInput = z.infer<typeof inventoryItemInputSchema>;
 
-/** Lado de um slot do Loadout. */
-export const loadoutSideSchema = z.enum(['ct', 't']).meta({ id: 'LoadoutSide' });
-
-export type LoadoutSide = z.infer<typeof loadoutSideSchema>;
-
 /**
- * `GET /api/inventory/items/{uid}/usages`: onde o Item está em uso. Sempre vazio na S04;
- * a S05 preenche (o formato de `slot` será fechado lá).
+ * `GET /api/inventory/items/{uid}/usages`: onde o Item está em uso. `loadout` são os slots do
+ * Preset ativo (o Loadout); `presets`, os outros Presets que o usam, com os slots de cada um.
  */
 export const itemUsagesSchema = z
   .object({
-    loadout: z.array(z.object({ slot: z.string(), side: loadoutSideSchema })),
-    presets: z.array(z.object({ id: z.uuid(), name: z.string() })),
+    loadout: z.array(z.object({ slot: loadoutSlotSchema, side: loadoutSlotSideSchema })),
+    presets: z.array(
+      z.object({
+        id: z.uuid(),
+        name: z.string(),
+        slots: z.array(z.object({ slot: loadoutSlotSchema, side: loadoutSlotSideSchema })),
+      }),
+    ),
   })
   .meta({ id: 'ItemUsages' });
 
 export type ItemUsages = z.infer<typeof itemUsagesSchema>;
 
 /**
- * `DELETE /api/inventory/items/{uid}`: o Item sai do Inventário (e, na S05, dos slots e
- * Presets, que voltam à Arma padrão). Até `restorableUntil`, `POST .../restore` o devolve com o
- * mesmo `uid` e nos mesmos lugares.
+ * `DELETE /api/inventory/items/{uid}`: o Item sai do Inventário e dos slots e Presets, que
+ * voltam à Arma padrão. Até `restorableUntil`, `POST .../restore` o devolve com o mesmo `uid` e
+ * nos mesmos lugares (menos os slots em que outro Item foi equipado nesse meio-tempo).
  */
 export const removedInventoryItemSchema = z
   .object({

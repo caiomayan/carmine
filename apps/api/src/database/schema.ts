@@ -2,14 +2,18 @@ import type { Cs2Item } from '@carmine/contracts';
 import { sql } from 'drizzle-orm';
 import {
   bigint,
+  boolean,
   check,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgSequence,
   pgTable,
+  primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 
@@ -64,8 +68,9 @@ export const accounts = pgTable(
  * validação e a conversão para o `equipped/v5` usam, e nenhuma consulta precisa dos atributos
  * em colunas. O `id` é estável: Loadout e Presets (S05) o referenciam.
  *
- * Remover é soft delete (`deletedAt`): o Desfazer devolve o mesmo `id` (e, na S05, os mesmos
- * slots) sem recriar nada. Passada a janela do Desfazer, a linha só espera a limpeza.
+ * Remover é soft delete (`deletedAt`): o Desfazer devolve o mesmo `id` sem recriar nada, e os
+ * slots continuam apontando para ele (as leituras ignoram Itens removidos), então ele volta aos
+ * mesmos lugares. Passada a janela do Desfazer, a linha só espera a limpeza.
  */
 export const inventoryItems = pgTable(
   'inventory_items',
@@ -75,6 +80,11 @@ export const inventoryItems = pgTable(
       .notNull()
       .references(() => accounts.id, { onDelete: 'cascade' }),
     item: jsonb().$type<Cs2Item>().notNull(),
+    /**
+     * `uid` numérico do Item no `equipped/v5` (o plugin usa `int`). Não é exposto ao web, que
+     * usa o `id`.
+     */
+    econUid: integer().generatedAlwaysAsIdentity().notNull().unique(),
     createdAt: timestamptz().notNull().defaultNow(),
     updatedAt: timestamptz().notNull().defaultNow(),
     /** Removido em; nulo enquanto o Item está no Inventário. */
@@ -84,8 +94,8 @@ export const inventoryItems = pgTable(
 );
 
 /**
- * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. Só leitura
- * na S04; a concessão pela Staff (S05) e os Pacotes VIP (S14) criam Períodos.
+ * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. A
+ * concessão e a revogação pela Staff (S05, com auditoria) e os Pacotes VIP (S14) mexem aqui.
  */
 export const vipPeriods = pgTable(
   'vip_periods',
@@ -101,5 +111,79 @@ export const vipPeriods = pgTable(
   (table) => [
     index('vip_periods_account_idx').on(table.accountId, table.endsAt),
     check('vip_periods_ends_after_start', sql`${table.endsAt} > ${table.startsAt}`),
+  ],
+);
+
+/**
+ * Preset (`Preset`): um Loadout salvo com nome. O ativo é o Loadout (o que vai para o jogo).
+ * Toda Conta tem um principal (`main`), criado na primeira leitura ou mutação do Loadout.
+ */
+export const presets = pgTable(
+  'presets',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    name: text().notNull(),
+    main: boolean().notNull().default(false),
+    active: boolean().notNull().default(false),
+    createdAt: timestamptz().notNull().defaultNow(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('presets_one_main_idx').on(table.accountId).where(sql`${table.main}`),
+    uniqueIndex('presets_one_active_idx').on(table.accountId).where(sql`${table.active}`),
+    index('presets_account_idx').on(table.accountId, table.createdAt),
+  ],
+);
+
+/** Lado de um slot; `any` é o do music kit, que não tem lado (`side: null` no contrato). */
+export const loadoutSlotSide = pgEnum('loadout_slot_side', ['ct', 't', 'any']);
+
+/** Um Item equipado num slot e lado de um Preset. Slot sem linha = Arma padrão. */
+export const loadoutSlots = pgTable(
+  'loadout_slots',
+  {
+    presetId: uuid()
+      .notNull()
+      .references(() => presets.id, { onDelete: 'cascade' }),
+    /** `weapon_<modelo>`, `knife`, `gloves`, `agent` ou `musicKit` (`LoadoutSlot`). */
+    slot: text().notNull(),
+    side: loadoutSlotSide().notNull(),
+    itemId: uuid()
+      .notNull()
+      .references(() => inventoryItems.id, { onDelete: 'cascade' }),
+  },
+  (table) => [
+    primaryKey({ columns: [table.presetId, table.slot, table.side] }),
+    index('loadout_slots_item_idx').on(table.itemId),
+  ],
+);
+
+/** Ações da Staff registradas no log de auditoria. */
+export const staffAuditAction = pgEnum('staff_audit_action', ['vip_grant', 'vip_revoke']);
+
+/**
+ * Log de auditoria das ações da Staff (S05: conceder e revogar Período VIP): autor, ação, alvo,
+ * motivo e horário. Só cresce; a Conta-alvo apagada deixa o registro com o SteamID64.
+ */
+export const staffAuditLog = pgTable(
+  'staff_audit_log',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** SteamID64 de quem fez (a Staff). Os papéis da Staff chegam na S07. */
+    actorSteamId: bigint({ mode: 'bigint' }).notNull(),
+    action: staffAuditAction().notNull(),
+    targetAccountId: uuid().references(() => accounts.id, { onDelete: 'set null' }),
+    targetSteamId: bigint({ mode: 'bigint' }).notNull(),
+    reason: text().notNull(),
+    /** O que mudou, ex.: `{ days, endsAtBefore, endsAtAfter }`. */
+    details: jsonb().$type<Record<string, unknown>>().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    index('staff_audit_log_target_idx').on(table.targetSteamId, table.createdAt),
+    check('staff_audit_log_reason_present', sql`length(trim(${table.reason})) > 0`),
   ],
 );

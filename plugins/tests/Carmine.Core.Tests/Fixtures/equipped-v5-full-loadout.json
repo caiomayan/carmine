@@ -1,0 +1,134 @@
+{
+  "agents": {
+    "2": {
+      "def": 5105,
+      "hash": "c186893",
+      "stickers": []
+    },
+    "3": {
+      "def": 5305,
+      "hash": "69df46d",
+      "stickers": []
+    }
+  },
+  "ctWeapons": {
+    "1": {
+      "def": 1,
+      "hash": "d2041f5",
+      "nametag": "",
+      "paint": 17,
+      "seed": 1000,
+      "stattrak": -1,
+      "stickers": [],
+      "keychains": [],
+      "uid": 3,
+      "wear": 0.3
+    },
+    "60": {
+      "def": 60,
+      "hash": "9421239",
+      "nametag": "",
+      "paint": 60,
+      "seed": 7,
+      "stattrak": -1,
+      "stickers": [],
+      "keychains": [],
+      "uid": 2,
+      "wear": 0.2
+    }
+  },
+  "gloves": {
+    "2": {
+      "def": 4725,
+      "hash": "386b28c",
+      "paint": 10085,
+      "seed": 9,
+      "wear": 0.5
+    },
+    "3": {
+      "def": 4725,
+      "hash": "386b28c",
+      "paint": 10085,
+      "seed": 9,
+      "wear": 0.5
+    }
+  },
+  "knives": {
+    "2": {
+      "def": 500,
+      "hash": "41bed79",
+      "nametag": "",
+      "paint": 5,
+      "seed": 3,
+      "stattrak": 0,
+      "stickers": [],
+      "uid": 4,
+      "wear": 0.07
+    },
+    "3": {
+      "def": 500,
+      "hash": "41bed79",
+      "nametag": "",
+      "paint": 5,
+      "seed": 3,
+      "stattrak": 0,
+      "stickers": [],
+      "uid": 4,
+      "wear": 0.07
+    }
+  },
+  "musicKit": {
+    "musicId": 3,
+    "stattrak": 0,
+    "uid": 8
+  },
+  "tWeapons": {
+    "1": {
+      "def": 1,
+      "hash": "d2041f5",
+      "nametag": "",
+      "paint": 17,
+      "seed": 1000,
+      "stattrak": -1,
+      "stickers": [],
+      "keychains": [],
+      "uid": 3,
+      "wear": 0.3
+    },
+    "7": {
+      "def": 7,
+      "hash": "f1b5783",
+      "nametag": "Carmine",
+      "paint": 282,
+      "seed": 661,
+      "stattrak": 0,
+      "stickers": [
+        {
+          "def": 1,
+          "rotation": 15,
+          "schema": 0,
+          "slot": 0,
+          "wear": 0.1
+        },
+        {
+          "def": 1,
+          "schema": 2,
+          "slot": 1,
+          "wear": 0,
+          "x": 0.1,
+          "y": 0.05
+        }
+      ],
+      "keychains": [
+        {
+          "def": 37,
+          "seed": 42,
+          "slot": 0,
+          "sticker": 1
+        }
+      ],
+      "uid": 1,
+      "wear": 0.15
+    }
+  }
+}

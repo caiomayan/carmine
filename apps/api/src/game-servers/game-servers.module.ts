@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServerRegistry } from './game-server-registry.js';
-import { ServerKeyGuard } from './server-key.guard.js';
+import { InvsimKeyGuard, ServerKeyGuard } from './server-key.guard.js';
 
 /** Servidores Carmine e a autenticação das rotas usadas pelos plugins (`/api/server/*`). */
 @Module({
@@ -12,7 +12,8 @@ import { ServerKeyGuard } from './server-key.guard.js';
       useFactory: (db: Database) => new GameServerRegistry(db),
     },
     ServerKeyGuard,
+    InvsimKeyGuard,
   ],
-  exports: [GameServerRegistry, ServerKeyGuard],
+  exports: [GameServerRegistry, ServerKeyGuard, InvsimKeyGuard],
 })
 export class GameServersModule {}

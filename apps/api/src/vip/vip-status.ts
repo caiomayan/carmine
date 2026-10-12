@@ -1,13 +1,19 @@
+import type { VipStatus } from '@carmine/contracts';
+
 /** Um Período VIP (`VipPeriod`): VIP de `startsAt` (inclusive) até `endsAt` (exclusive). */
 export interface VipPeriod {
   startsAt: Date;
   endsAt: Date;
 }
 
-/** VIP de uma Conta num instante. `endsAt` é nulo sem VIP ativo. */
+/**
+ * VIP de uma Conta num instante. `endsAt` é nulo sem VIP ativo; `endedAt`, o fim do último
+ * Período já encerrado, só sem VIP ativo (nulo se nunca houve).
+ */
 export interface VipStatusAt {
   active: boolean;
   endsAt: Date | null;
+  endedAt: Date | null;
 }
 
 /**
@@ -22,5 +28,19 @@ export function vipStatusAt(periods: readonly VipPeriod[], now: Date): VipStatus
     if (!reachable || periodEnd <= now) continue;
     if (endsAt === null || periodEnd > endsAt) endsAt = periodEnd;
   }
-  return endsAt === null ? { active: false, endsAt: null } : { active: true, endsAt };
+  if (endsAt !== null) return { active: true, endsAt, endedAt: null };
+  let endedAt: Date | null = null;
+  for (const { endsAt: periodEnd } of sorted) {
+    if (periodEnd <= now && (endedAt === null || periodEnd > endedAt)) endedAt = periodEnd;
+  }
+  return { active: false, endsAt: null, endedAt };
+}
+
+/** O VIP no formato do contrato (`VipStatus`). */
+export function toVipStatus(vip: VipStatusAt): VipStatus {
+  return {
+    active: vip.active,
+    endsAt: vip.endsAt?.toISOString() ?? null,
+    endedAt: vip.endedAt?.toISOString() ?? null,
+  };
 }

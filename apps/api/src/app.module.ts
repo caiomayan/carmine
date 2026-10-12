@@ -2,6 +2,7 @@ import { type DynamicModule, Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { AccountsModule } from './accounts/accounts.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { CatalogModule } from './catalog/catalog.module.js';
 import { ClientIpModule } from './client-ip/client-ip.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import type { AppConfig } from './config/config.js';
@@ -10,6 +11,7 @@ import { EquippedModule } from './equipped/equipped.module.js';
 import { GameServersModule } from './game-servers/game-servers.module.js';
 import { HealthModule } from './health/health.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
+import { LoadoutModule } from './loadout/loadout.module.js';
 import { loggerParams } from './logging.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { ValkeyModule } from './valkey/valkey.module.js';
@@ -24,6 +26,7 @@ export class AppModule {
         LoggerModule.forRoot(loggerParams(config)),
         DatabaseModule,
         ValkeyModule,
+        CatalogModule,
         ClientIpModule,
         RateLimitModule,
         HealthModule,
@@ -32,6 +35,7 @@ export class AppModule {
         AuthModule,
         EquippedModule,
         InventoryModule,
+        LoadoutModule,
       ],
     };
   }

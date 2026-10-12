@@ -16,14 +16,24 @@ describe('profileSchema', () => {
     expect(profileSchema.parse(profile)).toEqual(profile);
   });
 
-  it('rejeita itens na vitrine enquanto não existe Loadout', () => {
-    const withItem = { ...profile, loadoutShowcase: { items: [{ def: 7 }] } };
+  it('aceita a vitrine com os Itens equipados, por slot e lado', () => {
+    const items = [
+      { slot: 'weapon_ak47', side: 't', item: { id: 222, wear: 0.15, seed: 661 } },
+      { slot: 'musicKit', side: null, item: { id: 1780 } },
+    ];
+    const withItems = { ...profile, loadoutShowcase: { items } };
 
-    expect(profileSchema.safeParse(withItem).success).toBe(false);
+    expect(profileSchema.parse(withItems)).toEqual(withItems);
+  });
+
+  it('rejeita na vitrine um slot que não existe', () => {
+    const items = [{ slot: 'ak47', side: 't', item: { id: 222 } }];
+
+    expect(profileSchema.safeParse({ ...profile, loadoutShowcase: { items } }).success).toBe(false);
   });
 });
 
-const vip = { active: false, endsAt: null };
+const vip = { active: false, endsAt: null, endedAt: null };
 
 describe('currentSessionSchema', () => {
   it('diz se a sessão é a do primeiro login da Conta', () => {
@@ -37,7 +47,7 @@ describe('currentSessionSchema', () => {
 
   it('traz o Período VIP da Conta', () => {
     const session = { account: profile, csrfToken: 'token', firstLogin: false };
-    const active = { active: true, endsAt: '2026-11-10T12:00:00.000Z' };
+    const active = { active: true, endsAt: '2026-11-10T12:00:00.000Z', endedAt: null };
 
     expect(currentSessionSchema.parse({ ...session, vip: active }).vip).toEqual(active);
     expect(currentSessionSchema.safeParse(session).success).toBe(false);

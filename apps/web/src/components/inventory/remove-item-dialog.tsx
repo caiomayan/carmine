@@ -105,7 +105,7 @@ export function RemoveItemDialog({
                     {ready.loadout.map((use) => (
                       <li key={`${use.slot}-${use.side}`} className="flex items-center gap-2">
                         <span aria-hidden="true" className="size-1 rounded-full bg-foreground" />
-                        {t('loadout', { slot: use.slot, side: t(`sides.${use.side}`) })}
+                        {t('loadout', { slot: use.slot, side: t(`sides.${use.side ?? 'all'}`) })}
                       </li>
                     ))}
                     {ready.presets.map((preset) => (
