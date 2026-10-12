@@ -1,10 +1,43 @@
-/** Resumo dos Servidores Carmine para a casca (rodapé, contadores). */
-export type ServersSummary = { online: number; players: number };
+import type { LiveServerList } from '@carmine/contracts';
+import { useSyncExternalStore } from 'react';
 
-/**
- * Até a leitura ao vivo (S06) a casca mostra o pré-lançamento: nenhum servidor no ar.
- * Quando a API expuser o resumo, ele substitui esta constante sem mudar os componentes.
- */
-export const PRELAUNCH_SUMMARY: ServersSummary = { online: 0, players: 0 };
+/** Resumo dos Servidores Carmine para a casca (rodapé): servidores no ar e jogadores. */
+export type ServersSummary = LiveServerList['summary'];
 
 export const isLive = (summary: ServersSummary) => summary.online > 0;
+
+/**
+ * O último resumo que a conexão ao vivo da home recebeu. O rodapé nasce com o resumo lido no
+ * servidor e, enquanto a home está aberta, acompanha o ao vivo sem abrir outra conexão.
+ */
+let liveSummary: ServersSummary | null = null;
+const listeners = new Set<() => void>();
+
+export function publishLiveSummary(summary: ServersSummary) {
+  if (
+    liveSummary &&
+    liveSummary.online === summary.online &&
+    liveSummary.players === summary.players
+  ) {
+    return;
+  }
+  liveSummary = summary;
+  for (const listener of listeners) listener();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+/** O resumo ao vivo, quando a home já recebeu um; senão, o lido no servidor. */
+export function useServersSummary(fallback: ServersSummary | null): ServersSummary | null {
+  const live = useSyncExternalStore(
+    subscribe,
+    () => liveSummary,
+    () => null,
+  );
+  return live ?? fallback;
+}

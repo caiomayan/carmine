@@ -51,7 +51,8 @@
         "soon": "Em breve",
         "servers": "{count, plural, =0 {<n>#</n> servidores online} one {<n>#</n> servidor online} other {<n>#</n> servidores online}}",
         "players": "{count, plural, =0 {<n>#</n> jogadores} one {<n>#</n> jogador} other {<n>#</n> jogadores}}",
-        "region": "Servidores em São Paulo"
+        "region": "Servidores em São Paulo",
+        "unavailable": "Estado indisponível agora"
       },
       "copyright": "© {year} Carmine. Todos os direitos reservados.",
       "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela."
@@ -76,18 +77,99 @@
       "retake": "Retake",
       "deathmatch": "Deathmatch"
     },
+    "regions": {
+      "sao-paulo": "São Paulo"
+    },
+    "listLabel": "Servidores Carmine",
     "columns": {
       "server": "Servidor",
       "map": "Mapa",
       "players": "Jogadores",
-      "ping": "Ping"
+      "state": "Estado"
+    },
+    "states": {
+      "online": "Online",
+      "full": "Lotado",
+      "offline": "Offline"
+    },
+    "row": {
+      "currentMap": "Mapa atual",
+      "noMap": "Sem mapa",
+      "seen": "Visto {ago}",
+      "neverSeen": "Ainda não entrou no ar",
+      "players": "{players} de {max} jogadores",
+      "fullHint": "Lotado: com VIP você entra pela Vaga reservada."
+    },
+    "live": {
+      "live": "Ao vivo",
+      "connecting": "Conectando",
+      "lost": "Reconectando",
+      "updated": "atualizado há {seconds, plural, one {# s} other {# s}}",
+      "servers": "{count, plural, one {<n>#</n> servidor online} other {<n>#</n> servidores online}}",
+      "players": "{count, plural, one {<n>#</n> jogador} other {<n>#</n> jogadores}}",
+      "lostAnnounce": "A conexão ao vivo caiu. A lista mostra o último estado conhecido e reconecta sozinha.",
+      "backAnnounce": "Conexão ao vivo de volta."
+    },
+    "connect": {
+      "button": "Conectar",
+      "aria": "Conectar ao {server}",
+      "copy": "Copiar IP",
+      "copyAria": "Copiar o IP do {server}",
+      "copied": "IP copiado",
+      "copyFailed": "Não deu para copiar. Selecione o IP e copie à mão.",
+      "opening": "Abrindo o CS2.",
+      "hint": "Se não abrir, no console do CS2: <cmd>connect {address}</cmd>",
+      "close": "Fechar instrução",
+      "mobileHint": "No celular não dá para jogar: abra o CS2 no PC e, no console, digite <cmd>connect</cmd> com o IP do servidor."
     },
     "empty": {
       "title": "Nenhum servidor no ar ainda",
-      "titleMode": "Nenhum servidor de {mode} no ar ainda",
-      "body": "Assim que os Servidores Carmine entrarem no ar, eles aparecem aqui com o mapa, os jogadores e o botão de conectar."
+      "titleMode": "Nenhum servidor de {mode} por enquanto",
+      "body": "Assim que os Servidores Carmine entrarem no ar, eles aparecem aqui com o mapa, os jogadores e o botão de conectar.",
+      "bodyMode": "Os servidores de {mode} aparecem aqui assim que entrarem no ar.",
+      "showAll": "Ver todos os servidores"
     },
-    "region": "São Paulo"
+    "unavailable": {
+      "title": "Não conseguimos carregar os servidores",
+      "body": "A lista aparece sozinha assim que a conexão voltar.",
+      "retry": "Tentar de novo"
+    },
+    "friends": {
+      "title": "Seus amigos jogando agora",
+      "count": "{count, plural, one {# jogando} other {# jogando}}",
+      "loading": "Carregando seus amigos",
+      "join": "Entrar",
+      "joinAria": "Entrar no mesmo servidor que {name}",
+      "copyAria": "Copiar o IP do servidor de {name}",
+      "on": "{server} · {map}",
+      "serverOffline": "Servidor offline",
+      "serverUnknown": "Num Servidor Carmine",
+      "profile": "Ver o Perfil de {name}",
+      "none": {
+        "title": "Nenhum amigo jogando agora",
+        "body": "Quando um amigo seu da Steam entrar num Servidor Carmine, ele aparece aqui com o botão para entrar junto."
+      },
+      "private": {
+        "title": "Sua lista de amigos da Steam é privada",
+        "body": "Sem ver a lista, não dá para saber quais amigos estão jogando.",
+        "howTo": "Como deixar a lista visível",
+        "step1": "Na Steam, abra o seu perfil e vá em Editar perfil › Privacidade.",
+        "step2": "Em Lista de amigos, escolha Pública.",
+        "consequence": "Com a lista pública, qualquer pessoa vê os seus amigos no seu perfil da Steam. Deixar privada também é uma escolha válida: só este bloco fica sem dados.",
+        "open": "Abrir a privacidade na Steam"
+      },
+      "unavailable": {
+        "title": "A Steam não respondeu",
+        "body": "Não conseguimos ver os seus amigos agora. Tentamos de novo sozinhos em instantes.",
+        "stale": "A Steam não respondeu; esta é a última lista que vimos.",
+        "retry": "Tentar agora"
+      },
+      "anonymous": {
+        "title": "Veja quem está jogando",
+        "body": "Entre com a Steam para ver aqui os seus amigos nos Servidores Carmine e entrar no mesmo servidor.",
+        "cta": "Entrar com a Steam"
+      }
+    }
   },
   "inventory": {
     "title": "Inventário",
