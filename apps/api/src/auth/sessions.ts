@@ -34,6 +34,8 @@ const recordSchema = z.object({
 type SessionRecord = z.infer<typeof recordSchema>;
 
 const KEY_PREFIX = 'carmine:session:';
+/** Índice das sessões de cada Conta (S07): derrubar todas de uma vez, ex.: no ban. */
+const ACCOUNT_INDEX_PREFIX = 'carmine:account-sessions:';
 
 /**
  * Sessões no Valkey: o TTL nativo dá a expiração ociosa de graça, a renovação deslizante é um
@@ -61,8 +63,31 @@ export class SessionStore {
       firstLogin: options.firstLogin ?? false,
     };
     const ttl = this.ttlMs(record, now);
-    await this.valkey.set(keyOf(id), JSON.stringify(record), 'PX', ttl);
+    const index = indexOf(accountId);
+    // O índice vive o máximo que uma sessão pode viver; entradas de sessões já encerradas só
+    // ficam lá até lá (apagar uma chave que não existe não faz nada).
+    await this.valkey
+      .multi()
+      .set(keyOf(id), JSON.stringify(record), 'PX', ttl)
+      .sadd(index, keyOf(id))
+      .expire(index, this.options.absoluteTtlSeconds)
+      .exec()
+      .then(failOnError);
     return toSession(id, record, now, ttl);
+  }
+
+  /** Encerra na hora todas as sessões da Conta (ex.: ela foi banida). Devolve quantas havia. */
+  async destroyAllOf(accountId: string): Promise<number> {
+    const index = indexOf(accountId);
+    const keys = await this.valkey.smembers(index);
+    if (keys.length === 0) return 0;
+    const [deleted] = await this.valkey
+      .multi()
+      .del(...keys)
+      .del(index)
+      .exec()
+      .then(failOnError);
+    return Number(deleted?.[1] ?? 0);
   }
 
   /**
@@ -130,6 +155,18 @@ function toSession(id: string, record: SessionRecord, now: number, ttlMs: number
 /** 256 bits aleatórios em base64url (43 caracteres). */
 export function randomToken(): string {
   return randomBytes(32).toString('base64url');
+}
+
+function indexOf(accountId: string): string {
+  return `${ACCOUNT_INDEX_PREFIX}${accountId}`;
+}
+
+/** Um `MULTI` do ioredis não rejeita quando um comando falha: o erro vem no resultado. */
+function failOnError(results: [Error | null, unknown][] | null): [Error | null, unknown][] {
+  const failed = results?.find(([error]) => error !== null);
+  if (failed?.[0]) throw failed[0];
+  if (results === null) throw new Error('transação do Valkey abortada');
+  return results;
 }
 
 function keyOf(id: string): string {

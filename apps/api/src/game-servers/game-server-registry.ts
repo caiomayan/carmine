@@ -1,9 +1,15 @@
-import { type GameMode, gameModeSchema, type ServerRegion } from '@carmine/contracts';
+import {
+  type GameMode,
+  gameModeSchema,
+  type ServerRegion,
+  serverHostname,
+} from '@carmine/contracts';
 import { asc, eq } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import { z } from 'zod';
 import type { Database } from '../database/database.js';
 import { gameServers } from '../database/schema.js';
+import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
 import { generateServerKey, hashServerKey } from './server-key.js';
 
 /** Servidor Carmine (`GameServer`) como o resto da API o vê: nunca expõe o hash da chave. */
@@ -13,6 +19,10 @@ export interface GameServer {
   mode: GameMode;
   address: string;
   region: ServerRegion;
+  /** Nome de vitrine (S07), ex.: "Retake · Rotação". */
+  showcaseName: string | null;
+  /** Código do servidor (S07), ex.: "SP·2". */
+  code: string | null;
   keyRotatedAt: Date;
   createdAt: Date;
 }
@@ -32,12 +42,28 @@ export type GameServerRegistration = z.input<typeof registrationSchema>;
 
 export class GameServerRegistryError extends Error {}
 
+/** Outro Servidor Carmine já usa o código. */
+export class ServerCodeTaken extends Error {
+  constructor(code: string) {
+    super(`o código ${code} já é de outro servidor`);
+  }
+}
+
+/** O hostname do servidor no jogo, ou `null` enquanto faltar nome de vitrine ou código. */
+export function hostnameOf(server: Pick<GameServer, 'showcaseName' | 'code'>): string | null {
+  return server.showcaseName && server.code
+    ? serverHostname(server.showcaseName, server.code)
+    : null;
+}
+
 const publicColumns = {
   id: gameServers.id,
   name: gameServers.name,
   mode: gameServers.mode,
   address: gameServers.address,
   region: gameServers.region,
+  showcaseName: gameServers.showcaseName,
+  code: gameServers.code,
   keyRotatedAt: gameServers.keyRotatedAt,
   createdAt: gameServers.createdAt,
 };
@@ -97,6 +123,57 @@ export class GameServerRegistry {
 
   async list(): Promise<GameServer[]> {
     return this.db.select(publicColumns).from(gameServers).orderBy(asc(gameServers.name));
+  }
+
+  async find(id: string): Promise<GameServer | null> {
+    const [server] = await this.db
+      .select(publicColumns)
+      .from(gameServers)
+      .where(eq(gameServers.id, id));
+    return server ?? null;
+  }
+
+  /**
+   * Muda o nome de vitrine e o código (S07), com auditoria; o hostname muda no jogo no próximo
+   * batimento. `null` se o servidor não existe; {@link ServerCodeTaken} se o código é de outro.
+   */
+  async updateShowcase(
+    id: string,
+    showcase: { showcaseName: string; code: string },
+    staff: StaffAction,
+    now = new Date(),
+  ): Promise<GameServer | null> {
+    try {
+      return await this.db.transaction(async (tx) => {
+        const [before] = await tx
+          .select(publicColumns)
+          .from(gameServers)
+          .where(eq(gameServers.id, id))
+          .for('update');
+        if (!before) return null;
+        const [after] = await tx
+          .update(gameServers)
+          .set(showcase)
+          .where(eq(gameServers.id, id))
+          .returning(publicColumns);
+        await recordStaffAudit(tx, {
+          action: 'server_update',
+          staff,
+          target: { serverId: id },
+          details: {
+            before: { showcaseName: before.showcaseName, code: before.code },
+            after: showcase,
+          },
+          at: now,
+        });
+        return after ?? null;
+      });
+    } catch (error) {
+      if (isUniqueViolation(error, 'game_servers_code_unique')) {
+        throw new ServerCodeTaken(showcase.code);
+      }
+      throw error;
+    }
   }
 }
 

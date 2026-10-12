@@ -16,6 +16,7 @@ import { LiveServersModule } from './live-servers/live-servers.module.js';
 import { LoadoutModule } from './loadout/loadout.module.js';
 import { loggerParams } from './logging.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
+import { StaffModule } from './staff/staff.module.js';
 import { ValkeyModule } from './valkey/valkey.module.js';
 
 @Module({})
@@ -40,6 +41,7 @@ export class AppModule {
         LoadoutModule,
         LiveServersModule,
         FriendsModule,
+        StaffModule,
       ],
     };
   }

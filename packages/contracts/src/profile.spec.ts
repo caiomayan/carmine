@@ -9,6 +9,7 @@ const profile = {
   steamProfileUrl: 'https://steamcommunity.com/profiles/76561198000000001',
   claimed: false,
   loadoutShowcase: { items: [] },
+  sanctions: { active: [], history: [] },
 };
 
 describe('profileSchema', () => {
@@ -37,7 +38,14 @@ const vip = { active: false, endsAt: null, endedAt: null };
 
 describe('currentSessionSchema', () => {
   it('diz se a sessão é a do primeiro login da Conta', () => {
-    const session = { account: profile, csrfToken: 'token', firstLogin: true, vip };
+    const session = {
+      account: profile,
+      csrfToken: 'token',
+      firstLogin: true,
+      vip,
+      staffRole: null,
+      sanctions: [],
+    };
 
     expect(currentSessionSchema.parse(session)).toEqual(session);
     expect(
@@ -46,7 +54,13 @@ describe('currentSessionSchema', () => {
   });
 
   it('traz o Período VIP da Conta', () => {
-    const session = { account: profile, csrfToken: 'token', firstLogin: false };
+    const session = {
+      account: profile,
+      csrfToken: 'token',
+      firstLogin: false,
+      staffRole: null,
+      sanctions: [],
+    };
     const active = { active: true, endsAt: '2026-11-10T12:00:00.000Z', endedAt: null };
 
     expect(currentSessionSchema.parse({ ...session, vip: active }).vip).toEqual(active);

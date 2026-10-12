@@ -10,6 +10,8 @@ import {
 export interface ListedServer {
   id: string;
   name: string;
+  showcaseName: string | null;
+  code: string | null;
   mode: GameMode;
   address: string;
   region: ServerRegion;
@@ -59,10 +61,12 @@ function toLiveServer(
   now: Date,
   offlineAfterMs: number,
 ): LiveServer {
-  const { id, name, mode, address, region } = server;
+  const { id, name, showcaseName, code, mode, address, region } = server;
   const base = {
     id,
     name,
+    showcaseName,
+    code,
     mode,
     address,
     region,

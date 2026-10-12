@@ -37,11 +37,13 @@ import { AccountsService } from '../accounts/accounts.service.js';
 import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { Loadouts } from '../loadout/loadouts.js';
+import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { StaffRoles } from '../staff/staff-roles.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { toVipStatus } from '../vip/vip-status.js';
 import { LoginRateLimitFilter, loginErrorUrl } from './login-errors.js';
-import { AuthenticatedGuard, CurrentSession } from './session.guard.js';
+import { AllowBanned, AuthenticatedGuard, CurrentSession } from './session.guard.js';
 import {
   clearSessionCookies,
   LOGIN_STATE_COOKIE,
@@ -76,6 +78,8 @@ export class AuthController {
     @Inject(AccountsService) private readonly accounts: AccountsService,
     @Inject(VipPeriods) private readonly vipPeriods: VipPeriods,
     @Inject(Loadouts) private readonly loadouts: Loadouts,
+    @Inject(Sanctions) private readonly sanctions: Sanctions,
+    @Inject(StaffRoles) private readonly staffRoles: StaffRoles,
   ) {}
 
   @Get('auth/steam/login')
@@ -153,6 +157,7 @@ export class AuthController {
   }
 
   @Post('auth/logout')
+  @AllowBanned()
   @HttpCode(HttpStatus.NO_CONTENT)
   @RateLimit('mutations')
   @ApiCookieAuth()
@@ -179,7 +184,8 @@ export class AuthController {
   @ApiCookieAuth()
   @ApiOperation({
     operationId: 'getCurrentSession',
-    summary: 'A Conta da sessão atual, o token CSRF das mutações, se é o primeiro login e o VIP',
+    summary:
+      'A Conta da sessão atual, o token CSRF das mutações, se é o primeiro login, o VIP e o papel de Staff',
   })
   @ApiOkResponse({ description: 'Sessão ativa', standardSchema: currentSessionSchema })
   @ApiUnauthorizedResponse({ description: 'Sem sessão, ou ela expirou' })
@@ -194,12 +200,20 @@ export class AuthController {
       clearSessionCookies(reply);
       throw new UnauthorizedException('Sessão ausente ou expirada; entre de novo');
     }
-    const vip = await this.vipPeriods.statusOf(account.id);
+    const [vip, showcase, sanctions, staffRole, own] = await Promise.all([
+      this.vipPeriods.statusOf(account.id),
+      this.loadouts.showcase(account.id),
+      this.sanctions.profileOf(account.id),
+      this.staffRoles.roleOf(account.id),
+      this.sanctions.activeOf(account.id),
+    ]);
     return {
-      account: toProfile(account, await this.loadouts.showcase(account.id)),
+      account: toProfile(account, showcase, sanctions),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
       vip: toVipStatus(vip),
+      staffRole,
+      sanctions: own,
     };
   }
 

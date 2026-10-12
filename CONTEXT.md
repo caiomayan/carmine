@@ -79,6 +79,14 @@ _Evitar_: preset padrão, preset default
 Uma instância de servidor dedicado de CS2 operada pela plataforma, de um único Modo.
 _Evitar_: sala, lobby
 
+**Nome de vitrine** (`showcaseName`):
+O nome que a Staff dá a um Servidor Carmine para descrever a variante ("Retake · Rotação", "Deathmatch · Livre"). Aparece no site e no hostname do jogo (`Carmine | <nome de vitrine> | <código>`). Não é o identificador curto do CLI (`name`, ex.: `retake-1`).
+_Evitar_: título, nome do servidor (ambíguo com o `name`)
+
+**Código do servidor** (`code`):
+Identificador curto e único de um Servidor Carmine, região·número (SP·1, SP·2), mostrado pequeno ao lado do IP e no fim do hostname.
+_Evitar_: tag, ID do servidor
+
 **Modo** (`Mode`):
 O tipo de jogo de um Servidor Carmine: Retake, Deathmatch e, depois, 5v5 casual.
 _Evitar_: modalidade, game mode
@@ -128,11 +136,19 @@ A pessoa maior de idade que paga o VIP; pode não ser o dono da Conta.
 ## Moderação
 
 **Staff**:
-As Contas com papel de Dono, Admin ou Moderador.
+As Contas com papel de Dono, Admin ou Moderador (`StaffRole`: `owner`, `admin`, `moderator`). Só o Dono altera papéis.
 
 **Punição** (`Sanction`):
-Uma restrição aplicada a uma Conta em todos os Servidores Carmine: ban, mute (voz) ou gag (chat).
+Uma medida aplicada a uma Conta em todos os Servidores Carmine: ban, mute (voz), gag (chat), kick ou aviso (`warning`). Ban, mute e gag duram até um horário ou são permanentes; kick e aviso são instantâneos. Medidas aplicadas juntas formam uma ocorrência (`incidentId`).
 _Evitar_: penalidade, castigo
+
+**Categoria de infração** (`SanctionCategory`):
+O tipo de conduta que levou à Punição (chat ofensivo pessoal, voz ofensiva, griefing, exploit, discriminação, cheat, ameaça, doxxing, conta alternativa para fugir de ban). É o que o jogador e o Perfil público veem, em nome genérico; o motivo livre escrito pela Staff é interno. A reincidência é contada por Categoria.
+_Evitar_: tipo de punição, motivo (o motivo é o texto livre)
+
+**Recurso** (`appeal`):
+O pedido do jogador para rever uma Punição, feito por ticket no Discord, com resposta em até 72 h. Recurso aceito revoga a Punição, tira do Perfil público e da contagem de reincidência.
+_Evitar_: apelação, contestação
 
 **Denúncia** (`Report`):
 Um aviso de um jogador sobre outro, feito dentro do jogo e enviado à fila da Staff.

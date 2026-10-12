@@ -3,6 +3,7 @@ import type { PlayerConnect, PlayerConnectResult } from '@carmine/contracts';
 import { eq, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, publicIdCounter } from '../database/schema.js';
+import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
 import type { AvatarRefresher } from './avatar-refresher.js';
 import { displayNameFor } from './display-name.js';
 import { allocatePublicId, type BlockDraw } from './public-id.js';
@@ -15,6 +16,8 @@ export interface Account {
   publicId: number;
   steamName: string;
   displayName: string;
+  /** Nome Steam cujo Nome de exibição a Staff resetou (S07); nulo sem reset. */
+  displayNameBlockedSteamName: string | null;
   /** Nulo: ainda sem avatar Steam; vale o avatar neutro. */
   avatarUrl: string | null;
   avatarFetchedAt: Date | null;
@@ -42,7 +45,7 @@ export class AccountsService {
    * devolve o que o plugin aplica no jogo. Seguro sob connects simultâneos, inclusive do mesmo
    * jogador (só um deles recebe `isFirstConnect`).
    */
-  async registerConnect(connect: PlayerConnect): Promise<PlayerConnectResult> {
+  async registerConnect(connect: PlayerConnect): Promise<Omit<PlayerConnectResult, 'sanctions'>> {
     const now = new Date();
     // Um connect reenviado pelo plugin traz o horário original; nunca aceitamos um futuro.
     const connectedAt =
@@ -105,6 +108,44 @@ export class AccountsService {
     return row ? toAccount(row) : null;
   }
 
+  /**
+   * Reset do Nome de exibição pela Staff (S07), com auditoria: a Conta passa a "Jogador #ID"
+   * enquanto mantiver o nome Steam atual (trocar o nome na Steam libera o novo, pelo filtro). No
+   * jogo, vale no próximo connect.
+   */
+  async resetDisplayName(
+    accountId: string,
+    staff: StaffAction,
+    now = new Date(),
+  ): Promise<Account> {
+    return this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(accounts)
+        .where(eq(accounts.id, accountId))
+        .for('update');
+      if (!existing) throw new Error(`Conta ${accountId} não existe`);
+      const displayName = displayNameFor(existing.steamName, existing.publicId, existing.steamName);
+      const [updated] = await tx
+        .update(accounts)
+        .set({ displayName, displayNameBlockedSteamName: existing.steamName })
+        .where(eq(accounts.id, accountId))
+        .returning();
+      await recordStaffAudit(tx, {
+        action: 'display_name_reset',
+        staff,
+        target: { accountId, steamId: existing.steamId },
+        details: {
+          displayNameBefore: existing.displayName,
+          displayNameAfter: displayName,
+          steamName: existing.steamName,
+        },
+        at: now,
+      });
+      return toAccount(updated as AccountRow);
+    });
+  }
+
   /** `null` quando outro connect do mesmo jogador criou a Conta no meio do caminho. */
   private async upsertOnConnect(
     tx: Transaction,
@@ -123,7 +164,11 @@ export class AccountsService {
         .update(accounts)
         .set({
           steamName: connect.steamName,
-          displayName: displayNameFor(connect.steamName, existing.publicId),
+          displayName: displayNameFor(
+            connect.steamName,
+            existing.publicId,
+            existing.displayNameBlockedSteamName,
+          ),
           firstConnectedAt: sql`coalesce(${accounts.firstConnectedAt}, ${connectedAt})`,
           lastConnectedAt: sql`greatest(${accounts.lastConnectedAt}, ${connectedAt})`,
         })

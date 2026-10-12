@@ -4,11 +4,13 @@ import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { LoadoutModule } from '../loadout/loadout.module.js';
+import { ModerationModule } from '../moderation/moderation.module.js';
+import { Sanctions } from '../moderation/sanctions.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { VipModule } from '../vip/vip.module.js';
 import { AuthController } from './auth.controller.js';
-import { SessionGuard } from './session.guard.js';
-import { SessionStore } from './sessions.js';
+import { BAN_CHECK, type BanCheck, SessionGuard } from './session.guard.js';
+import { SessionsModule } from './sessions.module.js';
 import { SteamLogin, ValkeyNonceRegistry } from './steam-login.js';
 import { SteamOpenId } from './steam-openid.js';
 
@@ -21,13 +23,16 @@ const DEFAULT_STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login';
 
 /** Login Steam, sessões do site e proteção CSRF (S03). */
 @Module({
-  imports: [AccountsModule, VipModule, LoadoutModule],
+  imports: [AccountsModule, VipModule, LoadoutModule, SessionsModule, ModerationModule],
   controllers: [AuthController],
   providers: [
     {
-      provide: SessionStore,
-      inject: [VALKEY, APP_CONFIG],
-      useFactory: (valkey: Redis, config: AppConfig) => new SessionStore(valkey, config.session),
+      provide: BAN_CHECK,
+      inject: [Sanctions],
+      useFactory:
+        (sanctions: Sanctions): BanCheck =>
+        (accountId) =>
+          sanctions.isBanned(accountId),
     },
     {
       provide: SteamLogin,

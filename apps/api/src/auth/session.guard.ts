@@ -1,5 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
-import { CSRF_HEADER } from '@carmine/contracts';
+import { ACCOUNT_BANNED_CODE, CSRF_HEADER } from '@carmine/contracts';
 import {
   type CanActivate,
   createParamDecorator,
@@ -8,9 +8,12 @@ import {
   Inject,
   Injectable,
   Logger,
+  Optional,
   ServiceUnavailableException,
+  SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { clearSessionCookies, SESSION_COOKIE, setSessionCookies } from './session-cookies.js';
 import { type Session, SessionStore } from './sessions.js';
@@ -23,6 +26,15 @@ declare module 'fastify' {
 }
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+/** Diz se a Conta está banida agora (S07). */
+export type BanCheck = (accountId: string) => Promise<boolean>;
+export const BAN_CHECK = Symbol('BAN_CHECK');
+
+const ALLOW_BANNED = 'carmine:allowBanned';
+
+/** A mutação vale também para Conta banida (ex.: sair). */
+export const AllowBanned = () => SetMetadata(ALLOW_BANNED, true);
 
 /**
  * Guard global: resolve a sessão do cookie em toda requisição e protege toda mutação contra
@@ -41,7 +53,11 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export class SessionGuard implements CanActivate {
   private readonly logger = new Logger(SessionGuard.name);
 
-  constructor(@Inject(SessionStore) private readonly sessions: SessionStore) {}
+  constructor(
+    @Inject(SessionStore) private readonly sessions: SessionStore,
+    @Inject(Reflector) private readonly reflector: Reflector,
+    @Optional() @Inject(BAN_CHECK) private readonly isBanned: BanCheck | null = null,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     if (context.getType() !== 'http') {
@@ -70,9 +86,28 @@ export class SessionGuard implements CanActivate {
     }
     if (!SAFE_METHODS.has(request.method)) {
       assertCsrf(request, found.session);
+      await this.assertNotBanned(context, found.session);
     }
     request.carmineSession = found.session;
     return true;
+  }
+
+  /**
+   * Conta banida entra no site para ver a Punição e como recorrer, mas não muda nada (S07): o
+   * ban já derruba as sessões, e esta checagem cobre um login depois dele.
+   */
+  private async assertNotBanned(context: ExecutionContext, session: Session): Promise<void> {
+    if (!this.isBanned) return;
+    const allowed = this.reflector.getAllAndOverride<boolean>(ALLOW_BANNED, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (allowed || !(await this.isBanned(session.accountId))) return;
+    throw new ForbiddenException({
+      statusCode: 403,
+      code: ACCOUNT_BANNED_CODE,
+      message: 'Conta banida: o site fica só para leitura enquanto o ban durar',
+    });
   }
 }
 

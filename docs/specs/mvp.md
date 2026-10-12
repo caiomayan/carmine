@@ -16,7 +16,7 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 |---|---|---|
 | **A · Núcleo jogável** | S00 a S09 | Amigos jogam Retake e DM com o próprio Loadout, com moderação e termos mínimos |
 | **Beta fechado** | S10 | Critérios qualitativos de saída atendidos |
-| **B · Completo** | S11 a S14 | Perfil completo, Estatísticas, Ranking, Denúncias e VIP pago |
+| **B · Completo** | S11 a S15 | Perfil completo, Estatísticas, Ranking, Denúncias, VIP pago e Discord integrado |
 | **Abertura** | — | Lista de permissão desligada |
 
 ## Fora do escopo do MVP
@@ -27,7 +27,7 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 - Imagem OG personalizada com o Loadout (o link do Perfil tem prévia simples).
 - Feed, seguir, comentários, clips e destaques.
 - Demos, anti-cheat próprio e heurísticas além do VAC.
-- Bot de Discord e vínculo de conta Discord.
+- Bot de Discord e vínculo de conta Discord (fatia S15, depois do beta).
 - Atualização do Loadout em tempo real durante a partida (ADR 0006).
 - Mapas da Workshop.
 - Qualquer mecânica aleatória paga (ADR 0011, permanente).
@@ -64,6 +64,7 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 | S12 Estatísticas e Ranking | S01, S02 |
 | S13 Denúncias e log de chat | S07 |
 | S14 VIP e pagamentos | S05, S08, S09 |
+| S15 Discord integrado | S07, S14 |
 
 ---
 
@@ -209,18 +210,43 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 
 ### S07 · Moderação essencial
 
-- Papéis de Staff: Dono, Admin e Moderador, com permissões na API valendo no site e no jogo. Só o Dono altera papéis.
-- Punições globais (ban, mute, gag), temporárias ou permanentes, sempre com motivo. Aplicadas no connect (ban impede a entrada) e durante a Sessão de jogo; expiram sozinhas.
-- O jogador punido vê o motivo, a duração e como recorrer (na mensagem do jogo e no site).
-- Página de **regras de conduta** e caminho de recurso pelo Discord, com expectativa de resposta de até 72 h (sem promessa de moderação imediata).
-- Painel de Staff no site: busca de Conta, aplicar e revogar Punições, conceder e revogar Período VIP, resetar Nome de exibição.
-- Log de auditoria de toda ação de Staff (autor, ação, alvo, motivo, horário).
+Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são liberados; ofensa pessoal repetida e direcionada leva gag ou mute; discriminação (racismo, homofobia, xenofobia, misoginia) é tolerância zero; ameaça e doxxing são ban permanente; cheat comprovado pela Staff é ban permanente já na 1ª vez (contas com VAC a Steam já barra). Voz ofensiva só é punida com gravação enviada ao suporte.
+
+- **Papéis de Staff:** Dono, Admin e Moderador, com permissões na API valendo no site e no jogo (`STAFF_PERMISSIONS` em `packages/contracts`). Só o Dono altera papéis; o CLI `staff grant/revoke` cria o primeiro Dono e serve de recuperação, e a plataforma nunca fica sem Dono.
+  - Moderador: busca Conta, vê o histórico, aplica Punições temporárias, kick e aviso, revoga só as que aplicou e reseta Nome de exibição.
+  - Admin: tudo do Moderador, mais Punição permanente, revogar qualquer Punição, conceder e revogar Período VIP, editar os Servidores Carmine e ler o log de auditoria inteiro.
+  - Ninguém pune a si mesmo; só o Dono pune alguém da Staff com papel igual ou maior.
+- **Punições** globais (ban, mute, gag, kick e aviso), temporárias ou permanentes, sempre com uma **Categoria de infração** e um motivo livre interno. Ban, mute e gag expiram sozinhos no horário; kick e aviso são instantâneos.
+- **Sugestão por reincidência:** o painel mostra o histórico e sugere a Punição da tabela abaixo, contando as ocorrências da mesma Categoria nos últimos 30 dias (ocorrências, não medidas; recurso aceito não conta). Quem decide é a Staff (no início, só o dono), que confirma ou ajusta; a sugestão do momento vai para o log de auditoria.
+
+  | Categoria de infração | 1ª | 2ª | 3ª | 4ª+ |
+  |---|---|---|---|---|
+  | Chat ofensivo pessoal | aviso | gag 1 h | gag 24 h | gag 7 d |
+  | Voz ofensiva | aviso | mute 1 h | mute 24 h | mute 7 d |
+  | Griefing / AFK proposital / TK proposital | kick | ban 1 d | ban 7 d | ban 30 d |
+  | Abuso de bug / exploit | ban 1 d | ban 7 d | ban 30 d | permanente |
+  | Discriminação | gag 7 d + ban 1 d | ban 30 d | permanente | — |
+  | Cheat / ameaça / doxxing / conta alternativa para fugir de ban | permanente | — | — | — |
+
+- **No jogo:** o ban recusa o connect com a mensagem (Categoria, até quando no horário de Brasília e onde recorrer) e derruba quem está jogando; mute tira a voz e gag bloqueia o chat (comandos como `!ws` continuam). A resposta de cada batimento da S06 leva as Punições dos jogadores conectados (ADR 0017), então tudo vale em até ~10 s; kick e aviso são executados uma vez.
+- **No site:** o ban derruba todas as sessões da Conta (índice de sessões por Conta). O banido pode entrar de novo para ver a Punição e como recorrer, mas o site fica só leitura (mutações respondem 403 `account_banned`). A própria Conta vê o motivo escrito pela Staff das Punições ativas; o Perfil público nunca mostra o motivo.
+- **Perfil público:** selo da Punição ativa ("Banido até 20/10", "Sem chat até 14h"; a cor de erro só no selo) e histórico dos últimos 12 meses (sem avisos) com tipo, Categoria genérica ("Conduta no chat", "Griefing", "Cheat"...), data e duração. O ban permanente por cheat fica sempre visível. O Perfil privado não esconde Punições; recurso aceito remove a Punição do Perfil. Não há lista pública de banidos. (Validar com LGPD.)
+- **Recurso:** ticket no Discord, resposta em até 72 h, 1 recurso por ban permanente, revisado por alguém diferente de quem aplicou quando houver mais de uma pessoa na Staff. Página de **regras de conduta** com a tabela e o caminho do recurso (`/regras#recurso`), sem promessa de moderação imediata.
+- **VIP:** ban temporário não congela o VIP; ban permanente por cheat encerra o VIP sem reembolso (registrado no log; validar CDC). Fraude e chargeback entram com a S14.
+- **Painel de Staff no site** (`/api/staff/*`): buscar Conta (ID público, SteamID64, link Steam ou nome), histórico, aplicar e revogar Punições (revogação com "recurso aceito"), conceder e revogar Período VIP (o CLI `vip` continua), resetar Nome de exibição ("Jogador #ID" enquanto o nome Steam não mudar), papéis e os Servidores Carmine.
+- **Nome dos Servidores Carmine:** a Staff edita o **Nome de vitrine** (texto livre da variante: "Retake · Rotação", "Deathmatch · Livre", "Retake · Mirage") e o **Código do servidor** (região·número: SP·1, SP·2, mostrado pequeno ao lado do IP). No jogo, o hostname vira `Carmine | Retake · Rotação | SP·2`, aplicado pelo Carmine.Core no batimento seguinte. Lançamento: Retake · Rotação e Deathmatch · Livre.
+- **Log de auditoria** de toda ação de Staff (autor, ação, alvo, motivo, horário e o que mudou), consultável com filtros por autor, alvo e ação.
+- **Discord:** moderação manual pela Staff com as ferramentas do próprio Discord, com a mesma tabela; sem espelhamento automático até a S15.
 
 **Aceite**
 - Um ban aplicado no site derruba o jogador em até 15 s e impede novo connect; um mute e um gag têm efeito em até 15 s.
+- O ban derruba as sessões do site da Conta.
 - Uma Punição temporária expira no horário e o jogador volta a jogar ou falar sem intervenção.
+- O painel sugere a Punição da tabela conforme a reincidência em 30 dias.
+- O Perfil público mostra a Punição ativa e o histórico sem o motivo livre; um recurso aceito a remove.
 - Um Moderador não consegue alterar papéis de Staff.
 - Toda ação de Staff aparece no log de auditoria.
+- Mudar o nome de vitrine ou o código no painel muda o hostname do servidor em até 15 s.
 
 ### S08 · Termos e privacidade mínimos
 
@@ -341,6 +367,19 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 - DM com 16 jogadores: um VIP entra numa vaga extra sem ninguém sair; um jogador sem VIP não consegue usar as vagas extras.
 - Depois de restaurar um backup, os Períodos VIP são reconciliados com os pagamentos reais do Mercado Pago.
 
+### S15 · Discord integrado
+
+Depois do beta. Hoje a moderação no Discord é manual (S07).
+
+- Login com Discord no site e vínculo da conta Discord à Conta (a Steam continua sendo a única autenticação da Conta, ADR 0007; o Discord é um vínculo).
+- Cargos sincronizados no servidor Discord: Jogador, VIP, Staff e Dono, atualizados quando o VIP ou o papel de Staff muda.
+- Bot com o status dos Servidores Carmine e links do site.
+- Pagamento e configurações ficam só no site.
+
+**Aceite**
+- Vincular o Discord dá o cargo de Jogador; um VIP concedido ou vencido muda o cargo em até 1 minuto.
+- Um papel de Staff dado no painel aparece como cargo no Discord.
+
 ---
 
 ## Definição de "MVP pronto"
@@ -357,6 +396,7 @@ Retake e Deathmatch em produção; login Steam; Inventário com 3D aplicado no j
 | Configurar o Cloudflare Tunnel no domínio stcarmine.com | S09 |
 | Contratar a VPS de CS2 e gerar os tokens GSLT em contas Steam distintas | S09 |
 | Criar o servidor Discord e os webhooks | S07, S09 |
+| Criar o primeiro Dono com o CLI `staff grant` | S07 |
 | Criar as contas no Sentry e no serviço de uptime | S09 |
 | Revisar as páginas legais | S08, S14 |
 | Criar a conta Mercado Pago e as credenciais (sandbox e produção) | S14 |

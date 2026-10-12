@@ -22,12 +22,13 @@ public enum HeartbeatReportKind
     CameBack,
 }
 
-/// <summary>O que aconteceu com um batimento, para o plugin logar só as transições.</summary>
-public sealed record HeartbeatReport(HeartbeatReportKind Kind, string? Reason = null)
+/// <summary>
+/// O que aconteceu com um batimento, para o plugin logar só as transições. Quando a API recebeu,
+/// <see cref="Result"/> traz o que aplicar no jogo (hostname e Punições, S07).
+/// </summary>
+public sealed record HeartbeatReport(HeartbeatReportKind Kind, string? Reason = null, ServerHeartbeatResult? Result = null)
 {
-    public static readonly HeartbeatReport Sent = new(HeartbeatReportKind.Sent);
     public static readonly HeartbeatReport StillDown = new(HeartbeatReportKind.StillDown);
-    public static readonly HeartbeatReport CameBack = new(HeartbeatReportKind.CameBack);
 }
 
 /// <summary>
@@ -58,9 +59,10 @@ public sealed class HeartbeatReporter(ICarmineApiClient api)
 
     private async Task<HeartbeatReport> SendOneAsync(ServerSnapshot snapshot, CancellationToken cancellationToken)
     {
+        ServerHeartbeatResult result;
         try
         {
-            await api.SendHeartbeatAsync(
+            result = await api.SendHeartbeatAsync(
                 new ServerHeartbeat
                 {
                     Map = snapshot.Map,
@@ -81,9 +83,9 @@ public sealed class HeartbeatReporter(ICarmineApiClient api)
         if (_down)
         {
             _down = false;
-            return HeartbeatReport.CameBack;
+            return new HeartbeatReport(HeartbeatReportKind.CameBack, Result: result);
         }
-        return HeartbeatReport.Sent;
+        return new HeartbeatReport(HeartbeatReportKind.Sent, Result: result);
     }
 
     /// <summary>Cancelamento pedido por nós (plugin descarregando) não conta.</summary>
