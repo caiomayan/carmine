@@ -58,7 +58,7 @@ export async function heartbeat(
     headers: { authorization: `Bearer ${server.key}` },
     data: { map, players, maxPlayers: 9 },
   });
-  if (response.status() !== 204) throw new Error(`batimento recusado: ${response.status()}`);
+  if (response.status() !== 200) throw new Error(`batimento recusado: ${response.status()}`);
 }
 
 /**
@@ -92,6 +92,8 @@ export function fakeServer(over: Partial<LiveServer> = {}): LiveServer {
   return {
     id: crypto.randomUUID(),
     name: `fixo-${randomBytes(2).toString('hex')}`,
+    showcaseName: null,
+    code: null,
     mode: 'retake',
     address: '203.0.113.200:27015',
     region: 'sao-paulo',

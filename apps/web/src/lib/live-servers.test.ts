@@ -21,6 +21,8 @@ describe('Conectar a um Servidor Carmine', () => {
 const server = (over: Partial<LiveServer> = {}): LiveServer => ({
   id: '00000000-0000-4000-8000-000000000001',
   name: 'retake-1',
+  showcaseName: null,
+  code: null,
   mode: 'retake',
   address: '203.0.113.7:27015',
   region: 'sao-paulo',

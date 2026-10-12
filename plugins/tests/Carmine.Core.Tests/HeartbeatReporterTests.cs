@@ -9,7 +9,8 @@ public class HeartbeatReporterTests
     private static readonly ServerSnapshot Snapshot =
         new("de_mirage", [76561198000000001, 76561198000000002], MaxPlayers: 9);
 
-    private static HttpResponseMessage NoContent(SentRequest _) => new(HttpStatusCode.NoContent);
+    private static HttpResponseMessage Ok(SentRequest _) =>
+        StubHandler.Json(HttpStatusCode.OK, """{"hostname":"Carmine | Retake · Rotação | SP·1","sanctions":[]}""");
 
     private static HttpResponseMessage ApiDown(SentRequest _) => throw new HttpRequestException("Connection refused");
 
@@ -30,11 +31,12 @@ public class HeartbeatReporterTests
     [Fact]
     public async Task Envia_mapa_jogadores_como_texto_e_vagas_publicas_com_a_chave_do_servidor()
     {
-        using var f = new Fixture(NoContent);
+        using var f = new Fixture(Ok);
 
         var report = await f.Reporter.SendAsync(Snapshot, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HeartbeatReport.Sent, report);
+        Assert.Equal(HeartbeatReportKind.Sent, report.Kind);
+        Assert.Equal("Carmine | Retake · Rotação | SP·1", report.Result?.Hostname);
         var sent = Assert.Single(f.Api.Requests);
         Assert.Equal(HttpMethod.Post, sent.Method);
         Assert.Equal(new Uri("http://api.test/api/server/heartbeat"), sent.Uri);
@@ -52,15 +54,15 @@ public class HeartbeatReporterTests
 
         var first = await f.Reporter.SendAsync(Snapshot, token);
         var second = await f.Reporter.SendAsync(Snapshot, token);
-        f.Api.Respond = NoContent;
+        f.Api.Respond = Ok;
         var back = await f.Reporter.SendAsync(Snapshot, token);
         var steady = await f.Reporter.SendAsync(Snapshot, token);
 
         Assert.Equal(HeartbeatReportKind.WentDown, first.Kind);
         Assert.StartsWith("API inacessível", first.Reason);
         Assert.Equal(HeartbeatReport.StillDown, second);
-        Assert.Equal(HeartbeatReport.CameBack, back);
-        Assert.Equal(HeartbeatReport.Sent, steady);
+        Assert.Equal(HeartbeatReportKind.CameBack, back.Kind);
+        Assert.Equal(HeartbeatReportKind.Sent, steady.Kind);
     }
 
     [Theory]
@@ -83,7 +85,7 @@ public class HeartbeatReporterTests
         var token = TestContext.Current.CancellationToken;
         await f.Reporter.SendAsync(Snapshot, token);
         await f.Reporter.SendAsync(Snapshot with { Map = "de_nuke" }, token);
-        f.Api.Respond = NoContent;
+        f.Api.Respond = Ok;
 
         await f.Reporter.SendAsync(Snapshot with { Map = "de_inferno" }, token);
 
