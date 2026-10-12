@@ -7,6 +7,8 @@ import {
   liveReducer,
   nextFriends,
   occupancy,
+  serverFullLabel,
+  serverLabel,
   serversOfMode,
   steamConnectUrl,
   updatedSecondsAgo,
@@ -232,5 +234,18 @@ describe('bloco de amigos ao atualizar', () => {
       friends: [],
       stale: false,
     });
+  });
+});
+
+describe('nome do Servidor Carmine na home', () => {
+  it('usa o nome de vitrine e, nos rótulos, o código', () => {
+    const named = server({ showcaseName: 'Retake · Rotação', code: 'SP·2' });
+    expect(serverLabel(named)).toBe('Retake · Rotação');
+    expect(serverFullLabel(named)).toBe('Retake · Rotação (SP·2)');
+  });
+
+  it('sem nome de vitrine, cai no identificador da Staff', () => {
+    expect(serverLabel(server())).toBe('retake-1');
+    expect(serverFullLabel(server())).toBe('retake-1');
   });
 });
