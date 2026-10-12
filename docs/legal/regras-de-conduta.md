@@ -121,7 +121,9 @@ Quem aplica a punição é uma pessoa da Staff. O sistema mostra o seu históric
 - **Chat de voz:** o Carmine **não grava** a voz. Uma denúncia de voz só vira punição se quem denunciou enviar uma gravação (um clipe) ao suporte no Discord.
 - **Cheat:** não gravamos demos. Uma denúncia de cheat precisa de evidência, como um clipe, e é analisada por uma pessoa da Staff.
 
-Para denunciar, use `!report` no jogo ou abra um ticket no Discord. A Staff analisa em até 72 h. Não prometemos moderação imediata.
+Para denunciar, use `!report` no jogo ou abra um ticket no Discord. A Staff analisa em até 72 h e conta a quem denunciou se houve punição (sem expor os detalhes da outra pessoa). Não prometemos moderação imediata.
+
+Cada Conta é presa a uma conta Steam. Para pegar quem volta com outra conta, a Staff compara contas novas com as punidas (por exemplo, pelo histórico de jogo e pelos amigos Steam em comum) antes de aplicar a linha de conta alternativa. [VALIDAR COM ADVOGADO]
 
 ## Recurso
 
@@ -155,6 +157,7 @@ Fazemos isso para que a comunidade saiba com quem está jogando, e para que uma 
 
 - Nunca passe seu nome completo, endereço, escola, telefone ou fotos para quem você conheceu no jogo.
 - Se alguém insistir, ameaçar ou deixar você desconfortável, saia do servidor, denuncie com `!report` e conte para um adulto de confiança.
+- Você pode silenciar qualquer jogador pelo placar do CS2 (Tab) e desligar o chat de voz ou de texto nas configurações do jogo.
 - Para casos graves, você ou seus pais também podem falar direto com a Staff pela página de [contato](/contato). Esse canal pede identificação de quem denuncia; denúncias anônimas não são aceitas para esse tipo de pedido.
 
 ## Discord
@@ -169,6 +172,7 @@ Podemos atualizar estas regras. A data e a versão no topo mostram a última mud
 
 - Lei nº 15.211/2025 (ECA Digital), arts. 6º, 21, 27 a 30, 32 e 33: <https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/L15211.htm>
 - Decreto nº 12.880/2026 (regulamenta o ECA Digital): <https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/d12880.htm>
+- Lei nº 14.852/2024 (Marco Legal dos Games), art. 16 (salvaguardas em jogos com interação): <https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2024/lei/l14852.htm>
 - Lei nº 7.716/1989 (crimes de racismo): <https://www.planalto.gov.br/ccivil_03/leis/l7716.htm>
 - Lei nº 14.532/2023 (injúria racial como racismo): <https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2023/lei/l14532.htm>
 - STF, ADO 26 (homofobia e transfobia equiparadas ao racismo): <https://portal.stf.jus.br/processos/detalhe.asp?incidente=4515053>
