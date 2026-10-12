@@ -44,6 +44,9 @@ import { AccountNotClaimed, LastOwner, type StaffRoles } from './staff-roles.js'
 /** Ações da Staff sobre uma Conta que aparecem no detalhe dela. */
 const DETAIL_AUDIT_ENTRIES = 20;
 
+/** Uma busca maior que isso não é um nome nem um ID: só custaria um `ilike` caro. */
+const STAFF_SEARCH_MAX_LENGTH = 100;
+
 /** Motivo da revogação automática do VIP no ban permanente por cheat. */
 const CHEAT_VIP_REASON = 'Ban permanente por cheat: VIP encerrado sem reembolso';
 
@@ -76,7 +79,7 @@ export class StaffPanel {
    * Nome de exibição ou do nome Steam.
    */
   async search(query: string): Promise<StaffAccountSearch> {
-    const q = query.trim();
+    const q = query.trim().slice(0, STAFF_SEARCH_MAX_LENGTH);
     if (q.length < STAFF_SEARCH_MIN_LENGTH) return { accounts: [] };
     const conditions: SQL[] = [];
     const steamId = /(?:^|\/profiles\/)(7656\d{13})(?:\/|$)/.exec(q)?.[1];
