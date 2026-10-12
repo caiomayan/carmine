@@ -1,4 +1,4 @@
-import { type GameMode, gameModeSchema } from '@carmine/contracts';
+import { type GameMode, gameModeSchema, type ServerRegion } from '@carmine/contracts';
 import { asc, eq } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import { z } from 'zod';
@@ -12,6 +12,7 @@ export interface GameServer {
   name: string;
   mode: GameMode;
   address: string;
+  region: ServerRegion;
   keyRotatedAt: Date;
   createdAt: Date;
 }
@@ -36,6 +37,7 @@ const publicColumns = {
   name: gameServers.name,
   mode: gameServers.mode,
   address: gameServers.address,
+  region: gameServers.region,
   keyRotatedAt: gameServers.keyRotatedAt,
   createdAt: gameServers.createdAt,
 };

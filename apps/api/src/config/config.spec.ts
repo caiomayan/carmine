@@ -19,10 +19,17 @@ describe('loadConfig', () => {
       steamWebApi: { key: null, url: 'https://api.steampowered.com', timeoutMs: 5000 },
       trustedProxies: [],
       rateLimitsPerMinute: { login: 20, public: 240, equipped: 120, mutations: 60, server: 600 },
+      liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
       session: { idleTtlSeconds: 1_209_600, absoluteTtlSeconds: 7_776_000 },
     });
+  });
+
+  it('por padrão, um servidor desligado aparece offline em até 60 s (S06)', () => {
+    const { offlineAfterMs, sweepMs } = loadConfig(validEnv).liveServers;
+
+    expect(offlineAfterMs + sweepMs).toBeLessThanOrEqual(60_000);
   });
 
   it('lê os proxies confiáveis e recusa um que não é IP nem rede', () => {

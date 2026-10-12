@@ -22,6 +22,9 @@ const timestamptz = () => timestamp({ withTimezone: true });
 /** Modo (`Mode`) de um Servidor Carmine. */
 export const gameMode = pgEnum('game_mode', ['retake', 'deathmatch']);
 
+/** Onde o Servidor Carmine roda (S06); no MVP, só a VPS de São Paulo (ADR 0009). */
+export const gameServerRegion = pgEnum('game_server_region', ['sao-paulo']);
+
 /** Servidor Carmine (`GameServer`): uma instância de CS2 de um único Modo. */
 export const gameServers = pgTable('game_servers', {
   id: uuid().primaryKey().defaultRandom(),
@@ -30,6 +33,7 @@ export const gameServers = pgTable('game_servers', {
   mode: gameMode().notNull(),
   /** `host:porta` público do servidor. */
   address: text().notNull(),
+  region: gameServerRegion().notNull().default('sao-paulo'),
   /** SHA-256 da chave do servidor; a chave em si só é mostrada uma vez, ao gerar. */
   keyHash: text().notNull().unique(),
   keyRotatedAt: timestamptz().notNull().defaultNow(),
