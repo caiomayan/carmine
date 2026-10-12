@@ -9,7 +9,7 @@ Cada rota limitada declara uma política com `@RateLimit('<nome>')` (`apps/api/s
 | Política | Conta por | Rotas | Padrão/min | Valkey fora |
 | --- | --- | --- | --- | --- |
 | `login` | IP | `GET /api/auth/steam/login`, `GET /api/auth/steam/callback` | 20 (`RATE_LIMIT_LOGIN_PER_MINUTE`) | fechada (503) |
-| `public` | IP | `GET /api/me`, `GET /api/profiles/*` | 240 (`RATE_LIMIT_PUBLIC_PER_MINUTE`) | aberta |
+| `public` | IP | `GET /api/me`, `GET /api/profiles/*`, `GET /api/servers`, `GET /api/servers/live` (só a abertura do stream), `GET /api/me/friends-playing` | 240 (`RATE_LIMIT_PUBLIC_PER_MINUTE`) | aberta |
 | `equipped` | IP | `GET /api/equipped/v5/*` | 120 (`RATE_LIMIT_EQUIPPED_PER_MINUTE`) | aberta |
 | `mutations` | sessão (sem sessão, IP) | `POST /api/auth/logout` e as mutações do site daqui em diante | 60 (`RATE_LIMIT_MUTATIONS_PER_MINUTE`) | fechada (503) |
 | `server` | Servidor Carmine | `/api/server/*` (plugins) | 600 (`RATE_LIMIT_SERVER_PER_MINUTE`) | aberta |
