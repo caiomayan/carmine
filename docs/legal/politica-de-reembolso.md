@@ -1,7 +1,7 @@
 ---
 title: Política de Reembolso
 updatedAt: 2026-10-12
-version: 0.2.0
+version: 0.3.0
 ---
 
 Esta página explica quando você recebe o dinheiro do VIP de volta, como pedir e o que acontece com o seu Período VIP. Ela complementa os [Termos de Uso](/termos).
@@ -58,7 +58,7 @@ Quando os Servidores Carmine ficam fora do ar, ou os benefícios do VIP param de
 - **Pagou duas vezes por engano:** devolvemos o pagamento duplicado, a qualquer tempo, ou, se preferir, somamos os dias ao seu VIP.
 - **Compra feita por menor de idade:** pais ou responsáveis podem pedir o cancelamento e a devolução integral. [VALIDAR COM ADVOGADO]
 - **Ban temporário:** não gera reembolso nem congela o VIP.
-- **Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida do pagamento:** o VIP acaba e os dias restantes não são reembolsados, exceto se o recurso for aceito. Essa regra aparece em destaque na tela de compra. Isso não afeta o direito de arrependimento de 7 dias. [VALIDAR COM ADVOGADO]
+- **Ban permanente, por qualquer motivo** (cheat, ameaça, doxxing, discriminação reincidente, conta alternativa, assédio sexual ou risco a menores, abuso de bug reincidente, fraude ou contestação indevida do pagamento): o VIP acaba e os dias restantes não são reembolsados, exceto se o recurso for aceito. Essa regra aparece em destaque na tela de compra. Isso não afeta o direito de arrependimento de 7 dias. [VALIDAR COM ADVOGADO]
 
 ## 7. Contestação no banco
 
