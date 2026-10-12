@@ -69,6 +69,10 @@ _Evitar_: setup
 **Preset** (`Preset`):
 Um Loadout salvo com nome, que referencia Itens do Inventário e pode ser ativado de uma vez.
 
+**Preset principal** (`main`):
+O Preset que toda Conta tem e que nunca é apagado nem fica somente leitura; é o único do plano grátis. O Preset ativo é o Loadout.
+_Evitar_: preset padrão, preset default
+
 ## Jogo
 
 **Servidor Carmine** (`GameServer`):

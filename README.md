@@ -49,7 +49,7 @@ Mudou um contrato da API? Rode `pnpm --filter @carmine/api openapi:generate` e f
 
 ## Servidor CS2 local
 
-`infra/scripts/install-cs2-server.ps1` instala SteamCMD, o servidor dedicado do CS2, Metamod:Source e CounterStrikeSharp, compila os plugins e os copia com a config apontando para a API local, e instala o `cs2-css-inventory-simulator` (sem modificação, ADR 0006), que lê o Loadout em `/api/equipped/v5` (convars em `game\csgo\cfg\carmine\inventory-simulator.cfg`, executado pelo `server.cfg`). Padrões: `C:\carmine\cs2-server` e `C:\carmine\steamcmd` (mude com `-ServerDir` e `-SteamCmdDir`).
+`infra/scripts/install-cs2-server.ps1` instala SteamCMD, o servidor dedicado do CS2, Metamod:Source e CounterStrikeSharp, compila os plugins e os copia com a config apontando para a API local, e instala o `cs2-css-inventory-simulator` (sem modificação, ADR 0006), que lê o Loadout em `/api/equipped/v5` (convars em `game\csgo\cfg\carmine\inventory-simulator.cfg`, executado pelo `server.cfg`; o arquivo leva a chave do servidor, então rode a etapa depois de colar a `ApiKey` do `Carmine.Core`). Padrões: `C:\carmine\cs2-server` e `C:\carmine\steamcmd` (mude com `-ServerDir` e `-SteamCmdDir`).
 
 ```powershell
 # Primeira vez: baixa ~60 GB do CS2 (só com -DownloadCs2).
@@ -120,7 +120,7 @@ pnpm --filter @carmine/api vip status --steam-id 76561198000000001   # VIP e as 
 
 ## Loadout e Presets
 
-O Loadout (S05) é o Preset ativo: `GET /api/loadout` traz todos os slots (`weapon_<modelo>`, `knife`, `gloves` e `agent` por lado; `musicKit` sem lado) e `POST /api/loadout/{equip,unequip,assign}` o mudam (o `assign` com o `previous` da resposta é o Desfazer). `/api/presets` cria (VIP, até 20), renomeia, ativa e apaga Presets; sem VIP, os extras ficam somente leitura. O `equipped/v5` aplica a regra do VIP na resposta: sem Período ativo, agentes e music kits ficam fora e StatTrak e nametag saem dos Itens.
+O Loadout (S05) é o Preset ativo: `GET /api/loadout` traz todos os slots (`weapon_<modelo>`, `knife`, `gloves` e `agent` por lado; `musicKit` sem lado) e `POST /api/loadout/{equip,unequip,assign}` o mudam (o `assign` com o `previous` da resposta é o Desfazer). `/api/presets` cria (VIP, até 20), renomeia, ativa e apaga Presets; sem VIP, os extras ficam somente leitura. O `equipped/v5` aplica a regra do VIP na resposta: sem Período ativo, agentes e music kits ficam fora e StatTrak e nametag saem dos Itens. A cada abate, o plugin chama `POST /api/increment-item-stattrak` com a chave do Servidor Carmine (`invsim_apikey`, gravada pela etapa `InventorySimulator` a partir da `ApiKey` do `Carmine.Core`): o StatTrak do Item do Loadout sobe 1 se a Conta tem VIP; senão, a chamada é ignorada.
 
 Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/vip/vip.cli.js grant ...`.
 

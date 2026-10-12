@@ -125,27 +125,25 @@ export function inGameOf(
 
 /**
  * Atributos que o cs2-css-inventory-simulator (sem modificação) não aplica por completo no
- * jogo, para o editor avisar antes de salvar:
- * - `stattrak_not_counted`: o contador aparece com o valor salvo, mas os abates não são
- *   gravados (a Carmine não recebe o incremento do plugin); a cada connect ou `!ws` ele volta
- *   ao valor salvo.
+ * jogo, para o editor avisar antes de salvar. Hoje, nenhum: float, seed, StatTrak (o contador
+ * sobe a cada abate, gravado por `POST /api/increment-item-stattrak`), nametag, stickers
+ * (posição, rotação, desgaste), charm, faca, luvas, agente por time e music kit são aplicados.
+ * A lista fica para o que uma versão nova do plugin ou do jogo deixar de aplicar.
  *
- * Tudo o mais que o Inventário aceita é aplicado: float, seed, nametag, stickers (posição,
- * rotação, desgaste), charm, faca, luvas, agente por time e music kit. Observação sem aviso: se
- * duas armas visíveis no servidor tiverem a mesma pintura, o mesmo seed e o float igual até a
- * 3ª casa, mas stickers diferentes, o plugin desloca o float de uma delas em passos de 0,001
- * (limitação do cache de materiais do CS2).
+ * Observação sem aviso: se duas armas visíveis no servidor tiverem a mesma pintura, o mesmo seed
+ * e o float igual até a 3ª casa, mas stickers diferentes, o plugin desloca o float de uma delas
+ * em passos de 0,001 (limitação do cache de materiais do CS2).
  */
-export const GAME_LIMITATIONS = ['stattrak_not_counted'] as const;
+export const GAME_LIMITATIONS = [] as const satisfies readonly string[];
 
 export type GameLimitation = (typeof GAME_LIMITATIONS)[number];
 
 /** Limitações do jogo para este Item (vazio se tudo é aplicado). Ver {@link GAME_LIMITATIONS}. */
 export function gameLimitationsOf(
   _type: string,
-  item: { statTrak?: number | undefined },
+  _item: { statTrak?: number | undefined },
 ): { code: GameLimitation; field: string }[] {
-  return item.statTrak === undefined ? [] : [{ code: 'stattrak_not_counted', field: 'statTrak' }];
+  return [];
 }
 
 /** Um slot de um lado, e o Item que está nele (`uid` nulo = Arma padrão). */

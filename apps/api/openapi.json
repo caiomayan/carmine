@@ -509,6 +509,124 @@
         ]
       }
     },
+    "/api/increment-item-stattrak": {
+      "post": {
+        "operationId": "incrementItemStatTrak",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvsimItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Contado; ou ignorado em silêncio (Item sem StatTrak, Conta sem VIP ou Item fora do Loadout)"
+          },
+          "400": {
+            "description": "Corpo inválido, ou nenhum Item com esse uid no Inventário dessa Conta"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Um abate com o Item: soma 1 ao StatTrak (Item do Loadout, Conta com VIP)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/consume-item-spray": {
+      "post": {
+        "operationId": "consumeItemSpray",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvsimItemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Nada a consumir"
+          },
+          "400": {
+            "description": "Corpo inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Não faz nada: grafites não são Itens na Carmine",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/inventory": {
       "get": {
         "operationId": "getInventory",
@@ -2619,6 +2737,27 @@
           "uid"
         ],
         "additionalProperties": false
+      },
+      "InvsimItemRequest": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "targetUid": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "userId": {
+            "$ref": "#/components/schemas/SteamId64"
+          }
+        },
+        "required": [
+          "targetUid",
+          "userId"
+        ]
       },
       "Inventory": {
         "type": "object",

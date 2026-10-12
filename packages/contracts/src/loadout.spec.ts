@@ -68,11 +68,9 @@ describe('inGameOf', () => {
 });
 
 describe('gameLimitationsOf', () => {
-  it('avisa que o contador do StatTrak não sobe no jogo', () => {
-    expect(gameLimitationsOf('weapon', { statTrak: 0 })).toEqual([
-      { code: 'stattrak_not_counted', field: 'statTrak' },
-    ]);
-    expect(gameLimitationsOf('weapon', {})).toEqual([]);
+  it('o plugin aplica tudo o que o Inventário aceita, inclusive o contador do StatTrak', () => {
+    expect(gameLimitationsOf('weapon', { statTrak: 0 })).toEqual([]);
+    expect(gameLimitationsOf('musickit', { statTrak: 3 })).toEqual([]);
   });
 });
 
