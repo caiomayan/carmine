@@ -5,8 +5,9 @@ import {
   liveServerListSchema,
   type ServerHeartbeat,
 } from '@carmine/contracts';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
+import { LiveServerStreams } from '../src/live-servers/live-server-streams.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { openEventStream } from './support/event-stream.js';
 
@@ -147,6 +148,19 @@ describe('Servidores ao vivo (S06)', () => {
     } finally {
       stream.close();
     }
+  });
+
+  it('quando o navegador sai, o stream é liberado', async () => {
+    const streams = t.app.get(LiveServerStreams);
+    // Os streams dos testes anteriores também já foram fechados pelo cliente.
+    await vi.waitFor(() => expect(streams.openCount).toBe(0));
+    const stream = await openEventStream(`${baseUrl}/api/servers/live`);
+    await stream.next();
+    expect(streams.openCount).toBe(1);
+
+    stream.close();
+
+    await vi.waitFor(() => expect(streams.openCount).toBe(0));
   });
 
   it('rejeita um batimento malformado', async () => {

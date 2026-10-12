@@ -5,7 +5,7 @@ import {
   LIVE_SERVERS_RETRY_MS,
 } from '@carmine/contracts';
 import type { BeforeApplicationShutdown } from '@nestjs/common';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import type { LiveServers } from './live-servers.js';
 
 /**
@@ -19,7 +19,7 @@ export class LiveServerStreams implements BeforeApplicationShutdown {
   constructor(private readonly live: LiveServers) {}
 
   /** Assume a resposta (o Fastify não a envia mais) e a mantém aberta até o cliente sair. */
-  stream(request: FastifyRequest, reply: FastifyReply): void {
+  stream(reply: FastifyReply): void {
     reply.hijack();
     const raw = reply.raw;
     raw.writeHead(200, {
@@ -40,13 +40,20 @@ export class LiveServerStreams implements BeforeApplicationShutdown {
       raw.write(`event: ${LIVE_SERVERS_EVENT}\ndata: ${JSON.stringify(list)}\n\n`);
     });
     const close = () => {
+      if (!this.open.delete(close)) return;
       clearInterval(keepalive);
       unsubscribe();
-      this.open.delete(close);
       raw.end();
     };
     this.open.add(close);
-    request.raw.once('close', close);
+    // O 'close' da resposta, não o da requisição: este dispara assim que o corpo (vazio) é lido;
+    // aquele, quando o cliente sai (ou quando nós encerramos).
+    raw.once('close', close);
+  }
+
+  /** Quantos streams estão abertos agora. */
+  get openCount(): number {
+    return this.open.size;
   }
 
   /** Fecha os streams abertos: senão o encerramento esperaria cada cliente sair. */
