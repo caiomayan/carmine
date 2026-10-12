@@ -27,7 +27,7 @@ export interface RateLimitPolicy {
 export const RATE_LIMIT_POLICIES = {
   /** Início e volta do login Steam: cada volta custa uma ida à Steam (check_authentication). */
   login: { subject: 'ip', whenUnavailable: 'deny' },
-  /** Leituras públicas do site (Perfis, `/api/me`). */
+  /** Leituras públicas do site (Perfis, `/api/me`, servidores ao vivo e amigos jogando). */
   public: { subject: 'ip', whenUnavailable: 'allow' },
   /** `equipped/v5`: o servidor de jogo pede pelos jogadores todos, de um IP só. */
   equipped: { subject: 'ip', whenUnavailable: 'allow' },

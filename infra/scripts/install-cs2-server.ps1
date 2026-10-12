@@ -189,7 +189,7 @@ function Install-Plugins {
         $configFile = Join-Path $configDir "$plugin.json"
         if (-not (Test-Path $configFile)) {
             New-Item -ItemType Directory -Force -Path $configDir | Out-Null
-            [ordered]@{ ApiBaseUrl = $ApiBaseUrl; ApiKey = ''; TimeoutSeconds = 5; RetryIntervalSeconds = 15; ConfigVersion = 1 } |
+            [ordered]@{ ApiBaseUrl = $ApiBaseUrl; ApiKey = ''; TimeoutSeconds = 5; RetryIntervalSeconds = 15; HeartbeatIntervalSeconds = 10; PublicSlots = 0; ConfigVersion = 1 } |
                 ConvertTo-Json | Set-Content -Path $configFile -Encoding utf8
             Write-Host "    config criada em $configFile"
             Write-Host "    cole em ApiKey a chave de 'pnpm --filter @carmine/api servers create' (veja o README)"

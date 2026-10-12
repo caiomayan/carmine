@@ -124,10 +124,28 @@ O Loadout (S05) é o Preset ativo: `GET /api/loadout` traz todos os slots (`weap
 
 Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/vip/vip.cli.js grant ...`.
 
+## Servidores ao vivo e amigos jogando
+
+O Carmine.Core manda um batimento (`POST /api/server/heartbeat`, com a chave do servidor) a cada `HeartbeatIntervalSeconds` (10 s) e 1 s depois de cada connect, disconnect e troca de mapa: o mapa, os SteamID64 dos jogadores humanos e as vagas públicas (`PublicSlots` no `Carmine.Core.json`; 0 usa o `maxplayers`; no Retake, 9, sem a folga da Vaga reservada). A API guarda o último batimento no Valkey; sem batimento por `SERVER_OFFLINE_AFTER_SECONDS` (45 s) o servidor fica offline, e uma varredura a cada `LIVE_SERVERS_SWEEP_SECONDS` (5 s) avisa a home. Com a API fora, nada fica em fila (o próximo batimento leva o estado inteiro) e o log do servidor mostra só a queda e a volta.
+
+- `GET /api/servers`: a lista pública (Modo, nome, endereço, região, mapa, jogadores/vagas, estado online/lotado/offline) e o resumo do rodapé.
+- `GET /api/servers/live`: a mesma lista por SSE (ADR 0016), logo ao conectar e a cada mudança.
+- `GET /api/me/friends-playing`: os amigos Steam da Conta da sessão jogando agora (`ok`), a lista de amigos privada (`private`) ou a Steam indisponível (`unavailable`, também sem `STEAM_WEB_API_KEY`). A lista de amigos fica 60 s em cache no Valkey (15 s com a Steam fora); quem está jogando é sempre o atual.
+
+Para ver sem um CS2 de verdade, mande o batimento à mão com a chave de um servidor cadastrado:
+
+```sh
+curl -X POST http://localhost:3333/api/server/heartbeat -H "Authorization: Bearer <chave>" \
+  -H "Content-Type: application/json" -d '{"map":"de_mirage","players":["76561198000000002"],"maxPlayers":9}'
+curl -N http://localhost:3333/api/servers/live   # Ctrl+C para sair
+```
+
 ## Rate limit e IP real
 
 As rotas da API são limitadas por política (`@RateLimit`), com contagem no Valkey; os limites mudam por `RATE_LIMIT_*_PER_MINUTE`. Atrás do Cloudflare Tunnel, o IP do visitante vem de `CF-Connecting-IP`, aceito só de `TRUSTED_PROXIES` (vazio em desenvolvimento). Políticas, falha segura e a configuração da S09: [docs/operacao/rate-limit-e-ip-real.md](docs/operacao/rate-limit-e-ip-real.md).
 
 ## Steam Web API
 
-Os avatares das Contas vêm da Steam Web API. Crie a chave em https://steamcommunity.com/dev/apikey e coloque-a só no `apps/api/.env` local (`STEAM_WEB_API_KEY=...`), nunca no repositório. Sem a chave, as Contas ficam com o avatar neutro.
+Os avatares das Contas e as listas de amigos ("Seus amigos jogando agora") vêm da Steam Web API. Crie a chave em https://steamcommunity.com/dev/apikey e coloque-a só no `apps/api/.env` local (`STEAM_WEB_API_KEY=...`), nunca no repositório. Sem a chave, as Contas ficam com o avatar neutro e o bloco de amigos aparece como Steam indisponível.
+
+Sem a Steam real, a Steam falsa (`pnpm --filter @carmine/api fake-steam`) responde também a Steam Web API na mesma porta: `STEAM_WEB_API_URL=http://127.0.0.1:4555` e qualquer `STEAM_WEB_API_KEY`. Nela nenhum perfil existe (avatar neutro), os SteamID64 de `76561198000000001` a `76561198000000999` são amigos de todos, `76561198000009001` tem a lista de amigos privada e `76561198000009002` faz a Steam falhar.

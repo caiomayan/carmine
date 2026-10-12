@@ -13,7 +13,6 @@ import {
   HttpStatus,
   Inject,
   Post,
-  Req,
   Res,
   ServiceUnavailableException,
   UseGuards,
@@ -29,7 +28,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyReply } from 'fastify';
 import type { GameServer } from '../game-servers/game-server-registry.js';
 import { CurrentGameServer, ServerKeyGuard } from '../game-servers/server-key.guard.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
@@ -103,7 +102,7 @@ export class LiveServersController {
   })
   @ApiProduces('text/event-stream')
   @ApiOkResponse({ description: 'Stream aberto' })
-  stream(@Req() request: FastifyRequest, @Res() reply: FastifyReply): void {
-    this.streams.stream(request, reply);
+  stream(@Res() reply: FastifyReply): void {
+    this.streams.stream(reply);
   }
 }
