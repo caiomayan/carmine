@@ -12,7 +12,9 @@ namespace Carmine.Core;
 /// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e dá as boas-vindas no primeiro
 /// connect. Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois; na
 /// S05, ele também é avisado de que o Loadout não carregou (o cs2-css-inventory-simulator, sem
-/// modificação, aplica o Loadout e não tem esse aviso).
+/// modificação, aplica o Loadout e não tem esse aviso). Na S06, manda o batimento (mapa, jogadores
+/// e vagas públicas) a cada HeartbeatIntervalSeconds e logo depois de cada connect e disconnect,
+/// para a home do site mudar em segundos.
 /// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
 /// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
@@ -29,10 +31,12 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HttpClient? _http;
     private AccountSync? _sync;
     private PendingWelcomes? _welcomes;
+    private HeartbeatReporter? _heartbeat;
+    private bool _heartbeatScheduled;
     private readonly LoadoutNotices _loadoutNotices = new();
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.4.0";
+    public override string ModuleVersion => "0.5.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -44,9 +48,13 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             throw new ArgumentException($"ApiBaseUrl inválida: '{config.ApiBaseUrl}'", nameof(config));
         }
-        if (config.TimeoutSeconds <= 0 || config.RetryIntervalSeconds <= 0)
+        if (config.TimeoutSeconds <= 0 || config.RetryIntervalSeconds <= 0 || config.HeartbeatIntervalSeconds <= 0)
         {
-            throw new ArgumentException("TimeoutSeconds e RetryIntervalSeconds devem ser maiores que zero", nameof(config));
+            throw new ArgumentException("TimeoutSeconds, RetryIntervalSeconds e HeartbeatIntervalSeconds devem ser maiores que zero", nameof(config));
+        }
+        if (config.PublicSlots < 0)
+        {
+            throw new ArgumentException("PublicSlots não pode ser negativo (0 usa o maxplayers)", nameof(config));
         }
         Config = config;
     }
@@ -70,12 +78,15 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         _sync = new AccountSync(client, pending, TimeProvider.System);
         _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
+        _heartbeat = new HeartbeatReporter(client);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
         RegisterEventHandler<EventPlayerSpawn>(OnPlayerSpawn);
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
+        AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);
+        RegisterListener<Listeners.OnMapStart>(OnMapStart);
 
         var probe = new ApiHealthProbe(client);
         RunInBackground(async token =>
@@ -108,6 +119,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http = null;
         _sync = null;
         _welcomes = null;
+        _heartbeat = null;
     }
 
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -115,6 +127,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (@event.Userid is { } player && IsHuman(player))
         {
             SyncPlayer(player);
+            ScheduleHeartbeat();
         }
         return HookResult.Continue;
     }
@@ -172,6 +185,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
+            ScheduleHeartbeat();
         }
         return HookResult.Continue;
     }
@@ -205,6 +219,58 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                     break;
                 case ConnectOutcome.Rejected rejected:
                     Log.ConnectRejected(Logger, steamId, rejected.Reason);
+                    break;
+            }
+        });
+    }
+
+    /// <summary>O mapa novo aparece no site logo, não só no próximo batimento.</summary>
+    private void OnMapStart(string mapName) => ScheduleHeartbeat();
+
+    /// <summary>
+    /// Batimento extra logo depois de um connect ou disconnect (um só para vários em sequência): o
+    /// jogador que saiu ainda está na lista durante o evento, e a home muda em segundos, não em 10 s.
+    /// </summary>
+    private void ScheduleHeartbeat()
+    {
+        if (_heartbeatScheduled)
+        {
+            return;
+        }
+        _heartbeatScheduled = true;
+        AddTimer(1.0f, () =>
+        {
+            _heartbeatScheduled = false;
+            SendHeartbeat();
+        });
+    }
+
+    /// <summary>Na thread do jogo: lê o estado agora e manda fora dela.</summary>
+    private void SendHeartbeat()
+    {
+        if (_heartbeat is not { } heartbeat)
+        {
+            return;
+        }
+        var players = Utilities.GetPlayers()
+            .Where(p => IsHuman(p) && p.Connected == PlayerConnectedState.Connected)
+            .Select(p => p.SteamID)
+            .Distinct()
+            .ToList();
+        var snapshot = new ServerSnapshot(
+            Server.MapName,
+            players,
+            Config.PublicSlots > 0 ? Config.PublicSlots : Server.MaxPlayers);
+        RunInBackground(async token =>
+        {
+            var report = await heartbeat.SendAsync(snapshot, token);
+            switch (report.Kind)
+            {
+                case HeartbeatReportKind.WentDown:
+                    Log.HeartbeatDown(Logger, report.Reason ?? "");
+                    break;
+                case HeartbeatReportKind.CameBack:
+                    Log.HeartbeatBack(Logger);
                     break;
             }
         });
