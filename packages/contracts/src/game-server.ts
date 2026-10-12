@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { gameSanctionSchema } from './moderation.js';
 import { steamId64Schema } from './steam.js';
 
 /** Modo de um Servidor Carmine. O 5v5 casual entra depois do MVP. */
@@ -27,6 +28,11 @@ export const playerConnectResultSchema = z
     displayName: z.string().min(1),
     /** Primeiro connect da Conta a um Servidor Carmine: o plugin mostra a mensagem de boas-vindas. */
     isFirstConnect: z.boolean(),
+    /**
+     * Punições da Conta a aplicar já no connect (S07): com um `ban`, o plugin mostra a `message`
+     * e tira o jogador do servidor; `mute` e `gag` valem desde o primeiro instante.
+     */
+    sanctions: z.array(gameSanctionSchema),
   })
   .meta({ id: 'PlayerConnectResult' });
 
