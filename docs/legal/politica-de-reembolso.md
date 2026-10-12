@@ -1,7 +1,7 @@
 ---
 title: Política de Reembolso
 updatedAt: 2026-10-12
-version: 0.1.0
+version: 0.2.0
 ---
 
 Esta página explica quando você recebe o dinheiro do VIP de volta, como pedir e o que acontece com o seu Período VIP. Ela complementa os [Termos de Uso](/termos).
@@ -24,7 +24,7 @@ Toda compra pela internet pode ser desfeita em até 7 dias, pelo Código de Defe
 
 ## 2. Como pedir
 
-1. Pelo site: em "Minhas compras", use **Pedir reembolso** no pagamento. [CONFIRMAR: botão previsto na S14; o Decreto 7.962/2013 exige que o arrependimento possa ser feito pelo mesmo meio da compra]
+1. **Pelo site, no mesmo lugar da compra:** em "Minhas compras", use **Pedir reembolso** no pagamento. É o caminho principal: a lei garante que você possa desistir pelo mesmo meio que usou para comprar (Decreto 7.962/2013, art. 5º, § 1º).
 2. Ou pela página de [contato](/contato), com o assunto "Reembolso", o seu ID público e o identificador do pagamento (aparece em "Minhas compras" e no comprovante do Mercado Pago).
 3. Também aceitamos o pedido por ticket no Discord do Carmine.
 
@@ -33,7 +33,7 @@ Confirmamos que recebemos o pedido na hora (no site) ou em até 1 dia (contato e
 ## 3. Prazos
 
 - **Análise:** pedidos de arrependimento dentro dos 7 dias não precisam de análise; só conferimos o pagamento.
-- **Devolução:** a Staff faz o estorno no Mercado Pago em até [DONO: sugestão de 2 dias úteis] depois do pedido. A lei pede que a devolução seja imediata. [VALIDAR COM ADVOGADO]
+- **Devolução:** a Staff faz o estorno no Mercado Pago em até 2 dias úteis depois do pedido. A lei pede que a devolução seja imediata. [VALIDAR COM ADVOGADO]
 - **Quando o dinheiro chega:** o estorno de um Pix volta para a conta de quem pagou, normalmente no mesmo dia em que o Mercado Pago o processa.
 - **Resposta:** qualquer pedido sobre o VIP tem resposta em até 5 dias (Decreto 7.962/2013, art. 4º).
 
@@ -58,7 +58,7 @@ Quando os Servidores Carmine ficam fora do ar, ou os benefícios do VIP param de
 - **Pagou duas vezes por engano:** devolvemos o pagamento duplicado, a qualquer tempo, ou, se preferir, somamos os dias ao seu VIP.
 - **Compra feita por menor de idade:** pais ou responsáveis podem pedir o cancelamento e a devolução integral. [VALIDAR COM ADVOGADO]
 - **Ban temporário:** não gera reembolso nem congela o VIP.
-- **Ban permanente por cheat, fraude ou contestação indevida do pagamento:** o VIP acaba e os dias restantes não são reembolsados, exceto se o recurso for aceito. Isso não afeta o direito de arrependimento de 7 dias. [VALIDAR COM ADVOGADO]
+- **Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida do pagamento:** o VIP acaba e os dias restantes não são reembolsados, exceto se o recurso for aceito. Essa regra aparece em destaque na tela de compra. Isso não afeta o direito de arrependimento de 7 dias. [VALIDAR COM ADVOGADO]
 
 ## 7. Contestação no banco
 
