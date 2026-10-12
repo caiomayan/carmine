@@ -1,7 +1,7 @@
 ---
 title: Regras de conduta
 updatedAt: 2026-10-12
-version: 0.2.0
+version: 0.3.0
 ---
 
 Estas regras valem em todos os Servidores Carmine, no site stcarmine.com e no Discord do Carmine. Elas fazem parte dos [Termos de Uso](/termos): ao jogar num Servidor Carmine, você concorda com elas.
@@ -51,7 +51,7 @@ As duas dão ban permanente já na primeira vez.
 
 Cheat é qualquer programa, script, macro ou modificação que dê vantagem: aimbot, wallhack, triggerbot, bhop por script, entre outros. Cheat comprovado pela Staff dá **ban permanente em todos os Servidores Carmine já na primeira vez**.
 
-Para aplicar um ban por cheat, a Staff precisa de pelo menos uma destas coisas, ou das duas: uma **testemunha identificada** (alguém que viu, seja jogador do Carmine ou não) ou uma **evidência anexada**, como um clipe ou uma gravação de tela.
+Para aplicar um ban por cheat, a Staff precisa de pelo menos uma destas coisas, ou das duas: uma **testemunha identificada** (alguém que viu, seja jogador do Carmine ou não) ou uma **evidência anexada**, como um clipe ou uma gravação de tela. Nos dois casos o ban é permanente; o que muda é o que aparece no Perfil (veja "Punições no Perfil").
 
 Contas com banimento VAC já são barradas pela própria Steam nos servidores com VAC; o Carmine não precisa verificar isso.
 
@@ -115,7 +115,7 @@ Quem aplica a punição é uma pessoa da Staff. O sistema mostra o seu históric
 ### Punições e VIP
 
 - Ban temporário **não** pausa o seu Período VIP: os dias continuam correndo.
-- Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida de pagamento encerra o VIP sem reembolso. Os detalhes estão nos [Termos de Uso](/termos). [VALIDAR COM ADVOGADO]
+- **Ban permanente encerra o VIP**, sem reembolso dos dias restantes, qualquer que seja o motivo. Os detalhes estão nos [Termos de Uso](/termos). [VALIDAR COM ADVOGADO]
 
 ## Como a Staff analisa
 
@@ -149,7 +149,7 @@ O Carmine não tem lista pública de banidos. A informação aparece só no Perf
 - **Punição ativa (visível para todos):** um selo como "Banido até 20/10" ou "Silenciado no chat até 14h".
 - **Histórico dos últimos 12 meses (visível só para quem está logado no site):** tipo da punição, categoria genérica ("Conduta no chat", "Griefing", "Cheat"...), data e duração. Avisos não aparecem.
 - **O motivo escrito pela Staff nunca aparece no Perfil.** Só você vê esse texto.
-- **Ban permanente por cheat** fica sempre visível no Perfil.
+- **Ban permanente por cheat** fica sempre visível no Perfil. O selo só diz "Cheat" quando há evidência anexada (como um clipe). Se o ban se apoiou só em testemunha, o selo e o histórico mostram uma categoria neutra: "Violação das regras".
 - **O Perfil privado não esconde punições.** Ele esconde as Estatísticas e a sua identidade no Ranking, não o histórico de conduta.
 - Recurso aceito retira a punição do Perfil.
 
