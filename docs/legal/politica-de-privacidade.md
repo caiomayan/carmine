@@ -1,7 +1,7 @@
 ---
 title: Política de Privacidade
 updatedAt: 2026-10-12
-version: 0.2.0
+version: 0.3.0
 ---
 
 Esta página explica quais dados pessoais o Carmine usa, para quê, com quem compartilha, por quanto tempo guarda e como você pode controlar tudo isso. Ela segue a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).
@@ -98,7 +98,7 @@ O Carmine é uma plataforma de jogo com Perfis públicos. Qualquer pessoa pode v
 
 O Perfil privado só pode ser ativado por quem já entrou no site (Conta reivindicada). **Nenhum Perfil aparece em buscadores** como o Google: pedimos aos buscadores que não indexem essas páginas.
 
-**Sobre as punições no Perfil.** O selo da punição ativa é público; o histórico só aparece para quem está logado. Mostramos só o tipo, uma categoria genérica (como "Conduta no chat" ou "Cheat"), a data e a duração. O motivo escrito pela Staff nunca é público. Avisos não aparecem. Ban permanente por cheat fica sempre visível. Punição retirada em recurso some do Perfil. Não existe lista pública de banidos. Fazemos isso para proteger os outros jogadores e dar transparência à moderação, e o Perfil privado não esconde punições porque, se escondesse, a proteção perderia o sentido. [VALIDAR COM ADVOGADO]
+**Sobre as punições no Perfil.** O selo da punição ativa é público; o histórico só aparece para quem está logado. Mostramos só o tipo, uma categoria genérica (como "Conduta no chat" ou "Cheat"), a data e a duração. O motivo escrito pela Staff nunca é público. Avisos não aparecem. Ban permanente por cheat fica sempre visível, mas a categoria "Cheat" só aparece quando há evidência anexada; se o ban se apoiou só em testemunha, aparece "Violação das regras". Punição retirada em recurso some do Perfil. Não existe lista pública de banidos. Fazemos isso para proteger os outros jogadores e dar transparência à moderação, e o Perfil privado não esconde punições porque, se escondesse, a proteção perderia o sentido. [VALIDAR COM ADVOGADO]
 
 ## 5. Com quem compartilhamos
 
