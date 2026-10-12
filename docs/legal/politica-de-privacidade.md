@@ -1,7 +1,7 @@
 ---
 title: Política de Privacidade
 updatedAt: 2026-10-12
-version: 0.1.0
+version: 0.2.0
 ---
 
 Esta página explica quais dados pessoais o Carmine usa, para quê, com quem compartilha, por quanto tempo guarda e como você pode controlar tudo isso. Ela segue a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).
@@ -13,8 +13,9 @@ O resumo: o Carmine funciona com a sua conta Steam e com o que acontece nos Serv
 O controlador dos dados é o operador do Carmine, pessoa física:
 
 - **Controlador:** [DONO: nome completo], CPF [DONO: número]
-- **Encarregado (pessoa de contato para privacidade):** [DONO: nome; recomendação: o próprio dono] [VALIDAR COM ADVOGADO]
-- **Canal para pedidos de privacidade:** página de [contato](/contato), assunto "Privacidade"
+- **Encarregado (pessoa de contato para privacidade):** o próprio responsável pelo Carmine, [DONO: nome completo]
+- **E-mail do encarregado:** [DONO: e-mail de contato, por exemplo privacidade@stcarmine.com]
+- **Outro canal para pedidos de privacidade:** página de [contato](/contato), assunto "Privacidade"
 
 ## 2. Que dados usamos
 
@@ -92,11 +93,12 @@ O Carmine é uma plataforma de jogo com Perfis públicos. Qualquer pessoa pode v
 | Presença (em qual servidor você está agora) | Aparece | **Continua aparecendo** |
 | Estatísticas | Aparece | Escondidas |
 | Nome no Ranking | Aparece | Vira "Jogador privado" |
-| Selo da punição ativa e histórico dos últimos 12 meses | Aparece | **Continua aparecendo** |
+| Selo da punição ativa | Aparece | **Continua aparecendo** |
+| Histórico de punições dos últimos 12 meses | Só para quem está logado no site | **Só para quem está logado no site** |
 
-O Perfil privado só pode ser ativado por quem já entrou no site (Conta reivindicada).
+O Perfil privado só pode ser ativado por quem já entrou no site (Conta reivindicada). **Nenhum Perfil aparece em buscadores** como o Google: pedimos aos buscadores que não indexem essas páginas.
 
-**Sobre as punições no Perfil.** Mostramos só o tipo, uma categoria genérica (como "Conduta no chat" ou "Cheat"), a data e a duração. O motivo escrito pela Staff nunca é público. Avisos não aparecem. Ban permanente por cheat fica sempre visível. Punição retirada em recurso some do Perfil. Não existe lista pública de banidos. Fazemos isso para proteger os outros jogadores e dar transparência à moderação, e o Perfil privado não esconde punições porque, se escondesse, a proteção perderia o sentido. [VALIDAR COM ADVOGADO]
+**Sobre as punições no Perfil.** O selo da punição ativa é público; o histórico só aparece para quem está logado. Mostramos só o tipo, uma categoria genérica (como "Conduta no chat" ou "Cheat"), a data e a duração. O motivo escrito pela Staff nunca é público. Avisos não aparecem. Ban permanente por cheat fica sempre visível. Punição retirada em recurso some do Perfil. Não existe lista pública de banidos. Fazemos isso para proteger os outros jogadores e dar transparência à moderação, e o Perfil privado não esconde punições porque, se escondesse, a proteção perderia o sentido. [VALIDAR COM ADVOGADO]
 
 ## 5. Com quem compartilhamos
 
@@ -106,9 +108,9 @@ Não vendemos dados pessoais. Compartilhamos só o necessário com quem nos ajud
 |---|---|---|
 | **Valve / Steam** | O seu SteamID64 nos pedidos à Steam Web API; o login acontece na página da Steam | Login, nome, avatar e amigos; os Servidores Carmine rodam o servidor oficial do CS2, que se comunica com a Steam |
 | **Mercado Pago** | Valor, Conta beneficiada e os dados que o Pagador informa a ele | Processar o Pix e os reembolsos |
-| **Cloudflare** | Todo o tráfego do site passa por ela, incluindo o seu IP | Proteção contra ataques e entrega do site; também guarda as cópias de segurança do banco (Cloudflare R2) |
-| **Oracle Cloud** | O banco de dados e a API ficam nos servidores dela | Hospedagem |
-| **Provedor da VPS dos servidores de jogo** [DONO: nome do provedor] | O seu IP e o que acontece no servidor | Hospedagem dos Servidores Carmine |
+| **Cloudflare** | Todo o tráfego do site passa por ela, incluindo o seu IP | Proteção contra ataques e entrega do site (só trânsito); também guarda as cópias de segurança do banco (Cloudflare R2) |
+| **Oracle Cloud** (região de São Paulo) | O banco de dados e a API ficam nos servidores dela | Hospedagem |
+| **Provedor da VPS dos servidores de jogo**, no Brasil [DONO: nome do provedor] | O seu IP e o que acontece no servidor | Hospedagem dos Servidores Carmine |
 | **3d.cstrike.app** (visualizador 3D de Ian Lucas) | Os atributos do Item que você está vendo e o seu IP, porque o visualizador carrega dentro do site | Mostrar as skins em 3D. O visualizador também envia relatórios de erro para uma ferramenta de telemetria (GlitchTip) operada pelo próprio visualizador |
 | **Sentry** [CONFIRMAR: quando entrar em produção] | Dados técnicos de erros do site, da API e dos plugins, que podem incluir o seu SteamID64 e o seu IP | Achar e corrigir erros |
 | **Discord** | O que você envia nos tickets; denúncias encaminhadas ao canal da Staff, com as últimas linhas do chat do momento | Suporte e moderação |
@@ -118,22 +120,22 @@ Cada um desses serviços tem a sua própria política de privacidade.
 
 ## 6. Onde os dados ficam
 
-- **O banco de dados do Carmine fica em [DONO: país e região da Oracle Cloud; ex.: Brasil, São Paulo].** Os termos da Steam Web API exigem informar esse país.
-- **Os Servidores Carmine ficam no Brasil** (São Paulo).
+- **Os dados do Carmine, incluindo os dados que recebemos da Steam, ficam guardados no Brasil:** o banco de dados e a API na Oracle Cloud, região de São Paulo, e os Servidores Carmine numa VPS brasileira. Os termos da Steam Web API exigem informar esse país.
+- **A Cloudflare é só trânsito:** o tráfego do site passa pela rede dela, que pode processá-lo fora do Brasil, mas o banco de dados não fica lá. As cópias de segurança do banco ficam no Cloudflare R2. [CONFIRMAR: local do bucket do R2; se ficar fora do Brasil, citar aqui]
 - Alguns serviços da lista acima ficam ou processam dados fora do Brasil, principalmente nos Estados Unidos (Cloudflare, Discord, Sentry e, possivelmente, o 3d.cstrike.app). Nesses casos, a transferência segue as regras da LGPD (art. 33) e da ANPD (Resolução CD/ANPD nº 19/2024), como as cláusulas-padrão contratuais. [VALIDAR COM ADVOGADO]
 
 ## 7. Por quanto tempo guardamos
 
 | Dado | Por quanto tempo |
 |---|---|
-| Conta, Inventário, Loadout, Presets e Estatísticas | Enquanto a Conta existir. Contas que nunca entraram no site e ficaram [DONO: sugestão de 24 meses] sem conectar são anonimizadas |
+| Conta, Inventário, Loadout, Presets e Estatísticas | Enquanto a Conta existir. Contas que nunca entraram no site e ficaram 24 meses sem conectar são anonimizadas |
 | Lista de amigos Steam | Cerca de 60 segundos, em cache |
 | Chat de texto dos servidores | 30 dias. As linhas anexadas a uma denúncia ou punição ficam junto com ela |
-| Punições no Perfil público | 12 meses (ban permanente por cheat: enquanto durar) |
-| Registro interno de punições, denúncias e ações da Staff | [DONO: sugestão de 24 meses depois do fim da punição; bans permanentes enquanto durarem] |
+| Punições no Perfil | Selo enquanto a punição estiver ativa; histórico por 12 meses (ban permanente por cheat: enquanto durar) |
+| Registro interno de punições, denúncias e ações da Staff | 24 meses depois do fim da punição; bans permanentes, enquanto durarem |
 | Registros de pagamento, CPF e declaração de maioridade do Pagador | 5 anos depois da compra, pelo prazo do Código de Defesa do Consumidor (art. 27) e das obrigações fiscais [VALIDAR COM ADVOGADO] |
-| Endereço IP e registros técnicos | [DONO: sugestão de até 6 meses] |
-| Cópias de segurança do banco | [CONFIRMAR: tempo de rotação dos backups no R2] |
+| Endereço IP e registros técnicos | Até 6 meses |
+| Cópias de segurança do banco | Até serem substituídas pela rotação automática dos backups. Um dado apagado da Conta some dos backups quando a cópia antiga é descartada |
 
 O Marco Civil da Internet obriga só empresas a guardar registros de acesso por 6 meses (art. 15). Como o Carmine é operado por pessoa física, guardamos registros técnicos pelo prazo acima por segurança, e por mais tempo só se uma autoridade ou um juiz pedir. [VALIDAR COM ADVOGADO]
 
@@ -149,7 +151,7 @@ Pela LGPD (art. 18), você pode pedir, a qualquer momento:
 - **oposição** a um uso baseado em legítimo interesse, se você achar que ele não respeita os seus direitos;
 - **revisão por uma pessoa** de decisões automáticas, como o bloqueio do seu nome Steam pelo filtro de palavras ofensivas (art. 20). Punições nunca são automáticas: sempre são aplicadas por uma pessoa da Staff.
 
-**Como pedir:** pela página de [contato](/contato), com o assunto "Privacidade" e o seu ID público. Para confirmar que você é o dono da Conta, podemos pedir que você entre com a Steam no site. Respondemos em até 15 dias. Pais e responsáveis podem fazer os pedidos em nome de menores de idade.
+**Como pedir:** pelo e-mail do encarregado (seção 1) ou pela página de [contato](/contato), com o assunto "Privacidade" e o seu ID público. Para confirmar que você é o dono da Conta, podemos pedir que você entre com a Steam no site. Respondemos em até 15 dias. Pais e responsáveis podem fazer os pedidos em nome de menores de idade.
 
 **Exclusão da Conta:** a sua Conta é anonimizada. O nome, o avatar, o vínculo com a Steam, o Perfil público, o Inventário e as Estatísticas deixam de estar ligados a você. Ficam guardados só os registros de pagamento pelo prazo legal, e, se houver um ban permanente ativo, um registro mínimo do SteamID64 punido, para que o ban continue valendo. [VALIDAR COM ADVOGADO]
 
