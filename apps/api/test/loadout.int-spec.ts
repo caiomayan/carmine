@@ -533,7 +533,7 @@ describe('Loadout e Presets', () => {
   describe('Perfil', () => {
     it('a vitrine mostra o Loadout que vai para o jogo, sem os atributos VIP sem VIP', async () => {
       const p = await player({ vip: true });
-      const ak = await p.add({ id: AK_REDLINE, wear: 0.15, statTrak: 3 });
+      const ak = await p.add({ id: AK_REDLINE, wear: 0.15, statTrak: 0 });
       const agent = await p.add({ id: AGENT_T });
       await p.equip({ uid: ak });
       await p.equip({ uid: agent });
@@ -545,7 +545,7 @@ describe('Loadout e Presets', () => {
       );
 
       expect(me.account.loadoutShowcase.items).toEqual([
-        { slot: 'weapon_ak47', side: 't', item: { id: AK_REDLINE, wear: 0.15, statTrak: 3 } },
+        { slot: 'weapon_ak47', side: 't', item: { id: AK_REDLINE, wear: 0.15, statTrak: 0 } },
         { slot: 'agent', side: 't', item: { id: AGENT_T } },
       ]);
       expect(profile.loadoutShowcase.items).toEqual([

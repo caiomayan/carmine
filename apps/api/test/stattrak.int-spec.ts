@@ -1,5 +1,5 @@
 import { equippedV5Schema } from '@carmine/contracts';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { inventoryItems, vipPeriods } from '../src/database/schema.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
@@ -38,6 +38,14 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
     return row?.econUid ?? -1;
   }
 
+  /** Abates feitos antes (o contador só muda pelo servidor). */
+  async function setStatTrak(uid: string, count: number): Promise<void> {
+    await t.postgres.db
+      .update(inventoryItems)
+      .set({ item: sql`jsonb_set(${inventoryItems.item}, '{statTrak}', to_jsonb(${count}::int))` })
+      .where(eq(inventoryItems.id, uid));
+  }
+
   async function statTrakOf(uid: string): Promise<number | undefined> {
     const [row] = await t.postgres.db
       .select({ item: inventoryItems.item })
@@ -59,7 +67,8 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
   describe('increment-item-stattrak', () => {
     it('soma 1 ao StatTrak do Item equipado, e o equipped/v5 já mostra o novo valor', async () => {
       const p = await vipPlayer();
-      const ak = await p.add({ id: AK_REDLINE, statTrak: 41 });
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
+      await setStatTrak(ak, 41);
       await p.equip(ak);
       const equipped = async () =>
         equippedV5Schema.parse(
@@ -103,18 +112,18 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
       ['com uma chave inválida', 'chave-errada'],
     ])('%s responde 401 e não conta', async (_, apiKey) => {
       const p = await vipPlayer();
-      const ak = await p.add({ id: AK_REDLINE, statTrak: 5 });
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
       await p.equip(ak);
 
       const response = await killWith(p.steamId, ak, apiKey);
 
       expect(response.statusCode).toBe(401);
-      expect(await statTrakOf(ak)).toBe(5);
+      expect(await statTrakOf(ak)).toBe(0);
     });
 
     it('a chave no cabeçalho Authorization também vale', async () => {
       const p = await vipPlayer();
-      const ak = await p.add({ id: AK_REDLINE, statTrak: 5 });
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
       await p.equip(ak);
 
       const response = await t.app.inject({
@@ -125,7 +134,7 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
       });
 
       expect(response.statusCode).toBe(204);
-      expect(await statTrakOf(ak)).toBe(6);
+      expect(await statTrakOf(ak)).toBe(1);
     });
 
     it('um Item sem StatTrak é ignorado em silêncio', async () => {
@@ -141,7 +150,7 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
 
     it('sem Período VIP ativo, é ignorado em silêncio', async () => {
       const p = await vipPlayer();
-      const ak = await p.add({ id: AK_REDLINE, statTrak: 7 });
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
       await p.equip(ak);
       await t.postgres.db
         .update(vipPeriods)
@@ -151,25 +160,25 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
       const response = await killWith(p.steamId, ak);
 
       expect(response.statusCode).toBe(204);
-      expect(await statTrakOf(ak)).toBe(7);
+      expect(await statTrakOf(ak)).toBe(0);
     });
 
     it('um Item que não está no Loadout (o Preset ativo) é ignorado em silêncio', async () => {
       const p = await vipPlayer();
-      const deagle = await p.add({ id: DEAGLE, statTrak: 2 });
+      const deagle = await p.add({ id: DEAGLE, statTrak: 0 });
 
       const response = await killWith(p.steamId, deagle);
 
       expect(response.statusCode).toBe(204);
-      expect(await statTrakOf(deagle)).toBe(2);
+      expect(await statTrakOf(deagle)).toBe(0);
     });
 
     it('um Item que não é dessa Conta, ou removido, responde 400', async () => {
       const owner = await vipPlayer();
       const other = await vipPlayer();
-      const ak = await owner.add({ id: AK_REDLINE, statTrak: 1 });
+      const ak = await owner.add({ id: AK_REDLINE, statTrak: 0 });
       await owner.equip(ak);
-      const removed = await owner.add({ id: DEAGLE, statTrak: 1 });
+      const removed = await owner.add({ id: DEAGLE, statTrak: 0 });
       await owner.equip(removed);
       await owner.call('DELETE', `/api/inventory/items/${removed}`);
 
@@ -180,13 +189,95 @@ describe('Rotas do cs2-css-inventory-simulator', () => {
       ];
 
       expect(responses.map((r) => r.statusCode)).toEqual([400, 400, 400]);
-      expect(await statTrakOf(ak)).toBe(1);
+      expect(await statTrakOf(ak)).toBe(0);
     });
 
     it('um corpo fora do formato responde 400', async () => {
       const response = await increment({ apiKey: t.serverKey, targetUid: 'x', userId: '123' });
 
       expect(response.statusCode).toBe(400);
+    });
+  });
+
+  describe('o contador é do servidor', () => {
+    const edit = (p: Awaited<ReturnType<typeof vipPlayer>>, uid: string, item: object) =>
+      p.call('PUT', `/api/inventory/items/${uid}`, { item });
+
+    it('adicionar com StatTrak começa em 0, qualquer que seja o valor enviado', async () => {
+      const p = await vipPlayer();
+
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 500 });
+
+      expect(await statTrakOf(ak)).toBe(0);
+    });
+
+    it('editar ignora o contador enviado e preserva o do servidor', async () => {
+      const p = await vipPlayer();
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
+      await setStatTrak(ak, 12);
+
+      const response = await edit(p, ak, { id: AK_REDLINE, wear: 0.3, statTrak: 999 });
+
+      expect(response.statusCode, response.body).toBe(200);
+      expect(response.json().item).toEqual({ id: AK_REDLINE, wear: 0.3, statTrak: 12 });
+      expect(await statTrakOf(ak)).toBe(12);
+    });
+
+    it('desligar o StatTrak zera o contador; religar começa em 0', async () => {
+      const p = await vipPlayer();
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
+      await setStatTrak(ak, 30);
+
+      await edit(p, ak, { id: AK_REDLINE });
+      const off = await statTrakOf(ak);
+      await edit(p, ak, { id: AK_REDLINE, statTrak: 30 });
+
+      expect(off).toBeUndefined();
+      expect(await statTrakOf(ak)).toBe(0);
+    });
+
+    it('abates simultâneos com uma edição no meio não se perdem', async () => {
+      const p = await vipPlayer();
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
+      await p.equip(ak);
+      const kills = () => Array.from({ length: 10 }, () => killWith(p.steamId, ak));
+
+      const responses = await Promise.all([
+        ...kills(),
+        edit(p, ak, { id: AK_REDLINE, wear: 0.42, statTrak: 0 }),
+        ...kills(),
+      ]);
+
+      expect(responses.map((r) => r.statusCode).sort()).toEqual([200, ...Array(20).fill(204)]);
+      const [row] = await t.postgres.db
+        .select({ item: inventoryItems.item })
+        .from(inventoryItems)
+        .where(eq(inventoryItems.id, ak));
+      expect(row?.item).toEqual({ id: AK_REDLINE, wear: 0.42, statTrak: 20 });
+    });
+
+    it('remover e restaurar mantêm o contador', async () => {
+      const p = await vipPlayer();
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
+      await setStatTrak(ak, 8);
+
+      await p.call('DELETE', `/api/inventory/items/${ak}`);
+      await p.call('POST', `/api/inventory/items/${ak}/restore`);
+
+      expect(await statTrakOf(ak)).toBe(8);
+    });
+
+    it('o mesmo Item em vários Presets conta num contador só', async () => {
+      const p = await vipPlayer();
+      const ak = await p.add({ id: AK_REDLINE, statTrak: 0 });
+      await p.equip(ak);
+      const created = await p.call('POST', '/api/presets', { name: 'Retake' });
+      const presetId = created.json().id as string;
+      await killWith(p.steamId, ak);
+      await p.call('POST', `/api/presets/${presetId}/activate`);
+      await killWith(p.steamId, ak);
+
+      expect(await statTrakOf(ak)).toBe(2);
     });
   });
 
