@@ -1,7 +1,7 @@
 ---
 title: Riscos jurídicos
 updatedAt: 2026-10-12
-version: 0.1.0
+version: 0.2.0
 ---
 
 Documento interno, para o dono e para o advogado que revisar o Carmine. **Não é para publicar no site.** Não é parecer jurídico: é um mapa honesto dos pontos sensíveis, com o que já mitiga cada um e as perguntas a levar ao advogado.
@@ -16,6 +16,19 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 | 4 | Idade e ECA Digital | **Alto** (lei nova, fiscalização da ANPD, multas altas) | Antes do beta e antes de cobrar |
 | 5 | Operação como pessoa física (CPF) | **Médio** e cresce com a receita | Antes de cobrar |
 | 6 | Outros: licenças, músicas, Marco Civil, sorteios, marca | Baixo a médio | Antes da abertura |
+
+## Decisões do dono (12/10/2026)
+
+1. Identificação do fornecedor só quando a cobrança ligar: CPF + endereço de escritório virtual; CNPJ fica como alternativa futura.
+2. Encarregado LGPD: o próprio dono, com e-mail de contato.
+3. Dados no Brasil: Oracle São Paulo e VPS brasileira; Cloudflare como trânsito.
+4. Retenção: Conta não reivindicada inativa, 24 meses; punições internas, 24 meses; IP, 6 meses; chat, 30 dias; backups, pela rotação.
+5. Ban permanente por ameaça ou doxxing encerra o VIP sem reembolso, como o de cheat, com destaque obrigatório na tela de compra.
+6. Estorno no arrependimento em até 2 dias úteis, pedido pelo mesmo meio da compra.
+7. Aprovadas as linhas de assédio sexual ou risco a menores (permanente + comunicação às autoridades) e de denúncia falsa (como ofensa pessoal).
+8. Reincidência: janela móvel de 30 dias por categoria.
+9. Ninguém é bloqueado por idade para jogar; os termos citam a classificação do ClassInd (16 anos, violência) e o papel do responsável; compra só por Pagador adulto.
+10. Mitigações do ECA Digital: todos os Perfis com `noindex`; histórico de punições só para quem está logado (o selo da punição ativa continua público); ban por cheat exige testemunha identificada (jogador ou não) **ou** evidência anexada, ou ambas; `!chat off` opcional para o jogador esconder o chat para si. A página para pais fica para depois.
 
 ## 1. Skins simuladas e as regras da Valve
 
@@ -34,28 +47,27 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 
 ## 2. Punições públicas no Perfil e a LGPD
 
-**Situação.** O Perfil público mostra o selo da punição ativa e o histórico de 12 meses (tipo, categoria genérica, data e duração, sem o motivo). Ban permanente por cheat fica sempre visível, e o Perfil privado não esconde punições. Muitos titulares são adolescentes, e as Contas não reivindicadas nunca aceitaram nada no site.
+**Situação.** O selo da punição ativa é público. O histórico de 12 meses (tipo, categoria genérica, data e duração, sem o motivo) só aparece para quem está logado, e nenhum Perfil é indexado por buscadores. Ban permanente por cheat fica sempre visível, e o Perfil privado não esconde punições. Ban por cheat exige testemunha identificada ou evidência anexada (decisão do dono). Muitos titulares são adolescentes, e as Contas não reivindicadas nunca aceitaram nada no site.
 
 **Risco.**
 
 - **Base legal:** a única base viável é o legítimo interesse (art. 7º, IX), que exige finalidade concreta, necessidade e balanceamento documentados (art. 10 e Guia da ANPD de 2024). A ANPD pode pedir o relatório de impacto (art. 10, § 3º).
 - **Adolescentes:** o tratamento tem de respeitar o melhor interesse (art. 14 da LGPD; Enunciado CD/ANPD nº 1/2023; ECA Digital, arts. 3º e 7º). Expor publicamente que um adolescente foi punido é o ponto mais frágil do desenho.
 - **Alto risco e perda dos benefícios de pequeno porte:** pela Resolução CD/ANPD nº 2/2022 (art. 4º), tratamento que pode afetar a reputação (critério geral) envolvendo dados de adolescentes (critério específico) é de alto risco. Nesse caso, o Carmine perde a dispensa de encarregado e os prazos em dobro. Por isso a política de privacidade já indica um encarregado e promete resposta em 15 dias.
-- **Honra e reputação:** o selo "Cheat" é uma acusação. Se estiver errado, há risco de ação por dano moral (Código Civil, arts. 186 e 927) e, em tese, de difamação.
-- **Indexação:** um Perfil público aparece no Google e pode acompanhar a pessoa fora do jogo.
+- **Honra e reputação:** o selo "Cheat" é uma acusação pública e permanente. Se estiver errado, há risco de ação por dano moral (Código Civil, arts. 186 e 927) e, em tese, de difamação. Com a regra decidida, um ban por cheat pode se apoiar **só numa testemunha**, sem evidência guardada: é a base mais fraca para defender o selo se ele for contestado na Justiça. [VALIDAR COM ADVOGADO]
+- **Indexação:** resolvida pelo `noindex` em todos os Perfis.
 
-**Mitigação que já existe.** Categoria genérica, sem motivo livre; avisos fora do Perfil; janela de 12 meses; decisão sempre humana; recurso que remove do Perfil; sem lista pública de banidos.
+**Mitigação que já existe.** Categoria genérica, sem motivo livre; avisos fora do Perfil; janela de 12 meses; histórico só para logados; Perfis fora de buscadores; decisão sempre humana; testemunha ou evidência para cheat; recurso que remove do Perfil; sem lista pública de banidos.
 
 **Recomendação.**
 
 1. Escrever o teste de balanceamento do legítimo interesse (1 a 2 páginas) antes do beta.
-2. Exigir evidência guardada (clipe, log) para toda punição que aparece no Perfil, principalmente "Cheat".
-3. Marcar a seção de punições como `noindex` e, de preferência, mostrar o histórico só para quem está logado; manter público apenas o selo da punição ativa.
-4. Avaliar se o "sempre visível" do ban por cheat deve ter um limite (por exemplo, 24 meses) em vez de ser perpétuo. [VALIDAR COM ADVOGADO]
+2. Registrar no painel, para todo ban por cheat, quem é a testemunha (identificação e contato) e o que ela relatou, ou anexar a evidência. Quando houver só testemunha, preferir uma segunda fonte antes de exibir o selo "Cheat".
+3. Avaliar se o "sempre visível" do ban por cheat deve ter um limite (por exemplo, 24 meses) em vez de ser perpétuo. [VALIDAR COM ADVOGADO]
 
 ## 3. VIP encerrado sem reembolso em ban permanente e o CDC
 
-**Situação.** Ban permanente por cheat, fraude ou contestação indevida do pagamento encerra o VIP sem devolver os dias restantes. Ban temporário não congela o VIP.
+**Situação.** Ban permanente por cheat, ameaça, doxxing, fraude ou contestação indevida do pagamento encerra o VIP sem devolver os dias restantes, com destaque obrigatório na tela de compra (decisão do dono). Ban temporário não congela o VIP. Ainda falta decidir os outros bans permanentes (discriminação reincidente, conta alternativa, assédio sexual).
 
 **Risco.**
 
@@ -65,9 +77,9 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 - "Chargeback" quase não existe no Pix; o mecanismo é o MED, que é para fraude ou falha operacional. O texto já fala em "contestação indevida", que cobre os dois.
 - O ban temporário sem congelar o VIP é mais defensável: a pessoa causou a própria indisponibilidade.
 
-**Mitigação que já existe.** Só para cheat, fraude ou contestação indevida (condutas graves e intencionais); um recurso por ban permanente, com revisor diferente quando houver Staff; o direito de arrependimento de 7 dias não é afetado.
+**Mitigação que já existe.** Só para condutas graves e intencionais; cláusula em destaque na tela de compra (S14); um recurso por ban permanente, com revisor diferente quando houver Staff; o direito de arrependimento de 7 dias não é afetado.
 
-**Recomendação.** Mostrar a cláusula em destaque na tela de compra (item para a S14). Como alternativa mais segura, devolver os dias restantes com desconto de uma multa razoável (por exemplo, 20% do valor do Pacote) em vez de perda total. Guardar evidência de cada ban por cheat. [VALIDAR COM ADVOGADO]
+**Recomendação.** Como alternativa mais segura, devolver os dias restantes com desconto de uma multa razoável (por exemplo, 20% do valor do Pacote) em vez de perda total. Guardar evidência de cada ban por cheat. [VALIDAR COM ADVOGADO]
 
 ## 4. Idade e ECA Digital
 
@@ -82,10 +94,11 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 
 **Lacunas.** Os arts. 7º, 8º, 16, 21 e 24 **não** estão na lista de obrigações moduladas pelo porte do fornecedor (art. 39), então valem por inteiro:
 
-- **Art. 7º (privacidade máxima por padrão):** Perfis públicos por padrão, inclusive de Contas não reivindicadas, vão contra a "configuração mais protetiva" por padrão para menores.
-- **Art. 21 (jogos com chat):** jogos de acesso provável por menores com chat de texto ou voz devem, **por padrão, limitar a interação** para garantir o consentimento dos pais. Os Servidores Carmine têm chat aberto, como todo servidor de CS2. O cliente do CS2 permite silenciar jogadores, mas o padrão é aberto.
-- **Arts. 16 a 18 (supervisão parental):** não há ferramenta para os pais nem página com informações para eles.
-- **Art. 8º, V, e Decreto 12.880, art. 12, § 4º:** os termos devem informar a classificação indicativa. A do CS2 precisa ser confirmada no ClassInd (fontes divergem entre 10 e 16 anos).
+- **Art. 7º (privacidade máxima por padrão):** Perfis públicos por padrão, inclusive de Contas não reivindicadas, vão contra a "configuração mais protetiva" por padrão para menores. O `noindex` e o histórico de punições só para logados reduzem a exposição, mas nome, avatar, Loadout, presença e Estatísticas continuam abertos por padrão.
+- **Art. 21 (jogos com chat):** jogos de acesso provável por menores com chat de texto ou voz devem, **por padrão, limitar a interação** para garantir o consentimento dos pais. Os Servidores Carmine têm chat aberto, como todo servidor de CS2. O `!chat off` decidido é opcional (o jogador liga), então ajuda mas não inverte o padrão. **Continua sendo a maior lacuna.**
+- **Arts. 16 a 18 (supervisão parental):** não há ferramenta para os pais; a página com informações para eles ficou para depois (decisão do dono). O art. 16 exige essas informações para "acesso provável", sem modulação por porte.
+- **Art. 8º, V, e Decreto 12.880, art. 12, § 4º:** resolvido. Os termos citam a classificação do CS2 (16 anos, violência), conforme o selo DEJUS/ClassInd exibido na loja Steam brasileira. Vale conferir uma vez no portal do ClassInd.
+- **Classificação 16 e ninguém bloqueado por idade:** a classificação indicativa é orientação, não proibição, e o ECA Digital (art. 3º, parágrafo único) põe a supervisão nos pais. Mas um serviço que sabe que o jogo é "16" e deixa menores de 16 jogarem e conversarem por padrão reforça o enquadramento como "acesso provável". [VALIDAR COM ADVOGADO]
 - **Art. 24 (contas de menores de 16 vinculadas a um responsável):** está no capítulo de redes sociais, mas o texto fala em "produtos ou serviços". O Carmine não é rede social, mas o Perfil, o Ranking e os amigos o aproximam disso.
 - **Declaração de maioridade + CPF:** a vedação expressa à autodeclaração (art. 9º, § 1º) vale para conteúdo **proibido** a menores, e o VIP não é. Mesmo assim, o CPF informado ao Mercado Pago não prova que quem está pagando é o titular nem que é adulto.
 
@@ -93,11 +106,10 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 
 **Recomendação.**
 
-1. Criar uma página "Para pais e responsáveis" (art. 16), com riscos, ferramentas do CS2 para silenciar jogadores e o canal para pedir dados, exclusão ou bloqueio da Conta do filho.
-2. Tornar os Perfis de Contas não reivindicadas `noindex` e avaliar um padrão mais protetivo (por exemplo, Estatísticas e presença visíveis só para quem está logado).
-3. Avaliar um comando no jogo para o próprio jogador desligar o chat de todos (`!chat off`) e um bloqueio de Conta a pedido dos responsáveis.
-4. Para o VIP, conferir que o CPF do pagador do Pix (devolvido pelo Mercado Pago) é o mesmo CPF declarado, e manter a cobrança desligada até a decisão sobre verificação de idade (S14).
-5. Levar ao advogado a pergunta central: **o Carmine é de "acesso provável" por adolescentes e, se for, o que basta para cumprir o art. 21 sem quebrar o jogo?** [VALIDAR COM ADVOGADO]
+1. Não adiar demais a página "Para pais e responsáveis" (art. 16): com riscos, ferramentas do CS2 e `!chat off` para silenciar jogadores, e o canal para pedir dados, exclusão ou bloqueio da Conta do filho. Idealmente, publicá-la antes da abertura ao público.
+2. Avaliar um padrão mais protetivo nos Perfis (por exemplo, Estatísticas e presença visíveis só para quem está logado) e um bloqueio de Conta a pedido dos responsáveis.
+3. Para o VIP, conferir que o CPF do pagador do Pix (devolvido pelo Mercado Pago) é o mesmo CPF declarado, e manter a cobrança desligada até a decisão sobre verificação de idade (S14).
+4. Levar ao advogado a pergunta central: **o Carmine é de "acesso provável" por adolescentes e, se for, o que basta para cumprir o art. 21 sem quebrar o jogo?** [VALIDAR COM ADVOGADO]
 
 ## 5. Operação como pessoa física (CPF)
 
@@ -114,7 +126,9 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 - **LGPD:** pessoa física pode ser agente de pequeno porte (Res. CD/ANPD 2/2022, art. 2º, I), mas perde os benefícios se o tratamento for de alto risco (item 2).
 - **Marco Civil:** a guarda obrigatória de registros de acesso por 6 meses (art. 15) só vale para pessoa jurídica. Com CNPJ, passa a valer.
 
-**Recomendação.** Antes de ligar a cobrança: conversar com um contador sobre abrir uma ME ou SLU no Simples Nacional; usar o endereço de um escritório virtual ou coworking no site (avaliar com advogado se atende ao art. 2º do Decreto 7.962); separar a conta do Mercado Pago do uso pessoal; guardar todos os comprovantes. [VALIDAR COM ADVOGADO]
+**Decisão do dono.** Continuar no CPF; publicar nome, CPF e endereço de escritório virtual só quando a cobrança ligar; CNPJ como alternativa futura.
+
+**Recomendação.** Confirmar com o advogado se o endereço de escritório virtual atende ao art. 2º, II, do Decreto 7.962 ("endereço físico"). Antes de ligar a cobrança, conversar com um contador sobre o carnê-leão e sobre quando a ME ou SLU passa a compensar (lembrando que o prazo de 6 meses para o Pix Automático só começa a contar com o CNPJ aberto). Separar a conta do Mercado Pago do uso pessoal e guardar todos os comprovantes. [VALIDAR COM ADVOGADO]
 
 ## 6. Outros pontos
 
@@ -129,10 +143,10 @@ Documento interno, para o dono e para o advogado que revisar o Carmine. **Não �
 
 1. O Carmine é "de acesso provável" por adolescentes no ECA Digital? Se for, o que basta para os arts. 7º, 16 e 21 num servidor de CS2 com chat aberto?
 2. Declaração de maioridade + CPF conferido com o pagador do Pix é suficiente para a regra de Pagador adulto?
-3. O legítimo interesse sustenta mostrar punições de adolescentes no Perfil público? Qual o limite de tempo razoável para o ban por cheat ficar visível?
-4. A perda total dos dias de VIP em ban permanente por cheat ou fraude resiste ao CDC, ou é melhor uma multa proporcional?
+3. O legítimo interesse sustenta mostrar o selo de punição de adolescentes publicamente e o histórico para logados? Qual o limite de tempo razoável para o ban por cheat ficar visível? Uma testemunha identificada, sem evidência guardada, basta para sustentar o selo "Cheat"?
+4. A perda total dos dias de VIP em ban permanente por cheat, ameaça, doxxing ou fraude resiste ao CDC, mesmo com destaque na tela de compra, ou é melhor uma multa proporcional?
 5. Um 100% de reembolso no arrependimento, mesmo com o VIP usado, é obrigatório para serviço digital consumido na hora?
-6. Como cumprir o art. 2º do Decreto 7.962/2013 sem publicar o endereço residencial do dono? Vale abrir ME/SLU agora?
+6. Um endereço de escritório virtual atende ao "endereço físico" do art. 2º do Decreto 7.962/2013 para um fornecedor pessoa física?
 7. Vender acesso a music kits e agentes simulados como benefício do VIP cria risco de propriedade intelectual além do risco contratual com a Valve?
 8. As transferências internacionais (Cloudflare, Discord, Sentry, viewer 3D) estão cobertas pelos contratos padrão desses serviços, ou é preciso algo além da Resolução CD/ANPD nº 19/2024?
 
