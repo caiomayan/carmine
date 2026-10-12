@@ -49,9 +49,11 @@ test('o rodapé leva marca, links, estado dos servidores e o aviso sobre a Valve
   // O que o leitor de tela ouve: os rolos de dígitos do contador são decorativos.
   const snapshot = await status.ariaSnapshot();
   const spoken = snapshot.replace(/\s*\n\s*-?\s*(text:)?\s*/g, ' ');
-  for (const text of ['Em breve', '0 servidores online', '0 jogadores', 'São Paulo']) {
-    expect(spoken).toContain(text);
-  }
+  // O resumo é o real (S06): outros testes ligam servidores em paralelo, então só a forma.
+  expect(spoken).toMatch(/Ao vivo|Em breve/);
+  expect(spoken).toMatch(/\d+ servidor(es)? online/);
+  expect(spoken).toMatch(/\d+ jogador(es)?/);
+  expect(spoken).toContain('São Paulo');
 
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Carmine`);
   await expect(footer).toContainText('a Carmine não é afiliada nem endossada por ela');

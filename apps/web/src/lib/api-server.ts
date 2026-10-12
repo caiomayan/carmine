@@ -3,7 +3,9 @@ import {
   currentSessionSchema,
   type Inventory,
   inventorySchema,
+  type LiveServerList,
   type Loadout,
+  liveServerListSchema,
   loadoutSchema,
   type PresetList,
   type Profile,
@@ -115,5 +117,20 @@ export const getProfile = cache(async (publicId: number): Promise<ProfileResult>
     return { status: 'found', profile: profileSchema.parse(await response.json()) };
   } catch {
     return { status: 'unavailable' };
+  }
+});
+
+/**
+ * A lista de Servidores Carmine ao vivo como estava nesta requisição (S06): a home começa com
+ * ela e o rodapé mostra o resumo. Nulo com a API fora: a home avisa e tenta o ao vivo; o rodapé
+ * não afirma "0 servidores".
+ */
+export const getLiveServers = cache(async (): Promise<LiveServerList | null> => {
+  try {
+    const response = await apiGet('/servers', { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return liveServerListSchema.parse(await response.json());
+  } catch {
+    return null;
   }
 });

@@ -1,36 +1,15 @@
-import { getTranslations } from 'next-intl/server';
-import { ServerBrowser } from '@/components/server-browser';
+import { ServerBrowser } from '@/components/servers/server-browser';
+import { getLiveServers } from '@/lib/api-server';
 
+/**
+ * Home = Servidores ao vivo (S06). A página já sai do servidor com a lista daquele instante;
+ * no navegador ela segue o ao vivo da API.
+ */
 export default async function ServersPage() {
-  const t = await getTranslations('servers');
-
+  const initial = await getLiveServers();
   return (
     <div className="container-page animate-fade-up">
-      <ServerBrowser
-        labels={{
-          title: t('title'),
-          subtitle: t('subtitle'),
-          region: t('region'),
-          modeFilter: t('modeFilter'),
-          modes: {
-            all: t('modes.all'),
-            retake: t('modes.retake'),
-            deathmatch: t('modes.deathmatch'),
-          },
-          columns: {
-            server: t('columns.server'),
-            map: t('columns.map'),
-            players: t('columns.players'),
-            ping: t('columns.ping'),
-          },
-          empty: {
-            all: t('empty.title'),
-            retake: t('empty.titleMode', { mode: t('modes.retake') }),
-            deathmatch: t('empty.titleMode', { mode: t('modes.deathmatch') }),
-          },
-          emptyBody: t('empty.body'),
-        }}
-      />
+      <ServerBrowser initial={initial} />
     </div>
   );
 }

@@ -45,8 +45,13 @@ export default defineConfig({
         LOG_LEVEL: 'warn',
         PUBLIC_WEB_URL: baseURL,
         STEAM_OPENID_URL: `http://127.0.0.1:${FAKE_STEAM_PORT}/openid/login`,
-        // Sem Steam Web API no E2E: as Contas novas ficam com o avatar neutro.
-        STEAM_WEB_API_KEY: '',
+        // A Steam Web API do E2E é a mesma Steam falsa: amigos por SteamID (lista privada e
+        // Steam fora do ar em IDs fixos) e nenhum avatar, então as Contas ficam com o neutro.
+        STEAM_WEB_API_KEY: 'fake',
+        STEAM_WEB_API_URL: `http://127.0.0.1:${FAKE_STEAM_PORT}`,
+        // Offline rápido para o E2E da S06 (em produção, 45 s sem batimento).
+        SERVER_OFFLINE_AFTER_SECONDS: '4',
+        LIVE_SERVERS_SWEEP_SECONDS: '1',
         // Todo pedido do E2E chega à API do mesmo IP (o Next repassa /api/*): sem limite real.
         RATE_LIMIT_LOGIN_PER_MINUTE: '100000',
         RATE_LIMIT_PUBLIC_PER_MINUTE: '100000',

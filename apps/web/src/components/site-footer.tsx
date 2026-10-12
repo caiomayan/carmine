@@ -1,15 +1,12 @@
 import type { Route } from 'next';
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
-import { MapPinIcon } from '@/components/icons/animated/map-pin';
-import { AnimatedIcon } from '@/components/icons/animated-icon';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
+import { FooterStatus } from '@/components/footer-status';
 import { BrandIcon } from '@/components/icons/brand-icon';
-import { LiveCount } from '@/components/live-count';
 import { Seal } from '@/components/seal';
-import { StatusDot } from '@/components/status-dot';
 import { Wordmark } from '@/components/wordmark';
-import { isLive, PRELAUNCH_SUMMARY, type ServersSummary } from '@/lib/servers';
+import { getLiveServers } from '@/lib/api-server';
 import { SOCIAL_LINKS } from '@/lib/social';
 
 type FooterLink = { label: string; href: Route } | { label: string; href: string; external: true };
@@ -49,47 +46,11 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
   );
 }
 
-const Sep = () => <span aria-hidden="true" className="h-3 w-px bg-line-strong max-md:hidden" />;
-
-async function FooterStatus({ summary }: { summary: ServersSummary }) {
-  const t = await getTranslations('shell.footer.status');
-  const live = isLive(summary);
-  const strong = (chunks: ReactNode) => <b className="font-semibold text-foreground">{chunks}</b>;
-  return (
-    <div
-      role="status"
-      aria-label={t('label')}
-      className="flex flex-wrap items-center gap-x-5.5 gap-y-1.5 rounded-lg bg-surface px-4.5 py-3.5 text-xs text-muted-foreground max-md:flex-col max-md:items-start max-md:gap-y-2.5"
-    >
-      <span className="inline-flex items-center gap-2 label-caps text-foreground">
-        <StatusDot tone={live ? 'online' : 'offline'} pulse={live} />
-        {live ? t('live') : t('soon')}
-      </span>
-      <span>
-        {t.rich('servers', {
-          count: summary.online,
-          n: () => strong(<LiveCount value={summary.online} />),
-        })}
-      </span>
-      <Sep />
-      <span>
-        {t.rich('players', {
-          count: summary.players,
-          n: () => strong(<LiveCount value={summary.players} />),
-        })}
-      </span>
-      <Sep />
-      <span className="inline-flex items-center gap-1.5">
-        <AnimatedIcon icon={MapPinIcon} size={13} />
-        {t('region')}
-      </span>
-    </div>
-  );
-}
-
 export async function SiteFooter() {
   const t = await getTranslations('shell.footer');
   const discord = SOCIAL_LINKS.find((s) => s.id === 'discord');
+  const servers = await getLiveServers();
+  const { status } = (await getMessages()).shell.footer;
 
   const community: FooterLink[] = [{ label: t('links.rules'), href: '/regras' }];
   if (discord) community.push({ label: t('links.discord'), href: discord.href, external: true });
@@ -150,7 +111,10 @@ export async function SiteFooter() {
             />
           </nav>
         </div>
-        <FooterStatus summary={PRELAUNCH_SUMMARY} />
+        {/* Só as mensagens do estado vão ao cliente: ele acompanha o resumo ao vivo da home. */}
+        <NextIntlClientProvider messages={{ shell: { footer: { status } } }}>
+          <FooterStatus initial={servers?.summary ?? null} />
+        </NextIntlClientProvider>
         <div className="flex flex-wrap justify-between gap-x-6 gap-y-2 pt-5 pb-9 text-xs text-muted-foreground">
           <p>{t('copyright', { year: new Date().getFullYear() })}</p>
           <p className="max-w-[70ch]">{t('disclaimer')}</p>

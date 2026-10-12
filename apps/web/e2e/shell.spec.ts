@@ -11,7 +11,7 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.getByRole('heading', { level: 1, name: 'Servidores' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect(page.locator('body')).toHaveCSS('background-color', BG[theme]);
-    await expect(page.getByText('Nenhum servidor no ar ainda')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'São Paulo' })).toBeVisible();
 
     await expect(mainNav(page).getByRole('link')).toHaveCount(3);
     await expect(mainNav(page).getByRole('link', { name: 'Servidores' })).toHaveAttribute(
@@ -176,7 +176,7 @@ test('os contadores animados expõem só o valor ao leitor de tela', async ({ pa
   const tree = await status.ariaSnapshot();
   // Os rolos de dígitos (0 a 9 de cada casa) nunca aparecem na árvore de acessibilidade.
   expect(tree).not.toMatch(/\d \d \d \d/);
-  expect(tree).toMatch(/0 servidores online/);
+  expect(tree).toMatch(/\d+ servidor(es)? online/);
 
   await page.goto('/dev/componentes');
   const gallery = await page.locator('main').ariaSnapshot();

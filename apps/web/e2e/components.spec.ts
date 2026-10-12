@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, settle, test } from './fixtures';
+import { fakeServer, routeLiveServers } from './live-servers';
 
 /** Animações do Motion (WAAPI) rodando dentro do elemento; as de CSS ficam de fora. */
 const motionAnimationsIn = (page: Page, selector: string) =>
@@ -20,17 +21,18 @@ const motionAnimationsIn = (page: Page, selector: string) =>
   );
 
 test('o filtro de Modo troca a lista com destaque deslizante e teclado', async ({ page }) => {
+  await routeLiveServers(page, [fakeServer({ name: 'fixo-filtro' })]);
   await page.goto('/');
   const tabs = page.getByRole('tablist', { name: 'Modo' });
   await expect(tabs.getByRole('tab', { name: 'Todos' })).toHaveAttribute('aria-selected', 'true');
 
   await tabs.getByRole('tab', { name: 'Retake' }).click();
   await expect(tabs.getByRole('tab', { name: 'Retake' })).toHaveAttribute('aria-selected', 'true');
-  await expect(page.getByText('Nenhum servidor de Retake no ar ainda')).toBeVisible();
+  await expect(page.locator('[data-server="fixo-filtro"]')).toBeVisible();
 
   await page.keyboard.press('ArrowRight');
   await expect(tabs.getByRole('tab', { name: 'Deathmatch' })).toBeFocused();
-  await expect(page.getByText('Nenhum servidor de Deathmatch no ar ainda')).toBeVisible();
+  await expect(page.getByText('Nenhum servidor de Deathmatch por enquanto')).toBeVisible();
 });
 
 test('os ícones animam no hover do controle e ficam parados com movimento reduzido', async ({
