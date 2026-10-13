@@ -42,6 +42,11 @@ export const gameServers = pgTable('game_servers', {
   keyHash: text().notNull().unique(),
   keyRotatedAt: timestamptz().notNull().defaultNow(),
   createdAt: timestamptz().notNull().defaultNow(),
+  /**
+   * Aposentado pelo CLI (`servers retire`): some da lista pública e a chave para de valer, mas a
+   * linha fica (o log de auditoria e o histórico apontam para ela). Nulo: em operação.
+   */
+  retiredAt: timestamptz(),
 });
 
 /** Contador `n` do ID público (ADR 0013): cada valor vira um bloco exclusivo de 3 números. */
@@ -52,6 +57,10 @@ export const accounts = pgTable(
   'accounts',
   {
     id: uuid().primaryKey().defaultRandom(),
+    /**
+     * SteamID64. Numa Conta anonimizada (S08) sem ban valendo, vira `-publicId`: o vínculo com a
+     * Steam se desfaz e quem voltar a jogar ganha uma Conta nova (ver `AccountErasure`).
+     */
     steamId: bigint({ mode: 'bigint' }).notNull().unique(),
     publicId: bigint({ mode: 'number' }).notNull().unique(),
     /** Último nome Steam visto no jogo, sem filtro. */
@@ -70,6 +79,10 @@ export const accounts = pgTable(
     /** Nulos enquanto a Conta nunca conectou num Servidor Carmine (criada pelo site, S03). */
     firstConnectedAt: timestamptz(),
     lastConnectedAt: timestamptz(),
+    /** `!chat off` no jogo: o jogador não vê o chat dos outros. Padrão: chat visível. */
+    chatHidden: boolean().notNull().default(false),
+    /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
+    anonymizedAt: timestamptz(),
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [check('accounts_public_id_positive', sql`${table.publicId} > 0`)],
@@ -184,6 +197,7 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'role_revoke',
   'display_name_reset',
   'server_update',
+  'account_anonymize',
 ]);
 
 /**
@@ -261,6 +275,10 @@ export const sanctions = pgTable(
     category: sanctionCategory().notNull(),
     /** Motivo livre, interno da Staff: nunca sai no Perfil nem no jogo. */
     reason: text().notNull(),
+    /** Testemunha mencionada (texto livre, interno); ban por cheat exige ela ou a evidência. */
+    witness: text(),
+    /** Link da evidência anexada; cheat só aparece como "Cheat" no Perfil público com ela. */
+    evidenceUrl: text(),
     startsAt: timestamptz().notNull(),
     endsAt: timestamptz(),
     appliedBySteamId: bigint({ mode: 'bigint' }).notNull(),

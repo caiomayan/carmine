@@ -36,6 +36,7 @@
         "discord": "Discord",
         "terms": "Termos de uso",
         "privacy": "Política de privacidade",
+        "refund": "Política de reembolso",
         "contact": "Contato e exclusão de dados"
       },
       "social": {
@@ -779,7 +780,8 @@
       "cheat": "Cheat",
       "threat": "Ameaça",
       "doxxing": "Exposição de dados pessoais",
-      "ban_evasion": "Fuga de ban"
+      "ban_evasion": "Fuga de ban",
+      "rule_violation": "Violação das regras"
     },
     "staffCategories": {
       "offensive_chat": "Chat ofensivo pessoal",
@@ -843,7 +845,7 @@
   },
   "profileSanctions": {
     "title": "Punições",
-    "subtitle": "Últimos 12 meses, sem avisos. O motivo escrito pela Staff não aparece aqui.",
+    "subtitle": "Últimos 12 meses, sem avisos, visível só para quem entrou no site. O motivo escrito pela Staff não aparece aqui.",
     "active": "Em vigor",
     "revoked": "Encerrada antes do prazo",
     "columns": {
@@ -945,7 +947,18 @@
       "cancel": "Voltar",
       "confirmBody": "{name} recebe: {measures}. Categoria: {category}.",
       "banEffect": "O ban derruba o jogador do servidor em até 15 s e encerra as sessões dele no site.",
-      "done": "Punição aplicada."
+      "done": "Punição aplicada.",
+      "proof": {
+        "title": "Prova do cheat",
+        "hint": "Ban por cheat exige uma testemunha, o link da evidência ou os dois. Só com a evidência o Perfil público mostra “Cheat”; só com testemunha, mostra “Violação das regras”.",
+        "witness": "Testemunha",
+        "witnessPlaceholder": "Nome, ID público ou Discord",
+        "evidence": "Link da evidência",
+        "missing": "Informe a testemunha ou o link da evidência.",
+        "invalidUrl": "Use um link que comece com http:// ou https://.",
+        "publicCheat": "No Perfil público, aparece como “Cheat” (há evidência anexada).",
+        "publicRules": "No Perfil público, aparece como “Violação das regras” (sem evidência anexada)."
+      }
     },
     "history": {
       "title": "Histórico de punições",
@@ -966,6 +979,8 @@
       "appealAccepted": "Recurso aceito",
       "appealHint": "Some do Perfil público e não conta na reincidência.",
       "revokeSubmit": "Revogar punição",
+      "witness": "Testemunha: {witness}",
+      "evidence": "Evidência anexada",
       "revokeNotAllowed": "Só Admin e Dono revogam punições aplicadas por outra pessoa.",
       "done": "Punição revogada."
     },
@@ -980,6 +995,15 @@
       "readOnly": "Só Admin e Dono mexem no VIP.",
       "grantDone": "VIP concedido.",
       "revokeDone": "VIP revogado."
+    },
+    "erasure": {
+      "title": "Exclusão de dados",
+      "anonymized": "Conta anonimizada por um pedido de exclusão de dados. O SteamID64 fica só enquanto o ban valer.",
+      "submit": "Anonimizar a Conta",
+      "hint": "Para um pedido de exclusão que chegou pelo contato, depois de confirmar que a pessoa é dona da Conta. Apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta. Ficam as punições e o log de auditoria; com um ban valendo, o SteamID64 fica até ele acabar.",
+      "staff": "Contas da Staff saem da Staff antes de serem anonimizadas.",
+      "ownerOnly": "Só o Dono executa pedidos de exclusão de dados.",
+      "done": "Conta anonimizada. O Perfil público já não existe."
     },
     "displayName": {
       "title": "Nome de exibição",
@@ -1022,7 +1046,8 @@
         "role_grant": "Deu papel",
         "role_revoke": "Tirou papel",
         "display_name_reset": "Resetou o nome",
-        "server_update": "Editou servidor"
+        "server_update": "Editou servidor",
+        "account_anonymize": "Anonimizou a Conta"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
@@ -1058,6 +1083,7 @@
       "account_not_claimed": "A Conta precisa ter entrado no site ao menos uma vez.",
       "last_owner": "A Carmine precisa de pelo menos um Dono.",
       "server_code_taken": "Outro servidor já usa esse código.",
+      "account_anonymized": "Esta Conta já foi anonimizada por um pedido de exclusão de dados.",
       "unknown": "Não deu certo agora. Tente de novo em instantes."
     }
   },

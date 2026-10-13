@@ -50,6 +50,7 @@ async function applySanction(
   category: string,
   reason: string,
   adjust?: { type: string; value: string; unit: string },
+  proof?: { witness?: string; evidenceUrl?: string },
 ) {
   await page.getByTestId('sanction-category').selectOption(category);
   if (adjust) {
@@ -58,6 +59,8 @@ async function applySanction(
     await row.getByTestId('measure-value').fill(adjust.value);
     await row.getByTestId('measure-unit').selectOption(adjust.unit);
   }
+  if (proof?.witness) await page.getByTestId('proof-witness').fill(proof.witness);
+  if (proof?.evidenceUrl) await page.getByTestId('proof-evidence').fill(proof.evidenceUrl);
   await page.getByTestId('apply-sanction').getByTestId('reason').fill(reason);
   await page.getByTestId('sanction-review').click();
   await expect(page.getByTestId('sanction-confirm')).toBeVisible();
@@ -137,16 +140,23 @@ test.describe('Painel da Staff', () => {
     expect(blocked.status()).toBe(403);
     expect(((await blocked.json()) as { code?: string }).code).toBe('account_banned');
 
-    // Perfil público (visitante): o selo e o histórico, nunca o motivo livre.
+    // Perfil público (visitante): só o selo, sem o histórico; fora dos buscadores.
     const visitor = await browser.newPage();
     await visitor.goto(`/${player.publicId}`);
     await expect(visitor.getByTestId('sanction-badges')).toContainText(/Banido até \d{2}\/\d{2}/);
-    const history = visitor.getByTestId('sanction-history');
+    await expect(visitor.getByTestId('sanction-history')).toHaveCount(0);
+    await expect(visitor.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/);
+    await expect(visitor.getByText(reason)).toHaveCount(0);
+    await visitor.close();
+
+    // Logado: o histórico, nunca o motivo livre.
+    await owner.page.goto(`/${player.publicId}`);
+    const history = owner.page.getByTestId('sanction-history');
     await expect(history).toContainText('Ban');
     await expect(history).toContainText('Griefing');
     await expect(history).toContainText('2 dias');
-    await expect(visitor.getByText(reason)).toHaveCount(0);
-    await visitor.close();
+    await expect(owner.page.getByText(reason)).toHaveCount(0);
+    await openFile(owner.page, player.publicId);
 
     // Revogar (recurso aceito) tira do Perfil.
     await owner.page
@@ -199,6 +209,10 @@ test.describe('Painel da Staff', () => {
     await expect(form.getByTestId('measure-row')).toHaveCount(2);
     await expectSuggestion('cheat', 1, 'Ban permanente');
     await expect(form.getByTestId('measure-permanent')).toBeChecked();
+    // Ban por cheat pede a prova; fora dele, o campo some.
+    await expect(form.getByTestId('cheat-proof')).toBeVisible();
+    await form.getByTestId('measure-type').selectOption('kick');
+    await expect(form.getByTestId('cheat-proof')).toHaveCount(0);
 
     // Ajustar a duração marca "Ajustado"; "Voltar à sugestão" restaura a tabela.
     await expectSuggestion('offensive_chat', 1, 'Aviso');
@@ -211,6 +225,77 @@ test.describe('Painel da Staff', () => {
     await applySanction(owner.page, 'griefing', 'AFK ocupando vaga no Retake');
     await expectSuggestion('griefing', 2, 'Ban de 1 dia');
 
+    await owner.page.context().close();
+  });
+
+  test('ban por cheat exige testemunha ou evidência; só com evidência o Perfil diz Cheat', async ({
+    browser,
+    page,
+  }) => {
+    const witnessed = await signedInPlayer(page, 'Cheat Testemunhado');
+    const owner = await staffMember(browser, 'owner');
+    await openFile(owner.page, witnessed.publicId);
+    const form = owner.page.getByTestId('apply-sanction');
+
+    // Sem prova, não chega à confirmação.
+    await owner.page.getByTestId('sanction-category').selectOption('cheat');
+    await form.getByTestId('reason').fill('Aimbot no SP·1');
+    await owner.page.getByTestId('sanction-review').click();
+    await expect(form.getByTestId('cheat-proof')).toContainText(
+      'Informe a testemunha ou o link da evidência.',
+    );
+    await expect(owner.page.getByTestId('sanction-confirm')).toHaveCount(0);
+    await form.getByTestId('proof-evidence').fill('não é link');
+    await owner.page.getByTestId('sanction-review').click();
+    await expect(form.getByTestId('cheat-proof')).toContainText('Use um link');
+    await form.getByTestId('proof-evidence').fill('');
+
+    // Só testemunha: o Perfil mostra "Violação das regras".
+    await applySanction(owner.page, 'cheat', 'Aimbot no SP·1', undefined, {
+      witness: 'Fulano (Discord fulano), não joga aqui',
+    });
+    await expect(owner.page.getByTestId('sanction-proof').first()).toContainText(
+      'Testemunha: Fulano',
+    );
+    await owner.page.goto(`/${witnessed.publicId}`);
+    await expect(owner.page.getByTestId('sanction-history')).toContainText('Violação das regras');
+    await expect(owner.page.getByTestId('sanction-history')).not.toContainText('Cheat');
+
+    // Com evidência: "Cheat".
+    const proven = await signedInPlayer(page, 'Cheat Provado');
+    await openFile(owner.page, proven.publicId);
+    await applySanction(owner.page, 'cheat', 'Wallhack na demo', undefined, {
+      evidenceUrl: 'https://youtu.be/demo123',
+    });
+    const evidence = owner.page
+      .getByTestId('sanction-proof')
+      .first()
+      .getByRole('link', { name: 'Evidência anexada' });
+    await expect(evidence).toHaveAttribute('href', 'https://youtu.be/demo123');
+    await owner.page.goto(`/${proven.publicId}`);
+    await expect(owner.page.getByTestId('sanction-history')).toContainText('Cheat');
+    await owner.page.context().close();
+  });
+
+  test('o Dono executa um pedido de exclusão: a Conta é anonimizada e o Perfil some', async ({
+    browser,
+    page,
+  }) => {
+    const player = await signedInPlayer(page, 'Quer Sair');
+    const owner = await staffMember(browser, 'owner');
+    await openFile(owner.page, player.publicId);
+
+    await owner.page.getByRole('button', { name: 'Anonimizar a Conta' }).click();
+    const form = owner.page.getByTestId('erasure-form');
+    await form.getByTestId('reason').fill('Pedido pelo contato, protocolo E2E');
+    await form.getByRole('button', { name: 'Anonimizar a Conta' }).click();
+    await expect(owner.page.getByTestId('erasure-done')).toBeVisible();
+
+    expect((await page.goto(`/${player.publicId}`))?.status()).toBe(404);
+    // A sessão do jogador caiu junto.
+    expect((await page.request.get('/api/me')).status()).toBe(401);
+    await owner.page.goto('/staff/auditoria?acao=account_anonymize');
+    await expect(owner.page.getByTestId('audit-entries').first()).toContainText('protocolo E2E');
     await owner.page.context().close();
   });
 

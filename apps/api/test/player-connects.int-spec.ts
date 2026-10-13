@@ -57,6 +57,7 @@ describe('POST /api/server/player-connects', () => {
       displayName: 'FalleN',
       isFirstConnect: false,
       sanctions: [],
+      chatHidden: false,
     });
   });
 
@@ -129,5 +130,34 @@ describe('POST /api/server/player-connects', () => {
     const response = await connect({ steamId: '123', steamName: 'x' });
 
     expect(response.statusCode).toBe(400);
+  });
+
+  describe('!chat off / !chat on', () => {
+    function setChat(steamId: string, hidden: unknown, key: string | null = t.serverKey) {
+      return t.app.inject({
+        method: 'PUT',
+        url: `/api/server/players/${steamId}/chat-preference`,
+        headers: key === null ? {} : { authorization: `Bearer ${key}` },
+        payload: { hidden },
+      });
+    }
+
+    it('o padrão é o chat visível; o !chat off vale nos próximos connects até o !chat on', async () => {
+      const steamId = steamIdFor(700);
+      expect((await connectOk({ steamId, steamName: 'quieto' })).chatHidden).toBe(false);
+
+      expect((await setChat(steamId, true)).statusCode).toBe(204);
+      expect((await connectOk({ steamId, steamName: 'quieto' })).chatHidden).toBe(true);
+
+      expect((await setChat(steamId, false)).statusCode).toBe(204);
+      expect((await connectOk({ steamId, steamName: 'quieto' })).chatHidden).toBe(false);
+    });
+
+    it('Conta que não existe: 404; corpo inválido: 400; sem a chave do servidor: 401', async () => {
+      expect((await setChat(steamIdFor(701), true)).statusCode).toBe(404);
+      expect((await setChat(steamIdFor(1), 'sim')).statusCode).toBe(400);
+      expect((await setChat('123', true)).statusCode).toBe(400);
+      expect((await setChat(steamIdFor(1), true, null)).statusCode).toBe(401);
+    });
   });
 });

@@ -40,6 +40,7 @@ test('o rodapé leva marca, links, estado dos servidores e o aviso sobre a Valve
     ['Regras de conduta', '/regras'],
     ['Termos de uso', '/termos'],
     ['Política de privacidade', '/privacidade'],
+    ['Política de reembolso', '/reembolso'],
     ['Contato e exclusão de dados', '/contato'],
   ] as const) {
     await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);

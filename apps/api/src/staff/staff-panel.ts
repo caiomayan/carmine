@@ -1,4 +1,5 @@
 import {
+  type AccountAnonymized,
   type ApplySanctions,
   isPermanentMeasure,
   type RevokeSanction,
@@ -17,7 +18,12 @@ import {
   type UpdateStaffServer,
 } from '@carmine/contracts';
 import { Logger } from '@nestjs/common';
-import { desc, eq, ilike, or, type SQL, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, ilike, or, type SQL, sql } from 'drizzle-orm';
+import {
+  AccountAlreadyAnonymized,
+  type AccountErasure,
+  AccountIsStaff,
+} from '../accounts/account-erasure.js';
 import type { Account, AccountsService } from '../accounts/accounts.service.js';
 import type { SessionStore } from '../auth/sessions.js';
 import type { Database } from '../database/database.js';
@@ -59,6 +65,7 @@ export interface StaffPanelDeps {
   vip: VipPeriods;
   sessions: SessionStore;
   servers: GameServerRegistry;
+  erasure: AccountErasure;
   /** Tira do cache o `equipped/v5` da Conta (mudou o VIP). */
   invalidateEquipped: (steamId: string) => Promise<void>;
 }
@@ -91,7 +98,8 @@ export class StaffPanel {
     const rows = await this.deps.db
       .select()
       .from(accounts)
-      .where(or(...conditions))
+      // Conta anonimizada sem ban valendo já não tem SteamID64 (é negativo): fora da busca.
+      .where(and(gt(accounts.steamId, 0n), or(...conditions)))
       .orderBy(sql`${accounts.lastConnectedAt} desc nulls last`, desc(accounts.createdAt))
       .limit(STAFF_SEARCH_LIMIT);
     const found = rows.map((row) => ({ ...row, steamId: row.steamId.toString() }));
@@ -110,6 +118,9 @@ export class StaffPanel {
   ): Promise<StaffAccountDetail> {
     const target = await this.account(publicId);
     await this.assertCanPunish(actor, target);
+    if (target.anonymizedAt !== null) {
+      throw new StaffRejection('account_anonymized', 'A Conta foi anonimizada');
+    }
     if (
       input.measures.some(isPermanentMeasure) &&
       !staffCan(actor.role, 'sanctions.applyPermanent')
@@ -123,7 +134,12 @@ export class StaffPanel {
     const applied = await this.deps.sanctions.apply(
       target.id,
       staff,
-      { category: input.category, measures: input.measures },
+      {
+        category: input.category,
+        measures: input.measures,
+        ...(input.witness !== undefined && { witness: input.witness }),
+        ...(input.evidenceUrl !== undefined && { evidenceUrl: input.evidenceUrl }),
+      },
       now,
       suggestion?.measures,
     );
@@ -230,6 +246,38 @@ export class StaffPanel {
     return this.detailOf(target, now);
   }
 
+  /**
+   * Executa um pedido de exclusão de dados (S08): anonimiza a Conta, sem volta. A Conta da Staff
+   * sai da Staff antes; repetir é recusado.
+   */
+  async anonymize(
+    actor: StaffActor,
+    publicId: number,
+    reason: string,
+    now = new Date(),
+  ): Promise<AccountAnonymized> {
+    const target = await this.account(publicId);
+    try {
+      const erasure = await this.deps.erasure.anonymize(target.id, staffAction(actor, reason), now);
+      if (!erasure.sessionsDropped) {
+        this.logger.warn(`Sessões de #${publicId} não caíram na anonimização; expiram sozinhas`);
+      }
+      return {
+        publicId: erasure.publicId,
+        anonymizedAt: erasure.anonymizedAt.toISOString(),
+        steamIdRetained: erasure.steamIdRetained,
+      };
+    } catch (error) {
+      if (error instanceof AccountAlreadyAnonymized) {
+        throw new StaffRejection('account_anonymized', 'A Conta já foi anonimizada');
+      }
+      if (error instanceof AccountIsStaff) {
+        throw new StaffRejection('target_protected', error.message);
+      }
+      throw error;
+    }
+  }
+
   members(): Promise<StaffMember[]> {
     return this.deps.roles.members();
   }
@@ -274,7 +322,10 @@ export class StaffPanel {
 
   private async account(publicId: number): Promise<Account> {
     const account = await this.deps.accounts.findByPublicId(publicId);
-    if (!account) throw new StaffRejection('account_not_found', 'Conta não encontrada');
+    // Anonimizada e já sem o SteamID64 (sem ban valendo): não há mais o que ver nem fazer.
+    if (!account || BigInt(account.steamId) < 0n) {
+      throw new StaffRejection('account_not_found', 'Conta não encontrada');
+    }
     return account;
   }
 
@@ -350,6 +401,7 @@ export class StaffPanel {
       staffRole: roles.get(a.id) ?? null,
       activeSanctions: active.get(a.id) ?? [],
       lastConnectedAt: a.lastConnectedAt?.toISOString() ?? null,
+      anonymized: a.anonymizedAt !== null,
     }));
   }
 }

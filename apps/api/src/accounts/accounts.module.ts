@@ -7,12 +7,13 @@ import { ModerationModule } from '../moderation/moderation.module.js';
 import { AccountsService } from './accounts.service.js';
 import { AvatarRefresher } from './avatar-refresher.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
+import { PlayerPreferencesController } from './player-preferences.controller.js';
 import { ProfilesController } from './profiles.controller.js';
 import { SteamWebApi } from './steam-profiles.js';
 
 @Module({
   imports: [GameServersModule, LoadoutModule, ModerationModule],
-  controllers: [PlayerConnectsController, ProfilesController],
+  controllers: [PlayerConnectsController, PlayerPreferencesController, ProfilesController],
   providers: [
     {
       provide: AvatarRefresher,

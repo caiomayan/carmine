@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
 import {
+  requiresCheatProof,
   type SanctionMeasure,
   sanctionCategorySchema,
+  sanctionEvidenceUrlSchema,
   sanctionMeasureSchema,
   sanctionSuggestionSchema,
   sanctionTypeSchema,
+  sanctionWitnessSchema,
 } from './moderation.js';
 import { steamId64Schema } from './steam.js';
 import { vipStatusSchema } from './vip.js';
@@ -36,7 +39,9 @@ export const STAFF_ROLE_RANK: Record<StaffRole, number> = { owner: 3, admin: 2, 
  * - `vip.manage`: conceder e revogar Período VIP;
  * - `servers.edit`: editar nome de vitrine e código dos Servidores Carmine;
  * - `audit.read`: consultar o log de auditoria inteiro;
- * - `roles.manage`: alterar papéis de Staff (só o Dono).
+ * - `roles.manage`: alterar papéis de Staff (só o Dono);
+ * - `accounts.anonymize`: executar um pedido de exclusão de dados (S08), que anonimiza a Conta e
+ *   não tem volta (só o Dono, que é o encarregado na Política de Privacidade).
  */
 export const STAFF_PERMISSIONS = {
   'accounts.read': ['owner', 'admin', 'moderator'],
@@ -48,6 +53,7 @@ export const STAFF_PERMISSIONS = {
   'servers.edit': ['owner', 'admin'],
   'audit.read': ['owner', 'admin'],
   'roles.manage': ['owner'],
+  'accounts.anonymize': ['owner'],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type StaffPermission = keyof typeof STAFF_PERMISSIONS;
@@ -70,6 +76,11 @@ export const staffAccountSummarySchema = z
     /** Tipos das Punições valendo agora (ban, mute, gag). */
     activeSanctions: z.array(sanctionTypeSchema),
     lastConnectedAt: z.iso.datetime({ offset: true }).nullable(),
+    /**
+     * Anonimizada por um pedido de exclusão de dados (S08). Só aparece no painel enquanto um ban
+     * mantém o SteamID64 na Conta (para a Staff poder revogá-lo num recurso).
+     */
+    anonymized: z.boolean(),
   })
   .meta({ id: 'StaffAccountSummary' });
 
@@ -117,6 +128,10 @@ export const staffSanctionSchema = z
     endsAt: z.iso.datetime({ offset: true }).nullable(),
     /** Vale agora (ban, mute ou gag não revogado e não vencido). */
     active: z.boolean(),
+    /** Testemunha mencionada (ban por cheat); interna, como o motivo. */
+    witness: z.string().nullable(),
+    /** Link da evidência anexada (ban por cheat); com ela, o Perfil público diz "Cheat". */
+    evidenceUrl: z.string().nullable(),
     appliedBy: staffActorSchema,
     revocation: z
       .object({
@@ -143,6 +158,7 @@ export const staffAuditActionSchema = z
     'role_revoke',
     'display_name_reset',
     'server_update',
+    'account_anonymize',
   ])
   .meta({ id: 'StaffAuditAction' });
 
@@ -220,6 +236,11 @@ export const staffReasonSchema = z.string().trim().min(3).max(500);
  * `sanctions.applyPermanent`. Não se pune a si mesmo nem quem tem papel igual ou maior (o Dono
  * pune qualquer outro). Um ban derruba as sessões do site da Conta; o ban permanente por cheat
  * também encerra o VIP, sem reembolso. Responde 201 com o detalhe atualizado da Conta.
+ *
+ * Ban por cheat exige `witness` (testemunha mencionada, da plataforma ou não) ou `evidenceUrl`
+ * (link da evidência), ou os dois (decisão do dono, 2026-10-13); nas outras ocorrências, são
+ * opcionais. O Perfil público só mostra "Cheat" com a evidência anexada; só com testemunha,
+ * mostra "Violação das regras".
  */
 export const applySanctionsSchema = z
   .strictObject({
@@ -233,7 +254,19 @@ export const applySanctionsSchema = z
       .refine((measures) => new Set(measures.map((x) => x.type)).size === measures.length, {
         message: 'um tipo de Punição por ocorrência',
       }),
+    witness: sanctionWitnessSchema.optional(),
+    evidenceUrl: sanctionEvidenceUrlSchema.optional(),
   })
+  .refine(
+    (input) =>
+      !requiresCheatProof(input.category, input.measures) ||
+      input.witness !== undefined ||
+      input.evidenceUrl !== undefined,
+    {
+      message: 'ban por cheat exige testemunha ou link da evidência',
+      path: ['evidenceUrl'],
+    },
+  )
   .meta({ id: 'ApplySanctions' });
 
 export type ApplySanctions = z.infer<typeof applySanctionsSchema>;
@@ -270,6 +303,31 @@ export const staffReasonBodySchema = z
   .meta({ id: 'StaffReasonBody' });
 
 export type StaffReasonBody = z.infer<typeof staffReasonBodySchema>;
+
+/** Nome de exibição de uma Conta anonimizada por um pedido de exclusão de dados (S08). */
+export const ANONYMIZED_DISPLAY_NAME = 'Conta excluída';
+
+/**
+ * `POST /api/staff/accounts/{publicId}/anonymize` (`accounts.anonymize`, só o Dono), com o
+ * {@link staffReasonBodySchema} (ex.: "pedido de exclusão pelo contato, protocolo 12"): executa
+ * um pedido de exclusão de dados (S08, Política de Privacidade, seção 8). A Conta é anonimizada,
+ * sem volta: nome, avatar e Perfil público somem (o Perfil responde 404), o Inventário, os
+ * Presets, a preferência de chat e as sessões do site são apagados e o vínculo com a Steam é
+ * desfeito; se a pessoa voltar a jogar, nasce uma Conta nova. Ficam as Punições e o log de
+ * auditoria (registro interno de moderação) e, com um ban valendo, o SteamID64 punido, para o
+ * ban continuar valendo (`steamIdRetained`); o vínculo some quando o ban acabar. Conta da Staff
+ * precisa sair da Staff antes (403 `target_protected`); repetir dá 409 `account_anonymized`.
+ */
+export const accountAnonymizedSchema = z
+  .object({
+    publicId: z.int().positive(),
+    anonymizedAt: z.iso.datetime({ offset: true }),
+    /** Havia um ban valendo: o SteamID64 continua na Conta até ele acabar. */
+    steamIdRetained: z.boolean(),
+  })
+  .meta({ id: 'AccountAnonymized' });
+
+export type AccountAnonymized = z.infer<typeof accountAnonymizedSchema>;
 
 /**
  * `PUT /api/staff/accounts/{publicId}/role` (`roles.manage`, só o Dono): `role` nulo tira a Conta
@@ -385,6 +443,8 @@ export const STAFF_ERROR_CODES = [
   'last_owner',
   /** Outro Servidor Carmine já usa esse código. */
   'server_code_taken',
+  /** A Conta já foi anonimizada por um pedido de exclusão de dados. */
+  'account_anonymized',
 ] as const;
 
 export type StaffErrorCode = (typeof STAFF_ERROR_CODES)[number];
@@ -403,6 +463,7 @@ export const STAFF_ERROR_STATUS: Record<StaffErrorCode, number> = {
   account_not_claimed: 422,
   last_owner: 409,
   server_code_taken: 409,
+  account_anonymized: 409,
 };
 
 export const staffErrorSchema = z

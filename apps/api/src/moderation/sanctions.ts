@@ -6,6 +6,7 @@ import {
   LASTING_SANCTION_TYPES,
   type OwnSanction,
   type ProfileSanctions,
+  requiresCheatProof,
   type SanctionCategory,
   type SanctionMeasure,
   type SanctionSuggestion,
@@ -47,6 +48,17 @@ export class SanctionNotActive extends Error {
 export interface SanctionIncident {
   category: SanctionCategory;
   measures: SanctionMeasure[];
+  /** Testemunha mencionada; ban por cheat exige ela ou `evidenceUrl`. */
+  witness?: string;
+  /** Link da evidência anexada. */
+  evidenceUrl?: string;
+}
+
+/** Ban por cheat sem testemunha nem evidência (o contrato já barra; isto é a rede de segurança). */
+export class CheatProofMissing extends Error {
+  constructor() {
+    super('ban por cheat exige testemunha ou link da evidência');
+  }
 }
 
 /** O que ficou registrado de uma ocorrência aplicada. */
@@ -92,6 +104,11 @@ export class Sanctions {
     now = new Date(),
     suggested?: SanctionMeasure[],
   ): Promise<AppliedIncident> {
+    const witness = incident.witness?.trim() || null;
+    const evidenceUrl = incident.evidenceUrl?.trim() || null;
+    if (requiresCheatProof(incident.category, incident.measures) && !witness && !evidenceUrl) {
+      throw new CheatProofMissing();
+    }
     const incidentId = randomUUID();
     const sanctionIds = await this.db.transaction(async (tx) => {
       const [account] = await tx
@@ -109,6 +126,8 @@ export class Sanctions {
             type: measure.type,
             category: incident.category,
             reason: staff.reason,
+            witness,
+            evidenceUrl,
             startsAt: now,
             endsAt:
               isLastingSanction(measure.type) && measure.durationMinutes !== null
@@ -129,6 +148,8 @@ export class Sanctions {
           sanctionIds: ids,
           category: incident.category,
           measures: incident.measures,
+          ...(witness && { witness }),
+          ...(evidenceUrl && { evidenceUrl }),
           ...(suggested && { suggested }),
         },
         at: now,
@@ -236,6 +257,8 @@ export class Sanctions {
       startsAt: s.startsAt.toISOString(),
       endsAt: s.endsAt?.toISOString() ?? null,
       active: isActiveAt(s, now),
+      witness: s.witness,
+      evidenceUrl: s.evidenceUrl,
       appliedBy: {
         steamId: s.appliedBySteamId.toString(),
         publicId: who.appliedPublicId,
@@ -267,9 +290,13 @@ export class Sanctions {
     }));
   }
 
-  /** As Punições do Perfil público. */
-  async profileOf(accountId: string, now = new Date()): Promise<ProfileSanctions> {
-    return toProfileSanctions(await this.recordsOf(accountId), now);
+  /** As Punições do Perfil público; o histórico, só para quem está logado no site. */
+  async profileOf(
+    accountId: string,
+    viewer: { withHistory: boolean },
+    now = new Date(),
+  ): Promise<ProfileSanctions> {
+    return toProfileSanctions(await this.recordsOf(accountId), now, viewer);
   }
 
   /** As Punições valendo agora, com o motivo: só para a própria Conta (`GET /api/me`). */

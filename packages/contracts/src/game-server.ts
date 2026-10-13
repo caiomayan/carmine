@@ -33,7 +33,23 @@ export const playerConnectResultSchema = z
      * e tira o jogador do servidor; `mute` e `gag` valem desde o primeiro instante.
      */
     sanctions: z.array(gameSanctionSchema),
+    /**
+     * O jogador escolheu ocultar o chat dos outros jogadores (`!chat off`): o plugin não entrega a
+     * ele as mensagens de chat dos outros. Padrão: chat visível (`false`).
+     */
+    chatHidden: z.boolean(),
   })
   .meta({ id: 'PlayerConnectResult' });
 
 export type PlayerConnectResult = z.infer<typeof playerConnectResultSchema>;
+
+/**
+ * `PUT /api/server/players/{steamId}/chat-preference`: o Carmine.Core grava o `!chat off`
+ * (`hidden: true`) ou o `!chat on` (`hidden: false`) de um jogador. Vale por Conta, em todos os
+ * Servidores Carmine, até ele mudar de novo. 204; 404 se a Conta não existe.
+ */
+export const playerChatPreferenceSchema = z
+  .strictObject({ hidden: z.boolean() })
+  .meta({ id: 'PlayerChatPreference' });
+
+export type PlayerChatPreference = z.infer<typeof playerChatPreferenceSchema>;

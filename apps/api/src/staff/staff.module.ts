@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccountErasure } from '../accounts/account-erasure.js';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { AccountsService } from '../accounts/accounts.service.js';
 import { SessionStore } from '../auth/sessions.js';
@@ -64,6 +65,10 @@ import { StaffRoles } from './staff-roles.js';
           vip,
           sessions,
           servers,
+          erasure: new AccountErasure(db, {
+            dropSessions: (accountId) => sessions.destroyAllOf(accountId),
+            invalidateEquipped: (steamId) => equipped.invalidate(steamId),
+          }),
           invalidateEquipped: (steamId) => equipped.invalidate(steamId),
         }),
     },

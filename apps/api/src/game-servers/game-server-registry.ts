@@ -4,7 +4,7 @@ import {
   type ServerRegion,
   serverHostname,
 } from '@carmine/contracts';
-import { asc, eq } from 'drizzle-orm';
+import { and, asc, eq, isNull, like } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import { z } from 'zod';
 import type { Database } from '../database/database.js';
@@ -25,6 +25,8 @@ export interface GameServer {
   code: string | null;
   keyRotatedAt: Date;
   createdAt: Date;
+  /** Aposentado pelo CLI: fora da lista e sem chave válida; nulo em operação. */
+  retiredAt: Date | null;
 }
 
 const registrationSchema = z.object({
@@ -66,6 +68,7 @@ const publicColumns = {
   code: gameServers.code,
   keyRotatedAt: gameServers.keyRotatedAt,
   createdAt: gameServers.createdAt,
+  retiredAt: gameServers.retiredAt,
 };
 
 const UNIQUE_VIOLATION = '23505';
@@ -101,12 +104,30 @@ export class GameServerRegistry {
     const updated = await this.db
       .update(gameServers)
       .set({ keyHash: hashServerKey(key), keyRotatedAt: new Date() })
-      .where(eq(gameServers.name, name))
+      .where(and(eq(gameServers.name, name), isNull(gameServers.retiredAt)))
       .returning({ id: gameServers.id });
     if (updated.length === 0) {
-      throw new GameServerRegistryError(`Servidor "${name}" não encontrado`);
+      throw new GameServerRegistryError(`Servidor "${name}" não encontrado ou aposentado`);
     }
     return key;
+  }
+
+  /**
+   * Aposenta servidores (por nome exato ou por prefixo do nome): saem da lista pública e do
+   * painel e a chave para de valer, mas a linha fica (o log de auditoria aponta para ela) e o
+   * nome continua reservado. Devolve os nomes aposentados agora (os já aposentados ficam fora).
+   */
+  async retire(match: { name: string } | { prefix: string }, now = new Date()): Promise<string[]> {
+    const byName =
+      'name' in match
+        ? eq(gameServers.name, match.name)
+        : like(gameServers.name, `${match.prefix.replace(/[\\%_]/g, (c) => `\\${c}`)}%`);
+    const retired = await this.db
+      .update(gameServers)
+      .set({ retiredAt: now })
+      .where(and(byName, isNull(gameServers.retiredAt)))
+      .returning({ name: gameServers.name });
+    return retired.map((row) => row.name).sort();
   }
 
   /** O servidor dono da chave, ou `null` se ela não pertence a nenhum. */
@@ -117,12 +138,17 @@ export class GameServerRegistry {
     const [server] = await this.db
       .select(publicColumns)
       .from(gameServers)
-      .where(eq(gameServers.keyHash, hashServerKey(key)));
+      .where(and(eq(gameServers.keyHash, hashServerKey(key)), isNull(gameServers.retiredAt)));
     return server ?? null;
   }
 
-  async list(): Promise<GameServer[]> {
-    return this.db.select(publicColumns).from(gameServers).orderBy(asc(gameServers.name));
+  /** Os servidores em operação (com `includeRetired`, também os aposentados), por nome. */
+  async list({ includeRetired = false } = {}): Promise<GameServer[]> {
+    return this.db
+      .select(publicColumns)
+      .from(gameServers)
+      .where(includeRetired ? undefined : isNull(gameServers.retiredAt))
+      .orderBy(asc(gameServers.name));
   }
 
   async find(id: string): Promise<GameServer | null> {

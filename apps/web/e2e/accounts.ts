@@ -1,7 +1,6 @@
-import { execFileSync } from 'node:child_process';
 import { randomInt } from 'node:crypto';
-import path from 'node:path';
 import type { APIRequestContext, BrowserContext, Page } from '@playwright/test';
+import { runApiCli } from './api-cli';
 
 const FAKE_STEAM_HOST = '127.0.0.1';
 /** Mesmos nomes de cookie da Steam falsa (apps/api/test/support/fake-steam-openid.ts). */
@@ -56,24 +55,17 @@ const E2E_STAFF_STEAM_ID = '76561197960265729';
  * auditoria). A Conta precisa existir: entre com a Steam falsa antes.
  */
 export function grantVip(steamId: string, days = 1) {
-  execFileSync(
-    process.execPath,
-    [
-      '--env-file=.env.example',
-      '--env-file-if-exists=.env',
-      'dist/vip/vip.cli.js',
-      'grant',
-      '--steam-id',
-      steamId,
-      '--days',
-      String(days),
-      '--by',
-      E2E_STAFF_STEAM_ID,
-      '--reason',
-      'E2E',
-    ],
-    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
-  );
+  runApiCli('dist/vip/vip.cli.js', [
+    'grant',
+    '--steam-id',
+    steamId,
+    '--days',
+    String(days),
+    '--by',
+    E2E_STAFF_STEAM_ID,
+    '--reason',
+    'E2E',
+  ]);
 }
 
 /** O token CSRF da sessão deste navegador, para mutações feitas direto na API. */
@@ -85,22 +77,15 @@ export async function csrfToken(context: BrowserContext): Promise<string> {
 
 /** Revoga o Período VIP pelo CLI de operação da API, como a Staff (com registro no log de auditoria). */
 export function revokeVip(steamId: string) {
-  execFileSync(
-    process.execPath,
-    [
-      '--env-file=.env.example',
-      '--env-file-if-exists=.env',
-      'dist/vip/vip.cli.js',
-      'revoke',
-      '--steam-id',
-      steamId,
-      '--by',
-      E2E_STAFF_STEAM_ID,
-      '--reason',
-      'E2E',
-    ],
-    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
-  );
+  runApiCli('dist/vip/vip.cli.js', [
+    'revoke',
+    '--steam-id',
+    steamId,
+    '--by',
+    E2E_STAFF_STEAM_ID,
+    '--reason',
+    'E2E',
+  ]);
 }
 
 /**
@@ -108,22 +93,15 @@ export function revokeVip(steamId: string) {
  * existir e estar reivindicada: entre com a Steam falsa antes.
  */
 export function grantStaffRole(steamId: string, role: 'owner' | 'admin' | 'moderator') {
-  execFileSync(
-    process.execPath,
-    [
-      '--env-file=.env.example',
-      '--env-file-if-exists=.env',
-      'dist/staff/staff.cli.js',
-      'grant',
-      '--steam-id',
-      steamId,
-      '--role',
-      role,
-      '--by',
-      E2E_STAFF_STEAM_ID,
-      '--reason',
-      'E2E',
-    ],
-    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
-  );
+  runApiCli('dist/staff/staff.cli.js', [
+    'grant',
+    '--steam-id',
+    steamId,
+    '--role',
+    role,
+    '--by',
+    E2E_STAFF_STEAM_ID,
+    '--reason',
+    'E2E',
+  ]);
 }

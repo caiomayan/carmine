@@ -5,7 +5,7 @@ import {
   profileSchema,
   steamId64Schema,
 } from '@carmine/contracts';
-import { Controller, Get, Inject, NotFoundException, Param } from '@nestjs/common';
+import { Controller, Get, Inject, NotFoundException, Param, Req } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiNotFoundResponse,
@@ -14,6 +14,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
+import type { FastifyRequest } from 'fastify';
 import { Loadouts } from '../loadout/loadouts.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
@@ -51,11 +52,15 @@ export class ProfilesController {
 
   @Get(':publicId')
   @RateLimit('public')
-  @ApiOperation({ operationId: 'getProfile', summary: 'Perfil público de uma Conta' })
+  @ApiOperation({
+    operationId: 'getProfile',
+    summary:
+      'Perfil público de uma Conta; o histórico de Punições só vem com sessão (o selo das ativas é público)',
+  })
   @ApiParam({ name: 'publicId', type: 'integer', example: 10_016 })
   @ApiOkResponse({ description: 'O Perfil', standardSchema: profileSchema })
-  @ApiNotFoundResponse({ description: 'Nenhuma Conta com esse ID público' })
-  async get(@Param('publicId') publicId: string): Promise<Profile> {
+  @ApiNotFoundResponse({ description: 'Nenhuma Conta com esse ID público (ou ela foi excluída)' })
+  async get(@Param('publicId') publicId: string, @Req() request: FastifyRequest): Promise<Profile> {
     // Qualquer coisa que não é um ID público simplesmente não tem Perfil.
     const account = PUBLIC_ID.test(publicId)
       ? await this.accounts.findByPublicId(Number(publicId))
@@ -63,14 +68,16 @@ export class ProfilesController {
     const owner = found(account);
     const [showcase, sanctions] = await Promise.all([
       this.loadouts.showcase(owner.id),
-      this.sanctions.profileOf(owner.id),
+      // A sessão vem do SessionGuard global; o web a repassa na leitura do servidor.
+      this.sanctions.profileOf(owner.id, { withHistory: request.carmineSession !== undefined }),
     ]);
     return toProfile(owner, showcase, sanctions);
   }
 }
 
+/** Conta anonimizada por um pedido de exclusão de dados (S08) não tem mais Perfil. */
 function found(account: Account | null): Account {
-  if (account === null) {
+  if (account === null || account.anonymizedAt !== null) {
     throw new NotFoundException('Perfil não encontrado');
   }
   return account;

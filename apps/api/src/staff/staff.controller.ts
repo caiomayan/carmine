@@ -1,5 +1,7 @@
 import {
+  type AccountAnonymized,
   type ApplySanctions,
+  accountAnonymizedSchema,
   applySanctionsSchema,
   type RevokeSanction,
   revokeSanctionSchema,
@@ -190,6 +192,26 @@ export class StaffController {
     @Body({ schema: staffReasonBodySchema }) body: StaffReasonBody,
   ): Promise<StaffAccountDetail> {
     return this.panel.revokeVip(actor, publicId, body.reason);
+  }
+
+  @Post('accounts/:publicId/anonymize')
+  @StaffOnly('accounts.anonymize')
+  @RateLimit('mutations')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    operationId: 'staffAnonymizeAccount',
+    summary:
+      'Executa um pedido de exclusão de dados (S08): anonimiza a Conta, sem volta (só o Dono)',
+  })
+  @ApiParam({ name: 'publicId', type: 'integer', example: 10_016 })
+  @ApiOkResponse({ description: 'Anonimizada', standardSchema: accountAnonymizedSchema })
+  @ApiConflictResponse(ERROR)
+  anonymize(
+    @CurrentStaff() actor: StaffActor,
+    @Param('publicId', { schema: publicIdParam }) publicId: number,
+    @Body({ schema: staffReasonBodySchema }) body: StaffReasonBody,
+  ): Promise<AccountAnonymized> {
+    return this.panel.anonymize(actor, publicId, body.reason);
   }
 
   @Post('accounts/:publicId/display-name/reset')
