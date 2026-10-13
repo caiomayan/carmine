@@ -103,7 +103,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
         _heartbeat = new HeartbeatReporter(client);
         _chat = new ChatPreferences(client);
-        LoadReservedSlots(client);
+        LoadReservedSlots(client, hotReload);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
@@ -265,7 +265,11 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     }
 
     /// <summary>O mapa novo aparece no site logo, não só no próximo batimento.</summary>
-    private void OnMapStart(string mapName) => ScheduleHeartbeat();
+    private void OnMapStart(string mapName)
+    {
+        CheckReservedSlotsCapacity();
+        ScheduleHeartbeat();
+    }
 
     /// <summary>
     /// Batimento extra logo depois de um connect ou disconnect (um só para vários em sequência): o
