@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { E2E_DATABASE_URL } from './e2e/api-cli';
 
 const PORT = Number(process.env.WEB_E2E_PORT ?? 3000);
 const baseURL = `http://localhost:${PORT}`;
@@ -36,12 +37,15 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
-      command: `${API_NODE} dist/database/migrate.cli.js && ${API_NODE} dist/main.js`,
+      // Banco próprio do E2E (criado aqui, migrado e esvaziado no globalSetup): nada vai para o
+      // banco de desenvolvimento.
+      command: `node test/support/e2e-database.cli.ts prepare && ${API_NODE} dist/database/migrate.cli.js && ${API_NODE} dist/main.js`,
       cwd: '../api',
       url: `http://localhost:${API_PORT}/api/health`,
       reuseExistingServer: !process.env.CI,
       env: {
         PORT: String(API_PORT),
+        DATABASE_URL: E2E_DATABASE_URL,
         LOG_LEVEL: 'warn',
         PUBLIC_WEB_URL: baseURL,
         STEAM_OPENID_URL: `http://127.0.0.1:${FAKE_STEAM_PORT}/openid/login`,

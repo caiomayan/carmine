@@ -18,6 +18,10 @@ _Evitar_: conta fantasma, conta temporária
 Conta cuja pessoa já fez login Steam no site ao menos uma vez. É a mesma Conta, nunca uma nova.
 _Evitar_: conta registrada, conta ativada
 
+**Conta anonimizada** (`anonymizedAt`):
+Conta cujo dono pediu a exclusão dos dados (LGPD): perde nome, avatar, Perfil e o que montou, e o vínculo com a Steam se desfaz (fica só enquanto um ban dela valer). É a mesma Conta, com o mesmo ID público, que nunca é reaproveitado; se a pessoa voltar, nasce uma Conta nova.
+_Evitar_: conta apagada, conta deletada
+
 **ID público** (`publicId`):
 Número curto, imutável e único que identifica a Conta na plataforma; números menores pertencem a Contas mais antigas.
 _Evitar_: username, apelido, handle

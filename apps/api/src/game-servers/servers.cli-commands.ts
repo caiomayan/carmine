@@ -1,4 +1,4 @@
-import { parseArgs } from 'node:util';
+import { type ParseArgsOptionsConfig, parseArgs } from 'node:util';
 import type { GameMode } from '@carmine/contracts';
 import { type GameServerRegistry, GameServerRegistryError } from './game-server-registry.js';
 
@@ -11,7 +11,8 @@ export interface ServersCliDeps {
 const USAGE = `Uso:
   servers create --name <nome> --mode <retake|deathmatch> --address <host:porta>
   servers rotate-key --name <nome>
-  servers list`;
+  servers retire (--name <nome> | --prefix <início do nome>)
+  servers list [--all]`;
 
 class UsageError extends Error {}
 
@@ -24,8 +25,10 @@ export async function runServersCli(argv: string[], deps: ServersCliDeps): Promi
         return await create(rest, deps);
       case 'rotate-key':
         return await rotateKey(rest, deps);
+      case 'retire':
+        return await retire(rest, deps);
       case 'list':
-        return await list(deps);
+        return await list(rest, deps);
       default:
         deps.err(USAGE);
         return 1;
@@ -61,6 +64,14 @@ function requiredOptions<const Name extends string>(
   return values as Record<Name, string>;
 }
 
+function parse<const Options extends ParseArgsOptionsConfig>(args: string[], options: Options) {
+  try {
+    return parseArgs({ args, options, strict: true });
+  } catch (error) {
+    throw new UsageError(`${(error as Error).message}\n${USAGE}`);
+  }
+}
+
 function printKey(key: string, deps: ServersCliDeps): void {
   deps.out('');
   deps.out(`  Chave: ${key}`);
@@ -89,8 +100,30 @@ async function rotateKey(args: string[], deps: ServersCliDeps): Promise<number> 
   return 0;
 }
 
-async function list(deps: ServersCliDeps): Promise<number> {
-  const servers = await deps.registry.list();
+/**
+ * Aposenta: some da lista pública e do painel, a chave para de valer e o histórico fica. Por
+ * prefixo serve para limpar de uma vez, ex.: `--prefix e2e-`.
+ */
+async function retire(args: string[], deps: ServersCliDeps): Promise<number> {
+  const { values } = parse(args, { name: { type: 'string' }, prefix: { type: 'string' } });
+  const name = typeof values.name === 'string' ? values.name : '';
+  const prefix = typeof values.prefix === 'string' ? values.prefix : '';
+  if ((name === '') === (prefix === '')) {
+    throw new UsageError(`use --name ou --prefix (um dos dois)\n${USAGE}`);
+  }
+  const retired = await deps.registry.retire(name ? { name } : { prefix });
+  if (retired.length === 0) {
+    const what = name ? `o nome "${name}"` : `o prefixo "${prefix}"`;
+    throw new UsageError(`nenhum servidor em operação com ${what}`);
+  }
+  deps.out(`${retired.length} servidor(es) aposentado(s): ${retired.join(', ')}.`);
+  deps.out('Eles saem da lista pública e as chaves param de valer; o histórico fica.');
+  return 0;
+}
+
+async function list(args: string[], deps: ServersCliDeps): Promise<number> {
+  const { values } = parse(args, { all: { type: 'boolean' } });
+  const servers = await deps.registry.list({ includeRetired: values.all === true });
   if (servers.length === 0) {
     deps.out('Nenhum Servidor Carmine cadastrado.');
     return 0;
@@ -101,7 +134,9 @@ async function list(deps: ServersCliDeps): Promise<number> {
         server.name,
         server.mode,
         server.address,
-        `chave de ${server.keyRotatedAt.toISOString()}`,
+        server.retiredAt
+          ? `aposentado em ${server.retiredAt.toISOString()}`
+          : `chave de ${server.keyRotatedAt.toISOString()}`,
       ].join('\t'),
     );
   }

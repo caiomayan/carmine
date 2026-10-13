@@ -5,6 +5,7 @@ using CounterStrikeSharp.API.Core.Attributes;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Timers;
+using CounterStrikeSharp.API.Modules.UserMessages;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.ValveConstants.Protobuf;
 
@@ -19,7 +20,8 @@ namespace Carmine.Core;
 /// e vagas públicas) a cada HeartbeatIntervalSeconds e logo depois de cada connect e disconnect,
 /// para a home do site mudar em segundos. Na S07, aplica as Punições que a API devolve no connect e
 /// em cada batimento (ban e kick tiram do servidor, mute tira a voz, gag bloqueia o chat, aviso vai
-/// no chat) e o hostname "Carmine | nome de vitrine | código". Na S02/S14, a Vaga reservada (em
+/// no chat) e o hostname "Carmine | nome de vitrine | código". Com o !chat off, o jogador deixa de
+/// receber o chat dos outros (a escolha fica na Conta, na API). Na S02/S14, a Vaga reservada (em
 /// CorePlugin.ReservedSlots.cs).
 /// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
 /// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
@@ -44,6 +46,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// <summary>Jogadores com a saída já agendada (o ban vem em vários batimentos seguidos).</summary>
     private readonly HashSet<ulong> _kicking = [];
     private string? _hostname;
+    private ChatPreferences? _chat;
+
+    /// <summary>Id do CUserMessageSayText2, a mensagem de chat de um jogador para os outros.</summary>
+    private const int SayText2MessageId = 118;
 
     /// <summary>Tempo para ler a mensagem antes de sair do servidor.</summary>
     private const float KickDelaySeconds = 5.0f;
@@ -96,6 +102,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _sync = new AccountSync(client, pending, TimeProvider.System);
         _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
         _heartbeat = new HeartbeatReporter(client);
+        _chat = new ChatPreferences(client);
         LoadReservedSlots(client);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
@@ -104,6 +111,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         RegisterEventHandler<EventPlayerDisconnect>(OnPlayerDisconnect);
         AddCommandListener("say", OnSay, HookMode.Pre);
         AddCommandListener("say_team", OnSay, HookMode.Pre);
+        AddCommand("css_chat", "!chat off oculta o chat dos outros jogadores; !chat on mostra de novo", OnChatCommand);
+        HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);
         RegisterListener<Listeners.OnMapStart>(OnMapStart);
@@ -140,6 +149,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _sync = null;
         _welcomes = null;
         _heartbeat = null;
+        _chat = null;
     }
 
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -196,6 +206,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     current.PrintToChat($" {LoadoutNotices.Message}");
                 }
+                if (_chat?.TakeReminderOnSpawn(current.SteamID) == true)
+                {
+                    current.PrintToChat($" {ChatPreferences.ReminderMessage}");
+                }
             });
         }
         return HookResult.Continue;
@@ -208,6 +222,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
+            _chat?.OnDisconnect(player.SteamID);
             _kicking.Remove(player.SteamID);
             _reservedSlots?.OnLeave(player.SteamID);
             ScheduleHeartbeat();
@@ -346,6 +361,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private void ApplyResult(ulong steamId, PlayerConnectResult result)
     {
         var player = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
+        if (player is not null)
+        {
+            _chat?.OnConnectResult(steamId, result.ChatHidden);
+        }
         var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: player is not null && IsPlaying(player)) == true;
         if (player is null)
         {
@@ -377,6 +396,51 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         player.PrintToChat($" {message}");
         return HookResult.Handled;
+    }
+
+    /// <summary><c>!chat off</c> / <c>!chat on</c> (também <c>css_chat off</c> no console).</summary>
+    private void OnChatCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player is null || !IsHuman(player) || _chat is not { } chat)
+        {
+            return;
+        }
+        if (ChatPreferences.Parse(info.GetArg(1)) is not { } toggle)
+        {
+            player.PrintToChat($" {ChatPreferences.UsageMessage}");
+            return;
+        }
+        var steamId = player.SteamID;
+        RunInBackground(async token =>
+        {
+            var result = await chat.SetAsync(steamId, toggle, token);
+            Server.NextFrame(() =>
+            {
+                var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
+                current?.PrintToChat($" {result.Message}");
+            });
+        });
+    }
+
+    /// <summary>
+    /// Antes de cada mensagem de chat de um jogador sair: tira dos destinatários quem usou o
+    /// !chat off (a própria mensagem e as do servidor continuam chegando).
+    /// </summary>
+    private HookResult OnSayText2(UserMessage message)
+    {
+        if (_chat is not { } chat)
+        {
+            return HookResult.Continue;
+        }
+        var sender = Utilities.GetPlayerFromIndex(message.ReadInt("entityindex"));
+        var senderId = sender is not null && IsHuman(sender) ? sender.SteamID : 0;
+        var recipients = message.Recipients.Where(IsHuman).ToList();
+        var hidden = chat.HiddenFrom(senderId, recipients.Select(p => p.SteamID)).ToHashSet();
+        foreach (var recipient in recipients.Where(p => hidden.Contains(p.SteamID)))
+        {
+            message.Recipients.Remove(recipient);
+        }
+        return HookResult.Continue;
     }
 
     /// <summary>Na thread do jogo: aplica as Punições da API aos jogadores informados.</summary>

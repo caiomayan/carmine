@@ -34,7 +34,7 @@ describe('Perfil público', () => {
       steamProfileUrl: `https://steamcommunity.com/profiles/${steamId}`,
       claimed: false,
       loadoutShowcase: { items: [] },
-      sanctions: { active: [], history: [] },
+      sanctions: { active: [], history: null },
     });
   });
 

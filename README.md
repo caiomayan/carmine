@@ -35,6 +35,8 @@ pnpm build
 # E2E do web (Playwright + axe) contra os builds de produção; na primeira vez, instale o Chromium.
 # O Playwright sobe a Steam OpenID falsa (:4555), a API (:3333) e o web (:3000) e precisa do
 # Postgres e do Valkey no ar (pnpm infra:up); o que já estiver rodando nessas portas é reaproveitado.
+# O E2E usa um banco próprio, carmine_e2e (E2E_DATABASE_URL), esvaziado a cada execução: nada vai
+# para o banco de desenvolvimento. Com o pnpm dev no ar (API no banco de dev), o E2E para e avisa.
 pnpm --filter @carmine/web exec playwright install chromium
 pnpm --filter @carmine/web test:e2e
 # Também contra o next dev (pega erros do servidor que só o dev mostra no console):
@@ -73,8 +75,11 @@ Cada Servidor Carmine se autentica na API com uma chave própria (`Authorization
 pnpm --filter @carmine/api build
 pnpm --filter @carmine/api servers create --name local --mode retake --address 127.0.0.1:27015
 pnpm --filter @carmine/api servers rotate-key --name local   # gera outra; a anterior para na hora
-pnpm --filter @carmine/api servers list
+pnpm --filter @carmine/api servers list                      # --all mostra também os aposentados
+pnpm --filter @carmine/api servers retire --name local       # ou --prefix e2e- para vários de uma vez
 ```
+
+Aposentar tira o servidor da lista pública e do painel e a chave para de valer na hora; a linha fica (o log de auditoria aponta para ela) e o nome continua reservado. Para limpar o banco de dev dos servidores que os E2E antigos deixaram: `servers retire --prefix e2e-`.
 
 Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/game-servers/servers.cli.js create ...`.
 
@@ -187,7 +192,18 @@ Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/staff/sta
 - O Carmine.Core recebe as Punições na resposta do batimento e do connect (ADR 0017): ban e kick mostram o motivo no chat, no centro e no console e tiram o jogador em 5 s; mute desliga a voz; gag bloqueia o chat (comandos de uma palavra, como `!ws`, passam); aviso vai no chat.
 - O ban derruba as sessões do site da Conta; num novo login, o site fica só leitura (403 `account_banned`).
 - O hostname vira `Carmine | <nome de vitrine> | <código>` quando a Staff define os dois em `PATCH /api/staff/servers/{id}`.
+- Ban por cheat exige uma testemunha mencionada (`witness`, da plataforma ou não) ou o link da evidência (`evidenceUrl`), ou os dois. O Perfil público só mostra "Cheat" com a evidência; só com testemunha, mostra "Violação das regras".
+- No Perfil, o selo da Punição ativa é público; o histórico só vem para quem está logado (`sanctions.history` nulo para o visitante; o web repassa a sessão). Nenhum Perfil é indexado por buscadores (`noindex`).
+- `!chat off` (ou `css_chat off` no console) oculta para o jogador o chat dos outros jogadores; `!chat on` volta. A escolha fica na Conta (`PUT /api/server/players/{steamId}/chat-preference`) e volta em cada connect. Com gag, o `!chat off` no chat é bloqueado como qualquer mensagem; o console funciona.
 - As mensagens do jogo apontam para `<host do PUBLIC_WEB_URL>/regras#recurso`.
+
+## Exclusão de dados
+
+Um pedido de exclusão (LGPD) anonimiza a Conta: pelo painel da Staff (só o Dono) ou pelo CLI. Procedimento completo, o que some e o que fica: [docs/operacao/exclusao-de-dados.md](docs/operacao/exclusao-de-dados.md).
+
+```sh
+pnpm --filter @carmine/api accounts anonymize --public-id 10016 --by <SteamID64 do Dono> --reason "Pedido de exclusão, protocolo 12"
+```
 
 ## Rate limit e IP real
 

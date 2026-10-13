@@ -1,8 +1,8 @@
 import { randomInt } from 'node:crypto';
 import type { PlayerConnect, PlayerConnectResult } from '@carmine/contracts';
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
-import { accounts, publicIdCounter } from '../database/schema.js';
+import { accounts, publicIdCounter, sanctions } from '../database/schema.js';
 import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
 import type { AvatarRefresher } from './avatar-refresher.js';
 import { displayNameFor } from './display-name.js';
@@ -25,13 +25,17 @@ export interface Account {
   claimedAt: Date | null;
   firstConnectedAt: Date | null;
   lastConnectedAt: Date | null;
+  /** `!chat off`: não vê o chat dos outros no jogo. */
+  chatHidden: boolean;
+  /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
+  anonymizedAt: Date | null;
   createdAt: Date;
 }
 
 /** O connect registrado: a Conta e o que o plugin aplica (sem Punições e VIP, que o controller junta). */
 export type ConnectedAccount = Pick<
   PlayerConnectResult,
-  'publicId' | 'displayName' | 'isFirstConnect'
+  'publicId' | 'displayName' | 'isFirstConnect' | 'chatHidden'
 > & {
   accountId: string;
 };
@@ -74,6 +78,7 @@ export class AccountsService {
           publicId: account.publicId,
           displayName: account.displayName,
           isFirstConnect,
+          chatHidden: account.chatHidden,
         };
       }
     }
@@ -89,7 +94,8 @@ export class AccountsService {
    */
   async claimOnLogin(steamId: string): Promise<{ account: Account; firstLogin: boolean }> {
     const known = await this.findBySteamId(steamId);
-    const summary = known ? null : await this.avatars.lookup(steamId);
+    const summary =
+      known && known.anonymizedAt === null ? null : await this.avatars.lookup(steamId);
     // Na segunda volta, a Conta criada por um connect concorrente já está visível.
     for (let attempt = 0; attempt < 2; attempt++) {
       const claim = await this.db.transaction((tx) =>
@@ -101,6 +107,19 @@ export class AccountsService {
       }
     }
     throw new Error(`Conflito persistente ao reivindicar a Conta de ${steamId}`);
+  }
+
+  /**
+   * Grava o `!chat off` (`hidden`) ou `!chat on` do jogador, vindo do Carmine.Core. `false` se a
+   * Conta não existe (ou foi anonimizada).
+   */
+  async setChatHidden(steamId: string, hidden: boolean): Promise<boolean> {
+    const updated = await this.db
+      .update(accounts)
+      .set({ chatHidden: hidden })
+      .where(and(eq(accounts.steamId, BigInt(steamId)), isNull(accounts.anonymizedAt)))
+      .returning({ id: accounts.id });
+    return updated.length > 0;
   }
 
   async findBySteamId(steamId: string): Promise<Account | null> {
@@ -166,12 +185,17 @@ export class AccountsService {
     connectedAt: Date,
   ): Promise<{ account: Account; isFirstConnect: boolean } | null> {
     const steamId = BigInt(connect.steamId);
-    const [existing] = await tx
+    const [found] = await tx
       .select()
       .from(accounts)
       .where(eq(accounts.steamId, steamId))
       .for('update');
+    const existing = found && (await keepUnlessReleased(tx, found, connectedAt));
 
+    if (existing?.anonymizedAt) {
+      // Anonimizada com um ban valendo: o ban continua, mas o nome não volta.
+      return { account: toAccount(existing), isFirstConnect: false };
+    }
     if (existing) {
       const [updated] = await tx
         .update(accounts)
@@ -207,13 +231,15 @@ export class AccountsService {
     summary: SteamSummary | null,
     now: Date,
   ): Promise<{ account: Account; firstLogin: boolean } | null> {
-    const [existing] = await tx
+    const [found] = await tx
       .select()
       .from(accounts)
       .where(eq(accounts.steamId, steamId))
       .for('update');
+    const existing = found && (await keepUnlessReleased(tx, found, now));
     if (existing) {
-      if (existing.claimedAt !== null) {
+      // Anonimizada com um ban valendo: entra só para ver o ban, sem reivindicar nada de novo.
+      if (existing.claimedAt !== null || existing.anonymizedAt !== null) {
         return { account: toAccount(existing), firstLogin: false };
       }
       const [claimed] = await tx
@@ -230,6 +256,45 @@ export class AccountsService {
     });
     return created ? { account: created, firstLogin: true } : null;
   }
+}
+
+/**
+ * Uma Conta anonimizada (S08) só guarda o SteamID64 enquanto um ban dela vale. Quando a pessoa
+ * volta e o ban já acabou, o vínculo é desfeito aqui (`steamId = -publicId`) e ela segue como
+ * quem nunca jogou (`null`): ganha uma Conta nova. Fora isso, devolve a própria linha.
+ */
+export async function keepUnlessReleased(
+  tx: Transaction,
+  row: AccountRow,
+  now: Date,
+): Promise<AccountRow | null> {
+  if (row.anonymizedAt === null) return row;
+  const [ban] = await tx
+    .select({ id: sanctions.id })
+    .from(sanctions)
+    .where(and(eq(sanctions.accountId, row.id), activeBanAt(now)))
+    .limit(1);
+  if (ban) return row;
+  await tx
+    .update(accounts)
+    .set({ steamId: detachedSteamId(row.publicId) })
+    .where(eq(accounts.id, row.id));
+  return null;
+}
+
+/** SteamID "desligado" de uma Conta anonimizada: negativo, nunca colide com um de verdade. */
+export function detachedSteamId(publicId: number): bigint {
+  return -BigInt(publicId);
+}
+
+/** Ban não revogado, já começado e não vencido em `now`. */
+export function activeBanAt(now: Date): SQL {
+  return and(
+    eq(sanctions.type, 'ban'),
+    isNull(sanctions.revokedAt),
+    lte(sanctions.startsAt, now),
+    or(isNull(sanctions.endsAt), gt(sanctions.endsAt, now)),
+  ) as SQL;
 }
 
 /**

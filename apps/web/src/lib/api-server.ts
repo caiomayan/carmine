@@ -109,9 +109,17 @@ export type ProfileResult =
   | { status: 'not-found' }
   | { status: 'unavailable' };
 
+/**
+ * O Perfil público. Repassa a sessão (se houver): o histórico de Punições só vem para quem está
+ * logado; o visitante recebe só o selo das ativas.
+ */
 export const getProfile = cache(async (publicId: number): Promise<ProfileResult> => {
   try {
-    const response = await apiGet(`/profiles/${publicId}`, { visitorIp: await visitorIp() });
+    const cookie = await sessionCookie();
+    const response = await apiGet(`/profiles/${publicId}`, {
+      ...(cookie && { cookie }),
+      visitorIp: await visitorIp(),
+    });
     if (response.status === 404) return { status: 'not-found' };
     if (!response.ok) return { status: 'unavailable' };
     return { status: 'found', profile: profileSchema.parse(await response.json()) };

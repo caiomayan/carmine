@@ -231,6 +231,8 @@ Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são libera
 - **No jogo:** o ban recusa o connect com a mensagem (Categoria, até quando no horário de Brasília e onde recorrer) e derruba quem está jogando; mute tira a voz e gag bloqueia o chat (comandos como `!ws` continuam). A resposta de cada batimento da S06 leva as Punições dos jogadores conectados (ADR 0017), então tudo vale em até ~10 s; kick e aviso são executados uma vez.
 - **No site:** o ban derruba todas as sessões da Conta (índice de sessões por Conta). O banido pode entrar de novo para ver a Punição e como recorrer, mas o site fica só leitura (mutações respondem 403 `account_banned`). A própria Conta vê o motivo escrito pela Staff das Punições ativas; o Perfil público nunca mostra o motivo.
 - **Perfil público:** selo da Punição ativa ("Banido até 20/10", "Sem chat até 14h"; a cor de erro só no selo) e histórico dos últimos 12 meses (sem avisos) com tipo, Categoria genérica ("Conduta no chat", "Griefing", "Cheat"...), data e duração. O ban permanente por cheat fica sempre visível. O Perfil privado não esconde Punições; recurso aceito remove a Punição do Perfil. Não há lista pública de banidos. (Validar com LGPD.)
+  - Ajustes do dono (2026-10-13): o selo da Punição ativa é público, mas o histórico só aparece para quem está logado no site; nenhum Perfil é indexado por buscadores (`noindex`; o link continua compartilhável). Ban por cheat exige uma testemunha mencionada (da plataforma ou não) ou uma evidência anexada (link), ou as duas; a Categoria "Cheat" só aparece no Perfil com a evidência; só com testemunha, aparece "Violação das regras".
+- **Chat no jogo:** `!chat off` oculta para o próprio jogador as mensagens de chat dos outros jogadores e `!chat on` volta; o padrão é o chat visível e a escolha fica na Conta (decisão do dono, 2026-10-13).
 - **Recurso:** ticket no Discord, resposta em até 72 h, 1 recurso por ban permanente, revisado por alguém diferente de quem aplicou quando houver mais de uma pessoa na Staff. Página de **regras de conduta** com a tabela e o caminho do recurso (`/regras#recurso`), sem promessa de moderação imediata.
 - **VIP:** ban temporário não congela o VIP; ban permanente por cheat encerra o VIP sem reembolso (registrado no log; validar CDC). Fraude e chargeback entram com a S14.
 - **Painel de Staff no site** (`/api/staff/*`): buscar Conta (ID público, SteamID64, link Steam ou nome), histórico, aplicar e revogar Punições (revogação com "recurso aceito"), conceder e revogar Período VIP (o CLI `vip` continua), resetar Nome de exibição ("Jogador #ID" enquanto o nome Steam não mudar), papéis e os Servidores Carmine.
@@ -252,7 +254,7 @@ Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são libera
 
 - Termos de Uso (incluindo as regras de conduta), Política de Privacidade (LGPD) e canal de contato, redigidos com IA e revisados pelo dono.
 - A Política de Privacidade explica o que o Perfil privado esconde e o que continua público.
-- Procedimento de exclusão de dados exercitável: um pedido resulta na Conta anonimizada.
+- Procedimento de exclusão de dados exercitável: um pedido resulta na Conta anonimizada (procedimento em `docs/operacao/exclusao-de-dados.md`; painel da Staff, só o Dono, ou CLI `accounts anonymize`).
 - Links no rodapé e no aviso do primeiro connect.
 
 **Aceite**

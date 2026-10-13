@@ -1,8 +1,7 @@
-import { execFileSync } from 'node:child_process';
 import { randomBytes, randomInt } from 'node:crypto';
-import path from 'node:path';
 import type { LiveServer, LiveServerList } from '@carmine/contracts';
 import type { APIRequestContext, Page } from '@playwright/test';
+import { runApiCli } from './api-cli';
 
 /**
  * Servidores Carmine dos E2E da S06. Cada teste cadastra o seu pelo CLI da API (como a Staff) e
@@ -13,22 +12,15 @@ export type E2eServer = { name: string; key: string; address: string };
 export function createServer(): E2eServer {
   const name = `e2e-s06-${randomBytes(3).toString('hex')}`;
   const address = `203.0.113.${randomInt(1, 250)}:${randomInt(27015, 27999)}`;
-  const output = execFileSync(
-    process.execPath,
-    [
-      '--env-file=.env.example',
-      '--env-file-if-exists=.env',
-      'dist/game-servers/servers.cli.js',
-      'create',
-      '--name',
-      name,
-      '--mode',
-      'retake',
-      '--address',
-      address,
-    ],
-    { cwd: path.resolve(import.meta.dirname, '../../api'), encoding: 'utf8' },
-  );
+  const output = runApiCli('dist/game-servers/servers.cli.js', [
+    'create',
+    '--name',
+    name,
+    '--mode',
+    'retake',
+    '--address',
+    address,
+  ]);
   const key = /Chave: (\S+)/.exec(output)?.[1];
   if (!key) throw new Error(`O CLI de servidores não devolveu a chave:\n${output}`);
   return { name, key, address };

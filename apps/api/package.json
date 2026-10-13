@@ -21,6 +21,7 @@
     "servers": "node --env-file=.env.example --env-file-if-exists=.env dist/game-servers/servers.cli.js",
     "vip": "node --env-file=.env.example --env-file-if-exists=.env dist/vip/vip.cli.js",
     "staff": "node --env-file=.env.example --env-file-if-exists=.env dist/staff/staff.cli.js",
+    "accounts": "node --env-file=.env.example --env-file-if-exists=.env dist/accounts/accounts.cli.js",
     "fake-steam": "node test/support/fake-steam-openid.cli.ts",
     "openapi:generate": "nest build -p tsconfig.build.json && node dist/openapi/generate.cli.js"
   },

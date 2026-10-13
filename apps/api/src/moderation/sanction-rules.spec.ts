@@ -25,6 +25,7 @@ function sanction(fields: Partial<SanctionRecord>): SanctionRecord {
     endsAt: ahead(1),
     revokedAt: null,
     appealAccepted: false,
+    evidenceUrl: null,
     ...fields,
   };
 }
@@ -83,11 +84,13 @@ describe('toProfileSanctions (Perfil público)', () => {
     const warning = sanction({ type: 'warning', endsAt: null, startsAt: ago(5) });
     const tooOld = sanction({ startsAt: ago(400), endsAt: ago(399) });
 
-    const view = toProfileSanctions([old, warning, tooOld, active, kick], now);
+    const view = toProfileSanctions([old, warning, tooOld, active, kick], now, {
+      withHistory: true,
+    });
 
     expect(view.active.map((s) => s.id)).toEqual([active.id]);
-    expect(view.history.map((s) => s.id)).toEqual([active.id, kick.id, old.id]);
-    expect(view.history[0]).toEqual({
+    expect(view.history?.map((s) => s.id)).toEqual([active.id, kick.id, old.id]);
+    expect(view.history?.[0]).toEqual({
       id: active.id,
       type: 'gag',
       category: 'offensive_chat',
@@ -100,22 +103,47 @@ describe('toProfileSanctions (Perfil público)', () => {
   it('o ban permanente por cheat fica sempre visível, mesmo com mais de 12 meses', () => {
     const cheat = sanction({ category: 'cheat', endsAt: null, startsAt: ago(800) });
 
-    const view = toProfileSanctions([cheat], now);
+    const view = toProfileSanctions([cheat], now, { withHistory: true });
 
     expect(view.active.map((s) => s.id)).toEqual([cheat.id]);
-    expect(view.history.map((s) => s.id)).toEqual([cheat.id]);
+    expect(view.history?.map((s) => s.id)).toEqual([cheat.id]);
   });
 
   it('recurso aceito some; revogada sem recurso fica com o fim antecipado', () => {
     const appealed = sanction({ revokedAt: ago(0.5), appealAccepted: true });
     const revoked = sanction({ startsAt: ago(2), endsAt: ahead(5), revokedAt: ago(1) });
 
-    const view = toProfileSanctions([appealed, revoked], now);
+    const view = toProfileSanctions([appealed, revoked], now, { withHistory: true });
 
     expect(view.active).toEqual([]);
     expect(view.history).toEqual([
       expect.objectContaining({ id: revoked.id, endsAt: ago(1).toISOString(), revoked: true }),
     ]);
+  });
+
+  it('sem sessão, só o selo das ativas: o histórico fica nulo', () => {
+    const active = sanction({ startsAt: ago(0.1) });
+    const old = sanction({ startsAt: ago(200), endsAt: ago(199) });
+
+    const view = toProfileSanctions([active, old], now, { withHistory: false });
+
+    expect(view.active.map((s) => s.id)).toEqual([active.id]);
+    expect(view.history).toBeNull();
+  });
+
+  it('cheat só aparece como Cheat com evidência anexada; só com testemunha, Violação das regras', () => {
+    const withEvidence = sanction({
+      category: 'cheat',
+      endsAt: null,
+      startsAt: ago(2),
+      evidenceUrl: 'https://youtu.be/abc',
+    });
+    const witnessOnly = sanction({ category: 'cheat', endsAt: null, startsAt: ago(1) });
+
+    const view = toProfileSanctions([withEvidence, witnessOnly], now, { withHistory: true });
+
+    expect(view.active.map((s) => s.category)).toEqual(['rule_violation', 'cheat']);
+    expect(view.history?.map((s) => s.category)).toEqual(['rule_violation', 'cheat']);
   });
 });
 

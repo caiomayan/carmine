@@ -43,6 +43,13 @@
       "when": 1791819095817,
       "tag": "0005_s07_moderacao",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791921000748,
+      "tag": "0006_ajustes_j1_s08",
+      "breakpoints": true
     }
   ]
 }

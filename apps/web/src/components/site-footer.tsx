@@ -106,6 +106,7 @@ export async function SiteFooter() {
               links={[
                 { label: t('links.terms'), href: '/termos' },
                 { label: t('links.privacy'), href: '/privacidade' },
+                { label: t('links.refund'), href: '/reembolso' },
                 { label: t('links.contact'), href: '/contato' },
               ]}
             />
