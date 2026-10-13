@@ -92,7 +92,8 @@ export async function saveTheme(page: Page, theme: Theme) {
 
 /**
  * Espera as animações finitas no tempo (entradas, fades) terminarem. As ligadas à rolagem
- * (o rodapé) só terminam rolando a página, então ficam de fora.
+ * (o rodapé) só terminam rolando a página, então ficam de fora. Uma animação cancelada no meio
+ * (um re-render) rejeita o  com AbortError: ela não existe mais, então não conta.
  */
 export async function settle(page: Page) {
   await page.evaluate(() =>
@@ -104,7 +105,7 @@ export async function settle(page: Page) {
             a.timeline === document.timeline &&
             a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
         )
-        .map((a) => a.finished),
+        .map((a) => a.finished.catch(() => undefined)),
     ),
   );
 }
