@@ -93,7 +93,7 @@ export async function saveTheme(page: Page, theme: Theme) {
 /**
  * Espera as animações finitas no tempo (entradas, fades) terminarem. As ligadas à rolagem
  * (o rodapé) só terminam rolando a página, então ficam de fora. Uma animação cancelada no meio
- * (um re-render) rejeita o  com AbortError: ela não existe mais, então não conta.
+ * (um re-render) rejeita o `finished` com AbortError: ela não existe mais, então não conta.
  */
 export async function settle(page: Page) {
   await page.evaluate(() =>
