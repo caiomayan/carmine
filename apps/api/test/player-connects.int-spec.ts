@@ -1,6 +1,7 @@
 import { type PlayerConnectResult, playerConnectResultSchema } from '@carmine/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { isPrettyNumber } from '../src/accounts/public-id.js';
+import { vipPeriods } from '../src/database/schema.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 
 describe('POST /api/server/player-connects', () => {
@@ -56,6 +57,7 @@ describe('POST /api/server/player-connects', () => {
       publicId: first.publicId,
       displayName: 'FalleN',
       isFirstConnect: false,
+      isVip: false,
       sanctions: [],
     });
   });
@@ -123,6 +125,37 @@ describe('POST /api/server/player-connects', () => {
 
     expect(response.statusCode).toBe(401);
     expect(await t.accounts.findBySteamId(steamId)).toBeNull();
+  });
+
+  it('diz se a Conta tem VIP ativo agora (Vaga reservada, S14)', async () => {
+    const steamId = steamIdFor(30);
+    const before = await connectOk({ steamId, steamName: 'vip' });
+    const account = await t.accounts.findBySteamId(steamId);
+    if (!account) throw new Error('Conta não criada');
+    await t.postgres.db.insert(vipPeriods).values({
+      accountId: account.id,
+      startsAt: new Date(Date.now() - 60_000),
+      endsAt: new Date(Date.now() + 60 * 60_000),
+    });
+
+    const after = await connectOk({ steamId, steamName: 'vip' });
+
+    expect(before.isVip).toBe(false);
+    expect(after.isVip).toBe(true);
+  });
+
+  it('não conta um Período VIP já encerrado', async () => {
+    const steamId = steamIdFor(31);
+    await connectOk({ steamId, steamName: 'ex-vip' });
+    const account = await t.accounts.findBySteamId(steamId);
+    if (!account) throw new Error('Conta não criada');
+    await t.postgres.db.insert(vipPeriods).values({
+      accountId: account.id,
+      startsAt: new Date(Date.now() - 2 * 60 * 60_000),
+      endsAt: new Date(Date.now() - 60_000),
+    });
+
+    expect((await connectOk({ steamId, steamName: 'ex-vip' })).isVip).toBe(false);
   });
 
   it('responde 400 a um SteamID inválido', async () => {
