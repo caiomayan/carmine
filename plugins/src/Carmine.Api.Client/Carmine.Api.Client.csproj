@@ -15,11 +15,35 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    Troca de texto num arquivo. Uma task, e não WriteLinesToFile: no Linux o MSBuild trata cada linha
+    como caminho e troca "\" por "/", o que quebrava as strings do código gerado.
+  -->
+  <UsingTask TaskName="ReplaceInFile" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)/Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath ParameterType="System.String" Required="true" />
+      <Find ParameterType="System.String" Required="true" />
+      <Replacement ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs"><![CDATA[
+        var text = System.IO.File.ReadAllText(FilePath);
+        System.IO.File.WriteAllText(FilePath, text.Replace(Find, Replacement));
+      ]]></Code>
+    </Task>
+  </UsingTask>
+
   <Target Name="GenerateCarmineApiClient"
           BeforeTargets="CoreCompile"
           Inputs="$(OpenApiDocument);$(MSBuildProjectFullPath)"
           Outputs="$(GeneratedClientFile)">
     <Exec Command="$(NSwagExe_Net100) openapi2csclient /input:&quot;$(OpenApiDocument)&quot; /output:&quot;$(GeneratedClientFile)&quot; /namespace:Carmine.Api.Client /className:CarmineApiClient /operationGenerationMode:SingleClientFromOperationId /jsonLibrary:SystemTextJson /generateClientInterfaces:true /useBaseUrl:false /generateNullableReferenceTypes:true /generateOptionalPropertiesAsNullable:true" />
+    <!--
+      O NSwag marca os valores dos enums com [EnumMember], que o System.Text.Json ignora: um valor
+      que não bate com o nome C# ("sao-paulo" -> SaoPaulo) derrubava a resposta inteira. O
+      [JsonStringEnumMemberName] é o equivalente que o JsonStringEnumConverter lê.
+    -->
+    <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="System.Runtime.Serialization.EnumMember(Value =" Replacement="System.Text.Json.Serialization.JsonStringEnumMemberName(" />
   </Target>
 
   <Target Name="IncludeCarmineApiClient" BeforeTargets="CoreCompile" DependsOnTargets="GenerateCarmineApiClient">

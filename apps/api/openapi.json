@@ -89,7 +89,7 @@
         },
         "responses": {
           "200": {
-            "description": "Nome de exibição, ID público e Punições a aplicar no jogo",
+            "description": "Nome de exibição, ID público, VIP e Punições a aplicar no jogo",
             "content": {
               "application/json": {
                 "schema": {
@@ -3484,6 +3484,9 @@
           "isFirstConnect": {
             "type": "boolean"
           },
+          "isVip": {
+            "type": "boolean"
+          },
           "sanctions": {
             "type": "array",
             "items": {
@@ -3498,6 +3501,7 @@
           "publicId",
           "displayName",
           "isFirstConnect",
+          "isVip",
           "sanctions",
           "chatHidden"
         ],

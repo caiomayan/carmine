@@ -1,0 +1,121 @@
+{
+  "ConfigVersion": 26,
+  "Rtv": {
+    "Enabled": true,
+    "EnabledInWarmup": false,
+    "EnablePanoramaVote": false,
+    "EnablePanoramaToast": false,
+    "MinPlayers": 2,
+    "MinRounds": 0,
+    "ChangeAtRoundEnd": false,
+    "MapChangeDelay": 5,
+    "SoundEnabled": false,
+    "SoundVolume": 0.5,
+    "SoundPath": "sounds/vo/announcer/cs2_classic/felix_broken_fang_pick_1_map_tk01.vsnd_c",
+    "MapsToShow": 3,
+    "AlwaysActive": true,
+    "AlwaysActiveReminder": true,
+    "ReminderInterval": 180,
+    "RtvVoteDuration": 30,
+    "MapVoteDuration": 25,
+    "CooldownDuration": 120,
+    "MapStartDelay": 120,
+    "VotePercentage": 60,
+    "EnableCountdown": true,
+    "CountdownType": "chat",
+    "ChatCountdownInterval": 15
+  },
+  "EndOfMapVote": {
+    "Enabled": true,
+    "EnableRevote": false,
+    "MapsToShow": 3,
+    "MenuType": "ChatMenu",
+    "ChangeMapImmediately": false,
+    "VoteDuration": 30,
+    "SoundEnabled": true,
+    "SoundVolume": 0.5,
+    "SoundPath": "1974266470",
+    "TriggerSecondsBeforeEnd": 90,
+    "TriggerRoundsBeforeEnd": 0,
+    "DelayToChangeInTheEnd": 0,
+    "IncludeExtendCurrentMap": false,
+    "EnableCountdown": true,
+    "CountdownType": "chat",
+    "ChatCountdownInterval": 30,
+    "ChatMapChoiceReminder": true,
+    "ChatMapChoiceInterval": 30,
+    "EnableHint": false,
+    "HintType": "GameHint"
+  },
+  "Nominate": {
+    "Enabled": true,
+    "EnabledInWarmup": true,
+    "MenuType": "ChatMenu",
+    "NominateLimit": 1,
+    "Permission": ""
+  },
+  "Votemap": {
+    "Enabled": false,
+    "MenuType": "ChatMenu",
+    "VotePercentage": 50,
+    "ChangeMapImmediately": true,
+    "EnabledInWarmup": false,
+    "MinPlayers": 0,
+    "MinRounds": 0,
+    "Permission": "@css/vip, @css/votemap"
+  },
+  "VoteExtend": {
+    "Enabled": false,
+    "EnablePanorama": true,
+    "VoteDuration": 60,
+    "VotePercentage": 50,
+    "CooldownDuration": 180,
+    "EnableCountdown": true,
+    "CountdownType": "chat",
+    "ChatCountdownInterval": 15,
+    "Permission": "@css/vip,@css/votextend"
+  },
+  "MapChooser": {
+    "Command": [
+      "mapmenu"
+    ],
+    "MenuType": "ChatMenu",
+    "Permission": "@css/changemap"
+  },
+  "PanoramaMenu": {
+    "AddonName": "panorama/layout/custom_game/rockthevote.xml",
+    "EnableClickVoting": true,
+    "MapVoteMenuPosition": "CenterLeft",
+    "MapVoteHeaderSize": "extralarge",
+    "MapVoteHeaderColor": "orange",
+    "MapVoteRowSize": "large",
+    "MapVoteRowColor": "green",
+    "RtvPosition": "CenterRight",
+    "RtvMapVoteHeaderSize": "large",
+    "RtvMapVoteHeaderColor": "orange",
+    "RtvColor": "white",
+    "RtvSize": "normal"
+  },
+  "General": {
+    "AdminPermission": "@css/root,@css/admin",
+    "ExtendPermission": "@css/admin,@css/changemap",
+    "DebugLogging": false,
+    "ForceMapChange": true,
+    "MaxMapExtensions": 0,
+    "DisableMapExtensions": "",
+    "RoundTimeExtension": 15,
+    "MapsInCoolDown": 1,
+    "CooldownCommands": [
+      "cooldown",
+      "cd"
+    ],
+    "HideHudAfterVote": true,
+    "RandomStartMap": false,
+    "IncludeSpectator": false,
+    "IncludeAFK": true,
+    "AFKCheckInterval": 30,
+    "EnableMapValidation": false,
+    "SteamApiKey": "",
+    "DiscordWebhook": ""
+  }
+}

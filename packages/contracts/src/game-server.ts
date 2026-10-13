@@ -29,6 +29,10 @@ export const playerConnectResultSchema = z
     /** Primeiro connect da Conta a um Servidor Carmine: o plugin mostra a mensagem de boas-vindas. */
     isFirstConnect: z.boolean(),
     /**
+     * A Conta tem VIP ativo agora: no servidor lotado, só o VIP fica na Vaga reservada (S14).
+     */
+    isVip: z.boolean(),
+    /**
      * Punições da Conta a aplicar já no connect (S07): com um `ban`, o plugin mostra a `message`
      * e tira o jogador do servidor; `mute` e `gag` valem desde o primeiro instante.
      */

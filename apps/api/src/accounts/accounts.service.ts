@@ -32,6 +32,14 @@ export interface Account {
   createdAt: Date;
 }
 
+/** O connect registrado: a Conta e o que o plugin aplica (sem Punições e VIP, que o controller junta). */
+export type ConnectedAccount = Pick<
+  PlayerConnectResult,
+  'publicId' | 'displayName' | 'isFirstConnect' | 'chatHidden'
+> & {
+  accountId: string;
+};
+
 type AccountRow = typeof accounts.$inferSelect;
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -49,7 +57,7 @@ export class AccountsService {
    * devolve o que o plugin aplica no jogo. Seguro sob connects simultâneos, inclusive do mesmo
    * jogador (só um deles recebe `isFirstConnect`).
    */
-  async registerConnect(connect: PlayerConnect): Promise<Omit<PlayerConnectResult, 'sanctions'>> {
+  async registerConnect(connect: PlayerConnect): Promise<ConnectedAccount> {
     const now = new Date();
     // Um connect reenviado pelo plugin traz o horário original; nunca aceitamos um futuro.
     const connectedAt =
@@ -66,6 +74,7 @@ export class AccountsService {
         this.avatars.refreshInBackground(result.account);
         const { account, isFirstConnect } = result;
         return {
+          accountId: account.id,
           publicId: account.publicId,
           displayName: account.displayName,
           isFirstConnect,

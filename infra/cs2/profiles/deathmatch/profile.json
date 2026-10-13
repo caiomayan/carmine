@@ -1,0 +1,15 @@
+{
+  "$comment": "Deathmatch · Livre (S02). Lido por infra/scripts/install-cs2-server.ps1 (etapa Profiles) e start-cs2-profile.ps1. Os arquivos em csgo/ são copiados por cima do game/csgo da instância.",
+  "name": "deathmatch",
+  "showcaseName": "Deathmatch · Livre",
+  "mode": "deathmatch",
+  "port": 27016,
+  "maxPlayers": 18,
+  "publicSlots": 16,
+  "reservedSlots": "deathmatch",
+  "gameType": 1,
+  "gameMode": 2,
+  "startMap": "de_dust2",
+  "plugins": ["Carmine.Core", "InventorySimulator", "Deathmatch", "RockTheVote"],
+  "inventorySimulator": { "fallbackTeam": true }
+}

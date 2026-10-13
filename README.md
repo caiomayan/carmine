@@ -95,6 +95,35 @@ Com a API no ar (`pnpm dev`), suba o servidor e procure no console a linha `Carm
 
 `css_plugins list` no console confirma que o `Carmine.Core` e o `InventorySimulator` carregaram. O Loadout é aplicado no connect e com `!ws` (cooldown de 30 s); a API guarda a resposta em cache e a invalida a cada mudança. Com a API fora do ar, os connects ficam em `addons\counterstrikesharp\data\Carmine.Core\pending-connects.json` e são reenviados a cada `RetryIntervalSeconds` (padrão 15 s), e o jogador entra com as Armas padrão e o aviso "Não conseguimos carregar seu Loadout agora; tente !ws em alguns minutos".
 
+### Perfis de gameplay: Retake · Rotação e Deathmatch · Livre
+
+Os perfis (S02) ficam versionados em `infra/cs2/profiles/<perfil>`: o `profile.json` (porta, `maxplayers`, vagas públicas, Vaga reservada, modo de jogo, mapa inicial e plugins) e, em `csgo/`, os arquivos copiados por cima do `game\csgo` (`server.cfg`, `retakes.cfg`/`deathmatch.cfg`, configs dos plugins e o `maplist.txt` da votação de mapa).
+
+| Perfil | Porta | Vagas | Plugins de gameplay |
+|---|---|---|---|
+| `retake` (Retake · Rotação) | 27015 | 9 (5 TR × 4 CT) + 1 de Vaga reservada | cs2-retakes 3.1.1, cs2-retakes-allocator 3.0, RockTheVote 2.4.0 + CS2MenuManager 1.0.43 |
+| `deathmatch` (Deathmatch · Livre) | 27016 | 16 + 2 só para VIP | CS2-Deathmatch 1.3.6, RockTheVote 2.4.0 + CS2MenuManager 1.0.43 |
+
+A etapa `Profiles` monta uma instância por perfil em `C:\carmine\cs2-profiles\<perfil>` que reaproveita o CS2 do `-ServerDir` (junções e hardlinks: nada dos ~60 GB é copiado; o `-ProfilesDir` precisa estar no mesmo volume NTFS) e tem `addons\` e `cfg\` próprios. Os plugins de terceiros são baixados das releases oficiais com SHA-256 conferido (versões fixadas no topo do script) e nunca vão para o repositório: o RockTheVote não tem licença, então só o usamos, sem modificar nem redistribuir.
+
+```powershell
+# Depois das etapas Metamod e CounterStrikeSharp (e de cada update do CS2):
+./infra/scripts/install-cs2-server.ps1 -Steps Profiles
+
+# Um Servidor Carmine por perfil, cada um com a sua chave:
+pnpm --filter @carmine/api servers create --name retake-local --mode retake --address 127.0.0.1:27015
+pnpm --filter @carmine/api servers create --name dm-local --mode deathmatch --address 127.0.0.1:27016
+# Cole cada chave em C:\carmine\cs2-profiles\<perfil>\game\csgo\addons\counterstrikesharp\configs\plugins\Carmine.Core\Carmine.Core.json
+# e rode de novo a etapa (ela mantém a ApiKey e a leva ao cfg do inventory-simulator):
+./infra/scripts/install-cs2-server.ps1 -Steps Profiles
+
+# Subir (uma janela por servidor; 'quit' no console encerra). -DryRun só mostra o comando.
+./infra/scripts/start-cs2-profile.ps1 -Name retake
+./infra/scripts/start-cs2-profile.ps1 -Name deathmatch
+```
+
+A **Vaga reservada** (S14) é do Carmine.Core, configurada por `PublicSlots` e `ReservedSlots` no `Carmine.Core.json` (a etapa grava a partir do `profile.json`): o connect devolve `isVip`, e quem entra além das vagas públicas sem VIP sai na hora ("Servidor lotado: a vaga extra é reservada para VIP..."). No Retake, com um VIP na vaga extra, no fim do round sai um jogador sem VIP (espectador, depois AFK, depois o último que entrou), com a mensagem "Vaga liberada para um VIP. Há vaga em: [outro servidor]. Com o VIP, sua vaga é garantida." e 30 min de proteção; o cs2-retakes põe o VIP no jogo no round seguinte. Com a API fora, ninguém sai (falha aberta).
+
 ## Login Steam no site
 
 O web e a API ficam na mesma origem: o navegador chama sempre `/api/*` (ADR 0015). Em desenvolvimento o Next repassa `/api/*` para a API (`API_URL` no `apps/web/.env`, padrão `http://localhost:3333`); em produção quem separa é o Cloudflare Tunnel. A API precisa saber a origem pública do web em `PUBLIC_WEB_URL` (padrão `http://localhost:3000`).

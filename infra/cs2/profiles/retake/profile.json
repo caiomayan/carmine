@@ -1,0 +1,15 @@
+{
+  "$comment": "Retake · Rotação (S02). Lido por infra/scripts/install-cs2-server.ps1 (etapa Profiles) e start-cs2-profile.ps1. Os arquivos em csgo/ são copiados por cima do game/csgo da instância.",
+  "name": "retake",
+  "showcaseName": "Retake · Rotação",
+  "mode": "retake",
+  "port": 27015,
+  "maxPlayers": 10,
+  "publicSlots": 9,
+  "reservedSlots": "retake",
+  "gameType": 0,
+  "gameMode": 1,
+  "startMap": "de_mirage",
+  "plugins": ["Carmine.Core", "InventorySimulator", "RetakesPlugin", "RetakesAllocator", "RockTheVote"],
+  "inventorySimulator": { "fallbackTeam": false }
+}

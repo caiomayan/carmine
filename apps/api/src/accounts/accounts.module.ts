@@ -4,6 +4,7 @@ import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { LoadoutModule } from '../loadout/loadout.module.js';
 import { ModerationModule } from '../moderation/moderation.module.js';
+import { VipModule } from '../vip/vip.module.js';
 import { AccountsService } from './accounts.service.js';
 import { AvatarRefresher } from './avatar-refresher.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
@@ -12,7 +13,7 @@ import { ProfilesController } from './profiles.controller.js';
 import { SteamWebApi } from './steam-profiles.js';
 
 @Module({
-  imports: [GameServersModule, LoadoutModule, ModerationModule],
+  imports: [GameServersModule, LoadoutModule, ModerationModule, VipModule],
   controllers: [PlayerConnectsController, PlayerPreferencesController, ProfilesController],
   providers: [
     {

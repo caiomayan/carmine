@@ -37,4 +37,16 @@ public sealed class CoreConfig : BasePluginConfig
     /// </summary>
     [JsonPropertyName("PublicSlots")]
     public int PublicSlots { get; set; }
+
+    /// <summary>
+    /// Vaga reservada (S14): <c>"retake"</c> (com o VIP além das <see cref="PublicSlots"/>, um
+    /// jogador sem VIP sai no fim do round), <c>"deathmatch"</c> (vagas extras só para VIP) ou
+    /// vazio (desligada). Ligada, exige <see cref="PublicSlots"/> abaixo do maxplayers do servidor.
+    /// </summary>
+    [JsonPropertyName("ReservedSlots")]
+    public string ReservedSlots { get; set; } = "";
+
+    /// <summary>O modo da Vaga reservada; lança se o texto não é um dos aceitos.</summary>
+    [JsonIgnore]
+    public ReservedSlotsMode ReservedSlotsMode => Core.ReservedSlots.ParseMode(ReservedSlots);
 }
