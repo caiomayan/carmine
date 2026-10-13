@@ -305,6 +305,8 @@ test.describe('acessibilidade da moderação (axe)', () => {
 
   for (const theme of ['dark', 'light'] as const) {
     test(`painel, aviso e Perfil punido sem violações (${theme})`, async ({ browser, page }) => {
+      // Oito páginas com axe (cada uma rola até o fim e espera as animações): mais que os 30 s padrão.
+      test.setTimeout(120_000);
       const player = await signedInPlayer(page, 'Axe Punido');
       const owner = await staffMember(browser, 'owner');
       await saveTheme(owner.page, theme);
