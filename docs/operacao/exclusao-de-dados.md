@@ -17,7 +17,7 @@ Pelo painel (`/staff`, só o Dono): abra a Conta, "Exclusão de dados" → "Anon
 Pelo CLI:
 
 ```sh
-pnpm --filter @carmine/api build
+pnpm --filter "@carmine/api..." build
 pnpm --filter @carmine/api accounts anonymize --public-id 10016 --by <SteamID64 do Dono> --reason "Pedido de exclusão pelo contato, protocolo 12"
 ```
 
