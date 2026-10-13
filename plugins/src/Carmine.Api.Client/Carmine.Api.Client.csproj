@@ -20,6 +20,15 @@
           Inputs="$(OpenApiDocument);$(MSBuildProjectFullPath)"
           Outputs="$(GeneratedClientFile)">
     <Exec Command="$(NSwagExe_Net100) openapi2csclient /input:&quot;$(OpenApiDocument)&quot; /output:&quot;$(GeneratedClientFile)&quot; /namespace:Carmine.Api.Client /className:CarmineApiClient /operationGenerationMode:SingleClientFromOperationId /jsonLibrary:SystemTextJson /generateClientInterfaces:true /useBaseUrl:false /generateNullableReferenceTypes:true /generateOptionalPropertiesAsNullable:true" />
+    <!--
+      O NSwag marca os valores dos enums com [EnumMember], que o System.Text.Json ignora: um valor
+      que não bate com o nome C# ("sao-paulo" -> SaoPaulo) derrubava a resposta inteira. O
+      [JsonStringEnumMemberName] é o equivalente que o JsonStringEnumConverter lê.
+    -->
+    <PropertyGroup>
+      <_GeneratedClient>$([System.IO.File]::ReadAllText('$(GeneratedClientFile)').Replace('System.Runtime.Serialization.EnumMember(Value = ', 'System.Text.Json.Serialization.JsonStringEnumMemberName('))</_GeneratedClient>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(GeneratedClientFile)" Lines="$([MSBuild]::Escape('$(_GeneratedClient)'))" Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
 
   <Target Name="IncludeCarmineApiClient" BeforeTargets="CoreCompile" DependsOnTargets="GenerateCarmineApiClient">
