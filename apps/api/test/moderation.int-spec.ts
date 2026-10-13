@@ -76,8 +76,11 @@ describe('Moderação (S07)', () => {
     return serverHeartbeatResultSchema.parse(response.json());
   }
 
-  async function profileOf(publicId: number): Promise<Profile> {
-    const response = await t.app.inject({ method: 'GET', url: `/api/profiles/${publicId}` });
+  /** O Perfil como um visitante sem sessão o vê, ou como `viewer` (logado) o vê. */
+  async function profileOf(publicId: number, viewer?: Staff): Promise<Profile> {
+    const response = viewer
+      ? await viewer.call('GET', `/api/profiles/${publicId}`)
+      : await t.app.inject({ method: 'GET', url: `/api/profiles/${publicId}` });
     expect(response.statusCode, response.body).toBe(200);
     return profileSchema.parse(response.json());
   }
@@ -96,6 +99,8 @@ describe('Moderação (S07)', () => {
       category: string;
       reason: string;
       measures: { type: string; durationMinutes: number | null }[];
+      witness?: string;
+      evidenceUrl?: string;
     },
   ) {
     return by.call('POST', `/api/staff/accounts/${publicId}/sanctions`, body);
@@ -262,11 +267,61 @@ describe('Moderação (S07)', () => {
         category: 'cheat',
         reason: 'wallhack visto por 2 da Staff',
         measures: [{ type: 'ban', durationMinutes: null }],
+        witness: 'Staff #10016 e #10019, no SP·1',
       });
 
       expect(detail.vip.active).toBe(false);
       // Mesmo instante: a ordem entre as duas não é garantida.
       expect(detail.audit.map((e) => e.action).sort()).toEqual(['sanction_apply', 'vip_revoke']);
+    });
+
+    it('ban por cheat sem testemunha nem evidência é recusado', async () => {
+      const target = await staffMember(null);
+
+      const response = await punish(owner, target.account.publicId, {
+        category: 'cheat',
+        reason: 'aimbot',
+        measures: [{ type: 'ban', durationMinutes: null }],
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(errorCode(response)).toBe('invalid_body');
+      expect((await profileOf(target.account.publicId)).sanctions.active).toEqual([]);
+    });
+
+    it('cheat só com testemunha aparece como Violação das regras; com evidência, como Cheat', async () => {
+      const witnessOnly = await staffMember(null);
+      const withEvidence = await staffMember(null);
+      const viewer = await staffMember(null);
+
+      const detail = await punished(owner, witnessOnly.account.publicId, {
+        category: 'cheat',
+        reason: 'aimbot',
+        measures: [{ type: 'ban', durationMinutes: null }],
+        witness: 'fulano (Discord fulano#1), não joga aqui',
+      });
+      await punished(owner, withEvidence.account.publicId, {
+        category: 'cheat',
+        reason: 'aimbot',
+        measures: [{ type: 'ban', durationMinutes: null }],
+        evidenceUrl: 'https://youtu.be/demo123',
+      });
+
+      expect(detail.sanctions[0]).toMatchObject({
+        category: 'cheat',
+        witness: 'fulano (Discord fulano#1), não joga aqui',
+        evidenceUrl: null,
+      });
+      expect(detail.audit[0]?.details).toMatchObject({
+        witness: 'fulano (Discord fulano#1), não joga aqui',
+      });
+      const hidden = await profileOf(witnessOnly.account.publicId, viewer);
+      expect(hidden.sanctions.active.map((s) => s.category)).toEqual(['rule_violation']);
+      expect(hidden.sanctions.history?.map((s) => s.category)).toEqual(['rule_violation']);
+      expect(JSON.stringify(hidden)).not.toContain('fulano');
+      const shown = await profileOf(withEvidence.account.publicId, viewer);
+      expect(shown.sanctions.active.map((s) => s.category)).toEqual(['cheat']);
+      expect(JSON.stringify(shown)).not.toContain('youtu.be');
     });
   });
 
@@ -336,7 +391,9 @@ describe('Moderação (S07)', () => {
         'gag',
       ]);
       expect(await sanctions.forGame([target.steamId], at(60))).toEqual([]);
-      expect((await sanctions.profileOf(target.account.id, at(61))).active).toEqual([]);
+      expect(
+        (await sanctions.profileOf(target.account.id, { withHistory: true }, at(61))).active,
+      ).toEqual([]);
     });
   });
 
@@ -350,6 +407,7 @@ describe('Moderação (S07)', () => {
         category: 'cheat',
         reason: 'aimbot',
         measures: [{ type: 'ban', durationMinutes: null }],
+        evidenceUrl: 'https://youtu.be/demo123',
       });
       expect(permanent.statusCode).toBe(403);
       expect(errorCode(permanent)).toBe('permanent_not_allowed');
@@ -463,11 +521,12 @@ describe('Moderação (S07)', () => {
         measures: [{ type: 'ban', durationMinutes: DAY }],
       });
 
-      const profile = await profileOf(target.account.publicId);
+      const viewer = await staffMember(null);
+      const profile = await profileOf(target.account.publicId, viewer);
       expect(profile.sanctions.active.map((s) => [s.type, s.category])).toEqual([
         ['ban', 'griefing'],
       ]);
-      expect(profile.sanctions.history.map((s) => s.type)).toEqual(['ban']);
+      expect(profile.sanctions.history?.map((s) => s.type)).toEqual(['ban']);
       expect(JSON.stringify(profile)).not.toContain('sigiloso');
 
       const ban = banned.sanctions.find((s) => s.type === 'ban');
@@ -475,10 +534,24 @@ describe('Moderação (S07)', () => {
         reason: 'recurso aceito',
         appealAccepted: true,
       });
-      expect((await profileOf(target.account.publicId)).sanctions).toEqual({
+      expect((await profileOf(target.account.publicId, viewer)).sanctions).toEqual({
         active: [],
         history: [],
       });
+    });
+
+    it('sem sessão, o Perfil mostra só o selo da Punição ativa, sem o histórico', async () => {
+      const target = await staffMember(null);
+      await punished(owner, target.account.publicId, {
+        category: 'griefing',
+        reason: 'bloqueando o bomb',
+        measures: [{ type: 'ban', durationMinutes: DAY }],
+      });
+
+      const anonymous = await profileOf(target.account.publicId);
+
+      expect(anonymous.sanctions.active.map((s) => s.type)).toEqual(['ban']);
+      expect(anonymous.sanctions.history).toBeNull();
     });
 
     it('a própria Conta vê o motivo das Punições ativas em /api/me', async () => {

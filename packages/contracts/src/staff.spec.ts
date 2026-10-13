@@ -57,6 +57,49 @@ describe('applySanctionsSchema', () => {
   });
 });
 
+describe('applySanctionsSchema: ban por cheat', () => {
+  const cheatBan = {
+    category: 'cheat',
+    reason: 'aimbot visto na demo',
+    measures: [{ type: 'ban', durationMinutes: null }],
+  } as const;
+
+  it('exige testemunha ou evidência', () => {
+    const parsed = applySanctionsSchema.safeParse(cheatBan);
+
+    expect(parsed.success).toBe(false);
+    expect(parsed.error?.issues[0]?.path).toEqual(['evidenceUrl']);
+  });
+
+  it('aceita só testemunha, só evidência ou as duas', () => {
+    const witness = 'fulano#123 (Discord), estava no servidor';
+    const evidenceUrl = 'https://youtu.be/abc123';
+    for (const proof of [{ witness }, { evidenceUrl }, { witness, evidenceUrl }]) {
+      expect(applySanctionsSchema.safeParse({ ...cheatBan, ...proof }).success).toBe(true);
+    }
+  });
+
+  it('a evidência é um link http(s)', () => {
+    for (const evidenceUrl of ['nada', 'javascript:alert(1)', 'ftp://x.com/a']) {
+      expect(applySanctionsSchema.safeParse({ ...cheatBan, evidenceUrl }).success).toBe(false);
+    }
+  });
+
+  it('testemunha em branco não conta', () => {
+    expect(applySanctionsSchema.safeParse({ ...cheatBan, witness: '   ' }).success).toBe(false);
+  });
+
+  it('outras Categorias, e cheat sem ban, não exigem prova', () => {
+    expect(applySanctionsSchema.safeParse({ ...cheatBan, category: 'threat' }).success).toBe(true);
+    expect(
+      applySanctionsSchema.safeParse({
+        ...cheatBan,
+        measures: [{ type: 'kick', durationMinutes: null }],
+      }).success,
+    ).toBe(true);
+  });
+});
+
 describe('isPermanentMeasure', () => {
   it('ban, mute ou gag sem duração; kick e aviso nunca', () => {
     expect(isPermanentMeasure({ type: 'ban', durationMinutes: null })).toBe(true);

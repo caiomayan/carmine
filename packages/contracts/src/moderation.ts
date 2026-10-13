@@ -77,6 +77,36 @@ export const SANCTION_CATEGORY_LABELS: Record<SanctionCategory, string> = {
   ban_evasion: 'Fuga de ban',
 };
 
+/**
+ * Categoria como o Perfil público a mostra: a da Punição, menos `cheat` sem evidência anexada, que
+ * aparece como `rule_violation` ("Violação das regras"). Decisão do dono (2026-10-13): o selo
+ * público "Cheat" só com evidência; um ban apoiado só em testemunha não afirma cheat em público.
+ */
+export const publicSanctionCategorySchema = z
+  .enum([...sanctionCategorySchema.options, 'rule_violation'])
+  .meta({ id: 'PublicSanctionCategory' });
+
+export type PublicSanctionCategory = z.infer<typeof publicSanctionCategorySchema>;
+
+/**
+ * Prova de um ban por cheat (decisão do dono, 2026-10-13): uma testemunha mencionada (alguém da
+ * plataforma ou não, em texto livre: nome, ID público, Discord) e/ou um link para a evidência
+ * (vídeo, demo, print). Ao menos uma das duas; o Perfil público só diz "Cheat" com evidência.
+ */
+export const sanctionWitnessSchema = z.string().trim().min(2).max(200);
+
+export const sanctionEvidenceUrlSchema = z
+  .url({ protocol: /^https?$/, error: 'use um link http(s)' })
+  .max(500);
+
+/** Ban por cheat: exige testemunha ou evidência (ver {@link sanctionWitnessSchema}). */
+export function requiresCheatProof(
+  category: SanctionCategory,
+  measures: readonly { type: SanctionType }[],
+): boolean {
+  return category === 'cheat' && measures.some((m) => m.type === 'ban');
+}
+
 /** Duração máxima de uma Punição temporária: 1 ano (mais que isso, permanente). */
 export const SANCTION_MAX_DURATION_MINUTES = 365 * 24 * 60;
 
@@ -152,14 +182,16 @@ export type SanctionSuggestion = z.infer<typeof sanctionSuggestionSchema>;
 
 /**
  * Uma Punição como o Perfil público mostra: tipo, Categoria genérica, data e duração; nunca o
- * motivo livre nem quem aplicou. `endsAt` é o fim efetivo (antecipado se a Staff revogou); nulo
- * em ban/mute/gag é permanente e, em kick e aviso, é sempre nulo.
+ * motivo livre, quem aplicou, a testemunha nem o link da evidência. `endsAt` é o fim efetivo
+ * (antecipado se a Staff revogou); nulo em ban/mute/gag é permanente e, em kick e aviso, é sempre
+ * nulo.
  */
 export const publicSanctionSchema = z
   .object({
     id: z.uuid(),
     type: sanctionTypeSchema,
-    category: sanctionCategorySchema,
+    /** Cheat sem evidência anexada sai como `rule_violation`. */
+    category: publicSanctionCategorySchema,
     startsAt: z.iso.datetime({ offset: true }),
     endsAt: z.iso.datetime({ offset: true }).nullable(),
     /** A Staff encerrou antes da hora (não por recurso aceito: esse some do Perfil). */
@@ -195,13 +227,14 @@ export const PROFILE_SANCTION_HISTORY_MONTHS = 12;
  * - `active`: as Punições valendo agora (ban, mute, gag), para o selo ("Banido até 20/10");
  * - `history`: os últimos {@link PROFILE_SANCTION_HISTORY_MONTHS} meses, sem avisos, da mais
  *   recente para a mais antiga (inclui as ativas), mais o ban permanente por cheat de qualquer
- *   época.
+ *   época. Só para quem está logado no site (decisão do dono, 2026-10-13): nulo para o visitante
+ *   sem sessão, que vê só o selo das ativas.
  * O Perfil privado não esconde Punições; um recurso aceito remove a Punição das duas listas.
  */
 export const profileSanctionsSchema = z
   .object({
     active: z.array(publicSanctionSchema),
-    history: z.array(publicSanctionSchema),
+    history: z.array(publicSanctionSchema).nullable(),
   })
   .meta({ id: 'ProfileSanctions' });
 

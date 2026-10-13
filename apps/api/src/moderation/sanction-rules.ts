@@ -3,6 +3,7 @@ import {
   PROFILE_SANCTION_HISTORY_MONTHS,
   type ProfileSanctions,
   type PublicSanction,
+  type PublicSanctionCategory,
   RECIDIVISM_WINDOW_DAYS,
   SANCTION_CATEGORY_LABELS,
   type SanctionCategory,
@@ -23,6 +24,8 @@ export interface SanctionRecord {
   endsAt: Date | null;
   revokedAt: Date | null;
   appealAccepted: boolean;
+  /** Link da evidência anexada; sem ele, cheat aparece no Perfil como "Violação das regras". */
+  evidenceUrl: string | null;
 }
 
 /** Ban, mute ou gag valendo em `now`: não revogada, já começou e não venceu. */
@@ -65,11 +68,13 @@ export function previousOffensesAt(
 /**
  * Punições no Perfil público em `now`: as ativas (para o selo) e o histórico dos últimos 12
  * meses sem avisos, mais o ban permanente por cheat de qualquer época. Recurso aceito some.
- * Nunca leva o motivo livre.
+ * Nunca leva o motivo livre. O histórico é só para quem está logado no site (`withHistory`); o
+ * visitante vê só o selo das ativas. Cheat sem evidência anexada sai como "Violação das regras".
  */
 export function toProfileSanctions(
   sanctions: readonly SanctionRecord[],
   now: Date,
+  { withHistory }: { withHistory: boolean },
 ): ProfileSanctions {
   const since = new Date(now);
   since.setUTCMonth(since.getUTCMonth() - PROFILE_SANCTION_HISTORY_MONTHS);
@@ -79,7 +84,7 @@ export function toProfileSanctions(
     .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime());
   return {
     active: visible.filter((s) => isActiveAt(s, now)).map(toPublic),
-    history: visible.map(toPublic),
+    history: withHistory ? visible.map(toPublic) : null,
   };
 }
 
@@ -99,11 +104,16 @@ function toPublic(s: SanctionRecord): PublicSanction {
   return {
     id: s.id,
     type: s.type,
-    category: s.category,
+    category: publicCategory(s),
     startsAt: s.startsAt.toISOString(),
     endsAt: endsAt?.toISOString() ?? null,
     revoked,
   };
+}
+
+/** Só com evidência anexada o Perfil público afirma "Cheat" (decisão do dono, 2026-10-13). */
+function publicCategory(s: SanctionRecord): PublicSanctionCategory {
+  return s.category === 'cheat' && s.evidenceUrl === null ? 'rule_violation' : s.category;
 }
 
 const brasilia = new Intl.DateTimeFormat('pt-BR', {

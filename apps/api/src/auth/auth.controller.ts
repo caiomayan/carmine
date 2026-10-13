@@ -203,7 +203,7 @@ export class AuthController {
     const [vip, showcase, sanctions, staffRole, own] = await Promise.all([
       this.vipPeriods.statusOf(account.id),
       this.loadouts.showcase(account.id),
-      this.sanctions.profileOf(account.id),
+      this.sanctions.profileOf(account.id, { withHistory: true }),
       this.staffRoles.roleOf(account.id),
       this.sanctions.activeOf(account.id),
     ]);

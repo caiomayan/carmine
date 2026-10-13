@@ -1,5 +1,5 @@
 import { type BeforeApplicationShutdown, Logger } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts } from '../database/schema.js';
 import type { SteamProfiles, SteamSummary } from './steam-profiles.js';
@@ -24,9 +24,15 @@ export class AvatarRefresher implements BeforeApplicationShutdown {
 
   /** Agenda a busca se a Conta não tem avatar ou se ele está velho; retorna na hora. */
   refreshInBackground(
-    account: { steamId: string; avatarUrl: string | null; avatarFetchedAt: Date | null },
+    account: {
+      steamId: string;
+      avatarUrl: string | null;
+      avatarFetchedAt: Date | null;
+      anonymizedAt?: Date | null;
+    },
     now = new Date(),
   ): void {
+    if (account.anonymizedAt) return;
     const fresh =
       account.avatarUrl !== null &&
       account.avatarFetchedAt !== null &&
@@ -68,7 +74,8 @@ export class AvatarRefresher implements BeforeApplicationShutdown {
     await this.db
       .update(accounts)
       .set({ avatarUrl: summary.avatarUrl, avatarFetchedAt: new Date() })
-      .where(eq(accounts.steamId, BigInt(steamId)));
+      // Uma Conta anonimizada (S08) nunca recebe o avatar de volta.
+      .where(and(eq(accounts.steamId, BigInt(steamId)), isNull(accounts.anonymizedAt)));
   }
 
   /** Termina as buscas em andamento antes de o pool do banco fechar. */

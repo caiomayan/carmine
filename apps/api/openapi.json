@@ -139,6 +139,77 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/chat-preference": {
+      "put": {
+        "operationId": "setPlayerChatPreference",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlayerChatPreference"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Gravado; vale nos próximos connects"
+          },
+          "400": {
+            "description": "SteamID64 ou corpo inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Grava o !chat off (oculta o chat dos outros) ou o !chat on de um jogador",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/profiles/by-steam-id/{steamId}": {
       "get": {
         "operationId": "getProfileLocation",
@@ -225,7 +296,7 @@
             }
           },
           "404": {
-            "description": "Nenhuma Conta com esse ID público"
+            "description": "Nenhuma Conta com esse ID público (ou ela foi excluída)"
           },
           "429": {
             "description": "Limite de requisições por IP excedido (política \"public\")",
@@ -251,7 +322,7 @@
             }
           }
         },
-        "summary": "Perfil público de uma Conta",
+        "summary": "Perfil público de uma Conta; o histórico de Punições só vem com sessão (o selo das ativas é público)",
         "tags": [
           "profiles"
         ]
@@ -2699,6 +2770,95 @@
         ]
       }
     },
+    "/api/staff/accounts/{publicId}/anonymize": {
+      "post": {
+        "operationId": "staffAnonymizeAccount",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Anonimizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountAnonymized"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"accounts.anonymize\""
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Executa um pedido de exclusão de dados (S08): anonimiza a Conta, sem volta (só o Dono)",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/staff/accounts/{publicId}/display-name/reset": {
       "post": {
         "operationId": "resetDisplayName",
@@ -3110,7 +3270,8 @@
                 "role_grant",
                 "role_revoke",
                 "display_name_reset",
-                "server_update"
+                "server_update",
+                "account_anonymize"
               ],
               "type": "string"
             }
@@ -3328,13 +3489,17 @@
             "items": {
               "$ref": "#/components/schemas/GameSanction"
             }
+          },
+          "chatHidden": {
+            "type": "boolean"
           }
         },
         "required": [
           "publicId",
           "displayName",
           "isFirstConnect",
-          "sanctions"
+          "sanctions",
+          "chatHidden"
         ],
         "additionalProperties": false
       },
@@ -3399,6 +3564,18 @@
           "doxxing",
           "ban_evasion"
         ]
+      },
+      "PlayerChatPreference": {
+        "type": "object",
+        "properties": {
+          "hidden": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hidden"
+        ],
+        "additionalProperties": false
       },
       "ProfileLocation": {
         "type": "object",
@@ -3635,6 +3812,7 @@
             }
           },
           "history": {
+            "nullable": true,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/PublicSanction"
@@ -3659,7 +3837,7 @@
             "$ref": "#/components/schemas/SanctionType"
           },
           "category": {
-            "$ref": "#/components/schemas/SanctionCategory"
+            "$ref": "#/components/schemas/PublicSanctionCategory"
           },
           "startsAt": {
             "type": "string",
@@ -3685,6 +3863,21 @@
           "revoked"
         ],
         "additionalProperties": false
+      },
+      "PublicSanctionCategory": {
+        "type": "string",
+        "enum": [
+          "offensive_chat",
+          "offensive_voice",
+          "griefing",
+          "exploit",
+          "discrimination",
+          "cheat",
+          "threat",
+          "doxxing",
+          "ban_evasion",
+          "rule_violation"
+        ]
       },
       "CurrentSession": {
         "type": "object",
@@ -5119,6 +5312,9 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "anonymized": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -5130,7 +5326,8 @@
           "claimed",
           "staffRole",
           "activeSanctions",
-          "lastConnectedAt"
+          "lastConnectedAt",
+          "anonymized"
         ],
         "additionalProperties": false
       },
@@ -5208,6 +5405,14 @@
           "active": {
             "type": "boolean"
           },
+          "witness": {
+            "nullable": true,
+            "type": "string"
+          },
+          "evidenceUrl": {
+            "nullable": true,
+            "type": "string"
+          },
           "appliedBy": {
             "$ref": "#/components/schemas/StaffActor"
           },
@@ -5249,6 +5454,8 @@
           "startsAt",
           "endsAt",
           "active",
+          "witness",
+          "evidenceUrl",
           "appliedBy",
           "revocation"
         ],
@@ -5426,7 +5633,8 @@
           "role_grant",
           "role_revoke",
           "display_name_reset",
-          "server_update"
+          "server_update",
+          "account_anonymize"
         ]
       },
       "StaffError": {
@@ -5452,7 +5660,8 @@
               "no_vip_to_revoke",
               "account_not_claimed",
               "last_owner",
-              "server_code_taken"
+              "server_code_taken",
+              "account_anonymized"
             ]
           },
           "message": {
@@ -5484,6 +5693,16 @@
             "items": {
               "$ref": "#/components/schemas/SanctionMeasure"
             }
+          },
+          "witness": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "evidenceUrl": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "uri"
           }
         },
         "required": [
@@ -5542,6 +5761,31 @@
         },
         "required": [
           "reason"
+        ],
+        "additionalProperties": false
+      },
+      "AccountAnonymized": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "anonymizedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "steamIdRetained": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "publicId",
+          "anonymizedAt",
+          "steamIdRetained"
         ],
         "additionalProperties": false
       },
