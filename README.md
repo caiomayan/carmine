@@ -72,7 +72,7 @@ Mudou um contrato da API? Rode `pnpm --filter @carmine/api openapi:generate` e f
 Cada Servidor Carmine se autentica na API com uma chave própria (`Authorization: Bearer <chave>`). A API guarda só o hash; a chave aparece **uma única vez**, ao ser gerada:
 
 ```sh
-pnpm --filter @carmine/api build
+pnpm --filter "@carmine/api..." build
 pnpm --filter @carmine/api servers create --name local --mode retake --address 127.0.0.1:27015
 pnpm --filter @carmine/api servers rotate-key --name local   # gera outra; a anterior para na hora
 pnpm --filter @carmine/api servers list                      # --all mostra também os aposentados
@@ -145,7 +145,7 @@ O Inventário (S04) fica em `/api/inventory` (documentação em `/api/docs`), se
 Agentes, music kits, StatTrak e nametag exigem um Período VIP ativo. A Staff concede e revoga VIP pelo painel (S07) ou pelo CLI; toda ação vai para o log de auditoria (`staff_audit_log`: autor, ação, alvo, motivo e horário) e invalida o `equipped/v5` da Conta. A Conta precisa existir: jogue ou faça login antes.
 
 ```sh
-pnpm --filter @carmine/api build
+pnpm --filter "@carmine/api..." build
 # --by: o SteamID64 de quem da Staff está fazendo; --reason: o motivo (obrigatório)
 pnpm --filter @carmine/api vip grant --steam-id 76561198000000001 --days 30 --by 76561198000000002 --reason "beta"   # soma ao Período ativo
 pnpm --filter @carmine/api vip revoke --steam-id 76561198000000001 --by 76561198000000002 --reason "fim do teste"  # acaba agora
@@ -181,7 +181,7 @@ A S07 traz os papéis da Staff (Dono, Admin, Moderador), as Punições (ban, mut
 O primeiro Dono nasce pelo CLI (no painel, só um Dono altera papéis). A Conta precisa ter feito login no site:
 
 ```sh
-pnpm --filter @carmine/api build
+pnpm --filter "@carmine/api..." build
 pnpm --filter @carmine/api staff grant --steam-id 76561198000000001 --role owner --by 76561198000000001 --reason "fundador"
 pnpm --filter @carmine/api staff revoke --steam-id 76561198000000002 --by 76561198000000001 --reason "saiu da Staff"
 pnpm --filter @carmine/api staff list
