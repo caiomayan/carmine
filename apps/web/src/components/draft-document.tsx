@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { FileTextIcon } from '@/components/icons/animated/file-text';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { PageHead } from '@/components/page-head';
@@ -10,10 +11,13 @@ export function DraftDocument({
   title,
   status,
   body,
+  children,
 }: {
   title: string;
   status: string;
   body: string;
+  /** O que já vale antes do texto final (ex.: o caminho de recurso nas Regras). */
+  children?: ReactNode;
 }) {
   return (
     <div className="container-page animate-fade-up pb-16">
@@ -25,6 +29,7 @@ export function DraftDocument({
         <AnimatedIcon icon={FileTextIcon} size={16} className="mt-1 text-status-info" />
         <p>{body}</p>
       </div>
+      {children}
     </div>
   );
 }

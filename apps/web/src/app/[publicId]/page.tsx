@@ -12,6 +12,7 @@ import { ExternalLinkIcon } from '@/components/icons/animated/external-link';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
+import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
 import { findPublicIdBySteamId } from '@/lib/api-base';
@@ -139,6 +140,8 @@ export default async function ProfilePage({ params }: { params: Params }) {
           </div>
         )}
       </section>
+
+      <SanctionHistory sanctions={profile.sanctions} />
     </div>
   );
 }
@@ -183,6 +186,7 @@ async function ProfileHeader({ profile, isOwner }: { profile: Profile; isOwner: 
             <AnimatedIcon icon={ExternalLinkIcon} size={13} />
           </a>
         </div>
+        <SanctionBadges active={profile.sanctions.active} />
         {isOwner ? (
           <p className="text-[13px] text-muted-foreground">{t('own')}</p>
         ) : unclaimed ? (

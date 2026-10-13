@@ -44,3 +44,7 @@ export const SOCIAL_LINKS = socialLinks({
   NEXT_PUBLIC_X_URL: process.env.NEXT_PUBLIC_X_URL,
   NEXT_PUBLIC_YOUTUBE_URL: process.env.NEXT_PUBLIC_YOUTUBE_URL,
 });
+
+/** O Discord da Carmine: canal da comunidade e dos recursos de Punição (S07). */
+export const DISCORD_URL =
+  SOCIAL_LINKS.find((link) => link.id === 'discord')?.href ?? DEFAULT_DISCORD_URL;

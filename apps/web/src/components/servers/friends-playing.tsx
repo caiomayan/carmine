@@ -17,7 +17,12 @@ import { AnimatedIcon, type AnimatedIconComponent } from '@/components/icons/ani
 import { StatusDot } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
 import { signInHref } from '@/lib/auth-links';
-import { type FriendOnServer, friendsWithServers, steamConnectUrl } from '@/lib/live-servers';
+import {
+  type FriendOnServer,
+  friendsWithServers,
+  serverFullLabel,
+  steamConnectUrl,
+} from '@/lib/live-servers';
 import { cn } from '@/lib/utils';
 import { useCopy } from './use-copy';
 import { useFriendsPlaying } from './use-friends-playing';
@@ -137,7 +142,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
   const where = server
     ? server.state === 'offline'
       ? t('serverOffline')
-      : t('on', { server: server.name, map: server.map ?? '' })
+      : t('on', { server: serverFullLabel(server), map: server.map ?? '' })
     : t('serverUnknown');
 
   return (

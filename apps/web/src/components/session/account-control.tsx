@@ -16,6 +16,7 @@ import { Avatar } from '@/components/avatar';
 import { CompassIcon } from '@/components/icons/animated/compass';
 import { LogoutIcon } from '@/components/icons/animated/logout';
 import { UserIcon } from '@/components/icons/animated/user';
+import { UsersIcon } from '@/components/icons/animated/users';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { SIGN_IN_PATH, signInHref } from '@/lib/auth-links';
@@ -27,16 +28,18 @@ export type AccountControlLabels = {
   menu: string;
   profile: string;
   firstSteps: string;
+  staffPanel: string;
   signOut: string;
   signOutFailed: string;
 };
 
 /**
  * Canto direito da barra superior: "Entrar" para visitantes; para quem entrou, avatar e Nome
- * de exibição com o menu da Conta (Meu perfil, Primeiros passos, Sair).
+ * de exibição com o menu da Conta (Meu perfil, Primeiros passos, Painel da Staff para quem é
+ * da Staff, Sair).
  */
 export function AccountControl({ labels }: { labels: AccountControlLabels }) {
-  const { status, account, signOut, firstSteps } = useSession();
+  const { status, account, staffRole, signOut, firstSteps } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const [failed, setFailed] = useState(false);
@@ -118,6 +121,16 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             <AnimatedIcon icon={CompassIcon} size={16} className="text-muted-foreground" />
             {labels.firstSteps}
           </DropdownMenuItem>
+          {staffRole ? (
+            <DropdownMenuItem
+              onSelect={() => router.push('/staff')}
+              className="min-h-9"
+              data-testid="staff-panel-link"
+            >
+              <AnimatedIcon icon={UsersIcon} size={16} className="text-muted-foreground" />
+              {labels.staffPanel}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={async () => {

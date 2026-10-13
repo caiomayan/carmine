@@ -115,3 +115,15 @@ export function nextFriends(previous: FriendsView, result: FriendsPlaying | 'fai
   if (failed && previous.status === 'ok') return { ...previous, stale: true };
   return failed ? { status: 'unavailable' } : { status: 'private' };
 }
+
+/** Nome que a home mostra: o nome de vitrine (S07) ou, sem ele, o identificador da Staff. */
+export function serverLabel(server: Pick<LiveServer, 'name' | 'showcaseName'>): string {
+  return server.showcaseName ?? server.name;
+}
+
+/** Nome com o código, para rótulos de leitor de tela ("Retake · Rotação (SP·2)"). */
+export function serverFullLabel(
+  server: Pick<LiveServer, 'name' | 'showcaseName' | 'code'>,
+): string {
+  return server.code ? `${serverLabel(server)} (${server.code})` : serverLabel(server);
+}

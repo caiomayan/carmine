@@ -134,3 +134,32 @@ export const getLiveServers = cache(async (): Promise<LiveServerList | null> => 
     return null;
   }
 });
+
+/**
+ * Leitura do painel da Staff (S07). `forbidden` (sem papel ou sem a permissão) vira 404 na
+ * página: quem não é da Staff nem fica sabendo que o painel existe.
+ */
+export type StaffRead<T> =
+  | { status: 'ok'; data: T }
+  | { status: 'anonymous' }
+  | { status: 'forbidden' }
+  | { status: 'not-found' }
+  | { status: 'unavailable' };
+
+export async function readStaff<T>(
+  path: `/staff/${string}`,
+  schema: { parse: (value: unknown) => T },
+): Promise<StaffRead<T>> {
+  const cookie = await sessionCookie();
+  if (!cookie) return { status: 'anonymous' };
+  try {
+    const response = await apiGet(path, { cookie, visitorIp: await visitorIp() });
+    if (response.status === 401) return { status: 'anonymous' };
+    if (response.status === 403) return { status: 'forbidden' };
+    if (response.status === 404) return { status: 'not-found' };
+    if (!response.ok) return { status: 'unavailable' };
+    return { status: 'ok', data: schema.parse(await response.json()) };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}

@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { cookies } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
-import { getTranslations } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { SanctionNotice } from '@/components/moderation/sanction-notice';
 import { MotionProvider } from '@/components/motion-provider';
 import { FirstSteps } from '@/components/session/first-steps';
 import { SessionProvider } from '@/components/session/session-provider';
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // A sessão é lida no servidor: quem entrou já recebe a página com o avatar, sem piscar
   // "Entrar"; o navegador confirma depois em /api/me (e renova a sessão).
   const server = await getServerSession();
+  const { moderation } = await getMessages();
   const session = server.status === 'authenticated' ? server.session : null;
   const dismissed = (await cookies()).get(FIRST_STEPS_COOKIE)?.value;
   // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
@@ -90,6 +92,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               {/* Cabeçalho e conteúdo ocupam ao menos a tela inteira: o rodapé só aparece no fim real da página. */}
               <div className="flex min-h-dvh flex-col">
                 <SiteHeader />
+                {/* Aviso da própria Punição (S07): só as mensagens dele vão ao cliente. */}
+                <NextIntlClientProvider
+                  messages={{
+                    moderation: { notice: moderation.notice, categories: moderation.categories },
+                  }}
+                >
+                  <SanctionNotice />
+                </NextIntlClientProvider>
                 <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
                   <FirstSteps
                     labels={{

@@ -18,7 +18,7 @@ import { LiveCount } from '@/components/live-count';
 import { SERVER_GRID } from '@/components/servers/server-list';
 import { StatusDot, type StatusTone } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
-import { occupancy, steamConnectUrl } from '@/lib/live-servers';
+import { occupancy, serverFullLabel, serverLabel, steamConnectUrl } from '@/lib/live-servers';
 import { cn } from '@/lib/utils';
 import { useCopy } from './use-copy';
 
@@ -50,6 +50,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
   const helpId = useId();
   const offline = server.state === 'offline';
   const { ratio, level } = occupancy(server);
+  const fullLabel = serverFullLabel(server);
 
   const copyAddress = async () => {
     await copy(server.address);
@@ -85,7 +86,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
                 offline && 'text-muted-foreground',
               )}
             >
-              {server.name}
+              {serverLabel(server)}
             </h3>
           </div>
           <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
@@ -95,6 +96,14 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
             <span data-testid="server-address" className="truncate tabular-nums select-all">
               {server.address}
             </span>
+            {server.code ? (
+              <span
+                data-testid="server-code"
+                className="shrink-0 rounded-xs bg-surface-2 px-1 py-px text-[11px] font-semibold tracking-[0.02em] text-foreground tabular-nums"
+              >
+                {server.code}
+              </span>
+            ) : null}
           </p>
         </div>
 
@@ -159,7 +168,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
               <Button asChild className="max-md:flex-1 pointer-coarse:hidden">
                 <a
                   href={steamConnectUrl(server.address)}
-                  aria-label={t('connect.aria', { server: server.name })}
+                  aria-label={t('connect.aria', { server: fullLabel })}
                   aria-describedby={help !== 'closed' ? helpId : undefined}
                   onClick={() => setHelp('connect')}
                 >
@@ -171,7 +180,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label={t('connect.copyAria', { server: server.name })}
+                    aria-label={t('connect.copyAria', { server: fullLabel })}
                     onClick={copyAddress}
                     className="pointer-coarse:hidden"
                   >
@@ -185,7 +194,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
               {/* No toque: só copiar o IP, com o texto dizendo o que faz. */}
               <Button
                 variant="ghost"
-                aria-label={t('connect.copyAria', { server: server.name })}
+                aria-label={t('connect.copyAria', { server: fullLabel })}
                 onClick={copyAddress}
                 className="hidden max-md:flex-1 pointer-coarse:inline-flex"
               >

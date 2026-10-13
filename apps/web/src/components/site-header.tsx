@@ -37,6 +37,7 @@ export async function SiteHeader() {
               menu: t.raw('account.menu'),
               profile: t('account.profile'),
               firstSteps: t('account.firstSteps'),
+              staffPanel: t('account.staffPanel'),
               signOut: t('account.signOut'),
               signOutFailed: t('account.signOutFailed'),
             }}
