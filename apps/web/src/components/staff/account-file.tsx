@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  accountAnonymizedSchema,
   type StaffAccountDetail,
   type StaffRole,
   type StaffSanction,
@@ -99,6 +100,7 @@ export function AccountFile({
           <VipPanel detail={detail} viewer={viewer} onChange={setDetail} />
           <DisplayNamePanel detail={detail} onChange={setDetail} />
           <RolePanel detail={detail} viewer={viewer} onChange={setDetail} />
+          <ErasurePanel detail={detail} viewer={viewer} />
           <section aria-labelledby="auditoria-conta">
             <SectionTitle
               id="auditoria-conta"
@@ -274,6 +276,26 @@ function SanctionItem({
       <p className="text-[13.5px] [overflow-wrap:anywhere]" data-testid="sanction-reason">
         {sanction.reason}
       </p>
+      {sanction.witness || sanction.evidenceUrl ? (
+        <p
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]"
+          data-testid="sanction-proof"
+        >
+          {sanction.witness ? <span>{t('witness', { witness: sanction.witness })}</span> : null}
+          {sanction.evidenceUrl ? (
+            <a
+              href={sanction.evidenceUrl}
+              target="_blank"
+              rel="noopener noreferrer nofollow"
+              className="inline-flex items-center gap-1 font-medium text-foreground underline-offset-2 hover:underline"
+              data-icon-trigger
+            >
+              {t('evidence')}
+              <AnimatedIcon icon={ExternalLinkIcon} size={12} />
+            </a>
+          ) : null}
+        </p>
+      ) : null}
       <p className="text-[12.5px] text-muted-foreground" suppressHydrationWarning>
         {date(sanction.startsAt)}
         {sanction.endsAt ? ` · ${t('until', { date: date(sanction.endsAt) })}` : ''}
@@ -456,6 +478,58 @@ function DisplayNamePanel({
             staffAccountDetailSchema,
           );
           if (result.ok) onChange(result.data);
+          return result;
+        }}
+      />
+    </Panel>
+  );
+}
+
+/**
+ * Pedido de exclusão de dados (S08), só para o Dono: anonimiza a Conta, sem volta. A Conta da
+ * Staff sai da Staff antes.
+ */
+function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: StaffViewer }) {
+  const t = useTranslations('staff.erasure');
+  const { request } = useStaffRequest();
+  const [erased, setErased] = useState(detail.account.anonymized);
+  const { account } = detail;
+
+  if (erased) {
+    return (
+      <Panel id="exclusao" title={t('title')}>
+        <p className="text-[13px]" data-testid="erasure-done">
+          {t('anonymized')}
+        </p>
+      </Panel>
+    );
+  }
+  if (!staffCan(viewer.role, 'accounts.anonymize') || account.staffRole) {
+    return (
+      <Panel id="exclusao" title={t('title')}>
+        <p className="text-[12.5px] text-muted-foreground">
+          {account.staffRole ? t('staff') : t('ownerOnly')}
+        </p>
+      </Panel>
+    );
+  }
+  return (
+    <Panel id="exclusao" title={t('title')}>
+      <ActionForm
+        collapsed
+        label={t('submit')}
+        description={t('hint')}
+        submitLabel={t('submit')}
+        doneLabel={t('done')}
+        testId="erasure-form"
+        onSubmit={async (reason) => {
+          const result = await request(
+            `/api/staff/accounts/${account.publicId}/anonymize`,
+            'POST',
+            { reason },
+            accountAnonymizedSchema,
+          );
+          if (result.ok) setErased(true);
           return result;
         }}
       />

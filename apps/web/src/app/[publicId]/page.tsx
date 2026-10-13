@@ -44,9 +44,15 @@ async function loadProfile(
   return result;
 }
 
+/**
+ * Nenhum Perfil vai para os buscadores (decisão do dono, 2026-10-13; Política de Privacidade,
+ * seção 4); o link continua compartilhável, com a prévia do Open Graph.
+ */
+const NOINDEX: Metadata['robots'] = { index: false, follow: false };
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const result = await loadProfile((await params).publicId);
-  if (result.status !== 'found') return {};
+  if (result.status !== 'found') return { robots: NOINDEX };
   const { profile } = result;
   const t = await getTranslations('profile');
   const title = `${profile.displayName} · #${profile.publicId}`;
@@ -55,6 +61,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return {
     title,
     description,
+    robots: NOINDEX,
     alternates: { canonical: `/${profile.publicId}` },
     openGraph: { type: 'profile', title, description, images, siteName: 'Carmine' },
     twitter: { card: 'summary', title, description, images },

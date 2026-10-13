@@ -3,12 +3,14 @@
 import {
   isLastingSanction,
   RECIDIVISM_WINDOW_DAYS,
+  requiresCheatProof,
   SANCTION_MAX_DURATION_MINUTES,
   type SanctionCategory,
   type SanctionMeasure,
   type SanctionType,
   type StaffAccountDetail,
   sanctionCategorySchema,
+  sanctionEvidenceUrlSchema,
   staffAccountDetailSchema,
 } from '@carmine/contracts';
 import { AnimatePresence, motion } from 'motion/react';
@@ -73,6 +75,9 @@ export function ApplySanctionForm({
   const [category, setCategory] = useState<SanctionCategory | ''>('');
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [reason, setReason] = useState('');
+  const [witness, setWitness] = useState('');
+  const [evidenceUrl, setEvidenceUrl] = useState('');
+  const [proofError, setProofError] = useState<string | null>(null);
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -87,6 +92,14 @@ export function ApplySanctionForm({
   const blockedPermanent =
     !options.permanent && drafts.some((d) => isLastingSanction(d.type) && d.permanent);
   const duplicateType = new Set(drafts.map((d) => d.type)).size !== drafts.length;
+  // Ban por cheat: testemunha e/ou link da evidência (decisão do dono, 2026-10-13).
+  const needsProof = category !== '' && requiresCheatProof(category, chosen);
+  const proof = needsProof
+    ? {
+        ...(witness.trim() && { witness: witness.trim() }),
+        ...(evidenceUrl.trim() && { evidenceUrl: evidenceUrl.trim() }),
+      }
+    : {};
 
   const pickCategory = (value: string) => {
     const next = sanctionCategorySchema.safeParse(value);
@@ -119,6 +132,22 @@ export function ApplySanctionForm({
       return;
     }
     setReasonError(null);
+    if (needsProof) {
+      const evidence = evidenceUrl.trim();
+      const problem =
+        !witness.trim() && !evidence
+          ? t('apply.proof.missing')
+          : evidence && !sanctionEvidenceUrlSchema.safeParse(evidence).success
+            ? t('apply.proof.invalidUrl')
+            : witness.trim() && witness.trim().length < 2
+              ? t('apply.proof.missing')
+              : null;
+      setProofError(problem);
+      if (problem) {
+        document.getElementById(`${id}-witness`)?.focus();
+        return;
+      }
+    }
     setReviewing(true);
     requestAnimationFrame(() => confirmRef.current?.focus());
   };
@@ -128,7 +157,7 @@ export function ApplySanctionForm({
     const result = await request(
       `/api/staff/accounts/${detail.account.publicId}/sanctions`,
       'POST',
-      { category, reason: reason.trim(), measures: chosen },
+      { category, reason: reason.trim(), measures: chosen, ...proof },
       staffAccountDetailSchema,
     );
     if (!result.ok) {
@@ -140,6 +169,8 @@ export function ApplySanctionForm({
     setCategory('');
     setDrafts([]);
     setReason('');
+    setWitness('');
+    setEvidenceUrl('');
     setReviewing(false);
     setDone(true);
   };
@@ -269,6 +300,52 @@ export function ApplySanctionForm({
                 {duplicateType ? <FieldError>{t('errors.invalid_body')}</FieldError> : null}
               </fieldset>
 
+              {needsProof ? (
+                <fieldset className="grid gap-3" data-testid="cheat-proof">
+                  <legend className="grid gap-1 pb-3">
+                    <span className="text-[12.5px] font-semibold">{t('apply.proof.title')}</span>
+                    <span className="text-[12.5px] text-muted-foreground">
+                      {t('apply.proof.hint')}
+                    </span>
+                  </legend>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Field id={`${id}-witness`} label={t('apply.proof.witness')}>
+                      <TextInput
+                        id={`${id}-witness`}
+                        value={witness}
+                        maxLength={200}
+                        placeholder={t('apply.proof.witnessPlaceholder')}
+                        aria-invalid={proofError ? true : undefined}
+                        onChange={(event) => {
+                          setWitness(event.target.value);
+                          setReviewing(false);
+                          setProofError(null);
+                        }}
+                        data-testid="proof-witness"
+                      />
+                    </Field>
+                    <Field id={`${id}-evidence`} label={t('apply.proof.evidence')}>
+                      <TextInput
+                        id={`${id}-evidence`}
+                        type="url"
+                        inputMode="url"
+                        value={evidenceUrl}
+                        maxLength={500}
+                        placeholder="https://"
+                        aria-invalid={proofError ? true : undefined}
+                        onChange={(event) => {
+                          setEvidenceUrl(event.target.value);
+                          setReviewing(false);
+                          setProofError(null);
+                        }}
+                        data-testid="proof-evidence"
+                      />
+                    </Field>
+                  </div>
+                  {proofError ? <FieldError>{proofError}</FieldError> : null}
+                </fieldset>
+              ) : null}
+
               <ReasonField
                 id={`${id}-reason`}
                 value={reason}
@@ -303,6 +380,13 @@ export function ApplySanctionForm({
                         category: tm(`categories.${category}`),
                       })}
                     </p>
+                    {needsProof ? (
+                      <p className="text-[12.5px] text-muted-foreground" data-testid="proof-public">
+                        {t(
+                          proof.evidenceUrl ? 'apply.proof.publicCheat' : 'apply.proof.publicRules',
+                        )}
+                      </p>
+                    ) : null}
                     {chosen.some((m) => m.type === 'ban') ? (
                       <p className="text-[12.5px] text-muted-foreground">{t('apply.banEffect')}</p>
                     ) : null}

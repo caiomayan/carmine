@@ -44,6 +44,8 @@ const sanction = (over: Partial<StaffSanction> = {}): StaffSanction => ({
   startsAt: '2026-10-12T15:00:00Z',
   endsAt: '2026-10-13T15:00:00Z',
   active: true,
+  witness: null,
+  evidenceUrl: null,
   appliedBy: { steamId: OTHER, publicId: 2, displayName: 'Outra' },
   revocation: null,
   ...over,

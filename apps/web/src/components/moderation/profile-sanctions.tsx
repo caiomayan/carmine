@@ -47,11 +47,13 @@ export async function SanctionBadges({ active }: { active: PublicSanction[] }) {
 }
 
 /**
- * Histórico público de Punições (12 meses, sem avisos): tipo, Categoria genérica, data e
- * duração. Nunca o motivo livre. Sem histórico, a seção não aparece.
+ * Histórico de Punições no Perfil (12 meses, sem avisos): tipo, Categoria genérica, data e
+ * duração. Nunca o motivo livre. Só para quem está logado (`history` nulo para o visitante); sem
+ * histórico, a seção não aparece.
  */
 export async function SanctionHistory({ sanctions }: { sanctions: ProfileSanctions }) {
-  if (sanctions.history.length === 0) return null;
+  const { history } = sanctions;
+  if (history === null || history.length === 0) return null;
   const t = await getTranslations('moderation');
   const tp = await getTranslations('profileSanctions');
   const format = await getFormatter();
@@ -79,7 +81,7 @@ export async function SanctionHistory({ sanctions }: { sanctions: ProfileSanctio
           </tr>
         </thead>
         <tbody>
-          {sanctions.history.map((sanction) => {
+          {history.map((sanction) => {
             const length = sanctionLength(sanction);
             const isActive = activeIds.has(sanction.id);
             return (
