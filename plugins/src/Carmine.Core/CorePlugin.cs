@@ -19,13 +19,14 @@ namespace Carmine.Core;
 /// e vagas públicas) a cada HeartbeatIntervalSeconds e logo depois de cada connect e disconnect,
 /// para a home do site mudar em segundos. Na S07, aplica as Punições que a API devolve no connect e
 /// em cada batimento (ban e kick tiram do servidor, mute tira a voz, gag bloqueia o chat, aviso vai
-/// no chat) e o hostname "Carmine | nome de vitrine | código".
+/// no chat) e o hostname "Carmine | nome de vitrine | código". Na S02/S14, a Vaga reservada (em
+/// CorePlugin.ReservedSlots.cs).
 /// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
 /// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
 /// </summary>
 [MinimumApiVersion(376)]
-public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
+public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 {
     public const string WelcomeMessage =
         "Bem-vindo ao Carmine. Ao jogar você concorda com os termos: stcarmine.com/termos";
@@ -48,7 +49,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private const float KickDelaySeconds = 5.0f;
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.7.0";
+    public override string ModuleVersion => "0.8.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -67,6 +68,10 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (config.PublicSlots < 0)
         {
             throw new ArgumentException("PublicSlots não pode ser negativo (0 usa o maxplayers)", nameof(config));
+        }
+        if (config.ReservedSlotsMode != ReservedSlotsMode.Off && config.PublicSlots == 0)
+        {
+            throw new ArgumentException("Com ReservedSlots, defina PublicSlots (as vagas sem a Vaga reservada)", nameof(config));
         }
         Config = config;
     }
@@ -91,6 +96,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _sync = new AccountSync(client, pending, TimeProvider.System);
         _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
         _heartbeat = new HeartbeatReporter(client);
+        LoadReservedSlots(client);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
@@ -140,6 +146,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     {
         if (@event.Userid is { } player && IsHuman(player))
         {
+            _reservedSlots?.OnJoin(player.SteamID);
             SyncPlayer(player);
             ScheduleHeartbeat();
         }
@@ -172,6 +179,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     {
         if (@event.Userid is { } player && IsHuman(player))
         {
+            _reservedSlots?.OnSpawn(player.SteamID);
             var slot = player.Slot;
             Server.NextFrame(() =>
             {
@@ -201,6 +209,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _loadoutNotices.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _kicking.Remove(player.SteamID);
+            _reservedSlots?.OnLeave(player.SteamID);
             ScheduleHeartbeat();
         }
         return HookResult.Continue;
@@ -343,7 +352,7 @@ public sealed class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             return;
         }
         Enforce(result.Sanctions, [steamId]);
-        if (_kicking.Contains(steamId))
+        if (_kicking.Contains(steamId) || LeavesForReservedSlot(player, result.IsVip))
         {
             return;
         }

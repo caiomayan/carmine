@@ -62,6 +62,15 @@ public sealed class ReservedSlots(ReservedSlotsMode mode, int publicSlots, TimeP
         public TimeSpan Total { get; set; }
     }
 
+    /// <summary>O texto de <c>ReservedSlots</c> na config: <c>retake</c>, <c>deathmatch</c> ou vazio.</summary>
+    public static ReservedSlotsMode ParseMode(string value) => value.Trim().ToUpperInvariant() switch
+    {
+        "" or "OFF" => ReservedSlotsMode.Off,
+        "RETAKE" => ReservedSlotsMode.Retake,
+        "DEATHMATCH" => ReservedSlotsMode.Deathmatch,
+        _ => throw new ArgumentException($"ReservedSlots inválido: '{value}' (use retake, deathmatch ou vazio)", nameof(value)),
+    };
+
     public static string RemovedMessage(string? vacancy) =>
         $"Vaga liberada para um VIP.{VacancyText(vacancy)} {VipPitch}";
 
