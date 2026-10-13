@@ -1,0 +1,6 @@
+// Deathmatch · Livre: rotação curta de mapas de ação rápida do pool Active Duty (S02). O
+// CS2-Deathmatch 1.3.6 traz spawns de FFA para estes três; outros mapas usariam os spawns de
+// deathmatch da Valve (game_mode 2), não testados.
+de_dust2
+de_mirage
+de_inferno

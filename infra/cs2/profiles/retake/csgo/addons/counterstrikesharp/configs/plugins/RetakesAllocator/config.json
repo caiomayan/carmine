@@ -1,0 +1,118 @@
+{
+  "Config": {
+    "ResetStateOnGameRestart": true,
+    "AllowAllocationAfterFreezeTime": true,
+    "UseOnTickFeatures": true,
+    "CapabilityWeaponPaints": true,
+    "GunCommandsEnabled": true,
+    "EnableRoundTypeAnnouncement": true,
+    "EnableRoundTypeAnnouncementCenter": false,
+    "EnableBombSiteAnnouncementCenter": false,
+    "BombSiteAnnouncementCenterToCTOnly": false,
+    "DisableDefaultBombPlantedCenterMessage": false,
+    "ForceCloseBombSiteAnnouncementCenterOnPlant": true,
+    "BombSiteAnnouncementCenterDelay": 1,
+    "BombSiteAnnouncementCenterShowTimer": 5,
+    "EnableBombSiteAnnouncementChat": false,
+    "EnableNextRoundTypeVoting": false,
+    "EnableBuyMenu": 0,
+    "EnableCanAcquireHook": false,
+    "LogLevel": "Information",
+    "ChatMessagePluginName": "Carmine",
+    "ChatMessagePluginPrefix": null,
+    "InGameGunMenuCenterCommands": "guns,!guns,/guns",
+    "AutoUpdateSignatures": true
+  },
+  "RoundTypes": {
+    "RoundTypeSelection": "Random",
+    "RoundTypePercentages": {
+      "Pistol": 15,
+      "HalfBuy": 25,
+      "FullBuy": 60
+    },
+    "RoundTypeRandomFixedCounts": {
+      "Pistol": 5,
+      "HalfBuy": 10,
+      "FullBuy": 15
+    },
+    "RoundTypeManualOrdering": [
+      { "Type": "Pistol", "Count": 5 },
+      { "Type": "HalfBuy", "Count": 10 },
+      { "Type": "FullBuy", "Count": 15 }
+    ]
+  },
+  "Weapons": {
+    "AllowedWeaponSelectionTypes": ["PlayerChoice", "Default"],
+    "DefaultWeapons": {
+      "Terrorist": {
+        "FullBuyPrimary": "AK47",
+        "HalfBuyPrimary": "Mac10",
+        "Secondary": "Deagle",
+        "PistolRound": "Glock"
+      },
+      "CounterTerrorist": {
+        "FullBuyPrimary": "M4A1S",
+        "HalfBuyPrimary": "MP9",
+        "Secondary": "Deagle",
+        "PistolRound": "USPS"
+      }
+    },
+    "EnableAllWeaponsForEveryone": false,
+    "EnableWeaponShotguns": false,
+    "EnableWeaponPms": false
+  },
+  "Nades": {
+    "MaxNades": {
+      "GLOBAL": {
+        "Terrorist": { "Flashbang": 2, "Smoke": 1, "Molotov": 1, "HighExplosive": 1 },
+        "CounterTerrorist": { "Flashbang": 2, "Smoke": 1, "Incendiary": 2, "HighExplosive": 1 }
+      }
+    },
+    "MaxTeamNades": {
+      "GLOBAL": {
+        "Terrorist": {
+          "Pistol": "AverageOnePerPlayer",
+          "HalfBuy": "AverageOnePointFivePerPlayer",
+          "FullBuy": "AverageOnePointFivePerPlayer"
+        },
+        "CounterTerrorist": {
+          "Pistol": "AverageOnePerPlayer",
+          "HalfBuy": "AverageOnePointFivePerPlayer",
+          "FullBuy": "AverageOnePointFivePerPlayer"
+        }
+      }
+    }
+  },
+  "AWP": {
+    "EnableAwp": 1,
+    "EnableRoundType": 2,
+    "AwpPermission": "@css/vip",
+    "ChanceForAwpWeapon": 50,
+    "MaxAwpWeaponsPerTeam": { "Terrorist": 1, "CounterTerrorist": 1 },
+    "MinPlayersPerTeamForAwpWeapon": { "Terrorist": 2, "CounterTerrorist": 2 }
+  },
+  "SSG": {
+    "EnableSsg": 0,
+    "EnableRoundType": 2,
+    "SsgPermission": "@css/vip",
+    "ChanceForSsgWeapon": 0,
+    "MaxSsgWeaponsPerTeam": { "Terrorist": 0, "CounterTerrorist": 0 },
+    "MinPlayersPerTeamForSsgWeapon": { "Terrorist": 1, "CounterTerrorist": 1 }
+  },
+  "EnemyStuff": {
+    "EnableEnemyStuff": 0,
+    "EnemyStuffPermission": "@css/vip",
+    "ChanceForEnemyStuff": 0,
+    "MaxEnemyStuffPerTeam": { "Terrorist": -1, "CounterTerrorist": -1 }
+  },
+  "Zeus": {
+    "EnableZeus": 0,
+    "ChanceForZeusWeapon": 0,
+    "MaxZeusPerTeam": { "Terrorist": 0, "CounterTerrorist": 0 }
+  },
+  "Database": {
+    "DatabaseProvider": "Sqlite",
+    "DatabaseConnectionString": "Data Source={{csgoDir}}/addons/counterstrikesharp/data/RetakesAllocator/allocator.db; Pooling=False",
+    "MigrateOnStartup": true
+  }
+}

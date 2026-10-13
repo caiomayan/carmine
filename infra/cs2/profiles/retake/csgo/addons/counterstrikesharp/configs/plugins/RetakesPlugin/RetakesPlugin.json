@@ -1,0 +1,41 @@
+{
+  "GameSettings": {
+    "MaxPlayers": 9,
+    "MinimumPlayers": 2,
+    "ShouldBreakBreakables": false,
+    "ShouldOpenDoors": false,
+    "EnableFallbackAllocation": false
+  },
+  "QueueSettings": {
+    "QueuePriorityFlag": [
+      { "DisplayName": "Carmine", "Flag": "@carmine/retakes-sem-prioridade", "Priority": 0 }
+    ],
+    "QueueImmunityFlag": [
+      { "DisplayName": "Carmine", "Flag": "@carmine/retakes-sem-prioridade", "Priority": 0 }
+    ],
+    "ShouldRemoveSpectators": true,
+    "ShouldAutoJoinSpectators": true,
+    "ShouldAutoJoinGame": true
+  },
+  "TeamSettings": {
+    "TerroristRatio": 0.55,
+    "RoundsToScramble": 5,
+    "IsScrambleEnabled": true,
+    "IsBalanceEnabled": true,
+    "ShouldForceEvenTeamsWhenPlayerCountIsMultipleOf10": true,
+    "ShouldPreventTeamChangesMidRound": true
+  },
+  "MapConfigSettings": {
+    "EnableBombsiteAnnouncementVoices": false,
+    "EnableBombsiteAnnouncementCenter": true,
+    "EnableFallbackBombsiteAnnouncement": true,
+    "EnablePlantLocationAnnouncement": false
+  },
+  "BombSettings": {
+    "IsAutoPlantEnabled": true
+  },
+  "DebugSettings": {
+    "IsDebugMode": false
+  },
+  "ConfigVersion": 2
+}

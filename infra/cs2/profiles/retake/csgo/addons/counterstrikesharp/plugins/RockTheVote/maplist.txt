@@ -1,0 +1,10 @@
+// Retake · Rotação: pool Active Duty (S02). Um mapa por linha; o RockTheVote lê na partida.
+// O cs2-retakes 3.1.1 traz spawns (map_config) para todos estes. Confirme o pool atual da Valve
+// antes do beta (de_cache entrou no lugar de de_overpass em jul/2026).
+de_ancient
+de_anubis
+de_cache
+de_dust2
+de_inferno
+de_mirage
+de_nuke
