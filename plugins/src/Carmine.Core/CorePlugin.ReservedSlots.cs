@@ -28,12 +28,18 @@ public sealed partial class CorePlugin
     private VacancyFinder? _vacancies;
     /// <summary>O outro servidor com vaga, buscado quando alguém vai sair (só na thread do jogo).</summary>
     private string? _vacancy;
+    private bool _capacityChecked;
 
     private GameMode VacancyMode => Config.ReservedSlotsMode == ReservedSlotsMode.Deathmatch
         ? GameMode.Deathmatch
         : GameMode.Retake;
 
-    private void LoadReservedSlots(ICarmineApiClient client)
+    /// <summary>
+    /// No boot a frio o Load roda antes das globais do jogo: o maxplayers e a lista de jogadores
+    /// só existem a partir do primeiro mapa (<see cref="CheckReservedSlotsCapacity"/>) ou, no hot
+    /// reload, já.
+    /// </summary>
+    private void LoadReservedSlots(ICarmineApiClient client, bool hotReload)
     {
         var mode = Config.ReservedSlotsMode;
         if (mode == ReservedSlotsMode.Off)
@@ -42,19 +48,33 @@ public sealed partial class CorePlugin
         }
         _reservedSlots = new ReservedSlots(mode, Config.PublicSlots, TimeProvider.System);
         _vacancies = new VacancyFinder(client);
-        ReservedSlotsLog.Enabled(Logger, mode, Config.PublicSlots, Server.MaxPlayers);
-        if (Server.MaxPlayers <= Config.PublicSlots)
-        {
-            ReservedSlotsLog.NoRoom(Logger, Server.MaxPlayers, Config.PublicSlots);
-        }
         if (mode == ReservedSlotsMode.Retake)
         {
             RegisterEventHandler<EventRoundEnd>(OnRoundEndReservedSlots);
             AddTimer(PoseSampleSeconds, SamplePoses, TimerFlags.REPEAT);
         }
-        foreach (var player in Utilities.GetPlayers().Where(IsHuman))
+        if (hotReload)
         {
-            _reservedSlots.OnJoin(player.SteamID);
+            CheckReservedSlotsCapacity();
+            foreach (var player in Utilities.GetPlayers().Where(IsHuman))
+            {
+                _reservedSlots.OnJoin(player.SteamID);
+            }
+        }
+    }
+
+    /// <summary>Uma vez, com as globais do jogo prontas: avisa se o maxplayers não deixa vaga extra.</summary>
+    private void CheckReservedSlotsCapacity()
+    {
+        if (_reservedSlots is null || _capacityChecked)
+        {
+            return;
+        }
+        _capacityChecked = true;
+        ReservedSlotsLog.Enabled(Logger, Config.ReservedSlotsMode, Config.PublicSlots, Server.MaxPlayers);
+        if (Server.MaxPlayers <= Config.PublicSlots)
+        {
+            ReservedSlotsLog.NoRoom(Logger, Server.MaxPlayers, Config.PublicSlots);
         }
     }
 
