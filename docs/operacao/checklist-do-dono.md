@@ -41,11 +41,15 @@ openssl rand -hex 24   # VALKEY_PASSWORD
 
 ## 4. Chave SSH do deploy
 
-No PC do dono:
+No PC do dono. **No Git Bash** (ou WSL/Linux/macOS) rode:
 
 ```bash
 ssh-keygen -t ed25519 -N "" -C carmine-deploy -f carmine-deploy
 ```
+
+No **PowerShell** o `-N ""` não funciona: ele grava uma senha literal `""` na chave (e o deploy falharia pedindo a senha). Lá, rode só `ssh-keygen -t ed25519 -C carmine-deploy -f carmine-deploy` e aperte **Enter duas vezes** quando pedir a senha (vazia).
+
+**Confira que a chave não tem senha** (qualquer shell): `ssh-keygen -y -f carmine-deploy` deve imprimir a chave pública (`ssh-ed25519 AAAA...`) **sem pedir nada**. Se pedir `Enter passphrase`, apague os dois arquivos e refaça.
 
 - **Chave pública** (`carmine-deploy.pub`, uma linha) → entregue a quem conduz: vai no `bootstrap.sh` da VM (passo 9).
 - **Chave privada** (`carmine-deploy`, o arquivo inteiro, com as linhas `BEGIN`/`END`) → **GitHub**: `DEPLOY_SSH_KEY`. Depois **apague o arquivo privado** do PC.
@@ -87,12 +91,15 @@ scp -i ~/.ssh/carmine-oracle -r infra/prod ubuntu@144.22.255.77:/tmp/carmine-pro
 ssh -i ~/.ssh/carmine-oracle ubuntu@144.22.255.77
 sudo /tmp/carmine-prod/bin/bootstrap.sh "ssh-ed25519 AAAA... carmine-deploy"   # a chave PÚBLICA do passo 4
 sudoedit /opt/carmine/.env                                                       # colar os valores dos passos 1 a 8
+sudo /opt/carmine/bin/tunnel                                                     # sobe só o túnel (veja abaixo)
 ```
+
+**Por que subir o túnel antes do primeiro deploy:** o deploy chega à VM por SSH *dentro do túnel* (`ssh.stcarmine.com`), e o túnel só existiria depois do deploy. O `bin/tunnel` sobe só o cloudflared (precisa de `CLOUDFLARE_TUNNEL_TOKEN` preenchido e das senhas dos passos 1 a 8 no `.env`) e espera ele ficar saudável; no painel do Cloudflare o túnel `carmine-prod` passa a *Healthy*. Pode repetir sem problema. O deploy normal **adota** esse contêiner (mesma configuração: não reinicia o túnel no meio da própria sessão SSH).
 
 ## 10. Primeiro deploy
 
 1. **GitHub > Settings > Secrets and variables > Actions**: confira os 4 secrets (passos 3 e 4).
-2. Faça o merge do PR da S09a (ou *Actions > Deploy > Run workflow* na ponta do `main`). O job `Deploy` implanta; acompanhe o log.
+2. Confira que o túnel está *Healthy* no painel (passo 9). Faça o merge do PR da S09a (ou *Actions > Deploy > Run workflow* na ponta do `main`). O job `Deploy` implanta; acompanhe o log.
 3. Se o log disser "Deploy ainda não configurado", falta algum dos 4 secrets.
 
 ## 11. Conferir
