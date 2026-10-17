@@ -47,6 +47,17 @@ export async function signInFromHeader(page: Page, steamId: string) {
   await page.getByTestId('steam-login').click();
 }
 
+/**
+ * Entra pelo mesmo caminho do botão (API, Steam falsa e callback), mas só com requisições: a
+ * sessão cai nos cookies do navegador sem as três navegações da interface. Para os testes que
+ * precisam de uma Conta logada de partida; o fluxo pela interface fica em `signInFromHeader`.
+ */
+export async function signInByRequest(page: Page, steamId: string) {
+  await chooseSteamAccount(page.context(), steamId);
+  const response = await page.request.get('/api/auth/steam/login?returnTo=%2F');
+  if (!response.ok()) throw new Error(`login recusado: ${response.status()}`);
+}
+
 /** SteamID64 da "Staff" que assina as concessões de VIP dos E2E no log de auditoria. */
 const E2E_STAFF_STEAM_ID = '76561197960265729';
 
