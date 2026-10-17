@@ -8,9 +8,10 @@ import { themeInitScript } from '@/lib/theme';
  * executável que ele mesmo renderiza ("Encountered a script tag..."), e ele já rodou. A
  * diferença de `type` entre servidor e cliente é esperada.
  */
-export function ThemeScript() {
+export function ThemeScript({ nonce }: { nonce?: string }) {
   return (
     <script
+      nonce={nonce}
       suppressHydrationWarning
       type={typeof window === 'undefined' ? undefined : 'text/plain'}
       // biome-ignore lint/security/noDangerouslySetInnerHtml: string constante, aplica o tema salvo antes da primeira pintura

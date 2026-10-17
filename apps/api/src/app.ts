@@ -7,6 +7,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import type { AppConfig } from './config/config.js';
+import { registerDefaultHeaders } from './default-headers.js';
 import { buildOpenApiDocument } from './openapi/openapi.js';
 
 export const API_PREFIX = 'api';
@@ -27,6 +28,7 @@ export async function createApp(
   );
   // Cookies da sessão do site (S03); nenhum é assinado: o id da sessão já é aleatório e opaco.
   await app.register(cookie);
+  registerDefaultHeaders(app);
   if (!preview) {
     app.useLogger(app.get(Logger));
   }

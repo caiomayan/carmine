@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
@@ -14,6 +14,7 @@ import { ThemeScript } from '@/components/theme-script';
 import { locale } from '@/i18n/request';
 import { getServerSession } from '@/lib/api-server';
 import { FIRST_STEPS_COOKIE, hasDismissedFirstSteps } from '@/lib/first-steps';
+import { NONCE_HEADER } from '@/lib/security-headers';
 import { DEFAULT_THEME } from '@/lib/theme';
 import './globals.css';
 
@@ -48,6 +49,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const server = await getServerSession();
   const { moderation } = await getMessages();
   const session = server.status === 'authenticated' ? server.session : null;
+  // O nonce da CSP desta requisição (proxy.ts); o Next marca os próprios scripts sozinho.
+  const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
   const dismissed = (await cookies()).get(FIRST_STEPS_COOKIE)?.value;
   // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
   const firstStepsOpen =
@@ -72,7 +75,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       suppressHydrationWarning
     >
       <head>
-        <ThemeScript />
+        <ThemeScript nonce={nonce} />
       </head>
       <body>
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
