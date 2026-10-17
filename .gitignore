@@ -10,6 +10,7 @@ coverage/
 
 # .NET
 bin/
+!infra/prod/bin/
 obj/
 *.user
 
