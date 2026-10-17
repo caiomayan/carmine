@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -159,7 +159,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       >
         <AnimatePresence>
           {notice ? (
-            <motion.div
+            <m.div
               key={notice.id}
               role="status"
               data-testid={notice.kind === 'undo' ? 'undo-toast' : 'notice-toast'}
@@ -201,7 +201,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
                   }}
                 />
               ) : null}
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, type HTMLMotionProps, motion, type Transition } from 'motion/react';
+import { AnimatePresence, type HTMLMotionProps, m, type Transition } from 'framer-motion';
 import { Tabs as TabsPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import {
@@ -90,7 +90,7 @@ function TabsContent({
   return (
     <AnimatePresence mode="wait">
       <TabsPrimitive.Content asChild forceMount={forceMount} value={value}>
-        <motion.div
+        <m.div
           data-slot="tabs-content"
           layout
           layoutDependency={value}
@@ -143,7 +143,7 @@ function TabsContents(props: TabsContentsProps) {
   const { transition = defaultTransition, style, ...layoutProps } = props;
 
   return (
-    <motion.div
+    <m.div
       data-slot="tabs-contents"
       layout="size"
       layoutDependency={value}

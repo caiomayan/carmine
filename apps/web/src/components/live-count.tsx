@@ -1,6 +1,6 @@
 'use client';
 
-import { useReducedMotion } from 'motion/react';
+import { useReducedMotion } from 'framer-motion';
 import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { SlidingNumber } from '@/components/animate-ui/primitives/texts/sliding-number';

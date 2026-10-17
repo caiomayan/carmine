@@ -1,7 +1,7 @@
 'use client';
 
-import type { Variants } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Variants } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -82,8 +82,8 @@ const LogoutIcon = forwardRef<LogoutIconHandle, LogoutIconProps>(
           xmlns="http://www.w3.org/2000/svg"
         >
           <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-          <motion.polyline animate={controls} points="16 17 21 12 16 7" variants={PATH_VARIANTS} />
-          <motion.line animate={controls} variants={PATH_VARIANTS} x1="21" x2="9" y1="12" y2="12" />
+          <m.polyline animate={controls} points="16 17 21 12 16 7" variants={PATH_VARIANTS} />
+          <m.line animate={controls} variants={PATH_VARIANTS} x1="21" x2="9" y1="12" y2="12" />
         </svg>
       </span>
     );

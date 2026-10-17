@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, type ReactNode, useId, useRef, useState } from 'react';
 import { CheckIcon } from '@/components/icons/animated/check';
@@ -187,9 +187,9 @@ export function ActionForm({
       {collapsed ? (
         <AnimatePresence initial={false}>
           {open ? (
-            <motion.div key="form" {...reveal} className="overflow-hidden">
+            <m.div key="form" {...reveal} className="overflow-hidden">
               <div className="pt-1 pb-1">{form}</div>
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
       ) : (

@@ -3,10 +3,10 @@
 import {
   type HTMLMotionProps,
   type LegacyAnimationControls,
-  motion,
+  m,
   type TargetAndTransition,
   type Transition,
-} from 'motion/react';
+} from 'framer-motion';
 import type * as React from 'react';
 import { Slot, type WithAsChild } from '@/components/animate-ui/primitives/animate/slot';
 import { useAutoHeight } from '@/hooks/use-auto-height';
@@ -37,7 +37,7 @@ function AutoHeight({
 }: AutoHeightProps) {
   const { ref, height } = useAutoHeight<HTMLDivElement>(deps);
 
-  const Comp = asChild ? Slot : motion.div;
+  const Comp = asChild ? Slot : m.div;
 
   return (
     <Comp

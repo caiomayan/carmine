@@ -4,11 +4,11 @@ import {
   AnimatePresence,
   type HTMLMotionProps,
   type MotionValue,
-  motion,
+  m,
   type SpringOptions,
   useMotionValue,
   useSpring,
-} from 'motion/react';
+} from 'framer-motion';
 import { Tooltip as TooltipPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { useControlledState } from '@/hooks/use-controlled-state';
@@ -153,7 +153,7 @@ function TooltipContent({
       onEscapeKeyDown={onEscapeKeyDown}
       onPointerDownOutside={onPointerDownOutside}
     >
-      <motion.div
+      <m.div
         key="popover-content"
         data-slot="popover-content"
         initial={{ opacity: 0, scale: 0.5 }}

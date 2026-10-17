@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
+import { AnimatePresence, type HTMLMotionProps, m } from 'framer-motion';
 import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
 import * as React from 'react';
 
@@ -116,7 +116,7 @@ function DropdownMenuSubTrigger({ disabled, textValue, ...props }: DropdownMenuS
       textValue={textValue}
       asChild
     >
-      <motion.div data-slot="dropdown-menu-sub-trigger" data-disabled={disabled} {...props} />
+      <m.div data-slot="dropdown-menu-sub-trigger" data-disabled={disabled} {...props} />
     </DropdownMenuPrimitive.SubTrigger>
   );
 }
@@ -170,7 +170,7 @@ function DropdownMenuSubContent({
             sticky={sticky}
             hideWhenDetached={hideWhenDetached}
           >
-            <motion.div
+            <m.div
               key="dropdown-menu-sub-content"
               data-slot="dropdown-menu-sub-content"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -263,7 +263,7 @@ function DropdownMenuContent({
             sticky={sticky}
             hideWhenDetached={hideWhenDetached}
           >
-            <motion.div
+            <m.div
               key="dropdown-menu-content"
               data-slot="dropdown-menu-content"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -310,7 +310,7 @@ function DropdownMenuItem({ disabled, onSelect, textValue, ...props }: DropdownM
       textValue={textValue}
       asChild
     >
-      <motion.div data-slot="dropdown-menu-item" data-disabled={disabled} {...props} />
+      <m.div data-slot="dropdown-menu-item" data-disabled={disabled} {...props} />
     </DropdownMenuPrimitive.Item>
   );
 }
@@ -348,7 +348,7 @@ function DropdownMenuCheckboxItem({
       textValue={textValue}
       asChild
     >
-      <motion.div data-slot="dropdown-menu-checkbox-item" data-disabled={disabled} {...props} />
+      <m.div data-slot="dropdown-menu-checkbox-item" data-disabled={disabled} {...props} />
     </DropdownMenuPrimitive.CheckboxItem>
   );
 }
@@ -384,7 +384,7 @@ function DropdownMenuRadioItem({
       textValue={textValue}
       asChild
     >
-      <motion.div data-slot="dropdown-menu-radio-item" data-disabled={disabled} {...props} />
+      <m.div data-slot="dropdown-menu-radio-item" data-disabled={disabled} {...props} />
     </DropdownMenuPrimitive.RadioItem>
   );
 }
@@ -416,7 +416,7 @@ type DropdownMenuItemIndicatorProps = Omit<
 function DropdownMenuItemIndicator(props: DropdownMenuItemIndicatorProps) {
   return (
     <DropdownMenuPrimitive.ItemIndicator data-slot="dropdown-menu-item-indicator" asChild>
-      <motion.div {...props} />
+      <m.div {...props} />
     </DropdownMenuPrimitive.ItemIndicator>
   );
 }

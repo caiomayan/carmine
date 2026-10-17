@@ -13,7 +13,7 @@ import {
   sanctionEvidenceUrlSchema,
   staffAccountDetailSchema,
 } from '@carmine/contracts';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useRef, useState } from 'react';
 import { CheckIcon } from '@/components/icons/animated/check';
@@ -201,7 +201,7 @@ export function ApplySanctionForm({
 
       <AnimatePresence initial={false}>
         {category ? (
-          <motion.div
+          <m.div
             key="measures"
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -359,7 +359,7 @@ export function ApplySanctionForm({
 
               <AnimatePresence initial={false} mode="wait">
                 {reviewing ? (
-                  <motion.div
+                  <m.div
                     key="confirm"
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -411,9 +411,9 @@ export function ApplySanctionForm({
                         {t('apply.cancel')}
                       </Button>
                     </div>
-                  </motion.div>
+                  </m.div>
                 ) : (
-                  <motion.div key="review" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <m.div key="review" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <Button
                       type="submit"
                       size="sm"
@@ -422,11 +422,11 @@ export function ApplySanctionForm({
                     >
                       {t('apply.review')}
                     </Button>
-                  </motion.div>
+                  </m.div>
                 )}
               </AnimatePresence>
             </div>
-          </motion.div>
+          </m.div>
         ) : null}
       </AnimatePresence>
 

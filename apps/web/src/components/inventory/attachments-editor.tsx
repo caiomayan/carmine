@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
@@ -83,7 +83,7 @@ export function StickersEditor({
       <ol className="grid">
         <AnimatePresence initial={false}>
           {stickers.map((sticker, index) => (
-            <motion.li
+            <m.li
               // biome-ignore lint/suspicious/noArrayIndexKey: a ordem é a identidade do sticker (chave "0".."4" do contrato).
               key={`${index}-${sticker.id}`}
               {...listMotion}
@@ -106,7 +106,7 @@ export function StickersEditor({
                   drag.available ? () => drag.set(drag.active === index ? null : index) : null
                 }
               />
-            </motion.li>
+            </m.li>
           ))}
         </AnimatePresence>
       </ol>

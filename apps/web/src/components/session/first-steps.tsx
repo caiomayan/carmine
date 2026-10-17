@@ -1,7 +1,7 @@
 'use client';
 
+import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
 import { BoxIcon, ServerIcon, SquareTerminalIcon } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useRef } from 'react';
@@ -65,7 +65,7 @@ export function FirstSteps({ labels }: { labels: FirstStepsLabels }) {
   return (
     <AnimatePresence initial={false}>
       {firstSteps.open && account ? (
-        <motion.div
+        <m.div
           key="first-steps"
           initial={hidden}
           animate={{ height: 'auto', opacity: 1 }}
@@ -135,7 +135,7 @@ export function FirstSteps({ labels }: { labels: FirstStepsLabels }) {
               </div>
             </div>
           </section>
-        </motion.div>
+        </m.div>
       ) : null}
     </AnimatePresence>
   );
