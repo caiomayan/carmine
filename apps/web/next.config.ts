@@ -1,6 +1,7 @@
 import path from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { staticSecurityHeaders } from './src/lib/security-headers';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -22,6 +23,13 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  // Cabeçalhos fixos de segurança; a CSP, que muda por requisição (nonce), vem do proxy.ts.
+  headers: async () => [
+    {
+      source: '/:path*',
+      headers: staticSecurityHeaders({ production: process.env.NODE_ENV === 'production' }),
+    },
+  ],
   // O navegador fala com a API sempre na mesma origem, em /api (ADR 0015): cookies first-party,
   // sem CORS. Em produção o Cloudflare Tunnel manda /api/* direto para a API e isto nunca é
   // usado; em desenvolvimento e no E2E, o Next repassa /api/* para a API (lido no build).
