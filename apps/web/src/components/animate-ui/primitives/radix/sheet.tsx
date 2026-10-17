@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
+import { AnimatePresence, type HTMLMotionProps, m } from 'framer-motion';
 import { Dialog as SheetPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { useControlledState } from '@/hooks/use-controlled-state';
@@ -65,7 +65,7 @@ function SheetOverlay({
 }: SheetOverlayProps) {
   return (
     <SheetPrimitive.Overlay asChild forceMount>
-      <motion.div
+      <m.div
         key="sheet-overlay"
         data-slot="sheet-overlay"
         initial={{ opacity: 0, filter: 'blur(4px)' }}
@@ -110,7 +110,7 @@ function SheetContent({
 
   return (
     <SheetPrimitive.Content asChild forceMount {...props}>
-      <motion.div
+      <m.div
         key="sheet-content"
         data-slot="sheet-content"
         data-side={side}
@@ -125,7 +125,7 @@ function SheetContent({
         transition={transition}
       >
         {children}
-      </motion.div>
+      </m.div>
     </SheetPrimitive.Content>
   );
 }

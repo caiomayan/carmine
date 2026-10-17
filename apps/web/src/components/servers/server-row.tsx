@@ -1,7 +1,7 @@
 'use client';
 
 import type { LiveServer } from '@carmine/contracts';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'framer-motion';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { type CSSProperties, type ReactNode, useId, useState } from 'react';
 import {
@@ -208,7 +208,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
 
       <AnimatePresence initial={false}>
         {help !== 'closed' && !offline ? (
-          <motion.div
+          <m.div
             key="help"
             data-help
             initial={{ height: 0, opacity: 0 }}
@@ -226,7 +226,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
               onCopy={copyAddress}
               onClose={() => setHelp('closed')}
             />
-          </motion.div>
+          </m.div>
         ) : null}
       </AnimatePresence>
     </li>

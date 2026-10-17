@@ -1,4 +1,4 @@
-import { APPEAL_RESPONSE_HOURS } from '@carmine/contracts';
+import { APPEAL_RESPONSE_HOURS } from '@carmine/contracts/rules';
 import { getTranslations } from 'next-intl/server';
 import { siDiscord } from 'simple-icons';
 import { ExternalLinkIcon } from '@/components/icons/animated/external-link';

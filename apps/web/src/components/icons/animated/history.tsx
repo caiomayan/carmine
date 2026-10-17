@@ -1,7 +1,7 @@
 'use client';
 
-import type { Transition, Variants } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Transition, Variants } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -121,11 +121,11 @@ const HistoryIcon = forwardRef<HistoryIconHandle, HistoryIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.g animate={controls} transition={ARROW_TRANSITION} variants={ARROW_VARIANTS}>
+          <m.g animate={controls} transition={ARROW_TRANSITION} variants={ARROW_VARIANTS}>
             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
             <path d="M3 3v5h5" />
-          </motion.g>
-          <motion.line
+          </m.g>
+          <m.line
             animate={controls}
             initial="normal"
             transition={HAND_TRANSITION}
@@ -135,7 +135,7 @@ const HistoryIcon = forwardRef<HistoryIconHandle, HistoryIconProps>(
             y1="12"
             y2="7"
           />
-          <motion.line
+          <m.line
             animate={controls}
             initial="normal"
             transition={MINUTE_HAND_TRANSITION}

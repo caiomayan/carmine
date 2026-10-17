@@ -1,6 +1,12 @@
 import { randomInt } from 'node:crypto';
 import type { Browser, Page } from '@playwright/test';
-import { csrfToken, grantStaffRole, newSteamId, signInFromHeader } from './accounts';
+import {
+  csrfToken,
+  grantStaffRole,
+  newSteamId,
+  signInByRequest,
+  signInFromHeader,
+} from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
 import { connectPlayer, createServer, heartbeat, keepBeating } from './live-servers';
 
@@ -17,8 +23,8 @@ async function signedInPlayer(page: Page, steamName: string) {
   const steamId = newSteamId();
   const server = createServer();
   await connectPlayer(page.request, server, steamId, steamName);
+  await signInByRequest(page, steamId);
   await page.goto('/');
-  await signInFromHeader(page, steamId);
   await expect(page.getByTestId('account-menu')).toBeVisible();
   const me = (await (await page.request.get('/api/me')).json()) as {
     account: { publicId: number; displayName: string };
@@ -148,6 +154,18 @@ test.describe('Painel da Staff', () => {
     await expect(visitor.locator('meta[name=robots]')).toHaveAttribute('content', /noindex/);
     await expect(visitor.getByText(reason)).toHaveCount(0);
     await visitor.close();
+    await owner.page.context().close();
+  });
+
+  test('Staff revoga a Punição por recurso: o Perfil volta ao normal e o log guarda as duas ações', async ({
+    browser,
+    page,
+  }) => {
+    const player = await signedInPlayer(page, 'Banido Recorrente');
+    const owner = await staffMember(browser, 'owner');
+    await openFile(owner.page, player.publicId);
+    const reason = `TK proposital na rodada ${randomInt(1000, 9999)}`;
+    await applySanction(owner.page, 'griefing', reason, { type: 'ban', value: '2', unit: 'day' });
 
     // Logado: o histórico, nunca o motivo livre.
     await owner.page.goto(`/${player.publicId}`);
@@ -228,7 +246,7 @@ test.describe('Painel da Staff', () => {
     await owner.page.context().close();
   });
 
-  test('ban por cheat exige testemunha ou evidência; só com evidência o Perfil diz Cheat', async ({
+  test('ban por cheat exige testemunha ou evidência; só com testemunha o Perfil diz Violação das regras', async ({
     browser,
     page,
   }) => {
@@ -260,9 +278,12 @@ test.describe('Painel da Staff', () => {
     await owner.page.goto(`/${witnessed.publicId}`);
     await expect(owner.page.getByTestId('sanction-history')).toContainText('Violação das regras');
     await expect(owner.page.getByTestId('sanction-history')).not.toContainText('Cheat');
+    await owner.page.context().close();
+  });
 
-    // Com evidência: "Cheat".
+  test('ban por cheat com evidência: o Perfil diz Cheat', async ({ browser, page }) => {
     const proven = await signedInPlayer(page, 'Cheat Provado');
+    const owner = await staffMember(browser, 'owner');
     await openFile(owner.page, proven.publicId);
     await applySanction(owner.page, 'cheat', 'Wallhack na demo', undefined, {
       evidenceUrl: 'https://youtu.be/demo123',

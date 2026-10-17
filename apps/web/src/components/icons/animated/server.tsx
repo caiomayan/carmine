@@ -1,7 +1,7 @@
 'use client';
 
-import type { Variants } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Variants } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -96,14 +96,14 @@ const ServerIcon = forwardRef<ServerIconHandle, ServerIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.g animate={controls} initial="normal" variants={TOP_RECT_VARIANTS}>
+          <m.g animate={controls} initial="normal" variants={TOP_RECT_VARIANTS}>
             <rect height="8" rx="2" ry="2" width="20" x="2" y="2" />
             <line x1="6" x2="10" y1="6" y2="6" />
-          </motion.g>
-          <motion.g animate={controls} initial="normal" variants={BOTTOM_RECT_VARIANTS}>
+          </m.g>
+          <m.g animate={controls} initial="normal" variants={BOTTOM_RECT_VARIANTS}>
             <rect height="8" rx="2" ry="2" width="20" x="2" y="14" />
             <line x1="6" x2="10" y1="18" y2="18" />
-          </motion.g>
+          </m.g>
         </svg>
       </span>
     );

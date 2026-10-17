@@ -1,7 +1,7 @@
 'use client';
 
-import type { Transition, Variants } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Transition, Variants } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -82,11 +82,11 @@ const DeleteIcon = forwardRef<DeleteIconHandle, DeleteIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.g animate={controls} transition={SPRING_TRANSITION} variants={LID_VARIANTS}>
+          <m.g animate={controls} transition={SPRING_TRANSITION} variants={LID_VARIANTS}>
             <path d="M3 6h18" />
             <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-          </motion.g>
-          <motion.path
+          </m.g>
+          <m.path
             animate={controls}
             d="M19 8v12c0 1-1 2-2 2H7c-1 0-2-1-2-2V8"
             transition={SPRING_TRANSITION}
@@ -95,7 +95,7 @@ const DeleteIcon = forwardRef<DeleteIconHandle, DeleteIconProps>(
               animate: { d: 'M19 9v12c0 1-1 2-2 2H7c-1 0-2-1-2-2V9' },
             }}
           />
-          <motion.line
+          <m.line
             animate={controls}
             transition={SPRING_TRANSITION}
             variants={{
@@ -107,7 +107,7 @@ const DeleteIcon = forwardRef<DeleteIconHandle, DeleteIconProps>(
             y1="11"
             y2="17"
           />
-          <motion.line
+          <m.line
             animate={controls}
             transition={SPRING_TRANSITION}
             variants={{

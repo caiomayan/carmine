@@ -1,6 +1,6 @@
 'use client';
 
-import { cubicBezier, motion, useAnimation } from 'motion/react';
+import { cubicBezier, m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -71,7 +71,7 @@ const UndoIcon = forwardRef<UndoIconHandle, UndoIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.path
+          <m.path
             animate={controls}
             d="M3 7v6h6"
             transition={{
@@ -87,7 +87,7 @@ const UndoIcon = forwardRef<UndoIconHandle, UndoIconProps>(
               },
             }}
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"
             transition={{

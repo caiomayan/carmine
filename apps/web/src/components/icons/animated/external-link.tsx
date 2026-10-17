@@ -1,7 +1,7 @@
 'use client';
 
-import type { Variants } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Variants } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -84,10 +84,10 @@ const ExternalLinkIcon = forwardRef<ExternalLinkIconHandle, ExternalLinkIconProp
           xmlns="http://www.w3.org/2000/svg"
         >
           <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-          <motion.g animate={controls} variants={ARROW_VARIANTS}>
+          <m.g animate={controls} variants={ARROW_VARIANTS}>
             <path d="M15 3h6v6" />
             <path d="M10 14 21 3" />
-          </motion.g>
+          </m.g>
         </svg>
       </span>
     );

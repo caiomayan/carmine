@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useAnimation } from 'motion/react';
+import { m, useAnimation } from 'framer-motion';
 import type React from 'react';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
@@ -59,7 +59,7 @@ const FILE_TEXT = forwardRef<FileTextIconHandle, FileTextIconProps>(
         onMouseLeave={handleMouseLeave}
         {...props}
       >
-        <motion.svg
+        <m.svg
           animate={controls}
           fill="none"
           height={size}
@@ -85,7 +85,7 @@ const FILE_TEXT = forwardRef<FileTextIconHandle, FileTextIconProps>(
           <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
           <path d="M14 2v4a2 2 0 0 0 2 2h4" />
 
-          <motion.path
+          <m.path
             d="M10 9H8"
             stroke="currentColor"
             strokeWidth="2"
@@ -106,7 +106,7 @@ const FILE_TEXT = forwardRef<FileTextIconHandle, FileTextIconProps>(
               },
             }}
           />
-          <motion.path
+          <m.path
             d="M16 13H8"
             stroke="currentColor"
             strokeWidth="2"
@@ -127,7 +127,7 @@ const FILE_TEXT = forwardRef<FileTextIconHandle, FileTextIconProps>(
               },
             }}
           />
-          <motion.path
+          <m.path
             d="M16 17H8"
             stroke="currentColor"
             strokeWidth="2"
@@ -148,7 +148,7 @@ const FILE_TEXT = forwardRef<FileTextIconHandle, FileTextIconProps>(
               },
             }}
           />
-        </motion.svg>
+        </m.svg>
       </span>
     );
   },

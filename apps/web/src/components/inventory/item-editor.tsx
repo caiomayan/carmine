@@ -1,6 +1,6 @@
 'use client';
 
-import { type Cs2Item, inventoryErrorSchema, inventoryItemSchema } from '@carmine/contracts';
+import type { Cs2Item } from '@carmine/contracts';
 import type { Route } from 'next';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ import { useDraft } from '@/components/session/use-draft';
 import { Button } from '@/components/ui/button';
 import { signInHref } from '@/lib/auth-links';
 import type { ItemSpec } from '@/lib/catalog/catalog';
+import { loadContracts } from '@/lib/contracts-schemas';
 import { formatDecimal } from '@/lib/decimal';
 import {
   type AttachmentLabel,
@@ -160,11 +161,13 @@ export function ItemEditor(props: EditorProps) {
       );
       if (response.status === 401) return;
       if (!response.ok) {
+        const { inventoryErrorSchema } = await loadContracts();
         const parsed = inventoryErrorSchema.safeParse(await response.json().catch(() => null));
         if (parsed.success) setApiIssue(issueFromApiError(parsed.data));
         else setFailure('unexpected');
         return;
       }
+      const { inventoryItemSchema } = await loadContracts();
       const saved = inventoryItemSchema.parse(await response.json());
       draft.commit();
       if (andEquip) {

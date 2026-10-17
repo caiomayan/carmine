@@ -1,7 +1,7 @@
 'use client';
 
 import type { LiveServer } from '@carmine/contracts';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, m } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -256,7 +256,7 @@ function PrivateList() {
       </Button>
       <AnimatePresence initial={false}>
         {open ? (
-          <motion.div
+          <m.div
             key="how"
             id={panelId}
             initial={{ height: 0, opacity: 0 }}
@@ -283,7 +283,7 @@ function PrivateList() {
                 <AnimatedIcon icon={ExternalLinkIcon} size={14} />
               </a>
             </div>
-          </motion.div>
+          </m.div>
         ) : null}
       </AnimatePresence>
     </Notice>

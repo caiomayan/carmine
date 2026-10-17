@@ -1,16 +1,24 @@
 'use client';
 
-import {
-  LIVE_SERVERS_EVENT,
-  LIVE_SERVERS_RETRY_MS,
-  type LiveServerList,
-  liveServerListSchema,
-} from '@carmine/contracts';
+import type { LiveServerList } from '@carmine/contracts';
+import { LIVE_SERVERS_EVENT, LIVE_SERVERS_RETRY_MS } from '@carmine/contracts/rules';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { loadContracts } from '@/lib/contracts-schemas';
 import { initialLive, type LiveState, liveReducer } from '@/lib/live-servers';
 import { publishLiveSummary } from '@/lib/servers';
 
 export const LIVE_SERVERS_URL = '/api/servers/live';
+
+/** A lista de um evento SSE validada pelo contrato; `null` se o texto não é uma lista válida. */
+async function parseLiveList(data: string): Promise<LiveServerList | null> {
+  try {
+    const { liveServerListSchema } = await loadContracts();
+    const parsed = liveServerListSchema.safeParse(JSON.parse(data));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Teto da espera entre tentativas quando o EventSource desiste (API fora, 5xx do proxy). */
 const MAX_RETRY_MS = 30_000;
@@ -39,16 +47,12 @@ export function useLiveServers(initial: LiveServerList | null): {
       source?.close();
       const current = new EventSource(LIVE_SERVERS_URL);
       source = current;
-      current.addEventListener(LIVE_SERVERS_EVENT, (event) => {
-        let parsed: ReturnType<typeof liveServerListSchema.safeParse>;
-        try {
-          parsed = liveServerListSchema.safeParse(JSON.parse((event as MessageEvent).data));
-        } catch {
-          return;
-        }
-        if (!parsed.success) return;
+      current.addEventListener(LIVE_SERVERS_EVENT, async (event) => {
+        const list = await parseLiveList((event as MessageEvent).data);
+        // Uma conexão já fechada (reconexão, desmontagem) não publica mais nada.
+        if (list === null || source !== current) return;
         attempt = 0;
-        dispatch({ type: 'snapshot', list: parsed.data, at: Date.now() });
+        dispatch({ type: 'snapshot', list, at: Date.now() });
       });
       current.onerror = () => {
         dispatch({ type: 'lost', at: Date.now() });

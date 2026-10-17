@@ -119,9 +119,8 @@ export type LiveServerList = z.infer<typeof liveServerListSchema>;
  * Entre eventos, um comentário (`: keepalive`) a cada {@link LIVE_SERVERS_KEEPALIVE_SECONDS} s
  * mantém a conexão viva no Cloudflare; o `retry` diz ao EventSource quando reconectar.
  */
-export const LIVE_SERVERS_EVENT = 'servers';
 export const LIVE_SERVERS_KEEPALIVE_SECONDS = 15;
-export const LIVE_SERVERS_RETRY_MS = 3000;
+export { LIVE_SERVERS_EVENT, LIVE_SERVERS_RETRY_MS } from './rules.js';
 
 /** Um amigo Steam jogando agora num Servidor Carmine. */
 export const playingFriendSchema = z

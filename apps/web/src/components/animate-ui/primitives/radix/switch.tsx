@@ -3,10 +3,10 @@
 import {
   type HTMLMotionProps,
   type LegacyAnimationControls,
-  motion,
+  m,
   type TargetAndTransition,
   type VariantLabels,
-} from 'motion/react';
+} from 'framer-motion';
 import { Switch as SwitchPrimitives } from 'radix-ui';
 import * as React from 'react';
 import { useControlledState } from '@/hooks/use-controlled-state';
@@ -43,7 +43,7 @@ function Switch(props: SwitchProps) {
   return (
     <SwitchProvider value={{ isChecked, setIsChecked, isPressed, setIsPressed }}>
       <SwitchPrimitives.Root {...props} onCheckedChange={setIsChecked} asChild>
-        <motion.button
+        <m.button
           data-slot="switch"
           whileTap="tap"
           initial={false}
@@ -71,7 +71,7 @@ function SwitchThumb({
 
   return (
     <SwitchPrimitives.Thumb asChild>
-      <motion.div
+      <m.div
         data-slot="switch-thumb"
         whileTap="tab"
         layout
@@ -104,7 +104,7 @@ function SwitchIcon({
   }, [position, isChecked]);
 
   return (
-    <motion.div
+    <m.div
       data-slot={`switch-${position}-icon`}
       animate={isAnimated ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
       transition={transition}

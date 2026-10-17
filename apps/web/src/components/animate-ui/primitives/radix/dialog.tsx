@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
+import { AnimatePresence, type HTMLMotionProps, m } from 'framer-motion';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 import type * as React from 'react';
 
@@ -60,7 +60,7 @@ function DialogOverlay({
 }: DialogOverlayProps) {
   return (
     <DialogPrimitive.Overlay data-slot="dialog-overlay" asChild forceMount>
-      <motion.div
+      <m.div
         key="dialog-overlay"
         initial={{ opacity: 0, filter: 'blur(4px)' }}
         animate={{ opacity: 1, filter: 'blur(0px)' }}
@@ -106,7 +106,7 @@ function DialogContent({
       onPointerDownOutside={onPointerDownOutside}
       onInteractOutside={onInteractOutside}
     >
-      <motion.div
+      <m.div
         key="dialog-content"
         data-slot="dialog-content"
         initial={{

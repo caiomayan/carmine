@@ -1,8 +1,8 @@
 'use client';
 
-import { friendsPlayingSchema } from '@carmine/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSession } from '@/components/session/session-provider';
+import { loadContracts } from '@/lib/contracts-schemas';
 import { type FriendsView, nextFriends } from '@/lib/live-servers';
 
 export const FRIENDS_PLAYING_URL = '/api/me/friends-playing';
@@ -37,7 +37,7 @@ export function useFriendsPlaying(): {
         return;
       }
       const parsed = response.ok
-        ? friendsPlayingSchema.safeParse(await response.json())
+        ? (await loadContracts()).friendsPlayingSchema.safeParse(await response.json())
         : ({ success: false } as const);
       setView((previous) => nextFriends(previous, parsed.success ? parsed.data : 'failed'));
     } catch {

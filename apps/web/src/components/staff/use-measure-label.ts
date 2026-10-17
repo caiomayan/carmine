@@ -1,4 +1,5 @@
-import { isLastingSanction, type SanctionMeasure } from '@carmine/contracts';
+import type { SanctionMeasure } from '@carmine/contracts';
+import { isLastingSanction } from '@carmine/contracts/rules';
 import { useTranslations } from 'next-intl';
 import { durationParts } from '@/lib/moderation';
 

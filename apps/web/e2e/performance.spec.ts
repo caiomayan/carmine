@@ -13,11 +13,16 @@ const SLOW_4G = {
 };
 const BUDGET_MS = 4000;
 /**
- * O orçamento ainda não reprova a CI: home e editor passam dele pelo peso global do bundle
- * (React/Next, motion, zod, fonte) e pelo HTTP/1.1 do `next start` local, não pelo editor.
- * Até a dieta do bundle, o teste mede e anota; `PERF_BUDGET=enforce` faz reprovar.
+ * O tempo ainda não reprova a CI. Depois da dieta do bundle (Zod e motion fora da primeira
+ * carga: 310 → 259 kB de JS na home) a home e o editor ficam em ~4,4 s e ~4,7 s neste teste, que
+ * mede o `next start` em HTTP/1.1 (seis conexões, 21 pedidos); atrás de um proxy HTTP/2, como o
+ * Cloudflare, caem para ~4,2 s. O que sobra é o React/Next (~165 kB de JS) e a fonte (49 kB);
+ * o tempo oscila ±0,5 s entre execuções, então `PERF_BUDGET=enforce` faz reprovar, mas só vale
+ * numa máquina quieta. O que reprova sempre é o peso do JS da primeira carga (determinístico).
  */
 const ENFORCE = process.env.PERF_BUDGET === 'enforce';
+/** JS da primeira carga (bytes na rede, gzip do `next start`), com ~5% de folga sobre o medido. */
+const JS_BUDGET_KB = 275;
 
 /**
  * Interativo = o React já hidratou o controle que a pessoa usa (o nó ganhou a fibra do React e
@@ -50,13 +55,24 @@ for (const target of PAGES) {
     const hydrated = Date.now() - started;
     const timing = await page.evaluate(() => {
       const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
-      return { ttfb: Math.round(nav.responseStart), dcl: Math.round(nav.domContentLoadedEventEnd) };
+      const scripts = performance
+        .getEntriesByType('resource')
+        .filter((entry) => entry.name.endsWith('.js')) as PerformanceResourceTiming[];
+      return {
+        ttfb: Math.round(nav.responseStart),
+        dcl: Math.round(nav.domContentLoadedEventEnd),
+        jsKb: scripts.reduce((sum, entry) => sum + entry.transferSize, 0) / 1024,
+      };
     });
 
     test.info().annotations.push({
       type: 'tempos',
-      description: `pronto ${hydrated} ms · TTFB ${timing.ttfb} ms · DCL ${timing.dcl} ms`,
+      description: `pronto ${hydrated} ms · TTFB ${timing.ttfb} ms · DCL ${timing.dcl} ms · JS ${timing.jsKb.toFixed(1)} kB`,
     });
+    expect(
+      timing.jsKb,
+      `${target.path}: JS da primeira carga em ${timing.jsKb.toFixed(1)} kB (orçamento ${JS_BUDGET_KB} kB)`,
+    ).toBeLessThanOrEqual(JS_BUDGET_KB);
     if (ENFORCE) {
       expect(hydrated, `${target.path} interativo em ${hydrated} ms`).toBeLessThanOrEqual(
         BUDGET_MS,

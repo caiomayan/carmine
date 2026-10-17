@@ -1,7 +1,7 @@
 'use client';
 
-import type { Transition } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Transition } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -77,7 +77,7 @@ const CopyIcon = forwardRef<CopyIconHandle, CopyIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.rect
+          <m.rect
             animate={controls}
             height="14"
             rx="2"
@@ -91,7 +91,7 @@ const CopyIcon = forwardRef<CopyIconHandle, CopyIconProps>(
             x="8"
             y="8"
           />
-          <motion.path
+          <m.path
             animate={controls}
             d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"
             transition={DEFAULT_TRANSITION}

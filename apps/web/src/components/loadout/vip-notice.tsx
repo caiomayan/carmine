@@ -1,4 +1,5 @@
-import { type VipStatus, vipNoticeAt } from '@carmine/contracts';
+import type { VipStatus } from '@carmine/contracts';
+import { vipNoticeAt } from '@carmine/contracts/rules';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { cn } from '@/lib/utils';
 

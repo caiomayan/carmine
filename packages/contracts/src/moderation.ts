@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isLastingSanction } from './rules.js';
 import { steamId64Schema } from './steam.js';
 
 /**
@@ -23,14 +24,11 @@ export const sanctionTypeSchema = z
 
 export type SanctionType = z.infer<typeof sanctionTypeSchema>;
 
-/** Tipos que duram (com `endsAt`, ou permanentes); kick e aviso são instantâneos. */
-export const LASTING_SANCTION_TYPES = ['ban', 'mute', 'gag'] as const satisfies SanctionType[];
-
-export type LastingSanctionType = (typeof LASTING_SANCTION_TYPES)[number];
-
-export function isLastingSanction(type: SanctionType): type is LastingSanctionType {
-  return (LASTING_SANCTION_TYPES as readonly SanctionType[]).includes(type);
-}
+export {
+  isLastingSanction,
+  LASTING_SANCTION_TYPES,
+  type LastingSanctionType,
+} from './rules.js';
 
 /**
  * Categoria de infração (`SanctionCategory`), da tabela de conduta do dono (2026-10-12):
@@ -240,14 +238,7 @@ export const profileSanctionsSchema = z
 
 export type ProfileSanctions = z.infer<typeof profileSanctionsSchema>;
 
-/**
- * Caminho do web com as regras de conduta e como recorrer (ticket no Discord, resposta em até
- * 72 h). As mensagens do jogo mostram `stcarmine.com` + este caminho.
- */
-export const APPEAL_PATH = '/regras#recurso';
-
-/** Prazo de resposta de um recurso. */
-export const APPEAL_RESPONSE_HOURS = 72;
+export { APPEAL_PATH, APPEAL_RESPONSE_HOURS } from './rules.js';
 
 /**
  * Uma Punição para o Carmine.Core aplicar. Ban, mute e gag vêm enquanto valem (o plugin também

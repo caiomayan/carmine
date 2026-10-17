@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useAnimation } from 'motion/react';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -58,7 +58,7 @@ const LockIcon = forwardRef<LockIconHandle, LockIconProps>(
         onMouseLeave={handleMouseLeave}
         {...props}
       >
-        <motion.svg
+        <m.svg
           aria-hidden="true"
           animate={controls}
           fill="none"
@@ -87,7 +87,7 @@ const LockIcon = forwardRef<LockIconHandle, LockIconProps>(
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect height="11" rx="2" ry="2" width="18" x="3" y="11" />
-          <motion.path
+          <m.path
             animate={controls}
             d="M7 11V7a5 5 0 0 1 10 0v4"
             initial="normal"
@@ -104,7 +104,7 @@ const LockIcon = forwardRef<LockIconHandle, LockIconProps>(
               },
             }}
           />
-        </motion.svg>
+        </m.svg>
       </span>
     );
   },

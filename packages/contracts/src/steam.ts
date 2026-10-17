@@ -1,8 +1,5 @@
 import { z } from 'zod';
-
-/** Menor e maior SteamID64 de conta individual (universo público, tipo individual, instância 1). */
-const MIN_INDIVIDUAL_STEAM_ID = 76561197960265729n;
-const MAX_INDIVIDUAL_STEAM_ID = 76561202255233023n;
+import { isSteamId64 } from './rules.js';
 
 /**
  * SteamID64 de uma conta individual, sempre como texto: o número não cabe num `number` do
@@ -15,8 +12,7 @@ export const steamId64Schema = z
     (value) => {
       // O Zod roda o refine mesmo quando o regex falha; o regex já reportou esse caso.
       if (!/^\d{17}$/.test(value)) return true;
-      const id = BigInt(value);
-      return id >= MIN_INDIVIDUAL_STEAM_ID && id <= MAX_INDIVIDUAL_STEAM_ID;
+      return isSteamId64(value);
     },
     { message: 'não é o SteamID64 de uma conta individual' },
   )

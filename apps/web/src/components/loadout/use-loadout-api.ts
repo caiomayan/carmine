@@ -1,18 +1,16 @@
 'use client';
 
-import {
-  type AssignInput,
-  type CreatePresetInput,
-  type EquipInput,
-  inventoryItemSchema,
-  type LoadoutChange,
-  type LoadoutErrorCode,
-  loadoutChangeSchema,
-  loadoutErrorSchema,
-  type UnequipInput,
+import type {
+  AssignInput,
+  CreatePresetInput,
+  EquipInput,
+  LoadoutChange,
+  LoadoutErrorCode,
+  UnequipInput,
 } from '@carmine/contracts';
 import { useMemo } from 'react';
 import { useSession } from '@/components/session/session-provider';
+import { loadContracts } from '@/lib/contracts-schemas';
 
 /**
  * Falha de uma chamada do Loadout ou dos Presets. `code` vem do contrato (`LoadoutErrorCode`);
@@ -26,6 +24,7 @@ export class LoadoutApiError extends Error {
 
 async function failure(response: Response): Promise<LoadoutApiError> {
   if (response.status === 401) return new LoadoutApiError('session');
+  const { loadoutErrorSchema } = await loadContracts();
   const parsed = loadoutErrorSchema.safeParse(await response.json().catch(() => null));
   return new LoadoutApiError(parsed.success ? parsed.data.code : 'unexpected');
 }
@@ -51,8 +50,11 @@ export function useLoadoutApi() {
       return response;
     }
 
-    const change = async (path: `/api/${string}`, body: unknown): Promise<LoadoutChange> =>
-      loadoutChangeSchema.parse(await (await send(path, 'POST', body)).json());
+    const change = async (path: `/api/${string}`, body: unknown): Promise<LoadoutChange> => {
+      const json = await (await send(path, 'POST', body)).json();
+      const { loadoutChangeSchema } = await loadContracts();
+      return loadoutChangeSchema.parse(json);
+    };
 
     return {
       equip: (input: EquipInput) => change('/api/loadout/equip', input),
@@ -72,7 +74,9 @@ export function useLoadoutApi() {
       },
       addItem: async (item: unknown): Promise<string> => {
         const response = await send('/api/inventory/items', 'POST', { item });
-        return inventoryItemSchema.parse(await response.json()).uid;
+        const json = await response.json();
+        const { inventoryItemSchema } = await loadContracts();
+        return inventoryItemSchema.parse(json).uid;
       },
     };
   }, [mutate]);

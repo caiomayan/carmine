@@ -1,7 +1,7 @@
 'use client';
 
-import type { Variants } from 'motion/react';
-import { motion, useAnimation } from 'motion/react';
+import type { Variants } from 'framer-motion';
+import { m, useAnimation } from 'framer-motion';
 import type { HTMLAttributes } from 'react';
 import { forwardRef, useCallback, useImperativeHandle, useRef } from 'react';
 
@@ -92,8 +92,8 @@ const ArrowLeftIcon = forwardRef<ArrowLeftIconHandle, ArrowLeftIconProps>(
           width={size}
           xmlns="http://www.w3.org/2000/svg"
         >
-          <motion.path animate={controls} d="m12 19-7-7 7-7" variants={PATH_VARIANTS} />
-          <motion.path animate={controls} d="M19 12H5" variants={SECOND_PATH_VARIANTS} />
+          <m.path animate={controls} d="m12 19-7-7 7-7" variants={PATH_VARIANTS} />
+          <m.path animate={controls} d="M19 12H5" variants={SECOND_PATH_VARIANTS} />
         </svg>
       </span>
     );

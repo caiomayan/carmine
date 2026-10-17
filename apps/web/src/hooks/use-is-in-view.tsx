@@ -1,4 +1,4 @@
-import { type UseInViewOptions, useInView } from 'motion/react';
+import { type UseInViewOptions, useInView } from 'framer-motion';
 import * as React from 'react';
 
 interface UseIsInViewOptions {

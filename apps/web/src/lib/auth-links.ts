@@ -3,8 +3,8 @@ import {
   LOGIN_ERROR_PATH,
   type LoginError,
   safeReturnPath,
-  steamId64Schema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/auth';
+import { isSteamId64 } from '@carmine/contracts/rules';
 
 /** Página do web que oferece o login Steam (e recebe os erros dele em `?erro=`). */
 export const SIGN_IN_PATH = LOGIN_ERROR_PATH;
@@ -58,7 +58,7 @@ const PUBLIC_ID = /^[1-9]\d{0,14}$/;
  * redireciona para o Perfil). Os 17 dígitos de um SteamID64 nunca são um ID público.
  */
 export function parseProfileSegment(segment: string): ProfileSegment {
-  if (steamId64Schema.safeParse(segment).success) return { kind: 'steamId', steamId: segment };
+  if (isSteamId64(segment)) return { kind: 'steamId', steamId: segment };
   if (PUBLIC_ID.test(segment)) return { kind: 'publicId', publicId: Number(segment) };
   return { kind: 'invalid' };
 }
