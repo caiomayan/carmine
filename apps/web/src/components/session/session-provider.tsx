@@ -1,15 +1,13 @@
 'use client';
 
-import {
-  CSRF_COOKIE,
-  CSRF_HEADER,
-  type CurrentSession,
-  currentSessionSchema,
-  type OwnSanction,
-  type Profile,
-  type StaffRole,
-  type VipStatus,
+import type {
+  CurrentSession,
+  OwnSanction,
+  Profile,
+  StaffRole,
+  VipStatus,
 } from '@carmine/contracts';
+import { CSRF_COOKIE, CSRF_HEADER } from '@carmine/contracts/auth';
 import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -23,6 +21,7 @@ import {
   useState,
 } from 'react';
 import { signInHref } from '@/lib/auth-links';
+import { loadContracts } from '@/lib/contracts-schemas';
 import { FIRST_STEPS_COOKIE, firstStepsCookie } from '@/lib/first-steps';
 
 export type SessionStatus = 'authenticated' | 'anonymous' | 'unknown';
@@ -124,7 +123,9 @@ export function SessionProvider({
           }
           // API fora do ar: fica o último estado conhecido, nunca "saiu".
           if (!response.ok) return;
-          setState(stateFrom(currentSessionSchema.parse(await response.json()), 'authenticated'));
+          const body = await response.json();
+          const { currentSessionSchema } = await loadContracts();
+          setState(stateFrom(currentSessionSchema.parse(body), 'authenticated'));
         })
         .catch(() => {});
     };

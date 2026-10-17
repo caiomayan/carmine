@@ -1,6 +1,6 @@
 'use client';
 
-import { APPEAL_PATH, APPEAL_RESPONSE_HOURS } from '@carmine/contracts';
+import { APPEAL_PATH, APPEAL_RESPONSE_HOURS } from '@carmine/contracts/rules';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useFormatter, useNow, useTranslations } from 'next-intl';

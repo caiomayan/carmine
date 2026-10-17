@@ -1,4 +1,5 @@
-import { type LoadoutSide, type LoadoutSlot, loadoutSlotOf } from '@carmine/contracts';
+import type { LoadoutSide, LoadoutSlot } from '@carmine/contracts';
+import { loadoutSlotOf } from '@carmine/contracts/rules';
 import { CS2Team } from '@ianlucas/cs2-lib';
 import { catalogEntry, economy } from '../catalog/catalog';
 

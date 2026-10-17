@@ -1,4 +1,10 @@
 import { z } from 'zod';
+import {
+  LOADOUT_SIDES,
+  PRESET_NAME_MAX_LENGTH,
+  PRESETS_FREE_LIMIT,
+  PRESETS_VIP_LIMIT,
+} from './rules.js';
 
 /**
  * Contratos do Loadout e dos Presets (S05).
@@ -21,7 +27,7 @@ import { z } from 'zod';
  */
 
 /** Lado de um slot do Loadout. */
-export const LOADOUT_SIDES = ['ct', 't'] as const;
+export { LOADOUT_SIDES } from './rules.js';
 
 export const loadoutSideSchema = z.enum(LOADOUT_SIDES).meta({ id: 'LoadoutSide' });
 
@@ -51,43 +57,7 @@ export const LOADOUT_SLOT_GROUPS = [
 
 export type LoadoutSlotGroup = (typeof LOADOUT_SLOT_GROUPS)[number];
 
-/** Times da cs2-lib (`CS2Team`): 2 = TR, 3 = CT. */
-const TEAM_SIDES: Record<number, LoadoutSide> = { 2: 't', 3: 'ct' };
-
-/** O mínimo de um Item do catálogo da cs2-lib (`CS2EconomyItem`) para achar o slot. */
-export interface SlotCatalogItem {
-  type: string;
-  modelKey?: string | undefined;
-  /** `CS2Team[]`: 2 = TR, 3 = CT. */
-  teams?: readonly number[] | undefined;
-}
-
-/**
- * Onde um Item do catálogo é equipado: o slot e os lados possíveis (`null` no music kit), ou
- * `null` se não é um Item equipável. É a mesma regra da API: o web pode oferecer só esses lados.
- */
-export function loadoutSlotOf(
-  item: SlotCatalogItem,
-): { slot: LoadoutSlot; sides: LoadoutSide[] | null } | null {
-  const sides = (item.teams ?? [])
-    .map((team) => TEAM_SIDES[team])
-    .filter((side): side is LoadoutSide => side !== undefined)
-    .sort((a, b) => LOADOUT_SIDES.indexOf(a) - LOADOUT_SIDES.indexOf(b));
-  switch (item.type) {
-    case 'weapon':
-      return item.modelKey ? { slot: `weapon_${item.modelKey}`, sides } : null;
-    case 'melee':
-      return { slot: 'knife', sides };
-    case 'glove':
-      return { slot: 'gloves', sides };
-    case 'agent':
-      return { slot: 'agent', sides };
-    case 'musickit':
-      return { slot: 'musicKit', sides: null };
-    default:
-      return null;
-  }
-}
+export { loadoutSlotOf, type SlotCatalogItem } from './rules.js';
 
 /**
  * Por que um Item equipado não vai (inteiro) para o jogo:
@@ -251,13 +221,7 @@ export const loadoutChangeSchema = z
 
 export type LoadoutChange = z.infer<typeof loadoutChangeSchema>;
 
-/** Presets no plano grátis (só o principal, que é o Loadout). */
-export const PRESETS_FREE_LIMIT = 1;
-
-/** Presets com Período VIP ativo, contando o principal. */
-export const PRESETS_VIP_LIMIT = 20;
-
-export const PRESET_NAME_MAX_LENGTH = 32;
+export { PRESET_NAME_MAX_LENGTH, PRESETS_FREE_LIMIT, PRESETS_VIP_LIMIT } from './rules.js';
 
 /** Nome do Preset principal de toda Conta. */
 export const MAIN_PRESET_NAME = 'Principal';

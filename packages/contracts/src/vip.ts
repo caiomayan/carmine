@@ -37,41 +37,4 @@ export function vipFeaturesOf(
   return features;
 }
 
-/** Com quantos dias de antecedência o site avisa o fim do Período VIP. */
-export const VIP_ENDING_NOTICE_DAYS = 3;
-
-/** Fuso dos avisos: "hoje" é o dia no horário de Brasília. */
-export const VIP_NOTICE_TIME_ZONE = 'America/Sao_Paulo';
-
-/**
- * Aviso do fim do VIP a mostrar em `now`:
- * - `ending_soon`: o VIP acaba em até {@link VIP_ENDING_NOTICE_DAYS} dias (mas não hoje);
- * - `ending_today`: acaba hoje (horário de Brasília);
- * - `ended_today`: acabou hoje;
- * - `null`: nenhum aviso.
- */
-export function vipNoticeAt(
-  vip: Pick<VipStatus, 'active' | 'endsAt' | 'endedAt'>,
-  now: Date,
-): 'ending_soon' | 'ending_today' | 'ended_today' | null {
-  const today = dayIn(now);
-  if (vip.active && vip.endsAt !== null) {
-    const endsDay = dayIn(new Date(vip.endsAt));
-    if (endsDay === today) return 'ending_today';
-    return endsDay - today <= VIP_ENDING_NOTICE_DAYS ? 'ending_soon' : null;
-  }
-  if (vip.endedAt !== null && dayIn(new Date(vip.endedAt)) === today) return 'ended_today';
-  return null;
-}
-
-const dayFormat = new Intl.DateTimeFormat('en-CA', {
-  timeZone: VIP_NOTICE_TIME_ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-/** Número do dia (dias desde 1970) da data no fuso dos avisos. */
-function dayIn(date: Date): number {
-  return Math.round(Date.parse(`${dayFormat.format(date)}T00:00:00Z`) / 86_400_000);
-}
+export { VIP_ENDING_NOTICE_DAYS, VIP_NOTICE_TIME_ZONE, vipNoticeAt } from './rules.js';

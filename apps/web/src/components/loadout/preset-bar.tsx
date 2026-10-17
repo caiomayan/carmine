@@ -1,11 +1,7 @@
 'use client';
 
-import {
-  PRESET_NAME_MAX_LENGTH,
-  PRESETS_VIP_LIMIT,
-  type Preset,
-  type PresetList,
-} from '@carmine/contracts';
+import type { Preset, PresetList } from '@carmine/contracts';
+import { PRESET_NAME_MAX_LENGTH, PRESETS_VIP_LIMIT } from '@carmine/contracts/rules';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useState } from 'react';

@@ -1,9 +1,5 @@
-import {
-  isLastingSanction,
-  type PublicSanction,
-  type SanctionMeasure,
-  type SanctionType,
-} from '@carmine/contracts';
+import type { PublicSanction, SanctionMeasure, SanctionType } from '@carmine/contracts';
+import { isLastingSanction } from '@carmine/contracts/rules';
 
 /** Unidades de duração da Staff e do Perfil. */
 export type DurationUnit = 'minute' | 'hour' | 'day';
