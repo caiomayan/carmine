@@ -20,6 +20,8 @@ describe('loadConfig', () => {
       trustedProxies: [],
       rateLimitsPerMinute: { login: 20, public: 240, equipped: 120, mutations: 60, server: 600 },
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
+      alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
+      sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
       session: { idleTtlSeconds: 1_209_600, absoluteTtlSeconds: 7_776_000 },
@@ -52,6 +54,40 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ ...validEnv, RATE_LIMIT_PUBLIC_PER_MINUTE: '0' })).toThrow(
       /RATE_LIMIT_PUBLIC_PER_MINUTE/,
     );
+  });
+
+  it('lê o webhook do Discord e o Sentry; vazios, ficam desligados', () => {
+    const config = loadConfig({
+      ...validEnv,
+      DISCORD_ALERT_WEBHOOK_URL: 'https://discord.com/api/webhooks/1/abc',
+      ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: '90',
+      SENTRY_DSN: 'https://chave@o1.ingest.sentry.io/2',
+      SENTRY_RELEASE: 'abc123',
+    });
+
+    expect(config.alerts).toEqual({
+      discordWebhookUrl: 'https://discord.com/api/webhooks/1/abc',
+      serverOfflineConfirmMs: 90_000,
+      sweepMs: 15_000,
+    });
+    expect(config.sentry).toEqual({
+      dsn: 'https://chave@o1.ingest.sentry.io/2',
+      environment: 'development',
+      release: 'abc123',
+    });
+    expect(
+      loadConfig({ ...validEnv, DISCORD_ALERT_WEBHOOK_URL: '', SENTRY_DSN: '' }),
+    ).toMatchObject({
+      alerts: { discordWebhookUrl: null },
+      sentry: { dsn: null },
+    });
+    expect(() =>
+      loadConfig({
+        ...validEnv,
+        NODE_ENV: 'production',
+        DISCORD_ALERT_WEBHOOK_URL: 'http://x.example/w',
+      }),
+    ).toThrow(/DISCORD_ALERT_WEBHOOK_URL/);
   });
 
   it('lê a origem pública do web sem a barra final', () => {
