@@ -70,7 +70,7 @@ Nada publica porta. O deploy não reinicia o Postgres nem o Valkey a menos que a
 
 ## Primeira vez e manutenção do script
 
-`infra/prod/bin/bootstrap.sh` (root, na VM) cria o usuário `deploy`, `/opt/carmine` e instala o `deploy.sh` como `/opt/carmine/bin/deploy`, dono root, para o próprio `deploy` não conseguir alterá-lo. Se um PR mudar `infra/prod/bin/deploy.sh`, o deploy avisa ("difere do instalado"); rode o bootstrap de novo a partir da release nova para atualizar. O compose e o resto de `infra/prod` seguem o commit automaticamente (vão no tar).
+`infra/prod/bin/bootstrap.sh` (root, na VM) cria o usuário `deploy`, `/opt/carmine` e instala o `deploy.sh` como `/opt/carmine/bin/deploy`, dono root, para o próprio `deploy` não conseguir alterá-lo. Instala também o `tunnel.sh` (`/opt/carmine/bin/tunnel`): o deploy chega pelo túnel, então na primeira vez o cloudflared sobe antes do deploy (`sudo /opt/carmine/bin/tunnel`, depois de preencher o `.env`); o deploy normal adota o contêiner sem reiniciá-lo (a configuração do cloudflared não muda com a tag). Se um PR mudar `infra/prod/bin/deploy.sh`, o deploy avisa ("difere do instalado"); rode o bootstrap de novo a partir da release nova para atualizar. O compose e o resto de `infra/prod` seguem o commit automaticamente (vão no tar).
 
 ## Variáveis de ambiente de produção
 

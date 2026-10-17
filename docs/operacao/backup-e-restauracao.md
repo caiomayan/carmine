@@ -58,7 +58,7 @@ Faça isso uma vez por mês: backup que nunca foi restaurado não é backup.
 
 Perda possível: tudo desde o último backup (até 24 h). Se o dump local do último deploy for mais novo (`/opt/carmine/bin/dc run --rm --no-deps --entrypoint ls backup -l /backups`), restaure dele: `restore.sh /backups/carmine-....dump carmine_restaurado`.
 
-Disco do Postgres inteiro perdido (VM nova): `bootstrap.sh`, `.env` de novo, deploy, e então os passos acima a partir do 2.
+Disco do Postgres inteiro perdido (VM nova): `bootstrap.sh`, `.env` de novo, `bin/tunnel` (o deploy chega pelo túnel), deploy, e então os passos acima a partir do 2.
 
 ## Teste local (aceite)
 
