@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { ErrorReporting } from '@/components/error-reporting';
 import { SanctionNotice } from '@/components/moderation/sanction-notice';
 import { MotionProvider } from '@/components/motion-provider';
 import { FirstSteps } from '@/components/session/first-steps';
@@ -15,6 +16,7 @@ import { locale } from '@/i18n/request';
 import { getServerSession } from '@/lib/api-server';
 import { FIRST_STEPS_COOKIE, hasDismissedFirstSteps } from '@/lib/first-steps';
 import { NONCE_HEADER } from '@/lib/security-headers';
+import { sentryWebConfig } from '@/lib/sentry-config';
 import { DEFAULT_THEME } from '@/lib/theme';
 import './globals.css';
 
@@ -51,6 +53,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const session = server.status === 'authenticated' ? server.session : null;
   // O nonce da CSP desta requisição (proxy.ts); o Next marca os próprios scripts sozinho.
   const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
+  const sentry = sentryWebConfig(process.env);
   const dismissed = (await cookies()).get(FIRST_STEPS_COOKIE)?.value;
   // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
   const firstStepsOpen =
@@ -125,6 +128,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 </main>
               </div>
               <SiteFooter />
+              {sentry ? <ErrorReporting {...sentry} /> : null}
             </SessionProvider>
           </MotionProvider>
         </NextIntlClientProvider>

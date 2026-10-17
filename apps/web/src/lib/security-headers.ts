@@ -20,9 +20,12 @@ export function generateNonce(): string {
 export function buildContentSecurityPolicy({
   nonce,
   dev,
+  reportingOrigin = null,
 }: {
   nonce: string;
   dev: boolean;
+  /** Origem de ingestão do Sentry (do DSN), a única conexão externa do navegador. */
+  reportingOrigin?: string | null;
 }): string {
   return [
     "default-src 'self'",
@@ -31,7 +34,7 @@ export function buildContentSecurityPolicy({
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${IMAGE_ORIGINS.join(' ')}`,
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${reportingOrigin ? ` ${reportingOrigin}` : ''}`,
     `frame-src ${VIEWER_ORIGIN}`,
     "frame-ancestors 'none'",
     "object-src 'none'",

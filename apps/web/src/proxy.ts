@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { findPublicIdBySteamId, VISITOR_IP_HEADER } from '@/lib/api-base';
 import { PROFILE_PATH_HEADER, parseProfileSegment } from '@/lib/auth-links';
 import { buildContentSecurityPolicy, generateNonce, NONCE_HEADER } from '@/lib/security-headers';
+import { sentryIngestOrigin, sentryWebConfig } from '@/lib/sentry-config';
 
 const NUMERIC_PATH = /^\/[0-9]+$/;
 
@@ -22,6 +23,7 @@ export async function proxy(request: NextRequest) {
   const csp = buildContentSecurityPolicy({
     nonce,
     dev: process.env.NODE_ENV === 'development',
+    reportingOrigin: sentryIngestOrigin(sentryWebConfig(process.env)),
   });
 
   const headers = new Headers(request.headers);

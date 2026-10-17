@@ -47,6 +47,18 @@ describe('buildContentSecurityPolicy', () => {
     ]);
   });
 
+  it('com Sentry, o navegador também pode falar com a origem de ingestão do DSN', () => {
+    const withSentry = directives(
+      buildContentSecurityPolicy({
+        nonce: 'abc123',
+        dev: false,
+        reportingOrigin: 'https://o1.ingest.sentry.io',
+      }),
+    );
+
+    expect(withSentry.get('connect-src')).toEqual(["'self'", 'https://o1.ingest.sentry.io']);
+  });
+
   it('fala só com a própria origem (API em /api, SSE)', () => {
     expect(csp.get('connect-src')).toEqual(["'self'"]);
     expect(csp.get('default-src')).toEqual(["'self'"]);
