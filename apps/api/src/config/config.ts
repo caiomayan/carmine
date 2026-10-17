@@ -63,7 +63,7 @@ const envSchema = z
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
-    SENTRY_DSN: z.union([z.literal(''), urlWithProtocol(['https:'])]).default(''),
+    SENTRY_DSN: z.union([z.literal(''), urlWithProtocol(['https:', 'http:'])]).default(''),
     SENTRY_ENVIRONMENT: z.string().trim().default(''),
     SENTRY_RELEASE: z.string().trim().default(''),
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do

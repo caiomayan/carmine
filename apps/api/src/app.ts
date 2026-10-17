@@ -1,14 +1,16 @@
 import 'reflect-metadata';
 import cookie from '@fastify/cookie';
 import { StandardSchemaValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { SwaggerModule } from '@nestjs/swagger';
+import { captureException } from '@sentry/node';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import type { AppConfig } from './config/config.js';
 import { registerDefaultHeaders } from './default-headers.js';
 import { buildOpenApiDocument } from './openapi/openapi.js';
+import { SentryExceptionFilter } from './sentry/sentry-exception-filter.js';
 
 export const API_PREFIX = 'api';
 
@@ -35,6 +37,11 @@ export async function createApp(
   app.setGlobalPrefix(API_PREFIX);
   app.useGlobalPipes(new StandardSchemaValidationPipe());
   app.enableShutdownHooks();
+  if (config.sentry.dsn !== null && !preview) {
+    app.useGlobalFilters(
+      new SentryExceptionFilter(app.get(HttpAdapterHost).httpAdapter, captureException),
+    );
+  }
 
   if (config.nodeEnv !== 'production' && !preview) {
     SwaggerModule.setup(`${API_PREFIX}/docs`, app, buildOpenApiDocument(app));
