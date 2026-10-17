@@ -67,6 +67,8 @@ Os Server Components do web chamam a API pela rede interna (ADR 0015), então es
 
 ### Configuração na S09
 
+Implementada em `infra/prod/compose.yml` (rede `edge` 172.30.0.0/24, cloudflared em .10, web em .11, `TRUSTED_PROXIES=172.30.0.10/32,172.30.0.11/32`, nenhuma porta publicada). O trecho abaixo é a explicação do porquê.
+
 1. Ponha `cloudflared`, `web` e `api` numa rede Docker própria com sub-rede fixa e IPs fixos para o `cloudflared` e o `web`:
 
    ```yaml

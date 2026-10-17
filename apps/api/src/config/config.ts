@@ -55,6 +55,17 @@ const envSchema = z
     // 60 s (critério da S06).
     SERVER_OFFLINE_AFTER_SECONDS: z.coerce.number().int().positive().default(45),
     LIVE_SERVERS_SWEEP_SECONDS: z.coerce.number().int().positive().default(5),
+    // Alertas no Discord (S09): URL do webhook; vazia desliga. O servidor precisa ficar offline por
+    // esse tempo (além dos 45 s da presença) para avisar, o que evita alarme por troca de mapa.
+    DISCORD_ALERT_WEBHOOK_URL: z
+      .union([z.literal(''), urlWithProtocol(['https:', 'http:'])])
+      .default(''),
+    ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
+    ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
+    // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
+    SENTRY_DSN: z.union([z.literal(''), urlWithProtocol(['https:', 'http:'])]).default(''),
+    SENTRY_ENVIRONMENT: z.string().trim().default(''),
+    SENTRY_RELEASE: z.string().trim().default(''),
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
     PUBLIC_WEB_URL: origin().default('http://localhost:3000'),
@@ -84,8 +95,12 @@ const envSchema = z
       });
     }
     if (env.NODE_ENV === 'production') {
-      for (const key of ['PUBLIC_WEB_URL', 'STEAM_OPENID_URL'] as const) {
-        if (new URL(env[key]).protocol !== 'https:') {
+      for (const key of [
+        'PUBLIC_WEB_URL',
+        'STEAM_OPENID_URL',
+        'DISCORD_ALERT_WEBHOOK_URL',
+      ] as const) {
+        if (env[key] !== '' && new URL(env[key]).protocol !== 'https:') {
           ctx.addIssue({ code: 'custom', path: [key], message: 'deve usar https em produção' });
         }
       }
@@ -107,6 +122,10 @@ export interface AppConfig {
   rateLimitsPerMinute: Record<RateLimitPolicyName, number>;
   /** Servidores ao vivo (S06). */
   liveServers: { offlineAfterMs: number; sweepMs: number };
+  /** Alertas no Discord (S09). Sem webhook, desligados. */
+  alerts: { discordWebhookUrl: string | null; serverOfflineConfirmMs: number; sweepMs: number };
+  /** Sentry (S09): sem DSN, desligado. */
+  sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
   publicWebUrl: string;
   steamOpenIdUrl: string;
@@ -151,6 +170,16 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     liveServers: {
       offlineAfterMs: e.SERVER_OFFLINE_AFTER_SECONDS * 1000,
       sweepMs: e.LIVE_SERVERS_SWEEP_SECONDS * 1000,
+    },
+    alerts: {
+      discordWebhookUrl: e.DISCORD_ALERT_WEBHOOK_URL === '' ? null : e.DISCORD_ALERT_WEBHOOK_URL,
+      serverOfflineConfirmMs: e.ALERT_SERVER_OFFLINE_CONFIRM_SECONDS * 1000,
+      sweepMs: e.ALERT_SWEEP_SECONDS * 1000,
+    },
+    sentry: {
+      dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
+      environment: e.SENTRY_ENVIRONMENT === '' ? e.NODE_ENV : e.SENTRY_ENVIRONMENT,
+      release: e.SENTRY_RELEASE === '' ? null : e.SENTRY_RELEASE,
     },
     publicWebUrl: e.PUBLIC_WEB_URL.replace(/\/+$/, ''),
     steamOpenIdUrl: e.STEAM_OPENID_URL,

@@ -209,6 +209,10 @@ pnpm --filter @carmine/api accounts anonymize --public-id 10016 --by <SteamID64 
 
 As rotas da API são limitadas por política (`@RateLimit`), com contagem no Valkey; os limites mudam por `RATE_LIMIT_*_PER_MINUTE`. Atrás do Cloudflare Tunnel, o IP do visitante vem de `CF-Connecting-IP`, aceito só de `TRUSTED_PROXIES` (vazio em desenvolvimento). Políticas, falha segura e a configuração da S09: [docs/operacao/rate-limit-e-ip-real.md](docs/operacao/rate-limit-e-ip-real.md).
 
+## Produção (S09)
+
+Web, API, Postgres e Valkey rodam na Oracle A1 por Docker Compose (`infra/prod/`) atrás do Cloudflare Tunnel, com deploy pela CI, backup noturno no R2, Sentry e alertas no Discord. Comece pelo [checklist do dono](docs/operacao/checklist-do-dono.md); depois: [deploy e rollback](docs/operacao/deploy-e-rollback.md), [backup e restauração](docs/operacao/backup-e-restauracao.md), [monitoramento e alertas](docs/operacao/monitoramento-e-alertas.md), [troca de token GSLT](docs/operacao/troca-de-token-gslt.md), [atualização do CS2](docs/operacao/atualizacao-do-cs2.md), [cabeçalhos de segurança](docs/operacao/cabecalhos-de-seguranca.md) e [orçamento operacional](docs/operacao/orcamento-operacional.md).
+
 ## Steam Web API
 
 Os avatares das Contas e as listas de amigos ("Seus amigos jogando agora") vêm da Steam Web API. Crie a chave em https://steamcommunity.com/dev/apikey e coloque-a só no `apps/api/.env` local (`STEAM_WEB_API_KEY=...`), nunca no repositório. Sem a chave, as Contas ficam com o avatar neutro e o bloco de amigos aparece como Steam indisponível.
