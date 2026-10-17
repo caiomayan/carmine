@@ -1,0 +1,227 @@
+# Produção (S09): Oracle A1 (2 OCPU, 12 GB, arm64) atrás do Cloudflare Tunnel (ADR 0009, 0015).
+#
+# Regras que este arquivo cumpre e que não devem ser desfeitas:
+#   - NENHUMA porta publicada (`ports:`). O Docker publica por cima do iptables da VM; o único
+#     caminho até o web e a API é o túnel. Um web acessível por fora aceitaria um CF-Connecting-IP
+#     forjado (docs/operacao/rate-limit-e-ip-real.md).
+#   - `edge` tem IPs fixos para o cloudflared e o web; a API confia só nesses dois (/32).
+#   - `data` é interna (sem rota para fora): Postgres e Valkey nunca falam com a internet.
+#   - Limites de memória somam 7,3 GB dos 12 GB da VM, com folga para o sistema, o Docker e picos.
+#
+# Uso (feito pelo deploy, infra/prod/bin/deploy.sh):
+#   IMAGE_TAG=sha-<commit> docker compose -p carmine --env-file /opt/carmine/.env -f compose.yml up -d --wait
+name: carmine
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Configuração da API; o job de migração a lê pelo mesmo loadConfig, então recebe tudo igual.
+x-api-env: &api-env
+  NODE_ENV: production
+  HOST: 0.0.0.0
+  PORT: "3333"
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  NODE_OPTIONS: --max-old-space-size=1024
+  DATABASE_URL: postgres://carmine:${POSTGRES_PASSWORD:?}@postgres:5432/carmine
+  VALKEY_URL: redis://:${VALKEY_PASSWORD:?}@valkey:6379
+  PUBLIC_WEB_URL: https://stcarmine.com
+  # Só o cloudflared e o web (/32): o gateway da rede e qualquer outro contêiner ficam de fora.
+  TRUSTED_PROXIES: 172.30.0.10/32,172.30.0.11/32
+  STEAM_WEB_API_KEY: ${STEAM_WEB_API_KEY:-}
+  DISCORD_ALERT_WEBHOOK_URL: ${DISCORD_ALERT_WEBHOOK_URL:-}
+  SENTRY_DSN: ${API_SENTRY_DSN:-}
+  SENTRY_ENVIRONMENT: production
+  SENTRY_RELEASE: ${IMAGE_TAG}
+
+x-api-image: &api-image ghcr.io/caiomayan/carmine-api:${IMAGE_TAG:?defina IMAGE_TAG (sha-<commit>)}
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.1
+    command: tunnel --no-autoupdate --metrics 127.0.0.1:2000 run
+    environment:
+      # O token do túnel (painel Zero Trust > Networks > Tunnels); as rotas ficam no painel
+      # (infra/prod/tunnel/ingress.json é a cópia versionada).
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?}
+    # Para a regra ssh.stcarmine.com -> ssh://host.docker.internal:22 (deploy pela CI).
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      edge:
+        ipv4_address: 172.30.0.10
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    mem_limit: 256m
+    restart: unless-stopped
+    logging: *logging
+
+  web:
+    image: ghcr.io/caiomayan/carmine-web:${IMAGE_TAG}
+    environment:
+      NODE_ENV: production
+      # Os Server Components falam com a API pela rede interna (ADR 0015).
+      API_URL: http://api:3333
+      NODE_OPTIONS: --max-old-space-size=1024
+      SENTRY_DSN: ${WEB_SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: production
+      SENTRY_RELEASE: ${IMAGE_TAG}
+    networks:
+      edge:
+        ipv4_address: 172.30.0.11
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 1536m
+    restart: unless-stopped
+    logging: *logging
+
+  api:
+    image: *api-image
+    environment: *api-env
+    networks:
+      edge: {}
+      data: {}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+    mem_limit: 1536m
+    restart: unless-stopped
+    logging: *logging
+
+  # Migrações do Drizzle antes de a API subir. Falhou, a API não sobe e o deploy volta atrás.
+  migrate:
+    image: *api-image
+    command: ["node", "dist/database/migrate.cli.js"]
+    environment: *api-env
+    networks:
+      data: {}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 512m
+    restart: "no"
+    logging: *logging
+
+  postgres:
+    image: postgres:18.6-alpine
+    command:
+      - postgres
+      - -c
+      - shared_buffers=768MB
+      - -c
+      - effective_cache_size=1536MB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=100
+      - -c
+      - wal_compression=on
+      - -c
+      - log_min_duration_statement=500
+    environment:
+      POSTGRES_USER: carmine
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: carmine
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      data: {}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carmine -d carmine"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    shm_size: 256m
+    mem_limit: 2560m
+    stop_grace_period: 60s
+    restart: unless-stopped
+    logging: *logging
+
+  valkey:
+    image: valkey/valkey:9.0.6-alpine
+    # Sessões, rate limit, presença e caches vivem aqui: AOF para as sessões sobreviverem a um
+    # reinício, e noeviction para o Valkey nunca descartar uma sessão por falta de memória.
+    command:
+      - valkey-server
+      - --requirepass
+      - ${VALKEY_PASSWORD:?}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --save
+      - ""
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - valkey-data:/data
+    networks:
+      data: {}
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a \"$$VALKEY_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?}
+    mem_limit: 384m
+    restart: unless-stopped
+    logging: *logging
+
+  # Backup noturno do Postgres para o R2 (03:00 de Brasília). Precisa da rede `edge` só para
+  # sair para a internet (a `data` é interna). Os dumps recentes também ficam no volume
+  # `backups` (deploy.sh faz um antes de cada migração).
+  backup:
+    image: ghcr.io/caiomayan/carmine-ops:${IMAGE_TAG}
+    environment:
+      PGHOST: postgres
+      PGUSER: carmine
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: carmine
+      R2_BUCKET: ${R2_BUCKET:-}
+      R2_ENDPOINT: ${R2_ENDPOINT:-}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-30}
+      BACKUP_HEARTBEAT_URL: ${BACKUP_HEARTBEAT_URL:-}
+      DISCORD_ALERT_WEBHOOK_URL: ${DISCORD_ALERT_WEBHOOK_URL:-}
+    volumes:
+      - backups:/backups
+    networks:
+      data: {}
+      edge: {}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 512m
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          # Endereços dinâmicos só da metade de cima: .10 e .11 ficam sempre para os fixos.
+          ip_range: 172.30.0.128/25
+  data:
+    internal: true
+
+volumes:
+  postgres-data:
+  valkey-data:
+  backups:
