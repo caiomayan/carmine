@@ -14,7 +14,7 @@ const SLOW_4G = {
 const BUDGET_MS = 4000;
 /**
  * O tempo ainda não reprova a CI. Depois da dieta do bundle (Zod e motion fora da primeira
- * carga: 310 → 259 kB de JS na home; 246 kB com o menu da Conta sob demanda) a home e o editor ficam em ~4,4 s e ~4,7 s neste teste, que
+ * carga: 310 → 259 kB de JS na home; 251 kB com as mensagens pré-compiladas) a home e o editor ficam em ~4,4 s e ~4,7 s neste teste, que
  * mede o `next start` em HTTP/1.1 (seis conexões, 21 pedidos); atrás de um proxy HTTP/2, como o
  * Cloudflare, caem para ~4,2 s. O que sobra é o React/Next (~165 kB de JS) e a fonte (49 kB);
  * o tempo oscila ±0,5 s entre execuções, então `PERF_BUDGET=enforce` faz reprovar, mas só vale

@@ -3,7 +3,14 @@ import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { staticSecurityHeaders } from './src/lib/security-headers';
 
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+// `precompile` converte as mensagens ICU em build: o navegador deixa de levar o parser do
+// formatjs (~9 kB gz na home) e só executa as mensagens já compiladas.
+const withNextIntl = createNextIntlPlugin({
+  requestConfig: './src/i18n/request.ts',
+  experimental: {
+    messages: { format: 'json', path: './messages', locales: ['pt-BR'], precompile: true },
+  },
+});
 
 const nextConfig: NextConfig = {
   // Saída standalone só na imagem Docker (infra/docker/web.Dockerfile); fora dela, `next start`.
