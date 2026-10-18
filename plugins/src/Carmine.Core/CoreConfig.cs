@@ -30,6 +30,14 @@ public sealed class CoreConfig : BasePluginConfig
     [JsonPropertyName("HeartbeatIntervalSeconds")]
     public int HeartbeatIntervalSeconds { get; set; } = 10;
 
+    /// <summary>De quanto em quanto tempo os eventos do jogo (S12) vão à API; a fila também sai no fim do mapa e ao descarregar.</summary>
+    [JsonPropertyName("EventFlushIntervalSeconds")]
+    public int EventFlushIntervalSeconds { get; set; } = 5;
+
+    /// <summary>Eventos que esperam na memória com a API fora; acima disso, os mais antigos são descartados.</summary>
+    [JsonPropertyName("EventQueueLimit")]
+    public int EventQueueLimit { get; set; } = EventReporter.DefaultMaxQueued;
+
     /// <summary>
     /// Vagas públicas mostradas no site (o servidor fica lotado com essa quantidade de jogadores).
     /// 0 usa o maxplayers do servidor. No Retake, 9 (as do cs2-retakes): o maxplayers tem a folga
