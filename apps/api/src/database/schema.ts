@@ -71,6 +71,15 @@ export const accounts = pgTable(
      * Steam, ela aparece como "Jogador #ID". Trocar o nome Steam libera o novo (pelo filtro).
      */
     displayNameBlockedSteamName: text(),
+    /**
+     * Nome de exibição próprio, já normalizado (S11); nulo: vale o nome Steam. `displayName`
+     * guarda o nome efetivo (o que o jogo e o site mostram) e é recalculado a cada connect.
+     */
+    customDisplayName: text(),
+    /** Última troca do nome (ou reset da Staff que apagou o nome próprio); base dos 7 dias. */
+    displayNameChangedAt: timestamptz(),
+    /** Perfil privado (S11): esconde as Estatísticas e a identidade no Ranking. */
+    profilePrivate: boolean().notNull().default(false),
     /** URL do avatar Steam; nulo enquanto a Steam não respondeu (vale o avatar neutro). */
     avatarUrl: text(),
     avatarFetchedAt: timestamptz(),

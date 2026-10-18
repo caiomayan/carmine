@@ -35,6 +35,7 @@ describe('Perfil público', () => {
       claimed: false,
       loadoutShowcase: { items: [] },
       sanctions: { active: [], history: null },
+      isPrivate: false,
     });
   });
 

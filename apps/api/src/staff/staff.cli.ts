@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { Pool } from 'pg';
+import { DisplayNames } from '../accounts/display-names.js';
 import { loadConfig } from '../config/config.js';
 import { createDatabase } from '../database/database.js';
 import { accounts } from '../database/schema.js';
@@ -20,6 +21,7 @@ try {
       return row?.id ?? null;
     },
     roles: new StaffRoles(db),
+    displayNames: new DisplayNames(db),
     out: (line) => console.log(line),
     err: (line) => console.error(line),
   });

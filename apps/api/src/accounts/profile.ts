@@ -25,5 +25,6 @@ export function toProfile(
     claimed: account.claimedAt !== null,
     loadoutShowcase: { items: showcase },
     sanctions,
+    isPrivate: account.profilePrivate,
   };
 }

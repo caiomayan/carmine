@@ -25,6 +25,7 @@ import {
   AccountIsStaff,
 } from '../accounts/account-erasure.js';
 import type { Account, AccountsService } from '../accounts/accounts.service.js';
+import type { DisplayNames } from '../accounts/display-names.js';
 import type { SessionStore } from '../auth/sessions.js';
 import type { Database } from '../database/database.js';
 import { accounts } from '../database/schema.js';
@@ -59,6 +60,7 @@ const CHEAT_VIP_REASON = 'Ban permanente por cheat: VIP encerrado sem reembolso'
 export interface StaffPanelDeps {
   db: Database;
   accounts: AccountsService;
+  displayNames: DisplayNames;
   sanctions: Sanctions;
   roles: StaffRoles;
   audit: StaffAuditLog;
@@ -219,11 +221,7 @@ export class StaffPanel {
     now = new Date(),
   ): Promise<StaffAccountDetail> {
     const target = await this.account(publicId);
-    const updated = await this.deps.accounts.resetDisplayName(
-      target.id,
-      staffAction(actor, reason),
-      now,
-    );
+    const updated = await this.deps.displayNames.reset(target.id, staffAction(actor, reason), now);
     return this.detailOf(updated, now);
   }
 

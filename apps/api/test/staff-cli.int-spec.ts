@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountsService } from '../src/accounts/accounts.service.js';
 import { AvatarRefresher } from '../src/accounts/avatar-refresher.js';
+import { DisplayNames } from '../src/accounts/display-names.js';
 import { accounts } from '../src/database/schema.js';
 import { StaffAuditLog } from '../src/staff/audit-log.js';
 import { runStaffCli } from '../src/staff/staff.cli-commands.js';
@@ -36,6 +37,7 @@ describe('CLI staff (S07)', () => {
         return row?.id ?? null;
       },
       roles,
+      displayNames: new DisplayNames(postgres.db),
       out: (line) => out.push(line),
       err: (line) => err.push(line),
     });
@@ -67,6 +69,23 @@ describe('CLI staff (S07)', () => {
       reason: 'fundador',
       details: { roleBefore: null, roleAfter: 'owner' },
     });
+  });
+
+  it('reset-name volta o nome ao do Steam e registra o motivo', async () => {
+    const steamId = steamIdFor(7);
+    const { account } = await accountsService.claimOnLogin(steamId);
+    await new DisplayNames(postgres.db).change(account.id, 'Nome Ruim');
+    const by = steamIdFor(1);
+
+    const done = await run('reset-name', '--steam-id', steamId, '--by', by, '--reason', 'ofensivo');
+
+    expect(done.code, done.err).toBe(0);
+    expect(done.out).toContain(`${steamId} agora aparece como "Jogador #${account.publicId}"`);
+    const { entries } = await new StaffAuditLog(postgres.db).page({ targetSteamId: steamId });
+    expect(entries[0]).toMatchObject({ action: 'display_name_reset', reason: 'ofensivo' });
+    const noReason = await run('reset-name', '--steam-id', steamId, '--by', by);
+    expect(noReason.code).toBe(1);
+    expect(noReason.err).toContain('--reason é obrigatório');
   });
 
   it('não tira o último Dono', async () => {

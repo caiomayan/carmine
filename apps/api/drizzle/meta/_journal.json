@@ -57,6 +57,13 @@
       "when": 1792294128364,
       "tag": "0007_s10_id_reservado",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792329037646,
+      "tag": "0008_s11_perfil_completo",
+      "breakpoints": true
     }
   ]
 }

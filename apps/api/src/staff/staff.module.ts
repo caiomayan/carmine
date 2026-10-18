@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AccountErasure } from '../accounts/account-erasure.js';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { AccountsService } from '../accounts/accounts.service.js';
+import { DisplayNames } from '../accounts/display-names.js';
 import { SessionStore } from '../auth/sessions.js';
 import { SessionsModule } from '../auth/sessions.module.js';
 import { DATABASE, type Database } from '../database/database.module.js';
@@ -37,6 +38,7 @@ import { StaffRoles } from './staff-roles.js';
       inject: [
         DATABASE,
         AccountsService,
+        DisplayNames,
         Sanctions,
         StaffRoles,
         StaffAuditLog,
@@ -48,6 +50,7 @@ import { StaffRoles } from './staff-roles.js';
       useFactory: (
         db: Database,
         accounts: AccountsService,
+        displayNames: DisplayNames,
         sanctions: Sanctions,
         roles: StaffRoles,
         audit: StaffAuditLog,
@@ -59,6 +62,7 @@ import { StaffRoles } from './staff-roles.js';
         new StaffPanel({
           db,
           accounts,
+          displayNames,
           sanctions,
           roles,
           audit,
