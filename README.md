@@ -207,6 +207,10 @@ Um pedido de exclusão (LGPD) anonimiza a Conta: pelo painel da Staff (só o Don
 pnpm --filter @carmine/api accounts anonymize --public-id 10016 --by <SteamID64 do Dono> --reason "Pedido de exclusão, protocolo 12"
 ```
 
+## Beta fechado (S10)
+
+O acesso do beta é controlado ligando e desligando os servidores. A Staff troca o ID automático de um amigo por um ID reservado, uma vez por Conta, com `accounts assign-reserved-id` (o link do ID antigo responde 301 para o novo), e registra os atritos numa nota do Maestri. Passo a passo: [docs/operacao/beta-fechado.md](docs/operacao/beta-fechado.md).
+
 ## Rate limit e IP real
 
 As rotas da API são limitadas por política (`@RateLimit`), com contagem no Valkey; os limites mudam por `RATE_LIMIT_*_PER_MINUTE`. Atrás do Cloudflare Tunnel, o IP do visitante vem de `CF-Connecting-IP`, aceito só de `TRUSTED_PROXIES` (vazio em desenvolvimento). Políticas, falha segura e a configuração da S09: [docs/operacao/rate-limit-e-ip-real.md](docs/operacao/rate-limit-e-ip-real.md).

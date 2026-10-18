@@ -31,6 +31,7 @@ openssl rand -hex 24   # VALKEY_PASSWORD
    O Cloudflare cria os registros DNS sozinho.
 4. **`www`**: DNS > registro `www`, CNAME para `stcarmine.com`, *proxied*; depois **Rules > Redirect Rules** > de `www.stcarmine.com/*` para `https://stcarmine.com/${1}`, 301.
 5. **SSL/TLS > Edge Certificates**: *Always Use HTTPS* ligado, versão mínima do TLS 1.2.
+6. **Security > Bots**: deixe o *Bot Fight Mode* **desligado**. Os plugins dos servidores CS2 chamam a API a partir de um datacenter (AWS), o Bot Fight Mode os bloqueia, e o plano grátis não aceita exceção. A proteção da API é o rate limit por IP e a chave de cada Servidor Carmine (`docs/operacao/rate-limit-e-ip-real.md`).
 
 ## 3. Cloudflare Access para o SSH do deploy
 
