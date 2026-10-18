@@ -1,9 +1,11 @@
+import { randomInt } from 'node:crypto';
 import {
   chooseSteamAccount,
   createUnclaimedAccount,
   newSteamId,
   signInFromHeader,
 } from './accounts';
+import { runApiCli } from './api-cli';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
 
 const NOT_FOUND = /404 \(Not Found\)/;
@@ -86,6 +88,38 @@ test('/<SteamID64> redireciona com 301 para /<idPúblico>', async ({ page, reque
   await page.goto(`/${account.steamId}`);
   await expect(page).toHaveURL(`/${account.publicId}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Pelo SteamID' })).toBeVisible();
+});
+
+test('o ID antigo de uma Conta que ganhou um ID reservado redireciona com 301 para o novo', async ({
+  page,
+  request,
+}) => {
+  const account = await createUnclaimedAccount(request, 'Amigo do Beta');
+  const reservedId = randomInt(1, 10_000);
+  runApiCli('dist/accounts/accounts.cli.js', [
+    'assign-reserved-id',
+    '--steam-id',
+    account.steamId,
+    '--public-id',
+    String(reservedId),
+    '--by',
+    newSteamId(),
+    '--reason',
+    'E2E: amigo do beta',
+  ]);
+
+  // O web guarda a lista de IDs antigos por alguns segundos.
+  await expect
+    .poll(async () => (await request.get(`/${account.publicId}`, { maxRedirects: 0 })).status(), {
+      timeout: 25_000,
+    })
+    .toBe(301);
+  const response = await request.get(`/${account.publicId}`, { maxRedirects: 0 });
+  expect(response.headers().location).toMatch(new RegExp(`/${reservedId}$`));
+
+  await page.goto(`/${account.publicId}`);
+  await expect(page).toHaveURL(`/${reservedId}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Amigo do Beta' })).toBeVisible();
 });
 
 for (const [label, path] of [

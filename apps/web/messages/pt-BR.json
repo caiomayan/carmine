@@ -1047,7 +1047,8 @@
         "role_revoke": "Tirou papel",
         "display_name_reset": "Resetou o nome",
         "server_update": "Editou servidor",
-        "account_anonymize": "Anonimizou a Conta"
+        "account_anonymize": "Anonimizou a Conta",
+        "account_reserved_id": "Trocou o ID por um ID reservado"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
