@@ -388,6 +388,41 @@
       "title": "Nenhum Perfil com esse ID",
       "body": "Confira o número no link. Um Perfil só existe depois que a pessoa joga num Servidor Carmine ou entra no site.",
       "back": "Ver servidores"
+    },
+    "privateOwner": "Seu Perfil é privado: as Estatísticas e a sua identidade no Ranking ficam escondidas.",
+    "privateVisitor": "Perfil privado: as Estatísticas não são públicas.",
+    "settings": {
+      "title": "Ajustes do Perfil",
+      "name": {
+        "title": "Nome de exibição",
+        "steamHint": "Hoje vale o seu nome da Steam. Escolha um nome só da Carmine, para o site e para o jogo.",
+        "customHint": "É o nome que aparece no site e nos Servidores Carmine.",
+        "edit": "Alterar nome",
+        "label": "Novo nome",
+        "rules": "De {min} a {max} caracteres. Não precisa ser único. No jogo, aparece na próxima vez que você entrar num servidor.",
+        "cooldownRule": "Depois de salvar, você só poderá trocar de novo daqui a 7 dias.",
+        "cooldownActive": "Você só poderá trocar de novo em {when} (horário de Brasília).",
+        "save": "Salvar nome",
+        "cancel": "Cancelar",
+        "saved": "Nome alterado para {name}. No jogo, vale na próxima vez que você entrar num servidor.",
+        "errors": {
+          "too_short": "O nome precisa ter pelo menos 2 caracteres.",
+          "too_long": "O nome pode ter no máximo 24 caracteres.",
+          "invalid_chars": "Esse nome tem caracteres que não funcionam no jogo. Use letras, números e pontuação comum.",
+          "offensive": "Esse nome não é permitido. Escolha outro.",
+          "too_soon": "Você trocou de nome há pouco. Dá para trocar de novo em {when} (horário de Brasília).",
+          "not_claimed": "Entre no site com a Steam para escolher um nome.",
+          "generic": "Não deu para salvar agora. Tente de novo em instantes."
+        }
+      },
+      "privacy": {
+        "title": "Perfil privado",
+        "description": "Esconde as suas Estatísticas e tira o seu nome do Ranking, onde você aparece como \"Jogador privado\". Nome, avatar, Loadout e presença em servidor continuam públicos.",
+        "onTitle": "Perfil privado ativado",
+        "onBody": "As suas Estatísticas e a sua identidade no Ranking ficam escondidas (\"Jogador privado\"). Seu nome, avatar, Loadout e a presença em servidor continuam públicos.",
+        "offNote": "Perfil privado desativado. As suas Estatísticas voltam a aparecer no Perfil e no Ranking.",
+        "failed": "Não deu para salvar agora. Tente de novo em instantes."
+      }
     }
   },
   "firstSteps": {
@@ -1008,7 +1043,7 @@
     "displayName": {
       "title": "Nome de exibição",
       "current": "Atual: {name}",
-      "hint": "Volta para \"Jogador #{publicId}\" enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
+      "hint": "Com nome próprio, ele é apagado e vale o nome Steam; o prazo de 7 dias para trocar recomeça. Sem nome próprio, vira \"Jogador #{publicId}\" enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
       "submit": "Resetar nome",
       "done": "Nome de exibição resetado."
     },
