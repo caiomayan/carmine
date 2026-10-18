@@ -1,0 +1,41 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "VerInstancias",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceStatus",
+        "ssm:DescribeInstanceInformation"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "LigarDesligarSoACarmine",
+      "Effect": "Allow",
+      "Action": ["ec2:StartInstances", "ec2:StopInstances"],
+      "Resource": "arn:aws:ec2:sa-east-1:*:instance/*",
+      "Condition": { "StringEquals": { "aws:ResourceTag/Name": "carmine-cs2-beta" } }
+    },
+    {
+      "Sid": "TerminalPorSSMSoNaCarmine",
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": "arn:aws:ec2:sa-east-1:*:instance/*",
+      "Condition": { "StringEquals": { "aws:ResourceTag/Name": "carmine-cs2-beta" } }
+    },
+    {
+      "Sid": "SessaoSSMDocumento",
+      "Effect": "Allow",
+      "Action": "ssm:StartSession",
+      "Resource": "arn:aws:ssm:sa-east-1::document/SSM-SessionManagerRunShell"
+    },
+    {
+      "Sid": "EncerrarAPropriaSessao",
+      "Effect": "Allow",
+      "Action": ["ssm:TerminateSession", "ssm:ResumeSession"],
+      "Resource": "arn:aws:ssm:*:*:session/${aws:username}-*"
+    }
+  ]
+}
