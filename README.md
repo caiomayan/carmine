@@ -185,6 +185,8 @@ O primeiro Dono nasce pelo CLI (no painel, só um Dono altera papéis). A Conta 
 ```sh
 pnpm --filter "@carmine/api..." build
 pnpm --filter @carmine/api staff grant --steam-id 76561198000000001 --role owner --by 76561198000000001 --reason "fundador"
+# Reseta o Nome de exibição de uma Conta (volta ao nome Steam; vale no próximo connect no jogo):
+pnpm --filter @carmine/api staff reset-name --steam-id 76561198000000001 --by 76561198000000001 --reason "nome ofensivo"
 pnpm --filter @carmine/api staff revoke --steam-id 76561198000000002 --by 76561198000000001 --reason "saiu da Staff"
 pnpm --filter @carmine/api staff list
 ```
