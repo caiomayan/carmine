@@ -91,23 +91,38 @@ export async function saveTheme(page: Page, theme: Theme) {
 }
 
 /**
- * Espera as animações finitas no tempo (entradas, fades) terminarem. As ligadas à rolagem
- * (o rodapé) só terminam rolando a página, então ficam de fora. Uma animação cancelada no meio
- * (um re-render) rejeita o `finished` com AbortError: ela não existe mais, então não conta.
+ * Espera a página parar: os blocos que carregam (`aria-busy`) terminarem e as animações finitas
+ * no tempo (entradas, fades) acabarem. Um bloco que termina de carregar monta o conteúdo com uma
+ * entrada nova (a lista de amigos depois do login), então ler `getAnimations()` uma vez não basta:
+ * repete até um quadro sem nada novo. As ligadas à rolagem (o rodapé) só terminam rolando a
+ * página, então ficam de fora. Uma animação cancelada no meio (um re-render) rejeita o
+ * `finished` com AbortError: ela não existe mais, então não conta.
  */
 export async function settle(page: Page) {
-  await page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter(
-          (a) =>
-            a.timeline === document.timeline &&
-            a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
-        )
-        .map((a) => a.finished.catch(() => undefined)),
-    ),
-  );
+  for (let round = 0; round < 5; round++) {
+    // Um esqueleto que nunca resolve (a API fora do ar) não é motivo para travar: segue adiante.
+    await page
+      .waitForFunction(() => !document.querySelector('[aria-busy="true"]'), undefined, {
+        timeout: 5_000,
+      })
+      .catch(() => undefined);
+    const again = await page.evaluate(async () => {
+      const finite = () =>
+        document
+          .getAnimations()
+          .filter(
+            (a) =>
+              a.timeline === document.timeline &&
+              a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
+          );
+      const running = finite();
+      await Promise.all(running.map((a) => a.finished.catch(() => undefined)));
+      // Dois quadros: o React monta o que acabou de chegar e as entradas novas já se registram.
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return running.length > 0 || finite().length > 0;
+    });
+    if (!again) return;
+  }
 }
 
 /** Rola até o fim real da página, onde o rodapé termina de entrar. */
