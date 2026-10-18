@@ -64,6 +64,13 @@
       "when": 1792329037646,
       "tag": "0008_s11_perfil_completo",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792362922690,
+      "tag": "0009_s12_estatisticas",
+      "breakpoints": true
     }
   ]
 }

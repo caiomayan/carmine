@@ -4,6 +4,7 @@ import {
   bigint,
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -333,4 +334,72 @@ export const sanctions = pgTable(
     ),
     check('sanctions_reason_present', sql`length(trim(${table.reason})) > 0`),
   ],
+);
+
+/**
+ * IDs dos eventos de jogo já processados (S12, ADR 0018): a chave da idempotência. Um evento só
+ * soma nas Estatísticas se o seu ID entrou aqui na mesma transação. O plugin nunca guarda um
+ * evento por mais que algumas horas, então linhas antigas podem ser limpas (`receivedAt`).
+ */
+export const gameEvents = pgTable(
+  'game_events',
+  {
+    id: uuid().primaryKey(),
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    receivedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [index('game_events_received_idx').on(table.receivedAt)],
+);
+
+/**
+ * Estatísticas (`Stats`) de uma Conta por Modo e por semana de Brasília (S12): as somas que o
+ * Perfil lê (somando as semanas) e o Ranking semanal (PR B) usa direto. `weekStart` é a
+ * segunda-feira da semana (`YYYY-MM-DD`). ADR, KPM, K/D e HS% saem destas contagens.
+ */
+export const accountStatsWeekly = pgTable(
+  'account_stats_weekly',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    mode: gameMode().notNull(),
+    weekStart: date({ mode: 'string' }).notNull(),
+    kills: integer().notNull().default(0),
+    deaths: integer().notNull().default(0),
+    assists: integer().notNull().default(0),
+    headshots: integer().notNull().default(0),
+    /** Dano em inimigos (bots e aliados não entram). */
+    damage: bigint({ mode: 'number' }).notNull().default(0),
+    roundsPlayed: integer().notNull().default(0),
+    roundsWon: integer().notNull().default(0),
+    secondsPlayed: integer().notNull().default(0),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId, table.mode, table.weekStart] }),
+    index('account_stats_weekly_ranking_idx').on(table.mode, table.weekStart),
+  ],
+);
+
+/** Kill em aliado: não conta nas Estatísticas, mas fica registrada para a moderação (S12). */
+export const teamKills = pgTable(
+  'team_kills',
+  {
+    /** O ID do evento. */
+    id: uuid().primaryKey(),
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    killerAccountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    victimAccountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    weapon: text().notNull(),
+    killedAt: timestamptz().notNull(),
+  },
+  (table) => [index('team_kills_killer_idx').on(table.killerAccountId, table.killedAt)],
 );
