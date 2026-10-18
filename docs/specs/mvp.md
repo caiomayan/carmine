@@ -317,6 +317,8 @@ Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são libera
 
 ### S12 · Estatísticas e Ranking
 
+A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core grava e envia os eventos (fila em memória, lotes idempotentes, recuo, limite de fila, envio no fim do mapa e ao descarregar), a API recebe, deduplica e soma por Conta × Modo × semana de Brasília (já com tudo que o Ranking precisa: rounds vencidos e jogados, kills, mortes, assistências, headshots, dano e tempo), e expõe as Estatísticas do Perfil (`GET /api/profiles/{publicId}/stats`, via `canSeeStats`). Formato e idempotência: ADR 0018. **B (Ranking e telas):** o Ranking semanal por Modo (top 50, mínimos, desempates, progresso até o mínimo, estado vazio, semanas anteriores, remoção pela Staff com auditoria, `rankingIdentity`) e as telas de Estatísticas e Ranking no web. Os critérios de aceite de "Estatísticas" abaixo são do A; o do empate em rounds vencidos, do B.
+
 - O Carmine.Core envia eventos (kill, morte, assistência, dano, headshot, fim de round, início e fim de Sessão de jogo) em lotes idempotentes.
 - **Definições:** K/D = kills ÷ max(mortes, 1); HS% = kills com headshot ÷ kills; ADR = dano em inimigos ÷ rounds jogados (só no Retake); KPM = kills ÷ minutos jogados (só no DM).
 - **Não contam:** bots, aquecimento e kill em aliado (registrada para moderação). Suicídio conta como morte, não como kill. Um round abandonado no meio conta como jogado.
@@ -330,10 +332,10 @@ Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são libera
 - **Perfil privado (S11):** Estatísticas e Ranking não decidem sozinhos quem aparece. Consultam `canSeeStats(conta, quemPede)` (Perfil privado: só a própria Conta vê as Estatísticas) e `rankingIdentity(conta)` (privado: "Jogador privado", sem ID, nome nem avatar) em `apps/api/src/accounts/profile-privacy.ts`. Vale também para o Ranking de semanas anteriores e para a prévia do link, que continua só com nome, #ID e avatar (`apps/web/src/lib/profile-metadata.ts`, com teste). Quem ativa o Perfil privado sai do Ranking já existente na hora, não só da próxima semana.
 
 **Aceite**
-- Uma kill com headshot aparece no Perfil em até 1 minuto.
+- Uma kill com headshot aparece no Perfil em até 1 minuto (A: na API; o plugin envia a cada 5 s).
 - Um lote reenviado não duplica Estatísticas.
 - Kills em bots e no aquecimento não entram nas Estatísticas.
-- Um empate em rounds vencidos é resolvido pelo K/D.
+- Um empate em rounds vencidos é resolvido pelo K/D. *(B)*
 
 ### S13 · Denúncias e log de chat
 
