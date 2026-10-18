@@ -13,7 +13,13 @@ import { AccountErasure } from '../src/accounts/account-erasure.js';
 import { runAccountsCli } from '../src/accounts/accounts.cli-commands.js';
 import type { ReservedPublicIds } from '../src/accounts/reserved-public-ids.js';
 import { SessionStore } from '../src/auth/sessions.js';
-import { accounts, inventoryItems, presets, vipPeriods } from '../src/database/schema.js';
+import {
+  accountStatsWeekly,
+  accounts,
+  inventoryItems,
+  presets,
+  vipPeriods,
+} from '../src/database/schema.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
@@ -79,6 +85,9 @@ describe('Exclusão de dados (S08)', () => {
       payload: { hidden: true },
     });
     const { publicId } = target.account;
+    await t.postgres.db
+      .insert(accountStatsWeekly)
+      .values({ accountId: target.account.id, mode: 'retake', weekStart: '2026-10-12', kills: 5 });
     expect(await profileStatus(publicId)).toBe(200);
 
     const response = await anonymize(owner, publicId);
@@ -107,7 +116,7 @@ describe('Exclusão de dados (S08)', () => {
     });
     expect(row?.anonymizedAt).toBeInstanceOf(Date);
     const accountId = target.account.id;
-    for (const table of [inventoryItems, presets, vipPeriods]) {
+    for (const table of [inventoryItems, presets, vipPeriods, accountStatsWeekly]) {
       const rows = await t.postgres.db.select().from(table).where(eq(table.accountId, accountId));
       expect(rows).toEqual([]);
     }
