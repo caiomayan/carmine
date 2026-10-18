@@ -83,10 +83,27 @@ export const accounts = pgTable(
     chatHidden: boolean().notNull().default(false),
     /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
     anonymizedAt: timestamptz(),
+    /**
+     * Quando a Staff trocou o ID automático por um ID reservado (S10, ADR 0013). Preenchido, o ID
+     * público não muda mais; o ID antigo fica em `account_public_id_history`.
+     */
+    publicIdReservedAt: timestamptz(),
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [check('accounts_public_id_positive', sql`${table.publicId} > 0`)],
 );
+
+/**
+ * IDs públicos que uma Conta já teve (S10): o link antigo `/<idAntigo>` responde 301 para o ID
+ * atual. Um ID aqui nunca é reaproveitado por outra Conta.
+ */
+export const accountPublicIdHistory = pgTable('account_public_id_history', {
+  publicId: bigint({ mode: 'number' }).primaryKey(),
+  accountId: uuid()
+    .notNull()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
+  replacedAt: timestamptz().notNull().defaultNow(),
+});
 
 /**
  * Item (`Item`) do Inventário de uma Conta (S04). O Item fica inteiro em `item`, no formato
@@ -198,6 +215,7 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'display_name_reset',
   'server_update',
   'account_anonymize',
+  'account_reserved_id',
 ]);
 
 /**

@@ -210,6 +210,51 @@
         ]
       }
     },
+    "/api/profiles/former-ids": {
+      "get": {
+        "operationId": "getFormerPublicIds",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Os IDs antigos e o atual",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormerPublicIds"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "IDs públicos trocados por um ID reservado, para o web redirecionar (301) ao ID atual",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
     "/api/profiles/by-steam-id/{steamId}": {
       "get": {
         "operationId": "getProfileLocation",
@@ -3271,7 +3316,8 @@
                 "role_revoke",
                 "display_name_reset",
                 "server_update",
-                "account_anonymize"
+                "account_anonymize",
+                "account_reserved_id"
               ],
               "type": "string"
             }
@@ -3578,6 +3624,40 @@
         },
         "required": [
           "hidden"
+        ],
+        "additionalProperties": false
+      },
+      "FormerPublicIds": {
+        "type": "object",
+        "properties": {
+          "redirects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 9007199254740991
+                },
+                "to": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "exclusiveMinimum": true,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "from",
+                "to"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "redirects"
         ],
         "additionalProperties": false
       },
@@ -5638,7 +5718,8 @@
           "role_revoke",
           "display_name_reset",
           "server_update",
-          "account_anonymize"
+          "account_anonymize",
+          "account_reserved_id"
         ]
       },
       "StaffError": {

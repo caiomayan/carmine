@@ -79,6 +79,19 @@ export const profileLocationSchema = z
 
 export type ProfileLocation = z.infer<typeof profileLocationSchema>;
 
+/**
+ * `GET /api/profiles/former-ids`: os IDs públicos que a Staff trocou por um ID reservado (S10,
+ * ADR 0013). O web responde 301 de `/<from>` para `/<to>`. A lista só cresce por ação manual da
+ * Staff (poucas dezenas), então vai inteira e o web a guarda por alguns segundos.
+ */
+export const formerPublicIdsSchema = z
+  .object({
+    redirects: z.array(z.object({ from: z.int().positive(), to: z.int().positive() })),
+  })
+  .meta({ id: 'FormerPublicIds' });
+
+export type FormerPublicIds = z.infer<typeof formerPublicIdsSchema>;
+
 /** Endereço do perfil Steam de um SteamID64. */
 export function steamProfileUrl(steamId: string): string {
   return `https://steamcommunity.com/profiles/${steamId}`;
