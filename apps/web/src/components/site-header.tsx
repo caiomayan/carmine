@@ -33,8 +33,8 @@ export async function SiteHeader() {
             labels={{
               signIn: t('account.signIn'),
               loading: t('account.loading'),
-              // Modelo com {name}, preenchido no cliente com a Conta da sessão.
-              menu: t.raw('account.menu'),
+              // Modelo com {name} literal, preenchido no cliente com a Conta da sessão.
+              menu: t('account.menu', { name: '{name}' }),
               profile: t('account.profile'),
               firstSteps: t('account.firstSteps'),
               staffPanel: t('account.staffPanel'),
