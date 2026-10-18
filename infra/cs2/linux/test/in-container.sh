@@ -106,7 +106,7 @@ run_prestart retake CARMINE_API_KEY=chave-do-teste-123 CS2_GSLT=ABCDEF0123456789
 CORE="$P/retake/game/csgo/addons/counterstrikesharp/configs/plugins/Carmine.Core/Carmine.Core.json"
 INVSIM="$P/retake/game/csgo/cfg/carmine/inventory-simulator.cfg"
 check "Carmine.Core.json é JSON válido" jq -e . "$CORE" >/dev/null
-check "ApiBaseUrl de produção" test "$(jq -r .ApiBaseUrl "$CORE")" = https://stcarmine.com/api
+check "ApiBaseUrl de produção" test "$(jq -r .ApiBaseUrl "$CORE")" = https://stcarmine.com
 check "ApiKey veio do ambiente" test "$(jq -r .ApiKey "$CORE")" = chave-do-teste-123
 check "vagas do profile.json (retake: 9 públicas, reservada retake)" \
   test "$(jq -r '"\(.PublicSlots)/\(.ReservedSlots)"' "$CORE")" = 9/retake

@@ -28,7 +28,12 @@ require_match() {
 }
 require_match CARMINE_API_KEY '^[A-Za-z0-9._~+/=-]+$'
 require_match CS2_GSLT '^[A-Za-z0-9]+$'
-CARMINE_API_BASE_URL="${CARMINE_API_BASE_URL:-https://stcarmine.com/api}"
+# A origem do site, sem /api (como o -ApiBaseUrl do install-cs2-server.ps1): o InventorySimulator
+# concatena /api/equipped/v5/... e, com /api no fim, pediria /api/api/... (404, sem skins). Arquivos
+# de ambiente antigos com /api no fim continuam valendo: a barra e o /api finais são removidos.
+CARMINE_API_BASE_URL="${CARMINE_API_BASE_URL:-https://stcarmine.com}"
+CARMINE_API_BASE_URL="${CARMINE_API_BASE_URL%/}"
+CARMINE_API_BASE_URL="${CARMINE_API_BASE_URL%/api}"
 CARMINE_WEB_DISPLAY_URL="${CARMINE_WEB_DISPLAY_URL:-stcarmine.com}"
 require_match CARMINE_API_BASE_URL '^https?://[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+$'
 require_match CARMINE_WEB_DISPLAY_URL '^[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+$'

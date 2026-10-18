@@ -41,7 +41,7 @@ LIB_DIR=/usr/local/lib/carmine-cs2
 ETC_DIR=/etc/carmine-cs2
 UNIT_DIR=/etc/systemd/system
 DOTNET_DIR=/opt/dotnet
-API_BASE_URL='https://stcarmine.com/api'
+API_BASE_URL='https://stcarmine.com'
 WEB_DISPLAY_URL='stcarmine.com'
 PLUGIN_DIR=''
 DOWNLOAD_CS2=0
@@ -56,7 +56,7 @@ Uso: sudo install.sh [opções]
   --steps a,b,c           só estas etapas: deps,user,steamcmd,cs2,metamod,css,build,profiles,services
   --profiles a,b          perfis de infra/cs2/profiles (padrão: retake,deathmatch)
   --home DIR              onde ficam SteamCMD, CS2 e instâncias (padrão: /srv/carmine-cs2)
-  --api-base-url URL      API usada nos arquivos de ambiente novos (padrão: https://stcarmine.com/api)
+  --api-base-url URL      API usada nos arquivos de ambiente novos (origem do site, sem /api; padrão: https://stcarmine.com)
   --web-display-url TEXTO endereço do site que o !ws mostra (padrão: stcarmine.com)
   --plugin-dir DIR        usa um Carmine.Core já compilado em vez de compilar (saída do dotnet publish)
   -h, --help
