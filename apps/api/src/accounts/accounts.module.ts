@@ -5,8 +5,10 @@ import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { LoadoutModule } from '../loadout/loadout.module.js';
 import { ModerationModule } from '../moderation/moderation.module.js';
 import { VipModule } from '../vip/vip.module.js';
+import { AccountSettingsController } from './account-settings.controller.js';
 import { AccountsService } from './accounts.service.js';
 import { AvatarRefresher } from './avatar-refresher.js';
+import { DisplayNames } from './display-names.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
 import { PlayerPreferencesController } from './player-preferences.controller.js';
 import { ProfilesController } from './profiles.controller.js';
@@ -15,7 +17,12 @@ import { SteamWebApi } from './steam-profiles.js';
 
 @Module({
   imports: [GameServersModule, LoadoutModule, ModerationModule, VipModule],
-  controllers: [PlayerConnectsController, PlayerPreferencesController, ProfilesController],
+  controllers: [
+    AccountSettingsController,
+    PlayerConnectsController,
+    PlayerPreferencesController,
+    ProfilesController,
+  ],
   providers: [
     {
       provide: AvatarRefresher,
@@ -39,11 +46,16 @@ import { SteamWebApi } from './steam-profiles.js';
       useFactory: (db: Database, avatars: AvatarRefresher) => new AccountsService(db, avatars),
     },
     {
+      provide: DisplayNames,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new DisplayNames(db),
+    },
+    {
       provide: ReservedPublicIds,
       inject: [DATABASE],
       useFactory: (db: Database) => new ReservedPublicIds(db),
     },
   ],
-  exports: [AccountsService, ReservedPublicIds],
+  exports: [AccountsService, DisplayNames, ReservedPublicIds],
 })
 export class AccountsModule {}

@@ -2,7 +2,8 @@ import type { Profile } from '@carmine/contracts';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { siSteam } from 'simple-icons';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
@@ -13,6 +14,7 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
+import { ProfileSettings } from '@/components/profile/profile-settings';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
 import { findPublicIdBySteamId } from '@/lib/api-base';
@@ -20,6 +22,7 @@ import { getProfile, getServerSession, type ProfileResult, visitorIp } from '@/l
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
 import { RARITIES } from '@/lib/catalog/types';
 import { buildShowcase } from '@/lib/loadout/build';
+import { NOINDEX, profileMetadata } from '@/lib/profile-metadata';
 import { cn } from '@/lib/utils';
 
 type Params = Promise<{ publicId: string }>;
@@ -44,28 +47,12 @@ async function loadProfile(
   return result;
 }
 
-/**
- * Nenhum Perfil vai para os buscadores (decisão do dono, 2026-10-13; Política de Privacidade,
- * seção 4); o link continua compartilhável, com a prévia do Open Graph.
- */
-const NOINDEX: Metadata['robots'] = { index: false, follow: false };
-
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const result = await loadProfile((await params).publicId);
   if (result.status !== 'found') return { robots: NOINDEX };
   const { profile } = result;
   const t = await getTranslations('profile');
-  const title = `${profile.displayName} · #${profile.publicId}`;
-  const description = t('metaDescription', { name: profile.displayName });
-  const images = profile.avatarUrl ? [{ url: profile.avatarUrl, alt: '' }] : undefined;
-  return {
-    title,
-    description,
-    robots: NOINDEX,
-    alternates: { canonical: `/${profile.publicId}` },
-    openGraph: { type: 'profile', title, description, images, siteName: 'Carmine' },
-    twitter: { card: 'summary', title, description, images },
-  };
+  return profileMetadata(profile, t('metaDescription', { name: profile.displayName }));
 }
 
 export default async function ProfilePage({ params }: { params: Params }) {
@@ -94,12 +81,20 @@ export default async function ProfilePage({ params }: { params: Params }) {
   const invite = !profile.claimed && server.status !== 'authenticated';
   const showcase = buildShowcase(profile.loadoutShowcase.items);
   const tc = await getTranslations('catalog');
+  const messages = await getMessages();
 
   return (
     <div className="container-page pb-16">
       <ProfileHeader profile={profile} isOwner={isOwner} />
 
       {invite ? <ClaimInvite profile={profile} /> : null}
+
+      {isOwner ? (
+        // Só as mensagens dos ajustes vão ao cliente.
+        <NextIntlClientProvider messages={{ profile: { settings: messages.profile.settings } }}>
+          <ProfileSettings />
+        </NextIntlClientProvider>
+      ) : null}
 
       <section aria-labelledby="loadout" className="animate-fade-up pt-8 [animation-delay:80ms]">
         <SectionTitle
@@ -194,6 +189,11 @@ async function ProfileHeader({ profile, isOwner }: { profile: Profile; isOwner: 
           </a>
         </div>
         <SanctionBadges active={profile.sanctions.active} />
+        {profile.isPrivate ? (
+          <p className="text-[13px] text-muted-foreground" data-testid="private-note">
+            {isOwner ? t('privateOwner') : t('privateVisitor')}
+          </p>
+        ) : null}
         {isOwner ? (
           <p className="text-[13px] text-muted-foreground">{t('own')}</p>
         ) : unclaimed ? (

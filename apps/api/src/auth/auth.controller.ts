@@ -34,6 +34,7 @@ import {
 } from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AccountsService } from '../accounts/accounts.service.js';
+import { nextDisplayNameChange } from '../accounts/display-name.js';
 import { toProfile } from '../accounts/profile.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { Loadouts } from '../loadout/loadouts.js';
@@ -214,6 +215,11 @@ export class AuthController {
       vip: toVipStatus(vip),
       staffRole,
       sanctions: own,
+      displayNameChange: {
+        custom: account.customDisplayName !== null,
+        nextChangeAt:
+          nextDisplayNameChange(account.displayNameChangedAt, new Date())?.toISOString() ?? null,
+      },
     };
   }
 

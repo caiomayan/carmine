@@ -1,11 +1,13 @@
 import { parseArgs } from 'node:util';
 import { type StaffRole, staffRoleSchema, steamId64Schema } from '@carmine/contracts';
+import type { DisplayNames } from '../accounts/display-names.js';
 import { AccountNotClaimed, LastOwner, type StaffRoles } from './staff-roles.js';
 
 export interface StaffCliDeps {
   /** O id interno da Conta do SteamID64, ou `null` se ela não existe. */
   findAccountId: (steamId: string) => Promise<string | null>;
   roles: StaffRoles;
+  displayNames: DisplayNames;
   out: (line: string) => void;
   err: (line: string) => void;
 }
@@ -13,6 +15,7 @@ export interface StaffCliDeps {
 const USAGE = `Uso:
   staff grant  --steam-id <SteamID64> --role <owner|admin|moderator> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff revoke --steam-id <SteamID64> --by <SteamID64 de quem faz> --reason "<motivo>"
+  staff reset-name --steam-id <SteamID64> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff list`;
 
 const ROLE_NAMES: Record<StaffRole, string> = {
@@ -24,7 +27,8 @@ const ROLE_NAMES: Record<StaffRole, string> = {
 class UsageError extends Error {}
 
 /**
- * CLI dos papéis da Staff (S07). Cria o primeiro Dono (no painel, só um Dono altera papéis) e
+ * CLI da Staff (S07 e S11): papéis e reset do Nome de exibição. Cria o primeiro Dono (no painel,
+ * só um Dono altera papéis) e
  * serve de recuperação; toda mudança vai para o log de auditoria. A Conta precisa ter feito login
  * no site. Devolve o código de saída do processo.
  */
@@ -36,6 +40,8 @@ export async function runStaffCli(argv: string[], deps: StaffCliDeps): Promise<n
         return await change(rest, deps, true);
       case 'revoke':
         return await change(rest, deps, false);
+      case 'reset-name':
+        return await resetName(rest, deps);
       case 'list':
         return await list(deps);
       default:
@@ -104,6 +110,19 @@ async function change(args: string[], deps: StaffCliDeps, grant: boolean): Promi
     }
     throw error;
   }
+}
+
+async function resetName(args: string[], deps: StaffCliDeps): Promise<number> {
+  const { steamId, by, reason } = options(args, false);
+  const accountId = await deps.findAccountId(steamId);
+  if (accountId === null) {
+    throw new UsageError(`nenhuma Conta com o SteamID64 ${steamId}`);
+  }
+  const account = await deps.displayNames.reset(accountId, { actorSteamId: by, reason });
+  deps.out(
+    `${steamId} agora aparece como "${account.displayName}" (vale no próximo connect no jogo).`,
+  );
+  return 0;
 }
 
 async function list(deps: StaffCliDeps): Promise<number> {

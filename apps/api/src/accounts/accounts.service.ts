@@ -3,7 +3,6 @@ import type { PlayerConnect, PlayerConnectResult } from '@carmine/contracts';
 import { and, eq, gt, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, publicIdCounter, sanctions } from '../database/schema.js';
-import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
 import type { AvatarRefresher } from './avatar-refresher.js';
 import { displayNameFor } from './display-name.js';
 import { allocatePublicId, type BlockDraw } from './public-id.js';
@@ -18,6 +17,12 @@ export interface Account {
   displayName: string;
   /** Nome Steam cujo Nome de exibição a Staff resetou (S07); nulo sem reset. */
   displayNameBlockedSteamName: string | null;
+  /** Nome de exibição próprio (S11); nulo: vale o nome Steam. */
+  customDisplayName: string | null;
+  /** Última troca do nome próprio (ou reset da Staff que o apagou); base do prazo de 7 dias. */
+  displayNameChangedAt: Date | null;
+  /** Perfil privado (S11): sem Estatísticas e anônima no Ranking. */
+  profilePrivate: boolean;
   /** Nulo: ainda sem avatar Steam; vale o avatar neutro. */
   avatarUrl: string | null;
   avatarFetchedAt: Date | null;
@@ -140,42 +145,14 @@ export class AccountsService {
     return row ? toAccount(row) : null;
   }
 
-  /**
-   * Reset do Nome de exibição pela Staff (S07), com auditoria: a Conta passa a "Jogador #ID"
-   * enquanto mantiver o nome Steam atual (trocar o nome na Steam libera o novo, pelo filtro). No
-   * jogo, vale no próximo connect.
-   */
-  async resetDisplayName(
-    accountId: string,
-    staff: StaffAction,
-    now = new Date(),
-  ): Promise<Account> {
-    return this.db.transaction(async (tx) => {
-      const [existing] = await tx
-        .select()
-        .from(accounts)
-        .where(eq(accounts.id, accountId))
-        .for('update');
-      if (!existing) throw new Error(`Conta ${accountId} não existe`);
-      const displayName = displayNameFor(existing.steamName, existing.publicId, existing.steamName);
-      const [updated] = await tx
-        .update(accounts)
-        .set({ displayName, displayNameBlockedSteamName: existing.steamName })
-        .where(eq(accounts.id, accountId))
-        .returning();
-      await recordStaffAudit(tx, {
-        action: 'display_name_reset',
-        staff,
-        target: { accountId, steamId: existing.steamId },
-        details: {
-          displayNameBefore: existing.displayName,
-          displayNameAfter: displayName,
-          steamName: existing.steamName,
-        },
-        at: now,
-      });
-      return toAccount(updated as AccountRow);
-    });
+  /** Liga ou desliga o Perfil privado (S11). `false` se a Conta não existe ou foi anonimizada. */
+  async setProfilePrivate(accountId: string, isPrivate: boolean): Promise<boolean> {
+    const updated = await this.db
+      .update(accounts)
+      .set({ profilePrivate: isPrivate })
+      .where(and(eq(accounts.id, accountId), isNull(accounts.anonymizedAt)))
+      .returning({ id: accounts.id });
+    return updated.length > 0;
   }
 
   /** `null` quando outro connect do mesmo jogador criou a Conta no meio do caminho. */
@@ -205,6 +182,7 @@ export class AccountsService {
             connect.steamName,
             existing.publicId,
             existing.displayNameBlockedSteamName,
+            existing.customDisplayName,
           ),
           firstConnectedAt: sql`coalesce(${accounts.firstConnectedAt}, ${connectedAt})`,
           lastConnectedAt: sql`greatest(${accounts.lastConnectedAt}, ${connectedAt})`,

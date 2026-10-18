@@ -2,6 +2,7 @@
 
 import type {
   CurrentSession,
+  DisplayNameChange,
   OwnSanction,
   Profile,
   StaffRole,
@@ -36,9 +37,20 @@ type SessionState = {
   staffRole: StaffRole | null;
   /** Punições em vigor na própria Conta, com o motivo (S07): o aviso no alto do site. */
   sanctions: OwnSanction[];
+  /** Estado da troca do Nome de exibição (S11); nulo sem sessão. */
+  displayNameChange: DisplayNameChange | null;
 };
 
 type SessionContextValue = SessionState & {
+  /**
+   * Reflete na sessão do navegador o que a pessoa acabou de mudar no próprio Perfil (nome, Perfil
+   * privado), sem esperar a próxima conferência de `/api/me`.
+   */
+  updateAccount: (change: {
+    displayName?: string;
+    isPrivate?: boolean;
+    displayNameChange?: DisplayNameChange;
+  }) => void;
   /** Encerra a sessão na API (com o token CSRF); `false` se não deu. */
   signOut: () => Promise<boolean>;
   /** Mutação na API com o token CSRF; uma sessão expirada leva para entrar de novo. */
@@ -67,6 +79,7 @@ function stateFrom(session: CurrentSession | null, status: SessionStatus): Sessi
     vip: session?.vip ?? null,
     staffRole: session?.staffRole ?? null,
     sanctions: session?.sanctions ?? [],
+    displayNameChange: session?.displayNameChange ?? null,
   };
 }
 
@@ -163,6 +176,22 @@ export function SessionProvider({
     return true;
   }, [csrfToken, router]);
 
+  const updateAccount = useCallback<SessionContextValue['updateAccount']>((change) => {
+    setState((current) =>
+      current.account === null
+        ? current
+        : {
+            ...current,
+            account: {
+              ...current.account,
+              ...(change.displayName !== undefined && { displayName: change.displayName }),
+              ...(change.isPrivate !== undefined && { isPrivate: change.isPrivate }),
+            },
+            displayNameChange: change.displayNameChange ?? current.displayNameChange,
+          },
+    );
+  }, []);
+
   const mutate = useCallback(
     async (path: `/api/${string}`, init: RequestInit = {}) => {
       const token = readCookie(CSRF_COOKIE) ?? csrfToken;
@@ -198,8 +227,8 @@ export function SessionProvider({
   );
 
   const value = useMemo(
-    () => ({ ...state, signOut, mutate, firstSteps }),
-    [state, signOut, mutate, firstSteps],
+    () => ({ ...state, signOut, mutate, updateAccount, firstSteps }),
+    [state, signOut, mutate, updateAccount, firstSteps],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

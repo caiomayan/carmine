@@ -30,14 +30,14 @@ _Evitar_: username, apelido, handle
 ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável).
 
 **Nome de exibição** (`displayName`):
-O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único.
+O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único. É o nome Steam, ou o **nome próprio** (`customDisplayName`) que a Conta reivindicada escolhe no site (2 a 24 caracteres, filtro de palavras, uma troca a cada 7 dias). O reset da Staff apaga o nome próprio e recomeça o prazo.
 _Evitar_: nick, apelido, username
 
 **Perfil** (`Profile`):
 A página pública de uma Conta, com Loadout em vitrine e Estatísticas.
 
-**Perfil privado**:
-Perfil cuja Conta reivindicada optou por esconder as Estatísticas e aparecer anônima no Ranking.
+**Perfil privado** (`isPrivate` no Perfil, `profilePrivate` na Conta):
+Perfil cuja Conta reivindicada optou por esconder as Estatísticas e aparecer como "Jogador privado" no Ranking. Nome, avatar, Loadout e presença em servidor continuam públicos. A própria Conta vê as suas Estatísticas. Estatísticas e Ranking consultam o ponto único `profile-privacy`.
 
 ## Itens e loadout
 

@@ -73,6 +73,171 @@
         ]
       }
     },
+    "/api/me/display-name": {
+      "put": {
+        "operationId": "changeDisplayName",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeDisplayNameInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Trocado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameChanged"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Conta não reivindicada (not_claimed), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Trocou há menos de 7 dias (too_soon); `nextChangeAt` diz quando dá para trocar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Nome curto, longo, com caracteres que não servem ou reprovado pelo filtro (too_short, too_long, invalid_chars, offensive)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisplayNameError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Troca o Nome de exibição da Conta (2 a 24 caracteres, filtro de palavras, uma troca a cada 7 dias); vale no jogo no próximo connect",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/me/privacy": {
+      "put": {
+        "operationId": "setProfilePrivacy",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfilePrivacyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Gravado"
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Liga ou desliga o Perfil privado: esconde as Estatísticas e a identidade no Ranking; nome, avatar, Loadout e presença continuam públicos",
+        "tags": [
+          "me"
+        ]
+      }
+    },
     "/api/server/player-connects": {
       "post": {
         "operationId": "registerPlayerConnect",
@@ -3488,6 +3653,84 @@
         ],
         "additionalProperties": false
       },
+      "ChangeDisplayNameInput": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "displayName"
+        ]
+      },
+      "DisplayNameChanged": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "nextChangeAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "displayName",
+          "nextChangeAt"
+        ],
+        "additionalProperties": false
+      },
+      "DisplayNameError": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "invalid_body",
+              "too_short",
+              "too_long",
+              "invalid_chars",
+              "offensive",
+              "too_soon",
+              "not_claimed"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "nextChangeAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "ProfilePrivacyInput": {
+        "type": "object",
+        "properties": {
+          "isPrivate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isPrivate"
+        ]
+      },
       "PlayerConnect": {
         "type": "object",
         "properties": {
@@ -3709,6 +3952,9 @@
           },
           "sanctions": {
             "$ref": "#/components/schemas/ProfileSanctions"
+          },
+          "isPrivate": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -3719,7 +3965,8 @@
           "steamProfileUrl",
           "claimed",
           "loadoutShowcase",
-          "sanctions"
+          "sanctions",
+          "isPrivate"
         ],
         "additionalProperties": false
       },
@@ -3992,6 +4239,9 @@
             "items": {
               "$ref": "#/components/schemas/OwnSanction"
             }
+          },
+          "displayNameChange": {
+            "$ref": "#/components/schemas/DisplayNameChange"
           }
         },
         "required": [
@@ -4000,7 +4250,8 @@
           "firstLogin",
           "vip",
           "staffRole",
-          "sanctions"
+          "sanctions",
+          "displayNameChange"
         ],
         "additionalProperties": false
       },
@@ -4075,6 +4326,25 @@
           "reason",
           "startsAt",
           "endsAt"
+        ],
+        "additionalProperties": false
+      },
+      "DisplayNameChange": {
+        "type": "object",
+        "properties": {
+          "custom": {
+            "type": "boolean"
+          },
+          "nextChangeAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "custom",
+          "nextChangeAt"
         ],
         "additionalProperties": false
       },
