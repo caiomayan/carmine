@@ -134,8 +134,25 @@ export async function axeViolations(page: Page) {
   // O rodapé só fica opaco quando entra na tela: rola até o fim para o axe medir o contraste dele.
   await scrollToEnd(page);
   await settle(page);
-  const { violations } = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  return violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+  // A análise leva segundos, e uma transição que começa nesse meio tempo (o hover de uma linha
+  // quando o layout muda sob o mouse parado) seria medida pela metade. Com a página já assentada,
+  // congela as transições no valor final; as regras do axe seguem todas ligadas. A folha
+  // construída por script não passa pela CSP de estilos inline.
+  await page.evaluate(() => {
+    const sheet = new CSSStyleSheet();
+    sheet.replaceSync('*, *::before, *::after { transition: none !important; }');
+    document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
+    (window as unknown as { __axeFreeze: CSSStyleSheet }).__axeFreeze = sheet;
+  });
+  try {
+    const { violations } = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    return violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+  } finally {
+    await page.evaluate(() => {
+      const frozen = (window as unknown as { __axeFreeze?: CSSStyleSheet }).__axeFreeze;
+      document.adoptedStyleSheets = document.adoptedStyleSheets.filter((s) => s !== frozen);
+    });
+  }
 }
