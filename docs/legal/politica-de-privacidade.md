@@ -120,8 +120,8 @@ Cada um desses serviços tem a sua própria política de privacidade.
 
 ## 6. Onde os dados ficam
 
-- **Os dados do Carmine, incluindo os dados que recebemos da Steam, ficam guardados no Brasil:** o banco de dados e a API na Oracle Cloud, região de São Paulo, e os Servidores Carmine numa VPS brasileira. Os termos da Steam Web API exigem informar esse país.
-- **A Cloudflare é só trânsito:** o tráfego do site passa pela rede dela, que pode processá-lo fora do Brasil, mas o banco de dados não fica lá. As cópias de segurança do banco ficam no Cloudflare R2. [CONFIRMAR: local do bucket do R2; se ficar fora do Brasil, citar aqui]
+- **Os dados do Carmine, incluindo os dados que recebemos da Steam, ficam guardados no Brasil, com a exceção das cópias de segurança (abaixo):** o banco de dados e a API na Oracle Cloud, região de São Paulo, e os Servidores Carmine numa VPS brasileira. Os termos da Steam Web API exigem informar esse país.
+- **A Cloudflare é só trânsito:** o tráfego do site passa pela rede dela, que pode processá-lo fora do Brasil, mas o banco de dados não fica lá. As cópias de segurança do banco (os backups) ficam no Cloudflare R2, num bucket no leste da América do Norte (EUA), ou seja, fora do Brasil; é a única parte dos dados do Carmine guardada fora do país. [VALIDAR COM ADVOGADO: transferência internacional]
 - Alguns serviços da lista acima ficam ou processam dados fora do Brasil, principalmente nos Estados Unidos (Cloudflare, Discord, Sentry e, possivelmente, o 3d.cstrike.app). Nesses casos, a transferência segue as regras da LGPD (art. 33) e da ANPD (Resolução CD/ANPD nº 19/2024), como as cláusulas-padrão contratuais. [VALIDAR COM ADVOGADO]
 
 ## 7. Por quanto tempo guardamos
@@ -135,7 +135,7 @@ Cada um desses serviços tem a sua própria política de privacidade.
 | Registro interno de punições, denúncias e ações da Staff | 24 meses depois do fim da punição; bans permanentes, enquanto durarem |
 | Registros de pagamento, CPF e declaração de maioridade do Pagador | 5 anos depois da compra, pelo prazo do Código de Defesa do Consumidor (art. 27) e das obrigações fiscais [VALIDAR COM ADVOGADO] |
 | Endereço IP e registros técnicos | Até 6 meses |
-| Cópias de segurança do banco | Até serem substituídas pela rotação automática dos backups. Um dado apagado da Conta some dos backups quando a cópia antiga é descartada |
+| Cópias de segurança do banco | 30 dias: as cópias mais antigas são apagadas automaticamente. Um dado apagado da Conta some dos backups quando a cópia antiga é descartada, em até 30 dias |
 
 O Marco Civil da Internet obriga só empresas a guardar registros de acesso por 6 meses (art. 15). Como o Carmine é operado por pessoa física, guardamos registros técnicos pelo prazo acima por segurança, e por mais tempo só se uma autoridade ou um juiz pedir. [VALIDAR COM ADVOGADO]
 
