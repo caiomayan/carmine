@@ -1,0 +1,61 @@
+# Servidor CS2 de um perfil (infra/cs2/profiles/<perfil>): systemctl start carmine-cs2@retake
+# Gerado a partir deste modelo pelo install.sh (etapa services), que troca @HOME@ e @LIBDIR@.
+[Unit]
+Description=Servidor CS2 Carmine (%i)
+Documentation=https://github.com/caiomayan/carmine/tree/main/infra/cs2/linux
+After=network-online.target
+Wants=network-online.target
+PartOf=carmine-cs2.target
+# Cinco quedas em 5 minutos = algo está errado de verdade (token, update do CS2): para e espera um humano.
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=carmine-cs2
+Group=carmine-cs2
+WorkingDirectory=@HOME@/profiles/%i/game/bin/linuxsteamrt64
+# Segredos do perfil (CARMINE_API_KEY, CS2_GSLT, ...), fora do git; e porta/mapa/modo, vindos do profile.json.
+EnvironmentFile=/etc/carmine-cs2/%i.env
+EnvironmentFile=@HOME@/profiles/%i/profile.env
+Environment=HOME=@HOME@
+Environment=CARMINE_CS2_HOME=@HOME@
+Environment=LD_LIBRARY_PATH=@HOME@/profiles/%i/game/bin/linuxsteamrt64
+
+ExecStartPre=@LIBDIR@/prestart.sh %i
+ExecStart=@HOME@/profiles/%i/game/bin/linuxsteamrt64/cs2 \
+    -dedicated -console \
+    -port ${PORT} -maxplayers ${MAXPLAYERS} \
+    +sv_lan 0 +game_type ${GAME_TYPE} +game_mode ${GAME_MODE} \
+    +map ${START_MAP} \
+    +sv_setsteamaccount ${CS2_GSLT} \
+    $CS2_EXTRA_ARGS
+
+# Sai sozinho em queda, mas não em configuração faltando (prestart.sh sai com 78).
+Restart=on-failure
+RestartSec=10
+RestartPreventExitStatus=78
+# O CS2 trata SIGINT como quit e desmonta os plugins direito.
+KillSignal=SIGINT
+TimeoutStopSec=30
+LimitNOFILE=65536
+
+# Endurecimento sem quebrar o jogo: o serviço só escreve na própria instância e no HOME.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectProc=invisible
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=carmine-cs2.target

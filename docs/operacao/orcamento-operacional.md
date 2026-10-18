@@ -2,7 +2,7 @@
 
 Registro vivo do custo de manter o Carmine no ar. **Revise a cada fatia que aumente o consumo** (novo serviço, mais armazenamento, mais servidores de CS2, mais tráfego) e atualize a tabela e a data.
 
-Última revisão: 2026-10-17 (S09a). Valores em USD; os de fornecedores brasileiros em reais. Itens marcados *estimativa* vêm de pesquisa de 2026-10-10 e não de fatura.
+Última revisão: 2026-10-17 (S09a, S09b). Valores em USD; os de fornecedores brasileiros em reais. Itens marcados *estimativa* vêm de pesquisa de 2026-10-10 e não de fatura.
 
 ## Site, API e dados (esta fatia)
 
@@ -18,7 +18,23 @@ Registro vivo do custo de manter o Carmine no ar. **Revise a cada fatia que aume
 | Discord (webhooks) | Free | 0 | |
 | **Subtotal site/API/dados** | | **~US$ 5** | |
 
-## Servidores de CS2 (S09b, ainda não contratados)
+## Servidores de CS2: beta na AWS (S09b)
+
+Decisão do dono: até o fim do beta (~26/11/2026, ~10 amigos) os dois perfis rodam numa instância EC2 em sa-east-1, **ligada só nas sessões**, paga com os US$ 72 de créditos. Passo a passo e conta detalhada: `aws-beta-cs2.md`. Tarifas lidas na lista pública da AWS em 2026-10-15 (Linux sob demanda, São Paulo).
+
+| Item | Custo | Observação |
+| --- | --- | --- |
+| EC2 `m6a.xlarge` (4 vCPU, 16 GiB) ligada | US$ 0,2754/h + IPv4 US$ 0,005/h | Só nas sessões. `c6a.xlarge` (8 GiB) seria US$ 0,2358/h. |
+| Disco gp3 de 100 GB | US$ 15,20/mês (US$ 0,152/GB-mês) | Cobra ligada ou desligada. |
+| Elastic IP | US$ 3,65/mês (US$ 0,005/h) | Cobra sempre; o endereço fica no cadastro da API. |
+| Tráfego de saída | US$ 0,15/GB após 100 GB/mês grátis *(estimativa)* | ~1 GB por sessão de 3 h com 10 jogadores. |
+| **Parada** | **~US$ 19/mês (~US$ 0,03/h)** | Disco + IP. |
+| **Fixos até 26/11** | **~US$ 25** | ~40 dias de disco e IP. |
+| **Saldo para jogar** | **~US$ 47 ≈ 170 h** | De US$ 72, descontados os fixos. Alarmes de gasto em US$ 10/20/40. |
+
+Depois dos créditos o custo da instância parada continua: encerrar o beta é terminar a instância, liberar o IP e apagar o disco (`aws-beta-cs2.md`, "Encerrando o beta").
+
+## Servidores de CS2: VPS definitiva (a partir do fim de 2026, ainda não contratada)
 
 | Item | Custo/mês | Observação |
 | --- | --- | --- |
@@ -35,4 +51,5 @@ Limites de memória do `infra/prod/compose.yml`: Postgres 2,5 GB, API 1,5 GB, we
 - **Reclamação da instância ociosa pela Oracle.** Com uso real de CPU/rede/memória muito abaixo de 20%, a A1 pode ser recolhida. Mitigação conhecida: converter a conta para *Pay As You Go* (continua sem cobrança enquanto se usa só os recursos Always Free) e/ou manter carga constante. Decisão do dono, registrada em `docs/operacao/checklist-do-dono.md`.
 - **Sentry acima da cota**: o plano pago começa em ~US$ 26/mês; antes, reduza ruído.
 - **R2**: operações/armazenamento acima da cota grátis custam centavos; revise se mudar a retenção ou o tamanho do banco.
+- **Instância AWS do beta esquecida ligada**: US$ 0,28/h ≈ US$ 6,7/dia ≈ 4 dias de créditos de jogo. Mitigações: alarmes de gasto (US$ 10/20/40), o hábito de `cs2-beta.ps1 stop` e, opcional, o desligamento por CPU ociosa (`aws-beta-cs2.md`, passo 7).
 - **Mais slots/servidores de CS2**: cada servidor extra pesa na VPS (3–6 GB de RAM por servidor); reavalie o plano da VPS antes de lançar um terceiro perfil.
