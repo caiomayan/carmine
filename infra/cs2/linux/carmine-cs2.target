@@ -1,0 +1,7 @@
+# Todos os servidores CS2 do host: systemctl start|stop|restart carmine-cs2.target
+[Unit]
+Description=Servidores CS2 Carmine
+Wants=network-online.target
+
+[Install]
+WantedBy=multi-user.target
