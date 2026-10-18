@@ -23,11 +23,11 @@ Conta cujo dono pediu a exclusão dos dados (LGPD): perde nome, avatar, Perfil e
 _Evitar_: conta apagada, conta deletada
 
 **ID público** (`publicId`):
-Número curto, imutável e único que identifica a Conta na plataforma; números menores pertencem a Contas mais antigas.
+Número curto e único que identifica a Conta na plataforma; números menores pertencem a Contas mais antigas. Imutável, com uma exceção: a Staff pode trocar o ID automático por um ID reservado, uma única vez por Conta; depois de reservado, é imutável. O ID antigo continua funcionando como link (301 para o atual) e nunca é reaproveitado.
 _Evitar_: username, apelido, handle
 
 **ID reservado**:
-ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff).
+ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável).
 
 **Nome de exibição** (`displayName`):
 O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único.

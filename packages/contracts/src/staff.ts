@@ -159,6 +159,7 @@ export const staffAuditActionSchema = z
     'display_name_reset',
     'server_update',
     'account_anonymize',
+    'account_reserved_id',
   ])
   .meta({ id: 'StaffAuditAction' });
 

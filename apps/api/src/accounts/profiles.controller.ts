@@ -1,4 +1,6 @@
 import {
+  type FormerPublicIds,
+  formerPublicIdsSchema,
   type Profile,
   type ProfileLocation,
   profileLocationSchema,
@@ -20,6 +22,7 @@ import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { type Account, AccountsService } from './accounts.service.js';
 import { toProfile } from './profile.js';
+import { ReservedPublicIds } from './reserved-public-ids.js';
 
 /** ID público no caminho: só dígitos, sem zero à esquerda (o maior cabe num `number`). */
 const PUBLIC_ID = /^[1-9]\d{0,14}$/;
@@ -32,7 +35,19 @@ export class ProfilesController {
     @Inject(AccountsService) private readonly accounts: AccountsService,
     @Inject(Loadouts) private readonly loadouts: Loadouts,
     @Inject(Sanctions) private readonly sanctions: Sanctions,
+    @Inject(ReservedPublicIds) private readonly reservedIds: ReservedPublicIds,
   ) {}
+
+  @Get('former-ids')
+  @RateLimit('public')
+  @ApiOperation({
+    operationId: 'getFormerPublicIds',
+    summary: 'IDs públicos trocados por um ID reservado, para o web redirecionar (301) ao ID atual',
+  })
+  @ApiOkResponse({ description: 'Os IDs antigos e o atual', standardSchema: formerPublicIdsSchema })
+  async formerIds(): Promise<FormerPublicIds> {
+    return { redirects: await this.reservedIds.redirects() };
+  }
 
   @Get('by-steam-id/:steamId')
   @RateLimit('public')

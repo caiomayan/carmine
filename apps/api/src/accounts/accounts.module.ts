@@ -10,6 +10,7 @@ import { AvatarRefresher } from './avatar-refresher.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
 import { PlayerPreferencesController } from './player-preferences.controller.js';
 import { ProfilesController } from './profiles.controller.js';
+import { ReservedPublicIds } from './reserved-public-ids.js';
 import { SteamWebApi } from './steam-profiles.js';
 
 @Module({
@@ -37,7 +38,12 @@ import { SteamWebApi } from './steam-profiles.js';
       inject: [DATABASE, AvatarRefresher],
       useFactory: (db: Database, avatars: AvatarRefresher) => new AccountsService(db, avatars),
     },
+    {
+      provide: ReservedPublicIds,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new ReservedPublicIds(db),
+    },
   ],
-  exports: [AccountsService],
+  exports: [AccountsService, ReservedPublicIds],
 })
 export class AccountsModule {}

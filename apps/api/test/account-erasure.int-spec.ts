@@ -11,6 +11,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountErasure } from '../src/accounts/account-erasure.js';
 import { runAccountsCli } from '../src/accounts/accounts.cli-commands.js';
+import type { ReservedPublicIds } from '../src/accounts/reserved-public-ids.js';
 import { SessionStore } from '../src/auth/sessions.js';
 import { accounts, inventoryItems, presets, vipPeriods } from '../src/database/schema.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
@@ -193,6 +194,8 @@ describe('Exclusão de dados (S08)', () => {
       const errors: string[] = [];
       const exitCode = await runAccountsCli(argv, {
         findAccountId: async (publicId) => (await t.accounts.findByPublicId(publicId))?.id ?? null,
+        findAccountIdBySteamId: async () => null,
+        reserved: {} as ReservedPublicIds,
         erasure: new AccountErasure(t.postgres.db, {
           dropSessions: (accountId) => t.app.get(SessionStore).destroyAllOf(accountId),
           invalidateEquipped: async () => {},

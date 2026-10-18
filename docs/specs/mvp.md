@@ -281,11 +281,11 @@ Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são libera
 
 ### S10 · Beta fechado
 
-- Lista de permissão por SteamID na API: com o beta ativo, Contas fora da lista recebem uma mensagem e são desconectadas.
-- Amigos do beta (até ~10) recebem IDs reservados.
+- Acesso controlado ligando/desligando os servidores do beta (decisão do dono, 2026-10-18).
+- Amigos do beta (até ~10) recebem IDs reservados, por reatribuição pela Staff (`accounts assign-reserved-id`): uma única vez por Conta, com auditoria, e o link do ID antigo responde 301 para o novo.
 - **Matriz de experiências a cobrir:** jogador que começa pelo IP vs. pelo site; Conta sem VIP, com VIP concedido pela Staff e com VIP vencido; uso no celular.
 - Registro de atritos numa nota Maestri, revisado antes de abrir.
-- Abertura ao público desligando a lista, sem deploy.
+- Abertura ao público: servidores ligados de forma contínua (VPS definitiva).
 
 **Critérios de saída (qualitativos)**
 - Alguém novo consegue entrar, equipar e jogar sem ajuda.

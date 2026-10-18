@@ -7,3 +7,15 @@ A Conta é identificada publicamente por um número curto (`stcarmine.com/<id>`)
 - Sequencial puro: mais simples, mas revela quantas Contas existem.
 - Aleatório de 7 dígitos: esconde a contagem, mas perde a leitura de antiguidade pedida pelo produto.
 - Permutação Feistel: elegante, mas também perde a ordem e custa mais código.
+
+## Adendo (2026-10-18): reatribuição para ID reservado
+
+Decisão do dono: a Staff pode trocar o ID automático de uma Conta por um ID reservado (1 a 9.999), com `accounts assign-reserved-id`, para dar números baixos aos amigos do beta depois de as Contas já existirem. Regras:
+
+- **Uma única vez por Conta.** Depois de reservado (ou se a Conta já nasceu com ID abaixo de 10.000), o ID é imutável; o comando recusa repetir.
+- **Sem colisão.** O ID não pode ser de outra Conta nem ter sido de alguma; um ID que uma Conta já teve nunca é reaproveitado.
+- **O ID antigo continua funcionando como link.** Fica em `account_public_id_history`, e `stcarmine.com/<idAntigo>` responde 301 para `stcarmine.com/<idNovo>` (o proxy do web consulta `GET /api/profiles/former-ids`, lista inteira guardada por 10 s). No jogo, o ID novo vale no próximo connect.
+- **Auditoria.** A troca vai para o `staff_audit_log` (`account_reserved_id`, com `{ from, to }`).
+- Contas anonimizadas (S08) não recebem ID reservado.
+
+A garantia "crescente por antiguidade" vale para os IDs automáticos; os reservados são, por definição, escolhidos pela Staff.

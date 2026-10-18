@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { findPublicIdBySteamId, VISITOR_IP_HEADER } from '@/lib/api-base';
 import { PROFILE_PATH_HEADER, parseProfileSegment } from '@/lib/auth-links';
+import { formerPublicId } from '@/lib/former-public-ids';
 import { buildContentSecurityPolicy, generateNonce, NONCE_HEADER } from '@/lib/security-headers';
 import { sentryIngestOrigin, sentryWebConfig } from '@/lib/sentry-config';
 
@@ -15,6 +16,8 @@ const NUMERIC_PATH = /^\/[0-9]+$/;
  *   `stcarmine.com/<SteamID64>` redireciona com 301 para `/<idPúblico>`. Fica aqui porque o
  *   `permanentRedirect` de uma página responde 308. Sem Conta para o SteamID, ou com a API
  *   fora do ar, segue para a página, que mostra o 404 ou o aviso de instabilidade.
+ *   Um ID público que a Staff trocou por um ID reservado (S10) também redireciona com 301, para o
+ *   ID atual (`formerPublicId`, lista guardada por 10 s).
  *   O 404 deles é o do Perfil ("Nenhum Perfil com esse ID"); outros caminhos de um segmento
  *   que caem na mesma rota dinâmica (`/nao-existe`) ficam com o 404 geral.
  */
@@ -40,12 +43,12 @@ export async function proxy(request: NextRequest) {
 
   if (!numericPath) return next();
   const parsed = parseProfileSegment(request.nextUrl.pathname.slice(1));
-  if (parsed.kind !== 'steamId') return next();
+  if (parsed.kind === 'invalid') return next();
 
-  const publicId = await findPublicIdBySteamId(
-    parsed.steamId,
-    request.headers.get(VISITOR_IP_HEADER),
-  );
+  const publicId =
+    parsed.kind === 'steamId'
+      ? await findPublicIdBySteamId(parsed.steamId, request.headers.get(VISITOR_IP_HEADER))
+      : await formerPublicId(parsed.publicId);
   if (typeof publicId !== 'number') return next();
 
   const target = request.nextUrl.clone();

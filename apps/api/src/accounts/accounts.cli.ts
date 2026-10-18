@@ -9,6 +9,7 @@ import { EquippedCache } from '../equipped/equipped-cache.js';
 import { VALKEY_COMMAND_TIMEOUT_MS } from '../valkey/valkey.module.js';
 import { AccountErasure } from './account-erasure.js';
 import { runAccountsCli } from './accounts.cli-commands.js';
+import { ReservedPublicIds } from './reserved-public-ids.js';
 
 // pnpm --filter @carmine/api accounts <comando>; na imagem: node dist/accounts/accounts.cli.js
 const config = loadConfig(process.env);
@@ -32,6 +33,14 @@ try {
         .where(eq(accounts.publicId, publicId));
       return row?.id ?? null;
     },
+    findAccountIdBySteamId: async (steamId) => {
+      const [row] = await db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(eq(accounts.steamId, BigInt(steamId)));
+      return row?.id ?? null;
+    },
+    reserved: new ReservedPublicIds(db),
     erasure: new AccountErasure(db, {
       dropSessions: (accountId) => sessions.destroyAllOf(accountId),
       invalidateEquipped: (steamId) => cache.invalidate(steamId),
