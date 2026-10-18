@@ -129,3 +129,9 @@ export function isSteamId64(value: string): boolean {
   const id = BigInt(value);
   return id >= MIN_INDIVIDUAL_STEAM_ID && id <= MAX_INDIVIDUAL_STEAM_ID;
 }
+
+/** Tamanho do Nome de exibição próprio, em caracteres depois de normalizado (S11). */
+export const DISPLAY_NAME_MIN_LENGTH = 2;
+export const DISPLAY_NAME_MAX_LENGTH = 24;
+/** A Conta troca o Nome de exibição no máximo uma vez a cada tantos dias (S11). */
+export const DISPLAY_NAME_COOLDOWN_DAYS = 7;

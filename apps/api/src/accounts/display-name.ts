@@ -13,7 +13,8 @@ const MAX_LENGTH = 32;
  * Steam. Se o nome Steam for ofensivo ou vazio, a Conta aparece como "Jogador #ID" até ter um
  * nome aceitável. Depois de um reset da Staff (S07), o nome Steam resetado (`blockedSteamName`)
  * também vira "Jogador #ID", até a pessoa trocar de nome na Steam. Um nome próprio que o filtro
- * (ampliado depois) passou a reprovar também cai para o nome Steam.
+ * (ampliado depois) passou a reprovar também cai para o nome Steam. O nome Steam também perde
+ * `<>&{}` (o nome próprio os recusa): o nome vai para o placar e o chat do jogo.
  */
 export function displayNameFor(
   steamName: string,
@@ -30,6 +31,7 @@ export function displayNameFor(
   const cleaned = [
     ...steamName
       .replace(/[\p{Cc}\p{Cf}]/gu, '')
+      .replace(MARKUP_CHARS, '')
       .replace(/\s+/g, ' ')
       .trim(),
   ]
@@ -47,9 +49,10 @@ export type DisplayNameRejection = 'too_short' | 'too_long' | 'invalid_chars' | 
 /** Controle, formato (zero-width, bidi, BOM), uso privado, surrogates soltos e não atribuídos. */
 const INVISIBLE = /[\p{Cc}\p{Cf}\p{Co}\p{Cs}\p{Cn}]/gu;
 /** Letras e símbolos em branco que se passam por espaço: Hangul filler, braille vazio. */
-const BLANK_GLYPHS = /[ᅟᅠ឴឵⠀ㅤﾠ]/gu;
+const BLANK_GLYPHS = /[\u{115F}\u{1160}\u{17B4}\u{17B5}\u{2800}\u{3164}\u{FFA0}]/gu;
 /** Marcação que pode virar HTML no placar ou token de cor num plugin de chat. */
 const MARKUP = /[<>&{}]/u;
+const MARKUP_CHARS = /[<>&{}]/gu;
 /** Acentos empilhados além do que qualquer língua usa. */
 const STACKED_MARKS = /\p{M}{4,}/u;
 const LETTER_OR_DIGIT = /[\p{L}\p{N}]/u;

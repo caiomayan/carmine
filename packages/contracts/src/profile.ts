@@ -20,11 +20,11 @@ export const showcaseItemSchema = z
 
 export type ShowcaseItem = z.infer<typeof showcaseItemSchema>;
 
-/** Tamanho do Nome de exibição próprio, em caracteres depois de normalizado (S11). */
-export const DISPLAY_NAME_MIN_LENGTH = 2;
-export const DISPLAY_NAME_MAX_LENGTH = 24;
-/** A Conta troca o Nome de exibição no máximo uma vez a cada tantos dias (S11). */
-export const DISPLAY_NAME_COOLDOWN_DAYS = 7;
+export {
+  DISPLAY_NAME_COOLDOWN_DAYS,
+  DISPLAY_NAME_MAX_LENGTH,
+  DISPLAY_NAME_MIN_LENGTH,
+} from './rules.js';
 
 /**
  * Perfil (`Profile`) da S03: a página pública de uma Conta em `stcarmine.com/<publicId>`.

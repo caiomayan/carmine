@@ -86,9 +86,9 @@ describe('Perfil privado e troca de nome (S11)', () => {
   it('displayNameChange: quando a troca fica livre, em ISO com fuso', () => {
     const change = { custom: true, nextChangeAt: '2026-10-25T12:00:00.000Z' };
     expect(displayNameChangeSchema.parse(change)).toEqual(change);
-    expect(displayNameChangeSchema.safeParse({ custom: true, nextChangeAt: 'amanhã' }).success).toBe(
-      false,
-    );
+    expect(
+      displayNameChangeSchema.safeParse({ custom: true, nextChangeAt: 'amanhã' }).success,
+    ).toBe(false);
   });
 
   it('o nome da troca é texto de tamanho limitado (o servidor normaliza)', () => {

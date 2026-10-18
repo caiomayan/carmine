@@ -14,6 +14,11 @@ describe('displayNameFor', () => {
     expect(displayNameFor('  João\u0000​   Vitor \n', 10_016)).toBe('João Vitor');
   });
 
+  it('tira de um nome Steam a marcação que o jogo poderia interpretar', () => {
+    expect(displayNameFor('<b>Fer</b> {red}', 10_016)).toBe('bFer/b red');
+    expect(displayNameFor('<>&{}', 12_345)).toBe('Jogador #12345');
+  });
+
   it('mostra "Jogador #ID" quando não sobra nada do nome', () => {
     expect(displayNameFor(' ​\t', 12_345)).toBe('Jogador #12345');
   });
@@ -67,19 +72,19 @@ describe('normalizeDisplayName', () => {
 
   it('apara as pontas e colapsa espaços internos', () => {
     expect(ok('  João \t  Vitor\n')).toEqual({ ok: true, name: 'João Vitor' });
-    expect(ok('A 　B')).toEqual({ ok: true, name: 'A B' });
+    expect(ok('A\u00A0\u3000B')).toEqual({ ok: true, name: 'A B' });
   });
 
   it('tira caracteres de controle e invisíveis (inclusive os que parecem letra)', () => {
-    expect(ok('Fe\u0000r​‮﻿')).toEqual({ ok: true, name: 'Fer' });
-    expect(ok('ㅤㅤㅤ')).toEqual({ ok: false, reason: 'too_short' });
-    expect(ok('⠀⠀')).toEqual({ ok: false, reason: 'too_short' });
+    expect(ok('Fe\u0000r\u200B\u202E\uFEFF')).toEqual({ ok: true, name: 'Fer' });
+    expect(ok('\u3164\u3164\u3164')).toEqual({ ok: false, reason: 'too_short' });
+    expect(ok('\u2800\u2800')).toEqual({ ok: false, reason: 'too_short' });
     // Os códigos de cor do chat (0x01 a 0x10) são de controle.
     expect(ok('\u0004Fer')).toEqual({ ok: true, name: 'Fer' });
   });
 
   it('normaliza para NFC', () => {
-    expect(ok('José')).toEqual({ ok: true, name: 'José' });
+    expect(ok('Jose\u0301')).toEqual({ ok: true, name: 'José' });
   });
 
   it('recusa o que pode quebrar chat e placar', () => {
@@ -89,7 +94,7 @@ describe('normalizeDisplayName', () => {
   });
 
   it('recusa acentos empilhados (zalgo)', () => {
-    expect(ok('F̀́̂̃̄er')).toEqual({ ok: false, reason: 'invalid_chars' });
+    expect(ok('F\u0300\u0301\u0302\u0303\u0304er')).toEqual({ ok: false, reason: 'invalid_chars' });
   });
 
   it('exige ao menos uma letra ou número', () => {
