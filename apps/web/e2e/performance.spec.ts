@@ -14,14 +14,14 @@ const SLOW_4G = {
 const BUDGET_MS = 4000;
 /**
  * O tempo ainda não reprova a CI. Depois da dieta do bundle (Zod e motion fora da primeira
- * carga: 310 → 259 kB de JS na home) a home e o editor ficam em ~4,4 s e ~4,7 s neste teste, que
+ * carga: 310 → 259 kB de JS na home; 251 kB com as mensagens pré-compiladas) a home e o editor ficam em ~4,4 s e ~4,7 s neste teste, que
  * mede o `next start` em HTTP/1.1 (seis conexões, 21 pedidos); atrás de um proxy HTTP/2, como o
  * Cloudflare, caem para ~4,2 s. O que sobra é o React/Next (~165 kB de JS) e a fonte (49 kB);
  * o tempo oscila ±0,5 s entre execuções, então `PERF_BUDGET=enforce` faz reprovar, mas só vale
  * numa máquina quieta. O que reprova sempre é o peso do JS da primeira carga (determinístico).
  */
 const ENFORCE = process.env.PERF_BUDGET === 'enforce';
-/** JS da primeira carga (bytes na rede, gzip do `next start`), com ~5% de folga sobre o medido. */
+/** JS da primeira carga (bytes na rede, gzip do `next start`): o pedido até a página interativa. */
 const JS_BUDGET_KB = 275;
 
 /**
@@ -44,30 +44,42 @@ for (const target of PAGES) {
 
     const started = Date.now();
     await page.goto(target.path, { waitUntil: 'commit' });
-    await page.waitForFunction(
-      (selector) => {
-        const el = document.querySelector(selector);
-        return !!el && Object.keys(el).some((key) => key.startsWith('__reactProps'));
-      },
-      target.control,
-      { timeout: 20_000, polling: 50 },
+    // O instante (no relógio da página) em que o controle hidratou.
+    const hydratedAt = Number(
+      await (
+        await page.waitForFunction(
+          (selector) => {
+            const el = document.querySelector(selector);
+            const hydrated = !!el && Object.keys(el).some((key) => key.startsWith('__reactProps'));
+            return hydrated ? performance.now() : false;
+          },
+          target.control,
+          { timeout: 20_000, polling: 50 },
+        )
+      ).jsonValue(),
     );
     const hydrated = Date.now() - started;
-    const timing = await page.evaluate(() => {
+    const timing = await page.evaluate((hydratedAt) => {
       const nav = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
       const scripts = performance
         .getEntriesByType('resource')
         .filter((entry) => entry.name.endsWith('.js')) as PerformanceResourceTiming[];
+      const kb = (list: PerformanceResourceTiming[]) =>
+        list.reduce((sum, entry) => sum + entry.transferSize, 0) / 1024;
       return {
         ttfb: Math.round(nav.responseStart),
         dcl: Math.round(nav.domContentLoadedEventEnd),
-        jsKb: scripts.reduce((sum, entry) => sum + entry.transferSize, 0) / 1024,
+        // A primeira carga é o JS que já chegou quando a página ficou interativa. O chunk dos
+        // schemas Zod é pedido durante a hidratação, quando a API responde, e termina depois:
+        // contá-lo ou não dependia de quem acabava primeiro, ele ou esta leitura (±20 kB).
+        jsKb: kb(scripts.filter((entry) => entry.responseEnd <= hydratedAt)),
+        lateJsKb: kb(scripts.filter((entry) => entry.responseEnd > hydratedAt)),
       };
-    });
+    }, hydratedAt);
 
     test.info().annotations.push({
       type: 'tempos',
-      description: `pronto ${hydrated} ms · TTFB ${timing.ttfb} ms · DCL ${timing.dcl} ms · JS ${timing.jsKb.toFixed(1)} kB`,
+      description: `pronto ${hydrated} ms · TTFB ${timing.ttfb} ms · DCL ${timing.dcl} ms · JS ${timing.jsKb.toFixed(1)} kB (+${timing.lateJsKb.toFixed(1)} kB depois da hidratação)`,
     });
     expect(
       timing.jsKb,

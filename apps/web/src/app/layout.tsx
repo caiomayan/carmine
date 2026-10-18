@@ -109,8 +109,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
                   <FirstSteps
                     labels={{
-                      // Modelo com {name}: o nome vem da sessão no cliente, então vai sem formatar.
-                      title: tSteps.raw('title'),
+                      // Modelo com {name}: o nome vem da sessão no cliente, então o espaço dele segue literal.
+                      title: tSteps('title', { name: '{name}' }),
                       intro: tSteps('intro'),
                       close: tSteps('close'),
                       done: tSteps('done'),
