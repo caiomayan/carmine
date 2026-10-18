@@ -124,6 +124,8 @@ pnpm --filter @carmine/api servers create --name dm-local --mode deathmatch --ad
 
 A **Vaga reservada** (S14) é do Carmine.Core, configurada por `PublicSlots` e `ReservedSlots` no `Carmine.Core.json` (a etapa grava a partir do `profile.json`): o connect devolve `isVip`, e quem entra além das vagas públicas sem VIP sai na hora ("Servidor lotado: a vaga extra é reservada para VIP..."). No Retake, com um VIP na vaga extra, no fim do round sai um jogador sem VIP (espectador, depois AFK, depois o último que entrou), com a mensagem "Vaga liberada para um VIP. Há vaga em: [outro servidor]. Com o VIP, sua vaga é garantida." e 30 min de proteção; o cs2-retakes põe o VIP no jogo no round seguinte. Com a API fora, ninguém sai (falha aberta).
 
+**Linux (produção).** Em produção os mesmos perfis rodam em Ubuntu 24.04 com `infra/cs2/linux/install.sh` (uma unidade systemd por perfil, segredos em `/etc/carmine-cs2/<perfil>.env`; veja `infra/cs2/linux/README.md`). No beta a máquina é uma instância AWS ligada só nas sessões: `docs/operacao/aws-beta-cs2.md` e `infra/cs2/aws/cs2-beta.ps1`.
+
 ## Login Steam no site
 
 O web e a API ficam na mesma origem: o navegador chama sempre `/api/*` (ADR 0015). Em desenvolvimento o Next repassa `/api/*` para a API (`API_URL` no `apps/web/.env`, padrão `http://localhost:3333`); em produção quem separa é o Cloudflare Tunnel. A API precisa saber a origem pública do web em `PUBLIC_WEB_URL` (padrão `http://localhost:3000`).

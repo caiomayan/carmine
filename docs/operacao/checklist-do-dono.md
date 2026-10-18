@@ -128,6 +128,17 @@ Crie dois monitores HTTP (1 a 5 min): `https://stcarmine.com/` e `https://stcarm
 
 A A1 pode ser recolhida se ficar ociosa 7 dias (ADR 0009). O Carmine usa pouco (~0,4 GB de 12 GB). Decida com quem conduz: converter a conta Oracle para *Pay As You Go* (continua sem custo dentro do Always Free) ou aceitar o risco e manter os backups no R2 (que já permitem recriar a VM). Veja `docs/operacao/orcamento-operacional.md`.
 
+## 15. Servidores CS2 do beta (S09b)
+
+O site já está no ar; para os amigos jogarem falta a instância AWS com os dois servidores. Tudo está em `docs/operacao/aws-beta-cs2.md`; os pontos que só você faz:
+
+- [ ] Conta AWS com MFA, plano pago (créditos mantidos), região `sa-east-1`, orçamentos de US$ 10/20/40 e usuário IAM `carmine-operator`.
+- [ ] Instância `m6a.xlarge` com disco gp3 de 100 GB, Security Group só com UDP 27015–27016 e Elastic IP (o runbook tem os comandos).
+- [ ] Deploy key de leitura do repositório na instância.
+- [ ] Dois tokens GSLT (um por servidor, contas Steam distintas) e as duas chaves de Servidor Carmine (`servers create` na VM de produção) coladas em `/etc/carmine-cs2/<perfil>.env`.
+- [ ] Combinar com quem conduz: o `servers create` usa o Elastic IP, e a instalação baixa ~69 GB (ok para você?).
+- [ ] Hábito: `cs2-beta.ps1 stop` ao fim de cada sessão (ligada custa ~US$ 6,7 por dia).
+
 ## Depois
 
 - Se faltar um segredo, o serviço correspondente fica desligado, não quebrado: sem DSN, sem Sentry; sem webhook, sem alertas; sem chave da Steam, avatar neutro; **sem as credenciais do R2, o backup noturno falha e avisa**.
