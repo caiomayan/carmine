@@ -3,10 +3,11 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountsService } from '../src/accounts/accounts.service.js';
 import { AvatarRefresher } from '../src/accounts/avatar-refresher.js';
 import { DisplayNames } from '../src/accounts/display-names.js';
-import { accounts } from '../src/database/schema.js';
+import { accountStatsWeekly, accounts } from '../src/database/schema.js';
 import { StaffAuditLog } from '../src/staff/audit-log.js';
 import { runStaffCli } from '../src/staff/staff.cli-commands.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
+import { RankingRemovals } from '../src/stats/ranking-removals.js';
 import { steamIdFor } from './support/app.js';
 import { startPostgres, type TestPostgres } from './support/postgres.js';
 
@@ -38,6 +39,7 @@ describe('CLI staff (S07)', () => {
       },
       roles,
       displayNames: new DisplayNames(postgres.db),
+      rankingRemovals: new RankingRemovals(postgres.db),
       out: (line) => out.push(line),
       err: (line) => err.push(line),
     });
@@ -86,6 +88,44 @@ describe('CLI staff (S07)', () => {
     const noReason = await run('reset-name', '--steam-id', steamId, '--by', by);
     expect(noReason.code).toBe(1);
     expect(noReason.err).toContain('--reason é obrigatório');
+  });
+
+  it('ranking-remove tira a entrada do Ranking, registra o motivo e mantém as Estatísticas', async () => {
+    const steamId = steamIdFor(8);
+    const { account } = await accountsService.claimOnLogin(steamId);
+    await postgres.db
+      .insert(accountStatsWeekly)
+      .values({ accountId: account.id, mode: 'retake', weekStart: '2026-10-12', kills: 3 });
+    const args = (week: string) => [
+      'ranking-remove',
+      '--steam-id',
+      steamId,
+      '--mode',
+      'retake',
+      '--week',
+      week,
+      '--by',
+      steamIdFor(1),
+      '--reason',
+      'bot farm',
+    ];
+
+    const done = await run(...args('2026-10-12'));
+    const again = await run(...args('2026-10-12'));
+    const notMonday = await run(...args('2026-10-13'));
+
+    expect(done.code, done.err).toBe(0);
+    expect(done.out).toContain('saiu do Ranking de retake da semana 2026-10-12');
+    expect(again.err).toContain('já foi removida');
+    expect(notMonday.err).toContain('segunda-feira');
+    const { entries } = await new StaffAuditLog(postgres.db).page({ targetSteamId: steamId });
+    expect(entries[0]).toMatchObject({
+      action: 'ranking_entry_remove',
+      reason: 'bot farm',
+      details: { mode: 'retake', weekStart: '2026-10-12' },
+    });
+    const [stats] = await postgres.db.select().from(accountStatsWeekly);
+    expect(stats?.kills).toBe(3);
   });
 
   it('não tira o último Dono', async () => {

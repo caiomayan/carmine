@@ -54,6 +54,7 @@ export const STAFF_PERMISSIONS = {
   'audit.read': ['owner', 'admin'],
   'roles.manage': ['owner'],
   'accounts.anonymize': ['owner'],
+  'ranking.remove': ['owner', 'admin', 'moderator'],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type StaffPermission = keyof typeof STAFF_PERMISSIONS;
@@ -160,6 +161,7 @@ export const staffAuditActionSchema = z
     'server_update',
     'account_anonymize',
     'account_reserved_id',
+    'ranking_entry_remove',
   ])
   .meta({ id: 'StaffAuditAction' });
 
@@ -446,6 +448,10 @@ export const STAFF_ERROR_CODES = [
   'server_code_taken',
   /** A Conta já foi anonimizada por um pedido de exclusão de dados. */
   'account_anonymized',
+  /** A Conta não tem Estatísticas nesse Modo e semana, então não há entrada a remover. */
+  'ranking_entry_not_found',
+  /** A entrada já foi removida do Ranking. */
+  'ranking_entry_already_removed',
 ] as const;
 
 export type StaffErrorCode = (typeof STAFF_ERROR_CODES)[number];
@@ -465,6 +471,8 @@ export const STAFF_ERROR_STATUS: Record<StaffErrorCode, number> = {
   last_owner: 409,
   server_code_taken: 409,
   account_anonymized: 409,
+  ranking_entry_not_found: 404,
+  ranking_entry_already_removed: 409,
 };
 
 export const staffErrorSchema = z

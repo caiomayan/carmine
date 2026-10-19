@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import type { Redis } from 'ioredis';
 import { AccountErasure } from '../accounts/account-erasure.js';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { AccountsService } from '../accounts/accounts.service.js';
@@ -12,6 +13,9 @@ import { GameServerRegistry } from '../game-servers/game-server-registry.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { ModerationModule } from '../moderation/moderation.module.js';
 import { Sanctions } from '../moderation/sanctions.js';
+import { RankingCache } from '../stats/ranking-cache.js';
+import { RankingRemovals } from '../stats/ranking-removals.js';
+import { VALKEY } from '../valkey/valkey.module.js';
 import { VipModule } from '../vip/vip.module.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { StaffAuditLog } from './audit-log.js';
@@ -46,6 +50,7 @@ import { StaffRoles } from './staff-roles.js';
         SessionStore,
         GameServerRegistry,
         EquippedCache,
+        VALKEY,
       ],
       useFactory: (
         db: Database,
@@ -58,6 +63,7 @@ import { StaffRoles } from './staff-roles.js';
         sessions: SessionStore,
         servers: GameServerRegistry,
         equipped: EquippedCache,
+        valkey: Redis,
       ) =>
         new StaffPanel({
           db,
@@ -74,6 +80,9 @@ import { StaffRoles } from './staff-roles.js';
             invalidateEquipped: (steamId) => equipped.invalidate(steamId),
           }),
           invalidateEquipped: (steamId) => equipped.invalidate(steamId),
+          rankingRemovals: new RankingRemovals(db, (mode, weekStart) =>
+            new RankingCache(valkey).invalidate(mode, weekStart),
+          ),
         }),
     },
   ],

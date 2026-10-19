@@ -4,6 +4,7 @@ import { DisplayNames } from '../accounts/display-names.js';
 import { loadConfig } from '../config/config.js';
 import { createDatabase } from '../database/database.js';
 import { accounts } from '../database/schema.js';
+import { RankingRemovals } from '../stats/ranking-removals.js';
 import { runStaffCli } from './staff.cli-commands.js';
 import { StaffRoles } from './staff-roles.js';
 
@@ -22,6 +23,7 @@ try {
     },
     roles: new StaffRoles(db),
     displayNames: new DisplayNames(db),
+    rankingRemovals: new RankingRemovals(db),
     out: (line) => console.log(line),
     err: (line) => console.error(line),
   });

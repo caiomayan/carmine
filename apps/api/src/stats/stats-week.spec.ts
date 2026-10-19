@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitByWeek, weekStartOf } from './stats-week.js';
+import { parseWeekStart, splitByWeek, weekEndOf, weekStartOf } from './stats-week.js';
 
 describe('weekStartOf', () => {
   it('a semana começa na segunda-feira às 00:00 de Brasília', () => {
@@ -38,5 +38,27 @@ describe('splitByWeek', () => {
     const at = new Date('2026-10-14T20:00:00-03:00');
     expect(splitByWeek(at, at)).toEqual([]);
     expect(splitByWeek(at, new Date(at.getTime() - 1000))).toEqual([]);
+  });
+});
+
+describe('parseWeekStart', () => {
+  it('aceita só a segunda-feira (YYYY-MM-DD)', () => {
+    expect(parseWeekStart('2026-10-12')).toBe('2026-10-12');
+    expect(parseWeekStart('2026-10-13')).toBeNull();
+    expect(parseWeekStart('2026-10-18')).toBeNull();
+  });
+
+  it('recusa o que não é uma data', () => {
+    expect(parseWeekStart('2026-13-01')).toBeNull();
+    expect(parseWeekStart('2026-02-30')).toBeNull();
+    expect(parseWeekStart('12/10/2026')).toBeNull();
+    expect(parseWeekStart('')).toBeNull();
+  });
+});
+
+describe('weekEndOf', () => {
+  it('o fim é o domingo da mesma semana', () => {
+    expect(weekEndOf('2026-10-12')).toBe('2026-10-18');
+    expect(weekEndOf('2026-12-28')).toBe('2027-01-03');
   });
 });

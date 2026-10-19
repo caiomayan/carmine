@@ -1,16 +1,21 @@
 import { Module } from '@nestjs/common';
+import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
+import { VALKEY } from '../valkey/valkey.module.js';
 import { GameEventIngest } from './game-event-ingest.js';
 import { GameEventsController } from './game-events.controller.js';
 import { ProfileStatsController } from './profile-stats.controller.js';
 import { ProfileStatsReader } from './profile-stats.js';
+import { RankingController } from './ranking.controller.js';
+import { RankingCache } from './ranking-cache.js';
+import { WeeklyRanking } from './weekly-ranking.js';
 
 /** Eventos do jogo e Estatísticas das Contas (S12). */
 @Module({
   imports: [GameServersModule, AccountsModule],
-  controllers: [GameEventsController, ProfileStatsController],
+  controllers: [GameEventsController, ProfileStatsController, RankingController],
   providers: [
     {
       provide: GameEventIngest,
@@ -21,6 +26,11 @@ import { ProfileStatsReader } from './profile-stats.js';
       provide: ProfileStatsReader,
       inject: [DATABASE],
       useFactory: (db: Database) => new ProfileStatsReader(db),
+    },
+    {
+      provide: WeeklyRanking,
+      inject: [DATABASE, VALKEY],
+      useFactory: (db: Database, valkey: Redis) => new WeeklyRanking(db, new RankingCache(valkey)),
     },
   ],
 })

@@ -3,7 +3,9 @@ import {
   type ApplySanctions,
   accountAnonymizedSchema,
   applySanctionsSchema,
+  type RemoveRankingEntry,
   type RevokeSanction,
+  removeRankingEntrySchema,
   revokeSanctionSchema,
   type SetStaffRole,
   STAFF_AUDIT_PAGE_DEFAULT,
@@ -230,6 +232,27 @@ export class StaffController {
     @Body({ schema: staffReasonBodySchema }) body: StaffReasonBody,
   ): Promise<StaffAccountDetail> {
     return this.panel.resetDisplayName(actor, publicId, body.reason);
+  }
+
+  @Post('accounts/:publicId/ranking-removals')
+  @StaffOnly('ranking.remove')
+  @RateLimit('mutations')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    operationId: 'removeRankingEntry',
+    summary:
+      'Tira a Conta do Ranking de um Modo e semana (S12), com motivo; as Estatísticas continuam',
+  })
+  @ApiParam({ name: 'publicId', type: 'integer', example: 10_016 })
+  @ApiOkResponse({ description: 'Removida', standardSchema: staffAccountDetailSchema })
+  @ApiNotFoundResponse(ERROR)
+  @ApiConflictResponse(ERROR)
+  removeRankingEntry(
+    @CurrentStaff() actor: StaffActor,
+    @Param('publicId', { schema: publicIdParam }) publicId: number,
+    @Body({ schema: removeRankingEntrySchema }) body: RemoveRankingEntry,
+  ): Promise<StaffAccountDetail> {
+    return this.panel.removeFromRanking(actor, publicId, body);
   }
 
   @Put('accounts/:publicId/role')
