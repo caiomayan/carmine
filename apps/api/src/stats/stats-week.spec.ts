@@ -34,6 +34,14 @@ describe('splitByWeek', () => {
     ]);
   });
 
+  it('os pedaços somam a duração inteira mesmo com milissegundos na virada', () => {
+    const start = new Date('2026-10-19T02:38:08.245Z');
+    const end = new Date(start.getTime() + 30 * 60 * 1000);
+    const pieces = splitByWeek(start, end);
+    expect(pieces.map((piece) => piece.weekStart)).toEqual(['2026-10-12', '2026-10-19']);
+    expect(pieces.reduce((sum, piece) => sum + piece.seconds, 0)).toBe(1800);
+  });
+
   it('fim antes ou igual ao início não rende pedaço', () => {
     const at = new Date('2026-10-14T20:00:00-03:00');
     expect(splitByWeek(at, at)).toEqual([]);
