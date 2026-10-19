@@ -928,7 +928,8 @@
       "label": "Seções do painel da Staff",
       "accounts": "Contas",
       "audit": "Auditoria",
-      "servers": "Servidores"
+      "servers": "Servidores",
+      "reports": "Denúncias"
     },
     "roles": {
       "owner": "Dono",
@@ -1022,7 +1023,9 @@
         "invalidUrl": "Use um link que comece com http:// ou https://.",
         "publicCheat": "No Perfil público, aparece como “Cheat” (há evidência anexada).",
         "publicRules": "No Perfil público, aparece como “Violação das regras” (sem evidência anexada)."
-      }
+      },
+      "fromReport": "Esta Punição vem de uma Denúncia da fila: ao aplicar, a Denúncia é fechada como punida.",
+      "fromReportEvidence": "Esta Punição vem de uma Denúncia de cheat ou de voz. Sem demo, a Denúncia sozinha não basta: informe a testemunha ou o link da evidência (por exemplo, um clipe enviado no Discord)."
     },
     "history": {
       "title": "Histórico de punições",
@@ -1113,7 +1116,8 @@
         "server_update": "Editou servidor",
         "account_anonymize": "Anonimizou a Conta",
         "account_reserved_id": "Trocou o ID por um ID reservado",
-        "ranking_entry_remove": "Removeu do Ranking"
+        "ranking_entry_remove": "Removeu do Ranking",
+        "report_archive": "Arquivou uma Denúncia"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
@@ -1152,7 +1156,11 @@
       "account_anonymized": "Esta Conta já foi anonimizada por um pedido de exclusão de dados.",
       "unknown": "Não deu certo agora. Tente de novo em instantes.",
       "ranking_entry_not_found": "A Conta não tem Estatísticas nesse Modo e semana.",
-      "ranking_entry_already_removed": "Essa entrada já foi removida do Ranking."
+      "ranking_entry_already_removed": "Essa entrada já foi removida do Ranking.",
+      "report_not_found": "Essa Denúncia não existe mais (ela some 90 dias depois de criada).",
+      "report_not_open": "Essa Denúncia já foi arquivada ou virou Punição.",
+      "report_target_mismatch": "Essa Denúncia é contra outra Conta.",
+      "report_needs_evidence": "Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link."
     },
     "ranking": {
       "title": "Ranking",
@@ -1161,6 +1169,48 @@
       "week": "Semana (segunda-feira)",
       "submit": "Remover do Ranking",
       "done": "Entrada removida do Ranking."
+    },
+    "reports": {
+      "title": "Denúncias",
+      "subtitle": "{count, plural, =0 {Nenhuma Denúncia aberta} one {# Denúncia aberta} other {# Denúncias abertas}}. A Staff analisa em até 72 h; as mais antigas vêm primeiro.",
+      "subtitleBare": "Denúncias feitas no jogo com o !report.",
+      "tabs": {
+        "label": "Estado das Denúncias",
+        "open": "Abertas",
+        "archived": "Arquivadas",
+        "sanctioned": "Punidas"
+      },
+      "empty": {
+        "open": "Nenhuma Denúncia aberta. Quando alguém usar o !report no jogo, ela aparece aqui.",
+        "archived": "Nenhuma Denúncia arquivada.",
+        "sanctioned": "Nenhuma Denúncia virou Punição ainda."
+      },
+      "cardLabel": "Denúncia contra {name}",
+      "serverUnknown": "Servidor desconhecido",
+      "round": "round {round}",
+      "reportedBy": "denunciado por",
+      "reporterGone": "denunciante com os dados excluídos",
+      "others": "{count, plural, one {Mais # Denúncia aberta contra este jogador} other {Mais # Denúncias abertas contra este jogador}}",
+      "needsEvidence": "Cheat e voz: sem demo, a Denúncia sozinha não gera Punição. Só com evidência adicional (testemunha ou clipe enviado no Discord).",
+      "chat": {
+        "title": "Chat do momento ({count, plural, one {# linha} other {# linhas}})",
+        "empty": "Nenhuma linha de chat nos 5 minutos antes da Denúncia.",
+        "team": "time"
+      },
+      "openAccount": "Abrir a Conta",
+      "sanction": "Aplicar Punição",
+      "archive": {
+        "open": "Arquivar com motivo",
+        "submit": "Arquivar Denúncia",
+        "done": "Denúncia arquivada."
+      },
+      "resolution": {
+        "sanctioned": "Virou Punição, aplicada por {name}.",
+        "archived": "Arquivada por {name}: {reason}"
+      },
+      "loadMore": "Carregar mais",
+      "loadFailed": "Não deu para carregar mais agora.",
+      "end": "Fim da fila."
     }
   },
   "refund": {

@@ -75,7 +75,7 @@ Para uma versão nova do plugin (por exemplo, o envio de eventos da S12) não é
    journalctl -fu carmine-plugin        # termina com "Pronto."
    ```
 
-5. Suba e confira: `systemctl start carmine-cs2.target`. `journalctl -u carmine-cs2@retake -n 50` deve mostrar "Carmine.Core: API no ar" (e nenhum "eventos do jogo não chegaram"); `css_plugins list` no console mostra o Carmine.Core na versão nova (0.9.0 para a S12). Entre no jogo, mate alguém e, em até 1 minuto, `https://stcarmine.com/api/profiles/<seu ID público>/stats` mostra a kill.
+5. Suba e confira: `systemctl start carmine-cs2.target`. `journalctl -u carmine-cs2@retake -n 50` deve mostrar "Carmine.Core: API no ar" (e nenhum "eventos do jogo não chegaram"); `css_plugins list` no console mostra o Carmine.Core na versão nova (0.9.0 para a S12, 0.10.0 para a S13: `!report` e o log de chat). Entre no jogo, mate alguém e, em até 1 minuto, `https://stcarmine.com/api/profiles/<seu ID público>/stats` mostra a kill.
 6. Na AWS, desligue ao fim da sessão (`cs2-beta.ps1 stop`).
 
 Sem o terminal interativo, o mesmo pelo SSM (Windows PowerShell; troque `<ID>` pelo id da instância, `cs2-beta.ps1 status` mostra):

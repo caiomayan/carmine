@@ -163,5 +163,9 @@ O pedido do jogador para rever uma Punição, feito por ticket no Discord, com r
 _Evitar_: apelação, contestação
 
 **Denúncia** (`Report`):
-Um aviso de um jogador sobre outro, feito dentro do jogo e enviado à fila da Staff.
+Um aviso de um jogador sobre outro, feito dentro do jogo com o `!report` e enviado à fila da Staff, com o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro), o servidor, o mapa, o round, o horário e uma cópia das últimas linhas do chat. Vale 1 por alvo a cada 10 minutos e 5 por hora, por denunciante (a API recusa o excedente e diz quando tentar de novo). Fica na fila até a Staff arquivá-la com motivo ou aplicar uma Punição a partir dela; some 90 dias depois de criada. Denúncia de cheat ou voz sozinha não gera Punição: só com evidência adicional.
 _Evitar_: report, reclamação
+
+**Log de chat** (`chat_messages`):
+O registro de tudo o que é dito no chat dos Servidores Carmine (com o horário, o time de quem falou e se foi chat de time), retido por 30 dias, para a moderação. Registra o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off`.
+_Evitar_: histórico de chat, chat log

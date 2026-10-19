@@ -71,6 +71,11 @@ No **PowerShell** o `-N ""` não funciona: ele grava uma senha literal `""` na c
 Servidor do Carmine > crie o canal privado `#alertas` > ⚙ **Editar canal > Integrações > Webhooks > Novo webhook** > **Copiar URL do webhook**.
 → **.env da VM**: `DISCORD_ALERT_WEBHOOK_URL`.
 
+### Denúncias da Staff (S13)
+
+Outro canal privado, só da Staff (`#denuncias-staff`), com o seu próprio webhook (o mesmo caminho: ⚙ **Editar canal > Integrações > Webhooks > Novo webhook**). Cada `!report` no jogo cai ali em segundos, com o motivo, o alvo, o servidor e o link da fila.
+→ **.env da VM**: `STAFF_REPORTS_WEBHOOK_URL`. Depois `sudo /opt/carmine/bin/dc up -d api`. Detalhes em [denuncias-e-log-de-chat.md](denuncias-e-log-de-chat.md).
+
 ## 7. Sentry
 
 1. <https://sentry.io>: crie a organização (plano Developer, grátis) e **dois projetos**: `carmine-api` (plataforma *Node.js*) e `carmine-web` (plataforma *Next.js*).
