@@ -142,10 +142,12 @@ export const reportStatusSchema = z
 
 export type ReportStatus = z.infer<typeof reportStatusSchema>;
 
-const reportPersonSchema = z.object({
-  publicId: z.int().positive(),
-  displayName: z.string().min(1),
-});
+const reportPersonSchema = z
+  .object({
+    publicId: z.int().positive(),
+    displayName: z.string().min(1),
+  })
+  .meta({ id: 'ReportPerson' });
 
 /** Uma Denúncia na fila da Staff (`GET /api/staff/reports`, permissão `reports.handle`). */
 export const staffReportSchema = z
@@ -164,6 +166,7 @@ export const staffReportSchema = z
         code: z.string().nullable(),
         mode: gameModeSchema,
       })
+      .meta({ id: 'StaffReportServer' })
       .nullable(),
     map: z.string().nullable(),
     round: z.int().nonnegative().nullable(),
@@ -175,10 +178,13 @@ export const staffReportSchema = z
     resolution: z
       .object({
         at: z.iso.datetime({ offset: true }),
-        by: z.object({ publicId: z.int().positive().nullable(), displayName: z.string().nullable() }),
+        by: z
+          .object({ publicId: z.int().positive().nullable(), displayName: z.string().nullable() })
+          .meta({ id: 'StaffReportResolver' }),
         /** Motivo do arquivamento; nulo quando virou Punição. */
         reason: z.string().nullable(),
       })
+      .meta({ id: 'StaffReportResolution' })
       .nullable(),
   })
   .meta({ id: 'StaffReport' });

@@ -56,7 +56,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private const float KickDelaySeconds = 5.0f;
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.9.0";
+    public override string ModuleVersion => "0.10.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -107,6 +107,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _chat = new ChatPreferences(client);
         LoadReservedSlots(client, hotReload);
         LoadEvents(client, hotReload);
+        LoadReports(client);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
@@ -154,6 +155,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _welcomes = null;
         _heartbeat = null;
         _chat = null;
+        _reportDialog = null;
+        _reportSender = null;
     }
 
     private HookResult OnPlayerConnectFull(EventPlayerConnectFull @event, GameEventInfo info)
@@ -228,6 +231,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _loadoutNotices.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
+            _reportDialog?.Forget(player.SteamID);
             _kicking.Remove(player.SteamID);
             _reservedSlots?.OnLeave(player.SteamID);
             _recorder?.PlayerLeft(player.SteamID);
@@ -394,11 +398,22 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
     }
 
-    /// <summary>Gag: a mensagem não sai (comandos de uma palavra, como !ws, passam).</summary>
+    /// <summary>
+    /// Gag: a mensagem não sai (comandos de uma palavra, como !ws, passam). A que sai vai para o log
+    /// de chat (S13); a barrada pelo gag nunca chegou a ninguém e fica de fora.
+    /// </summary>
     private HookResult OnSay(CCSPlayerController? player, CommandInfo info)
     {
-        if (player is null || !IsHuman(player) || _sanctions.GagMessage(player.SteamID) is not { } message)
+        if (player is null || !IsHuman(player))
         {
+            return HookResult.Continue;
+        }
+        if (_sanctions.GagMessage(player.SteamID) is not { } message)
+        {
+            if (PlayerRefOf(player) is { } speaker)
+            {
+                _recorder?.Chat(speaker, teamChat: info.GetArg(0) == "say_team", info.GetArg(1));
+            }
             return HookResult.Continue;
         }
         if (SanctionEnforcer.IsChatCommand(info.GetArg(1).Trim()))

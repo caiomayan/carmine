@@ -1,3 +1,4 @@
+using Carmine.Api.Client;
 using Microsoft.Extensions.Logging;
 
 namespace Carmine.Core;
@@ -59,4 +60,7 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: {Count} evento(s) do jogo não saíram antes de o plugin descarregar")]
     public static partial void EventsLeftBehind(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: Denúncia de {Reporter} contra {Target} ({Reason}); aceita: {Accepted}")]
+    public static partial void ReportSent(ILogger logger, ulong reporter, ulong target, ReportReason reason, bool accepted);
 }

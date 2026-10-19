@@ -3548,6 +3548,183 @@
         ]
       }
     },
+    "/api/staff/reports": {
+      "get": {
+        "operationId": "listStaffReports",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1 a 100",
+            "schema": {}
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "`nextCursor` da página anterior",
+            "schema": {}
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "archived",
+                "sanctioned"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uma página",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffReportPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"reports.handle\""
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Fila de Denúncias (S13) com o chat do momento, o servidor e o round; as abertas, das mais antigas",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/reports/{id}/archive": {
+      "post": {
+        "operationId": "archiveStaffReport",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Arquivada"
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"reports.handle\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Arquiva uma Denúncia aberta, com motivo (vai para o log de auditoria)",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/staff/audit": {
       "get": {
         "operationId": "listStaffAudit",
@@ -3582,7 +3759,8 @@
                 "server_update",
                 "account_anonymize",
                 "account_reserved_id",
-                "ranking_entry_remove"
+                "ranking_entry_remove",
+                "report_archive"
               ],
               "type": "string"
             }
@@ -3846,6 +4024,72 @@
         "summary": "Ranking semanal de um Modo (top 50); quem está logado recebe também a própria posição ou o progresso até o mínimo",
         "tags": [
           "ranking"
+        ]
+      }
+    },
+    "/api/server/reports": {
+      "post": {
+        "operationId": "createReport",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aceita ou recusada (com `message` pronta para o chat e, nos limites, `retryAfterSeconds`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Registra a Denúncia (`!report`) de um jogador contra outro; aplica os limites e avisa a Staff",
+        "tags": [
+          "server"
         ]
       }
     }
@@ -6285,7 +6529,8 @@
           "server_update",
           "account_anonymize",
           "account_reserved_id",
-          "ranking_entry_remove"
+          "ranking_entry_remove",
+          "report_archive"
         ]
       },
       "StaffError": {
@@ -6314,7 +6559,11 @@
               "server_code_taken",
               "account_anonymized",
               "ranking_entry_not_found",
-              "ranking_entry_already_removed"
+              "ranking_entry_already_removed",
+              "report_not_found",
+              "report_not_open",
+              "report_target_mismatch",
+              "report_needs_evidence"
             ]
           },
           "message": {
@@ -6356,6 +6605,11 @@
             "type": "string",
             "maxLength": 500,
             "format": "uri"
+          },
+          "reportId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
         "required": [
@@ -6630,6 +6884,279 @@
         ],
         "additionalProperties": false
       },
+      "StaffReportPage": {
+        "type": "object",
+        "properties": {
+          "reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffReport"
+            }
+          },
+          "nextCursor": {
+            "nullable": true,
+            "type": "string"
+          },
+          "openCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "reports",
+          "nextCursor",
+          "openCount"
+        ],
+        "additionalProperties": false
+      },
+      "StaffReport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ReportStatus"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ReportReason"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "target": {
+            "$ref": "#/components/schemas/ReportPerson"
+          },
+          "reporter": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportPerson"
+              }
+            ]
+          },
+          "server": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffReportServer"
+              }
+            ]
+          },
+          "map": {
+            "nullable": true,
+            "type": "string"
+          },
+          "round": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "chat": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReportChatLine"
+            }
+          },
+          "otherOpenAgainstTarget": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "needsEvidence": {
+            "type": "boolean"
+          },
+          "resolution": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffReportResolution"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "reason",
+          "createdAt",
+          "target",
+          "reporter",
+          "server",
+          "map",
+          "round",
+          "chat",
+          "otherOpenAgainstTarget",
+          "needsEvidence",
+          "resolution"
+        ],
+        "additionalProperties": false
+      },
+      "ReportStatus": {
+        "type": "string",
+        "enum": [
+          "open",
+          "archived",
+          "sanctioned"
+        ]
+      },
+      "ReportReason": {
+        "type": "string",
+        "enum": [
+          "cheat",
+          "voice",
+          "offensive_chat",
+          "griefing",
+          "other"
+        ]
+      },
+      "ReportPerson": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "publicId",
+          "displayName"
+        ],
+        "additionalProperties": false
+      },
+      "StaffReportServer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "code": {
+            "nullable": true,
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "ReportChatLine": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "publicId": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/ChatTeam"
+          },
+          "teamChat": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          },
+          "fromTarget": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "at",
+          "publicId",
+          "displayName",
+          "team",
+          "teamChat",
+          "text",
+          "fromTarget"
+        ],
+        "additionalProperties": false
+      },
+      "ChatTeam": {
+        "type": "string",
+        "enum": [
+          "ct",
+          "t",
+          "spectator"
+        ]
+      },
+      "StaffReportResolution": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "by": {
+            "$ref": "#/components/schemas/StaffReportResolver"
+          },
+          "reason": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "by",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "StaffReportResolver": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "publicId",
+          "displayName"
+        ],
+        "additionalProperties": false
+      },
       "StaffAuditPage": {
         "type": "object",
         "properties": {
@@ -6686,6 +7213,13 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/SessionEndEvent"
+            }
+          },
+          "chatMessages": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageEvent"
             }
           }
         },
@@ -6940,6 +7474,43 @@
           "sessionId",
           "steamId",
           "startedAt"
+        ]
+      },
+      "ChatMessageEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "steamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "team": {
+            "$ref": "#/components/schemas/ChatTeam"
+          },
+          "teamChat": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "steamId",
+          "team",
+          "teamChat",
+          "text"
         ]
       },
       "EventBatchResult": {
@@ -7307,6 +7878,81 @@
           "missing"
         ],
         "additionalProperties": false
+      },
+      "CreateReport": {
+        "type": "object",
+        "properties": {
+          "reporterSteamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "targetSteamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/ReportReason"
+          },
+          "round": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "map": {
+            "nullable": true,
+            "type": "string",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "reporterSteamId",
+          "targetSteamId",
+          "reason",
+          "round",
+          "map"
+        ]
+      },
+      "ReportResult": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "refusal": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportRefusal"
+              }
+            ]
+          },
+          "retryAfterSeconds": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "accepted",
+          "message",
+          "refusal",
+          "retryAfterSeconds"
+        ],
+        "additionalProperties": false
+      },
+      "ReportRefusal": {
+        "type": "string",
+        "enum": [
+          "self",
+          "unknown_account",
+          "same_target_cooldown",
+          "hourly_limit"
+        ]
       }
     }
   }
