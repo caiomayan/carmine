@@ -76,6 +76,11 @@ Servidor do Carmine > crie o canal privado `#alertas` > ⚙ **Editar canal > Int
 Outro canal privado, só da Staff (`#denuncias-staff`), com o seu próprio webhook (o mesmo caminho: ⚙ **Editar canal > Integrações > Webhooks > Novo webhook**). Cada `!report` no jogo cai ali em segundos, com o motivo, o alvo, o servidor e o link da fila.
 → **.env da VM**: `STAFF_REPORTS_WEBHOOK_URL`. Depois `sudo /opt/carmine/bin/dc up -d api`. Detalhes em [denuncias-e-log-de-chat.md](denuncias-e-log-de-chat.md).
 
+### Discord integrado (S15, opcional)
+
+Vínculo da Conta, cargos Jogador/VIP/Staff/Dono e a mensagem de status dos servidores. Sem as variáveis, ficam desligados, sem erro. Passo a passo no Developer Portal, cargos, permissões do bot e IDs: [discord.md](discord.md).
+→ **.env da VM**: `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID`, `DISCORD_ROLE_*_ID` e `DISCORD_STATUS_CHANNEL_ID`.
+
 ## 7. Sentry
 
 1. <https://sentry.io>: crie a organização (plano Developer, grátis) e **dois projetos**: `carmine-api` (plataforma *Node.js*) e `carmine-web` (plataforma *Next.js*).

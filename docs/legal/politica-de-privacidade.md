@@ -1,7 +1,7 @@
 ---
 title: Política de Privacidade
 updatedAt: 2026-10-19
-version: 0.4.0
+version: 0.5.0
 ---
 
 Esta página explica quais dados pessoais o Carmine usa, para quê, com quem compartilha, por quanto tempo guarda e como você pode controlar tudo isso. Ela segue a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).
@@ -46,6 +46,7 @@ O Carmine **não grava a voz**. Uma gravação de voz só chega a nós se algué
 | **Inventário, Loadout e Presets** | Montar e aplicar as suas skins simuladas no jogo |
 | **Lista de amigos Steam** (consultada na Steam Web API) | Mostrar "seus amigos jogando agora". Fica em cache por cerca de 60 segundos e não é guardada no banco de dados |
 | Configurações, como o Perfil privado | Respeitar as suas escolhas |
+| **Vínculo com o Discord** (opcional): o ID e o nome de usuário do seu Discord, a data do vínculo e quais cargos foram aplicados | Dar a você, no servidor do Carmine no Discord, os cargos de Jogador, VIP e Staff. É só um vínculo: não é um login (a Steam continua sendo a única forma de entrar) e não guardamos a sua senha, o seu e-mail nem o token de acesso do Discord. Você nunca é obrigado a vincular |
 | Endereço IP e dados técnicos do navegador | Segurança, limite de uso por IP e diagnóstico de erros |
 | Cookies essenciais (sessão e proteção CSRF) e armazenamento local do navegador (tema e edições não salvas) | Manter você logado com segurança e não perder edições |
 
@@ -65,6 +66,12 @@ Os dados do Pix, como banco e conta, ficam com o Mercado Pago. O Carmine não re
 ### Quando você fala com a gente
 
 Se você abre um ticket no Discord ou usa a página de contato, usamos o que você enviar (incluindo o seu usuário do Discord) para responder e resolver o pedido.
+
+### Se você vincula o Discord
+
+Nos ajustes do seu Perfil você pode ligar o seu Discord à sua Conta. Para isso você autoriza o Carmine na tela do próprio Discord, com permissão apenas para ver quem você é (identify) e para entrar no nosso servidor (guilds.join). Usamos a autorização uma única vez, na hora, para ler o seu ID e o seu nome de usuário e colocar você no servidor; depois ela é descartada. Guardamos só o ID e o nome de usuário do Discord, para saber a quem dar os cargos. O Discord não recebe o seu SteamID64 nem o seu Nome de exibição: o servidor só vê que você é um jogador, VIP ou da Staff, pelos cargos. Um Discord só pode estar ligado a uma Conta.
+
+**Para desvincular:** use o botão "Desvincular" nos ajustes do seu Perfil. Os cargos do Carmine são retirados na hora e o vínculo é apagado do nosso banco. Também dá para revogar a autorização nas configurações do próprio Discord (Aplicativos autorizados); nesse caso o vínculo e os cargos continuam até você desvincular no site. Se você pedir a exclusão da Conta, o vínculo é apagado junto.
 
 ## 3. Por que podemos usar esses dados (bases legais)
 
@@ -113,7 +120,7 @@ Não vendemos dados pessoais. Compartilhamos só o necessário com quem nos ajud
 | **Provedor da VPS dos servidores de jogo**, no Brasil [DONO: nome do provedor] | O seu IP e o que acontece no servidor | Hospedagem dos Servidores Carmine |
 | **3d.cstrike.app** (visualizador 3D de Ian Lucas) | Os atributos do Item que você está vendo e o seu IP, porque o visualizador carrega dentro do site | Mostrar as skins em 3D. O visualizador também envia relatórios de erro para uma ferramenta de telemetria (GlitchTip) operada pelo próprio visualizador |
 | **Sentry** (os dados ficam na Alemanha, na União Europeia) | Dados técnicos de erros do site, da API e dos plugins, que podem incluir o seu SteamID64 e o seu IP | Achar e corrigir erros |
-| **Discord** | O que você envia nos tickets; e, a cada Denúncia nova, um aviso no canal da Staff com o motivo, o nome e o ID público de quem foi denunciado, o servidor e o link da fila (sem o chat e sem o nome de quem denunciou) | Suporte e moderação |
+| **Discord** | O que você envia nos tickets; o que você autorizar no vínculo opcional do Discord (o seu ID e nome de usuário) e os cargos que damos a você no servidor; a mensagem de status dos servidores (sem dados de jogadores); e, a cada Denúncia nova, um aviso no canal da Staff com o motivo, o nome e o ID público de quem foi denunciado, o servidor e o link da fila (sem o chat e sem o nome de quem denunciou) | Suporte e moderação |
 | **Autoridades** | O necessário, quando a lei ou uma ordem judicial exigir | Cumprir a lei, como nos casos graves envolvendo menores (ECA Digital, art. 27) |
 
 Cada um desses serviços tem a sua própria política de privacidade.
@@ -131,6 +138,7 @@ Cada um desses serviços tem a sua própria política de privacidade.
 |---|---|
 | Conta, Inventário, Loadout, Presets e Estatísticas | Enquanto a Conta existir. Contas que nunca entraram no site e ficaram 24 meses sem conectar são anonimizadas |
 | Lista de amigos Steam | Cerca de 60 segundos, em cache |
+| Vínculo com o Discord (ID, nome de usuário e cargos aplicados) | Até você desvincular ou excluir a Conta. O token de acesso do Discord não é guardado |
 | Chat de texto dos servidores | 30 dias, apagado automaticamente. As linhas copiadas para uma Denúncia ficam só com a Denúncia (próxima linha) |
 | Denúncias (com a cópia do chat), abertas, arquivadas ou que viraram punição | 90 dias depois de feitas, apagadas automaticamente. A punição que saiu de uma Denúncia é outro registro (abaixo) e não é apagada junto |
 | Punições no Perfil | Selo enquanto a punição estiver ativa; histórico por 12 meses (ban permanente por cheat: enquanto durar) |
@@ -155,7 +163,7 @@ Pela LGPD (art. 18), você pode pedir, a qualquer momento:
 
 **Como pedir:** pelo e-mail do encarregado (seção 1) ou pela página de [contato](/contato), com o assunto "Privacidade" e o seu ID público. Para confirmar que você é o dono da Conta, podemos pedir que você entre com a Steam no site. Respondemos em até 15 dias. Pais e responsáveis podem fazer os pedidos em nome de menores de idade.
 
-**Exclusão da Conta:** a sua Conta é anonimizada. O nome, o avatar, o vínculo com a Steam, o Perfil público, o Inventário, as Estatísticas e o chat que você escreveu deixam de estar ligados a você; as Denúncias que você fez perdem o vínculo com você, e as suas linhas no chat copiado em Denúncias de outras pessoas são apagadas. Ficam guardados só os registros de pagamento pelo prazo legal, as Denúncias feitas contra você (registro de moderação, até completar os 90 dias, como as punições) e, se houver um ban permanente ativo, um registro mínimo do SteamID64 punido, para que o ban continue valendo. [VALIDAR COM ADVOGADO]
+**Exclusão da Conta:** a sua Conta é anonimizada. O nome, o avatar, o vínculo com a Steam, o Perfil público, o Inventário, as Estatísticas e o chat que você escreveu e o vínculo com o Discord deixam de estar ligados a você; as Denúncias que você fez perdem o vínculo com você, e as suas linhas no chat copiado em Denúncias de outras pessoas são apagadas. Ficam guardados só os registros de pagamento pelo prazo legal, as Denúncias feitas contra você (registro de moderação, até completar os 90 dias, como as punições) e, se houver um ban permanente ativo, um registro mínimo do SteamID64 punido, para que o ban continue valendo. [VALIDAR COM ADVOGADO]
 
 Se não ficar satisfeito com a nossa resposta, você pode reclamar à Agência Nacional de Proteção de Dados (ANPD), em gov.br/anpd.
 
