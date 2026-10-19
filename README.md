@@ -187,6 +187,8 @@ pnpm --filter "@carmine/api..." build
 pnpm --filter @carmine/api staff grant --steam-id 76561198000000001 --role owner --by 76561198000000001 --reason "fundador"
 # Reseta o Nome de exibição de uma Conta (volta ao nome Steam; vale no próximo connect no jogo):
 pnpm --filter @carmine/api staff reset-name --steam-id 76561198000000001 --by 76561198000000001 --reason "nome ofensivo"
+# Tira uma Conta do Ranking de um Modo e semana (segunda-feira); as Estatísticas continuam:
+pnpm --filter @carmine/api staff ranking-remove --steam-id 76561198000000001 --mode retake --week 2026-10-12 --by 76561198000000001 --reason "rounds de bot farm"
 pnpm --filter @carmine/api staff revoke --steam-id 76561198000000002 --by 76561198000000001 --reason "saiu da Staff"
 pnpm --filter @carmine/api staff list
 ```

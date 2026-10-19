@@ -115,7 +115,14 @@ Números de desempenho de uma Conta, por Modo e no total. Saem dos **eventos do 
 _Evitar_: stats (na interface), métricas
 
 **Ranking** (`Leaderboard`):
-A classificação semanal das Contas por Modo.
+A classificação semanal das Contas por Modo (top 50), que recomeça na segunda-feira às 00:00 de Brasília. Retake ordena por rounds vencidos (desempate: K/D) e Deathmatch por KPM (desempate: HS%); a ordem sempre fecha, por mais kills e depois pela Conta mais antiga. Semanas anteriores continuam consultáveis. Quem tem Perfil privado aparece como "Jogador privado" e ocupa a posição.
+
+**Mínimo da semana** (`minimum`):
+O que a Conta precisa jogar na semana para entrar no Ranking de um Modo: 50 rounds jogados no Retake, 30 minutos no Deathmatch. A interface mostra quanto falta ("faltam 12 rounds").
+
+**Remoção do Ranking** (`ranking_removals`):
+A Staff tira uma Conta do Ranking de um Modo numa semana, com motivo e registro de auditoria. Não apaga as Estatísticas; o jogador contesta pelo Discord.
+_Evitar_: banir do Ranking, punir (a Remoção não é uma Punição)
 
 ## VIP e pagamento
 
