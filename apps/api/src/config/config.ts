@@ -15,6 +15,18 @@ const origin = () =>
 
 const DAY_SECONDS = 24 * 60 * 60;
 
+/** ID do Discord (snowflake) ou vazio. */
+const snowflake = () =>
+  z
+    .union([
+      z
+        .string()
+        .trim()
+        .regex(/^\d{15,25}$/,'deve ser um ID do Discord (só dígitos)'),
+      z.literal(''),
+    ])
+    .default('');
+
 const perMinute = (fallback: number) => z.coerce.number().int().positive().default(fallback);
 
 const envSchema = z
@@ -68,6 +80,27 @@ const envSchema = z
       .union([z.literal(''), urlWithProtocol(['https:', 'http:'])])
       .default(''),
     RETENTION_SWEEP_MINUTES: z.coerce.number().int().nonnegative().default(60),
+    // Discord integrado (S15): o vínculo da Conta, os cargos sincronizados e o status dos servidores.
+    // Sem o conjunto base (as quatro primeiras), a S15 fica desligada; os cargos são opcionais um a um
+    // (cargo sem ID não é gerenciado) e sem canal de status o bot não posta. Ver docs/operacao/discord.md.
+    DISCORD_CLIENT_ID: snowflake(),
+    DISCORD_CLIENT_SECRET: z.string().trim().default(''),
+    DISCORD_BOT_TOKEN: z.string().trim().default(''),
+    DISCORD_GUILD_ID: snowflake(),
+    DISCORD_ROLE_PLAYER_ID: snowflake(),
+    DISCORD_ROLE_VIP_ID: snowflake(),
+    DISCORD_ROLE_STAFF_ID: snowflake(),
+    DISCORD_ROLE_OWNER_ID: snowflake(),
+    DISCORD_STATUS_CHANNEL_ID: snowflake(),
+    // Só os testes mudam estas duas (o Discord falso local); em produção valem as padrão.
+    DISCORD_API_URL: urlWithProtocol(['https:', 'http:']).default('https://discord.com/api/v10'),
+    DISCORD_AUTHORIZE_URL: urlWithProtocol(['https:', 'http:']).default(
+      'https://discord.com/oauth2/authorize',
+    ),
+    // A reconciliação de cargos (pega o VIP que vence, que não tem evento) e a edição da mensagem de
+    // status. O aceite da S15 pede até 1 minuto para o cargo mudar.
+    DISCORD_SYNC_SECONDS: z.coerce.number().int().positive().default(30),
+    DISCORD_STATUS_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
@@ -108,6 +141,8 @@ const envSchema = z
         'STEAM_OPENID_URL',
         'DISCORD_ALERT_WEBHOOK_URL',
         'STAFF_REPORTS_WEBHOOK_URL',
+        'DISCORD_API_URL',
+        'DISCORD_AUTHORIZE_URL',
       ] as const) {
         if (env[key] !== '' && new URL(env[key]).protocol !== 'https:') {
           ctx.addIssue({ code: 'custom', path: [key], message: 'deve usar https em produção' });
@@ -137,12 +172,33 @@ export interface AppConfig {
   alerts: { discordWebhookUrl: string | null; serverOfflineConfirmMs: number; sweepMs: number };
   /** Denúncias (S13): webhook da Staff (sem URL, desligado) e a limpeza de retenção (0: desligada). */
   reports: { webhookUrl: string | null; retentionSweepMs: number };
+  /** Discord integrado (S15); nulo (desligado) sem o conjunto base de variáveis. */
+  discord: DiscordConfig | null;
+  /** Variáveis base do Discord que faltam quando só parte delas foi preenchida (a S15 fica desligada). */
+  discordMissing: string[];
   /** Sentry (S09): sem DSN, desligado. */
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
   publicWebUrl: string;
   steamOpenIdUrl: string;
   session: { idleTtlSeconds: number; absoluteTtlSeconds: number };
+}
+
+export type DiscordRoleKey = 'player' | 'vip' | 'staff' | 'owner';
+
+export interface DiscordConfig {
+  clientId: string;
+  clientSecret: string;
+  botToken: string;
+  guildId: string;
+  /** ID do cargo de cada chave; cargo sem ID configurado não é gerenciado. */
+  roleIds: Partial<Record<DiscordRoleKey, string>>;
+  /** Canal da mensagem de status; nulo: o bot de status fica desligado. */
+  statusChannelId: string | null;
+  apiUrl: string;
+  authorizeUrl: string;
+  syncMs: number;
+  statusMs: number;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -194,6 +250,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       webhookUrl: e.STAFF_REPORTS_WEBHOOK_URL === '' ? null : e.STAFF_REPORTS_WEBHOOK_URL,
       retentionSweepMs: e.RETENTION_SWEEP_MINUTES * 60_000,
     },
+    ...discordConfig(e),
     sentry: {
       dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
       environment: e.SENTRY_ENVIRONMENT === '' ? e.NODE_ENV : e.SENTRY_ENVIRONMENT,
@@ -204,6 +261,47 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     session: {
       idleTtlSeconds: e.SESSION_IDLE_TTL_SECONDS,
       absoluteTtlSeconds: e.SESSION_ABSOLUTE_TTL_SECONDS,
+    },
+  };
+}
+
+type Env = z.infer<typeof envSchema>;
+
+const DISCORD_BASE_VARS = [
+  'DISCORD_CLIENT_ID',
+  'DISCORD_CLIENT_SECRET',
+  'DISCORD_BOT_TOKEN',
+  'DISCORD_GUILD_ID',
+] as const;
+
+/** A S15 liga só com o conjunto base inteiro; parcial desliga e a API avisa o que falta no boot. */
+function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
+  const missing = DISCORD_BASE_VARS.filter((key) => e[key] === '');
+  if (missing.length > 0) {
+    return {
+      discord: null,
+      discordMissing: missing.length === DISCORD_BASE_VARS.length ? [] : missing,
+    };
+  }
+  const roles: [DiscordRoleKey, string][] = [
+    ['player', e.DISCORD_ROLE_PLAYER_ID],
+    ['vip', e.DISCORD_ROLE_VIP_ID],
+    ['staff', e.DISCORD_ROLE_STAFF_ID],
+    ['owner', e.DISCORD_ROLE_OWNER_ID],
+  ];
+  return {
+    discordMissing: [],
+    discord: {
+      clientId: e.DISCORD_CLIENT_ID,
+      clientSecret: e.DISCORD_CLIENT_SECRET,
+      botToken: e.DISCORD_BOT_TOKEN,
+      guildId: e.DISCORD_GUILD_ID,
+      roleIds: Object.fromEntries(roles.filter(([, id]) => id !== '')),
+      statusChannelId: e.DISCORD_STATUS_CHANNEL_ID === '' ? null : e.DISCORD_STATUS_CHANNEL_ID,
+      apiUrl: e.DISCORD_API_URL.replace(/\/+$/, ''),
+      authorizeUrl: e.DISCORD_AUTHORIZE_URL,
+      syncMs: e.DISCORD_SYNC_SECONDS * 1000,
+      statusMs: e.DISCORD_STATUS_SECONDS * 1000,
     },
   };
 }

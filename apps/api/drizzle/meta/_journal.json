@@ -85,6 +85,13 @@
       "when": 1792445820491,
       "tag": "0011_s13_denuncias_e_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792453014560,
+      "tag": "0012_s15_discord",
+      "breakpoints": true
     }
   ]
 }

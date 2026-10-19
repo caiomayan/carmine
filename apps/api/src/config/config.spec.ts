@@ -23,6 +23,8 @@ describe('loadConfig', () => {
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
       reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },
+      discord: null,
+      discordMissing: [],
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',

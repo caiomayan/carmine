@@ -521,3 +521,35 @@ export const reports = pgTable(
     ),
   ],
 );
+
+/**
+ * Vínculo da Conta com um usuário do Discord (S15). É só um vínculo, não um login (ADR 0007): guarda
+ * o ID e o nome do Discord, nunca token (o `guilds.join` usa o token na hora do vínculo e o descarta).
+ * Um Discord só liga a uma Conta (`discordId` único).
+ */
+export const discordLinks = pgTable('discord_links', {
+  accountId: uuid()
+    .primaryKey()
+    .references(() => accounts.id, { onDelete: 'cascade' }),
+  /** ID (snowflake) do usuário no Discord. */
+  discordId: text().notNull().unique(),
+  /** Nome de usuário do Discord na hora do vínculo. */
+  username: text().notNull(),
+  linkedAt: timestamptz().notNull().defaultNow(),
+  /** Cargos (`player`, `vip`, `staff`, `owner`) que a última reconciliação deixou aplicados. */
+  syncedRoles: text()
+    .array()
+    .notNull()
+    .default(sql`'{}'::text[]`),
+  /** Última reconciliação que conseguiu falar com o Discord; nulo: ainda não houve. */
+  syncedAt: timestamptz(),
+  /** A pessoa não está no servidor do Discord: só tenta de novo depois desse instante. */
+  retryAt: timestamptz(),
+});
+
+/** A mensagem de status dos Servidores Carmine (S15): uma por canal, editada, nunca repostada. */
+export const discordStatusMessages = pgTable('discord_status_messages', {
+  channelId: text().primaryKey(),
+  messageId: text().notNull(),
+  updatedAt: timestamptz().notNull().defaultNow(),
+});
