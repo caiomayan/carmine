@@ -7,7 +7,8 @@ import { Avatar } from '@/components/avatar';
 import { playedParts } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 
-const HEAD = 'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-[11px] text-muted-foreground';
+const HEAD =
+  'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-[11px] text-muted-foreground';
 
 /**
  * O top 50 numa tabela de verdade (cabeçalhos e legenda para o leitor de tela), com números

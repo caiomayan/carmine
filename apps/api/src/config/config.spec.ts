@@ -19,6 +19,7 @@ describe('loadConfig', () => {
       steamWebApi: { key: null, url: 'https://api.steampowered.com', timeoutMs: 5000 },
       trustedProxies: [],
       rateLimitsPerMinute: { login: 20, public: 240, equipped: 120, mutations: 60, server: 600 },
+      rankingCacheTtlSeconds: 45,
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
       sentry: { dsn: null, environment: 'development', release: null },
