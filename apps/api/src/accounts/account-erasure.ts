@@ -1,11 +1,13 @@
 import { ANONYMIZED_DISPLAY_NAME } from '@carmine/contracts';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, ne, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import {
   accountStatsWeekly,
   accounts,
+  chatMessages,
   inventoryItems,
   presets,
+  reports,
   sanctions,
   staffMembers,
   vipPeriods,
@@ -47,10 +49,13 @@ export interface Erasure {
  * Pedido de exclusão de dados (S08, Política de Privacidade, seção 8): anonimiza a Conta, sem
  * volta. Some o que identifica a pessoa (nome Steam, Nome de exibição, avatar, Perfil público,
  * reivindicação), as Estatísticas e o que ela montou (Inventário, Presets, Loadout, Períodos VIP,
- * preferência de chat); o vínculo com a Steam se desfaz (`steamId = -publicId`), então quem voltar a jogar ganha
+ * preferência de chat), o chat que ela escreveu (`chat_messages`), o vínculo dela com as
+ * Denúncias que fez (S13) e as linhas dela dentro do chat copiado em Denúncias de outras pessoas;
+ * o vínculo com a Steam se desfaz (`steamId = -publicId`), então quem voltar a jogar ganha
  * uma Conta nova. Fica o necessário por obrigação legal ou para a moderação valer: as Punições e
  * o log de auditoria (registro interno, com o SteamID64 no log) e, com um ban valendo, o SteamID64
- * na Conta, até o ban acabar (`keepUnlessReleased`). Os registros de pagamento da S14 terão
+ * na Conta, até o ban acabar (`keepUnlessReleased`). As Denúncias contra ela também ficam, com
+ * o chat copiado, até o prazo de 90 dias (registro de moderação, como as Punições). Os registros de pagamento da S14 terão
  * tabela própria e ficam pelo prazo legal.
  */
 export class AccountErasure {
@@ -98,6 +103,35 @@ export class AccountErasure {
         .delete(accountStatsWeekly)
         .where(eq(accountStatsWeekly.accountId, accountId))
         .returning({ weekStart: accountStatsWeekly.weekStart });
+      const removedChat = await tx
+        .delete(chatMessages)
+        .where(eq(chatMessages.accountId, accountId))
+        .returning({ id: chatMessages.id });
+      const unlinkedReports = await tx
+        .update(reports)
+        .set({ reporterAccountId: null })
+        .where(eq(reports.reporterAccountId, accountId))
+        .returning({ id: reports.id });
+      // As linhas da pessoa no chat copiado em Denúncias de outros: nome e texto saem, o resto fica.
+      const scrubbedReports = await tx
+        .update(reports)
+        .set({
+          chatContext: sql`(
+            select coalesce(jsonb_agg(
+              case when (line->>'publicId')::bigint = ${account.publicId}
+                then line || jsonb_build_object('displayName', ${ANONYMIZED_DISPLAY_NAME}::text, 'text', '[removido]')
+                else line end
+              order by position), '[]'::jsonb)
+            from jsonb_array_elements(${reports.chatContext}) with ordinality as lines(line, position)
+          )`,
+        })
+        .where(
+          and(
+            ne(reports.targetAccountId, accountId),
+            sql`${reports.chatContext} @> jsonb_build_array(jsonb_build_object('publicId', ${account.publicId}::bigint))`,
+          ),
+        )
+        .returning({ id: reports.id });
       await tx
         .update(accounts)
         .set({
@@ -126,6 +160,9 @@ export class AccountErasure {
             presets: removedPresets.length,
             vipPeriods: removedVip.length,
             statsWeeks: removedStats.length,
+            chatMessages: removedChat.length,
+            reportsUnlinked: unlinkedReports.length,
+            reportsScrubbed: scrubbedReports.length,
           },
         },
         at: now,

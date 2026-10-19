@@ -1,4 +1,5 @@
 import {
+  type ChatMessageEvent,
   countEvents,
   type EventBatch,
   type EventBatchResult,
@@ -6,7 +7,13 @@ import {
 } from '@carmine/contracts';
 import { inArray, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
-import { accountStatsWeekly, accounts, gameEvents, teamKills } from '../database/schema.js';
+import {
+  accountStatsWeekly,
+  accounts,
+  chatMessages,
+  gameEvents,
+  teamKills,
+} from '../database/schema.js';
 import { collectStats } from './stats-deltas.js';
 
 /** Quem mandou o lote: o Servidor Carmine autenticado pela chave. */
@@ -21,6 +28,8 @@ const EVENT_KEYS = ['kills', 'damages', 'roundEnds', 'sessionStarts', 'sessionEn
  * Recebe os lotes de eventos do jogo (S12, ADR 0018): descarta o que já viu (pelo ID do evento),
  * aplica as regras do que conta (`collectStats`) e soma nas Estatísticas semanais. Tudo numa
  * transação, então um lote ou entra inteiro ou o plugin reenvia sem risco de contar em dobro.
+ * O chat dos servidores (S13) viaja no mesmo lote e na mesma fila; o ID da mensagem é a chave
+ * dela (`chat_messages`), e mensagem de Conta desconhecida não entra.
  */
 export class GameEventIngest {
   constructor(private readonly db: Database) {}
@@ -31,13 +40,17 @@ export class GameEventIngest {
 
     return this.db.transaction(async (tx) => {
       // `on conflict do nothing` também resolve o ID repetido dentro do próprio lote.
-      const inserted = await tx
-        .insert(gameEvents)
-        .values(
-          EVENT_KEYS.flatMap((key) => batch[key].map(({ id }) => ({ id, serverId: server.id }))),
-        )
-        .onConflictDoNothing()
-        .returning({ id: gameEvents.id });
+      const eventIds = EVENT_KEYS.flatMap((key) =>
+        batch[key].map(({ id }) => ({ id, serverId: server.id })),
+      );
+      const inserted =
+        eventIds.length === 0
+          ? []
+          : await tx
+              .insert(gameEvents)
+              .values(eventIds)
+              .onConflictDoNothing()
+              .returning({ id: gameEvents.id });
       const fresh = new Set(inserted.map((row) => row.id));
 
       // Um ID repetido dentro do lote conta uma vez só: `delete` só diz sim na primeira vez.
@@ -45,7 +58,8 @@ export class GameEventIngest {
         EVENT_KEYS.map((key) => [key, batch[key].filter(({ id }) => fresh.delete(id))]),
       ) as unknown as EventBatch;
 
-      const steamIds = steamIdsOf(news);
+      const chat = batch.chatMessages ?? [];
+      const steamIds = steamIdsOf(news, chat);
       const rows =
         steamIds.length === 0
           ? []
@@ -108,13 +122,36 @@ export class GameEventIngest {
           .onConflictDoNothing();
       }
 
-      return { accepted: inserted.length, duplicates: total - inserted.length, ignored };
+      // Chat de Conta que não existe (ou já foi anonimizada) é aceito e não guardado.
+      const knownChat = chat.filter(({ steamId }) => accountBySteamId.has(steamId));
+      const unknownChat = chat.length - knownChat.length;
+      const savedChat =
+        knownChat.length === 0
+          ? []
+          : await tx
+              .insert(chatMessages)
+              .values(
+                knownChat.map((line) => ({
+                  id: line.id,
+                  serverId: server.id,
+                  accountId: accountBySteamId.get(line.steamId) as string,
+                  team: line.team,
+                  teamChat: line.teamChat,
+                  text: line.text,
+                  at: new Date(line.at),
+                })),
+              )
+              .onConflictDoNothing()
+              .returning({ id: chatMessages.id });
+
+      const accepted = inserted.length + savedChat.length + unknownChat;
+      return { accepted, duplicates: total - accepted, ignored: ignored + unknownChat };
     });
   }
 }
 
-function steamIdsOf(batch: EventBatch): string[] {
-  const ids = new Set<string>();
+function steamIdsOf(batch: EventBatch, chat: ChatMessageEvent[]): string[] {
+  const ids = new Set<string>(chat.map(({ steamId }) => steamId));
   for (const kill of batch.kills) {
     for (const id of [kill.killerSteamId, kill.victimSteamId, kill.assisterSteamId]) {
       if (id !== null) ids.add(id);

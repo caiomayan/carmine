@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
+import { chatMessageEventSchema } from './reports.js';
 import { steamId64Schema } from './steam.js';
 
 /** Quantos eventos cabem num lote (`POST /api/server/events`), somando todos os tipos. */
@@ -130,13 +131,15 @@ export function countEvents(batch: {
   roundEnds: readonly unknown[];
   sessionStarts: readonly unknown[];
   sessionEnds: readonly unknown[];
+  chatMessages?: readonly unknown[];
 }): number {
   return (
     batch.kills.length +
     batch.damages.length +
     batch.roundEnds.length +
     batch.sessionStarts.length +
-    batch.sessionEnds.length
+    batch.sessionEnds.length +
+    (batch.chatMessages?.length ?? 0)
   );
 }
 
@@ -152,6 +155,8 @@ export const eventBatchSchema = z
     roundEnds: z.array(roundEndEventSchema).max(EVENT_BATCH_MAX_EVENTS),
     sessionStarts: z.array(sessionStartEventSchema).max(EVENT_BATCH_MAX_EVENTS),
     sessionEnds: z.array(sessionEndEventSchema).max(EVENT_BATCH_MAX_EVENTS),
+    /** Chat dos servidores (S13): vai no mesmo lote e na mesma fila. Ausente: nenhuma. */
+    chatMessages: z.array(chatMessageEventSchema).max(EVENT_BATCH_MAX_EVENTS).optional(),
   })
   .refine((batch) => countEvents(batch) <= EVENT_BATCH_MAX_EVENTS, {
     message: `no máximo ${EVENT_BATCH_MAX_EVENTS} eventos por lote`,

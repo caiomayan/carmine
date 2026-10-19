@@ -4,6 +4,7 @@ import { AccountsService } from '../src/accounts/accounts.service.js';
 import { AvatarRefresher } from '../src/accounts/avatar-refresher.js';
 import { DisplayNames } from '../src/accounts/display-names.js';
 import { accountStatsWeekly, accounts } from '../src/database/schema.js';
+import { StaffReports } from '../src/reports/staff-reports.js';
 import { StaffAuditLog } from '../src/staff/audit-log.js';
 import { runStaffCli } from '../src/staff/staff.cli-commands.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
@@ -40,6 +41,7 @@ describe('CLI staff (S07)', () => {
       roles,
       displayNames: new DisplayNames(postgres.db),
       rankingRemovals: new RankingRemovals(postgres.db),
+      reports: new StaffReports(postgres.db),
       out: (line) => out.push(line),
       err: (line) => err.push(line),
     });

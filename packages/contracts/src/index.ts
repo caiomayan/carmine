@@ -10,6 +10,7 @@ export * from './loadout.js';
 export * from './moderation.js';
 export * from './profile.js';
 export * from './ranking.js';
+export * from './reports.js';
 export * from './staff.js';
 export * from './stats.js';
 export * from './steam.js';

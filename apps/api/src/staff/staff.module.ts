@@ -14,6 +14,8 @@ import { GameServerRegistry } from '../game-servers/game-server-registry.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { ModerationModule } from '../moderation/moderation.module.js';
 import { Sanctions } from '../moderation/sanctions.js';
+import { ReportsModule } from '../reports/reports.module.js';
+import { StaffReports } from '../reports/staff-reports.js';
 import { RankingCache } from '../stats/ranking-cache.js';
 import { RankingRemovals } from '../stats/ranking-removals.js';
 import { VALKEY } from '../valkey/valkey.module.js';
@@ -34,6 +36,7 @@ import { StaffRoles } from './staff-roles.js';
     VipModule,
     EquippedModule,
     GameServersModule,
+    ReportsModule,
   ],
   controllers: [StaffController],
   providers: [
@@ -51,6 +54,7 @@ import { StaffRoles } from './staff-roles.js';
         SessionStore,
         GameServerRegistry,
         EquippedCache,
+        StaffReports,
         VALKEY,
         APP_CONFIG,
       ],
@@ -65,6 +69,7 @@ import { StaffRoles } from './staff-roles.js';
         sessions: SessionStore,
         servers: GameServerRegistry,
         equipped: EquippedCache,
+        reports: StaffReports,
         valkey: Redis,
         config: AppConfig,
       ) =>
@@ -78,6 +83,7 @@ import { StaffRoles } from './staff-roles.js';
           vip,
           sessions,
           servers,
+          reports,
           erasure: new AccountErasure(db, {
             dropSessions: (accountId) => sessions.destroyAllOf(accountId),
             invalidateEquipped: (steamId) => equipped.invalidate(steamId),

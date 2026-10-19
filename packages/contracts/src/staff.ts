@@ -41,7 +41,9 @@ export const STAFF_ROLE_RANK: Record<StaffRole, number> = { owner: 3, admin: 2, 
  * - `audit.read`: consultar o log de auditoria inteiro;
  * - `roles.manage`: alterar papéis de Staff (só o Dono);
  * - `accounts.anonymize`: executar um pedido de exclusão de dados (S08), que anonimiza a Conta e
- *   não tem volta (só o Dono, que é o encarregado na Política de Privacidade).
+ *   não tem volta (só o Dono, que é o encarregado na Política de Privacidade);
+ * - `ranking.remove`: tirar uma Conta do Ranking de um Modo e semana (S12);
+ * - `reports.handle`: ver a fila de Denúncias e arquivá-las (S13).
  */
 export const STAFF_PERMISSIONS = {
   'accounts.read': ['owner', 'admin', 'moderator'],
@@ -55,6 +57,7 @@ export const STAFF_PERMISSIONS = {
   'roles.manage': ['owner'],
   'accounts.anonymize': ['owner'],
   'ranking.remove': ['owner', 'admin', 'moderator'],
+  'reports.handle': ['owner', 'admin', 'moderator'],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type StaffPermission = keyof typeof STAFF_PERMISSIONS;
@@ -162,6 +165,7 @@ export const staffAuditActionSchema = z
     'account_anonymize',
     'account_reserved_id',
     'ranking_entry_remove',
+    'report_archive',
   ])
   .meta({ id: 'StaffAuditAction' });
 
@@ -259,6 +263,8 @@ export const applySanctionsSchema = z
       }),
     witness: sanctionWitnessSchema.optional(),
     evidenceUrl: sanctionEvidenceUrlSchema.optional(),
+    /** A Denúncia (fila da Staff) que originou a Punição: ela é fechada como "punida". */
+    reportId: z.uuid().optional(),
   })
   .refine(
     (input) =>
@@ -452,6 +458,13 @@ export const STAFF_ERROR_CODES = [
   'ranking_entry_not_found',
   /** A entrada já foi removida do Ranking. */
   'ranking_entry_already_removed',
+  'report_not_found',
+  /** A Denúncia já foi arquivada ou virou Punição. */
+  'report_not_open',
+  /** A Denúncia citada é contra outra Conta. */
+  'report_target_mismatch',
+  /** Denúncia de cheat ou voz: a Punição precisa de testemunha ou link da evidência. */
+  'report_needs_evidence',
 ] as const;
 
 export type StaffErrorCode = (typeof STAFF_ERROR_CODES)[number];
@@ -473,6 +486,10 @@ export const STAFF_ERROR_STATUS: Record<StaffErrorCode, number> = {
   account_anonymized: 409,
   ranking_entry_not_found: 404,
   ranking_entry_already_removed: 409,
+  report_not_found: 404,
+  report_not_open: 409,
+  report_target_mismatch: 400,
+  report_needs_evidence: 400,
 };
 
 export const staffErrorSchema = z
