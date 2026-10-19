@@ -3148,6 +3148,105 @@
         ]
       }
     },
+    "/api/staff/accounts/{publicId}/ranking-removals": {
+      "post": {
+        "operationId": "removeRankingEntry",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveRankingEntry"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Removida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAccountDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"ranking.remove\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Tira a Conta do Ranking de um Modo e semana (S12), com motivo; as Estatísticas continuam",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
     "/api/staff/accounts/{publicId}/role": {
       "put": {
         "operationId": "setStaffRole",
@@ -3482,7 +3581,8 @@
                 "display_name_reset",
                 "server_update",
                 "account_anonymize",
-                "account_reserved_id"
+                "account_reserved_id",
+                "ranking_entry_remove"
               ],
               "type": "string"
             }
@@ -3675,6 +3775,77 @@
         "summary": "Estatísticas de uma Conta, por Modo e no total; num Perfil privado, só a própria Conta as vê",
         "tags": [
           "profiles"
+        ]
+      }
+    },
+    "/api/ranking/{mode}": {
+      "get": {
+        "operationId": "getRanking",
+        "parameters": [
+          {
+            "name": "mode",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "enum": [
+                "retake",
+                "deathmatch"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "week",
+            "required": false,
+            "in": "query",
+            "description": "Segunda-feira da semana (YYYY-MM-DD); sem ela, a semana atual",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O Ranking",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ranking"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Semana inválida (precisa ser uma segunda-feira passada)"
+          },
+          "404": {
+            "description": "Modo desconhecido"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Ranking semanal de um Modo (top 50); quem está logado recebe também a própria posição ou o progresso até o mínimo",
+        "tags": [
+          "ranking"
         ]
       }
     }
@@ -6113,7 +6284,8 @@
           "display_name_reset",
           "server_update",
           "account_anonymize",
-          "account_reserved_id"
+          "account_reserved_id",
+          "ranking_entry_remove"
         ]
       },
       "StaffError": {
@@ -6140,7 +6312,9 @@
               "account_not_claimed",
               "last_owner",
               "server_code_taken",
-              "account_anonymized"
+              "account_anonymized",
+              "ranking_entry_not_found",
+              "ranking_entry_already_removed"
             ]
           },
           "message": {
@@ -6267,6 +6441,32 @@
           "steamIdRetained"
         ],
         "additionalProperties": false
+      },
+      "RemoveRankingEntry": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "weekStart": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "mode",
+          "weekStart",
+          "reason"
+        ]
+      },
+      "WeekStart": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+        "example": "2026-10-12"
       },
       "SetStaffRole": {
         "type": "object",
@@ -6897,6 +7097,214 @@
           "secondsPlayed",
           "adr",
           "kpm"
+        ],
+        "additionalProperties": false
+      },
+      "Ranking": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "weekStart": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "weekEnd": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "current": {
+            "type": "boolean"
+          },
+          "minimum": {
+            "type": "object",
+            "properties": {
+              "unit": {
+                "type": "string",
+                "enum": [
+                  "rounds",
+                  "minutes"
+                ]
+              },
+              "value": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "unit",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "entries": {
+            "maxItems": 50,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankingEntry"
+            }
+          },
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeekStart"
+            }
+          },
+          "viewer": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingViewer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "mode",
+          "weekStart",
+          "weekEnd",
+          "current",
+          "minimum",
+          "entries",
+          "weeks",
+          "viewer"
+        ],
+        "additionalProperties": false
+      },
+      "RankingEntry": {
+        "type": "object",
+        "properties": {
+          "position": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "player": {
+            "$ref": "#/components/schemas/RankingPlayer"
+          },
+          "score": {
+            "type": "number",
+            "minimum": 0
+          },
+          "kd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "headshotPercent": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "roundsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "secondsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "self": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "position",
+          "player",
+          "score",
+          "kd",
+          "headshotPercent",
+          "roundsPlayed",
+          "secondsPlayed",
+          "self"
+        ],
+        "additionalProperties": false
+      },
+      "RankingPlayer": {
+        "type": "object",
+        "properties": {
+          "private": {
+            "type": "boolean"
+          },
+          "publicId": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "avatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "private",
+          "publicId",
+          "displayName",
+          "avatarUrl"
+        ],
+        "additionalProperties": false
+      },
+      "RankingViewer": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingEntry"
+              }
+            ]
+          },
+          "progress": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RankingProgress"
+              }
+            ]
+          },
+          "removed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entry",
+          "progress",
+          "removed"
+        ],
+        "additionalProperties": false
+      },
+      "RankingProgress": {
+        "type": "object",
+        "properties": {
+          "unit": {
+            "type": "string",
+            "enum": [
+              "rounds",
+              "minutes"
+            ]
+          },
+          "missing": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "unit",
+          "missing"
         ],
         "additionalProperties": false
       }

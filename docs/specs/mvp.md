@@ -317,7 +317,7 @@ Decisões do dono (2026-10-12) sobre conduta: trash talk e palavrão são libera
 
 ### S12 · Estatísticas e Ranking
 
-A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core grava e envia os eventos (fila em memória, lotes idempotentes, recuo, limite de fila, envio no fim do mapa e ao descarregar), a API recebe, deduplica e soma por Conta × Modo × semana de Brasília (já com tudo que o Ranking precisa: rounds vencidos e jogados, kills, mortes, assistências, headshots, dano e tempo), e expõe as Estatísticas do Perfil (`GET /api/profiles/{publicId}/stats`, via `canSeeStats`). Formato e idempotência: ADR 0018. **B (Ranking e telas):** o Ranking semanal por Modo (top 50, mínimos, desempates, progresso até o mínimo, estado vazio, semanas anteriores, remoção pela Staff com auditoria, `rankingIdentity`) e as telas de Estatísticas e Ranking no web. Os critérios de aceite de "Estatísticas" abaixo são do A; o do empate em rounds vencidos, do B.
+A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core grava e envia os eventos (fila em memória, lotes idempotentes, recuo, limite de fila, envio no fim do mapa e ao descarregar), a API recebe, deduplica e soma por Conta × Modo × semana de Brasília (já com tudo que o Ranking precisa: rounds vencidos e jogados, kills, mortes, assistências, headshots, dano e tempo), e expõe as Estatísticas do Perfil (`GET /api/profiles/{publicId}/stats`, via `canSeeStats`). Formato e idempotência: ADR 0018. **B (Ranking e telas):** o Ranking semanal por Modo (top 50, mínimos, desempates, progresso até o mínimo, estado vazio, semanas anteriores, remoção pela Staff com auditoria, `rankingIdentity`) e as telas de Estatísticas e Ranking no web. Os critérios de aceite de "Estatísticas" abaixo são do A; os do Ranking, do B (entregue; decisões no fim desta seção).
 
 - O Carmine.Core envia eventos (kill, morte, assistência, dano, headshot, fim de round, início e fim de Sessão de jogo) em lotes idempotentes.
 - **Definições:** K/D = kills ÷ max(mortes, 1); HS% = kills com headshot ÷ kills; ADR = dano em inimigos ÷ rounds jogados (só no Retake); KPM = kills ÷ minutos jogados (só no DM).
@@ -336,6 +336,17 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 - Um lote reenviado não duplica Estatísticas.
 - Kills em bots e no aquecimento não entram nas Estatísticas.
 - Um empate em rounds vencidos é resolvido pelo K/D. *(B)*
+- A semana sem ninguém elegível mostra o estado vazio que explica as regras. *(B)*
+- O Perfil privado aparece como "Jogador privado" no Ranking (sem link, nome nem avatar) e continua ocupando a posição. *(B)*
+
+**Decidido na parte B (Ranking e telas)**
+- **Quem entra:** o mínimo é de **rounds jogados** (50, Retake) ou **minutos jogados** (30, Deathmatch) na semana, não de rounds vencidos. Contas anonimizadas e entradas removidas pela Staff ficam de fora.
+- **Ordem, sempre determinística:** Retake = rounds vencidos, depois K/D, depois mais kills, depois a Conta mais antiga (menor ID público). Deathmatch = KPM, depois HS%, depois mais kills, depois a Conta mais antiga. K/D e KPM (2 casas) e HS% (1 casa) são comparados como aparecem na tela, então um empate visível nunca é decidido por uma casa oculta. O ID público é único, então a ordem é total (ADR 0018, adendo).
+- **API:** `GET /api/ranking/{mode}?week=YYYY-MM-DD` (público; sem `week`, a semana atual; `week` precisa ser uma segunda-feira que já começou, senão 400). Devolve o top 50, o mínimo, a lista de semanas consultáveis (a atual e até 12 com atividade) e, para quem está logado, `viewer`: a própria linha (mesmo fora do top 50), o que falta para o mínimo ("faltam 12 rounds" / "faltam 8 minutos", minutos arredondados para cima) ou o aviso de remoção.
+- **Perfil privado:** `rankingIdentity` é lido na hora (o cache guarda só números e IDs internos), então ligar o Perfil privado tira a identidade do Ranking sem esperar o cache. A própria Conta vê a sua linha marcada "Você", mesmo privada.
+- **Cache:** a ordem de cada Modo e semana fica 45 s no Valkey (`RANKING_CACHE_TTL_SECONDS`; 0 desliga). A remoção pela Staff invalida a chave, no painel e no CLI.
+- **Integridade:** `POST /api/staff/accounts/{publicId}/ranking-removals` (`ranking.remove`: Dono, Admin e Moderador) e `staff ranking-remove --steam-id --mode --week --by --reason` gravam a remoção em `ranking_removals` (Conta × Modo × semana, com motivo) e em `staff_audit_log` (`ranking_entry_remove`). As Estatísticas não mudam. Só há remoção onde a Conta tem Estatísticas na semana (404) e remover duas vezes é 409. A interface só orienta contestar pelo Discord; o painel oferece as 8 últimas semanas e o CLI qualquer uma.
+- **Web:** `/ranking?modo=retake|deathmatch&semana=YYYY-MM-DD` (URL compartilhável; link na barra superior e no rodapé), abas por Modo (links), seletor de semana nativo, tabela do top 50 (colunas HS% e rounds/tempo somem abaixo de 768 px), estado vazio com as regras. O Perfil mostra as Estatísticas por Modo e o total (só kills, mortes, assistências, K/D, HS% e tempo; ADR só no Retake, KPM só no Deathmatch); com o Perfil privado o visitante vê o aviso e o dono vê as suas com "Só você vê".
 
 ### S13 · Denúncias e log de chat
 

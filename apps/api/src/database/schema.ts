@@ -226,6 +226,7 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'server_update',
   'account_anonymize',
   'account_reserved_id',
+  'ranking_entry_remove',
 ]);
 
 /**
@@ -380,6 +381,30 @@ export const accountStatsWeekly = pgTable(
   (table) => [
     primaryKey({ columns: [table.accountId, table.mode, table.weekStart] }),
     index('account_stats_weekly_ranking_idx').on(table.mode, table.weekStart),
+  ],
+);
+
+/**
+ * Entradas que a Staff removeu do Ranking semanal (S12): Conta × Modo × semana, com o motivo. A
+ * remoção não apaga as Estatísticas (`account_stats_weekly` continua igual); só tira a Conta
+ * dessa semana do Ranking. O registro completo também vai para `staff_audit_log`.
+ */
+export const rankingRemovals = pgTable(
+  'ranking_removals',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    mode: gameMode().notNull(),
+    weekStart: date({ mode: 'string' }).notNull(),
+    /** SteamID64 de quem removeu (a Staff). */
+    removedBySteamId: bigint({ mode: 'bigint' }).notNull(),
+    reason: text().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId, table.mode, table.weekStart] }),
+    index('ranking_removals_week_idx').on(table.mode, table.weekStart),
   ],
 );
 

@@ -14,7 +14,8 @@
     "nav": {
       "servers": "Servidores",
       "loadout": "Loadout",
-      "inventory": "Inventário"
+      "inventory": "Inventário",
+      "ranking": "Ranking"
     },
     "theme": {
       "useLight": "Usar tema claro",
@@ -37,7 +38,8 @@
         "terms": "Termos de uso",
         "privacy": "Política de privacidade",
         "refund": "Política de reembolso",
-        "contact": "Contato e exclusão de dados"
+        "contact": "Contato e exclusão de dados",
+        "ranking": "Ranking"
       },
       "social": {
         "label": "Redes da Carmine",
@@ -423,6 +425,33 @@
         "offNote": "Perfil privado desativado. As suas Estatísticas voltam a aparecer no Perfil e no Ranking.",
         "failed": "Não deu para salvar agora. Tente de novo em instantes."
       }
+    },
+    "stats": {
+      "title": "Estatísticas",
+      "onlyYou": "Só você vê",
+      "privateTitle": "Estatísticas privadas",
+      "privateBody": "{name} escolheu manter as Estatísticas privadas. O Loadout continua aqui.",
+      "emptyTitle": "Sem Estatísticas ainda",
+      "emptyVisitor": "Quando {name} jogar num Servidor Carmine, os números aparecem aqui.",
+      "emptyOwner": "Entre num Servidor Carmine e jogue: os seus números aparecem aqui em até um minuto.",
+      "unavailable": "Não conseguimos carregar as Estatísticas agora. Tente de novo em instantes.",
+      "total": "Total",
+      "groupLabel": "Estatísticas de {mode}",
+      "labels": {
+        "kills": "Kills",
+        "deaths": "Mortes",
+        "assists": "Assistências",
+        "kd": "K/D",
+        "headshotPercent": "HS%",
+        "timePlayed": "Tempo jogado",
+        "adr": "ADR",
+        "kpm": "KPM"
+      },
+      "time": {
+        "hoursMinutes": "{hours} h {minutes, number, ::integer-width/2} min",
+        "minutes": "{minutes} min"
+      },
+      "none": "—"
     }
   },
   "firstSteps": {
@@ -1083,7 +1112,8 @@
         "display_name_reset": "Resetou o nome",
         "server_update": "Editou servidor",
         "account_anonymize": "Anonimizou a Conta",
-        "account_reserved_id": "Trocou o ID por um ID reservado"
+        "account_reserved_id": "Trocou o ID por um ID reservado",
+        "ranking_entry_remove": "Removeu do Ranking"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
@@ -1120,12 +1150,90 @@
       "last_owner": "A Carmine precisa de pelo menos um Dono.",
       "server_code_taken": "Outro servidor já usa esse código.",
       "account_anonymized": "Esta Conta já foi anonimizada por um pedido de exclusão de dados.",
-      "unknown": "Não deu certo agora. Tente de novo em instantes."
+      "unknown": "Não deu certo agora. Tente de novo em instantes.",
+      "ranking_entry_not_found": "A Conta não tem Estatísticas nesse Modo e semana.",
+      "ranking_entry_already_removed": "Essa entrada já foi removida do Ranking."
+    },
+    "ranking": {
+      "title": "Ranking",
+      "hint": "Tira a Conta do Ranking de um Modo e semana. As Estatísticas e o Perfil não mudam. O jogador contesta pelo Discord; o motivo fica no log de auditoria. Semanas mais antigas, só pelo CLI (staff ranking-remove).",
+      "mode": "Modo",
+      "week": "Semana (segunda-feira)",
+      "submit": "Remover do Ranking",
+      "done": "Entrada removida do Ranking."
     }
   },
   "refund": {
     "title": "Política de reembolso",
     "status": "Em redação · publicação antes do VIP",
     "body": "Aqui vai ficar como funcionam o arrependimento e o reembolso do VIP, conforme o Código de Defesa do Consumidor. A política será publicada antes de o VIP ser vendido."
+  },
+  "ranking": {
+    "metaDescription": "O Ranking semanal da Carmine: os melhores do Retake e do Deathmatch, que recomeça toda segunda-feira.",
+    "title": "Ranking",
+    "subtitle": "Os melhores da semana em cada Modo. Recomeça toda segunda-feira às 00:00, horário de Brasília.",
+    "modeTabs": "Modo do Ranking",
+    "modes": {
+      "retake": "Retake",
+      "deathmatch": "Deathmatch"
+    },
+    "week": {
+      "label": "Semana",
+      "current": "{start} a {end} (atual)",
+      "past": "{start} a {end}",
+      "range": "{start} a {end}"
+    },
+    "rules": {
+      "retake": "Quem vence mais rounds na semana fica na frente. Para entrar, jogue ao menos {min} rounds; em caso de empate, vale o K/D.",
+      "deathmatch": "Quem faz mais kills por minuto fica na frente. Para entrar, jogue ao menos {min} minutos na semana; em caso de empate, vale o HS%."
+    },
+    "table": {
+      "caption": "{mode}: top {size} da semana de {range}",
+      "position": "Posição",
+      "player": "Jogador",
+      "roundsWon": "Rounds vencidos",
+      "kpm": "KPM",
+      "kd": "K/D",
+      "headshotPercent": "HS%",
+      "roundsPlayed": "Rounds",
+      "timePlayed": "Tempo"
+    },
+    "rowPosition": "{position}º",
+    "you": "Você",
+    "privatePlayer": "Jogador privado",
+    "profileLink": "Perfil de {name}",
+    "viewer": {
+      "title": "A sua semana",
+      "ranked": "Você está na posição {position} do {mode} nesta semana.",
+      "rankedPast": "Você terminou na posição {position} do {mode} nesta semana.",
+      "progressRounds": "Faltam {missing, plural, one {# round} other {# rounds}} para você entrar no Ranking do Retake desta semana.",
+      "progressMinutes": "Faltam {missing, plural, one {# minuto} other {# minutos}} para você entrar no Ranking do Deathmatch desta semana.",
+      "progressPast": "Você não cumpriu o mínimo desta semana.",
+      "removed": "A Staff removeu você do Ranking do {mode} desta semana. As suas Estatísticas continuam no Perfil. Se acha que foi um engano, fale com a Staff no <discord>Discord</discord>.",
+      "signIn": "Entre com a Steam para ver a sua posição e quanto falta para entrar.",
+      "signInAction": "Entrar com a Steam"
+    },
+    "empty": {
+      "title": "Ninguém entrou no Ranking desta semana",
+      "titlePast": "Ninguém entrou no Ranking desta semana",
+      "bodyRetake": "Para aparecer, jogue ao menos {min} rounds de Retake na semana. Quem vence mais rounds fica na frente; se empatar, vale o K/D.",
+      "bodyDeathmatch": "Para aparecer, jogue ao menos {min} minutos de Deathmatch na semana. Quem faz mais kills por minuto fica na frente; se empatar, vale o HS%.",
+      "bodyPast": "Nessa semana, ninguém cumpriu o mínimo de {min} {unit}."
+    },
+    "units": {
+      "rounds": "rounds",
+      "minutes": "minutos"
+    },
+    "integrity": "A Staff remove resultados irregulares. Se algo estiver errado com o seu, fale com a Staff no <discord>Discord</discord>.",
+    "unavailable": {
+      "title": "Não conseguimos carregar o Ranking agora",
+      "body": "A Carmine está com instabilidade. Tente de novo em instantes."
+    },
+    "invalidWeek": {
+      "title": "Essa semana não existe",
+      "body": "O Ranking guarda semanas que começam na segunda-feira e já começaram.",
+      "action": "Ver a semana atual"
+    },
+    "loading": "Carregando o Ranking"
   }
 }

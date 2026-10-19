@@ -43,3 +43,19 @@ function weekStartInstant(at: Date): number {
     local.getUTCDate() - daysSinceMonday,
   );
 }
+
+/**
+ * Valida o parâmetro de semana do Ranking: precisa ser uma data real e a segunda-feira que abre a
+ * semana (`YYYY-MM-DD`). Devolve a própria data, ou `null`.
+ */
+export function parseWeekStart(value: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) return null;
+  return date.getUTCDay() === 1 ? value : null;
+}
+
+/** O domingo (`YYYY-MM-DD`) da semana que começa em `weekStart`. */
+export function weekEndOf(weekStart: string): string {
+  return new Date(Date.parse(`${weekStart}T00:00:00Z`) + 6 * DAY_MS).toISOString().slice(0, 10);
+}

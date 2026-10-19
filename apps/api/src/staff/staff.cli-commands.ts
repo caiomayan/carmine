@@ -1,6 +1,18 @@
 import { parseArgs } from 'node:util';
-import { type StaffRole, staffRoleSchema, steamId64Schema } from '@carmine/contracts';
+import {
+  type GameMode,
+  gameModeSchema,
+  type StaffRole,
+  staffRoleSchema,
+  steamId64Schema,
+} from '@carmine/contracts';
 import type { DisplayNames } from '../accounts/display-names.js';
+import {
+  RankingEntryAlreadyRemoved,
+  RankingEntryNotFound,
+  type RankingRemovals,
+} from '../stats/ranking-removals.js';
+import { parseWeekStart } from '../stats/stats-week.js';
 import { AccountNotClaimed, LastOwner, type StaffRoles } from './staff-roles.js';
 
 export interface StaffCliDeps {
@@ -8,6 +20,7 @@ export interface StaffCliDeps {
   findAccountId: (steamId: string) => Promise<string | null>;
   roles: StaffRoles;
   displayNames: DisplayNames;
+  rankingRemovals: RankingRemovals;
   out: (line: string) => void;
   err: (line: string) => void;
 }
@@ -16,6 +29,7 @@ const USAGE = `Uso:
   staff grant  --steam-id <SteamID64> --role <owner|admin|moderator> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff revoke --steam-id <SteamID64> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff reset-name --steam-id <SteamID64> --by <SteamID64 de quem faz> --reason "<motivo>"
+  staff ranking-remove --steam-id <SteamID64> --mode <retake|deathmatch> --week <segunda-feira YYYY-MM-DD> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff list`;
 
 const ROLE_NAMES: Record<StaffRole, string> = {
@@ -42,6 +56,8 @@ export async function runStaffCli(argv: string[], deps: StaffCliDeps): Promise<n
         return await change(rest, deps, false);
       case 'reset-name':
         return await resetName(rest, deps);
+      case 'ranking-remove':
+        return await rankingRemove(rest, deps);
       case 'list':
         return await list(deps);
       default:
@@ -57,8 +73,8 @@ export async function runStaffCli(argv: string[], deps: StaffCliDeps): Promise<n
   }
 }
 
-function options(args: string[], withRole: boolean) {
-  const names = ['steam-id', 'by', 'reason', ...(withRole ? ['role'] : [])];
+function options(args: string[], withRole: boolean, extra: string[] = []) {
+  const names = ['steam-id', 'by', 'reason', ...(withRole ? ['role'] : []), ...extra];
   let values: Record<string, string | boolean | undefined>;
   try {
     ({ values } = parseArgs({
@@ -83,6 +99,7 @@ function options(args: string[], withRole: boolean) {
     throw new UsageError(`--role precisa ser owner, admin ou moderator\n${USAGE}`);
   }
   return {
+    value,
     steamId: value('steam-id'),
     by: value('by'),
     reason: value('reason').trim(),
@@ -121,6 +138,36 @@ async function resetName(args: string[], deps: StaffCliDeps): Promise<number> {
   const account = await deps.displayNames.reset(accountId, { actorSteamId: by, reason });
   deps.out(
     `${steamId} agora aparece como "${account.displayName}" (vale no próximo connect no jogo).`,
+  );
+  return 0;
+}
+
+async function rankingRemove(args: string[], deps: StaffCliDeps): Promise<number> {
+  const { steamId, by, reason, value } = options(args, false, ['mode', 'week']);
+  const mode = gameModeSchema.safeParse(value('mode'));
+  if (!mode.success)
+    throw new UsageError(`--mode precisa ser retake ou deathmatch
+${USAGE}`);
+  const week = parseWeekStart(value('week'));
+  if (week === null) {
+    throw new UsageError(`--week precisa ser a segunda-feira da semana (YYYY-MM-DD)
+${USAGE}`);
+  }
+  const accountId = await deps.findAccountId(steamId);
+  if (accountId === null) throw new UsageError(`nenhuma Conta com o SteamID64 ${steamId}`);
+  try {
+    await deps.rankingRemovals.remove({ accountId, steamId }, mode.data satisfies GameMode, week, {
+      actorSteamId: by,
+      reason,
+    });
+  } catch (error) {
+    if (error instanceof RankingEntryNotFound || error instanceof RankingEntryAlreadyRemoved) {
+      throw new UsageError(`${steamId}: ${error.message}`);
+    }
+    throw error;
+  }
+  deps.out(
+    `${steamId} saiu do Ranking de ${mode.data} da semana ${week} (as Estatísticas continuam; some do Ranking em até 1 minuto).`,
   );
   return 0;
 }

@@ -71,6 +71,13 @@
       "when": 1792362922690,
       "tag": "0009_s12_estatisticas",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792374776915,
+      "tag": "0010_s12b_ranking",
+      "breakpoints": true
     }
   ]
 }

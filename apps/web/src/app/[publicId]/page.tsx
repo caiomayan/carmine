@@ -15,10 +15,17 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
 import { ProfileSettings } from '@/components/profile/profile-settings';
+import { ProfileStats } from '@/components/profile/profile-stats';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
 import { findPublicIdBySteamId } from '@/lib/api-base';
-import { getProfile, getServerSession, type ProfileResult, visitorIp } from '@/lib/api-server';
+import {
+  getProfile,
+  getProfileStats,
+  getServerSession,
+  type ProfileResult,
+  visitorIp,
+} from '@/lib/api-server';
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
 import { RARITIES } from '@/lib/catalog/types';
 import { buildShowcase } from '@/lib/loadout/build';
@@ -82,6 +89,7 @@ export default async function ProfilePage({ params }: { params: Params }) {
   const showcase = buildShowcase(profile.loadoutShowcase.items);
   const tc = await getTranslations('catalog');
   const messages = await getMessages();
+  const stats = await getProfileStats(profile.publicId);
 
   return (
     <div className="container-page pb-16">
@@ -142,6 +150,13 @@ export default async function ProfilePage({ params }: { params: Params }) {
           </div>
         )}
       </section>
+
+      <ProfileStats
+        stats={stats}
+        name={profile.displayName}
+        isOwner={isOwner}
+        isPrivate={profile.isPrivate}
+      />
 
       <SanctionHistory sanctions={profile.sanctions} />
     </div>

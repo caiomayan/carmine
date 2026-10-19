@@ -2,6 +2,8 @@
 
 import {
   accountAnonymizedSchema,
+  type GameMode,
+  gameModeSchema,
   type StaffAccountDetail,
   type StaffRole,
   type StaffSanction,
@@ -25,6 +27,7 @@ import { SectionTitle } from '@/components/section-title';
 import { useCopy } from '@/components/servers/use-copy';
 import { Button } from '@/components/ui/button';
 import { sanctionLength } from '@/lib/moderation';
+import { recentWeekStarts } from '@/lib/ranking';
 import { canRevoke, type StaffViewer, sanctionGuard, sanctionState } from '@/lib/staff';
 import { cn } from '@/lib/utils';
 import { ActionForm } from './action-form';
@@ -99,6 +102,7 @@ export function AccountFile({
         <aside className="grid min-w-0 gap-10 animate-fade-up [animation-delay:120ms]">
           <VipPanel detail={detail} viewer={viewer} onChange={setDetail} />
           <DisplayNamePanel detail={detail} onChange={setDetail} />
+          <RankingPanel detail={detail} onChange={setDetail} />
           <RolePanel detail={detail} viewer={viewer} onChange={setDetail} />
           <ErasurePanel detail={detail} viewer={viewer} />
           <section aria-labelledby="auditoria-conta">
@@ -481,6 +485,80 @@ function DisplayNamePanel({
           return result;
         }}
       />
+    </Panel>
+  );
+}
+
+const RANKING_WEEKS_OFFERED = 8;
+
+/**
+ * Integridade do Ranking (S12): tira a Conta do Ranking de um Modo e semana, com motivo. As
+ * Estatísticas não mudam. A semana é uma das últimas ${RANKING_WEEKS_OFFERED} (as mais antigas, só pelo CLI).
+ */
+function RankingPanel({
+  detail,
+  onChange,
+}: {
+  detail: StaffAccountDetail;
+  onChange: (detail: StaffAccountDetail) => void;
+}) {
+  const t = useTranslations('staff.ranking');
+  const tr = useTranslations('ranking');
+  const { request } = useStaffRequest();
+  const id = useId();
+  const [mode, setMode] = useState<GameMode>('retake');
+  const [weeks] = useState(() => recentWeekStarts(new Date(), RANKING_WEEKS_OFFERED));
+  const [week, setWeek] = useState(weeks[0] ?? '');
+  const { account } = detail;
+  return (
+    <Panel id="ranking" title={t('title')}>
+      <ActionForm
+        collapsed
+        label={t('submit')}
+        description={t('hint')}
+        submitLabel={t('submit')}
+        doneLabel={t('done')}
+        testId="ranking-removal"
+        onSubmit={async (reason) => {
+          const result = await request(
+            `/api/staff/accounts/${account.publicId}/ranking-removals`,
+            'POST',
+            { mode, weekStart: week, reason },
+            staffAccountDetailSchema,
+          );
+          if (result.ok) onChange(result.data);
+          return result;
+        }}
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id={`${id}-mode`} label={t('mode')}>
+            <Select
+              id={`${id}-mode`}
+              value={mode}
+              onChange={(event) => setMode(gameModeSchema.parse(event.target.value))}
+            >
+              {gameModeSchema.options.map((value) => (
+                <option key={value} value={value}>
+                  {tr(`modes.${value}`)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field id={`${id}-week`} label={t('week')}>
+            <Select
+              id={`${id}-week`}
+              value={week}
+              onChange={(event) => setWeek(event.target.value)}
+            >
+              {weeks.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+      </ActionForm>
     </Panel>
   );
 }

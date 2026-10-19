@@ -2,6 +2,7 @@ import {
   type AccountAnonymized,
   type ApplySanctions,
   isPermanentMeasure,
+  type RemoveRankingEntry,
   type RevokeSanction,
   type SetStaffRole,
   STAFF_ROLE_RANK,
@@ -36,6 +37,11 @@ import {
   ServerCodeTaken,
 } from '../game-servers/game-server-registry.js';
 import { SanctionNotActive, type Sanctions } from '../moderation/sanctions.js';
+import {
+  RankingEntryAlreadyRemoved,
+  RankingEntryNotFound,
+  type RankingRemovals,
+} from '../stats/ranking-removals.js';
 import { NoVipToRevoke, type VipPeriods } from '../vip/vip-periods.js';
 import { toVipStatus } from '../vip/vip-status.js';
 import {
@@ -68,6 +74,7 @@ export interface StaffPanelDeps {
   sessions: SessionStore;
   servers: GameServerRegistry;
   erasure: AccountErasure;
+  rankingRemovals: RankingRemovals;
   /** Tira do cache o `equipped/v5` da Conta (mudou o VIP). */
   invalidateEquipped: (steamId: string) => Promise<void>;
 }
@@ -223,6 +230,34 @@ export class StaffPanel {
     const target = await this.account(publicId);
     const updated = await this.deps.displayNames.reset(target.id, staffAction(actor, reason), now);
     return this.detailOf(updated, now);
+  }
+
+  /** Tira a Conta do Ranking de um Modo e semana (S12); as Estatísticas continuam. */
+  async removeFromRanking(
+    actor: StaffActor,
+    publicId: number,
+    input: RemoveRankingEntry,
+    now = new Date(),
+  ): Promise<StaffAccountDetail> {
+    const target = await this.account(publicId);
+    try {
+      await this.deps.rankingRemovals.remove(
+        { accountId: target.id, steamId: target.steamId },
+        input.mode,
+        input.weekStart,
+        staffAction(actor, input.reason),
+        now,
+      );
+    } catch (error) {
+      if (error instanceof RankingEntryNotFound) {
+        throw new StaffRejection('ranking_entry_not_found', error.message);
+      }
+      if (error instanceof RankingEntryAlreadyRemoved) {
+        throw new StaffRejection('ranking_entry_already_removed', error.message);
+      }
+      throw error;
+    }
+    return this.detailOf(target, now);
   }
 
   async setRole(

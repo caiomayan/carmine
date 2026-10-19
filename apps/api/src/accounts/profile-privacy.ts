@@ -1,5 +1,6 @@
-/** Como o Ranking chama quem tem o Perfil privado (S11). */
-export const PRIVATE_PLAYER_NAME = 'Jogador privado';
+import { PRIVATE_PLAYER_NAME } from '@carmine/contracts';
+
+export { PRIVATE_PLAYER_NAME };
 
 /**
  * O ponto único do Perfil privado (S11) que Estatísticas e Ranking (S12) consultam. Nada que
