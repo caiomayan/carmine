@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { type FormEvent, useId, useRef, useState } from 'react';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
+import { DiscordSetting } from '@/components/profile/discord-setting';
 import { SectionTitle } from '@/components/section-title';
 import { useSession } from '@/components/session/session-provider';
 import { controlClass, Field, FieldError } from '@/components/staff/fields';
@@ -31,6 +32,7 @@ export function ProfileSettings() {
       <div className="grid gap-1 rounded-xl bg-surface p-2 max-md:p-1">
         <NameRow />
         <PrivacyRow />
+        <DiscordSetting />
       </div>
     </section>
   );
