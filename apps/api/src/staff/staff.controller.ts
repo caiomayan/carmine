@@ -6,14 +6,18 @@ import {
   type RemoveRankingEntry,
   type RevokeSanction,
   removeRankingEntrySchema,
+  reportStatusSchema,
   revokeSanctionSchema,
   type SetStaffRole,
   STAFF_AUDIT_PAGE_DEFAULT,
   STAFF_AUDIT_PAGE_MAX,
+  STAFF_REPORTS_PAGE_DEFAULT,
+  STAFF_REPORTS_PAGE_MAX,
   type StaffAccountDetail,
   type StaffAccountSearch,
   type StaffAuditPage,
   type StaffReasonBody,
+  type StaffReportPage,
   type StaffServer,
   type StaffVipGrant,
   setStaffRoleSchema,
@@ -24,6 +28,7 @@ import {
   staffErrorSchema,
   staffMemberListSchema,
   staffReasonBodySchema,
+  staffReportPageSchema,
   staffServerListSchema,
   staffServerSchema,
   staffVipGrantSchema,
@@ -50,6 +55,7 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -78,6 +84,17 @@ const auditQuerySchema = z.object({
   action: staffAuditActionSchema.optional(),
   before: z.string().max(200).optional(),
   limit: z.coerce.number().int().min(1).max(STAFF_AUDIT_PAGE_MAX).default(STAFF_AUDIT_PAGE_DEFAULT),
+});
+
+const reportsQuerySchema = z.object({
+  status: reportStatusSchema.default('open'),
+  before: z.string().max(200).optional(),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(STAFF_REPORTS_PAGE_MAX)
+    .default(STAFF_REPORTS_PAGE_DEFAULT),
 });
 
 const ERROR = {
@@ -307,6 +324,49 @@ export class StaffController {
     @Body({ schema: updateStaffServerSchema }) body: UpdateStaffServer,
   ): Promise<StaffServer> {
     return this.panel.updateServer(actor, id, body);
+  }
+
+  @Get('reports')
+  @StaffOnly('reports.handle')
+  @RateLimit('public')
+  @ApiOperation({
+    operationId: 'listStaffReports',
+    summary:
+      'Fila de Denúncias (S13) com o chat do momento, o servidor e o round; as abertas, das mais antigas',
+  })
+  @ApiQuery({ name: 'status', required: false, enum: reportStatusSchema.options })
+  @ApiQuery({ name: 'before', required: false, description: '`nextCursor` da página anterior' })
+  @ApiQuery({ name: 'limit', required: false, description: `1 a ${STAFF_REPORTS_PAGE_MAX}` })
+  @ApiOkResponse({ description: 'Uma página', standardSchema: staffReportPageSchema })
+  reports(@Query() query: Record<string, string>): Promise<StaffReportPage> {
+    const parsed = reportsQuerySchema.safeParse(query);
+    if (!parsed.success) {
+      throw new StaffRejection(
+        'invalid_body',
+        parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; '),
+      );
+    }
+    const { status, before, limit } = parsed.data;
+    return this.panel.reports(status, { ...(before && { before }), limit });
+  }
+
+  @Post('reports/:id/archive')
+  @StaffOnly('reports.handle')
+  @RateLimit('mutations')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    operationId: 'archiveStaffReport',
+    summary: 'Arquiva uma Denúncia aberta, com motivo (vai para o log de auditoria)',
+  })
+  @ApiNoContentResponse({ description: 'Arquivada' })
+  @ApiNotFoundResponse(ERROR)
+  @ApiConflictResponse(ERROR)
+  async archiveReport(
+    @CurrentStaff() actor: StaffActor,
+    @Param('id', { schema: uuidParam }) id: string,
+    @Body({ schema: staffReasonBodySchema }) body: StaffReasonBody,
+  ): Promise<void> {
+    await this.panel.archiveReport(actor, id, body.reason);
   }
 
   @Get('audit')

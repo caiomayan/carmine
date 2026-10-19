@@ -22,6 +22,7 @@ describe('loadConfig', () => {
       rankingCacheTtlSeconds: 45,
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
+      reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
@@ -89,6 +90,24 @@ describe('loadConfig', () => {
         DISCORD_ALERT_WEBHOOK_URL: 'http://x.example/w',
       }),
     ).toThrow(/DISCORD_ALERT_WEBHOOK_URL/);
+  });
+
+  it('lê o webhook da Staff (S13) e a limpeza de retenção; sem webhook, desligado', () => {
+    expect(loadConfig(validEnv).reports).toEqual({ webhookUrl: null, retentionSweepMs: 3_600_000 });
+    expect(
+      loadConfig({
+        ...validEnv,
+        STAFF_REPORTS_WEBHOOK_URL: 'https://discord.com/api/webhooks/2/def',
+        RETENTION_SWEEP_MINUTES: '0',
+      }).reports,
+    ).toEqual({ webhookUrl: 'https://discord.com/api/webhooks/2/def', retentionSweepMs: 0 });
+    expect(() =>
+      loadConfig({
+        ...validEnv,
+        NODE_ENV: 'production',
+        STAFF_REPORTS_WEBHOOK_URL: 'http://x.example/w',
+      }),
+    ).toThrow(/STAFF_REPORTS_WEBHOOK_URL/);
   });
 
   it('lê a origem pública do web sem a barra final', () => {

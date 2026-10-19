@@ -2,11 +2,13 @@ import { parseArgs } from 'node:util';
 import {
   type GameMode,
   gameModeSchema,
+  REPORT_REASON_LABELS,
   type StaffRole,
   staffRoleSchema,
   steamId64Schema,
 } from '@carmine/contracts';
 import type { DisplayNames } from '../accounts/display-names.js';
+import { ReportNotFound, ReportNotOpen, type StaffReports } from '../reports/staff-reports.js';
 import {
   RankingEntryAlreadyRemoved,
   RankingEntryNotFound,
@@ -21,6 +23,7 @@ export interface StaffCliDeps {
   roles: StaffRoles;
   displayNames: DisplayNames;
   rankingRemovals: RankingRemovals;
+  reports: StaffReports;
   out: (line: string) => void;
   err: (line: string) => void;
 }
@@ -30,6 +33,8 @@ const USAGE = `Uso:
   staff revoke --steam-id <SteamID64> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff reset-name --steam-id <SteamID64> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff ranking-remove --steam-id <SteamID64> --mode <retake|deathmatch> --week <segunda-feira YYYY-MM-DD> --by <SteamID64 de quem faz> --reason "<motivo>"
+  staff reports
+  staff report-archive --id <id da Denúncia> --by <SteamID64 de quem faz> --reason "<motivo>"
   staff list`;
 
 const ROLE_NAMES: Record<StaffRole, string> = {
@@ -58,6 +63,10 @@ export async function runStaffCli(argv: string[], deps: StaffCliDeps): Promise<n
         return await resetName(rest, deps);
       case 'ranking-remove':
         return await rankingRemove(rest, deps);
+      case 'reports':
+        return await openReports(deps);
+      case 'report-archive':
+        return await archiveReport(rest, deps);
       case 'list':
         return await list(deps);
       default:
@@ -169,6 +178,66 @@ ${USAGE}`);
   deps.out(
     `${steamId} saiu do Ranking de ${mode.data} da semana ${week} (as Estatísticas continuam; some do Ranking em até 1 minuto).`,
   );
+  return 0;
+}
+
+/** As Denúncias abertas (S13), das mais antigas: o prazo de 72 h corre desde a primeira. */
+async function openReports(deps: StaffCliDeps): Promise<number> {
+  const { reports, openCount } = await deps.reports.page('open', { limit: 100 });
+  if (reports.length === 0) {
+    deps.out('Nenhuma Denúncia aberta.');
+    return 0;
+  }
+  for (const report of reports) {
+    deps.out(
+      [
+        report.id,
+        report.createdAt,
+        REPORT_REASON_LABELS[report.reason],
+        `#${report.target.publicId} ${report.target.displayName}`,
+        report.server?.code ?? report.server?.name ?? '-',
+        `${report.chat.length} linha(s) de chat`,
+      ].join('\t'),
+    );
+  }
+  deps.out(
+    `${openCount} aberta(s). Para arquivar: staff report-archive --id <id> --by <SteamID64> --reason "..."`,
+  );
+  return 0;
+}
+
+async function archiveReport(args: string[], deps: StaffCliDeps): Promise<number> {
+  let values: Record<string, string | boolean | undefined>;
+  try {
+    ({ values } = parseArgs({
+      args,
+      options: { id: { type: 'string' }, by: { type: 'string' }, reason: { type: 'string' } },
+      strict: true,
+    }));
+  } catch (error) {
+    throw new UsageError(`${(error as Error).message}\n${USAGE}`);
+  }
+  const id = typeof values.id === 'string' ? values.id : '';
+  const by = typeof values.by === 'string' ? values.by : '';
+  const reason = typeof values.reason === 'string' ? values.reason.trim() : '';
+  if (!/^[0-9a-f-]{36}$/.test(id)) {
+    throw new UsageError(`--id precisa ser o id da Denúncia (staff reports)\n${USAGE}`);
+  }
+  if (!steamId64Schema.safeParse(by).success) {
+    throw new UsageError(`--by precisa ser o SteamID64 de uma conta individual\n${USAGE}`);
+  }
+  if (reason === '') {
+    throw new UsageError(`--reason é obrigatório: vai para o log de auditoria\n${USAGE}`);
+  }
+  try {
+    await deps.reports.archive(id, { actorSteamId: by, reason });
+  } catch (error) {
+    if (error instanceof ReportNotFound || error instanceof ReportNotOpen) {
+      throw new UsageError(error.message);
+    }
+    throw error;
+  }
+  deps.out(`Denúncia ${id} arquivada.`);
   return 0;
 }
 

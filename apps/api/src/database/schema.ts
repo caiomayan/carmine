@@ -227,6 +227,7 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'account_anonymize',
   'account_reserved_id',
   'ranking_entry_remove',
+  'report_archive',
 ]);
 
 /**
@@ -427,4 +428,96 @@ export const teamKills = pgTable(
     killedAt: timestamptz().notNull(),
   },
   (table) => [index('team_kills_killer_idx').on(table.killerAccountId, table.killedAt)],
+);
+
+/** Em que lado o jogador estava ao falar no chat (S13). */
+export const chatTeam = pgEnum('chat_team', ['ct', 't', 'spectator']);
+
+/**
+ * Log de chat dos Servidores Carmine (S13, ADR 0019): toda mensagem dita, com o lado e se foi
+ * chat de time. O `id` é o do evento (UUID v7 do plugin): é a chave da idempotência. Dura 30
+ * dias (`DataRetention`); apagar a Conta (anonimização) apaga as linhas dela.
+ */
+export const chatMessages = pgTable(
+  'chat_messages',
+  {
+    id: uuid().primaryKey(),
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    team: chatTeam().notNull(),
+    teamChat: boolean().notNull(),
+    text: text().notNull(),
+    /** Quando foi dito, pelo relógio do servidor. */
+    at: timestamptz().notNull(),
+    receivedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    index('chat_messages_server_idx').on(table.serverId, table.at),
+    index('chat_messages_account_idx').on(table.accountId, table.at),
+    index('chat_messages_at_idx').on(table.at),
+  ],
+);
+
+export const reportReason = pgEnum('report_reason', [
+  'cheat',
+  'voice',
+  'offensive_chat',
+  'griefing',
+  'other',
+]);
+
+export const reportStatus = pgEnum('report_status', ['open', 'archived', 'sanctioned']);
+
+/** Uma linha do chat copiada para dentro da Denúncia (sobrevive à limpeza dos 30 dias). */
+export type ReportChatLineRow = {
+  at: string;
+  /** Nulo se a Conta foi anonimizada depois. */
+  publicId: number | null;
+  displayName: string;
+  team: 'ct' | 't' | 'spectator';
+  teamChat: boolean;
+  text: string;
+  fromTarget: boolean;
+};
+
+/**
+ * Denúncia (`Report`, S13): um jogador avisa a Staff sobre outro, pelo `!report` no jogo. Leva o
+ * servidor, o mapa, o round, o horário e as últimas linhas do chat (`chatContext`, uma cópia).
+ * Fica na fila da Staff até ser arquivada (com motivo) ou virar Punição; some 90 dias depois de
+ * criada (`DataRetention`).
+ */
+export const reports = pgTable(
+  'reports',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Nulo depois que o denunciante pede a exclusão dos dados. */
+    reporterAccountId: uuid().references(() => accounts.id, { onDelete: 'set null' }),
+    targetAccountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    serverId: uuid().references(() => gameServers.id),
+    map: text(),
+    round: integer(),
+    reason: reportReason().notNull(),
+    chatContext: jsonb().$type<ReportChatLineRow[]>().notNull(),
+    status: reportStatus().notNull().default('open'),
+    createdAt: timestamptz().notNull().defaultNow(),
+    resolvedAt: timestamptz(),
+    resolvedBySteamId: bigint({ mode: 'bigint' }),
+    /** Motivo do arquivamento; nulo quando virou Punição. */
+    resolutionReason: text(),
+  },
+  (table) => [
+    index('reports_status_idx').on(table.status, table.createdAt),
+    index('reports_reporter_idx').on(table.reporterAccountId, table.createdAt),
+    index('reports_target_idx').on(table.targetAccountId, table.status),
+    check(
+      'reports_resolution_complete',
+      sql`(${table.status} = 'open') = (${table.resolvedAt} is null) and (${table.status} = 'open') = (${table.resolvedBySteamId} is null)`,
+    ),
+  ],
 );

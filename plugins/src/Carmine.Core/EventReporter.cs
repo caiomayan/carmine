@@ -56,6 +56,9 @@ public sealed class EventReporter(ICarmineApiClient api, TimeProvider time, int 
 
     public void Add(KillEvent kill) => Enqueue(kill);
 
+    /// <summary>Uma mensagem de chat (S13): vai no mesmo lote e na mesma fila dos eventos do jogo.</summary>
+    public void Add(ChatMessageEvent chat) => Enqueue(chat);
+
     public void Add(DamageEvent damage) => Enqueue(damage);
 
     public void Add(RoundEndEvent roundEnd) => Enqueue(roundEnd);
@@ -205,6 +208,9 @@ public sealed class EventReporter(ICarmineApiClient api, TimeProvider time, int 
                     break;
                 case SessionEndEvent end:
                     batch.SessionEnds.Add(end);
+                    break;
+                case ChatMessageEvent chat:
+                    (batch.ChatMessages ??= []).Add(chat);
                     break;
             }
         }

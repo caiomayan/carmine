@@ -165,9 +165,11 @@ public sealed partial class CorePlugin
     private static bool TeammatesAreEnemies() =>
         ConVar.Find("mp_teammates_are_enemies")?.GetPrimitiveValue<bool>() ?? false;
 
-    private bool IsWarmup()
+    private bool IsWarmup() => GameRules()?.WarmupPeriod ?? false;
+
+    private CCSGameRules? GameRules()
     {
         _gameRules ??= Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").FirstOrDefault()?.GameRules;
-        return _gameRules?.WarmupPeriod ?? false;
+        return _gameRules;
     }
 }

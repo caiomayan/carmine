@@ -17,7 +17,7 @@ import {
 } from '@carmine/contracts';
 import { aliasedTable, and, desc, eq, gt, inArray, isNull, lte, or, type SQL } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
-import { accounts, sanctions } from '../database/schema.js';
+import { accounts, reports, sanctions } from '../database/schema.js';
 import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
 import {
   gameSanctionMessage,
@@ -52,6 +52,8 @@ export interface SanctionIncident {
   witness?: string;
   /** Link da evidência anexada. */
   evidenceUrl?: string;
+  /** A Denúncia (S13) que originou a Punição: é fechada como "punida" na mesma transação. */
+  reportId?: string;
 }
 
 /** Ban por cheat sem testemunha nem evidência (o contrato já barra; isto é a rede de segurança). */
@@ -151,9 +153,20 @@ export class Sanctions {
           ...(witness && { witness }),
           ...(evidenceUrl && { evidenceUrl }),
           ...(suggested && { suggested }),
+          ...(incident.reportId && { reportId: incident.reportId }),
         },
         at: now,
       });
+      if (incident.reportId) {
+        await tx
+          .update(reports)
+          .set({
+            status: 'sanctioned',
+            resolvedAt: now,
+            resolvedBySteamId: BigInt(staff.actorSteamId),
+          })
+          .where(and(eq(reports.id, incident.reportId), eq(reports.status, 'open')));
+      }
       return ids;
     });
     return {

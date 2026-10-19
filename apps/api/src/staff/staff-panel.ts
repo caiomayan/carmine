@@ -2,7 +2,9 @@ import {
   type AccountAnonymized,
   type ApplySanctions,
   isPermanentMeasure,
+  REPORT_REASONS_NEEDING_EVIDENCE,
   type RemoveRankingEntry,
+  type ReportStatus,
   type RevokeSanction,
   type SetStaffRole,
   STAFF_ROLE_RANK,
@@ -13,6 +15,7 @@ import {
   type StaffAccountSummary,
   type StaffAuditPage,
   type StaffMember,
+  type StaffReportPage,
   type StaffServer,
   type StaffVipGrant,
   staffCan,
@@ -37,6 +40,13 @@ import {
   ServerCodeTaken,
 } from '../game-servers/game-server-registry.js';
 import { SanctionNotActive, type Sanctions } from '../moderation/sanctions.js';
+import {
+  InvalidReportCursor,
+  ReportNotFound,
+  ReportNotOpen,
+  ReportTargetMismatch,
+  type StaffReports,
+} from '../reports/staff-reports.js';
 import {
   RankingEntryAlreadyRemoved,
   RankingEntryNotFound,
@@ -73,6 +83,7 @@ export interface StaffPanelDeps {
   vip: VipPeriods;
   sessions: SessionStore;
   servers: GameServerRegistry;
+  reports: StaffReports;
   erasure: AccountErasure;
   rankingRemovals: RankingRemovals;
   /** Tira do cache o `equipped/v5` da Conta (mudou o VIP). */
@@ -136,6 +147,20 @@ export class StaffPanel {
     ) {
       throw new StaffRejection('permanent_not_allowed', 'Seu papel não aplica Punição permanente');
     }
+    if (input.reportId !== undefined) {
+      const reason = await this.openReport(input.reportId, target.id);
+      // Sem demo, a Denúncia de cheat ou de voz sozinha não basta: precisa de evidência adicional.
+      if (
+        REPORT_REASONS_NEEDING_EVIDENCE.includes(reason) &&
+        input.witness === undefined &&
+        input.evidenceUrl === undefined
+      ) {
+        throw new StaffRejection(
+          'report_needs_evidence',
+          'Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link',
+        );
+      }
+    }
     const suggestion = (await this.deps.sanctions.suggestionsFor(target.id, now)).find(
       (s) => s.category === input.category,
     );
@@ -148,6 +173,7 @@ export class StaffPanel {
         measures: input.measures,
         ...(input.witness !== undefined && { witness: input.witness }),
         ...(input.evidenceUrl !== undefined && { evidenceUrl: input.evidenceUrl }),
+        ...(input.reportId !== undefined && { reportId: input.reportId }),
       },
       now,
       suggestion?.measures,
@@ -260,6 +286,35 @@ export class StaffPanel {
     return this.detailOf(target, now);
   }
 
+  /** A fila de Denúncias (S13), com o contexto de cada uma. */
+  async reports(
+    status: ReportStatus,
+    options: { before?: string; limit?: number },
+  ): Promise<StaffReportPage> {
+    try {
+      return await this.deps.reports.page(status, options);
+    } catch (error) {
+      if (error instanceof InvalidReportCursor) {
+        throw new StaffRejection('invalid_body', 'before: cursor inválido');
+      }
+      throw error;
+    }
+  }
+
+  /** Arquiva a Denúncia aberta, com motivo; fica no log de auditoria. */
+  async archiveReport(
+    actor: StaffActor,
+    reportId: string,
+    reason: string,
+    now = new Date(),
+  ): Promise<void> {
+    try {
+      await this.deps.reports.archive(reportId, staffAction(actor, reason), now);
+    } catch (error) {
+      throw reportRejection(error);
+    }
+  }
+
   async setRole(
     actor: StaffActor,
     publicId: number,
@@ -353,6 +408,14 @@ export class StaffPanel {
     }
   }
 
+  private async openReport(reportId: string, targetAccountId: string) {
+    try {
+      return await this.deps.reports.openReasonFor(reportId, targetAccountId);
+    } catch (error) {
+      throw reportRejection(error);
+    }
+  }
+
   private async account(publicId: number): Promise<Account> {
     const account = await this.deps.accounts.findByPublicId(publicId);
     // Anonimizada e já sem o SteamID64 (sem ban valendo): não há mais o que ver nem fazer.
@@ -437,6 +500,16 @@ export class StaffPanel {
       anonymized: a.anonymizedAt !== null,
     }));
   }
+}
+
+/** Os erros da fila de Denúncias como recusas do painel; o resto sobe. */
+function reportRejection(error: unknown): unknown {
+  if (error instanceof ReportNotFound) return new StaffRejection('report_not_found', error.message);
+  if (error instanceof ReportNotOpen) return new StaffRejection('report_not_open', error.message);
+  if (error instanceof ReportTargetMismatch) {
+    return new StaffRejection('report_target_mismatch', error.message);
+  }
+  return error;
 }
 
 function staffAction(actor: StaffActor, reason: string): StaffAction {

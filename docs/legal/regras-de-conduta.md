@@ -1,7 +1,7 @@
 ---
 title: Regras de conduta
-updatedAt: 2026-10-12
-version: 0.3.0
+updatedAt: 2026-10-19
+version: 0.4.0
 ---
 
 Estas regras valem em todos os Servidores Carmine, no site stcarmine.com e no Discord do Carmine. Elas fazem parte dos [Termos de Uso](/termos): ao jogar num Servidor Carmine, você concorda com elas.
@@ -119,11 +119,25 @@ Quem aplica a punição é uma pessoa da Staff. O sistema mostra o seu históric
 
 ## Como a Staff analisa
 
-- **Chat de texto:** a Staff consegue ver o que foi escrito nos servidores. Guardamos o chat por até 30 dias.
+- **Chat de texto:** o Carmine registra tudo o que é dito no chat dos servidores (inclusive o chat de time), com o horário e o time de quem falou, e guarda por 30 dias. Esconder o chat dos outros com `!chat off` não muda isso: o registro é do que foi dito. Cada Denúncia leva uma cópia das últimas linhas do chat do servidor, que fica com ela por até 90 dias.
 - **Chat de voz:** o Carmine **não grava** a voz. Uma denúncia de voz só vira punição se quem denunciou enviar uma gravação (um clipe) ao suporte no Discord.
 - **Cheat:** não gravamos demos. Uma denúncia de cheat precisa de uma testemunha identificada, de uma evidência (como um clipe) ou das duas, e é analisada por uma pessoa da Staff.
 
-Para denunciar, use `!report` no jogo ou abra um ticket no Discord. A Staff analisa em até 72 h e conta a quem denunciou se houve punição (sem expor os detalhes da outra pessoa). Não prometemos moderação imediata.
+### Como denunciar
+
+Use `!report` no jogo: o chat lista os jogadores, você escolhe um pelo número e depois o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro). Você recebe a confirmação "Denúncia recebida; a Staff analisa em até 72 h". Também dá para abrir um ticket no Discord.
+
+- Não dá para denunciar a si mesmo nem bots.
+- Limites: 1 denúncia por jogador a cada 10 minutos e 5 por hora. Se passar do limite, o jogo diz quando dá para tentar de novo.
+- A Denúncia vai para a fila da Staff com o servidor, o mapa, o round, o horário e as últimas linhas do chat.
+
+### O que acontece com a Denúncia
+
+A Staff analisa em até 72 h e conta a quem denunciou se houve punição (sem expor os detalhes da outra pessoa). Não prometemos moderação imediata.
+
+- **Chat ofensivo, antijogo e outros:** a Staff olha o chat anexado e o histórico da Conta e decide.
+- **Cheat e voz:** sem demo e sem gravação de voz, **a Denúncia sozinha não gera punição**. Ela fica registrada, e a Staff só pune com **evidência adicional**: uma testemunha identificada ou um clipe, por exemplo enviado pelo ticket no Discord. É a mesma regra do ban por cheat, que vale também para quem denuncia voz.
+- Denúncia arquivada fica registrada com o motivo do arquivamento, e nada acontece com quem foi denunciado.
 
 Cada Conta é presa a uma conta Steam. Para pegar quem volta com outra conta, a Staff compara contas novas com as punidas (por exemplo, pelo histórico de jogo e pelos amigos Steam em comum) antes de aplicar a linha de conta alternativa. [VALIDAR COM ADVOGADO]
 

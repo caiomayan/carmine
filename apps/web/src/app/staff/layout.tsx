@@ -24,8 +24,11 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   if (!role) notFound();
 
   const t = await getTranslations('staff');
-  const { staff, moderation } = await getMessages();
+  const { staff, moderation, ranking } = await getMessages();
   const items: NavItem[] = [{ href: '/staff', label: t('nav.accounts') }];
+  if (staffCan(role, 'reports.handle')) {
+    items.push({ href: '/staff/denuncias', label: t('nav.reports') });
+  }
   if (staffCan(role, 'audit.read')) items.push({ href: '/staff/auditoria', label: t('nav.audit') });
   if (staffCan(role, 'servers.edit')) {
     items.push({ href: '/staff/servidores', label: t('nav.servers') });
@@ -45,7 +48,9 @@ export default async function StaffLayout({ children }: { children: ReactNode })
           className="-mx-3 mb-6 animate-fade-up overflow-x-auto [animation-delay:40ms]"
         />
       ) : null}
-      <NextIntlClientProvider messages={{ staff, moderation }}>{children}</NextIntlClientProvider>
+      <NextIntlClientProvider messages={{ staff, moderation, ranking }}>
+        {children}
+      </NextIntlClientProvider>
     </div>
   );
 }

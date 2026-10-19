@@ -1,7 +1,7 @@
 ---
 title: Política de Privacidade
-updatedAt: 2026-10-12
-version: 0.3.0
+updatedAt: 2026-10-19
+version: 0.4.0
 ---
 
 Esta página explica quais dados pessoais o Carmine usa, para quê, com quem compartilha, por quanto tempo guarda e como você pode controlar tudo isso. Ela segue a Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018).
@@ -31,8 +31,8 @@ Mesmo que você nunca entre no site, ao conectar num Servidor Carmine nós receb
 | **ID público** e **Nome de exibição** | Identificar você no site e no jogo |
 | **Presença**: em qual servidor você está agora, quando conectou e desconectou (Sessões de jogo) | A lista de servidores ao vivo, o bloco "amigos jogando" e as Estatísticas |
 | **Estatísticas**: kills, mortes, assistências, dano, headshots, rounds e tempo jogado | O seu Perfil e o Ranking semanal |
-| **Chat de texto dos servidores** | Moderação: analisar denúncias e aplicar as [Regras de conduta](/regras) |
-| **Denúncias** que você faz ou recebe | Moderação |
+| **Chat de texto dos servidores**: cada mensagem com a hora, o servidor, o seu time e se foi chat de time | Moderação: analisar denúncias e aplicar as [Regras de conduta](/regras). Registramos o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off` |
+| **Denúncias** que você faz (com `!report`) ou recebe: motivo, servidor, mapa, round, horário e uma cópia das últimas linhas do chat do servidor | Moderação: a fila da Staff |
 | **Punições** (tipo, categoria, data, duração, motivo e quem aplicou) | Moderação, reincidência e o selo e histórico no Perfil |
 | **Endereço IP** da conexão | Conectar você ao servidor, segurança e combate a abuso |
 
@@ -112,8 +112,8 @@ Não vendemos dados pessoais. Compartilhamos só o necessário com quem nos ajud
 | **Oracle Cloud** (região de São Paulo) | O banco de dados e a API ficam nos servidores dela | Hospedagem |
 | **Provedor da VPS dos servidores de jogo**, no Brasil [DONO: nome do provedor] | O seu IP e o que acontece no servidor | Hospedagem dos Servidores Carmine |
 | **3d.cstrike.app** (visualizador 3D de Ian Lucas) | Os atributos do Item que você está vendo e o seu IP, porque o visualizador carrega dentro do site | Mostrar as skins em 3D. O visualizador também envia relatórios de erro para uma ferramenta de telemetria (GlitchTip) operada pelo próprio visualizador |
-| **Sentry** [CONFIRMAR: quando entrar em produção] | Dados técnicos de erros do site, da API e dos plugins, que podem incluir o seu SteamID64 e o seu IP | Achar e corrigir erros |
-| **Discord** | O que você envia nos tickets; denúncias encaminhadas ao canal da Staff, com as últimas linhas do chat do momento | Suporte e moderação |
+| **Sentry** (os dados ficam na Alemanha, na União Europeia) | Dados técnicos de erros do site, da API e dos plugins, que podem incluir o seu SteamID64 e o seu IP | Achar e corrigir erros |
+| **Discord** | O que você envia nos tickets; e, a cada Denúncia nova, um aviso no canal da Staff com o motivo, o nome e o ID público de quem foi denunciado, o servidor e o link da fila (sem o chat e sem o nome de quem denunciou) | Suporte e moderação |
 | **Autoridades** | O necessário, quando a lei ou uma ordem judicial exigir | Cumprir a lei, como nos casos graves envolvendo menores (ECA Digital, art. 27) |
 
 Cada um desses serviços tem a sua própria política de privacidade.
@@ -122,7 +122,8 @@ Cada um desses serviços tem a sua própria política de privacidade.
 
 - **Os dados do Carmine, incluindo os dados que recebemos da Steam, ficam guardados no Brasil, com a exceção das cópias de segurança (abaixo):** o banco de dados e a API na Oracle Cloud, região de São Paulo, e os Servidores Carmine numa VPS brasileira. Os termos da Steam Web API exigem informar esse país.
 - **A Cloudflare é só trânsito:** o tráfego do site passa pela rede dela, que pode processá-lo fora do Brasil, mas o banco de dados não fica lá. As cópias de segurança do banco (os backups) ficam no Cloudflare R2, num bucket no leste da América do Norte (EUA), ou seja, fora do Brasil; é a única parte dos dados do Carmine guardada fora do país. [VALIDAR COM ADVOGADO: transferência internacional]
-- Alguns serviços da lista acima ficam ou processam dados fora do Brasil, principalmente nos Estados Unidos (Cloudflare, Discord, Sentry e, possivelmente, o 3d.cstrike.app). Nesses casos, a transferência segue as regras da LGPD (art. 33) e da ANPD (Resolução CD/ANPD nº 19/2024), como as cláusulas-padrão contratuais. [VALIDAR COM ADVOGADO]
+- O Sentry guarda os dados que recebe na Alemanha, na União Europeia.
+- Alguns serviços da lista acima ficam ou processam dados fora do Brasil, principalmente nos Estados Unidos (Cloudflare, Discord e, possivelmente, o 3d.cstrike.app), e o Sentry, na União Europeia. Nesses casos, a transferência segue as regras da LGPD (art. 33) e da ANPD (Resolução CD/ANPD nº 19/2024), como as cláusulas-padrão contratuais. [VALIDAR COM ADVOGADO]
 
 ## 7. Por quanto tempo guardamos
 
@@ -130,9 +131,10 @@ Cada um desses serviços tem a sua própria política de privacidade.
 |---|---|
 | Conta, Inventário, Loadout, Presets e Estatísticas | Enquanto a Conta existir. Contas que nunca entraram no site e ficaram 24 meses sem conectar são anonimizadas |
 | Lista de amigos Steam | Cerca de 60 segundos, em cache |
-| Chat de texto dos servidores | 30 dias. As linhas anexadas a uma denúncia ou punição ficam junto com ela |
+| Chat de texto dos servidores | 30 dias, apagado automaticamente. As linhas copiadas para uma Denúncia ficam só com a Denúncia (próxima linha) |
+| Denúncias (com a cópia do chat), abertas, arquivadas ou que viraram punição | 90 dias depois de feitas, apagadas automaticamente. A punição que saiu de uma Denúncia é outro registro (abaixo) e não é apagada junto |
 | Punições no Perfil | Selo enquanto a punição estiver ativa; histórico por 12 meses (ban permanente por cheat: enquanto durar) |
-| Registro interno de punições, denúncias e ações da Staff | 24 meses depois do fim da punição; bans permanentes, enquanto durarem |
+| Registro interno de punições e ações da Staff | 24 meses depois do fim da punição; bans permanentes, enquanto durarem |
 | Registros de pagamento, CPF e declaração de maioridade do Pagador | 5 anos depois da compra, pelo prazo do Código de Defesa do Consumidor (art. 27) e das obrigações fiscais [VALIDAR COM ADVOGADO] |
 | Endereço IP e registros técnicos | Até 6 meses |
 | Cópias de segurança do banco | 30 dias: as cópias mais antigas são apagadas automaticamente. Um dado apagado da Conta some dos backups quando a cópia antiga é descartada, em até 30 dias |
@@ -153,7 +155,7 @@ Pela LGPD (art. 18), você pode pedir, a qualquer momento:
 
 **Como pedir:** pelo e-mail do encarregado (seção 1) ou pela página de [contato](/contato), com o assunto "Privacidade" e o seu ID público. Para confirmar que você é o dono da Conta, podemos pedir que você entre com a Steam no site. Respondemos em até 15 dias. Pais e responsáveis podem fazer os pedidos em nome de menores de idade.
 
-**Exclusão da Conta:** a sua Conta é anonimizada. O nome, o avatar, o vínculo com a Steam, o Perfil público, o Inventário e as Estatísticas deixam de estar ligados a você. Ficam guardados só os registros de pagamento pelo prazo legal, e, se houver um ban permanente ativo, um registro mínimo do SteamID64 punido, para que o ban continue valendo. [VALIDAR COM ADVOGADO]
+**Exclusão da Conta:** a sua Conta é anonimizada. O nome, o avatar, o vínculo com a Steam, o Perfil público, o Inventário, as Estatísticas e o chat que você escreveu deixam de estar ligados a você; as Denúncias que você fez perdem o vínculo com você, e as suas linhas no chat copiado em Denúncias de outras pessoas são apagadas. Ficam guardados só os registros de pagamento pelo prazo legal, as Denúncias feitas contra você (registro de moderação, até completar os 90 dias, como as punições) e, se houver um ban permanente ativo, um registro mínimo do SteamID64 punido, para que o ban continue valendo. [VALIDAR COM ADVOGADO]
 
 Se não ficar satisfeito com a nossa resposta, você pode reclamar à Agência Nacional de Proteção de Dados (ANPD), em gov.br/anpd.
 

@@ -31,7 +31,7 @@ import { recentWeekStarts } from '@/lib/ranking';
 import { canRevoke, type StaffViewer, sanctionGuard, sanctionState } from '@/lib/staff';
 import { cn } from '@/lib/utils';
 import { ActionForm } from './action-form';
-import { ApplySanctionForm } from './apply-sanction-form';
+import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 import { AuditEntries } from './audit-entries';
 import { Field, Select, TextInput } from './fields';
 import { RoleTag, SanctionTypeTags } from './tags';
@@ -45,9 +45,12 @@ import { useStaffRequest } from './use-staff-request';
 export function AccountFile({
   initial,
   viewer,
+  report,
 }: {
   initial: StaffAccountDetail;
   viewer: StaffViewer;
+  /** A Denúncia da fila que originou a visita (S13): a Punição aplicada a fecha. */
+  report?: ReportOrigin;
 }) {
   const [detail, setDetail] = useState(initial);
   const t = useTranslations('staff');
@@ -72,7 +75,12 @@ export function AccountFile({
           <section aria-labelledby="aplicar" className="animate-fade-up [animation-delay:60ms]">
             <SectionTitle id="aplicar">{t('apply.title')}</SectionTitle>
             {guard === 'ok' ? (
-              <ApplySanctionForm detail={detail} viewer={viewer} onApplied={setDetail} />
+              <ApplySanctionForm
+                detail={detail}
+                viewer={viewer}
+                onApplied={setDetail}
+                {...(report && { report })}
+              />
             ) : (
               <p className="text-[13.5px] text-muted-foreground" data-testid="sanction-guard">
                 {guard === 'self' ? t('account.self') : t('account.protected')}

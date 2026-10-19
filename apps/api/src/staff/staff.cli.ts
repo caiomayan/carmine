@@ -5,6 +5,7 @@ import { DisplayNames } from '../accounts/display-names.js';
 import { loadConfig } from '../config/config.js';
 import { createDatabase } from '../database/database.js';
 import { accounts } from '../database/schema.js';
+import { StaffReports } from '../reports/staff-reports.js';
 import { RankingCache } from '../stats/ranking-cache.js';
 import { RankingRemovals } from '../stats/ranking-removals.js';
 import { VALKEY_COMMAND_TIMEOUT_MS } from '../valkey/valkey.module.js';
@@ -33,6 +34,7 @@ try {
       return row?.id ?? null;
     },
     roles: new StaffRoles(db),
+    reports: new StaffReports(db),
     displayNames: new DisplayNames(db),
     rankingRemovals: new RankingRemovals(db, async (mode, weekStart) => {
       await valkey.connect().catch(() => {});

@@ -29,6 +29,9 @@ import { Field, FieldError, Select, TextInput } from './fields';
 import { useMeasureLabel } from './use-measure-label';
 import { useStaffRequest } from './use-staff-request';
 
+/** A Denúncia (S13) de onde a Staff veio: a Punição a fecha; cheat e voz exigem evidência. */
+export type ReportOrigin = { id: string; needsEvidence: boolean };
+
 type Draft = { type: SanctionType; value: string; unit: DurationUnit; permanent: boolean };
 
 const UNITS: DurationUnit[] = ['minute', 'hour', 'day'];
@@ -61,10 +64,12 @@ export function ApplySanctionForm({
   detail,
   viewer,
   onApplied,
+  report,
 }: {
   detail: StaffAccountDetail;
   viewer: StaffViewer;
   onApplied: (detail: StaffAccountDetail) => void;
+  report?: ReportOrigin;
 }) {
   const t = useTranslations('staff');
   const tm = useTranslations('moderation');
@@ -93,7 +98,8 @@ export function ApplySanctionForm({
     !options.permanent && drafts.some((d) => isLastingSanction(d.type) && d.permanent);
   const duplicateType = new Set(drafts.map((d) => d.type)).size !== drafts.length;
   // Ban por cheat: testemunha e/ou link da evidência (decisão do dono, 2026-10-13).
-  const needsProof = category !== '' && requiresCheatProof(category, chosen);
+  const needsProof =
+    category !== '' && (requiresCheatProof(category, chosen) || report?.needsEvidence === true);
   const proof = needsProof
     ? {
         ...(witness.trim() && { witness: witness.trim() }),
@@ -157,7 +163,13 @@ export function ApplySanctionForm({
     const result = await request(
       `/api/staff/accounts/${detail.account.publicId}/sanctions`,
       'POST',
-      { category, reason: reason.trim(), measures: chosen, ...proof },
+      {
+        category,
+        reason: reason.trim(),
+        measures: chosen,
+        ...proof,
+        ...(report && { reportId: report.id }),
+      },
       staffAccountDetailSchema,
     );
     if (!result.ok) {
@@ -180,6 +192,14 @@ export function ApplySanctionForm({
 
   return (
     <form onSubmit={review} noValidate className="grid gap-5" data-testid="apply-sanction">
+      {report ? (
+        <p
+          className="rounded-sm bg-surface-2 px-3 py-2 text-[13px]"
+          data-testid="apply-from-report"
+        >
+          {report.needsEvidence ? t('apply.fromReportEvidence') : t('apply.fromReport')}
+        </p>
+      ) : null}
       <Field id={`${id}-category`} label={t('apply.category')}>
         <Select
           id={`${id}-category`}

@@ -42,6 +42,32 @@ public sealed class EventRecorder(EventReporter reporter, TimeProvider time)
         reporter.Add(Ended(steamId, session));
     }
 
+    /// <summary>
+    /// Uma mensagem de chat de um humano (S13): vai para o log com o lado em que ele estava e se foi
+    /// chat de time. O que não entra no log está em <see cref="ChatLogFilter"/>.
+    /// </summary>
+    public void Chat(PlayerRef speaker, bool teamChat, string? text)
+    {
+        if (!IsHuman(speaker) || ChatLogFilter.Clean(text) is not { } clean)
+        {
+            return;
+        }
+        reporter.Add(new ChatMessageEvent
+        {
+            Id = NewId(),
+            At = time.GetUtcNow(),
+            SteamId = Text(speaker.SteamId),
+            Team = speaker.Team switch
+            {
+                GameTeam.Ct => ChatTeam.Ct,
+                GameTeam.T => ChatTeam.T,
+                _ => ChatTeam.Spectator,
+            },
+            TeamChat = teamChat,
+            Text = clean,
+        });
+    }
+
     /// <summary>O plugin vai sair: fecha as Sessões abertas para o tempo jogado não se perder.</summary>
     public void CloseAllSessions()
     {

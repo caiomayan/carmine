@@ -62,6 +62,12 @@ const envSchema = z
     DISCORD_ALERT_WEBHOOK_URL: z
       .union([z.literal(''), urlWithProtocol(['https:', 'http:'])])
       .default(''),
+    // Denúncias (S13): webhook do canal da Staff, separado do de alertas; vazio desliga. A limpeza de
+    // retenção (chat 30 dias, Denúncia 90 dias) roda de tantos em tantos minutos (0 desliga).
+    STAFF_REPORTS_WEBHOOK_URL: z
+      .union([z.literal(''), urlWithProtocol(['https:', 'http:'])])
+      .default(''),
+    RETENTION_SWEEP_MINUTES: z.coerce.number().int().nonnegative().default(60),
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
@@ -101,6 +107,7 @@ const envSchema = z
         'PUBLIC_WEB_URL',
         'STEAM_OPENID_URL',
         'DISCORD_ALERT_WEBHOOK_URL',
+        'STAFF_REPORTS_WEBHOOK_URL',
       ] as const) {
         if (env[key] !== '' && new URL(env[key]).protocol !== 'https:') {
           ctx.addIssue({ code: 'custom', path: [key], message: 'deve usar https em produção' });
@@ -128,6 +135,8 @@ export interface AppConfig {
   rankingCacheTtlSeconds: number;
   /** Alertas no Discord (S09). Sem webhook, desligados. */
   alerts: { discordWebhookUrl: string | null; serverOfflineConfirmMs: number; sweepMs: number };
+  /** Denúncias (S13): webhook da Staff (sem URL, desligado) e a limpeza de retenção (0: desligada). */
+  reports: { webhookUrl: string | null; retentionSweepMs: number };
   /** Sentry (S09): sem DSN, desligado. */
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
@@ -180,6 +189,10 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       discordWebhookUrl: e.DISCORD_ALERT_WEBHOOK_URL === '' ? null : e.DISCORD_ALERT_WEBHOOK_URL,
       serverOfflineConfirmMs: e.ALERT_SERVER_OFFLINE_CONFIRM_SECONDS * 1000,
       sweepMs: e.ALERT_SWEEP_SECONDS * 1000,
+    },
+    reports: {
+      webhookUrl: e.STAFF_REPORTS_WEBHOOK_URL === '' ? null : e.STAFF_REPORTS_WEBHOOK_URL,
+      retentionSweepMs: e.RETENTION_SWEEP_MINUTES * 60_000,
     },
     sentry: {
       dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
