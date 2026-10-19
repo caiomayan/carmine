@@ -19,12 +19,15 @@ export interface WeekSeconds {
 /** Divide `[start, end)` pelas semanas que cruza; vazio quando `end` não vem depois de `start`. */
 export function splitByWeek(start: Date, end: Date): WeekSeconds[] {
   const pieces: WeekSeconds[] = [];
+  // Arredonda o tempo acumulado desde o início, não cada pedaço: assim os pedaços somam a
+  // duração inteira mesmo quando a virada da semana cai no meio de um segundo.
+  const elapsed = (at: number) => Math.floor((at - start.getTime()) / 1000);
   let cursor = start.getTime();
   while (cursor < end.getTime()) {
     const weekStart = weekStartInstant(new Date(cursor));
     const nextWeek = weekStart + 7 * DAY_MS - BRASILIA_OFFSET_MS;
     const pieceEnd = Math.min(end.getTime(), nextWeek);
-    const seconds = Math.floor((pieceEnd - cursor) / 1000);
+    const seconds = elapsed(pieceEnd) - elapsed(cursor);
     if (seconds > 0) {
       pieces.push({ weekStart: new Date(weekStart).toISOString().slice(0, 10), seconds });
     }
