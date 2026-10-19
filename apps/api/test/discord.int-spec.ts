@@ -1,9 +1,11 @@
 import { currentSessionSchema, discordLinkStatusSchema } from '@carmine/contracts';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AccountErasure } from '../src/accounts/account-erasure.js';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
 import { SessionStore } from '../src/auth/sessions.js';
 import { discordLinks, vipPeriods } from '../src/database/schema.js';
+import { DISCORD, type DiscordIntegration } from '../src/discord/discord-integration.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
 import { VipPeriods } from '../src/vip/vip-periods.js';
 import { startTestApp, type TestApp } from './support/app.js';
@@ -388,6 +390,26 @@ describe('Discord integrado (S15)', () => {
       expect(response.statusCode).toBe(503);
       expect((await status(p)).link).not.toBeNull();
       expect((await p.call('DELETE', '/api/discord/link')).statusCode).toBe(204);
+      expect(rolesOf(p.user)).toEqual([]);
+    });
+
+    it('o pedido de exclusão da Conta (S08) apaga o vínculo e tira os cargos', async () => {
+      const p = await account({ vipUntil: Date.now() + 10 * 86_400_000 });
+      await link(p);
+      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.vip].sort());
+      const discord_ = t.app.get<DiscordIntegration>(DISCORD);
+
+      await new AccountErasure(t.postgres.db, {
+        dropSessions: async () => undefined,
+        invalidateEquipped: async () => undefined,
+        removeDiscordRoles: (id) => discord_.roles.strip(id),
+      }).anonymize(p.account.id, STAFF);
+
+      const rows = await t.postgres.db
+        .select()
+        .from(discordLinks)
+        .where(eq(discordLinks.accountId, p.account.id));
+      expect(rows).toEqual([]);
       expect(rolesOf(p.user)).toEqual([]);
     });
 
