@@ -7225,63 +7225,35 @@
         "additionalProperties": false
       },
       "RankingPlayer": {
-        "oneOf": [
-          {
-            "type": "object",
-            "properties": {
-              "private": {
-                "type": "boolean",
-                "enum": [
-                  false
-                ]
-              },
-              "publicId": {
-                "type": "integer",
-                "minimum": 0,
-                "exclusiveMinimum": true,
-                "maximum": 9007199254740991
-              },
-              "displayName": {
-                "type": "string",
-                "minLength": 1
-              },
-              "avatarUrl": {
-                "nullable": true,
-                "type": "string",
-                "format": "uri"
-              }
-            },
-            "required": [
-              "private",
-              "publicId",
-              "displayName",
-              "avatarUrl"
-            ],
-            "additionalProperties": false
+        "type": "object",
+        "properties": {
+          "private": {
+            "type": "boolean"
           },
-          {
-            "type": "object",
-            "properties": {
-              "private": {
-                "type": "boolean",
-                "enum": [
-                  true
-                ]
-              },
-              "displayName": {
-                "type": "string",
-                "enum": [
-                  "Jogador privado"
-                ]
-              }
-            },
-            "required": [
-              "private",
-              "displayName"
-            ],
-            "additionalProperties": false
+          "publicId": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "avatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
           }
-        ]
+        },
+        "required": [
+          "private",
+          "publicId",
+          "displayName",
+          "avatarUrl"
+        ],
+        "additionalProperties": false
       },
       "RankingViewer": {
         "type": "object",

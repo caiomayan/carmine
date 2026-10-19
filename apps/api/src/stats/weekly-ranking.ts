@@ -10,7 +10,7 @@ import {
   RETAKE_MIN_ROUNDS,
 } from '@carmine/contracts';
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { rankingIdentity } from '../accounts/profile-privacy.js';
+import { type RankingIdentity, rankingIdentity } from '../accounts/profile-privacy.js';
 import type { Database } from '../database/database.js';
 import { accountStatsWeekly, accounts, rankingRemovals } from '../database/schema.js';
 import { DEATHMATCH_MIN_SECONDS, progressToMinimum, type RankedRow, rankWeek } from './ranking.js';
@@ -148,7 +148,7 @@ export class WeeklyRanking {
       })
       .from(accounts)
       .where(inArray(accounts.id, accountIds));
-    return new Map(rows.map((row) => [row.id, rankingIdentity(row)]));
+    return new Map(rows.map((row) => [row.id, toPlayer(rankingIdentity(row))]));
   }
 
   /** A própria posição (mesmo fora do top 50) ou quanto falta para o mínimo. */
@@ -193,6 +193,12 @@ export class WeeklyRanking {
       removed: removal !== undefined,
     };
   }
+}
+
+function toPlayer(identity: RankingIdentity): RankingPlayer {
+  return identity.private
+    ? { private: true, publicId: null, displayName: identity.displayName, avatarUrl: null }
+    : identity;
 }
 
 function toEntry(row: RankedRow, player: RankingPlayer, self: boolean): RankingEntry {

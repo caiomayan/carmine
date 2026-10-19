@@ -23,17 +23,18 @@ export const weekStartSchema = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .meta({ id: 'WeekStart', example: '2026-10-12' });
 
-/** Quem aparece numa linha do Ranking: o Perfil privado vira "Jogador privado", sem nada que leve à Conta. */
+/**
+ * Quem aparece numa linha do Ranking. Plano (sem união) para o cliente C# gerado do OpenAPI: o
+ * Perfil privado (S11) vem com `private: true`, o nome "Jogador privado" e nada que leve à Conta
+ * (`publicId` e `avatarUrl` nulos).
+ */
 export const rankingPlayerSchema = z
-  .discriminatedUnion('private', [
-    z.object({
-      private: z.literal(false),
-      publicId: z.int().positive(),
-      displayName: z.string().min(1),
-      avatarUrl: z.url().nullable(),
-    }),
-    z.object({ private: z.literal(true), displayName: z.literal(PRIVATE_PLAYER_NAME) }),
-  ])
+  .object({
+    private: z.boolean(),
+    publicId: z.int().positive().nullable(),
+    displayName: z.string().min(1),
+    avatarUrl: z.url().nullable(),
+  })
   .meta({ id: 'RankingPlayer' });
 
 export type RankingPlayer = z.infer<typeof rankingPlayerSchema>;

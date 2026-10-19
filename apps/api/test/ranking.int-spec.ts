@@ -79,15 +79,9 @@ describe('Ranking semanal (S12, parte B)', () => {
 
     const result = await ranking('retake');
 
-    const mine = result.entries.filter(
-      (entry) =>
-        !entry.player.private &&
-        [alto.account.publicId, baixo.account.publicId].includes(entry.player.publicId),
-    );
-    expect(mine.map((entry) => !entry.player.private && entry.player.publicId)).toEqual([
-      alto.account.publicId,
-      baixo.account.publicId,
-    ]);
+    const ids = [alto.account.publicId, baixo.account.publicId];
+    const mine = result.entries.filter((entry) => ids.includes(entry.player.publicId ?? 0));
+    expect(mine.map((entry) => entry.player.publicId)).toEqual(ids);
     expect(mine[0]?.position).toBeLessThan(mine[1]?.position ?? 0);
   });
 
@@ -139,7 +133,12 @@ describe('Ranking semanal (S12, parte B)', () => {
 
     const result = await ranking('retake');
 
-    expect(result.entries[0]?.player).toEqual({ private: true, displayName: 'Jogador privado' });
+    expect(result.entries[0]?.player).toEqual({
+      private: true,
+      publicId: null,
+      displayName: 'Jogador privado',
+      avatarUrl: null,
+    });
     expect(result.entries[0]?.position).toBe(1);
     expect(JSON.stringify(result.entries[0])).not.toContain(quiet.steamId);
     expect(JSON.stringify(result.entries[0])).not.toContain(`${quiet.account.publicId}`);
