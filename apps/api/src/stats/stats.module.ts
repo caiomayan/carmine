@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
+import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
@@ -29,8 +30,9 @@ import { WeeklyRanking } from './weekly-ranking.js';
     },
     {
       provide: WeeklyRanking,
-      inject: [DATABASE, VALKEY],
-      useFactory: (db: Database, valkey: Redis) => new WeeklyRanking(db, new RankingCache(valkey)),
+      inject: [DATABASE, VALKEY, APP_CONFIG],
+      useFactory: (db: Database, valkey: Redis, config: AppConfig) =>
+        new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
     },
   ],
 })

@@ -98,6 +98,7 @@ export async function SiteFooter() {
               links={[
                 { label: t('links.servers'), href: '/' },
                 { label: t('links.inventory'), href: '/inventario' },
+                { label: t('links.ranking'), href: '/ranking' },
               ]}
             />
             <FooterColumn title={t('columns.community')} links={community} />

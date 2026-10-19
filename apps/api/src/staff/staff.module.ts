@@ -6,6 +6,7 @@ import { AccountsService } from '../accounts/accounts.service.js';
 import { DisplayNames } from '../accounts/display-names.js';
 import { SessionStore } from '../auth/sessions.js';
 import { SessionsModule } from '../auth/sessions.module.js';
+import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { EquippedModule } from '../equipped/equipped.module.js';
 import { EquippedCache } from '../equipped/equipped-cache.js';
@@ -51,6 +52,7 @@ import { StaffRoles } from './staff-roles.js';
         GameServerRegistry,
         EquippedCache,
         VALKEY,
+        APP_CONFIG,
       ],
       useFactory: (
         db: Database,
@@ -64,6 +66,7 @@ import { StaffRoles } from './staff-roles.js';
         servers: GameServerRegistry,
         equipped: EquippedCache,
         valkey: Redis,
+        config: AppConfig,
       ) =>
         new StaffPanel({
           db,
@@ -81,7 +84,7 @@ import { StaffRoles } from './staff-roles.js';
           }),
           invalidateEquipped: (steamId) => equipped.invalidate(steamId),
           rankingRemovals: new RankingRemovals(db, (mode, weekStart) =>
-            new RankingCache(valkey).invalidate(mode, weekStart),
+            new RankingCache(valkey, config.rankingCacheTtlSeconds).invalidate(mode, weekStart),
           ),
         }),
     },

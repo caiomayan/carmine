@@ -3,12 +3,6 @@ import { Logger } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import type { RankedRow } from './ranking.js';
 
-/**
- * Quanto o Ranking de um Modo e semana fica no cache (ADR 0018, adendo): o Ranking é público e
- * a consulta soma a semana inteira, então 45 s absorvem rajadas sem o número parecer parado.
- */
-export const RANKING_CACHE_TTL_SECONDS = 45;
-
 /** O que se guarda por Modo e semana: a ordem inteira e as semanas consultáveis. */
 export interface CachedRanking {
   ranked: RankedRow[];
@@ -25,7 +19,14 @@ const key = (mode: GameMode, weekStart: string) => `ranking:v1:${mode}:${weekSta
 export class RankingCache {
   private readonly logger = new Logger('RankingCache');
 
-  constructor(private readonly valkey: Redis) {}
+  /**
+   * `ttlSeconds` (padrão 45 s, ADR 0018): o Ranking é público e a consulta soma a semana inteira,
+   * então um cache curto absorve rajadas sem o número parecer parado.
+   */
+  constructor(
+    private readonly valkey: Redis,
+    private readonly ttlSeconds = 45,
+  ) {}
 
   async get(mode: GameMode, weekStart: string): Promise<CachedRanking | null> {
     try {
@@ -38,13 +39,9 @@ export class RankingCache {
   }
 
   async set(mode: GameMode, weekStart: string, value: CachedRanking): Promise<void> {
+    if (this.ttlSeconds <= 0) return;
     try {
-      await this.valkey.set(
-        key(mode, weekStart),
-        JSON.stringify(value),
-        'EX',
-        RANKING_CACHE_TTL_SECONDS,
-      );
+      await this.valkey.set(key(mode, weekStart), JSON.stringify(value), 'EX', this.ttlSeconds);
     } catch (error) {
       this.logger.warn(`Escrita no cache falhou: ${(error as Error).message}`);
     }

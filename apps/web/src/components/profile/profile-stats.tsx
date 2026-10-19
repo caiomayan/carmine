@@ -1,0 +1,175 @@
+import type { ModeStats, ProfileStats as ProfileStatsData, TotalStats } from '@carmine/contracts';
+import { getFormatter, getTranslations } from 'next-intl/server';
+import { EmptyState } from '@/components/empty-state';
+import { LockIcon } from '@/components/icons/animated/lock';
+import { UsersIcon } from '@/components/icons/animated/users';
+import { SectionTitle } from '@/components/section-title';
+import { playedParts } from '@/lib/ranking';
+
+/**
+ * Estatísticas do Perfil (S12): por Modo e no total. No total só entram os números que se somam
+ * entre Modos (ADR só no Retake, KPM só no Deathmatch). Num Perfil privado o visitante vê o
+ * aviso no lugar dos números; o dono vê os seus, marcados "Só você vê".
+ */
+export async function ProfileStats({
+  stats,
+  name,
+  isOwner,
+  isPrivate,
+}: {
+  /** Nulo quando a API não respondeu: avisa, em vez de mostrar zeros. */
+  stats: ProfileStatsData | null;
+  name: string;
+  isOwner: boolean;
+  isPrivate: boolean;
+}) {
+  const t = await getTranslations('profile.stats');
+
+  const aside =
+    isOwner && isPrivate ? (
+      <span
+        data-testid="stats-only-you"
+        className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2 py-[3px] label-caps text-[10px] text-foreground"
+      >
+        {t('onlyYou')}
+      </span>
+    ) : null;
+
+  return (
+    <section
+      aria-labelledby="estatisticas"
+      data-testid="profile-stats"
+      className="animate-fade-up pt-10 [animation-delay:120ms]"
+    >
+      <SectionTitle id="estatisticas" aside={aside}>
+        {t('title')}
+      </SectionTitle>
+      <Body stats={stats} name={name} isOwner={isOwner} />
+    </section>
+  );
+}
+
+async function Body({
+  stats,
+  name,
+  isOwner,
+}: {
+  stats: ProfileStatsData | null;
+  name: string;
+  isOwner: boolean;
+}) {
+  const t = await getTranslations('profile.stats');
+  const tr = await getTranslations('ranking');
+
+  if (stats === null) {
+    return (
+      <p className="text-[13.5px] text-muted-foreground" data-testid="stats-unavailable">
+        {t('unavailable')}
+      </p>
+    );
+  }
+  if (!stats.visible) {
+    return (
+      <div className="rounded-xl bg-surface" data-testid="stats-private">
+        <EmptyState icon={LockIcon} title={t('privateTitle')} body={t('privateBody', { name })} />
+      </div>
+    );
+  }
+  if (stats.total === null || stats.modes.length === 0) {
+    return (
+      <div className="rounded-xl bg-surface" data-testid="stats-empty">
+        <EmptyState
+          icon={UsersIcon}
+          title={t('emptyTitle')}
+          body={isOwner ? t('emptyOwner') : t('emptyVisitor', { name })}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="grid gap-x-10 gap-y-8 md:grid-cols-3">
+      <Group testId="stats-total" label={t('total')}>
+        <Rows stats={stats.total} />
+      </Group>
+      {stats.modes.map((mode) => (
+        <Group key={mode.mode} testId={`stats-${mode.mode}`} label={tr(`modes.${mode.mode}`)}>
+          <Rows stats={mode} mode={mode} />
+        </Group>
+      ))}
+    </div>
+  );
+}
+
+async function Group({
+  label,
+  testId,
+  children,
+}: {
+  label: string;
+  testId: string;
+  children: React.ReactNode;
+}) {
+  const t = await getTranslations('profile.stats');
+  return (
+    <section data-testid={testId} aria-label={t('groupLabel', { mode: label })}>
+      <h3 className="pb-2 label-caps text-[11px] text-muted-foreground">{label}</h3>
+      <dl className="grid">{children}</dl>
+    </section>
+  );
+}
+
+async function Rows({ stats, mode }: { stats: TotalStats; mode?: ModeStats }) {
+  const t = await getTranslations('profile.stats');
+  const format = await getFormatter();
+  const two = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  const time = playedParts(stats.secondsPlayed);
+  const rows: [key: string, label: string, value: string][] = [
+    ['kills', t('labels.kills'), format.number(stats.kills)],
+    ['deaths', t('labels.deaths'), format.number(stats.deaths)],
+    ['assists', t('labels.assists'), format.number(stats.assists)],
+    ['kd', t('labels.kd'), format.number(stats.kd, two)],
+    [
+      'headshotPercent',
+      t('labels.headshotPercent'),
+      stats.headshotPercent === null
+        ? t('none')
+        : `${format.number(stats.headshotPercent, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`,
+    ],
+  ];
+  if (mode?.mode === 'retake') {
+    rows.push([
+      'adr',
+      t('labels.adr'),
+      mode.adr === null
+        ? t('none')
+        : format.number(mode.adr, { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+    ]);
+  }
+  if (mode?.mode === 'deathmatch') {
+    rows.push([
+      'kpm',
+      t('labels.kpm'),
+      mode.kpm === null ? t('none') : format.number(mode.kpm, two),
+    ]);
+  }
+  rows.push([
+    'timePlayed',
+    t('labels.timePlayed'),
+    time.hours > 0 ? t('time.hoursMinutes', time) : t('time.minutes', { minutes: time.minutes }),
+  ]);
+
+  return (
+    <>
+      {rows.map(([key, label, value]) => (
+        <div
+          key={key}
+          data-stat={key}
+          className="flex items-baseline justify-between gap-4 rounded-md px-2 py-1.5 -mx-2 text-sm transition-colors duration-(--dur-fast) ease-std hover:bg-surface"
+        >
+          <dt className="text-muted-foreground">{label}</dt>
+          <dd className="font-semibold tabular-nums">{value}</dd>
+        </div>
+      ))}
+    </>
+  );
+}

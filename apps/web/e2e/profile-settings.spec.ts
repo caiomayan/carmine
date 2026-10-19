@@ -152,7 +152,8 @@ test('Perfil privado: a interface avisa o que continua público e o visitante v�
     'Perfil privado: as Estatísticas não são públicas.',
   );
   await expect(visitor.getByTestId('profile-settings')).toHaveCount(0);
-  await expect(visitor.getByText(/K\/D|kills|mortes|Estatísticas$/i)).toHaveCount(0);
+  await expect(visitor.getByTestId('stats-private')).toContainText('Estatísticas privadas');
+  await expect(visitor.locator('[data-stat]')).toHaveCount(0);
   const preview = await visitor.evaluate(() =>
     [
       ...document.querySelectorAll(

@@ -9,12 +9,17 @@ import {
   loadoutSchema,
   type PresetList,
   type Profile,
+  type ProfileStats,
   presetListSchema,
   profileSchema,
+  profileStatsSchema,
+  type Ranking,
+  rankingSchema,
 } from '@carmine/contracts';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { apiGet, VISITOR_IP_HEADER } from './api-base';
+import type { Mode } from './modes';
 
 /**
  * Sessão e Perfil lidos pelos Server Components, repassando o cookie da sessão (ADR 0015). Um
@@ -171,3 +176,45 @@ export async function readStaff<T>(
     return { status: 'unavailable' };
   }
 }
+
+/**
+ * O Ranking semanal de um Modo (S12). Repassa a sessão para o jogador ver a própria posição e o
+ * progresso até o mínimo. `invalid-week` quando a URL traz uma semana que a API recusa.
+ */
+export type RankingResult =
+  | { status: 'ok'; ranking: Ranking }
+  | { status: 'invalid-week' }
+  | { status: 'unavailable' };
+
+export const getRanking = cache(
+  async (mode: Mode, week: string | undefined): Promise<RankingResult> => {
+    try {
+      const cookie = await sessionCookie();
+      const query = week ? `?week=${encodeURIComponent(week)}` : '';
+      const response = await apiGet(`/ranking/${mode}${query}`, {
+        ...(cookie && { cookie }),
+        visitorIp: await visitorIp(),
+      });
+      if (response.status === 400) return { status: 'invalid-week' };
+      if (!response.ok) return { status: 'unavailable' };
+      return { status: 'ok', ranking: rankingSchema.parse(await response.json()) };
+    } catch {
+      return { status: 'unavailable' };
+    }
+  },
+);
+
+/** As Estatísticas do Perfil (S12); nulo com a API fora (o Perfil avisa, não mostra zeros). */
+export const getProfileStats = cache(async (publicId: number): Promise<ProfileStats | null> => {
+  try {
+    const cookie = await sessionCookie();
+    const response = await apiGet(`/profiles/${publicId}/stats`, {
+      ...(cookie && { cookie }),
+      visitorIp: await visitorIp(),
+    });
+    if (!response.ok) return null;
+    return profileStatsSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});

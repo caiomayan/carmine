@@ -56,6 +56,8 @@ export default defineConfig({
         // Offline rápido para o E2E da S06 (em produção, 45 s sem batimento).
         SERVER_OFFLINE_AFTER_SECONDS: '4',
         LIVE_SERVERS_SWEEP_SECONDS: '1',
+        // Sem cache do Ranking no E2E: os testes precisam ver os resultados novos na hora (em produção, 45 s).
+        RANKING_CACHE_TTL_SECONDS: '0',
         // Todo pedido do E2E chega à API do mesmo IP (o Next repassa /api/*): sem limite real.
         RATE_LIMIT_LOGIN_PER_MINUTE: '100000',
         RATE_LIMIT_PUBLIC_PER_MINUTE: '100000',
