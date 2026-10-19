@@ -537,10 +537,7 @@ export const discordLinks = pgTable('discord_links', {
   username: text().notNull(),
   linkedAt: timestamptz().notNull().defaultNow(),
   /** Cargos (`player`, `vip`, `staff`, `owner`) que a última reconciliação deixou aplicados. */
-  syncedRoles: text()
-    .array()
-    .notNull()
-    .default(sql`'{}'::text[]`),
+  syncedRoles: text().array().notNull().default(sql`'{}'::text[]`),
   /** Última reconciliação que conseguiu falar com o Discord; nulo: ainda não houve. */
   syncedAt: timestamptz(),
   /** A pessoa não está no servidor do Discord: só tenta de novo depois desse instante. */

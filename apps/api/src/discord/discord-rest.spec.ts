@@ -61,7 +61,10 @@ describe('DiscordRest', () => {
 
   it('um 429 espera o retry_after e repete a mesma chamada', async () => {
     const { client, calls, sleeps } = rest([
-      json({ message: 'You are being rate limited.', retry_after: 1.5, global: false }, { status: 429 }),
+      json(
+        { message: 'You are being rate limited.', retry_after: 1.5, global: false },
+        { status: 429 },
+      ),
       new Response(null, { status: 204 }),
     ]);
 

@@ -8,6 +8,8 @@ import { SessionStore } from '../auth/sessions.js';
 import { SessionsModule } from '../auth/sessions.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
+import { DiscordModule } from '../discord/discord.module.js';
+import { DISCORD, type DiscordIntegration } from '../discord/discord-integration.js';
 import { EquippedModule } from '../equipped/equipped.module.js';
 import { EquippedCache } from '../equipped/equipped-cache.js';
 import { GameServerRegistry } from '../game-servers/game-server-registry.js';
@@ -37,6 +39,7 @@ import { StaffRoles } from './staff-roles.js';
     EquippedModule,
     GameServersModule,
     ReportsModule,
+    DiscordModule,
   ],
   controllers: [StaffController],
   providers: [
@@ -57,6 +60,7 @@ import { StaffRoles } from './staff-roles.js';
         StaffReports,
         VALKEY,
         APP_CONFIG,
+        DISCORD,
       ],
       useFactory: (
         db: Database,
@@ -72,6 +76,7 @@ import { StaffRoles } from './staff-roles.js';
         reports: StaffReports,
         valkey: Redis,
         config: AppConfig,
+        discord: DiscordIntegration | null,
       ) =>
         new StaffPanel({
           db,
@@ -87,6 +92,7 @@ import { StaffRoles } from './staff-roles.js';
           erasure: new AccountErasure(db, {
             dropSessions: (accountId) => sessions.destroyAllOf(accountId),
             invalidateEquipped: (steamId) => equipped.invalidate(steamId),
+            ...(discord && { removeDiscordRoles: (id) => discord.roles.strip(id) }),
           }),
           invalidateEquipped: (steamId) => equipped.invalidate(steamId),
           rankingRemovals: new RankingRemovals(db, (mode, weekStart) =>

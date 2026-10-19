@@ -86,7 +86,8 @@ export class DiscordRest implements DiscordClient {
     if (typeof me.id !== 'string' || typeof me.username !== 'string') {
       throw new DiscordApiError('resposta de /users/@me sem id ou username', meResponse.status);
     }
-    const name = typeof me.global_name === 'string' && me.global_name ? me.global_name : me.username;
+    const name =
+      typeof me.global_name === 'string' && me.global_name ? me.global_name : me.username;
     return { accessToken: token.access_token, user: { id: me.id, username: name } };
   }
 

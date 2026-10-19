@@ -5,6 +5,7 @@ import {
   accountStatsWeekly,
   accounts,
   chatMessages,
+  discordLinks,
   inventoryItems,
   presets,
   reports,
@@ -34,6 +35,8 @@ export interface ErasureDeps {
   dropSessions: (accountId: string) => Promise<unknown>;
   /** Tira do cache o `equipped/v5` do SteamID64. */
   invalidateEquipped: (steamId: string) => Promise<void>;
+  /** Tira os cargos do Discord de quem estava vinculado (S15); ausente: o Discord está desligado. */
+  removeDiscordRoles?: (discordId: string) => Promise<void>;
 }
 
 export interface Erasure {
@@ -65,58 +68,64 @@ export class AccountErasure {
   ) {}
 
   async anonymize(accountId: string, staff: StaffAction, now = new Date()): Promise<Erasure> {
-    const { steamId, publicId, steamIdRetained } = await this.db.transaction(async (tx) => {
-      const [account] = await tx
-        .select()
-        .from(accounts)
-        .where(eq(accounts.id, accountId))
-        .for('update');
-      if (!account) throw new Error(`Conta ${accountId} não existe`);
-      if (account.anonymizedAt !== null) throw new AccountAlreadyAnonymized();
-      const [member] = await tx
-        .select({ role: staffMembers.role })
-        .from(staffMembers)
-        .where(eq(staffMembers.accountId, accountId));
-      if (member) throw new AccountIsStaff();
+    const { steamId, publicId, steamIdRetained, discordId } = await this.db.transaction(
+      async (tx) => {
+        const [account] = await tx
+          .select()
+          .from(accounts)
+          .where(eq(accounts.id, accountId))
+          .for('update');
+        if (!account) throw new Error(`Conta ${accountId} não existe`);
+        if (account.anonymizedAt !== null) throw new AccountAlreadyAnonymized();
+        const [member] = await tx
+          .select({ role: staffMembers.role })
+          .from(staffMembers)
+          .where(eq(staffMembers.accountId, accountId));
+        if (member) throw new AccountIsStaff();
 
-      const [ban] = await tx
-        .select({ id: sanctions.id })
-        .from(sanctions)
-        .where(and(eq(sanctions.accountId, accountId), activeBanAt(now)))
-        .limit(1);
-      const retained = ban !== undefined;
+        const [ban] = await tx
+          .select({ id: sanctions.id })
+          .from(sanctions)
+          .where(and(eq(sanctions.accountId, accountId), activeBanAt(now)))
+          .limit(1);
+        const retained = ban !== undefined;
 
-      // Os slots do Loadout caem junto (cascade) com os Presets e os Itens.
-      const removedPresets = await tx
-        .delete(presets)
-        .where(eq(presets.accountId, accountId))
-        .returning({ id: presets.id });
-      const removedItems = await tx
-        .delete(inventoryItems)
-        .where(eq(inventoryItems.accountId, accountId))
-        .returning({ id: inventoryItems.id });
-      const removedVip = await tx
-        .delete(vipPeriods)
-        .where(eq(vipPeriods.accountId, accountId))
-        .returning({ id: vipPeriods.id });
-      const removedStats = await tx
-        .delete(accountStatsWeekly)
-        .where(eq(accountStatsWeekly.accountId, accountId))
-        .returning({ weekStart: accountStatsWeekly.weekStart });
-      const removedChat = await tx
-        .delete(chatMessages)
-        .where(eq(chatMessages.accountId, accountId))
-        .returning({ id: chatMessages.id });
-      const unlinkedReports = await tx
-        .update(reports)
-        .set({ reporterAccountId: null })
-        .where(eq(reports.reporterAccountId, accountId))
-        .returning({ id: reports.id });
-      // As linhas da pessoa no chat copiado em Denúncias de outros: nome e texto saem, o resto fica.
-      const scrubbedReports = await tx
-        .update(reports)
-        .set({
-          chatContext: sql`(
+        // Os slots do Loadout caem junto (cascade) com os Presets e os Itens.
+        const removedPresets = await tx
+          .delete(presets)
+          .where(eq(presets.accountId, accountId))
+          .returning({ id: presets.id });
+        const removedItems = await tx
+          .delete(inventoryItems)
+          .where(eq(inventoryItems.accountId, accountId))
+          .returning({ id: inventoryItems.id });
+        // O vínculo com o Discord é dado pessoal (S15): some junto; os cargos saem logo depois.
+        const [unlinkedDiscord] = await tx
+          .delete(discordLinks)
+          .where(eq(discordLinks.accountId, accountId))
+          .returning({ discordId: discordLinks.discordId });
+        const removedVip = await tx
+          .delete(vipPeriods)
+          .where(eq(vipPeriods.accountId, accountId))
+          .returning({ id: vipPeriods.id });
+        const removedStats = await tx
+          .delete(accountStatsWeekly)
+          .where(eq(accountStatsWeekly.accountId, accountId))
+          .returning({ weekStart: accountStatsWeekly.weekStart });
+        const removedChat = await tx
+          .delete(chatMessages)
+          .where(eq(chatMessages.accountId, accountId))
+          .returning({ id: chatMessages.id });
+        const unlinkedReports = await tx
+          .update(reports)
+          .set({ reporterAccountId: null })
+          .where(eq(reports.reporterAccountId, accountId))
+          .returning({ id: reports.id });
+        // As linhas da pessoa no chat copiado em Denúncias de outros: nome e texto saem, o resto fica.
+        const scrubbedReports = await tx
+          .update(reports)
+          .set({
+            chatContext: sql`(
             select coalesce(jsonb_agg(
               case when (line->>'publicId')::bigint = ${account.publicId}
                 then line || jsonb_build_object('displayName', ${ANONYMIZED_DISPLAY_NAME}::text, 'text', '[removido]')
@@ -124,55 +133,58 @@ export class AccountErasure {
               order by position), '[]'::jsonb)
             from jsonb_array_elements(${reports.chatContext}) with ordinality as lines(line, position)
           )`,
-        })
-        .where(
-          and(
-            ne(reports.targetAccountId, accountId),
-            sql`${reports.chatContext} @> jsonb_build_array(jsonb_build_object('publicId', ${account.publicId}::bigint))`,
-          ),
-        )
-        .returning({ id: reports.id });
-      await tx
-        .update(accounts)
-        .set({
-          steamId: retained ? account.steamId : detachedSteamId(account.publicId),
-          steamName: '',
-          displayName: ANONYMIZED_DISPLAY_NAME,
-          displayNameBlockedSteamName: null,
-          customDisplayName: null,
-          displayNameChangedAt: null,
-          profilePrivate: false,
-          avatarUrl: null,
-          avatarFetchedAt: null,
-          claimedAt: null,
-          chatHidden: false,
-          anonymizedAt: now,
-        })
-        .where(eq(accounts.id, accountId));
-      await recordStaffAudit(tx, {
-        action: 'account_anonymize',
-        staff,
-        target: { accountId, steamId: account.steamId },
-        details: {
-          steamIdRetained: retained,
-          removed: {
-            inventoryItems: removedItems.length,
-            presets: removedPresets.length,
-            vipPeriods: removedVip.length,
-            statsWeeks: removedStats.length,
-            chatMessages: removedChat.length,
-            reportsUnlinked: unlinkedReports.length,
-            reportsScrubbed: scrubbedReports.length,
+          })
+          .where(
+            and(
+              ne(reports.targetAccountId, accountId),
+              sql`${reports.chatContext} @> jsonb_build_array(jsonb_build_object('publicId', ${account.publicId}::bigint))`,
+            ),
+          )
+          .returning({ id: reports.id });
+        await tx
+          .update(accounts)
+          .set({
+            steamId: retained ? account.steamId : detachedSteamId(account.publicId),
+            steamName: '',
+            displayName: ANONYMIZED_DISPLAY_NAME,
+            displayNameBlockedSteamName: null,
+            customDisplayName: null,
+            displayNameChangedAt: null,
+            profilePrivate: false,
+            avatarUrl: null,
+            avatarFetchedAt: null,
+            claimedAt: null,
+            chatHidden: false,
+            anonymizedAt: now,
+          })
+          .where(eq(accounts.id, accountId));
+        await recordStaffAudit(tx, {
+          action: 'account_anonymize',
+          staff,
+          target: { accountId, steamId: account.steamId },
+          details: {
+            steamIdRetained: retained,
+            removed: {
+              inventoryItems: removedItems.length,
+              presets: removedPresets.length,
+              vipPeriods: removedVip.length,
+              statsWeeks: removedStats.length,
+              chatMessages: removedChat.length,
+              reportsUnlinked: unlinkedReports.length,
+              reportsScrubbed: scrubbedReports.length,
+              discordLinks: unlinkedDiscord ? 1 : 0,
+            },
           },
-        },
-        at: now,
-      });
-      return {
-        steamId: account.steamId.toString(),
-        publicId: account.publicId,
-        steamIdRetained: retained,
-      };
-    });
+          at: now,
+        });
+        return {
+          steamId: account.steamId.toString(),
+          publicId: account.publicId,
+          steamIdRetained: retained,
+          discordId: unlinkedDiscord?.discordId ?? null,
+        };
+      },
+    );
 
     let sessionsDropped = true;
     try {
@@ -181,6 +193,10 @@ export class AccountErasure {
       sessionsDropped = false;
     }
     await this.deps.invalidateEquipped(steamId);
+    if (discordId !== null) {
+      // Melhor esforço: a Conta já foi anonimizada; um cargo que sobrar não identifica ninguém.
+      await this.deps.removeDiscordRoles?.(discordId).catch(() => undefined);
+    }
     return { publicId, anonymizedAt: now, steamIdRetained, sessionsDropped };
   }
 }

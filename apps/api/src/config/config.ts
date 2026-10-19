@@ -22,7 +22,7 @@ const snowflake = () =>
       z
         .string()
         .trim()
-        .regex(/^\d{15,25}$/,'deve ser um ID do Discord (só dígitos)'),
+        .regex(/^\d{15,25}$/, 'deve ser um ID do Discord (só dígitos)'),
       z.literal(''),
     ])
     .default('');
