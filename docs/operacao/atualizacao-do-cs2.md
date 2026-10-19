@@ -51,3 +51,46 @@ Os dois perfis usam **uma só instalação do CS2** (`/srv/carmine-cs2/server`) 
 
 - Anote a versão do CS2/CounterStrikeSharp/plugins que passou na validação (nota do Maestri) e atualize as versões fixadas no repositório.
 - Não é preciso mexer no site: web e API não dependem da versão do CS2.
+
+## Atualizar só o Carmine.Core (sem update do CS2)
+
+Para uma versão nova do plugin (por exemplo, o envio de eventos da S12) não é preciso baixar o CS2 nem mexer no Metamod: só compilar o plugin e remontar as instâncias. Leva 3–5 minutos fora do ar.
+
+1. **Primeiro a API.** O PR com a rota nova e a migração precisa estar no `main` e a produção já deployada (a API da S12 tem a rota `POST /api/server/events`; o plugin novo contra uma API antiga só enche a fila de eventos e loga "eventos do jogo não chegaram à API", sem afetar o jogo).
+2. Avise quem estiver jogando; na AWS ligue a instância se estiver desligada (`./infra/cs2/aws/cs2-beta.ps1 start -Profile carmine`) e abra o terminal (`... shell -Profile carmine`, via SSM, sem SSH). Depois `sudo -i`.
+3. Pare os servidores e traga o código:
+
+   ```sh
+   systemctl stop carmine-cs2.target
+   cd /opt/carmine-src
+   export GIT_SSH_COMMAND='ssh -i /root/.ssh/carmine_deploy -o IdentitiesOnly=yes'
+   git checkout main && git pull
+   ```
+
+4. Compile e remonte (sem `--download-cs2`; a etapa `build` recompila o plugin e a `profiles` o copia para as duas instâncias, mantendo `addons/…/data` e os arquivos de ambiente em `/etc/carmine-cs2`):
+
+   ```sh
+   systemd-run --unit=carmine-plugin --collect \
+     /opt/carmine-src/infra/cs2/linux/install.sh --steps build,profiles
+   journalctl -fu carmine-plugin        # termina com "Pronto."
+   ```
+
+5. Suba e confira: `systemctl start carmine-cs2.target`. `journalctl -u carmine-cs2@retake -n 50` deve mostrar "Carmine.Core: API no ar" (e nenhum "eventos do jogo não chegaram"); `css_plugins list` no console mostra o Carmine.Core na versão nova (0.9.0 para a S12). Entre no jogo, mate alguém e, em até 1 minuto, `https://stcarmine.com/api/profiles/<seu ID público>/stats` mostra a kill.
+6. Na AWS, desligue ao fim da sessão (`cs2-beta.ps1 stop`).
+
+Sem o terminal interativo, o mesmo pelo SSM (Windows PowerShell; troque `<ID>` pelo id da instância, `cs2-beta.ps1 status` mostra):
+
+```powershell
+$comandos = @(
+  'systemctl stop carmine-cs2.target',
+  'cd /opt/carmine-src && GIT_SSH_COMMAND="ssh -i /root/.ssh/carmine_deploy -o IdentitiesOnly=yes" git checkout main && GIT_SSH_COMMAND="ssh -i /root/.ssh/carmine_deploy -o IdentitiesOnly=yes" git pull',
+  '/opt/carmine-src/infra/cs2/linux/install.sh --steps build,profiles',
+  'systemctl start carmine-cs2.target'
+) | ConvertTo-Json -Compress
+$parametros = "{`"commands`":$comandos,`"executionTimeout`":[`"900`"]}"
+aws ssm send-command --region sa-east-1 --profile carmine --instance-ids <ID> `
+  --document-name AWS-RunShellScript --parameters $parametros --query Command.CommandId --output text
+aws ssm get-command-invocation --region sa-east-1 --profile carmine --instance-id <ID> --command-id <CommandId>
+```
+
+Se algo der errado, o rollback é voltar o checkout (`git checkout <commit anterior>`) e repetir os passos 3–5: nenhuma migração de dados do jogo depende do plugin.

@@ -43,4 +43,20 @@ internal static partial class Log
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: hostname agora é \"{Hostname}\"")]
     public static partial void HostnameApplied(ILogger logger, string hostname);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Carmine.Core: eventos do jogo não chegaram à API ({Reason}); ficam na fila e são reenviados, o jogo segue normal")]
+    public static partial void EventsDown(ILogger logger, string reason);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: eventos do jogo de volta à API; a fila foi enviada")]
+    public static partial void EventsBack(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Carmine.Core: {Detail}; descartados")]
+    public static partial void EventsRejected(ILogger logger, string detail);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: {Count} evento(s) do jogo descartado(s) (fila cheia ou lote recusado)")]
+    public static partial void EventsDropped(ILogger logger, int count);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: {Count} evento(s) do jogo não saíram antes de o plugin descarregar")]
+    public static partial void EventsLeftBehind(ILogger logger, int count);
 }

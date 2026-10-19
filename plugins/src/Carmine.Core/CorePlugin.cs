@@ -22,7 +22,8 @@ namespace Carmine.Core;
 /// em cada batimento (ban e kick tiram do servidor, mute tira a voz, gag bloqueia o chat, aviso vai
 /// no chat) e o hostname "Carmine | nome de vitrine | código". Com o !chat off, o jogador deixa de
 /// receber o chat dos outros (a escolha fica na Conta, na API). Na S02/S14, a Vaga reservada (em
-/// CorePlugin.ReservedSlots.cs).
+/// CorePlugin.ReservedSlots.cs). Na S12, manda os eventos do jogo para as Estatísticas (em
+/// CorePlugin.Events.cs).
 /// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
 /// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
@@ -55,7 +56,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private const float KickDelaySeconds = 5.0f;
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.8.0";
+    public override string ModuleVersion => "0.9.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -67,9 +68,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             throw new ArgumentException($"ApiBaseUrl inválida: '{config.ApiBaseUrl}'", nameof(config));
         }
-        if (config.TimeoutSeconds <= 0 || config.RetryIntervalSeconds <= 0 || config.HeartbeatIntervalSeconds <= 0)
+        if (config.TimeoutSeconds <= 0 || config.RetryIntervalSeconds <= 0 || config.HeartbeatIntervalSeconds <= 0
+            || config.EventFlushIntervalSeconds <= 0 || config.EventQueueLimit <= 0)
         {
-            throw new ArgumentException("TimeoutSeconds, RetryIntervalSeconds e HeartbeatIntervalSeconds devem ser maiores que zero", nameof(config));
+            throw new ArgumentException("TimeoutSeconds, RetryIntervalSeconds, HeartbeatIntervalSeconds, EventFlushIntervalSeconds e EventQueueLimit devem ser maiores que zero", nameof(config));
         }
         if (config.PublicSlots < 0)
         {
@@ -104,6 +106,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _heartbeat = new HeartbeatReporter(client);
         _chat = new ChatPreferences(client);
         LoadReservedSlots(client, hotReload);
+        LoadEvents(client, hotReload);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
         RegisterEventHandler<EventPlayerChangename>(OnPlayerChangename);
@@ -142,6 +145,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 
     public override void Unload(bool hotReload)
     {
+        UnloadEvents();
         _unloading.Cancel();
         _unloading.Dispose();
         _http?.Dispose();
@@ -157,6 +161,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (@event.Userid is { } player && IsHuman(player))
         {
             _reservedSlots?.OnJoin(player.SteamID);
+            _recorder?.PlayerJoined(player.SteamID);
             SyncPlayer(player);
             ScheduleHeartbeat();
         }
@@ -225,6 +230,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _chat?.OnDisconnect(player.SteamID);
             _kicking.Remove(player.SteamID);
             _reservedSlots?.OnLeave(player.SteamID);
+            _recorder?.PlayerLeft(player.SteamID);
             ScheduleHeartbeat();
         }
         return HookResult.Continue;
@@ -267,6 +273,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// <summary>O mapa novo aparece no site logo, não só no próximo batimento.</summary>
     private void OnMapStart(string mapName)
     {
+        _gameRules = null;
         CheckReservedSlotsCapacity();
         ScheduleHeartbeat();
     }

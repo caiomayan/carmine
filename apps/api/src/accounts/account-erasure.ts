@@ -2,6 +2,7 @@ import { ANONYMIZED_DISPLAY_NAME } from '@carmine/contracts';
 import { and, eq } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import {
+  accountStatsWeekly,
   accounts,
   inventoryItems,
   presets,
@@ -45,8 +46,8 @@ export interface Erasure {
 /**
  * Pedido de exclusão de dados (S08, Política de Privacidade, seção 8): anonimiza a Conta, sem
  * volta. Some o que identifica a pessoa (nome Steam, Nome de exibição, avatar, Perfil público,
- * reivindicação) e o que ela montou (Inventário, Presets, Loadout, Períodos VIP, preferência de
- * chat); o vínculo com a Steam se desfaz (`steamId = -publicId`), então quem voltar a jogar ganha
+ * reivindicação), as Estatísticas e o que ela montou (Inventário, Presets, Loadout, Períodos VIP,
+ * preferência de chat); o vínculo com a Steam se desfaz (`steamId = -publicId`), então quem voltar a jogar ganha
  * uma Conta nova. Fica o necessário por obrigação legal ou para a moderação valer: as Punições e
  * o log de auditoria (registro interno, com o SteamID64 no log) e, com um ban valendo, o SteamID64
  * na Conta, até o ban acabar (`keepUnlessReleased`). Os registros de pagamento da S14 terão
@@ -93,6 +94,10 @@ export class AccountErasure {
         .delete(vipPeriods)
         .where(eq(vipPeriods.accountId, accountId))
         .returning({ id: vipPeriods.id });
+      const removedStats = await tx
+        .delete(accountStatsWeekly)
+        .where(eq(accountStatsWeekly.accountId, accountId))
+        .returning({ weekStart: accountStatsWeekly.weekStart });
       await tx
         .update(accounts)
         .set({
@@ -120,6 +125,7 @@ export class AccountErasure {
             inventoryItems: removedItems.length,
             presets: removedPresets.length,
             vipPeriods: removedVip.length,
+            statsWeeks: removedStats.length,
           },
         },
         at: now,
