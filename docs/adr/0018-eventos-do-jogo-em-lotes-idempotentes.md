@@ -10,7 +10,7 @@ As somas ficam em `account_stats_weekly`, uma linha por Conta × Modo × semana 
 
 - O reenvio é sempre seguro, então o plugin não precisa saber se um 5xx ou um timeout perdeu o pedido ou só a resposta: manda de novo.
 - Uma queda do servidor de jogo perde o que estava na fila em memória (alguns segundos de eventos) e o tempo das Sessões abertas. Aceito: as Estatísticas são de recreio, e gravar a fila em disco custaria mais do que vale.
-- `game_events` só cresce. O plugin nunca guarda um evento por mais que algumas horas, então linhas com `received_at` antigo (ex.: 30 dias) podem ser apagadas por um job de limpeza; fica para quando a tabela pesar.
+- `game_events` guarda só o ID e a hora de recebimento (sem dado pessoal), e o plugin nunca guarda um evento por mais que algumas horas. Por isso o `RetentionJob` (o mesmo da S13) apaga as linhas com `received_at` acima de 30 dias (`GAME_EVENT_RETENTION_DAYS`), em lotes de 5.000 para não segurar a tabela. Um evento reenviado depois dos 30 dias seria contado de novo, o que o plugin não faz.
 - O início da Sessão é aceito e deduplicado, mas não soma nada hoje (o fim carrega `startedAt`). Fica no contrato para a Presença e a moderação.
 - A anonimização da Conta (S08) apaga as suas linhas de `account_stats_weekly`; `team_kills` fica (registro de moderação, sem dado que identifique a pessoa depois da anonimização).
 - Um servidor com o relógio errado distorce a semana de um evento. A chave de servidor é de confiança (ADR 0005), então a API não desconfia do horário.
