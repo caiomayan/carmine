@@ -2,11 +2,14 @@ import {
   currentSessionSchema,
   displayNameChangedSchema,
   displayNameErrorSchema,
+  displayNameRevertedSchema,
   profileSchema,
 } from '@carmine/contracts';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DisplayNames } from '../src/accounts/display-names.js';
+import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
+import { SessionStore } from '../src/auth/sessions.js';
 import { accounts, staffAuditLog } from '../src/database/schema.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
@@ -62,6 +65,103 @@ describe('Perfil completo (S11): Nome de exibição e Perfil privado', () => {
       .update(accounts)
       .set({ displayNameChangedAt: new Date(Date.now() - days * DAY_MS) })
       .where(eq(accounts.id, accountId));
+
+  describe('voltar ao nome Steam', () => {
+    const revert = (p: Player) => p.call('DELETE', '/api/me/display-name');
+    const rowOf = async (p: Player) =>
+      (await t.postgres.db.select().from(accounts).where(eq(accounts.id, p.account.id)))[0];
+
+    it('apaga o nome próprio e a Conta volta ao nome Steam, no Perfil e no connect', async () => {
+      const p = await player('coldzera');
+      await rename(p, 'Fer Ninja');
+
+      const response = await revert(p);
+
+      expect(response.statusCode, response.body).toBe(200);
+      const reverted = displayNameRevertedSchema.parse(response.json());
+      expect(reverted.displayName).toBe('coldzera');
+      expect((await profileOf(p)).displayName).toBe('coldzera');
+      expect((await connect(p.steamId, 'outro nome steam')).displayName).toBe('outro nome steam');
+      expect((await rowOf(p))?.customDisplayName).toBeNull();
+    });
+
+    it('não zera nem reinicia o prazo de 7 dias: ele continua da última troca', async () => {
+      const p = await player();
+      await rename(p, 'Primeiro');
+      await backdate(p.account.id, 3);
+      const before = (await rowOf(p))?.displayNameChangedAt;
+
+      const reverted = displayNameRevertedSchema.parse((await revert(p)).json());
+
+      expect((await rowOf(p))?.displayNameChangedAt).toEqual(before);
+      expect(new Date(reverted.nextChangeAt ?? '').getTime()).toBe(
+        (before?.getTime() ?? 0) + 7 * DAY_MS,
+      );
+      const tooSoon = await rename(p, 'Segundo');
+      expect(tooSoon.statusCode).toBe(409);
+      expect(errorOf(tooSoon).code).toBe('too_soon');
+      // Passado o prazo da última troca, o nome novo é livre, mesmo depois de voltar ao nome Steam.
+      await backdate(p.account.id, 7.01);
+      expect((await rename(p, 'Segundo')).statusCode).toBe(200);
+    });
+
+    it('com o prazo já vencido, nextChangeAt é nulo', async () => {
+      const p = await player();
+      await rename(p, 'Primeiro');
+      await backdate(p.account.id, 8);
+
+      const reverted = displayNameRevertedSchema.parse((await revert(p)).json());
+
+      expect(reverted.nextChangeAt).toBeNull();
+    });
+
+    it('repetir não muda nada (já está no nome Steam)', async () => {
+      const p = await player('coldzera');
+      await rename(p, 'Primeiro');
+      await revert(p);
+      const before = await rowOf(p);
+
+      const again = await revert(p);
+
+      expect(again.statusCode).toBe(200);
+      expect(displayNameRevertedSchema.parse(again.json()).displayName).toBe('coldzera');
+      expect(await rowOf(p)).toEqual(before);
+    });
+
+    it('quem nunca trocou segue no nome Steam, sem prazo', async () => {
+      const p = await player('coldzera');
+
+      const reverted = displayNameRevertedSchema.parse((await revert(p)).json());
+
+      expect(reverted).toEqual({ displayName: 'coldzera', nextChangeAt: null });
+    });
+
+    it('um nome Steam bloqueado pela Staff segue como "Jogador #ID"', async () => {
+      const p = await player('coldzera');
+      await rename(p, 'Nome Bom');
+      await t.postgres.db
+        .update(accounts)
+        .set({ displayNameBlockedSteamName: 'coldzera' })
+        .where(eq(accounts.id, p.account.id));
+
+      const reverted = displayNameRevertedSchema.parse((await revert(p)).json());
+
+      expect(reverted.displayName).toBe(`Jogador #${p.account.publicId}`);
+    });
+
+    it('exige sessão e CSRF', async () => {
+      const p = await player();
+      const anonymous = await t.app.inject({ method: 'DELETE', url: '/api/me/display-name' });
+      expect(anonymous.statusCode).toBe(401);
+      const session = await t.app.get(SessionStore).create(p.account.id);
+      const noCsrf = await t.app.inject({
+        method: 'DELETE',
+        url: '/api/me/display-name',
+        headers: { cookie: `${SESSION_COOKIE}=${session.id}` },
+      });
+      expect(noCsrf.statusCode).toBe(403);
+    });
+  });
 
   describe('troca do nome', () => {
     it('troca, normaliza, aparece no Perfil e no próximo connect no jogo', async () => {
