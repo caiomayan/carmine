@@ -8,6 +8,7 @@ import { ClientIpModule } from './client-ip/client-ip.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
 import type { AppConfig } from './config/config.js';
 import { DatabaseModule } from './database/database.module.js';
+import { DiscordModule } from './discord/discord.module.js';
 import { EquippedModule } from './equipped/equipped.module.js';
 import { FriendsModule } from './friends/friends.module.js';
 import { GameServersModule } from './game-servers/game-servers.module.js';
@@ -46,6 +47,7 @@ export class AppModule {
         FriendsModule,
         StaffModule,
         AlertsModule,
+        DiscordModule,
         StatsModule,
         ReportsModule,
       ],

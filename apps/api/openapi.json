@@ -3832,6 +3832,206 @@
         ]
       }
     },
+    "/api/auth/discord/link": {
+      "get": {
+        "operationId": "startDiscordLink",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "description": "Caminho interno do web para onde voltar (padrão: /)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Para o Discord, ou de volta com ?discord=<motivo>"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Começa o vínculo do Discord: redireciona para a autorização do Discord (exige sessão)",
+        "tags": [
+          "discord"
+        ]
+      }
+    },
+    "/api/auth/discord/callback": {
+      "get": {
+        "operationId": "completeDiscordLink",
+        "parameters": [],
+        "responses": {
+          "303": {
+            "description": "Para a página de origem com ?discord=<resultado>"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Volta do Discord: liga o Discord à Conta da sessão e aplica os cargos",
+        "tags": [
+          "discord"
+        ]
+      }
+    },
+    "/api/discord/link": {
+      "get": {
+        "operationId": "getDiscordLink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Estado do vínculo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscordLinkStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "O Discord ligado à Conta da sessão, e se a integração está ligada neste ambiente",
+        "tags": [
+          "discord"
+        ]
+      },
+      "delete": {
+        "operationId": "unlinkDiscord",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "Desvinculado (ou já não estava vinculado)"
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "O Discord não respondeu; o vínculo continua\n\nSem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Desvincula o Discord e tira os cargos dele (exige x-csrf-token)",
+        "tags": [
+          "discord"
+        ]
+      }
+    },
     "/api/server/events": {
       "post": {
         "operationId": "sendGameEvents",
@@ -7174,6 +7374,38 @@
         "required": [
           "entries",
           "nextCursor"
+        ],
+        "additionalProperties": false
+      },
+      "DiscordLinkStatus": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "link": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "username": {
+                "type": "string"
+              },
+              "linkedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              }
+            },
+            "required": [
+              "username",
+              "linkedAt"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "enabled",
+          "link"
         ],
         "additionalProperties": false
       },

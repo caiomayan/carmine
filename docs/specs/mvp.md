@@ -27,7 +27,7 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 - Imagem OG personalizada com o Loadout (o link do Perfil tem prévia simples).
 - Feed, seguir, comentários, clips e destaques.
 - Demos, anti-cheat próprio e heurísticas além do VAC.
-- Bot de Discord e vínculo de conta Discord (fatia S15, depois do beta).
+- Login com Discord (o Discord é só um vínculo, ADR 0007) e bot de Discord com comandos ou gateway: a S15 faz o vínculo, os cargos e a mensagem de status, só por REST.
 - Atualização do Loadout em tempo real durante a partida (ADR 0006).
 - Mapas da Workshop.
 - Qualquer mecânica aleatória paga (ADR 0011, permanente).
@@ -394,16 +394,25 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 
 ### S15 · Discord integrado
 
-Depois do beta. Hoje a moderação no Discord é manual (S07).
+Depois do beta. Hoje a moderação no Discord é manual (S07). Decisões no ADR 0020; passo a passo do dono em `docs/operacao/discord.md`.
 
-- Login com Discord no site e vínculo da conta Discord à Conta (a Steam continua sendo a única autenticação da Conta, ADR 0007; o Discord é um vínculo).
-- Cargos sincronizados no servidor Discord: Jogador, VIP, Staff e Dono, atualizados quando o VIP ou o papel de Staff muda.
-- Bot com o status dos Servidores Carmine e links do site.
-- Pagamento e configurações ficam só no site.
+- Vínculo da Conta ao Discord pelo OAuth2 (escopos `identify` e `guilds.join`) nos ajustes do Perfil. **Não é login**: exige a sessão Steam, que continua a única autenticação da Conta (ADR 0007). Guarda só o ID e o nome do Discord, nunca o token. Um Discord só liga a uma Conta.
+- Cargos sincronizados no servidor Discord: Jogador, VIP, Staff e Dono, atualizados quando a Conta vincula ou desvincula e quando o VIP ou o papel de Staff muda. O VIP que vence não tem evento: um job reconcilia o estado desejado com o real.
+- Bot com o status dos Servidores Carmine (uma mensagem fixa, editada) e links do site, do Ranking e das regras.
+- Pagamento e configurações do VIP ficam só no site.
+- Tudo é configurado por variáveis de ambiente (`DISCORD_*`); sem elas a S15 fica desligada, sem erro.
 
 **Aceite**
 - Vincular o Discord dá o cargo de Jogador; um VIP concedido ou vencido muda o cargo em até 1 minuto.
 - Um papel de Staff dado no painel aparece como cargo no Discord.
+
+**Decidido na implementação**
+- **Vínculo:** `GET /api/auth/discord/link?returnTo=` (começa; exige sessão) e `GET /api/auth/discord/callback` (volta do Discord; `redirect_uri` fixo `<PUBLIC_WEB_URL>/api/auth/discord/callback`) redirecionam para a página de origem com `?discord=<resultado>` (`vinculado`, `em-uso`, `conta-ja-vinculada`, `cancelado`, `invalido`, `indisponivel`, `desligado`, `sem-sessao`). O `state` é aleatório, de uso único, preso à Conta que começou (Valkey) e ao navegador (cookie). `GET /api/discord/link` devolve `{ enabled, link }` e `DELETE /api/discord/link` desvincula (CSRF).
+- **Quem não está no servidor:** o vínculo usa o `guilds.join` na hora para pôr a pessoa no servidor (o token é usado uma vez e descartado). Se o Discord falhar nesse momento, o vínculo é desfeito e a pessoa tenta de novo. Quem sai do servidor depois fica sem cargos até voltar: o job reconfere a cada 30 min.
+- **Cargos:** o job (`DISCORD_SYNC_SECONDS`, 30 s) compara os cargos desejados com os últimos aplicados e só fala com o Discord quando há diferença (e, a cada 6 h, para pegar cargo mexido à mão). Mexe só nos cargos com ID configurado. Desvincular tira os cargos antes de apagar o vínculo; se o Discord falhar, o vínculo fica (503). A anonimização da Conta (S08) apaga o vínculo e tira os cargos.
+- **Rate limit:** respeita `X-RateLimit-Remaining`/`Reset-After` por rota e o `retry_after` do 429 (o global trava tudo); 3 repetições, e esperas acima de 30 s falham para o job tentar no ciclo seguinte.
+- **Status:** uma mensagem por canal (`DISCORD_STATUS_CHANNEL_ID`), editada a cada `DISCORD_STATUS_SECONDS` (60 s); o ID dela fica no banco, e se for apagada o bot posta outra e passa a editá-la.
+- **Web:** linha "Discord" nos ajustes do Perfil (só para o dono), com o botão desabilitado e uma explicação quando a integração está desligada.
 
 ---
 
@@ -421,6 +430,7 @@ Retake e Deathmatch em produção; login Steam; Inventário com 3D aplicado no j
 | Configurar o Cloudflare Tunnel no domínio stcarmine.com | S09 |
 | Contratar a VPS de CS2 e gerar os tokens GSLT em contas Steam distintas | S09 |
 | Criar o servidor Discord e os webhooks | S07, S09 |
+| Criar o app e o bot no Discord Developer Portal, os cargos, e preencher as variáveis `DISCORD_*` (`docs/operacao/discord.md`) | S15 |
 | Criar o primeiro Dono com o CLI `staff grant` | S07 |
 | Criar as contas no Sentry e no serviço de uptime | S09 |
 | Revisar as páginas legais | S08, S14 |

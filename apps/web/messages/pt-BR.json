@@ -424,6 +424,28 @@
         "onBody": "As suas Estatísticas e a sua identidade no Ranking ficam escondidas (\"Jogador privado\"). Seu nome, avatar, Loadout e a presença em servidor continuam públicos.",
         "offNote": "Perfil privado desativado. As suas Estatísticas voltam a aparecer no Perfil e no Ranking.",
         "failed": "Não deu para salvar agora. Tente de novo em instantes."
+      },
+      "discord": {
+        "title": "Discord",
+        "description": "Ligue o seu Discord para receber no nosso servidor os cargos de Jogador, VIP e Staff. É só um vínculo: você continua entrando pela Steam.",
+        "linked": "Ligado a {username}. Seus cargos do Carmine seguem o seu VIP e o seu papel na Staff.",
+        "link": "Vincular Discord",
+        "unlink": "Desvincular",
+        "loading": "Carregando",
+        "unavailable": "O vínculo com o Discord não está disponível agora.",
+        "loadFailed": "Não deu para ver o seu vínculo agora. Recarregue a página em instantes.",
+        "results": {
+          "vinculado": "Discord ligado. Seus cargos do Carmine já estão no servidor.",
+          "desvinculado": "Discord desvinculado. Os cargos do Carmine foram retirados.",
+          "em-uso": "Esse Discord já está ligado a outra Conta do Carmine. Entre nessa Conta e desvincule, ou use outro Discord.",
+          "conta-ja-vinculada": "A sua Conta já tem um Discord ligado. Desvincule antes de ligar outro.",
+          "cancelado": "Você cancelou no Discord. Nada foi ligado.",
+          "invalido": "O pedido expirou ou não era deste navegador. Tente vincular de novo.",
+          "indisponivel": "O Discord não respondeu. Tente de novo em instantes.",
+          "desligado": "O vínculo com o Discord não está disponível agora.",
+          "sem-sessao": "Entre com a Steam para ligar o Discord.",
+          "desvincular-falhou": "Não deu para desvincular agora. Tente de novo em instantes."
+        }
       }
     },
     "stats": {

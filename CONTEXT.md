@@ -18,6 +18,14 @@ _Evitar_: conta fantasma, conta temporária
 Conta cuja pessoa já fez login Steam no site ao menos uma vez. É a mesma Conta, nunca uma nova.
 _Evitar_: conta registrada, conta ativada
 
+**Vínculo do Discord** (`DiscordLink`):
+A ligação opcional de uma Conta a um usuário do Discord (ID e nome), feita pelo OAuth2 nos ajustes do Perfil. É só um vínculo: a Steam continua a única autenticação (ADR 0007). Um Discord liga a uma única Conta.
+_Evitar_: login com Discord, conta Discord
+
+**Cargo do Discord** (`DiscordRole`):
+O cargo que o bot dá a uma Conta vinculada no servidor do Discord: Jogador (todo vinculado), VIP (Período VIP ativo), Staff (qualquer papel de Staff) e Dono (papel `owner`). Só esses quatro são gerenciados; os outros cargos da pessoa não são tocados.
+_Evitar_: role, tag
+
 **Conta anonimizada** (`anonymizedAt`):
 Conta cujo dono pediu a exclusão dos dados (LGPD): perde nome, avatar, Perfil e o que montou, e o vínculo com a Steam se desfaz (fica só enquanto um ban dela valer). É a mesma Conta, com o mesmo ID público, que nunca é reaproveitado; se a pessoa voltar, nasce uma Conta nova.
 _Evitar_: conta apagada, conta deletada

@@ -23,6 +23,8 @@ describe('loadConfig', () => {
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
       reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },
+      discord: null,
+      discordMissing: [],
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
@@ -174,5 +176,63 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ ...validEnv, DATABASE_URL: 'mysql://localhost/carmine' })).toThrow(
       /DATABASE_URL/,
     );
+  });
+
+  describe('Discord integrado (S15)', () => {
+    const discordEnv = {
+      ...validEnv,
+      DISCORD_CLIENT_ID: '830000000000000001',
+      DISCORD_CLIENT_SECRET: 'segredo',
+      DISCORD_BOT_TOKEN: 'token',
+      DISCORD_GUILD_ID: '900000000000000001',
+    };
+
+    it('sem nenhuma variável fica desligado, sem erro e sem aviso', () => {
+      const config = loadConfig(validEnv);
+
+      expect(config.discord).toBeNull();
+      expect(config.discordMissing).toEqual([]);
+    });
+
+    it('com o conjunto base liga; cargo sem ID não é gerenciado e sem canal não há status', () => {
+      const config = loadConfig({
+        ...discordEnv,
+        DISCORD_ROLE_PLAYER_ID: '810000000000000001',
+        DISCORD_ROLE_VIP_ID: '',
+      });
+
+      expect(config.discord).toMatchObject({
+        guildId: '900000000000000001',
+        roleIds: { player: '810000000000000001' },
+        statusChannelId: null,
+        apiUrl: 'https://discord.com/api/v10',
+        syncMs: 30_000,
+        statusMs: 60_000,
+      });
+    });
+
+    it('com só parte do conjunto base fica desligado e diz o que falta', () => {
+      const config = loadConfig({ ...discordEnv, DISCORD_BOT_TOKEN: '' });
+
+      expect(config.discord).toBeNull();
+      expect(config.discordMissing).toEqual(['DISCORD_BOT_TOKEN']);
+    });
+
+    it('rejeita ID que não é número do Discord', () => {
+      expect(() => loadConfig({ ...discordEnv, DISCORD_GUILD_ID: 'meu-servidor' })).toThrow(
+        /DISCORD_GUILD_ID/,
+      );
+    });
+
+    it('em produção exige https nas URLs do Discord', () => {
+      expect(() =>
+        loadConfig({
+          ...discordEnv,
+          NODE_ENV: 'production',
+          PUBLIC_WEB_URL: 'https://stcarmine.com',
+          DISCORD_API_URL: 'http://discord.test/api',
+        }),
+      ).toThrow(/DISCORD_API_URL/);
+    });
   });
 });
