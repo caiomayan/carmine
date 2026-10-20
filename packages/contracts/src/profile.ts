@@ -141,6 +141,19 @@ export const displayNameChangedSchema = z
 export type DisplayNameChanged = z.infer<typeof displayNameChangedSchema>;
 
 /**
+ * `DELETE /api/me/display-name`: a Conta voltou ao nome Steam. O prazo da próxima troca continua
+ * contando da última troca (voltar não o reinicia): `nextChangeAt` é nulo quando já passou.
+ */
+export const displayNameRevertedSchema = z
+  .object({
+    displayName: z.string().min(1),
+    nextChangeAt: z.iso.datetime({ offset: true }).nullable(),
+  })
+  .meta({ id: 'DisplayNameReverted' });
+
+export type DisplayNameReverted = z.infer<typeof displayNameRevertedSchema>;
+
+/**
  * Códigos estáveis da recusa de uma troca de Nome de exibição (o HTTP está em
  * {@link DISPLAY_NAME_ERROR_STATUS}).
  */

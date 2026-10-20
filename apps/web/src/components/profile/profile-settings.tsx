@@ -4,6 +4,13 @@ import { DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_MIN_LENGTH } from '@carmine/contr
 import { useRouter } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
 import { type FormEvent, useId, useRef, useState } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogTitle,
+} from '@/components/animate-ui/components/radix/dialog';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
 import { DiscordSetting } from '@/components/profile/discord-setting';
 import { SectionTitle } from '@/components/section-title';
@@ -41,6 +48,7 @@ export function ProfileSettings() {
 type NameState =
   | { kind: 'idle' }
   | { kind: 'saved'; name: string }
+  | { kind: 'reverted'; name: string }
   | { kind: 'error'; message: string };
 
 function NameRow() {
@@ -52,6 +60,7 @@ function NameRow() {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState('');
   const [busy, setBusy] = useState(false);
+  const [reverting, setReverting] = useState(false);
   const [state, setState] = useState<NameState>({ kind: 'idle' });
   const input = useRef<HTMLInputElement>(null);
   const openButton = useRef<HTMLButtonElement>(null);
@@ -128,6 +137,31 @@ function NameRow() {
     }
   }
 
+  async function revert() {
+    setBusy(true);
+    try {
+      const response = await mutate('/api/me/display-name', { method: 'DELETE' });
+      if (response.status === 401) return;
+      const body: unknown = await response.json().catch(() => null);
+      const { displayNameRevertedSchema } = await loadContracts();
+      if (!response.ok) throw new Error(String(response.status));
+      const reverted = displayNameRevertedSchema.parse(body);
+      updateAccount({
+        displayName: reverted.displayName,
+        displayNameChange: { custom: false, nextChangeAt: reverted.nextChangeAt },
+      });
+      setReverting(false);
+      setState({ kind: 'reverted', name: reverted.displayName });
+      router.refresh();
+      requestAnimationFrame(() => openButton.current?.focus());
+    } catch {
+      setState({ kind: 'error', message: t('errors.generic') });
+      setReverting(false);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const errorId = `${inputId}-error`;
 
   return (
@@ -140,11 +174,55 @@ function NameRow() {
           </p>
         </div>
         {editing ? null : (
-          <Button ref={openButton} variant="ghost" size="sm" onClick={open} data-testid="name-edit">
-            {t('edit')}
-          </Button>
+          <div className="flex flex-wrap items-center gap-1">
+            {displayNameChange.custom ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setReverting(true)}
+                data-testid="name-revert"
+              >
+                {t('revert.open')}
+              </Button>
+            ) : null}
+            <Button
+              ref={openButton}
+              variant="ghost"
+              size="sm"
+              onClick={open}
+              data-testid="name-edit"
+            >
+              {t('edit')}
+            </Button>
+          </div>
         )}
       </div>
+
+      <Dialog open={reverting} onOpenChange={setReverting}>
+        <DialogContent
+          closeLabel={t('revert.close')}
+          className="gap-5 sm:max-w-md"
+          data-testid="name-revert-dialog"
+        >
+          <div className="grid gap-2 pr-8">
+            <DialogTitle>{t('revert.title')}</DialogTitle>
+            <DialogDescription className="text-[13.5px] leading-[1.55]">
+              {t('revert.body')}{' '}
+              {nextChangeAt
+                ? t('revert.cooldownActive', { when: when(nextChangeAt) })
+                : t('revert.cooldownFree')}
+            </DialogDescription>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReverting(false)}>
+              {t('cancel')}
+            </Button>
+            <Button onClick={revert} disabled={busy} data-testid="name-revert-confirm">
+              {t('revert.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {editing ? (
         <form onSubmit={submit} className="grid gap-3" data-testid="name-form" noValidate>
@@ -185,10 +263,17 @@ function NameRow() {
         </form>
       ) : null}
 
-      <div aria-live="polite" className={cn(state.kind === 'saved' ? '' : 'sr-only')}>
+      <div
+        aria-live="polite"
+        className={cn(state.kind === 'saved' || state.kind === 'reverted' ? '' : 'sr-only')}
+      >
         {state.kind === 'saved' ? (
           <p className="text-[13px]" data-testid="name-saved">
             {t('saved', { name: state.name })}
+          </p>
+        ) : state.kind === 'reverted' ? (
+          <p className="text-[13px]" data-testid="name-reverted">
+            {t('revert.done', { name: state.name })}
           </p>
         ) : null}
       </div>

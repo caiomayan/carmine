@@ -115,6 +115,33 @@ test('a Staff reseta o nome pelo CLI e o Perfil volta ao nome Steam', async ({ p
   expect(await connectName(request, account.steamId, 'Steam Original')).toBe('Steam Original');
 });
 
+test('voltar ao nome Steam: confirma avisando do prazo, volta no site e no jogo e não reinicia os 7 dias', async ({
+  page,
+  request,
+}) => {
+  const account = await ownProfile(page, request, 'Steam De Volta');
+  await expect(page.getByTestId('name-revert')).toHaveCount(0);
+  await page.getByTestId('name-edit').click();
+  await page.getByLabel('Novo nome').fill('Nome Temporario');
+  await page.getByTestId('name-save').click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Nome Temporario' })).toBeVisible();
+
+  await page.getByTestId('name-revert').click();
+  const dialog = page.getByTestId('name-revert-dialog');
+  await expect(dialog).toContainText('não reinicia nem zera o prazo de 7 dias');
+  await expect(dialog).toContainText('(horário de Brasília)');
+  await page.getByTestId('name-revert-confirm').click();
+
+  await expect(page.getByTestId('name-reverted')).toContainText('Steam De Volta');
+  await expect(page.getByRole('heading', { level: 1, name: 'Steam De Volta' })).toBeVisible();
+  await expect(page.getByTestId('name-revert')).toHaveCount(0);
+  expect(await connectName(request, account.steamId, 'Steam De Volta')).toBe('Steam De Volta');
+
+  // O prazo da troca anterior segue valendo: não dá para escolher outro nome na hora.
+  await page.getByTestId('name-edit').click();
+  await expect(page.getByTestId('name-cooldown')).toContainText('Você só poderá trocar de novo em');
+});
+
 test('Perfil privado: a interface avisa o que continua público e o visitante vê o aviso', async ({
   page,
   request,

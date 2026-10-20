@@ -38,11 +38,12 @@ Confirme: `sudo /opt/carmine/bin/dc logs api --tail 20` sem erro de configuraç�
 | --- | --- | --- |
 | Log de chat (`chat_messages`) | 30 dias (por `received_at`) | `RetentionJob` |
 | Denúncia (`reports`, com a cópia do chat) | 90 dias depois de criada, em qualquer estado | `RetentionJob` |
+| IDs de eventos do jogo (`game_events`, chave da idempotência das Estatísticas; ADR 0018) | 30 dias (por `received_at`), apagados em lotes de 5.000 | `RetentionJob` |
 | Punição que saiu de uma Denúncia | fica (outro registro, 24 meses depois do fim, conforme a Política de Privacidade) | |
 
-O `RetentionJob` (`apps/api/src/reports/`) roda ao subir a API e a cada `RETENTION_SWEEP_MINUTES` (padrão 60; 0 desliga) e registra no log quantas linhas apagou ("Limpeza de retenção: N mensagem(ns) de chat e M Denúncia(s) apagadas"). Apagar duas vezes não faz mal. Não há tarefa externa para agendar. Com a API fora, a limpeza só atrasa.
+O `RetentionJob` (`apps/api/src/reports/`) roda ao subir a API e a cada `RETENTION_SWEEP_MINUTES` (padrão 60; 0 desliga) e registra no log quantas linhas apagou ("Limpeza de retenção: N mensagem(ns) de chat, M Denúncia(s) e K ID(s) de evento apagados"). Apagar duas vezes não faz mal. Não há tarefa externa para agendar. Com a API fora, a limpeza só atrasa.
 
-Para conferir o tamanho do log: `select count(*), min(received_at) from chat_messages;` no Postgres (`sudo /opt/carmine/bin/dc exec postgres psql -U carmine`).
+Para conferir o tamanho do log: `select count(*), min(received_at) from chat_messages;` (ou `from game_events`) no Postgres (`sudo /opt/carmine/bin/dc exec postgres psql -U carmine`).
 
 ## Exclusão de dados (S08)
 

@@ -407,6 +407,16 @@
         "save": "Salvar nome",
         "cancel": "Cancelar",
         "saved": "Nome alterado para {name}. No jogo, vale na próxima vez que você entrar num servidor.",
+        "revert": {
+          "open": "Voltar ao nome Steam",
+          "title": "Voltar ao nome da Steam?",
+          "body": "O seu nome próprio sai e você volta a aparecer com o nome da Steam, no site e (na próxima vez que entrar) nos servidores. Voltar ao nome Steam não reinicia nem zera o prazo de 7 dias: ele continua contando da sua última troca de nome.",
+          "cooldownActive": "Para escolher um nome novo, você terá de esperar até {when} (horário de Brasília).",
+          "cooldownFree": "O prazo já passou: você pode escolher um nome novo quando quiser.",
+          "confirm": "Voltar ao nome Steam",
+          "close": "Fechar",
+          "done": "Pronto: você voltou ao nome da Steam ({name}). No jogo, vale na próxima vez que você entrar num servidor."
+        },
         "errors": {
           "too_short": "O nome precisa ter pelo menos 2 caracteres.",
           "too_long": "O nome pode ter no máximo 24 caracteres.",

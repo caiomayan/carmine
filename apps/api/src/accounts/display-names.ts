@@ -95,6 +95,44 @@ export class DisplayNames {
   }
 
   /**
+   * A própria Conta apaga o nome próprio e volta a aparecer com o nome Steam, quando quiser.
+   * **Não mexe no prazo**: ele continua contando da última troca, senão voltar ao nome Steam
+   * viraria uma brecha para trocar de nome sem esperar os 7 dias. Repetir não muda nada.
+   */
+  async revert(
+    accountId: string,
+    now = new Date(),
+  ): Promise<{ displayName: string; nextChangeAt: Date | null }> {
+    return this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(accounts)
+        .where(eq(accounts.id, accountId))
+        .for('update');
+      if (!existing || existing.claimedAt === null || existing.anonymizedAt !== null) {
+        throw new DisplayNameRejected(
+          'not_claimed',
+          'Só a Conta que entrou no site pode escolher um nome.',
+        );
+      }
+      const nextChangeAt = nextDisplayNameChange(existing.displayNameChangedAt, now);
+      if (existing.customDisplayName === null) {
+        return { displayName: existing.displayName, nextChangeAt };
+      }
+      const displayName = displayNameFor(
+        existing.steamName,
+        existing.publicId,
+        existing.displayNameBlockedSteamName,
+      );
+      await tx
+        .update(accounts)
+        .set({ customDisplayName: null, displayName })
+        .where(eq(accounts.id, accountId));
+      return { displayName, nextChangeAt };
+    });
+  }
+
+  /**
    * Reset do Nome de exibição pela Staff (S07 e S11), com auditoria e motivo.
    *
    * - Com nome próprio: ele é apagado e a Conta volta ao nome Steam. **O prazo de 7 dias recomeça

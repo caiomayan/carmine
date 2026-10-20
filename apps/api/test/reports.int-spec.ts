@@ -9,9 +9,9 @@ import {
   staffErrorSchema,
   staffReportPageSchema,
 } from '@carmine/contracts';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { chatMessages, reports } from '../src/database/schema.js';
+import { chatMessages, gameEvents, reports } from '../src/database/schema.js';
 import { DataRetention } from '../src/reports/data-retention.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
@@ -327,6 +327,31 @@ describe('Denúncias e log de chat (S13)', () => {
       expect(
         await t.postgres.db.select().from(reports).where(eq(reports.targetAccountId, accountId)),
       ).toHaveLength(0);
+    });
+  });
+
+  describe('limpeza de game_events (ADR 0018)', () => {
+    it('apaga em lotes os eventos recebidos há mais de 30 dias e mantém os recentes', async () => {
+      const day = 24 * 60 * 60 * 1000;
+      const server = await t.postgres.db.query.gameServers.findFirst();
+      const serverId = server?.id as string;
+      const old = Array.from({ length: 7 }, () => messageId());
+      const recent = Array.from({ length: 2 }, () => messageId());
+      await t.postgres.db
+        .insert(gameEvents)
+        .values([
+          ...old.map((id) => ({ id, serverId, receivedAt: new Date(Date.now() - 31 * day) })),
+          ...recent.map((id) => ({ id, serverId, receivedAt: new Date(Date.now() - 29 * day) })),
+        ]);
+
+      const swept = await new DataRetention(t.postgres.db, { batchSize: 3 }).sweep();
+
+      expect(swept.gameEvents).toBeGreaterThanOrEqual(7);
+      const left = await t.postgres.db
+        .select({ id: gameEvents.id })
+        .from(gameEvents)
+        .where(inArray(gameEvents.id, [...old, ...recent]));
+      expect(left.map((row) => row.id).sort()).toEqual([...recent].sort());
     });
   });
 

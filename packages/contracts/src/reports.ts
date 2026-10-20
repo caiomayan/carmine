@@ -38,8 +38,9 @@ export const REPORT_HOURLY_LIMIT = 5;
 export const REPORT_CHAT_LINES = 20;
 export const REPORT_CHAT_WINDOW_MINUTES = 5;
 
-/** Retenção (job de limpeza da API): o chat 30 dias, a Denúncia 90 dias. */
+/** Retenção (job de limpeza da API): o chat 30 dias, a Denúncia 90 dias, os IDs de eventos 30 dias. */
 export const CHAT_RETENTION_DAYS = 30;
+export const GAME_EVENT_RETENTION_DAYS = 30;
 export const REPORT_RETENTION_DAYS = 90;
 
 /** Maior mensagem de chat guardada (o jogo já limita bem abaixo disto). */

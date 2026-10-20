@@ -2,14 +2,17 @@ import {
   type ChangeDisplayNameInput,
   changeDisplayNameInputSchema,
   type DisplayNameChanged,
+  type DisplayNameReverted,
   displayNameChangedSchema,
   displayNameErrorSchema,
+  displayNameRevertedSchema,
   type ProfilePrivacyInput,
   profilePrivacyInputSchema,
 } from '@carmine/contracts';
 import {
   Body,
   Controller,
+  Delete,
   HttpCode,
   HttpStatus,
   Inject,
@@ -80,6 +83,27 @@ export class AccountSettingsController {
     return {
       displayName: changed.displayName,
       nextChangeAt: changed.nextChangeAt.toISOString(),
+    };
+  }
+
+  @Delete('display-name')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit('mutations')
+  @ApiOperation({
+    operationId: 'revertDisplayName',
+    summary:
+      'Apaga o Nome de exibição próprio e volta ao nome Steam, a qualquer momento; o prazo de 7 dias para escolher um nome novo continua contando da última troca (não reinicia nem zera)',
+  })
+  @ApiOkResponse({
+    description: 'De volta ao nome Steam',
+    standardSchema: displayNameRevertedSchema,
+  })
+  @errorResponse(403, 'Conta não reivindicada (not_claimed), ou CSRF inválido')
+  async revertName(@CurrentSession() session: Session): Promise<DisplayNameReverted> {
+    const reverted = await this.displayNames.revert(session.accountId);
+    return {
+      displayName: reverted.displayName,
+      nextChangeAt: reverted.nextChangeAt?.toISOString() ?? null,
     };
   }
 
