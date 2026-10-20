@@ -85,6 +85,37 @@ describe('Servidores ao vivo (S06)', () => {
     });
   });
 
+  it('um servidor aposentado sai da lista e do rodapé, mesmo com o último batimento guardado', async () => {
+    const { server, key } = await newServer('retake-fantasma');
+    await heartbeat(key, { map: 'de_nuke', players: [steamIdFor(20)], maxPlayers: 9 });
+    const online = await list();
+    expect(online.servers.find((s) => s.id === server.id)?.state).toBe('online');
+
+    await t.app.get(GameServerRegistry).retire({ name: 'retake-fantasma' });
+
+    const after = await list();
+    expect(after.servers.find((s) => s.id === server.id)).toBeUndefined();
+    expect(after.summary.online).toBe(online.summary.online - 1);
+    expect(after.summary.players).toBe(online.summary.players - 1);
+    // A chave aposentada não cria presença nova.
+    expect((await heartbeat(key, { map: 'de_nuke', players: [], maxPlayers: 9 })).statusCode).toBe(
+      401,
+    );
+  });
+
+  it('um servidor cadastrado que nunca mandou batimento aparece offline, sem mapa nem jogadores', async () => {
+    const { server } = await newServer('retake-nunca-visto');
+
+    const listed = (await list()).servers.find((s) => s.id === server.id);
+
+    expect(listed).toMatchObject({
+      state: 'offline',
+      map: null,
+      players: 0,
+      lastHeartbeatAt: null,
+    });
+  });
+
   it('um servidor cheio aparece lotado e o rodapé soma os jogadores', async () => {
     const { server, key } = await newServer('dm-lotado', 'deathmatch');
     const before = (await list()).summary;

@@ -81,6 +81,10 @@ pnpm --filter @carmine/api servers retire --name local       # ou --prefix e2e- 
 
 Aposentar tira o servidor da lista pública e do painel e a chave para de valer na hora; a linha fica (o log de auditoria aponta para ela) e o nome continua reservado. Para limpar o banco de dev dos servidores que os E2E antigos deixaram: `servers retire --prefix e2e-`.
 
+**Servidores que sobram na home em dev (não é bug):** a home lista todo servidor cadastrado e não aposentado. Um servidor sem batimento nos últimos 45 s aparece **offline** (e um que nunca mandou batimento, offline sem mapa), por desenho (S06). Por isso:
+- "servidores de teste" na home são cadastros que ficaram no banco de dev (os E2E antigos escreviam nele; hoje usam o banco `carmine_e2e`). Veja o que há com `servers list --all` e aposente: `servers retire --prefix e2e-` (ou `--name <nome>`).
+- "Retake não aparece online" quer dizer que o CS2 desse perfil não está batendo na API: confira se o servidor está de pé, se a `ApiKey` do `Carmine.Core.json` é a do cadastro `retake-local` (chave rotacionada ou servidor aposentado dão 401 no batimento) e se a `ApiBaseUrl` aponta para a API do `pnpm dev`. A linha `Carmine.Core: API no ar (...)` no console só prova que a API respondeu ao subir; o batimento a cada 10 s é o que põe o servidor online.
+
 Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/game-servers/servers.cli.js create ...`.
 
 Cole a chave em `ApiKey` no `game\csgo\addons\counterstrikesharp\configs\plugins\Carmine.Core\Carmine.Core.json` (o script cria o arquivo com a URL da API).
