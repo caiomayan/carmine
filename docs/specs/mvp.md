@@ -17,13 +17,14 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 | **A · Núcleo jogável** | S00 a S09 | Amigos jogam Retake e DM com o próprio Loadout, com moderação e termos mínimos |
 | **Beta fechado** | S10 | Critérios qualitativos de saída atendidos |
 | **B · Completo** | S11 a S15 | Perfil completo, Estatísticas, Ranking, Denúncias, VIP pago e Discord integrado |
+| **UI · Polimento** | U1 a U4 e A1, antes da S14 | Telas polidas e completas sobre uma base de componentes, e analytics de produto medindo desde a S14 |
 | **Abertura** | — | Lista de permissão desligada |
 
 ## Fora do escopo do MVP
 
 - Matchmaking, fila, ELO e servidores sob demanda (Fase 2, ADR 0001).
 - 5v5 casual (entra logo depois do MVP).
-- **Cartão de crédito e recorrência** (só Pacotes VIP via Pix no MVP).
+- **Assinatura recorrente** (cartão ou Pix Automático): a S14 já a modela, mas ela fica desligada até existir um CNPJ (previsão: 2027). O Pix Automático exige CNPJ ativo há 6 meses, e uma assinatura no cartão criada na conta CPF teria que ser refeita pelo assinante na troca de conta. No MVP, só Pacotes VIP avulsos, por Pix ou cartão.
 - Imagem OG personalizada com o Loadout (o link do Perfil tem prévia simples).
 - Feed, seguir, comentários, clips e destaques.
 - Demos, anti-cheat próprio e heurísticas além do VAC.
@@ -36,6 +37,7 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 
 - **Interface:** app-first, sem landing page. Barra superior com container global de 1080 px e margem lateral mínima de 36 px. Identidade **Liberty**: só neutros (preto quente e creme, escala de cinzas), sem cor de acento de marca; ação primária = preenchido invertido. Arredondamento nível shadcn; botões, abas e filtros sem borda, com fundo mais claro no hover e no ativo; poucas linhas. Rodapé só no fim real da página. Cores de contexto (online, lotado, erro, sucesso, info, VIP) apenas em sinais pequenos. Animações sutis em toda interação, respeitando `prefers-reduced-motion`. Polimento visual com a skill impeccable.
 - **Stack de UI:** Tailwind CSS v4 + shadcn/ui + Animate UI, ícones Lucide (animados via lucide-animated) e marcas via Simple Icons (ADR 0014).
+- **ID público fora da interface:** o `#ID` não aparece em nenhuma tela do site nem no jogo; ele fica só na URL do Perfil. Exceções, por serem operacionais: o painel da Staff e a mensagem de Denúncia no Discord da Staff (decisão do dono, 2026-10-20). O nome provisório "Jogador #ID" continua valendo como nome.
 - **Texto:** PT-BR, tom sóbrio tratando por "você", com tempero da marca só em momentos leves e nunca em erros, pagamentos ou moderação. Todas as strings externalizadas (i18n desde o dia 1).
 - **Acessibilidade:** WCAG 2.2 AA, navegação completa por teclado, foco visível, alvos de 44 px no mobile. Todo controle que existe por arrasto (stickers, charms) também existe por formulário.
 - **Responsivo:** 390 px a 1440 px+ sem scroll horizontal.
@@ -65,6 +67,8 @@ A promessa central, que tem prioridade sobre todo o resto, é: **entrar, equipar
 | S13 Denúncias e log de chat | S07 |
 | S14 VIP e pagamentos | S05, S08, S09 |
 | S15 Discord integrado | S07, S14 |
+| U1–U4 Fase de UI | S11, S12, S13, S15 |
+| A1 Analytics de produto | U1 |
 
 ---
 
@@ -138,7 +142,7 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 - O primeiro login reivindica a Conta existente; se ela não existir (a pessoa nunca jogou), é criada já reivindicada.
 - Sessão por cookie `httpOnly`, `Secure`, `SameSite=Lax`, com proteção CSRF nas mutações. Se a sessão expirar durante uma edição, a edição é guardada localmente e restaurada depois do novo login.
 - Barra superior mostra avatar e Nome de exibição; logout.
-- **Perfil básico** em `stcarmine.com/<idPúblico>`: Nome de exibição, `#ID`, avatar Steam, link para o perfil Steam e o Loadout em vitrine. Uma URL com SteamID64 redireciona (301) para ela.
+- **Perfil básico** em `stcarmine.com/<idPúblico>`: Nome de exibição, avatar Steam, link para o perfil Steam e o Loadout em vitrine. Uma URL com SteamID64 redireciona (301) para ela.
 - **Sinal de reivindicação:** para visitantes, uma diferença sutil de cor ou disposição, nunca parecida com um selo de verificado. Para o dono de uma Conta não reivindicada que abre o próprio Perfil, vira um convite: "É você? Entre com a Steam para personalizar".
 - **Primeiros passos** depois do primeiro login: uma orientação curta (o que é o Carmine, vínculo com a Steam, adicionar ao Inventário vs. equipar, usar `!ws` ou reconectar para ver no jogo), que pode ser fechada e reaberta.
 
@@ -366,8 +370,9 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 ### S14 · VIP e pagamentos
 
 - Página do VIP: o que é grátis e o que é VIP, e a política de vagas reservadas.
-- **Pacotes VIP via Pix (Mercado Pago):** 1 mês (R$ 9,90), 3 meses (R$ 26,90) e 6 meses (R$ 49,90). Um "mês" são 30 dias.
-- **Antes de pagar**, a tela mostra: a Conta beneficiada (avatar, nome e `#ID`), o valor, a duração, a nova data de fim e "pagamento único, sem renovação automática". O Pagador declara ser maior de idade, e o CPF dele fica registrado (ADR 0011).
+- **Pacotes VIP avulsos (Mercado Pago, conta CPF):** 1 mês (R$ 9,90), 3 meses (R$ 26,90) e 6 meses (R$ 49,90). Um "mês" são 30 dias. **Meios:** Pix e cartão de crédito à vista (e débito, se o checkout oferecer). **Sem boleto:** a taxa fixa (~R$ 3,49) come ~35% do pacote de 1 mês e a compensação leva dias.
+- **Assinatura modelada, desligada:** o domínio já tem a Assinatura (renovação a cada 30 dias, cancelamento pelo próprio site) e o provedor de pagamento fica isolado atrás de uma interface. Ligar a assinatura no cartão quando houver conta CNPJ, e o Pix Automático 6 meses depois, é configuração e um PR pequeno, sem reescrita.
+- **Antes de pagar**, a tela mostra: a Conta beneficiada (avatar, nome e o link do Perfil), o valor, a duração, a nova data de fim e "pagamento único, sem renovação automática". O Pagador declara ser maior de idade, e o CPF dele fica registrado (ADR 0011).
 - **Estados do pagamento**, visíveis em "Minhas compras" mesmo depois de fechar a página:
   - Pendente: QR válido por 30 minutos, recuperável.
   - Expirado: QR vencido, sem cobrança.
@@ -418,6 +423,53 @@ Depois do beta. Hoje a moderação no Discord é manual (S07). Decisões no ADR 
 
 ---
 
+## Fase de UI · Polimento (antes da S14)
+
+Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é polir, espaçar, completar telas e criar poucos momentos assinatura. Vem antes da S14 para que as telas novas do VIP já nasçam no padrão. As ideias do dono e os achados vivem na nota Maestri "Carmine · Ideias de UI".
+
+**Regras da fase**
+- Primitivos (Select, Combobox, Dropdown Menu, Dialog, Tabs, Tooltip, Popover) vêm do **shadcn/ui** (Radix), nunca feitos à mão. As versões animadas vêm do **Animate UI** (ADR 0014).
+- Peças assinatura (cartão de servidor, menu do usuário e, na S14, recibo e passe VIP) são **nossas**, sobre os primitivos e nos tokens Liberty. Inspiração externa é recriada, não copiada.
+- Animação com CSS (transitions, `@starting-style`, scroll-driven animations), View Transitions e framer-motion, que já está no projeto. **Sem GSAP e sem Lenis.** Sempre `prefers-reduced-motion`; orçamento de JS da 1ª carga mantido (275 kB).
+- O dono aprova o visual de cada PR antes do merge, no navegador (portal do Maestri ou site local).
+
+### U1 · Base de componentes, menu do usuário e configurações
+- Instala os primitivos do shadcn que faltam e troca os `<select>` nativos (semana do Ranking, catálogo, anexos, seletor de stickers, painel da Staff): Select nos simples, Combobox com busca nos longos.
+- **Menu do usuário** completo: cabeçalho com avatar, nome e selo VIP com os dias restantes (sem `#ID`); "jogando agora no <servidor>" quando estiver em partida; atalhos Perfil, Inventário, Loadout e Configurações; tema claro/escuro; painel da Staff só para a Staff; Início e Primeiros passos como atalhos menores; Sair separado no fim.
+- **`/configuracoes`** com navegação lateral: Perfil (nome, voltar ao nome Steam, privacidade), Conexões (Discord), Aparência (tema), Dados e conta (baixar os dados, excluir a conta); a seção VIP e compras chega com a S14. É o único lugar de ajustes: no próprio Perfil fica só o botão "Editar perfil".
+- Tira o `#ID` de todas as telas (princípio "ID público fora da interface").
+
+### U2 · Home com cartões de servidor
+- Com até ~6 servidores, cada um vira um **cartão grande**: o mapa atual ao fundo (escurecido para o texto ficar legível), nome, Modo, status, jogadores/vagas, avatares dos amigos e o botão Jogar. Acima disso, a mesma tela vira lista. "Amigos jogando" continua abaixo.
+- As imagens dos mapas vêm de `assets/thumbs/` (fora do git): só os mapas da rotação, uma imagem por mapa, em AVIF/WebP com ~1600 px, em `apps/web/public/maps/`. Mapa sem imagem cai num fundo neutro.
+
+### U3 · Polimento e animações sutis
+- Espaçamento, hierarquia, estados vazios e de erro, e animações sutis no site inteiro, a partir da crítica com a skill impeccable e das anotações do dono no beta.
+
+### U4 · Auditoria final
+- Auditoria impeccable: WCAG 2.2 AA, 390 px sem scroll horizontal, tema claro e escuro, orçamento de JS.
+
+### A1 · Analytics de produto (depois da U1)
+- **PostHog Cloud na região UE.** Os eventos importantes saem da API (zero JS a mais); no navegador, só a contagem de páginas, carregada depois da hidratação. Sem gravação de sessão (público com menores).
+- Um **plano de eventos** escrito antes da instalação (nomes e propriedades fixos, ex.: `login_concluido`, `skin_equipada`, `servidor_conectado`, `vip_comprado`) é a fonte única para o PostHog, o GA4 e o BI.
+- Na Política de Privacidade, o PostHog entra como terceiro (UE).
+- Depois: **GA4 na abertura**, para aquisição, anúncios e patrocínios, sem Google Signals nem personalização de anúncios e com o banner de consentimento. **Metabase** quando o dono quiser o BI, juntando o nosso banco, o PostHog e o GA.
+
+---
+
+## Depois do MVP
+
+Amadurecido com o dono em 2026-10-20; detalhes na nota Maestri "Carmine · Roadmap futuro". Nada disto está em implementação.
+- **Coleta para o futuro**, logo depois da S14: posição de quem matou e de quem morreu, dano, resultado do round, economia e utilitárias pela fila do ADR 0018, e gravação de demos (SourceTV) no R2 por algumas semanas.
+- **Card de boas-vindas no jogo** (HUD Panorama, `custom_hud_layout`, CS2 de 24/08/2026; exige MultiAddonManager e um addon da Workshop): Retake, Deathmatch e 5v5 Casual, nunca em Lobby/Partida privada.
+- **Foto de perfil própria** para todos (R2, refeita no servidor sem EXIF, moderada, com volta à foto da Steam).
+- **5v5 Casual** sempre ligado; depois a **Lobby de 10** (Partida privada sob demanda, Fase 2 do ADR 0001) e, no futuro distante, **Times**.
+- **Agente de IA**, o diferencial do projeto: Treinador e Assistente primeiro, depois Estilista, Organizador e Guardião (Staff). Serviço TypeScript separado, que age com as permissões de quem pediu e nunca pune. No início, só para o Dono (sem limite) e a Staff (cota por custo).
+- **Highlights em vídeo** a partir das demos (futuro mais distante).
+- A AWS é só para testes; em produção o CS2 roda numa VPS.
+
+---
+
 ## Definição de "MVP pronto"
 
 Retake e Deathmatch em produção; login Steam; Inventário com 3D aplicado no jogo; Perfil e Ranking; servidores ao vivo e amigos jogando; VIP de ponta a ponta (com a cobrança ligada só após a decisão sobre verificação de idade); moderação básica; páginas legais publicadas; monitoramento ativo. Sem metas numéricas de validação: crescer com calma.
@@ -437,7 +489,7 @@ Retake e Deathmatch em produção; login Steam; Inventário com 3D aplicado no j
 | Criar as contas no Sentry e no serviço de uptime | S09 |
 | Revisar as páginas legais | S08, S14 |
 | Criar a conta Mercado Pago e as credenciais (sandbox e produção) | S14 |
-| Decidir sobre a verificação de idade (idealmente com advogado) | Ligar a cobrança (S14) |
+| Criar a conta do PostHog (região UE) | A1 || Decidir sobre a verificação de idade (idealmente com advogado) | Ligar a cobrança (S14) |
 
 ## Pontos em aberto
 
