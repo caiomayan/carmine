@@ -43,7 +43,7 @@ function MapBackdrop({
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'auto' : 'low'}
         decoding="async"
-        className="map-art size-full object-cover group-hover/card:scale-[1.035]"
+        className="map-art size-full object-cover"
       />
     </picture>
   );
@@ -84,7 +84,7 @@ export function ServerCard({
       style={{ '--i': index } as CSSProperties}
       className={cn(
         'group/card relative isolate flex min-h-[264px] enter-stagger flex-col overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-line ring-inset',
-        'transition-shadow duration-(--dur-base) ease-std hover:ring-line-strong',
+        'transition-shadow duration-(--dur-slow) ease-soft hover:ring-line-strong has-focus-visible:ring-line-strong',
         solo && 'md:min-h-[320px]',
       )}
     >

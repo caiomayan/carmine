@@ -86,6 +86,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* chegadas */
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0); /* saídas */
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* tema, crossfade */
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1); /* movimento longo e contínuo (zoom, abrir) */
 
   --animate-rise: rise var(--dur-enter) var(--ease-out) backwards;
   --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
@@ -215,10 +216,19 @@
   background: color-mix(in srgb, var(--bg) 93%, transparent);
 }
 
-/* a imagem do mapa assenta ao entrar e se aproxima devagar no hover do cartão */
+/*
+ * A imagem do mapa assenta ao entrar e se aproxima devagar com o mouse (ou o foco do teclado) no
+ * cartão. O Tailwind 4 aplica `scale` pela propriedade `scale`, não por `transform`: a transição
+ * tem de ser de `scale`, senão o zoom salta. Com movimento reduzido não há animação nem zoom.
+ */
 @utility map-art {
   animation: map-settle 1100ms var(--ease-out) backwards;
-  transition: transform 900ms var(--ease-out);
+  transition: scale var(--dur-zoom) var(--ease-soft);
+  @media (prefers-reduced-motion: no-preference) {
+    .group\/card:is(:hover, :has(:focus-visible)) & {
+      scale: 1.035;
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     transition: none;

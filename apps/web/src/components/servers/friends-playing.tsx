@@ -156,7 +156,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
       data-testid="friend-row"
       data-friend={friend.steamId}
       style={{ '--i': index } as CSSProperties}
-      className="relative flex enter-stagger items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2"
+      className="relative flex enter-stagger items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-(--dur-base) ease-std hover:bg-surface-2 has-focus-visible:bg-surface-2"
     >
       <span className="relative shrink-0">
         <Avatar src={friend.avatarUrl} name={friend.displayName} size={36} />
@@ -253,7 +253,7 @@ function PrivateList() {
           aria-hidden="true"
           viewBox="0 0 16 16"
           className={cn(
-            'size-3.5 transition-transform duration-(--dur-base) ease-out motion-reduce:transition-none',
+            'size-3.5 transition-transform duration-(--dur-slow) ease-soft motion-reduce:transition-none',
             open && 'rotate-180',
           )}
           fill="none"

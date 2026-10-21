@@ -31,7 +31,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
       data-server={server.name}
       data-state={server.state}
       style={{ '--i': index } as CSSProperties}
-      className="group/row mb-0.5 enter-stagger rounded-lg transition-colors duration-(--dur-fast) ease-std hover:bg-surface has-[[data-help]]:bg-surface"
+      className="group/row mb-0.5 enter-stagger rounded-lg transition-colors duration-(--dur-base) ease-std hover:bg-surface has-[[data-help]]:bg-surface has-focus-visible:bg-surface"
     >
       <div
         className={cn(

@@ -42,7 +42,7 @@ export function OfflineGroup({
           aria-hidden="true"
           viewBox="0 0 16 16"
           className={cn(
-            'size-3.5 transition-transform duration-(--dur-base) ease-out motion-reduce:transition-none',
+            'size-3.5 transition-transform duration-(--dur-slow) ease-soft motion-reduce:transition-none',
             open && 'rotate-180',
           )}
           fill="none"
@@ -54,11 +54,20 @@ export function OfflineGroup({
           <path d="m4 6 4 4 4-4" />
         </svg>
       </Button>
-      <ul id={listId} hidden={!open} aria-label={t('listLabel')} className="grid pt-1">
-        {servers.map((server, i) => (
-          <OfflineRow key={server.id} server={server} index={i} />
-        ))}
-      </ul>
+      {/* abre e fecha deslizando: a linha do grid vai de 0fr a 1fr; fechado, o conteúdo sai da
+          árvore de acessibilidade (visibility) só depois de a transição acabar */}
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows,opacity,visibility] duration-(--dur-slow) ease-soft motion-reduce:transition-none',
+          open ? 'visible grid-rows-[1fr] opacity-100' : 'invisible grid-rows-[0fr] opacity-0',
+        )}
+      >
+        <ul id={listId} aria-label={t('listLabel')} className="grid min-h-0 overflow-hidden pt-1">
+          {servers.map((server, i) => (
+            <OfflineRow key={server.id} server={server} index={i} />
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

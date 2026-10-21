@@ -1169,7 +1169,7 @@
     },
     "servers": {
       "title": "Servidores Carmine",
-      "subtitle": "Nome de vitrine e código aparecem na home, no Conectar e no hostname do jogo (aplicado no próximo batimento, em até 10 s).",
+      "subtitle": "Nome de vitrine e código aparecem na home, no botão Jogar e no hostname do jogo (aplicado no próximo batimento, em até 10 s).",
       "showcaseName": "Nome de vitrine",
       "showcaseHint": "Descreve a variante, ex.: Retake · Rotação",
       "code": "Código",
