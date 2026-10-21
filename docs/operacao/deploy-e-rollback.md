@@ -5,7 +5,8 @@ Como o código do `main` chega à produção (Oracle A1, Docker Compose atrás d
 ## Visão geral
 
 ```
-merge no main ──> CI inteiro (node, dotnet, api-image, web-image, ops-image) ──> Deploy
+PR ──> CI (node, dotnet e as imagens, só construídas) ──> merge no main
+merge no main ──> CI do push (só api-image, web-image e ops-image) ──> Deploy
                    publica ghcr.io/caiomayan/carmine-{api,web,ops}:sha-<commit>
 Deploy: GitHub Actions ──SSH pelo Cloudflare Tunnel (Access + service token)──> VM
         usuário `deploy`, chave que só executa /opt/carmine/bin/deploy
