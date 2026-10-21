@@ -156,7 +156,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
       data-testid="friend-row"
       data-friend={friend.steamId}
       style={{ '--i': index } as CSSProperties}
-      className="flex enter-stagger items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2"
+      className="relative flex enter-stagger items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2"
     >
       <span className="relative shrink-0">
         <Avatar src={friend.avatarUrl} name={friend.displayName} size={36} />
@@ -168,7 +168,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
         <Link
           href={`/${friend.publicId}`}
           aria-label={t('profile', { name: friend.displayName })}
-          className="w-fit max-w-full truncate rounded-xs text-[13.5px] font-semibold underline-offset-4 hover:underline"
+          className="w-fit max-w-full truncate rounded-xs text-[13.5px] font-semibold underline-offset-4 outline-offset-4 after:absolute after:inset-0 after:rounded-lg hover:underline"
         >
           {friend.displayName}
         </Link>
@@ -176,7 +176,12 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
       </span>
       {joinable && server ? (
         <>
-          <Button asChild variant="ghost" size="sm" className="shrink-0 pointer-coarse:hidden">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="relative z-10 shrink-0 pointer-coarse:hidden"
+          >
             <a
               href={steamConnectUrl(server.address)}
               aria-label={t('joinAria', { name: friend.displayName })}
@@ -189,7 +194,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
             size="icon"
             aria-label={t('copyAria', { name: friend.displayName })}
             onClick={() => copy(server.address)}
-            className="hidden shrink-0 pointer-coarse:inline-flex"
+            className="relative z-10 hidden shrink-0 pointer-coarse:inline-flex"
           >
             {copyStatus === 'copied' ? (
               <span className="text-status-success">
