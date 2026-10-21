@@ -132,6 +132,12 @@ describe('groupResults', () => {
     expect(group?.hits[0]?.item).toBe('item-0');
   });
 
+  it('as páginas cabem todas no grupo (a lista sem busca é o menu do site)', () => {
+    const pages = Array.from({ length: 7 }, (_, i) => hit('pages', `p${i}`, 1));
+
+    expect(groupResults(pages)[0]?.hits).toHaveLength(7);
+  });
+
   it('sem nada, nenhum grupo', () => {
     expect(groupResults([])).toEqual([]);
   });

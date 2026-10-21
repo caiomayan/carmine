@@ -97,6 +97,9 @@ const PANEL = cn(
   'md:shadow-[0_28px_72px_-24px_var(--shadow),0_0_0_1px_var(--line)]',
 );
 
+/** Texto de apoio que também aparece sobre o fundo da linha selecionada: o cinza de sempre ali cai abaixo de 4,5:1. */
+const MUTED = 'text-[color-mix(in_srgb,var(--text)_72%,var(--muted))]';
+
 const GROUP_HEADING =
   '[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase';
 
@@ -310,6 +313,7 @@ function PaletteBody({
     <Command
       shouldFilter={false}
       loop
+      vimBindings={false}
       value={selected}
       onValueChange={setSelected}
       label={t('palette.title')}
@@ -346,62 +350,56 @@ function PaletteBody({
       </div>
 
       <CommandList
-        aria-label={t('palette.listLabel')}
-        className="max-h-none min-h-24 flex-1 px-2 pb-2 md:max-h-[min(28rem,60dvh)]"
+        label={t('palette.listLabel')}
+        className="max-h-none min-h-0 flex-[0_1_auto] px-2 pb-2 md:max-h-[min(28rem,60dvh)]"
         data-testid="palette-list"
       >
         {showRecent ? (
-          <>
-            <div className="flex items-center justify-between px-2.5 pt-3 pb-1.5">
-              <span className="text-[11px] font-semibold tracking-[0.14em] text-muted-foreground uppercase">
-                {t('groups.recent')}
-              </span>
-              <Button
-                type="button"
-                variant="quiet"
-                size="sm"
-                aria-label={t('recent.clearAria')}
-                onClick={() => {
-                  clearRecent(publicId);
-                  setRecent([]);
-                }}
-                className="min-h-7 px-2 text-[12px]"
+          <CommandGroup heading={t('groups.recent')} className={GROUP_HEADING}>
+            {recent.map((entry) => (
+              <CommandItem
+                key={entry}
+                value={`recent:${entry}`}
+                onSelect={() => setQuery(entry)}
+                className={ROW}
+                data-testid="palette-recent"
               >
-                {t('recent.clear')}
-              </Button>
-            </div>
-            <CommandGroup>
-              {recent.map((entry) => (
-                <CommandItem
-                  key={entry}
-                  value={`recent:${entry}`}
-                  onSelect={() => setQuery(entry)}
-                  className={ROW}
-                  data-testid="palette-recent"
-                >
-                  <Leading>
-                    <HistoryIcon aria-hidden="true" className="size-4" />
-                  </Leading>
-                  <span className="min-w-0 flex-1 truncate">{entry}</span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </>
+                <Leading>
+                  <HistoryIcon aria-hidden="true" className="size-4" />
+                </Leading>
+                <span className="min-w-0 flex-1 truncate">{entry}</span>
+              </CommandItem>
+            ))}
+            <CommandItem
+              value="recent-clear"
+              onSelect={() => {
+                clearRecent(publicId);
+                setRecent([]);
+              }}
+              className={cn(ROW, 'min-h-10 text-[13px]', MUTED)}
+              data-testid="palette-recent-clear"
+            >
+              <Leading>
+                <XIcon aria-hidden="true" className="size-4" />
+              </Leading>
+              {t('recent.clear')}
+            </CommandItem>
+          </CommandGroup>
         ) : null}
 
         {groups.map((group) => renderGroup(group.group, group.hits))}
-
-        <Status
-          searching={data.searching}
-          text={text}
-          total={total}
-          loading={loading}
-          failed={failed}
-          signOutFailed={signOutFailed}
-          sources={[data.items, data.players, data.servers]}
-          onRetry={data.retry}
-        />
       </CommandList>
+
+      <Status
+        searching={data.searching}
+        text={text}
+        total={total}
+        loading={loading}
+        failed={failed}
+        signOutFailed={signOutFailed}
+        sources={[data.items, data.players, data.servers]}
+        onRetry={data.retry}
+      />
 
       <p
         aria-hidden="true"
@@ -419,7 +417,10 @@ function Leading({ children }: { children: ReactNode }) {
   return (
     <span
       aria-hidden="true"
-      className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-(--fill-rest) text-muted-foreground"
+      className={cn(
+        'grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-(--fill-rest)',
+        MUTED,
+      )}
     >
       {children}
     </span>
@@ -432,7 +433,10 @@ function Hint({ keys, label }: { keys: string[]; label: string }) {
       {keys.map((key) => (
         <kbd
           key={key}
-          className="grid min-w-5 place-items-center rounded-sm bg-(--fill-rest) px-1 py-0.5 font-sans text-[11px] leading-none font-medium"
+          className={cn(
+            'grid min-w-5 place-items-center rounded-sm bg-(--fill-rest) px-1 py-0.5 font-sans text-[11px] leading-none font-medium',
+            MUTED,
+          )}
         >
           {key}
         </kbd>
@@ -463,17 +467,13 @@ function RowText({
         ) : null}
         <span className="truncate">{title}</span>
       </span>
-      {subtitle ? (
-        <span className="truncate text-[12px] text-muted-foreground">{subtitle}</span>
-      ) : null}
+      {subtitle ? <span className={cn('truncate text-[12px]', MUTED)}>{subtitle}</span> : null}
     </span>
   );
 }
 
 function Trailing({ children }: { children: ReactNode }) {
-  return (
-    <span className="shrink-0 text-[12px] text-muted-foreground tabular-nums">{children}</span>
-  );
+  return <span className={cn('shrink-0 text-[12px] tabular-nums', MUTED)}>{children}</span>;
 }
 
 function RowView({ row }: { row: Row }) {
