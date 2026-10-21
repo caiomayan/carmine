@@ -444,7 +444,7 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 - As imagens dos mapas vêm de `assets/thumbs/` (fora do git): só os mapas da rotação, uma imagem por mapa, em AVIF/WebP com ~1600 px, em `apps/web/public/maps/`. Mapa sem imagem cai num fundo neutro.
 
 **Decidido na implementação**
-- **Cartão ou lista:** só contam os servidores **no ar** (online ou lotado): até 6, cartões; 7 ou mais, lista. Os offline nunca ganham cartão: ficam num grupo "Offline (n)" no fim, sem imagem e sem botão (um "Jogar" desabilitado só parece quebrado), com o motivo por extenso ("Offline há 2 horas", "Nunca ficou online"). O grupo nasce aberto com até 2 offline ou quando nada está no ar; com mais, recolhido.
+- **Cartão ou lista:** só contam os servidores **no ar** (online ou lotado) **do Modo filtrado**: até 6, cartões; 7 ou mais, lista (a aba "Todos" pode ser lista enquanto uma aba de Modo é cartões). Os offline nunca ganham cartão: ficam num grupo "Offline (n)" no fim, sem imagem e sem botão (um "Jogar" desabilitado só parece quebrado), com o motivo por extenso ("Offline há 2 horas", "Nunca ficou online"). O grupo nasce aberto com até 2 offline ou quando nada está no ar; com mais, recolhido.
 - **Colunas:** 1, 2 ou 3 conforme a quantidade (1 → cartão largo; 2, 4 e 5 → 2 colunas; 3 e 6 → 3 no desktop), sem buraco na última linha.
 - **Botão:** "Jogar" (era "Conectar") no cartão e na linha; no bloco de amigos, "Jogar junto". Lotado mantém o botão, sem o preenchido: o VIP entra pela Vaga reservada.
 - **Amigos:** o bloco "Seus amigos jogando agora" desceu para baixo da lista e a mesma leitura alimenta os avatares empilhados do cartão do servidor onde cada um está.

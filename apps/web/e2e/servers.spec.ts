@@ -1,3 +1,4 @@
+import type { Page } from '@playwright/test';
 import { chooseSteamAccount, newSteamId } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
 import {
@@ -18,18 +19,17 @@ const FRIENDS_ERROR_STEAM_ID = '76561198000009002';
  * O servidor na home, seja cartão, linha da lista ou linha offline: a quantidade de servidores
  * no ar decide o desenho, e os E2E de outros arquivos deixam servidores ligados em paralelo.
  */
-const row = (page: import('@playwright/test').Page, name: string) =>
-  page.locator(`li[data-server="${name}"]`);
+const row = (page: Page, name: string) => page.locator(`li[data-server="${name}"]`);
 
 /** O grupo "Offline (n)" nasce recolhido com muitos servidores offline: abre antes de olhar. */
-async function openOfflineGroup(page: import('@playwright/test').Page) {
+async function openOfflineGroup(page: Page) {
   const toggle = page.getByTestId('offline-group').getByRole('button', { name: /^Offline \(/ });
   await expect(toggle).toBeVisible();
   if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
 }
 
 /** Entra pela Steam falsa e volta para a home. */
-async function signIn(page: import('@playwright/test').Page, steamId: string) {
+async function signIn(page: Page, steamId: string) {
   await chooseSteamAccount(page.context(), steamId);
   await page.goto('/entrar');
   await page.getByTestId('steam-login').click();
@@ -316,7 +316,7 @@ for (const theme of ['dark', 'light'] as const) {
 }
 
 test.describe('Home em cartões (U2)', () => {
-  const list = (page: import('@playwright/test').Page) => page.getByTestId('server-list');
+  const list = (page: Page) => page.getByTestId('server-list');
 
   test('até 6 servidores no ar viram cartões com o mapa atual ao fundo', async ({ page }) => {
     await routeLiveServers(page, [

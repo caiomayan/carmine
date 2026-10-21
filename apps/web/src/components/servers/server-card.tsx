@@ -5,17 +5,12 @@ import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/avatar';
 import { LiveCount } from '@/components/live-count';
-import { StatusDot, type StatusTone } from '@/components/status-dot';
-import { occupancy, serverFullLabel, serverLabel } from '@/lib/live-servers';
+import { StatusDot } from '@/components/status-dot';
+import { serverFullLabel, serverLabel } from '@/lib/live-servers';
 import { mapArt, mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ConnectButtons, ConnectHelp, useConnect } from './connect';
-
-const STATE_TONE: Record<LiveServer['state'], StatusTone> = {
-  online: 'online',
-  full: 'warn',
-  offline: 'offline',
-};
+import { OccupancyBar, STATE_TONE } from './occupancy-bar';
 
 /** Quantos avatares de amigos aparecem empilhados; o resto vira "+N". */
 const VISIBLE_AVATARS = 4;
@@ -43,8 +38,8 @@ function MapBackdrop({
       <img
         src={art.src}
         alt=""
-        width={1600}
-        height={900}
+        width={art.width}
+        height={art.height}
         loading={priority ? 'eager' : 'lazy'}
         fetchPriority={priority ? 'auto' : 'low'}
         decoding="async"
@@ -77,7 +72,6 @@ export function ServerCard({
 }) {
   const t = useTranslations('servers');
   const connect = useConnect(server);
-  const { ratio, level } = occupancy(server);
   const mapName = mapDisplayName(server.map);
   const full = server.state === 'full';
 
@@ -161,19 +155,7 @@ export function ServerCard({
               </span>
             ) : null}
           </div>
-          <span aria-hidden="true" className="block h-[3px] overflow-hidden rounded-[2px] bg-line">
-            <span
-              className={cn(
-                'block h-full origin-left rounded-[2px] transition-[transform,background-color] duration-(--dur-slow) ease-out motion-reduce:transition-none',
-                level === 'full'
-                  ? 'bg-[repeating-linear-gradient(-45deg,var(--status-warn)_0_3px,color-mix(in_srgb,var(--status-warn)_35%,transparent)_3px_6px)]'
-                  : level === 'high'
-                    ? 'bg-status-warn'
-                    : 'bg-status-online',
-              )}
-              style={{ transform: `scaleX(${ratio})` }}
-            />
-          </span>
+          <OccupancyBar server={server} />
         </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3 max-md:flex-col max-md:items-stretch">

@@ -179,7 +179,7 @@
 
 /* um cartão sozinho é largo: o texto fica à esquerda e a imagem respira à direita */
 @utility map-scrim-solo {
-  @media (min-width: 761px) {
+  @variant md {
     background:
       linear-gradient(
         to right,

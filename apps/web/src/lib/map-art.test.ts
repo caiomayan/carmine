@@ -28,6 +28,7 @@ describe('mapArt', () => {
     expect(art?.webp).toBe('/maps/nuke-800.webp 800w, /maps/nuke-1600.webp 1600w');
     expect(art?.src).toBe('/maps/nuke-1600.webp');
     expect(MAP_ART_WIDTHS).toEqual([800, 1600]);
+    expect(art).toMatchObject({ width: 1600, height: 900 });
   });
 });
 

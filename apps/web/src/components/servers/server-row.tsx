@@ -7,17 +7,12 @@ import { MapPinIcon } from '@/components/icons/animated/map-pin';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { LiveCount } from '@/components/live-count';
 import { SERVER_GRID } from '@/components/servers/server-list';
-import { StatusDot, type StatusTone } from '@/components/status-dot';
-import { occupancy, serverLabel } from '@/lib/live-servers';
+import { StatusDot } from '@/components/status-dot';
+import { serverLabel } from '@/lib/live-servers';
 import { mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ConnectButtons, ConnectHelp, useConnect } from './connect';
-
-const STATE_TONE: Record<LiveServer['state'], StatusTone> = {
-  online: 'online',
-  full: 'warn',
-  offline: 'offline',
-};
+import { OccupancyBar, STATE_TONE } from './occupancy-bar';
 
 /**
  * Uma linha da lista ao vivo, para quando há mais de 6 servidores no ar (acima disso a home
@@ -29,7 +24,6 @@ const STATE_TONE: Record<LiveServer['state'], StatusTone> = {
 export function ServerRow({ server, index }: { server: LiveServer; index: number }) {
   const t = useTranslations('servers');
   const connect = useConnect(server);
-  const { ratio, level } = occupancy(server);
 
   return (
     <li
@@ -89,19 +83,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
             <LiveCount value={server.players} className="font-semibold" />
             <span className="text-muted-foreground">/{server.maxPlayers}</span>
           </span>
-          <span aria-hidden="true" className="block h-[3px] overflow-hidden rounded-[2px] bg-line">
-            <span
-              className={cn(
-                'block h-full origin-left rounded-[2px] transition-[transform,background-color] duration-(--dur-slow) ease-out motion-reduce:transition-none',
-                level === 'full'
-                  ? 'bg-[repeating-linear-gradient(-45deg,var(--status-warn)_0_3px,color-mix(in_srgb,var(--status-warn)_35%,transparent)_3px_6px)]'
-                  : level === 'high'
-                    ? 'bg-status-warn'
-                    : 'bg-status-online',
-              )}
-              style={{ transform: `scaleX(${ratio})` }}
-            />
-          </span>
+          <OccupancyBar server={server} />
         </div>
 
         <div className="flex items-center gap-2 self-center text-[12.5px] [grid-area:state] md:[grid-area:auto]">

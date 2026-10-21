@@ -18,12 +18,18 @@ export const ROTATION_MAPS = [
 /** Larguras geradas por mapa: a menor serve o celular, a maior o desktop. */
 export const MAP_ART_WIDTHS = [800, 1600] as const;
 
+/** Proporção das miniaturas originais (16:9): o `width`/`height` da imagem evitam o salto de layout. */
+const HEIGHT_RATIO = 9 / 16;
+
 export type MapArt = {
   slug: (typeof ROTATION_MAPS)[number];
   avif: string;
   webp: string;
   /** Imagem de reserva para quem não entende `srcset`: a maior em WebP. */
   src: string;
+  /** Tamanho da maior imagem, para o navegador reservar o espaço. */
+  width: number;
+  height: number;
 };
 
 /** O nome do mapa sem caminho da Workshop, em minúsculas e sem espaços nas pontas. */
@@ -40,11 +46,14 @@ export function mapArt(map: string | null): MapArt | null {
   const slug = baseName(map).replace(/^de_/, '');
   const known = ROTATION_MAPS.find((m) => m === slug);
   if (!known || !baseName(map).startsWith('de_')) return null;
+  const width = MAP_ART_WIDTHS[MAP_ART_WIDTHS.length - 1] ?? 1600;
   return {
     slug: known,
     avif: srcset(known, 'avif'),
     webp: srcset(known, 'webp'),
-    src: `/maps/${known}-${MAP_ART_WIDTHS[MAP_ART_WIDTHS.length - 1]}.webp`,
+    src: `/maps/${known}-${width}.webp`,
+    width,
+    height: Math.round(width * HEIGHT_RATIO),
   };
 }
 
