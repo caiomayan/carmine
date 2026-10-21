@@ -3,14 +3,8 @@
 import { CheckIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from '@/hooks/use-theme';
-import { parseTheme, THEMES, type Theme } from '@/lib/theme';
+import { parseTheme, THEMES } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-
-/** As cores de cada tema no miniatura (iguais aos tokens `--bg`, `--surface` e `--text`). */
-const PREVIEW: Record<Theme, { bg: string; surface: string; text: string }> = {
-  dark: { bg: '#11100d', surface: '#23211c', text: '#ede2c7' },
-  light: { bg: '#f8edd1', surface: '#e6dcc1', text: '#1c1b17' },
-};
 
 /**
  * Tema do site: dois rádios nativos (setas trocam, Tab entra e sai) com uma miniatura de cada
@@ -28,7 +22,6 @@ export function AppearanceSetting() {
       </legend>
       <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
         {THEMES.map((option) => {
-          const colors = PREVIEW[option];
           return (
             <label
               key={option}
@@ -46,16 +39,14 @@ export function AppearanceSetting() {
                 data-testid={`theme-${option}`}
                 className="sr-only"
               />
+              {/* Cada miniatura leva o próprio data-theme: os tokens resolvem sozinhos, sem cor crua. */}
               <span
                 aria-hidden="true"
-                className="grid h-16 content-center gap-1.5 rounded-md px-3"
-                style={{ backgroundColor: colors.bg }}
+                data-theme={option}
+                className="grid h-16 content-center gap-1.5 rounded-md bg-background px-3"
               >
-                <span
-                  className="h-1.5 w-2/5 rounded-full"
-                  style={{ backgroundColor: colors.text }}
-                />
-                <span className="h-4 rounded-sm" style={{ backgroundColor: colors.surface }} />
+                <span className="h-1.5 w-2/5 rounded-full bg-foreground" />
+                <span className="h-4 rounded-sm bg-surface-2" />
               </span>
               <span className="flex min-h-6 items-center justify-between gap-2 px-0.5 text-sm font-semibold">
                 {t(option)}

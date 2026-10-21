@@ -11,7 +11,7 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { useSession } from '@/components/session/session-provider';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
-import { oppositeTheme } from '@/lib/theme';
+import { DEFAULT_THEME, oppositeTheme } from '@/lib/theme';
 
 /**
  * Alterna escuro e claro. O ícone mostra o destino da troca: sol no escuro, lua no claro. Só para
@@ -32,7 +32,7 @@ export function ThemeToggle({ labels }: { labels: { light: string; dark: string 
           size="icon"
           aria-label={label}
           data-testid="theme-toggle"
-          onClick={() => setTheme(oppositeTheme(theme ?? 'dark'))}
+          onClick={() => setTheme(oppositeTheme(theme ?? DEFAULT_THEME))}
         >
           <AnimatedIcon icon={SunIcon} size={18} className="light:hidden" />
           <AnimatedIcon icon={MoonIcon} size={18} className="dark:hidden" />

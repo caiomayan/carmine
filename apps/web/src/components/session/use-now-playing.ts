@@ -30,13 +30,15 @@ export function useNowPlaying(): { server: NowPlaying['server']; load: () => voi
     controller.current = current;
     fetch(NOW_PLAYING_URL, { cache: 'no-store', signal: current.signal })
       .then(async (response) => {
-        if (!response.ok) return;
         const { nowPlayingSchema } = await loadContracts();
-        const parsed = nowPlayingSchema.safeParse(await response.json());
-        if (parsed.success) setServer(parsed.data.server);
+        const parsed = response.ok ? nowPlayingSchema.safeParse(await response.json()) : null;
+        // Sem resposta boa não se sabe onde a Conta está: a linha some em vez de ficar velha.
+        setServer(parsed?.success ? parsed.data.server : null);
       })
       .catch(() => {
+        if (current.signal.aborted) return;
         // Sem a linha: o menu funciona igual. Tenta de novo na próxima vez que abrir.
+        setServer(null);
         loadedAt.current = 0;
       });
   }, [status]);

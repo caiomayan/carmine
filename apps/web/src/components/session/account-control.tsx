@@ -209,7 +209,11 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <DropdownMenuLabel className="px-2 pt-1.5 pb-0.5 label-caps text-[11px] font-normal text-muted-foreground">
+            {/* O grupo já leva o nome (aria-label): o rótulo visível não se repete para o leitor de tela. */}
+            <DropdownMenuLabel
+              aria-hidden="true"
+              className="px-2 pt-1.5 pb-0.5 label-caps text-[11px] font-normal text-muted-foreground"
+            >
               {labels.theme.label}
             </DropdownMenuLabel>
             <DropdownMenuRadioGroup
