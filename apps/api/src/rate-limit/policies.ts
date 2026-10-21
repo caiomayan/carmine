@@ -29,6 +29,8 @@ export const RATE_LIMIT_POLICIES = {
   login: { subject: 'ip', whenUnavailable: 'deny' },
   /** Leituras públicas do site (Perfis, `/api/me`, servidores ao vivo e amigos jogando). */
   public: { subject: 'ip', whenUnavailable: 'allow' },
+  /** Busca de jogadores pelo nome (a paleta de comandos): uma varredura da tabela por busca, então tem cota própria. */
+  search: { subject: 'ip', whenUnavailable: 'allow' },
   /** `equipped/v5`: o servidor de jogo pede pelos jogadores todos, de um IP só. */
   equipped: { subject: 'ip', whenUnavailable: 'allow' },
   /** Mutações do site, com sessão. */

@@ -11,6 +11,8 @@ import { AvatarRefresher } from './avatar-refresher.js';
 import { DisplayNames } from './display-names.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
 import { PlayerPreferencesController } from './player-preferences.controller.js';
+import { PlayerSearchController } from './player-search.controller.js';
+import { PlayerSearcher } from './player-search.js';
 import { ProfilesController } from './profiles.controller.js';
 import { ReservedPublicIds } from './reserved-public-ids.js';
 import { SteamWebApi } from './steam-profiles.js';
@@ -21,6 +23,7 @@ import { SteamWebApi } from './steam-profiles.js';
     AccountSettingsController,
     PlayerConnectsController,
     PlayerPreferencesController,
+    PlayerSearchController,
     ProfilesController,
   ],
   providers: [
@@ -44,6 +47,11 @@ import { SteamWebApi } from './steam-profiles.js';
       provide: AccountsService,
       inject: [DATABASE, AvatarRefresher],
       useFactory: (db: Database, avatars: AvatarRefresher) => new AccountsService(db, avatars),
+    },
+    {
+      provide: PlayerSearcher,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new PlayerSearcher(db),
     },
     {
       provide: DisplayNames,
