@@ -401,7 +401,6 @@ export function LoadoutScreen({
   );
 }
 
-/** O catálogo já filtrado para o slot: a arma, ou o tipo (faca, luvas, agente, kit de música). */
 /** Leva o foco do teclado ao cartão desta chave. */
 function focusCard(key: string): void {
   for (const card of document.querySelectorAll<HTMLElement>('[data-card]')) {
@@ -409,6 +408,7 @@ function focusCard(key: string): void {
   }
 }
 
+/** O catálogo já filtrado para o slot: a arma, ou o tipo (faca, luvas, agente, kit de música). */
 function catalogHref(slot: SlotView): string {
   const type: Record<string, string> = {
     knife: 'knife',
