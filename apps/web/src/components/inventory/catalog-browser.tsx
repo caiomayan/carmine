@@ -126,7 +126,7 @@ export function CatalogBrowser({
           />
         </div>
 
-        <fieldset className="flex flex-wrap items-center gap-1 max-md:-mx-(--mx) max-md:flex-nowrap max-md:overflow-x-auto max-md:px-(--mx) max-md:pb-1 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
+        <fieldset className="flex min-w-0 flex-wrap items-center gap-1 max-md:-mx-(--mx) max-md:flex-nowrap max-md:overflow-x-auto max-md:px-(--mx) max-md:pb-1 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
           <legend className="sr-only">{labels.type}</legend>
           <TypeButton active={!type} onClick={() => navigate({ tipo: null, arma: null })}>
             {labels.allTypes}

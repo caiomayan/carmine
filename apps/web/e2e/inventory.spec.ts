@@ -382,7 +382,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
   expect(await dragSelectedInViewer(page)).toBe(true);
   await expect(placement).toContainText('Personalizada');
-  await expect(sliderX).toHaveAttribute('aria-valuetext', '1,00');
+  await expect(sliderX).toHaveAttribute('aria-valuetext', '1');
 
   // Voltar ao padrão da arma tira a posição.
   await chooseOption(page, placement, 'default');
@@ -536,11 +536,16 @@ for (const theme of ['dark', 'light'] as const) {
       seed: 661,
       statTrak: 0,
       stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
+      // Um chaveiro numa posição pronta: o ícone no cartão e o ajuste fino do editor entram no axe.
+      keychains: { '0': { id: 13113, seed: 5 } },
     });
     await page.reload();
     expect(await axeViolations(page), `inventário (${theme})`).toEqual([]);
     await page.goto(`/inventario/${uid}`);
     await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+    await page.getByTestId('charm').getByText('Ajuste fino').click();
+    await chooseOption(page, page.getByTestId('charm-placement'), '2');
+    await expect(page.getByTestId('charm').getByRole('slider', { name: 'X' })).toBeVisible();
     expect(await axeViolations(page), `editor (${theme})`).toEqual([]);
   });
 }

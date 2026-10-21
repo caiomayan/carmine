@@ -332,6 +332,8 @@ export function ItemEditor(props: EditorProps) {
                     checked={form.statTrak}
                     onCheckedChange={(statTrak) => change({ statTrak })}
                     aria-describedby={describedBy(statTrakId, {})}
+                    // Alvo de toque de 44 px: a área clicável passa do desenho do interruptor (36×20).
+                    className="after:absolute after:-inset-x-1.5 after:-inset-y-3.5 after:content-['']"
                     data-testid="field-stattrak"
                   />
                 </div>
