@@ -313,8 +313,17 @@
     border-radius: 8px;
   }
 
+  /*
+   * Foco do teclado: um anel fino (--focus-ring, 3:1 sobre as superfícies nos dois temas, medido em
+   * lib/focus-contrast.test.ts) só quando o foco vem do teclado (`html[data-kbd]`, ligado por
+   * components/input-modality.tsx). Mouse e toque nunca mostram anel, nem num campo de texto, que o
+   * navegador trata como :focus-visible até depois de um clique.
+   */
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: none;
+  }
+  [data-kbd] :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
     outline-offset: 2px;
   }
 }
@@ -497,10 +506,22 @@
     color: color-mix(in srgb, var(--text) 90%, transparent);
   }
 
+  /* O fundo que clareia não chega a 3:1: com o teclado, o anel fino entra também no campo. */
+  [data-kbd] &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
   @media (forced-colors: active) {
     &:focus {
       outline: 2px solid CanvasText;
       outline-offset: 2px;
     }
   }
+}
+
+/* Um grupo cujo controle de dentro (rádio escondido) recebeu o foco do teclado ganha o anel no grupo. */
+[data-kbd] .kbd-ring-within:has(:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
 }

@@ -49,7 +49,7 @@ export function SettingsShell({
       {active ? (
         <Link
           href={SETTINGS_BASE as Route}
-          className="-ml-2 inline-flex min-h-(--tap) items-center gap-1.5 rounded-md bg-(--fill-rest) px-3 text-sm text-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) focus-visible:bg-(--fill-focus) focus-visible:outline-none md:hidden"
+          className="-ml-2 inline-flex min-h-(--tap) items-center gap-1.5 rounded-md bg-(--fill-rest) px-3 text-sm text-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) md:hidden"
           data-testid="settings-back"
         >
           <AnimatedIcon icon={ArrowLeftIcon} size={16} />
@@ -66,7 +66,7 @@ export function SettingsShell({
                   aria-current={current === section ? 'page' : undefined}
                   data-testid={`settings-nav-${section}`}
                   className={cn(
-                    'flex min-h-(--tap) items-center justify-between gap-3 rounded-md bg-(--fill-rest) px-3 text-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) hover:text-foreground focus-visible:bg-(--fill-focus) focus-visible:text-foreground focus-visible:outline-none aria-[current=page]:font-semibold aria-[current=page]:text-foreground md:aria-[current=page]:bg-(--fill-active)',
+                    'flex min-h-(--tap) items-center justify-between gap-3 rounded-md bg-(--fill-rest) px-3 text-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) hover:text-foreground focus-visible:text-foreground aria-[current=page]:font-semibold aria-[current=page]:text-foreground md:aria-[current=page]:bg-(--fill-active)',
                     'max-md:min-h-14 max-md:px-4 max-md:text-foreground max-md:text-[15px]',
                   )}
                 >

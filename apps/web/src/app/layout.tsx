@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ErrorReporting } from '@/components/error-reporting';
+import { InputModality } from '@/components/input-modality';
 import { SanctionNotice } from '@/components/moderation/sanction-notice';
 import { MotionProvider } from '@/components/motion-provider';
 import { FirstSteps } from '@/components/session/first-steps';
@@ -81,6 +82,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <ThemeScript nonce={nonce} />
       </head>
       <body>
+        <InputModality />
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
         <NextIntlClientProvider messages={null}>
           <MotionProvider>

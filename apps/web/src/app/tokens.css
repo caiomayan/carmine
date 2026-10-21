@@ -26,9 +26,10 @@
   --shadow: rgb(0 0 0 / 0.5);
 
   /*
-   * Escala de fundos (regra do dono: fundos, não anéis): repouso, hover, ativo/selecionado e foco são
-   * camadas do texto sobre a superfície onde o controle está, então valem em qualquer fundo. O foco
-   * é o degrau mais forte e nunca é só o hover (ver lib/focus-contrast.test.ts, que mede os dois temas).
+   * Escala de fundos (regra do dono: fundos, não anéis): repouso, hover e ativo/selecionado são camadas
+   * do texto sobre a superfície onde o controle está, então valem em qualquer fundo; `--fill-focus` é o
+   * degrau dos campos de texto ao focar. O foco do teclado nos controles é o anel fino (`--focus-ring`,
+   * só no modo teclado). Os dois estão medidos em lib/focus-contrast.test.ts.
    */
   --fill-rest: color-mix(in srgb, var(--text) 7%, transparent);
   --fill-hover: color-mix(in srgb, var(--text) 12%, transparent);
@@ -132,6 +133,9 @@
   --border: var(--line);
   --input: var(--surface);
   --ring: var(--text);
+  /* anel de foco do teclado: fino, com 3:1 sobre as superfícies nos dois temas (lib/focus-contrast.test.ts) */
+  --focus-ring: color-mix(in srgb, var(--text) 85%, transparent);
+  --focus-ring-width: 2px;
 }
 
 :root {

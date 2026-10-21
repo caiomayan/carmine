@@ -27,7 +27,7 @@ export function AppearanceSetting() {
               key={option}
               className={cn(
                 'relative grid cursor-pointer gap-2 rounded-lg bg-(--fill-rest) p-2.5 transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover)',
-                'has-checked:bg-(--fill-active) has-focus-visible:bg-(--fill-focus)',
+                'kbd-ring-within has-checked:bg-(--fill-active)',
               )}
             >
               <input

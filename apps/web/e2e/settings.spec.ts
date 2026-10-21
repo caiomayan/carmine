@@ -296,6 +296,8 @@ test.describe('Configurações', () => {
       page,
       request,
     }) => {
+      // 4 larguras x 4 seções, cada uma com a varredura do axe: passa dos 30 s padrão em máquina ocupada.
+      test.setTimeout(90_000);
       await saveTheme(page, theme);
       await signedIn(page, request, 'Nome De Exibição Bem Comprido Mesmo');
       for (const width of WIDTHS) {
@@ -320,7 +322,7 @@ test.describe('Configurações', () => {
 });
 
 test.describe('foco', () => {
-  test('campo de texto: sem contorno nem anel, o campo clareia o fundo ao focar', async ({
+  test('campo de texto: o campo clareia ao focar, sem anel com o mouse e com o anel fino no teclado', async ({
     page,
     request,
   }) => {
@@ -330,50 +332,61 @@ test.describe('foco', () => {
     await page.getByTestId('name-edit').click();
     const input = page.getByTestId('name-input');
     await expect(input).toBeFocused();
+    const html = page.locator('html');
 
-    const style = (property: 'outlineStyle' | 'boxShadow') =>
+    const style = (property: 'outlineStyle' | 'outlineWidth' | 'boxShadow') =>
       input.evaluate((el, name) => getComputedStyle(el)[name], property);
+
+    // Foco do mouse (o campo é focado depois de um clique): só o fundo que clareia, sem anel.
+    await expect(html).not.toHaveAttribute('data-kbd', '');
     expect(await style('outlineStyle')).toBe('none');
-    // Só a camada interna que clareia o campo (sombra interna, sem espalhamento de anel); a
-    // transição curta leva a cor até o fim.
     await expect.poll(() => style('boxShadow')).toMatch(/inset/);
-    const shadow = await style('boxShadow');
-    expect(shadow.split('inset')).toHaveLength(2);
+    expect((await style('boxShadow')).split('inset')).toHaveLength(2);
+
+    // Foco do teclado (Tab para fora e Shift+Tab de volta): o anel fino entra, e o fundo continua.
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    await expect(input).toBeFocused();
+    await expect(html).toHaveAttribute('data-kbd', '');
+    expect(await style('outlineStyle')).toBe('solid');
+    expect(await style('outlineWidth')).toBe('2px');
+    await expect.poll(() => style('boxShadow')).toMatch(/inset/);
 
     // Sem foco, o fundo volta (também depois da transição).
     await input.evaluate((el) => (el as HTMLInputElement).blur());
     await expect.poll(() => style('boxShadow')).toBe('none');
   });
 
-  test('botões: o foco do teclado é um fundo mais forte que o hover, nunca um anel', async ({
+  test('botões e links: anel fino só no foco do teclado; mouse e toque nunca o mostram', async ({
     page,
   }) => {
     await page.goto('/regras');
-    // Clique do mouse no botão de tema: o foco fica nele, mas sem fundo de foco nem anel.
+    const html = page.locator('html');
+    const focused = () =>
+      page.evaluate(() => {
+        const style = getComputedStyle(document.activeElement as Element);
+        return {
+          outline: style.outlineStyle,
+          width: style.outlineWidth,
+          background: style.backgroundColor,
+        };
+      });
+
+    // Clique do mouse no botão de tema: o foco fica nele, mas sem anel e sem o modo teclado.
     await page.getByTestId('theme-toggle').click();
     await expect(page.getByTestId('theme-toggle')).toBeFocused();
-    const afterMouse = await page.evaluate(() => {
-      const style = getComputedStyle(document.activeElement as Element);
-      return { outline: style.outlineStyle, background: style.backgroundColor };
-    });
-    expect(afterMouse.outline).toBe('none');
-    expect(afterMouse.background).toBe('rgba(0, 0, 0, 0)');
+    await expect(html).not.toHaveAttribute('data-kbd', '');
+    expect(await focused()).toMatchObject({ outline: 'none', background: 'rgba(0, 0, 0, 0)' });
 
-    // Tab: o foco do teclado vai para "Entrar" e o fundo dele é o degrau de foco da escala.
+    // Tab: o foco vai para "Entrar" e o teclado desenha o anel fino (o fundo é o do repouso).
     await page.keyboard.press('Tab');
     await expect(page.getByTestId('sign-in')).toBeFocused();
-    await expect
-      .poll(() =>
-        page.evaluate(() => {
-          const style = getComputedStyle(document.activeElement as Element);
-          const probe = document.createElement('div');
-          probe.style.backgroundColor = 'var(--fill-focus)';
-          document.body.append(probe);
-          const expected = getComputedStyle(probe).backgroundColor;
-          probe.remove();
-          return { outline: style.outlineStyle, same: style.backgroundColor === expected };
-        }),
-      )
-      .toEqual({ outline: 'none', same: true });
+    await expect(html).toHaveAttribute('data-kbd', '');
+    expect(await focused()).toMatchObject({ outline: 'solid', width: '2px' });
+
+    // Um clique desliga o modo: o anel some até o próximo Tab.
+    await page.getByTestId('theme-toggle').click();
+    await expect(html).not.toHaveAttribute('data-kbd', '');
+    expect((await focused()).outline).toBe('none');
   });
 });
