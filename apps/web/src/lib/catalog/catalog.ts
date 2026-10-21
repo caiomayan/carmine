@@ -240,6 +240,21 @@ function facetOptions<T extends CatalogEntry | AttachmentEntry>(
   return [...options.values()].sort((a, b) => collator.compare(a.value, b.value));
 }
 
+/**
+ * Facetas por recorte: dependem só do tipo e da arma (ou do tipo do anexo), não do texto
+ * digitado nem da raridade, e a busca roda a cada tecla. São montadas uma vez e nunca alteradas.
+ */
+const facetCache = new Map<string, FacetOption[]>();
+
+function cachedFacet(key: string, build: () => FacetOption[]): FacetOption[] {
+  let options = facetCache.get(key);
+  if (!options) {
+    options = build();
+    facetCache.set(key, options);
+  }
+  return options;
+}
+
 /** O nome da arma em inglês ("Dual Berettas"): o que vem antes da skin no nome original. */
 const englishWeapon = (entry: CatalogEntry) => english[entry.id]?.name.split(' | ')[0];
 
@@ -263,15 +278,19 @@ export function searchCatalog(filters: CatalogFilters): CatalogPage {
     items: matches.slice(0, pageLimit(filters.limit)),
     total: matches.length,
     facets: {
-      weapons: facetOptions(
-        ofType,
-        (entry) => entry.weapon,
-        (entry) => [englishWeapon(entry), TYPE_WORDS[entry.type]],
+      weapons: cachedFacet(`weapons|${filters.type ?? ''}`, () =>
+        facetOptions(
+          ofType,
+          (entry) => entry.weapon,
+          (entry) => [englishWeapon(entry), TYPE_WORDS[entry.type]],
+        ),
       ),
-      collections: facetOptions(
-        ofWeapon,
-        (entry) => entry.collection,
-        (entry) => [english[entry.id]?.collectionName],
+      collections: cachedFacet(`collections|${filters.type ?? ''}|${filters.weapon ?? ''}`, () =>
+        facetOptions(
+          ofWeapon,
+          (entry) => entry.collection,
+          (entry) => [english[entry.id]?.collectionName],
+        ),
       ),
       rarities: RARITIES.filter((rarity) => rarities.has(rarity)),
     },
@@ -334,10 +353,12 @@ export function searchAttachments(
     items: matches.slice(0, pageLimit(filters.limit)),
     total: matches.length,
     facets: {
-      categories: facetOptions(
-        all,
-        (entry) => entry.category,
-        (entry) => [english[entry.id]?.categoryName],
+      categories: cachedFacet(`categories|${type}`, () =>
+        facetOptions(
+          all,
+          (entry) => entry.category,
+          (entry) => [english[entry.id]?.categoryName],
+        ),
       ),
     },
   };

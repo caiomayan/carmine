@@ -8,7 +8,8 @@
     "team": {
       "equippedIn": {
         "ct": "Equipada no CT",
-        "t": "Equipada no TR"
+        "t": "Equipada no TR",
+        "both": "Equipada no TR e no CT"
       }
     },
     "close": "Fechar",
@@ -660,6 +661,7 @@
     "nameTagPlaceholder": "Sem nametag",
     "nameTagHint": "Até 20 caracteres.",
     "vipLocked": "Exclusivo do VIP",
+    "vipBadge": "VIP",
     "vipAttributes": "StatTrak e nametag fazem parte do VIP. Você pode ver como ficam, mas só salva com um Período VIP ativo.",
     "vipItem": "Agentes e kits de música fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
     "noAttributes": "Este Item não tem float, seed nem stickers: é só adicionar.",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { equippedTeamSides, orderedSides } from './team-sides';
+import { equippedTeamSides, orderedSides, sidesLabelKey } from './team-sides';
 
 describe('orderedSides', () => {
   it('põe o TR à esquerda e o CT à direita, qualquer que seja a ordem de entrada', () => {
@@ -31,5 +31,26 @@ describe('equippedTeamSides', () => {
   it('sem slots, sem lados', () => {
     expect(equippedTeamSides(undefined)).toEqual([]);
     expect(equippedTeamSides([])).toEqual([]);
+  });
+});
+
+describe('sidesLabelKey', () => {
+  it('um lado só dá o próprio lado', () => {
+    expect(sidesLabelKey(['ct'])).toBe('ct');
+    expect(sidesLabelKey(['t'])).toBe('t');
+  });
+
+  it('os dois lados, ou um slot sem lado, dão "both"', () => {
+    expect(sidesLabelKey(['ct', 't'])).toBe('both');
+    expect(sidesLabelKey(['t', 'ct'])).toBe('both');
+    expect(sidesLabelKey([null])).toBe('both');
+  });
+
+  it('não repete lados', () => {
+    expect(sidesLabelKey(['ct', 'ct'])).toBe('ct');
+  });
+
+  it('sem lados vale como os dois (ninguém pergunta isso: o Item sempre está em algum lado)', () => {
+    expect(sidesLabelKey([])).toBe('both');
   });
 });

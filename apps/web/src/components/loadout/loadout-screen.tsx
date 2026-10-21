@@ -30,6 +30,7 @@ import {
   slotNameOfKey,
 } from '@/lib/loadout/board';
 import type { CandidateView, LoadoutView, SlotView } from '@/lib/loadout/view';
+import { sidesLabelKey } from '@/lib/team-sides';
 import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
 import { BoardCard } from './board-card';
@@ -114,9 +115,7 @@ export function LoadoutScreen({
     const key = focusKey.current;
     if (!key) return;
     focusKey.current = null;
-    for (const card of document.querySelectorAll<HTMLElement>('[data-card]')) {
-      if (card.dataset.key === key) card.focus();
-    }
+    focusCard(key);
   }, [selectedKey, activeColumn]);
 
   // A barra de baixo avisa a altura dela, para o aviso de "Desfazer" subir acima dela.
@@ -139,9 +138,6 @@ export function LoadoutScreen({
       ? t(`slots.${slot.slot as 'knife' | 'gloves' | 'agent' | 'musicKit'}`)
       : (slot.defaultName ?? slot.slot);
 
-  const sidesText = (sides: LoadoutSide[]) =>
-    sides.length > 1 ? t('sidesShort.both') : t(`sidesShort.${sides[0] ?? 'ct'}`);
-
   function labelsOf(slot: SlotView) {
     const { item } = slot;
     const title = titleOf(slot);
@@ -155,7 +151,11 @@ export function LoadoutScreen({
       skin: item ? (weapon ? (item.subtitle ?? item.title) : item.title) : null,
       accessible: item
         ? [
-            t('board.cardEquipped', { slot: title, item: item.name, sides: sidesText(sides) }),
+            t('board.cardEquipped', {
+              slot: title,
+              item: item.name,
+              sides: t(`sidesShort.${sidesLabelKey(sides)}`),
+            }),
             outOfGame ? t('board.cardOutOfGame') : '',
           ]
             .filter(Boolean)
@@ -168,9 +168,13 @@ export function LoadoutScreen({
   }
 
   function select(key: string, { focus = false } = {}) {
-    if (focus) focusKey.current = key;
-    setSelectedKey(key);
     const column = columns.find((candidate) => candidate.slots.some((slot) => slot.key === key));
+    // Sem mudança de estado não há nova renderização, e o efeito acima nunca limparia o pedido
+    // de foco: ele sobraria para o próximo clique. Então o foco vai direto.
+    const unchanged = key === selectedKey && (!column || column.id === chosenColumn);
+    if (focus && unchanged) focusCard(key);
+    else if (focus) focusKey.current = key;
+    setSelectedKey(key);
     if (column) setChosenColumn(column.id);
   }
 
@@ -398,6 +402,13 @@ export function LoadoutScreen({
 }
 
 /** O catálogo já filtrado para o slot: a arma, ou o tipo (faca, luvas, agente, kit de música). */
+/** Leva o foco do teclado ao cartão desta chave. */
+function focusCard(key: string): void {
+  for (const card of document.querySelectorAll<HTMLElement>('[data-card]')) {
+    if (card.dataset.key === key) card.focus();
+  }
+}
+
 function catalogHref(slot: SlotView): string {
   const type: Record<string, string> = {
     knife: 'knife',

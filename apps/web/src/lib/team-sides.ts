@@ -18,3 +18,12 @@ export function equippedTeamSides(
   if (!slots) return [];
   return orderedSides(slots.flatMap((side) => (side === null ? ORDER : [side])));
 }
+
+/**
+ * Qual texto diz onde algo está equipado: `ct`, `t` ou `both` (os dois lados, ou um slot sem
+ * lado). A chave é a de `sidesShort.*` e `common.team.equippedIn.*` nas mensagens.
+ */
+export function sidesLabelKey(sides: readonly (LoadoutSide | null)[]): LoadoutSide | 'both' {
+  const shown = equippedTeamSides(sides);
+  return shown.length === 1 ? (shown[0] as LoadoutSide) : 'both';
+}

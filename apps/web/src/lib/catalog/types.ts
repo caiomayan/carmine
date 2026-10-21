@@ -35,7 +35,9 @@ export type FacetOption = { value: string; label: string; keywords: string[] };
 
 /**
  * Versão do formato da resposta de `/inventario/aplicaveis`. Vai na URL do pedido porque a resposta
- * fica em cache no navegador e na borda por até um dia: quem mudar o formato (`AttachmentPage`)
- * sobe este número, e o cache antigo deixa de valer em vez de chegar ao código novo no formato velho.
+ * fica em cache no navegador e na borda (1 hora, e até 1 dia servindo a antiga enquanto revalida):
+ * quem mudar o formato (`AttachmentPage`) sobe este número, e o cache antigo deixa de valer em vez de
+ * chegar ao código novo no formato velho. O teste "formato da resposta de /inventario/aplicaveis"
+ * (`catalog.test.ts`) falha se o formato mudar sem esta versão subir.
  */
 export const ATTACHMENTS_PAYLOAD_VERSION = '2';

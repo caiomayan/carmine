@@ -268,6 +268,10 @@ test('sem VIP, StatTrak e nametag ficam com cadeado e não salvam; music kit nem
   await signIn(page);
   await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
   await expect(page.getByTestId('vip-attributes-lock')).toBeVisible();
+  // O cadeado de cada campo trava com a palavra VIP à vista, não só o ícone.
+  const locks = page.getByTestId('field-vip-lock');
+  await expect(locks).toHaveCount(2);
+  for (const lock of await locks.all()) await expect(lock).toContainText('VIP');
   await page.getByTestId('field-stattrak').click();
   await page.getByTestId('save-item').click();
   await expect(page.getByTestId('editor-alert')).toContainText('Corrija 1 campo para salvar.');

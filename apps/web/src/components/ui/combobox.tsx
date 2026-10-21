@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   Command,
   CommandEmpty,
@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { type SelectOption, selectTriggerClass } from '@/components/ui/select';
-import { searchScore } from '@/lib/option-search';
+import { indexText, type SearchDoc, scoreDoc } from '@/lib/option-search';
 import { cn } from '@/lib/utils';
 
 /** Chave cmdk do item "vazio" (o cmdk não distingue bem um `value` vazio). */
@@ -124,6 +124,15 @@ function ComboboxPanel({
   const t = useTranslations('common.combobox');
   const [active, setActive] = useState(value || EMPTY_KEY);
   const list = useRef<HTMLDivElement>(null);
+  // O texto de cada opção é normalizado e quebrado em palavras uma vez por abertura, não a cada
+  // tecla de cada opção (listas de centenas de Coleções e categorias).
+  const docs = useMemo(() => {
+    const byKey = new Map<string, SearchDoc>();
+    for (const item of items) {
+      byKey.set(item.value || EMPTY_KEY, indexText([item.label, ...(item.keywords ?? [])]));
+    }
+    return byKey;
+  }, [items]);
 
   useEffect(() => {
     const current = list.current?.querySelector('[data-checked]');
@@ -140,7 +149,9 @@ function ComboboxPanel({
       // Filtro nosso: o cmdk chaveia o item pelo valor, e a busca olha o rótulo e os outros nomes
       // (palavras parciais, sem acento, com erro de digitação). O número devolvido é a
       // relevância: o cmdk ordena por ele e esconde os de zero.
-      filter={(_key, search, keywords) => searchScore(keywords ?? [], search)}
+      filter={(key, search, keywords) =>
+        scoreDoc(docs.get(key) ?? indexText(keywords ?? []), search)
+      }
     >
       <CommandInput placeholder={t('search')} aria-label={t('search')} />
       <CommandList id={listId} ref={list}>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { useInventory } from '@/components/inventory/inventory-provider';
+import { sidesLabelKey } from '@/lib/team-sides';
 import { LoadoutApiError, useLoadoutApi } from './use-loadout-api';
 
 type Names = (uid: string) => string | undefined;
@@ -21,11 +22,7 @@ export function useEquip() {
   const { offerAction, notify } = useInventory();
 
   const sidesText = useCallback(
-    (sides: (LoadoutSide | null)[]) => {
-      const set = new Set(sides);
-      if (set.has(null) || (set.has('ct') && set.has('t'))) return t('sidesShort.both');
-      return t(`sidesShort.${set.has('ct') ? 'ct' : 't'}`);
-    },
+    (sides: (LoadoutSide | null)[]) => t(`sidesShort.${sidesLabelKey(sides)}`),
     [t],
   );
 

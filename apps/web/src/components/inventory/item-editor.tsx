@@ -331,6 +331,7 @@ export function ItemEditor(props: EditorProps) {
                 id={statTrakId}
                 label={t('statTrak')}
                 locked={!vip ? t('vipLocked') : undefined}
+                lockedBadge={t('vipBadge')}
                 error={
                   visibleIssues.some((i) => i.field === 'statTrak')
                     ? errorText(issueOf('statTrak') as FormIssue)
@@ -361,6 +362,7 @@ export function ItemEditor(props: EditorProps) {
             label={t('nameTag')}
             hint={t('nameTagHint')}
             locked={!vip ? t('vipLocked') : undefined}
+            lockedBadge={t('vipBadge')}
             error={
               visibleIssues.some((i) => i.field === 'nameTag')
                 ? errorText(issueOf('nameTag') as FormIssue)
