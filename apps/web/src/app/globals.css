@@ -311,18 +311,18 @@
   touch-action: pan-y;
 
   &::-webkit-slider-runnable-track {
-    height: 4px;
+    height: var(--range-h, 4px);
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p));
+    background: var(--range-bg, linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p)));
   }
   &::-moz-range-track {
-    height: 4px;
+    height: var(--range-h, 4px);
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p));
+    background: var(--range-bg, linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p)));
   }
   &::-webkit-slider-thumb {
     appearance: none;
-    margin-top: -7px;
+    margin-top: calc((var(--range-h, 4px) - 18px) / 2);
     width: 18px;
     height: 18px;
     border-radius: 6px;

@@ -15,6 +15,13 @@
      distinguir os dois lados num relance. Contraste >= 4,5:1 sobre --bg, --surface e --surface-2. */
   --side-ct: #6AAAF5;
   --side-t: #F29A45;
+  /* Fases do desgaste (barra do float): da Nova de Fábrica (verde) à Veterana de Guerra
+     (vermelho). Cor de contexto em faixa fina; o nome da fase sempre vem escrito. */
+  --wear-fn: var(--status-online);
+  --wear-mw: #B4B660;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #E0905C;
+  --wear-bs: var(--status-danger);
 }
 [data-theme="light"] {
   --status-online: #3F6930;
@@ -26,4 +33,9 @@
   --status-offline: var(--faint);
   --side-ct: #1F5EA8;
   --side-t: #9C4807;
+  --wear-fn: var(--status-online);
+  --wear-mw: #6B6A1C;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #94490F;
+  --wear-bs: var(--status-danger);
 }

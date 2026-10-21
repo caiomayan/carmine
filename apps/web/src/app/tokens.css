@@ -39,6 +39,12 @@
   /* lados do jogo (bolinhas CT e TR): cor de contexto, ver shared/liberty-status.css */
   --side-ct: #6aaaf5;
   --side-t: #f29a45;
+  /* fases do desgaste na barra do float, da Nova de Fábrica (verde) à Veterana de Guerra (vermelho) */
+  --wear-fn: var(--status-online);
+  --wear-mw: #b4b660;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #e0905c;
+  --wear-bs: var(--status-danger);
 }
 
 [data-theme="light"] {
@@ -62,6 +68,11 @@
   --status-vip: #765c1a;
   --side-ct: #1f5ea8;
   --side-t: #9c4807;
+  --wear-fn: var(--status-online);
+  --wear-mw: #6b6a1c;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #94490f;
+  --wear-bs: var(--status-danger);
 }
 
 /*
