@@ -1,5 +1,6 @@
 import { type PlayerConnectResult, playerConnectResultSchema } from '@carmine/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { placeholderNameFor } from '../src/accounts/placeholder-names.js';
 import { isPrettyNumber } from '../src/accounts/public-id.js';
 import { vipPeriods } from '../src/database/schema.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
@@ -63,13 +64,13 @@ describe('POST /api/server/player-connects', () => {
     });
   });
 
-  it('mostra "Jogador #ID" quando o nome Steam é ofensivo, e o nome aceitável depois', async () => {
+  it('mostra o nome fictício quando o nome Steam é ofensivo, e o nome aceitável depois', async () => {
     const steamId = steamIdFor(3);
 
     const offensive = await connectOk({ steamId, steamName: 'fdp123' });
     const acceptable = await connectOk({ steamId, steamName: 'Gabriel' });
 
-    expect(offensive.displayName).toBe(`Jogador #${offensive.publicId}`);
+    expect(offensive.displayName).toBe(placeholderNameFor(offensive.publicId));
     expect(acceptable.displayName).toBe('Gabriel');
   });
 

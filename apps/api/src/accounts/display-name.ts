@@ -4,15 +4,17 @@ import {
   DISPLAY_NAME_MIN_LENGTH,
 } from '@carmine/contracts';
 import { isOffensiveName } from './name-filter.js';
+import { placeholderNameFor } from './placeholder-names.js';
 
 /** Limite de caracteres de um nome Steam. */
 const MAX_LENGTH = 32;
 
 /**
  * Nome de exibição de uma Conta (ADR 0008). Com nome próprio (S11), vale ele; sem, segue o nome
- * Steam. Se o nome Steam for ofensivo ou vazio, a Conta aparece como "Jogador #ID" até ter um
- * nome aceitável. Depois de um reset da Staff (S07), o nome Steam resetado (`blockedSteamName`)
- * também vira "Jogador #ID", até a pessoa trocar de nome na Steam. Um nome próprio que o filtro
+ * Steam. Se o nome Steam for ofensivo ou vazio, a Conta aparece com um nome fictício fixo
+ * (`placeholderNameFor`, nunca o `#ID`) até ter um nome aceitável. Depois de um reset da Staff
+ * (S07), o nome Steam resetado (`blockedSteamName`) também vira esse nome fictício, até a pessoa
+ * trocar de nome na Steam. Um nome próprio que o filtro
  * (ampliado depois) passou a reprovar também cai para o nome Steam. O nome Steam também perde
  * `<>&{}` (o nome próprio os recusa): o nome vai para o placar e o chat do jogo.
  */
@@ -26,7 +28,7 @@ export function displayNameFor(
     return customName;
   }
   if (blockedSteamName !== null && steamName === blockedSteamName) {
-    return `Jogador #${publicId}`;
+    return placeholderNameFor(publicId);
   }
   const cleaned = [
     ...steamName
@@ -39,7 +41,7 @@ export function displayNameFor(
     .join('')
     .trim();
   if (cleaned === '' || isOffensiveName(cleaned)) {
-    return `Jogador #${publicId}`;
+    return placeholderNameFor(publicId);
   }
   return cleaned;
 }

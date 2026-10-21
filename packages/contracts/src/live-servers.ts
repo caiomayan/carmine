@@ -151,3 +151,18 @@ export const friendsPlayingSchema = z
   .meta({ id: 'FriendsPlaying' });
 
 export type FriendsPlaying = z.infer<typeof friendsPlayingSchema>;
+
+/**
+ * `GET /api/me/playing` (com sessão; 401 sem ela): o Servidor Carmine onde a Conta da sessão está
+ * jogando agora, ou `null`. Alimenta a linha "Jogando agora" do menu da Conta; leva só o que o
+ * menu mostra (nome, Modo e mapa), sem endereço nem lotação.
+ */
+export const nowPlayingSchema = z
+  .object({
+    server: liveServerSchema
+      .pick({ id: true, name: true, showcaseName: true, mode: true, map: true })
+      .nullable(),
+  })
+  .meta({ id: 'NowPlaying' });
+
+export type NowPlaying = z.infer<typeof nowPlayingSchema>;

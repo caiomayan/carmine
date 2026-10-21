@@ -1174,7 +1174,7 @@
     "displayName": {
       "title": "Nome de exibição",
       "current": "Atual: {name}",
-      "hint": "Com nome próprio, ele é apagado e vale o nome Steam; o prazo de 7 dias para trocar recomeça. Sem nome próprio, vira \"Jogador #{publicId}\" enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
+      "hint": "Com nome próprio, ele é apagado e vale o nome Steam; o prazo de 7 dias para trocar recomeça. Sem nome próprio, vira um nome fictício fixo (como \"Alfredo\") enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
       "submit": "Resetar nome",
       "done": "Nome de exibição resetado."
     },

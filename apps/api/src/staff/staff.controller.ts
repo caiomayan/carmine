@@ -239,7 +239,7 @@ export class StaffController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     operationId: 'resetDisplayName',
-    summary: 'Troca o Nome de exibição por "Jogador #ID" enquanto o nome Steam não mudar',
+    summary: 'Troca o Nome de exibição por um nome fictício fixo enquanto o nome Steam não mudar',
   })
   @ApiParam({ name: 'publicId', type: 'integer', example: 10_016 })
   @ApiOkResponse({ description: 'Resetado', standardSchema: staffAccountDetailSchema })

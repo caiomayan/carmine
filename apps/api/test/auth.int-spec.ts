@@ -5,6 +5,7 @@ import {
   currentSessionSchema,
 } from '@carmine/contracts';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { placeholderNameFor } from '../src/accounts/placeholder-names.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { Browser, setCookiesOf } from './support/browser.js';
 import { FakeSteam } from './support/fake-steam.js';
@@ -130,14 +131,14 @@ describe('Login Steam (OpenID 2.0)', () => {
       });
     });
 
-    it('sem resposta da Steam Web API, a Conta nova nasce como "Jogador #ID" e avatar neutro', async () => {
+    it('sem resposta da Steam Web API, a Conta nova nasce com o nome fictício e avatar neutro', async () => {
       const steamId = steamIdFor(3);
       webApi.behavior = 'error';
 
       await loginViaSteam(steamId);
 
       const { account } = await me();
-      expect(account.displayName).toBe(`Jogador #${account.publicId}`);
+      expect(account.displayName).toBe(placeholderNameFor(account.publicId));
       expect(account.avatarUrl).toBeNull();
     });
 
