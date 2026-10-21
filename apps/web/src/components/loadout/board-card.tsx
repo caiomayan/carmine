@@ -86,7 +86,12 @@ export function BoardCard({
       >
         {labels.name}
       </span>
-      <span aria-hidden="true" className="absolute inset-x-2 top-5 bottom-3.5">
+      {/* A arte nova (skin equipada ou desequipada) entra com um fade curto, sem troca seca. */}
+      <span
+        key={item?.uid ?? 'padrao'}
+        aria-hidden="true"
+        className="absolute inset-x-2 top-5 bottom-3.5 animate-fade-up"
+      >
         {item ? (
           <ItemArt src={item.image} className={ART} />
         ) : slot.defaultImage ? (

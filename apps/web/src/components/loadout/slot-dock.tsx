@@ -115,6 +115,7 @@ export function SlotDock({
         />
       ) : null}
       <span
+        key={`thumb-${slot.key}`}
         className={cn(
           'block h-14 w-[76px] overflow-hidden rounded-md bg-surface max-md:h-12 max-md:w-16',
           !item && 'opacity-40 grayscale',
@@ -123,7 +124,7 @@ export function SlotDock({
         {art ? <ItemArt src={art} className="aspect-auto h-full w-full" /> : null}
       </span>
 
-      <div className="grid min-w-0 gap-0.5">
+      <div key={`text-${slot.key}`} className="grid min-w-0 animate-fade-up gap-0.5">
         <p className="flex min-w-0 items-center gap-2.5 text-md leading-snug font-[650]">
           <span className="truncate" data-testid="dock-title">
             {item

@@ -250,6 +250,8 @@ export function LoadoutScreen({
 
       <TabsContent
         value={side}
+        // Troca de lado: um fade curto com saída suave, não os 0,5 s do padrão (saída e entrada em fila).
+        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
         data-testid={`loadout-${side}`}
         onKeyDown={onBoardKeyDown}
         className="grid grid-cols-5 items-start gap-3 rounded-2xl bg-surface p-3.5 max-lg:block max-lg:p-3"
