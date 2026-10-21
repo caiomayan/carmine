@@ -16,6 +16,7 @@ import {
   type CharmBounds,
   charmPlacement,
   charmSlotPosition,
+  middle,
 } from '@/lib/inventory/charm-slots';
 import {
   type AttachmentLabel,
@@ -322,8 +323,6 @@ function SliderField({
   );
 }
 
-const mid = (b: Bounds) => (b.min !== undefined && b.max !== undefined ? (b.min + b.max) / 2 : 0);
-
 /**
  * O que o editor liga ao 3D: a seleção que o viewer deixa arrastar agora (a linha com o foco) e
  * o despacho dos eventos que a movem (ver `lib/viewer/drag-selection.ts`).
@@ -531,7 +530,7 @@ export function CharmEditor({
                 <div className="grid grid-cols-3 gap-3 pt-2 max-md:grid-cols-1">
                   {(['x', 'y', 'z'] as const).map((axis) => {
                     const range = bounds[axis];
-                    const value = charm[axis] ?? mid(range);
+                    const value = charm[axis] ?? middle(range);
                     return (
                       <SliderField
                         key={axis}
@@ -544,9 +543,9 @@ export function CharmEditor({
                         onChange={(next) =>
                           onChange({
                             ...charm,
-                            x: charm.x ?? mid(bounds.x),
-                            y: charm.y ?? mid(bounds.y),
-                            z: charm.z ?? mid(bounds.z),
+                            x: charm.x ?? middle(bounds.x),
+                            y: charm.y ?? middle(bounds.y),
+                            z: charm.z ?? middle(bounds.z),
                             [axis]: next,
                           })
                         }

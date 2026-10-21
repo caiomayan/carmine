@@ -308,6 +308,7 @@ export function attachmentEntry(id: number): AttachmentEntry | undefined {
   if (!item) return undefined;
   const type = item.isSticker() ? 'sticker' : item.isKeychain() ? 'charm' : null;
   if (!type) return undefined;
+  // Montar o índice do tipo é o que popula `attachmentsById` (uma vez só).
   attachmentIndex(type);
   return attachmentsById.get(id);
 }
