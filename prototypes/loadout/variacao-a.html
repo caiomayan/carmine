@@ -48,8 +48,8 @@ a{color:inherit;text-decoration:none}
 .ic{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 /* ---------- barra do protótipo (não faz parte do produto) ---------- */
-.proto{background:var(--proto-bg);color:var(--proto-fg);font:500 12px/1 var(--font-ui)}
-.proto .container{display:flex;align-items:center;gap:2px;min-height:40px;overflow-x:auto;scrollbar-width:none}
+.proto{background:var(--proto-bg);color:var(--proto-fg);font:500 12px/1 var(--font-ui);padding:4px 8px}
+.proto .container{display:flex;align-items:center;gap:2px;min-height:36px;overflow-x:auto;scrollbar-width:none}
 .proto a,.proto button{padding:9px 11px;border-radius:var(--radius-md);white-space:nowrap;color:color-mix(in srgb,var(--proto-fg) 70%,transparent);transition:background-color var(--dur-fast) var(--ease-std),color var(--dur-fast) var(--ease-std)}
 .proto a:hover,.proto button:hover,.proto [aria-current=page],.proto [aria-pressed=true]{background:color-mix(in srgb,var(--proto-fg) 13%,transparent);color:var(--proto-fg)}
 .proto :focus-visible{outline-color:var(--proto-fg);outline-offset:-2px}
