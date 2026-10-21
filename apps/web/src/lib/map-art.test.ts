@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MAP_ART_WIDTHS, mapArt, mapDisplayName, ROTATION_MAPS } from './map-art';
 
@@ -40,5 +42,15 @@ describe('mapDisplayName', () => {
   it('não inventa nome: nulo vira nulo', () => {
     expect(mapDisplayName(null)).toBeNull();
     expect(mapDisplayName('')).toBeNull();
+  });
+});
+
+describe('arquivos em public/maps', () => {
+  it('cada mapa da rotação tem as duas larguras em AVIF e WebP (rode scripts/maps.mjs)', () => {
+    const dir = path.join(process.cwd(), 'public/maps');
+    const missing = ROTATION_MAPS.flatMap((slug) =>
+      MAP_ART_WIDTHS.flatMap((w) => ['avif', 'webp'].map((format) => `${slug}-${w}.${format}`)),
+    ).filter((file) => !existsSync(path.join(dir, file)));
+    expect(missing).toEqual([]);
   });
 });
