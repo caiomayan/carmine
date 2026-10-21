@@ -117,6 +117,10 @@
   --border: var(--line);
   --input: var(--surface);
   --ring: var(--text);
+  /* foco dos campos: anel de 1,5 px (3:1 sobre o fundo nos dois temas) e um halo suave */
+  --focus-ring: color-mix(in srgb, var(--text) 60%, transparent);
+  --focus-halo: color-mix(in srgb, var(--text) 10%, transparent);
+  --focus-field: 0 0 0 1.5px var(--focus-ring), 0 0 0 4px var(--focus-halo);
 }
 
 :root {

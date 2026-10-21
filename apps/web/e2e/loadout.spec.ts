@@ -24,13 +24,12 @@ async function boardReady(page: Page) {
   });
 }
 
-/** Entra com uma Conta nova (Steam falsa) a partir de `start`, fecha os Primeiros passos e, se pedido, dá VIP. */
+/** Entra com uma Conta nova (Steam falsa) a partir de `start` e, se pedido, dá VIP. */
 async function signIn(page: Page, { vip = false, start = '/loadout' } = {}) {
   const steamId = newSteamId();
   await page.goto(start);
   await signInFromHeader(page, steamId);
   await expect(page).toHaveURL(start);
-  await page.getByRole('button', { name: 'Entendi' }).click();
   if (vip) {
     grantVip(steamId);
     await page.reload();

@@ -112,6 +112,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                       // Modelo com {name}: o nome vem da sessão no cliente, então o espaço dele segue literal.
                       title: tSteps('title', { name: '{name}' }),
                       intro: tSteps('intro'),
+                      strip: tSteps('strip'),
+                      open: tSteps('open'),
                       close: tSteps('close'),
                       done: tSteps('done'),
                       toInventory: tSteps('toInventory'),

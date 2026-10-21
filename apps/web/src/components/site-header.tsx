@@ -37,6 +37,19 @@ export async function SiteHeader() {
               // Modelo com {name} literal, preenchido no cliente com a Conta da sessão.
               menu: t('account.menu', { name: '{name}' }),
               profile: t('account.profile'),
+              inventory: t('account.inventory'),
+              loadout: t('account.loadout'),
+              settings: t('account.settings'),
+              theme: {
+                label: t('account.theme.label'),
+                light: t('account.theme.light'),
+                dark: t('account.theme.dark'),
+              },
+              home: t('account.home'),
+              // Modelos com {days} literal: os dias vêm da sessão, no cliente.
+              vipOne: t('account.vipOne', { days: '{days}' }),
+              vipOther: t('account.vipOther', { days: '{days}' }),
+              playing: t('account.playing'),
               firstSteps: t('account.firstSteps'),
               staffPanel: t('account.staffPanel'),
               signOut: t('account.signOut'),

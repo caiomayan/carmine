@@ -12,8 +12,6 @@ import {
   DialogTitle,
 } from '@/components/animate-ui/components/radix/dialog';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
-import { DiscordSetting } from '@/components/profile/discord-setting';
-import { SectionTitle } from '@/components/section-title';
 import { useSession } from '@/components/session/session-provider';
 import { controlClass, Field, FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
@@ -21,27 +19,19 @@ import { loadContracts } from '@/lib/contracts-schemas';
 import { cn } from '@/lib/utils';
 
 /**
- * Ajustes do próprio Perfil (S11), só para o dono: o Nome de exibição (uma troca a cada 7 dias) e
- * o Perfil privado. Os schemas Zod só são carregados quando a resposta da API precisa ser lida.
+ * Ajustes do próprio Perfil (S11), em Configurações > Perfil: o Nome de exibição (uma troca a cada
+ * 7 dias) e o Perfil privado. Os schemas Zod só são carregados quando a resposta da API precisa
+ * ser lida.
  */
 export function ProfileSettings() {
-  const t = useTranslations('profile.settings');
   const { account } = useSession();
   if (!account) return null;
 
   return (
-    <section
-      aria-labelledby="ajustes"
-      data-testid="profile-settings"
-      className="animate-fade-up pt-8 [animation-delay:60ms]"
-    >
-      <SectionTitle id="ajustes">{t('title')}</SectionTitle>
-      <div className="grid gap-1 rounded-xl bg-surface p-2 max-md:p-1">
-        <NameRow />
-        <PrivacyRow />
-        <DiscordSetting />
-      </div>
-    </section>
+    <div className="grid gap-1" data-testid="profile-settings">
+      <NameRow />
+      <PrivacyRow />
+    </div>
   );
 }
 
@@ -52,7 +42,7 @@ type NameState =
   | { kind: 'error'; message: string };
 
 function NameRow() {
-  const t = useTranslations('profile.settings.name');
+  const t = useTranslations('settings.name');
   const format = useFormatter();
   const router = useRouter();
   const { account, displayNameChange, mutate, updateAccount } = useSession();
@@ -283,7 +273,7 @@ function NameRow() {
 }
 
 function PrivacyRow() {
-  const t = useTranslations('profile.settings.privacy');
+  const t = useTranslations('settings.privacy');
   const router = useRouter();
   const { account, mutate, updateAccount } = useSession();
   const switchId = useId();
@@ -315,12 +305,16 @@ function PrivacyRow() {
   }
 
   return (
-    <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="privacy-setting">
-      <div className="flex items-center justify-between gap-4">
-        <label htmlFor={switchId} className="grid min-w-0 flex-1 cursor-pointer gap-0.5 py-1">
+    <div className="grid gap-2 rounded-lg px-4 py-3 max-md:px-3" data-testid="privacy-setting">
+      {/* A linha inteira é o rótulo do interruptor: o alvo de toque é a linha, não os 36 px dele. */}
+      <label
+        htmlFor={switchId}
+        className="flex min-h-(--tap) cursor-pointer items-center justify-between gap-4 py-1"
+      >
+        <span className="grid min-w-0 flex-1 gap-0.5">
           <span className="text-[14px] font-semibold">{t('title')}</span>
           <span className="text-[13px] text-muted-foreground">{t('description')}</span>
-        </label>
+        </span>
         <Switch
           id={switchId}
           checked={account.isPrivate}
@@ -328,20 +322,14 @@ function PrivacyRow() {
           onCheckedChange={toggle}
           data-testid="privacy-switch"
         />
-      </div>
-      <div aria-live="polite">
-        {announce === 'on' ? (
-          <div
-            className="grid gap-1 rounded-md bg-surface-2 px-3 py-2.5"
-            data-testid="privacy-on-note"
-          >
-            <p className="text-[13px] font-semibold">{t('onTitle')}</p>
-            <p className="text-[13px] text-muted-foreground">{t('onBody')}</p>
-          </div>
-        ) : announce === 'off' ? (
-          <p className="text-[13px] text-muted-foreground">{t('offNote')}</p>
-        ) : null}
-      </div>
+      </label>
+      <p
+        aria-live="polite"
+        className="text-[13px] text-muted-foreground"
+        data-testid="privacy-status"
+      >
+        {announce === 'on' ? t('announceOn') : announce === 'off' ? t('announceOff') : null}
+      </p>
       {failed ? <FieldError>{t('failed')}</FieldError> : null}
     </div>
   );

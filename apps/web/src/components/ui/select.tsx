@@ -18,6 +18,8 @@ const SelectValue = SelectPrimitive.Value;
 export const selectTriggerClass = [
   'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
   'hover:bg-surface-2 data-[state=open]:bg-surface-2 data-[placeholder]:text-muted-foreground',
+  // Parece um campo, então foca como um (anel fino e suave, só no teclado), não com o anel de 2 px.
+  'focus-visible:bg-surface-2 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-field)]',
   'disabled:pointer-events-none disabled:text-faint aria-invalid:outline-1 aria-invalid:outline-status-danger',
   '*:data-[slot=select-value]:truncate [&_svg]:pointer-events-none [&_svg]:shrink-0',
 ].join(' ');

@@ -123,7 +123,7 @@ test('o Perfil privado aparece como "Jogador privado", sem link, nome nem avatar
   await play(request, { rounds: { steamIds: [quiet.steamId, other.steamId], count: 50 } });
   // A Conta entra no site e liga o Perfil privado pela interface.
   await signInByRequest(page, quiet.steamId);
-  await page.goto(`/${quiet.publicId}`);
+  await page.goto('/configuracoes/perfil');
   await turnPrivateProfileOn(page);
 
   await page.goto('/ranking');
@@ -272,9 +272,9 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
 
   // O dono liga o Perfil privado: vê as suas com "Só você vê"; o visitante vê o aviso.
   await signInByRequest(page, killer.steamId);
-  await page.goto(`/${killer.publicId}`);
+  await page.goto('/configuracoes/perfil');
   await turnPrivateProfileOn(page);
-  await page.reload();
+  await page.goto(`/${killer.publicId}`);
   await expect(page.getByTestId('stats-only-you')).toHaveText('Só você vê');
   await expect(page.getByTestId('stats-total').locator('[data-stat="kills"]')).toContainText('1');
 
