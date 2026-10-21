@@ -23,7 +23,7 @@ const row = (page: import('@playwright/test').Page, name: string) =>
 
 /** O grupo "Offline (n)" nasce recolhido com muitos servidores offline: abre antes de olhar. */
 async function openOfflineGroup(page: import('@playwright/test').Page) {
-  const toggle = page.getByTestId('offline-group').getByRole('button', { name: /^Offline (/ });
+  const toggle = page.getByTestId('offline-group').getByRole('button', { name: /^Offline \(/ });
   await expect(toggle).toBeVisible();
   if ((await toggle.getAttribute('aria-expanded')) === 'false') await toggle.click();
 }
@@ -383,7 +383,7 @@ test.describe('Home em cartões (U2)', () => {
     await page.goto('/');
     const card = row(page, 'fixo-cheio');
     await expect(card.getByText('Lotado', { exact: true })).toBeVisible();
-    await expect(card.getByText('Com VIP você entra pela Vaga reservada.')).toBeVisible();
+    await expect(card.getByText('Vaga reservada: só VIP')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Jogar em fixo-cheio' })).toBeVisible();
   });
 

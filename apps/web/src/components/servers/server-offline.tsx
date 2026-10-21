@@ -21,7 +21,9 @@ export function OfflineGroup({
   defaultOpen: boolean;
 }) {
   const t = useTranslations('servers.offline');
-  const [open, setOpen] = useState(defaultOpen);
+  // Só a escolha da pessoa fica guardada: sem ela, o padrão acompanha a lista ao vivo.
+  const [chosen, setChosen] = useState<boolean | null>(null);
+  const open = chosen ?? defaultOpen;
   const listId = useId();
   if (servers.length === 0) return null;
 
@@ -32,7 +34,7 @@ export function OfflineGroup({
         size="sm"
         aria-expanded={open}
         aria-controls={listId}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setChosen(!open)}
         className="-ml-3"
       >
         <span className="tabular-nums">{t('title', { count: servers.length })}</span>

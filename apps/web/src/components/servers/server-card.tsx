@@ -156,7 +156,7 @@ export function ServerCard({
               </span>
             </span>
             {full ? (
-              <span className="text-right text-[12px] text-(--on-map-muted)">
+              <span className="text-right text-[12px] whitespace-nowrap text-(--on-map-muted)">
                 {t('card.fullNote')}
               </span>
             ) : null}

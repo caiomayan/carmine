@@ -42,8 +42,8 @@
   --scrim-40: 93%;
   --scrim-70: 62%;
   --scrim-100: 28%;
-  /* texto de apoio sobre o mapa: no escuro o cinza de sempre; no claro, quase o texto (o mapa por baixo varia) */
-  --on-map-muted: var(--muted);
+  /* texto de apoio sobre o mapa: um passo mais claro que o cinza de sempre no escuro, e quase o texto no claro (o mapa por baixo varia) */
+  --on-map-muted: color-mix(in srgb, var(--text) 60%, var(--muted));
 }
 
 [data-theme="light"] {

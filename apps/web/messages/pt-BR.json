@@ -177,7 +177,7 @@
     },
     "card": {
       "playersUnit": "jogadores",
-      "fullNote": "Com VIP você entra pela Vaga reservada.",
+      "fullNote": "Vaga reservada: só VIP",
       "friendsAria": "Amigos no {server}",
       "friendsHere": "{others, plural, =0 {{name} está aqui} other {{name} e mais # estão aqui}}"
     },
