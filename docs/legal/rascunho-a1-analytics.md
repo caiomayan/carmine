@@ -3,6 +3,8 @@
 > **NÃO PUBLICAR ainda.** Este arquivo **não** é lido pelo web (só os quatro documentos listados em `docs/legal/README.md` são publicados) e os trechos abaixo só entram em `politica-de-privacidade.md` **no mesmo PR que liga o PostHog** (A1). Quando entrarem: subir a versão para 0.6.0, atualizar `updatedAt` e avisar no site e no Discord (seção 11 da Política).
 >
 > Decisões que sustentam o texto: [ADR 0021](../adr/0021-analytics-posthog-ga4-metabase.md). Lista dos eventos: [plano de eventos](../analytics/plano-de-eventos.md). Marcas: **[ENTRA COM A A1]** = vai com a A1; **[ENTRA NA ABERTURA]** = vai com o GA4, não com a A1; **[VALIDAR COM ADVOGADO]**, **[DONO: …]** e **[CONFIRMAR: …]** seguem o padrão da Política atual. Rascunho redigido com IA; não é parecer jurídico.
+>
+> **Decisões do dono de 2026-10-21 refletidas aqui:** a chave "Participar da análise de uso" vem **ligada** por padrão (o texto diz isso); anúncios e patrocínios só de posição fixa ou contextual, sem personalização (seção 3); sem evento de clique em "Conectar" e sem dados demográficos (nada disso aparece na lista de dados); a transferência internacional para a UE (seção 5 do rascunho) e o legítimo interesse com menores (seção 3) estão na **lista do advogado**, e a A1 só liga o PostHog depois da resposta. O amostrador de jogadores simultâneos (`server_presence_samples`) guarda só o número de jogadores por servidor por minuto, sem dado pessoal, e não precisa de linha na Política.
 
 ## Resumo das mudanças na Política atual
 
@@ -45,7 +47,7 @@
 >
 > **No navegador**, o site só conta que uma página foi aberta, sem cookies, sem guardar nada no seu aparelho e sem identificar você.
 >
-> **Você pode desligar** a análise de uso a qualquer momento em Configurações → Dados e conta → "Participar da análise de uso". Desligada, o Carmine deixa de mandar qualquer aviso sobre a sua Conta. Isso não muda o seu jogo, o seu Perfil, as Estatísticas nem o Ranking: esses dados continuam, porque são o próprio serviço.
+> **A análise de uso vem ligada para todas as Contas**, e você pode desligar a qualquer momento em Configurações → Dados e conta → "Participar da análise de uso". Desligada, o Carmine deixa de mandar qualquer aviso sobre a sua Conta. Isso não muda o seu jogo, o seu Perfil, as Estatísticas nem o Ranking: esses dados continuam, porque são o próprio serviço.
 
 ## 3. Seção 3, "Por que podemos usar esses dados"  **[ENTRA COM A A1] [VALIDAR COM ADVOGADO]**
 
@@ -61,7 +63,7 @@ Acrescentar ao parágrafo "**Sobre o legítimo interesse.**":
 
 Acrescentar a "**Sobre crianças e adolescentes.**":
 
-> A análise de uso nunca é usada para publicidade nem para criar perfis de comportamento para anúncios, conforme o ECA Digital (art. 26), e não grava a tela de ninguém.
+> A análise de uso nunca é usada para publicidade nem para criar perfis de comportamento para anúncios, conforme o ECA Digital (art. 26), e não grava a tela de ninguém. Os anúncios e patrocínios que o site vier a ter ficam em posição fixa ou são contextuais (ligados à página, não a quem a vê); não são personalizados nem segmentados pelo seu comportamento.
 
 ## 4. Seção 5, "Com quem compartilhamos": nova linha  **[ENTRA COM A A1]**
 
@@ -69,7 +71,7 @@ Acrescentar a "**Sobre crianças e adolescentes.**":
 |---|---|---|
 | **PostHog** (região da União Europeia) | Os avisos de uso descritos acima, ligados a um identificador interno e aleatório da sua Conta (nunca o SteamID64 nem o ID público), e a contagem de páginas sem identificação | Entender e melhorar o uso do Carmine. O PostHog não recebe o seu nome, o seu avatar, o seu IP (o da contagem de páginas é descartado depois de ler o país), o que você escreve no chat nem punições |
 
-## 5. Seção 6, "Onde os dados ficam": novo parágrafo  **[ENTRA COM A A1] [VALIDAR COM ADVOGADO: transferência internacional]**
+## 5. Seção 6, "Onde os dados ficam": novo parágrafo  **[ENTRA COM A A1] [VALIDAR COM ADVOGADO: transferência internacional, na lista do advogado desde 2026-10-21]**
 
 > Os avisos de uso vão para o PostHog, que os guarda na **União Europeia** (os dados da análise de uso ficam fora do Brasil). A transferência segue a LGPD (art. 33) e a Resolução CD/ANPD nº 19/2024, por meio das cláusulas-padrão contratuais da ANPD [CONFIRMAR: DPA do PostHog com as cláusulas-padrão da ANPD aceito pelo Dono].
 

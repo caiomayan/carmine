@@ -1,8 +1,10 @@
-# Plano de eventos · v1.0.0
+# Plano de eventos · v1.0.1
 
 > Fonte única dos **nomes, quando disparam e propriedades** dos eventos de analytics do Carmine, para o PostHog, o GA4 e o BI (Metabase). Decisões e limites: [ADR 0021](../adr/0021-analytics-posthog-ga4-metabase.md). Linguagem do domínio: [`CONTEXT.md`](../../CONTEXT.md). Spec: seção "A1 · Analytics de produto" de [`docs/specs/mvp.md`](../specs/mvp.md).
 >
 > **Estado:** escrito antes da instalação (A1). Nada aqui está implementado. Os "pontos de disparo" foram lidos no código da API em 2026-10-20 (`apps/api/src`, a partir do commit `95be772`); quando o ponto exige uma pequena mudança em código existente, está dito.
+>
+> **Decisões do dono de 2026-10-21** (ADR 0021, que as registra): (1) a chave `analytics_opt_out` vem **desligada** por padrão, ou seja, a Conta participa até a pessoa sair; (2) anúncios só fixos ou contextuais; (3) o amostrador `server_presence_samples` está **aprovado** e entra na A1; (4) **não** há evento de clique em "Conectar", `vip_expirado` vem do job da S14 com marcador, e **não** há dados demográficos; (5) a transferência internacional para a UE está na lista do advogado e a A1 só liga o PostHog depois da resposta.
 
 ## 1. Como ler este plano
 
@@ -12,7 +14,7 @@
 - **Horário:** o do fato, não o do envio (por exemplo, o `connectedAt` original do plugin).
 - **Idempotência:** onde há um ID natural (sessão, Denúncia, pagamento, Conta), o `uuid` do evento no PostHog é `UUIDv5(namespace do Carmine, "<evento>:<id natural>")`, então reenviar não duplica. Nos demais é um UUID aleatório (analytics não é contabilidade; perder um evento ocasional é aceito).
 - **Quando emitir:** sempre **depois** do commit da transação do caso de uso, sem esperar o envio e sem nunca deixar a requisição falhar por causa do analytics.
-- **Quem nunca emite:** Conta anonimizada (S08), Conta com `analytics_opt_out` ligado (ADR 0021), ambiente de desenvolvimento e testes (sem chave do PostHog, o emissor é nulo).
+- **Quem nunca emite:** Conta anonimizada (S08), Conta com `analytics_opt_out` ligado (ADR 0021; a coluna nasce `false`, então toda Conta participa até desligar a chave "Participar da análise de uso", decisão do dono de 2026-10-21), ambiente de desenvolvimento e testes (sem chave do PostHog, o emissor é nulo).
 - **Valores:** textos de lista fechada vêm em minúsculas, sem acento (`ct`, `tr`, `ambos`). Booleanos são `true`/`false`, nunca `0`/`1`. Inteiros são ≥ 0, salvo dito. Nenhuma propriedade é opcional-por-omissão: o que não se sabe vai como `null`.
 
 ### 1.1 Propriedades comuns (em todo evento)
@@ -278,9 +280,9 @@ Propriedades comuns do VIP: `pacote` (`1_mes` | `3_meses` | `6_meses`); `meio` (
 
 #### 35. `vip_expirado` · S14 · API · Conta (beneficiada)
 
-- **Dispara:** a rotina de vencimento do VIP, a mesma que a S14 já precisa para o "lembrete 3 dias antes do fim" (hoje o fim do Período não gera evento nenhum, ADR 0020), com um marcador de última passada, para cada Período que acabou desde a passada anterior e não foi encadeado a outro. `uuid` do Período.
+- **Dispara:** o job de vencimento do VIP da S14, o mesmo que ela já precisa para o "lembrete 3 dias antes do fim" (hoje o fim do Período não gera evento nenhum, ADR 0020), com um marcador de última passada (decisão do dono, 2026-10-21: o evento vem desse job, não do banco), para cada Período que acabou desde a passada anterior e não foi encadeado a outro. `uuid` do Período.
 - **Propriedades:** `origem_vip` (`compra` | `concessao`); `dias_ativo_total` (inteiro: soma dos Períodos contíguos).
-- **Responde:** o VIP é renovado? (`vip_pago` com `ja_foi_vip = true` e `renovacao = false` nos 30 dias seguintes a `vip_expirado` é a "reativação"); quanto tempo dura o VIP típico. *Alternativa se o dono preferir não criar o marcador:* tirar esta métrica só do banco (`vip_periods`), sem evento.
+- **Responde:** o VIP é renovado? (`vip_pago` com `ja_foi_vip = true` e `renovacao = false` nos 30 dias seguintes a `vip_expirado` é a "reativação"); quanto tempo dura o VIP típico. O job e o marcador são trabalho da S14, não da A1; até lá, `vip_periods` no banco responde a mesma pergunta.
 
 ## 3. Funis e métricas
 
@@ -363,7 +365,7 @@ Para patrocinadores e anúncios, o dono quer: **jogadores únicos, horas jogadas
 | **Retenção semanal** (semanas +1, +4, +8) | Seção 3.3 | **Banco** | Sim (histórico desde a S12) |
 | **Retenção diária** (D1, D7, D30) | Seção 3.3 | **PostHog** (`sessao_de_jogo_encerrada`) | A partir da A1 |
 | **Sessões por jogador e duração da sessão** | Contagem e média de `duracao_segundos` | **PostHog** (o banco guarda só a soma de segundos) | A partir da A1 |
-| **Jogadores simultâneos** (pico e média por dia/Modo) | Contagem de jogadores nos Batimentos | **Nenhuma: lacuna.** A Presença vive no Valkey e não é guardada. Proposta: uma amostra por minuto por servidor numa tabela aditiva `server_presence_samples (server_id, at, players)` gravada em `live-servers/live-servers.ts` → `LiveServers.recordHeartbeat` (~1.440 linhas/dia/servidor, sem dado pessoal) | **Não** (depende de decisão do dono) |
+| **Jogadores simultâneos** (pico e média por dia/Modo) | Contagem de jogadores nos Batimentos | **Lacuna hoje**, fechada pela A1: a Presença vive no Valkey e não é guardada. **Aprovado pelo dono em 2026-10-21:** uma amostra por minuto por servidor numa tabela aditiva `server_presence_samples (server_id, at, players)` gravada em `live-servers/live-servers.ts` → `LiveServers.recordHeartbeat` (~1.440 linhas/dia/servidor, sem dado pessoal). Só há histórico a partir do dia em que ligar | **Não** hoje; entra com a A1 |
 | **Alcance do site** (visitantes únicos e páginas vistas) | `pagina_vista` agregado | **GA4** após a abertura; **PostHog** antes. São contagens diferentes (o GA4 só vê quem consentiu): o kit usa uma fonte só e diz qual | PostHog: A1. GA4: abertura |
 | **Origem das visitas** | Canal, fonte/meio e campanha | **GA4** (abertura); `referenciador` e `utm_*` no PostHog antes | Abertura |
 | **Origem das Contas** | Proporção `jogo` × `site` | **PostHog** (`conta_criada.origem`); no banco, aproximável por `claimed_at` e `first_connected_at` | A1 |
@@ -374,7 +376,7 @@ Para patrocinadores e anúncios, o dono quer: **jogadores únicos, horas jogadas
 | **Segurança do ambiente** (Denúncias por 100 horas, tempo até resolver) | `reports` agregada | **Banco**, mas `reports` é apagada em 90 dias: **materializar** mensalmente | Parcial |
 | **Servidores no ar** | Disponibilidade | Monitoramento de uptime (S09) | Sim, fora deste plano |
 
-**O que o kit não entrega, de propósito:** idade, gênero ou renda dos jogadores (o Carmine não coleta, e o público inclui menores); país dos **jogadores** (o IP do jogador fica com o servidor de jogo; só os visitantes do site têm país); origem de quem nunca abre o site; qualquer segmentação por comportamento para anúncio (ECA Digital, art. 26).
+**O que o kit não entrega, de propósito:** idade, gênero ou renda dos jogadores (o Carmine não coleta, e o público inclui menores; decisão do dono, 2026-10-21); país dos **jogadores** (o IP do jogador fica com o servidor de jogo; só os visitantes do site têm país); origem de quem nunca abre o site; qualquer segmentação por comportamento para anúncio (ECA Digital, art. 26).
 
 **Regras para os números não mexerem sozinhos:**
 - Uma Conta anonimizada some de `account_stats_weekly` (S08), então números passados mudam um pouco retroativamente. Quando o kit existir, cada mês é **congelado** numa tabela de fotos (`bi.midia_kit_mensal`), e o kit publica a foto, não a consulta ao vivo.
@@ -409,3 +411,4 @@ O objetivo é mudar um evento sem quebrar a série histórica nem os painéis.
 | Versão | Data | Mudança |
 |---|---|---|
 | 1.0.0 | 2026-10-20 | Primeira versão: 35 eventos (29 da A1, 6 da S14), funis, mídia kit e versionamento |
+| 1.0.1 | 2026-10-21 | PATCH: registra as decisões do dono (opt-out ligado por padrão, anúncios só fixos/contextuais, `server_presence_samples` aprovado, sem clique em "Conectar", `vip_expirado` pelo job da S14, sem dados demográficos). Nenhum evento mudou |
