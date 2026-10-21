@@ -139,8 +139,6 @@ export type ServersLayout = {
   offline: LiveServer[];
   /** Colunas da grade de cartões em telas largas: nenhuma linha termina com buraco. */
   columns: 1 | 2 | 3;
-  /** Com 5 cartões em 2 colunas, o último ocupa a linha inteira. */
-  spanLast: boolean;
 };
 
 const COLUMNS: Record<number, 1 | 2 | 3> = { 1: 1, 2: 2, 3: 3, 4: 2, 5: 2, 6: 3 };
@@ -154,7 +152,7 @@ export function serversLayout(servers: LiveServer[]): ServersLayout {
   const offline = servers.filter((s) => s.state === 'offline');
   const kind = live.length > MAX_CARD_SERVERS ? 'list' : 'cards';
   const columns = COLUMNS[live.length] ?? 1;
-  return { kind, live, offline, columns, spanLast: kind === 'cards' && live.length === 5 };
+  return { kind, live, offline, columns };
 }
 
 /** O grupo "Offline (n)" já nasce aberto com poucos servidores ou quando nada está no ar. */

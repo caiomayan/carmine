@@ -279,7 +279,7 @@ describe('cartões ou lista', () => {
   });
 
   it('separa no ar e offline sem mudar a ordem de cada grupo', () => {
-    const [a, b, c] = many(3);
+    const [a, b, c] = many(3) as [LiveServer, LiveServer, LiveServer];
     const off = { ...b, state: 'offline' as const };
     const layout = serversLayout([off, a, c]);
     expect(layout.live).toEqual([a, c]);
@@ -291,15 +291,9 @@ describe('cartões ou lista', () => {
     expect([1, 2, 3, 4, 5, 6].map(columns)).toEqual([1, 2, 3, 2, 2, 3]);
   });
 
-  it('com 5 cartões em 2 colunas o último ocupa a linha inteira', () => {
-    expect(serversLayout(many(5)).spanLast).toBe(true);
-    expect(serversLayout(many(3)).spanLast).toBe(false);
-    expect(serversLayout(many(4)).spanLast).toBe(false);
-  });
-
   it('sem nenhum servidor, sem colunas a inventar', () => {
     const layout = serversLayout([]);
-    expect(layout).toMatchObject({ live: [], offline: [], columns: 1, spanLast: false });
+    expect(layout).toMatchObject({ live: [], offline: [], columns: 1 });
   });
 });
 

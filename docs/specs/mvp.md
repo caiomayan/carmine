@@ -198,9 +198,9 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 
 ### S06 · Servidores ao vivo e amigos jogando
 
-- **Home = lista de servidores ao vivo:** Modo, mapa, jogadores/máximo, região (São Paulo), estado (online, lotado, offline) e Conectar.
-- **Conectar:** abre `steam://connect`; ao lado, o IP copiável com uma instrução curta ("no console do CS2: `connect <ip>`"). No celular, mostra só o IP e a instrução para abrir no PC.
-- Lotado mostra o estado claramente; offline desabilita Conectar.
+- **Home = servidores ao vivo:** Modo, mapa, jogadores/máximo, região (São Paulo), estado (online, lotado, offline) e Jogar. Desde a U2, cartões grandes (até 6 servidores no ar) ou lista; os offline ficam num grupo leve no fim.
+- **Jogar:** abre `steam://connect`; ao lado, o IP copiável com uma instrução curta ("no console do CS2: `connect <ip>`"). No celular, mostra só o IP e a instrução para abrir no PC.
+- Lotado mostra o estado claramente e mantém o Jogar (o VIP entra pela Vaga reservada); offline não tem botão.
 - O Carmine.Core envia batimento a cada ~10 s com mapa e jogadores conectados; servidor sem batimento por 45 s fica offline.
 - Atualização ao vivo por WebSocket ou SSE, com transição numérica suave. Se a conexão ao vivo cair, a home mostra o último estado conhecido com "atualizado há X s".
 - **"Seus amigos jogando agora"** para Contas reivindicadas, com botão de entrar no mesmo servidor. Três estados distintos: nenhum amigo jogando; lista de amigos Steam privada (orientação opcional de como torná-la visível, explicando a consequência de privacidade); Steam indisponível.

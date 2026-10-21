@@ -23,9 +23,10 @@ import {
   serverFullLabel,
   steamConnectUrl,
 } from '@/lib/live-servers';
+import { mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { useCopy } from './use-copy';
-import { useFriendsPlaying } from './use-friends-playing';
+import type { FriendsPlayingState } from './use-friends-playing';
 
 /** Onde a Steam guarda a privacidade da lista de amigos (a pessoa já está logada lá). */
 const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
@@ -41,9 +42,14 @@ const VISIBLE_FRIENDS = 6;
  * lista de amigos privada (com a orientação opcional e a consequência de privacidade) e Steam
  * indisponível. Sem sessão, um convite para entrar.
  */
-export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
+export function FriendsPlaying({
+  servers,
+  friends: { view, refresh },
+}: {
+  servers: LiveServer[];
+  friends: FriendsPlayingState;
+}) {
   const t = useTranslations('servers.friends');
-  const { view, refresh } = useFriendsPlaying();
   const titleId = useId();
   const playing = view.status === 'ok' ? friendsWithServers(view.friends, servers) : [];
   const [expanded, setExpanded] = useState(false);
@@ -57,7 +63,7 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
       aria-busy={view.status === 'loading'}
       data-testid="friends-playing"
       data-status={view.status}
-      className="self-start rounded-xl bg-surface p-1.5 xl:sticky xl:top-24"
+      className="rounded-xl bg-surface p-1.5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pt-3 pb-2.5">
         <h2
@@ -107,7 +113,7 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
         <Notice icon={UsersIcon} title={t('none.title')} body={t('none.body')} />
       ) : (
         <>
-          <ul id={listId} className="grid">
+          <ul id={listId} className="grid sm:grid-cols-2 lg:grid-cols-3">
             {shown.map((entry, i) => (
               <FriendRow key={entry.friend.steamId} entry={entry} index={i} />
             ))}
@@ -142,7 +148,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
   const where = server
     ? server.state === 'offline'
       ? t('serverOffline')
-      : t('on', { server: serverFullLabel(server), map: server.map ?? '' })
+      : t('on', { server: serverFullLabel(server), map: mapDisplayName(server.map) ?? '' })
     : t('serverUnknown');
 
   return (

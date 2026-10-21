@@ -36,6 +36,14 @@
   --status-danger: #db8274;
   --status-info: #82a6c2;
   --status-vip: #cdaa62;
+
+  /* degradê que escurece o mapa no cartão de servidor (U2): % da cor de fundo, de baixo p/ cima */
+  --scrim-0: 97%;
+  --scrim-40: 93%;
+  --scrim-70: 62%;
+  --scrim-100: 28%;
+  /* texto de apoio sobre o mapa: no escuro o cinza de sempre; no claro, quase o texto (o mapa por baixo varia) */
+  --on-map-muted: var(--muted);
 }
 
 [data-theme="light"] {
@@ -57,6 +65,12 @@
   --status-danger: #a3382c;
   --status-info: #386287;
   --status-vip: #765c1a;
+
+  --scrim-0: 95%;
+  --scrim-40: 90%;
+  --scrim-70: 62%;
+  --scrim-100: 14%;
+  --on-map-muted: color-mix(in srgb, var(--text) 88%, var(--bg));
 }
 
 /*

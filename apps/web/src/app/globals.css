@@ -162,6 +162,76 @@
   animation: var(--animate-shimmer);
 }
 
+/*
+ * Cartão de servidor da home (U2). O mapa vai ao fundo e o degradê da superfície o escurece (no
+ * claro, o encobre de creme) até o texto passar no AA mesmo no mapa mais claro (dust2): o texto
+ * fica na parte de baixo, onde o degradê é mais forte. As chips do alto têm fundo próprio.
+ */
+@utility map-scrim {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--bg) var(--scrim-0), transparent) 0%,
+    color-mix(in srgb, var(--bg) var(--scrim-40), transparent) 40%,
+    color-mix(in srgb, var(--bg) var(--scrim-70), transparent) 70%,
+    color-mix(in srgb, var(--bg) var(--scrim-100), transparent) 100%
+  );
+}
+
+/* um cartão sozinho é largo: o texto fica à esquerda e a imagem respira à direita */
+@utility map-scrim-solo {
+  @media (min-width: 761px) {
+    background:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--bg) var(--scrim-0), transparent) 0%,
+        color-mix(in srgb, var(--bg) var(--scrim-40), transparent) 38%,
+        color-mix(in srgb, var(--bg) calc(var(--scrim-70) * 0.55), transparent) 72%,
+        color-mix(in srgb, var(--bg) calc(var(--scrim-100) * 0.4), transparent) 100%
+      ),
+      linear-gradient(
+        to top,
+        color-mix(in srgb, var(--bg) calc(var(--scrim-40) * 0.7), transparent) 0%,
+        transparent 45%
+      );
+  }
+}
+
+/* mapa sem imagem: um fundo neutro, só com uma textura quase invisível */
+@utility map-neutral {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 14px,
+      color-mix(in srgb, var(--text) 3.5%, transparent) 14px 15px
+    ),
+    linear-gradient(160deg, var(--surface-2), var(--surface));
+}
+
+/* chip com fundo próprio, para o texto não depender da imagem que está por baixo */
+@utility chip-solid {
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 93%, transparent);
+}
+
+/* a imagem do mapa assenta ao entrar e se aproxima devagar no hover do cartão */
+@utility map-art {
+  animation: map-settle 1100ms var(--ease-out) backwards;
+  transition: transform 900ms var(--ease-out);
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transition: none;
+  }
+}
+
+@keyframes map-settle {
+  from {
+    transform: scale(1.06);
+    opacity: 0.4;
+  }
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
