@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {
   Command,
   CommandEmpty,
@@ -23,7 +23,8 @@ const EMPTY_KEY = '__empty__';
  * Select com busca para listas longas (Arma, Coleção, categorias de sticker): um botão que abre
  * um Popover com campo de busca e a lista filtrada, tudo por teclado (setas, Enter, Esc). A
  * busca ignora acentos e maiúsculas, aceita palavras parciais e erros de digitação, em qualquer
- * ordem, e ordena por relevância (`lib/option-search.ts`). O botão leva o
+ * ordem, acha também os `keywords` da opção (o nome em inglês, o tipo) e ordena por relevância
+ * (`lib/option-search.ts`). A lista abre na opção atual, destacada e à vista. O botão leva o
  * `id` (para o `<label htmlFor>`) e, com `name`, o valor vai no formulário (e nada vai enquanto
  * estiver vazio), como no `SimpleSelect`. O valor vazio (`''`) é "nada escolhido": com
  * `emptyLabel` vira o primeiro item da lista ("Todas").
@@ -59,7 +60,6 @@ export function Combobox({
   triggerClassName?: string;
   'aria-describedby'?: string;
 }) {
-  const t = useTranslations('common.combobox');
   const [open, setOpen] = useState(false);
   const listId = useId();
   const items = emptyLabel ? [{ value: '', label: emptyLabel }, ...options] : options;
@@ -82,7 +82,7 @@ export function Combobox({
             data-placeholder={selected ? undefined : ''}
             className={cn(selectTriggerClass, triggerClassName)}
           >
-            <span className="truncate">{selected?.label ?? placeholder}</span>
+            <span className="truncate">{selected?.label ?? (value || placeholder)}</span>
             <ChevronsUpDownIcon
               aria-hidden="true"
               className="size-4 shrink-0 text-muted-foreground"
@@ -90,41 +90,80 @@ export function Combobox({
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-(--radix-popover-trigger-width) min-w-56 p-0">
-          <Command
-            // Filtro nosso: o cmdk chaveia o item pelo valor, e a busca olha o rótulo (palavras
-            // parciais, sem acento, com erro de digitação). O número devolvido é a relevância: o
-            // cmdk ordena por ele e esconde os de zero.
-            filter={(_key, search, keywords) => searchScore((keywords ?? []).join(' '), search)}
-          >
-            <CommandInput placeholder={t('search')} aria-label={t('search')} />
-            <CommandList id={listId}>
-              <CommandEmpty>{t('empty')}</CommandEmpty>
-              <CommandGroup>
-                {items.map((item) => (
-                  <CommandItem
-                    key={item.value || EMPTY_KEY}
-                    value={item.value || EMPTY_KEY}
-                    keywords={[item.label]}
-                    data-testid={`option-${item.value || 'empty'}`}
-                    data-checked={item.value === value ? '' : undefined}
-                    onSelect={() => {
-                      onValueChange(item.value);
-                      setOpen(false);
-                    }}
-                    className="justify-between data-[checked]:font-semibold"
-                  >
-                    <span className="truncate">{item.label}</span>
-                    {item.value === value ? (
-                      <CheckIcon aria-hidden="true" className="size-4 shrink-0" />
-                    ) : null}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
+          <ComboboxPanel
+            items={items}
+            value={value}
+            listId={listId}
+            onPick={(next) => {
+              onValueChange(next);
+              setOpen(false);
+            }}
+          />
         </PopoverContent>
       </Popover>
       {name && value !== '' ? <input type="hidden" name={name} value={value} /> : null}
     </div>
+  );
+}
+
+/**
+ * O painel aberto: busca e lista. Monta a cada abertura (o Popover desmonta ao fechar), então a
+ * busca começa vazia e a opção atual vem destacada e à vista, em vez de a lista abrir no topo.
+ */
+function ComboboxPanel({
+  items,
+  value,
+  listId,
+  onPick,
+}: {
+  items: SelectOption[];
+  value: string;
+  listId: string;
+  onPick: (value: string) => void;
+}) {
+  const t = useTranslations('common.combobox');
+  const [active, setActive] = useState(value || EMPTY_KEY);
+  const list = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const current = list.current?.querySelector('[data-checked]');
+    if (!list.current || !current) return;
+    const box = list.current.getBoundingClientRect();
+    const row = current.getBoundingClientRect();
+    list.current.scrollTop += row.top - box.top - (list.current.clientHeight - row.height) / 2;
+  }, []);
+
+  return (
+    <Command
+      value={active}
+      onValueChange={setActive}
+      // Filtro nosso: o cmdk chaveia o item pelo valor, e a busca olha o rótulo e os outros nomes
+      // (palavras parciais, sem acento, com erro de digitação). O número devolvido é a
+      // relevância: o cmdk ordena por ele e esconde os de zero.
+      filter={(_key, search, keywords) => searchScore(keywords ?? [], search)}
+    >
+      <CommandInput placeholder={t('search')} aria-label={t('search')} />
+      <CommandList id={listId} ref={list}>
+        <CommandEmpty>{t('empty')}</CommandEmpty>
+        <CommandGroup>
+          {items.map((item) => (
+            <CommandItem
+              key={item.value || EMPTY_KEY}
+              value={item.value || EMPTY_KEY}
+              keywords={[item.label, ...(item.keywords ?? [])]}
+              data-testid={`option-${item.value || 'empty'}`}
+              data-checked={item.value === value ? '' : undefined}
+              onSelect={() => onPick(item.value)}
+              className="justify-between data-[checked]:font-semibold"
+            >
+              <span className="truncate">{item.label}</span>
+              {item.value === value ? (
+                <CheckIcon aria-hidden="true" className="size-4 shrink-0" />
+              ) : null}
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
   );
 }

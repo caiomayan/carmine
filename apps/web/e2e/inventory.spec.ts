@@ -109,6 +109,51 @@ test('catálogo: busca tolerante (parcial, erro de digitação, inglês) e orden
   await expect(first).toContainText(/Luvas|Faixas/);
 });
 
+test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, em inglês e sem acento', async ({
+  page,
+}) => {
+  await page.goto('/inventario/adicionar');
+  const search = page.getByRole('combobox', { name: 'Buscar na lista' });
+  const options = page.getByRole('option');
+
+  // Arma: "a1 m4" (código misturado, fora de ordem) acha só a M4A1-S; Enter escolhe e filtra.
+  await page.getByLabel('Arma').click();
+  await search.fill('a1 m4');
+  await expect(options).toHaveText(['M4A1-S']);
+  await search.press('Enter');
+  await expect(page).toHaveURL(/arma=M4A1-S/);
+  await expect(search).toBeHidden();
+
+  // Ao reabrir, a opção atual vem destacada e à vista, e a busca começa vazia.
+  await page.getByLabel('Arma').click();
+  await expect(search).toHaveValue('');
+  const current = page.getByTestId('option-M4A1-S');
+  await expect(current).toHaveAttribute('data-selected', 'true');
+  await expect(current).toBeInViewport();
+  await page.keyboard.press('Escape');
+
+  // "knife" (inglês) acha as facas; o nome original acha o PT-BR.
+  await page.getByRole('button', { name: 'Facas', exact: true }).click();
+  await page.getByLabel('Arma').click();
+  await search.fill('knife');
+  await expect(options.first()).toBeVisible();
+  expect(await options.count()).toBeGreaterThan(10);
+  await search.fill('butterfly');
+  await expect(options).toHaveText(['Canivete Borboleta']);
+  await page.keyboard.press('Escape');
+
+  // Coleção: sem acento, parcial, com erro de digitação e pelo nome em inglês ("Quilowatt").
+  await page.getByRole('button', { name: 'Armas', exact: true }).click();
+  await page.getByLabel('Coleção').click();
+  for (const query of ['colecao quilowatt', 'quilowat', 'kilowatt', 'kilowtat']) {
+    await search.fill(query);
+    await expect(options, query).toHaveText(['A Coleção Quilowatt']);
+  }
+  await search.press('Enter');
+  await expect(page).toHaveURL(/colecao=A\+Cole%C3%A7%C3%A3o\+Quilowatt/);
+  await expect(page.getByLabel('Coleção')).toHaveText('A Coleção Quilowatt');
+});
+
 test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot é um Select', async ({
   page,
 }) => {
@@ -120,6 +165,9 @@ test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot 
   await category.click();
   // Sem chave de tradução crua na lista; a busca acha sem acento e sem ordem.
   await expect(page.getByRole('option', { name: /^#CSGO/ })).toHaveCount(0);
+  // O nome em inglês e o PT-BR acham a mesma categoria.
+  await page.getByRole('combobox', { name: 'Buscar na lista' }).fill('antwerp 2022');
+  await expect(page.getByRole('option', { name: 'Antuérpia 2022 da PGL' })).toBeVisible();
   await page.getByRole('combobox', { name: 'Buscar na lista' }).fill('2013 dreamhack winter');
   await page.getByRole('option').first().click();
   await expect(category).toContainText('DreamHack Winter 2013');

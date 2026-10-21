@@ -84,6 +84,49 @@ describe('busca tolerante', () => {
   });
 });
 
+describe('busca nas opções dos Combobox (Arma, Coleção, categoria)', () => {
+  it('"a1 m4" acha a M4A1-S: pedaço de duas letras com número vale dentro da palavra', () => {
+    expect(matchesSearch('M4A1-S', 'a1 m4')).toBe(true);
+    expect(matchesSearch('M4A1-S', 'm4 a1')).toBe(true);
+    expect(matchesSearch('M4A1-S', 'a1')).toBe(true);
+    // A M4A4 não tem "a1"; e duas letras sem número seguem exatas (nada de ruído no meio).
+    expect(matchesSearch('M4A4', 'a1 m4')).toBe(false);
+    expect(matchesSearch('Karambit', 'ra')).toBe(false);
+    expect(matchesSearch('Desert Eagle', 'es')).toBe(false);
+  });
+
+  it('número puro de dois dígitos não casa no meio de código ("20" não é a P2000)', () => {
+    expect(matchesSearch('P2000', '20')).toBe(false);
+    expect(matchesSearch('P2000', 'p2000')).toBe(true);
+  });
+
+  it('coleção: sem acento, parcial, com erro de digitação e em qualquer ordem', () => {
+    const collection = 'Coleção Kilowatt';
+    for (const query of ['colecao', 'colecao kilowatt', 'kilowatt colecao', 'kilowa', 'kilowat']) {
+      expect(matchesSearch(collection, query), query).toBe(true);
+    }
+    // Um erro de digitação (4 a 7 letras) e dois (8 ou mais).
+    expect(matchesSearch(collection, 'colcao')).toBe(true);
+    expect(matchesSearch(collection, 'kilowtat')).toBe(true);
+    expect(matchesSearch(collection, 'colecao dust')).toBe(false);
+  });
+
+  it('aceita vários textos por opção: o nome em PT-BR e o original em inglês', () => {
+    const butterfly = ['Faca Borboleta', 'Butterfly Knife', 'faca knife'];
+    expect(searchScore(butterfly, 'butterfly')).toBeGreaterThan(0);
+    expect(searchScore(butterfly, 'knife')).toBeGreaterThan(0);
+    expect(searchScore(butterfly, 'borbol')).toBeGreaterThan(0);
+    expect(searchScore(butterfly, 'borboleta knife')).toBeGreaterThan(0);
+    expect(searchScore(butterfly, 'luvas')).toBe(0);
+  });
+
+  it('o nome inteiro ainda ganha desempate quando há mais de um texto', () => {
+    expect(searchScore(['AK-47', 'weapon'], 'ak 47')).toBeGreaterThan(
+      searchScore(['Skin do AK-47', 'weapon'], 'ak 47'),
+    );
+  });
+});
+
 describe('relevância: exato, depois prefixo, depois trecho, depois aproximado', () => {
   const score = (text: string, query: string) => searchScore(text, query);
 

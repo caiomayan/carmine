@@ -25,3 +25,13 @@ export type Rarity = (typeof RARITIES)[number];
 
 /** Itens por página no catálogo e nas buscas de stickers e charms. */
 export const CATALOG_PAGE_SIZE = 48;
+
+/** Uma opção de filtro de lista longa: o valor da URL, o rótulo e outros nomes que a busca acha. */
+export type FacetOption = { value: string; label: string; keywords: string[] };
+
+/**
+ * Versão do formato da resposta de `/inventario/aplicaveis`. Vai na URL do pedido porque a resposta
+ * fica em cache no navegador e na borda por até um dia: quem mudar o formato (`AttachmentPage`)
+ * sobe este número, e o cache antigo deixa de valer em vez de chegar ao código novo no formato velho.
+ */
+export const ATTACHMENTS_PAYLOAD_VERSION = '2';
