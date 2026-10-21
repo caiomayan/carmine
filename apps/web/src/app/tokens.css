@@ -44,6 +44,15 @@
   --scrim-100: 28%;
   /* texto de apoio sobre o mapa: um passo mais claro que o cinza de sempre no escuro, e quase o texto no claro (o mapa por baixo varia) */
   --on-map-muted: color-mix(in srgb, var(--text) 60%, var(--muted));
+  /* lados do jogo (bolinhas CT e TR): cor de contexto, ver shared/liberty-status.css */
+  --side-ct: #6aaaf5;
+  --side-t: #f29a45;
+  /* fases do desgaste na barra do float, da Nova de Fábrica (verde) à Veterana de Guerra (vermelho) */
+  --wear-fn: var(--status-online);
+  --wear-mw: #b4b660;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #e0905c;
+  --wear-bs: var(--status-danger);
 }
 
 [data-theme="light"] {
@@ -71,6 +80,13 @@
   --scrim-70: 62%;
   --scrim-100: 14%;
   --on-map-muted: color-mix(in srgb, var(--text) 88%, var(--bg));
+  --side-ct: #2d6fd6;
+  --side-t: #c75a00;
+  --wear-fn: var(--status-online);
+  --wear-mw: #6b6a1c;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #94490f;
+  --wear-bs: var(--status-danger);
 }
 
 /*

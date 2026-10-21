@@ -11,6 +11,7 @@ import {
 import { SearchIcon } from '@/components/icons/animated/search';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
 import type { AttachmentEntry, AttachmentPage } from '@/lib/catalog/catalog';
 import { type AttachmentType, CATALOG_PAGE_SIZE } from '@/lib/catalog/types';
 import type { AttachmentLabel } from '@/lib/inventory/item-form';
@@ -122,35 +123,18 @@ export function AttachmentPicker({
             />
           </div>
           {type === 'sticker' && page && page.facets.categories.length > 0 ? (
-            <div className="relative">
+            <div>
               <label htmlFor={categoryId} className="sr-only">
                 {t('category')}
               </label>
-              <select
+              <Combobox
                 id={categoryId}
                 value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                className="min-h-(--tap) w-full appearance-none truncate rounded-md bg-surface-2 pr-8 pl-3 text-[14px]"
-              >
-                <option value="">{t('allCategories')}</option>
-                {page.facets.categories.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+                onValueChange={setCategory}
+                emptyLabel={t('allCategories')}
+                triggerClassName="bg-surface-2 text-[14px] hover:bg-line"
+                options={page.facets.categories.map((value) => ({ value, label: value }))}
+              />
             </div>
           ) : null}
         </div>

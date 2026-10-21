@@ -1,7 +1,10 @@
+import type { LoadoutSide } from '@carmine/contracts';
 import type { Route } from 'next';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
+import { TeamDots } from '@/components/team-dots';
 import type { Rarity } from '@/lib/catalog/types';
+import type { CardAttachment } from '@/lib/inventory/cards';
 import { cn } from '@/lib/utils';
 
 /**
@@ -58,17 +61,23 @@ export function ItemArt({
 
 /**
  * Cartão de Item da Liberty (tela Loadout da referência): superfície sem borda que clareia no
- * hover, imagem no alto, arma em semibold e a skin em secundário. `badges` fica no canto
- * superior direito (StatTrak, VIP); `index` escalona a entrada.
+ * hover, imagem no alto, skin em destaque e a arma em secundário. No canto superior direito ficam
+ * `badges` (StatTrak, VIP) e, por último, as bolinhas dos lados em que o Item está equipado
+ * (`sides`); dentro da área da imagem, os stickers (embaixo à esquerda) e o chaveiro (embaixo à
+ * direita). `index` escalona a entrada.
  */
 export function ItemTile({
   href,
   title,
   subtitle,
+  skinFirst = false,
   image,
   rarity,
   rarityLabel,
   badges,
+  sides,
+  stickers,
+  charm,
   meta,
   index = 0,
   selected = false,
@@ -79,10 +88,18 @@ export function ItemTile({
   href: string;
   title: string;
   subtitle: string | null;
+  /** Skins de arma, faca e luvas: o nome da skin domina e a arma vira a linha de apoio. */
+  skinFirst?: boolean;
   image: string;
   rarity: Rarity;
   rarityLabel: string;
   badges?: ReactNode;
+  /** Lados em que o Item está equipado: viram as bolinhas CT/TR no canto superior direito. */
+  sides?: readonly LoadoutSide[];
+  /** Stickers aplicados, em ícones no canto inferior esquerdo da imagem. */
+  stickers?: readonly CardAttachment[];
+  /** Chaveiro aplicado, em ícone no canto inferior direito da imagem. */
+  charm?: CardAttachment | null;
   /** Linha de detalhe (ex.: "2 stickers · charm"). */
   meta?: string;
   index?: number;
@@ -100,7 +117,7 @@ export function ItemTile({
       style={{ '--i': index } as CSSProperties}
       className={cn(
         'group/tile relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5',
-        'transition-[background-color,box-shadow] duration-(--dur-fast) ease-std hover:bg-surface-2',
+        'transition-[background-color,box-shadow] duration-(--dur-base) ease-std hover:bg-surface-2',
         selected && 'bg-surface-2 shadow-[inset_0_0_0_1.5px_var(--text)]',
         className,
       )}
@@ -108,23 +125,82 @@ export function ItemTile({
       <span className="relative block overflow-hidden rounded-md">
         <ItemArt
           src={image}
-          className="transition-transform duration-(--dur-slow) ease-out group-hover/tile:scale-[1.04] motion-reduce:transform-none"
+          className="transition-transform duration-500 ease-(--ease-out) group-hover/tile:scale-[1.04] motion-reduce:transform-none motion-reduce:duration-150"
         />
+        {stickers?.length || charm ? (
+          <span
+            data-testid="tile-attachments"
+            className="absolute inset-x-1.5 bottom-1 flex items-end justify-between gap-2"
+          >
+            <span className="flex min-w-0 items-end gap-0.5" data-testid="tile-stickers">
+              {stickers?.map((sticker, index) => (
+                <AttachmentIcon
+                  // biome-ignore lint/suspicious/noArrayIndexKey: o mesmo sticker pode estar em dois slots.
+                  key={`${sticker.id}-${index}`}
+                  attachment={sticker}
+                  className="h-4 md:h-[18px]"
+                />
+              ))}
+            </span>
+            {charm ? (
+              <span data-testid="tile-charm">
+                <AttachmentIcon attachment={charm} className="h-5 md:h-6" />
+              </span>
+            ) : null}
+          </span>
+        ) : null}
       </span>
-      <span className={cn('grid min-w-0 gap-0.5 pr-1', actionSpace && 'pr-9')}>
-        <span className="truncate text-[13.5px] font-semibold">{title}</span>
+      <span className={cn('grid min-w-0 gap-0.5 pr-1', actionSpace && 'pr-12')}>
+        <span className="truncate text-[14px] font-semibold">
+          {skinFirst && subtitle ? subtitle : title}
+        </span>
         <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
           <RarityDot rarity={rarity} label={rarityLabel} />
-          <span className="truncate">{subtitle ?? rarityLabel}</span>
+          <span className="truncate">
+            {skinFirst && subtitle ? title : (subtitle ?? rarityLabel)}
+          </span>
         </span>
         {meta ? (
           <span className="truncate pt-0.5 text-[11.5px] text-muted-foreground">{meta}</span>
         ) : null}
       </span>
-      {badges ? (
-        <span className="absolute top-2.5 right-2.5 flex items-center gap-1.5">{badges}</span>
+      {badges || sides?.length ? (
+        <span className="absolute top-2.5 right-2.5 flex items-center gap-2">
+          {badges}
+          {sides?.length ? <TeamDots sides={sides} /> : null}
+        </span>
       ) : null}
     </Link>
+  );
+}
+
+/** Ícone pequeno e sem fundo de um sticker ou chaveiro, sobre a imagem da arma. */
+function AttachmentIcon({
+  attachment,
+  className,
+}: {
+  attachment: CardAttachment;
+  className?: string;
+}) {
+  if (!attachment.image) return <span className="sr-only">{attachment.name}</span>;
+  return (
+    // biome-ignore lint/performance/noImgElement: imagens da CDN da cs2-lib, sem otimização no Next.
+    <img
+      src={attachment.image}
+      alt={attachment.name}
+      title={attachment.name}
+      width={40}
+      height={30}
+      loading="lazy"
+      decoding="async"
+      className={cn(
+        'w-auto object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]',
+        // Entra suave e dá um passo à frente com o cartão; sem movimento, só o fade curto.
+        'transition-[transform,opacity] duration-(--dur-base) ease-(--ease-out) starting:translate-y-1 starting:opacity-0',
+        'group-hover/tile:scale-110 motion-reduce:transform-none motion-reduce:starting:translate-y-0',
+        className,
+      )}
+    />
   );
 }
 
@@ -133,7 +209,7 @@ export function TileBadge({ children, className }: { children: ReactNode; classN
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-sm bg-background/80 px-1.5 py-1 label-caps text-[9.5px] tracking-[0.12em] text-foreground',
+        'inline-flex items-center gap-1 rounded-sm bg-background/80 px-1.5 py-1 label-caps text-[11px] tracking-[0.1em] text-foreground',
         className,
       )}
     >

@@ -137,7 +137,7 @@ export default async function InventoryPage() {
           </div>
 
           <div className="grid gap-3">
-            <h3 className="label-caps text-[10.5px]">{t('empty.pathTitle')}</h3>
+            <h3 className="label-caps text-[11px]">{t('empty.pathTitle')}</h3>
             <ol className="grid grid-cols-3 gap-2.5 max-md:grid-cols-1">
               {(['step1', 'step2', 'step3'] as const).map((step, index) => (
                 <li

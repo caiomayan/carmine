@@ -1,3 +1,4 @@
+import { newSteamId, signInByRequest } from './accounts';
 import { expect, test } from './fixtures';
 
 /**
@@ -29,14 +30,22 @@ const JS_BUDGET_KB = 275;
  * responde a eventos), e não só o HTML do servidor na tela.
  */
 const PAGES = [
-  { name: 'a home', path: '/', control: '[role="tablist"] [role="tab"]' },
-  { name: 'o editor', path: '/inventario/adicionar/222', control: '[data-testid="field-seed"]' },
+  { name: 'a home', path: '/', control: '[role="tablist"] [role="tab"]', signedIn: false },
+  {
+    name: 'o editor',
+    path: '/inventario/adicionar/222',
+    control: '[data-testid="field-seed"]',
+    signedIn: false,
+  },
+  // Com a Conta entrada: deslogado o Loadout é só um convite para entrar, sem o quadro.
+  { name: 'o Loadout', path: '/loadout', control: '[data-card]', signedIn: true },
 ] as const;
 
 for (const target of PAGES) {
   test(`${target.name} fica interativo em até 4 s no Slow 4G de celular`, async ({ page }) => {
     test.skip(process.env.E2E_DEV === '1', 'mede o build de produção');
     await page.setViewportSize({ width: 390, height: 844 });
+    if (target.signedIn) await signInByRequest(page, newSteamId());
     const cdp = await page.context().newCDPSession(page);
     await cdp.send('Network.enable');
     await cdp.send('Network.emulateNetworkConditions', SLOW_4G);

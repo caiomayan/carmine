@@ -7,8 +7,9 @@ import {
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLog } from '@/components/staff/audit-log';
-import { Field, Select, TextInput } from '@/components/staff/fields';
+import { Field, TextInput } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { SimpleSelect } from '@/components/ui/select';
 import { getServerSession, readStaff } from '@/lib/api-server';
 
 type SearchParams = Promise<Record<'acao' | 'autor' | 'alvo', string | string[] | undefined>>;
@@ -54,14 +55,16 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
         className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
       >
         <Field id="acao" label={t('filter')}>
-          <Select id="acao" name="acao" defaultValue={filters.action ?? ''}>
-            <option value="">{t('allActions')}</option>
-            {staffAuditActionSchema.options.map((value) => (
-              <option key={value} value={value}>
-                {t(`actions.${value}`)}
-              </option>
-            ))}
-          </Select>
+          <SimpleSelect
+            id="acao"
+            name="acao"
+            defaultValue={filters.action ?? ''}
+            emptyLabel={t('allActions')}
+            options={staffAuditActionSchema.options.map((value) => ({
+              value,
+              label: t(`actions.${value}`),
+            }))}
+          />
         </Field>
         <Field
           id="autor"

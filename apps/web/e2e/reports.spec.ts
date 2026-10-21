@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import type { Browser, Page } from '@playwright/test';
 import { grantStaffRole, newSteamId, signInByRequest } from './accounts';
-import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
 import { connectPlayer, createServer, type E2eServer } from './live-servers';
 
 /**
@@ -135,7 +135,7 @@ test.describe('Denúncias', () => {
     await expect(owner.page.getByTestId('apply-from-report')).toContainText(
       'clipe enviado no Discord',
     );
-    await owner.page.getByTestId('sanction-category').selectOption('cheat');
+    await chooseOption(owner.page, owner.page.getByTestId('sanction-category'), 'cheat');
     await expect(owner.page.getByTestId('proof-witness')).toBeVisible();
     await owner.page.context().close();
   });

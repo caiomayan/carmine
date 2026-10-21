@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useId } from 'react';
-import { Select } from '@/components/staff/fields';
+import { SimpleSelect } from '@/components/ui/select';
 
 export interface WeekOption {
   /** Segunda-feira (`YYYY-MM-DD`). */
@@ -13,8 +13,8 @@ export interface WeekOption {
 }
 
 /**
- * Seletor de semana: um `<select>` nativo (teclado e leitor de tela de graça) que troca a URL.
- * A semana escolhida fica no endereço, então o Ranking é compartilhável.
+ * Seletor de semana: um Select que troca a URL; a semana escolhida fica no endereço, então o
+ * Ranking é compartilhável. Com uma semana só não há o que escolher, e vira texto.
  */
 export function WeekSelect({
   label,
@@ -27,27 +27,30 @@ export function WeekSelect({
 }) {
   const router = useRouter();
   const id = useId();
+  if (options.length <= 1) {
+    return (
+      <p className="flex items-center gap-2.5 text-sm" data-testid="week-label">
+        <span className="label-caps text-[10.5px] text-muted-foreground">{label}</span>
+        {options.find((option) => option.value === value)?.label ?? options[0]?.label}
+      </p>
+    );
+  }
   return (
     <div className="flex items-center gap-2.5 max-md:w-full">
       <label htmlFor={id} className="label-caps text-[10.5px] text-muted-foreground">
         {label}
       </label>
-      <Select
+      <SimpleSelect
         className="min-w-0 max-md:flex-1 md:w-[240px]"
         id={id}
         value={value}
         data-testid="week-select"
-        onChange={(event) => {
-          const next = options.find((option) => option.value === event.target.value);
+        onValueChange={(selected) => {
+          const next = options.find((option) => option.value === selected);
           if (next) router.push(next.href as '/ranking');
         }}
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </Select>
+        options={options}
+      />
     </div>
   );
 }

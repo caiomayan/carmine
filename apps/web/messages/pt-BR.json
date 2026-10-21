@@ -5,7 +5,18 @@
     "description": "Servidores comunitários de Counter-Strike 2. Entre, equipe e veja o seu Loadout no jogo."
   },
   "common": {
-    "close": "Fechar"
+    "team": {
+      "equippedIn": {
+        "ct": "Equipada no CT",
+        "t": "Equipada no TR"
+      }
+    },
+    "close": "Fechar",
+    "cancel": "Cancelar",
+    "combobox": {
+      "search": "Buscar na lista",
+      "empty": "Nada encontrado"
+    }
   },
   "shell": {
     "skipToContent": "Pular para o conteúdo",
@@ -224,10 +235,7 @@
       "edit": "Editar",
       "remove": "Remover",
       "statTrak": "StatTrak™",
-      "stickers": "{count, plural, one {# sticker} other {# stickers}}",
-      "charm": "1 charm",
       "vip": "VIP",
-      "equipped": "Equipado: {sides}",
       "equipIn": {
         "ct": "Equipar em CT",
         "t": "Equipar em TR",
@@ -328,6 +336,38 @@
       "title": "Painel",
       "heading": "Filtros",
       "body": "Painéis laterais servem para filtros e detalhes sem sair da página."
+    },
+    "select": {
+      "title": "Select",
+      "label": "Modo",
+      "empty": "Todos os Modos",
+      "options": {
+        "retake": "Retake",
+        "deathmatch": "Deathmatch"
+      }
+    },
+    "combobox": {
+      "title": "Combobox",
+      "label": "Arma",
+      "empty": "Todas",
+      "options": {
+        "ak47": "AK-47",
+        "aug": "AUG",
+        "awp": "AWP",
+        "bayonet": "Baioneta",
+        "deagle": "Desert Eagle",
+        "glock": "Glock-18",
+        "m4a1s": "M4A1-S",
+        "m4a4": "M4A4",
+        "usps": "USP-S"
+      }
+    },
+    "confirm": {
+      "title": "Confirmação",
+      "open": "Excluir Preset",
+      "heading": "Excluir o Preset Treino?",
+      "body": "Os Itens continuam no Inventário; só o Preset some.",
+      "confirm": "Excluir"
     },
     "counter": {
       "title": "Contador",
@@ -556,7 +596,7 @@
       "knife": "Facas",
       "glove": "Luvas",
       "agent": "Agentes",
-      "musickit": "Music kits"
+      "musickit": "Kits de música"
     },
     "rarities": {
       "consumer": "Nível Consumidor",
@@ -620,12 +660,13 @@
     "nameTagHint": "Até 20 caracteres.",
     "vipLocked": "Exclusivo do VIP",
     "vipAttributes": "StatTrak e nametag fazem parte do VIP. Você pode ver como ficam, mas só salva com um Período VIP ativo.",
-    "vipItem": "Agentes e music kits fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
+    "vipItem": "Agentes e kits de música fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
     "noAttributes": "Este Item não tem float, seed nem stickers: é só adicionar.",
     "stickers": "Stickers",
     "stickersCount": "{count} de {max}",
     "addSticker": "Adicionar sticker",
     "stickerLabel": "Sticker {n}: {name}",
+    "charmLabel": "Chaveiro: {name}",
     "slot": "Posição na arma",
     "slotN": "Slot {n}",
     "rotation": "Rotação",
@@ -635,22 +676,27 @@
     "offsetY": "Ajuste vertical",
     "removeSticker": "Tirar {name}",
     "moreOptions": "Ajuste fino",
-    "charm": "Charm",
-    "addCharm": "Adicionar charm",
-    "charmSeed": "Padrão do charm",
-    "charmPosition": "Posição do charm",
+    "charm": "Chaveiro",
+    "addCharm": "Adicionar chaveiro",
+    "charmSeed": "Padrão do chaveiro",
+    "charmPosition": "Posição na arma",
     "positionDefault": "Padrão da arma",
     "positionCustom": "Personalizada",
+    "charmSlotN": "Posição {n}",
+    "charmSlotFirst": "Posição {n} · traseira da arma",
+    "charmSlotLast": "Posição {n} · ponta da arma",
+    "charmFineHint": "Escolha uma posição para ajustar o chaveiro com precisão.",
+    "onViewer": "Arraste no 3D",
     "axisX": "X",
     "axisY": "Y",
     "axisZ": "Z",
     "removeCharm": "Tirar {name}",
     "picker": {
       "sticker": "Escolher sticker",
-      "charm": "Escolher charm",
+      "charm": "Escolher chaveiro",
       "search": "Buscar",
       "searchPlaceholderSticker": "Nome, time ou campeonato",
-      "searchPlaceholderCharm": "Nome do charm",
+      "searchPlaceholderCharm": "Nome do chaveiro",
       "category": "Campeonato ou coleção",
       "allCategories": "Todos",
       "results": "{total, plural, =0 {Nada encontrado} one {# resultado} other {# resultados}}",
@@ -682,9 +728,9 @@
       "stickers_not_allowed": "Só skins de arma aceitam stickers.",
       "too_many_stickers": "Cabem até 5 stickers.",
       "invalid_sticker": "Confira este sticker: cada um precisa de uma posição diferente na arma.",
-      "keychains_not_allowed": "Só skins de arma aceitam charm.",
-      "too_many_keychains": "Cabe só 1 charm.",
-      "invalid_keychain": "Confira o charm: o padrão vai de 1 a 100.000.",
+      "keychains_not_allowed": "Só skins de arma aceitam chaveiro.",
+      "too_many_keychains": "Cabe só 1 chaveiro.",
+      "invalid_keychain": "Confira o chaveiro: o padrão vai de 1 a 100.000.",
       "item_id_immutable": "Não dá para trocar a skin de um Item. Remova este e adicione outro.",
       "vip_required": "Isto exige um Período VIP ativo.",
       "inventory_full": "Seu Inventário chegou a 300 Itens. Remova um para adicionar outro.",
@@ -696,7 +742,8 @@
     "viewer": {
       "label": "Prévia de {name}",
       "loading": "Carregando o 3D",
-      "hint": "Arraste para girar",
+      "hint": "Arraste para girar · Shift + arraste para mover · Roda para aproximar",
+      "hintTouch": "Arraste para girar",
       "frame": "Visualizador 3D de {name}",
       "reasons": {
         "no-webgl": "Este navegador não desenha 3D; mostrando a imagem.",
@@ -706,11 +753,8 @@
         "rate-limited": "O 3D atingiu o limite de uso por agora; mostrando a imagem."
       },
       "retry": "Tentar o 3D de novo",
-      "dragHint": "Arraste o item selecionado na prévia"
+      "dragHint": "Arraste o item selecionado para movê-lo; fora dele, arraste para girar."
     },
-    "drag3d": "Arrastar no 3D",
-    "drag3dLabel": "Arrastar {name} na prévia 3D",
-    "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado.",
     "addAndEquip": "Adicionar e equipar"
   },
   "loadout": {
@@ -727,7 +771,6 @@
       "both": "CT e TR"
     },
     "groups": {
-      "gear": "Faca, luvas e personagem",
       "secondary": "Pistolas",
       "smg": "Submetralhadoras",
       "rifle": "Rifles",
@@ -738,14 +781,13 @@
       "knife": "Faca",
       "gloves": "Luvas",
       "agent": "Agente",
-      "musicKit": "Music kit"
+      "musicKit": "Kit de música"
     },
     "defaultWeapon": "Arma padrão",
     "defaultGear": "Padrão do jogo",
-    "defaultAgent": "Agente do mapa",
     "notInGame": {
       "short": "Fora do jogo",
-      "vip_inactive": "Agentes e music kits são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
+      "vip_inactive": "Agentes e kits de música são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
       "plugin_unsupported": "O servidor ainda não consegue aplicar este Item no jogo. Ele continua equipado e no seu Inventário."
     },
     "stripped": {
@@ -754,15 +796,26 @@
       "nameTag": "nametag",
       "body": "Sem Período VIP ativo, {attributes} não vão para o jogo. O Item vai, e eles voltam com o VIP."
     },
+    "board": {
+      "categories": "Categorias",
+      "columnCount": "{equipped} de {total} com Item",
+      "cardEquipped": "{slot}: {item}. Equipado em {sides}.",
+      "cardEmpty": "{slot}: {default}.",
+      "cardOutOfGame": "Fora do jogo."
+    },
     "panel": {
       "label": "Slot selecionado",
       "empty": "Nada equipado: no jogo você usa a Arma padrão.",
       "emptyGear": "Nada equipado: no jogo você usa o padrão do jogo.",
+      "pick": "Trocar Item",
+      "pickEmpty": "Equipar Item",
+      "pickerTitle": "Escolher: {slot}",
+      "pickerDescription": "Itens do seu Inventário que cabem neste slot.",
       "choose": "Do seu Inventário",
       "none": "Você não tem Itens para este slot.",
       "addFromCatalog": "Adicionar do catálogo",
       "bothSides": "Equipar também em {side}",
-      "current": "Equipado",
+      "rarityStatTrak": "{rarity} · StatTrak™",
       "equip": "Equipar {name}",
       "unequip": "Desequipar",
       "edit": "Editar Item",
@@ -780,8 +833,8 @@
       "inGame": "{item} equipado em {sides}. No servidor, digite !ws ou reconecte para ver no jogo."
     },
     "vip": {
-      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
-      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, kits de música, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, kits de música, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
       "ended_today": "Seu VIP acabou hoje. Os Itens VIP continuam no seu Inventário, mas não vão para o jogo, e os Presets extras ficaram somente leitura."
     },
     "presets": {
@@ -1110,6 +1163,9 @@
       "title": "Exclusão de dados",
       "anonymized": "Conta anonimizada por um pedido de exclusão de dados. O SteamID64 fica só enquanto o ban valer.",
       "submit": "Anonimizar a Conta",
+      "confirmTitle": "Anonimizar esta Conta?",
+      "confirmBody": "Isto apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta.",
+      "confirmLabel": "Anonimizar",
       "hint": "Para um pedido de exclusão que chegou pelo contato, depois de confirmar que a pessoa é dona da Conta. Apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta. Ficam as punições e o log de auditoria; com um ban valendo, o SteamID64 fica até ele acabar.",
       "staff": "Contas da Staff saem da Staff antes de serem anonimizadas.",
       "ownerOnly": "Só o Dono executa pedidos de exclusão de dados.",

@@ -26,6 +26,7 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { SectionTitle } from '@/components/section-title';
 import { useCopy } from '@/components/servers/use-copy';
 import { Button } from '@/components/ui/button';
+import { SimpleSelect } from '@/components/ui/select';
 import { sanctionLength } from '@/lib/moderation';
 import { recentWeekStarts } from '@/lib/ranking';
 import { canRevoke, type StaffViewer, sanctionGuard, sanctionState } from '@/lib/staff';
@@ -33,7 +34,7 @@ import { cn } from '@/lib/utils';
 import { ActionForm } from './action-form';
 import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 import { AuditEntries } from './audit-entries';
-import { Field, Select, TextInput } from './fields';
+import { Field, TextInput } from './fields';
 import { RoleTag, SanctionTypeTags } from './tags';
 import { useStaffRequest } from './use-staff-request';
 
@@ -540,30 +541,23 @@ function RankingPanel({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id={`${id}-mode`} label={t('mode')}>
-            <Select
+            <SimpleSelect
               id={`${id}-mode`}
               value={mode}
-              onChange={(event) => setMode(gameModeSchema.parse(event.target.value))}
-            >
-              {gameModeSchema.options.map((value) => (
-                <option key={value} value={value}>
-                  {tr(`modes.${value}`)}
-                </option>
-              ))}
-            </Select>
+              onValueChange={(next) => setMode(gameModeSchema.parse(next))}
+              options={gameModeSchema.options.map((value) => ({
+                value,
+                label: tr(`modes.${value}`),
+              }))}
+            />
           </Field>
           <Field id={`${id}-week`} label={t('week')}>
-            <Select
+            <SimpleSelect
               id={`${id}-week`}
               value={week}
-              onChange={(event) => setWeek(event.target.value)}
-            >
-              {weeks.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </Select>
+              onValueChange={setWeek}
+              options={weeks.map((value) => ({ value, label: value }))}
+            />
           </Field>
         </div>
       </ActionForm>
@@ -607,6 +601,11 @@ function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: 
         description={t('hint')}
         submitLabel={t('submit')}
         doneLabel={t('done')}
+        confirmation={{
+          title: t('confirmTitle'),
+          description: t('confirmBody'),
+          confirmLabel: t('confirmLabel'),
+        }}
         testId="erasure-form"
         onSubmit={async (reason) => {
           const result = await request(
@@ -673,18 +672,18 @@ function RolePanel({
           }}
         >
           <Field id={`${id}-role`} label={t('role.label')}>
-            <Select
+            <SimpleSelect
               id={`${id}-role`}
               value={role}
-              onChange={(event) => setRole(event.target.value)}
-            >
-              <option value="none">{t('roles.none')}</option>
-              {(['moderator', 'admin', 'owner'] as StaffRole[]).map((r) => (
-                <option key={r} value={r}>
-                  {t(`roles.${r}`)}
-                </option>
-              ))}
-            </Select>
+              onValueChange={setRole}
+              options={[
+                { value: 'none', label: t('roles.none') },
+                ...(['moderator', 'admin', 'owner'] as StaffRole[]).map((r) => ({
+                  value: r,
+                  label: t(`roles.${r}`),
+                })),
+              ]}
+            />
           </Field>
         </ActionForm>
       ) : (

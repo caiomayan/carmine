@@ -1,5 +1,7 @@
 import { CS2_ITEMS, CS2Economy, type CS2EconomyItem } from '@ianlucas/cs2-lib';
 import { brazilian } from '@ianlucas/cs2-lib/translations/brazilian';
+import { english } from '@ianlucas/cs2-lib/translations/english';
+import { indexText, type SearchDoc, scoreDoc } from '../option-search';
 import {
   type AttachmentType,
   CATALOG_PAGE_SIZE,
@@ -149,22 +151,6 @@ export function catalogEntry(id: number): CatalogEntry | undefined {
   return byId?.get(id);
 }
 
-/** Minúsculas e sem acentos, para a busca não depender de como a pessoa digita. */
-export function normalize(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
-}
-
-function matchesQuery(haystack: string, query: string | undefined): boolean {
-  if (!query) return true;
-  return normalize(query)
-    .split(/\s+/)
-    .filter(Boolean)
-    .every((token) => haystack.includes(token));
-}
-
 export type CatalogFilters = {
   q?: string;
   type?: CatalogType;
@@ -180,15 +166,52 @@ export type CatalogPage = {
   facets: { weapons: string[]; collections: string[]; rarities: Rarity[] };
 };
 
-const haystacks = new WeakMap<CatalogEntry | AttachmentEntry, string>();
-function haystackOf(entry: CatalogEntry | AttachmentEntry): string {
-  let haystack = haystacks.get(entry);
-  if (haystack === undefined) {
+/** O que a busca acha além do nome: o tipo nos dois idiomas ("knife" acha as facas). */
+const TYPE_WORDS: Record<CatalogType, string> = {
+  weapon: 'arma weapon',
+  knife: 'faca knife',
+  glove: 'luvas gloves',
+  agent: 'agente agent',
+  musickit: 'music kit trilha sonora',
+};
+
+/**
+ * Texto de busca de uma entrada: o nome em PT-BR, o original em inglês da lib e o tipo
+ * (principais), mais a coleção ou categoria nos dois idiomas (secundários). O tipo é principal
+ * para "gloves" achar as luvas antes das armas da "Coleção Luvas". Montado uma vez por entrada.
+ */
+const docs = new WeakMap<CatalogEntry | AttachmentEntry, SearchDoc>();
+function docOf(entry: CatalogEntry | AttachmentEntry): SearchDoc {
+  let doc = docs.get(entry);
+  if (!doc) {
+    const original = english[entry.id];
     const extra = 'collection' in entry ? entry.collection : entry.category;
-    haystack = normalize(`${entry.name} ${extra ?? ''}`);
-    haystacks.set(entry, haystack);
+    const originalExtra = original?.collectionName ?? original?.categoryName;
+    const type = 'collection' in entry ? TYPE_WORDS[entry.type] : '';
+    doc = indexText(
+      [entry.name, original?.name, type].filter((text): text is string => !!text),
+      [extra, originalExtra].filter(Boolean).join(' '),
+    );
+    docs.set(entry, doc);
   }
-  return haystack;
+  return doc;
+}
+
+/**
+ * As entradas que casam com a busca, da mais relevante para a menos (exato, prefixo, trecho,
+ * aproximado); sem busca, na ordem em que vieram. A ordem original desempata.
+ */
+function rank<T extends CatalogEntry | AttachmentEntry>(
+  entries: T[],
+  query: string | undefined,
+): T[] {
+  if (!query?.trim()) return entries;
+  const scored: { entry: T; score: number; order: number }[] = [];
+  entries.forEach((entry, order) => {
+    const score = scoreDoc(docOf(entry), query);
+    if (score > 0) scored.push({ entry, score, order });
+  });
+  return scored.sort((a, b) => b.score - a.score || a.order - b.order).map(({ entry }) => entry);
 }
 
 const distinct = (values: (string | null)[]) =>
@@ -201,11 +224,13 @@ export function searchCatalog(filters: CatalogFilters): CatalogPage {
   const all = catalogIndex();
   const ofType = filters.type ? all.filter((entry) => entry.type === filters.type) : all;
   const ofWeapon = filters.weapon ? ofType.filter((e) => e.weapon === filters.weapon) : ofType;
-  const matches = ofWeapon.filter(
-    (entry) =>
-      (!filters.rarity || entry.rarity === filters.rarity) &&
-      (!filters.collection || entry.collection === filters.collection) &&
-      matchesQuery(haystackOf(entry), filters.q),
+  const matches = rank(
+    ofWeapon.filter(
+      (entry) =>
+        (!filters.rarity || entry.rarity === filters.rarity) &&
+        (!filters.collection || entry.collection === filters.collection),
+    ),
+    filters.q,
   );
   const rarities = new Set(ofWeapon.map((entry) => entry.rarity));
   return {
@@ -220,6 +245,7 @@ export function searchCatalog(filters: CatalogFilters): CatalogPage {
 }
 
 const attachments: Partial<Record<AttachmentType, AttachmentEntry[]>> = {};
+const attachmentsById = new Map<number, AttachmentEntry>();
 
 function attachmentIndex(type: AttachmentType): AttachmentEntry[] {
   let list = attachments[type];
@@ -230,13 +256,16 @@ function attachmentIndex(type: AttachmentType): AttachmentEntry[] {
         id: item.id,
         type,
         name: clean(item.name),
-        category: item.categoryName ? clean(item.categoryName) : null,
+        // Chave de tradução que a lib não resolveu ("#CSGO_..."): sem categoria, em vez de crua.
+        category:
+          item.categoryName && !item.categoryName.startsWith('#') ? clean(item.categoryName) : null,
         rarity: RARITY_BY_COLOR[item.rarityColor] ?? 'consumer',
         image: item.getImageUrl(),
       }))
       // Os mais novos primeiro: são os que a pessoa mais procura.
       .sort((a, b) => b.id - a.id);
     attachments[type] = list;
+    for (const entry of list) attachmentsById.set(entry.id, entry);
   }
   return list;
 }
@@ -259,11 +288,13 @@ export function searchAttachments(
   filters: AttachmentFilters,
 ): AttachmentPage {
   const all = attachmentIndex(type);
-  const matches = all.filter(
-    (entry) =>
-      (!filters.category || entry.category === filters.category) &&
-      (!filters.rarity || entry.rarity === filters.rarity) &&
-      matchesQuery(haystackOf(entry), filters.q),
+  const matches = rank(
+    all.filter(
+      (entry) =>
+        (!filters.category || entry.category === filters.category) &&
+        (!filters.rarity || entry.rarity === filters.rarity),
+    ),
+    filters.q,
   );
   return {
     items: matches.slice(0, pageLimit(filters.limit)),
@@ -276,7 +307,9 @@ export function attachmentEntry(id: number): AttachmentEntry | undefined {
   const item = economy().items.get(id);
   if (!item) return undefined;
   const type = item.isSticker() ? 'sticker' : item.isKeychain() ? 'charm' : null;
-  return type ? attachmentIndex(type).find((entry) => entry.id === id) : undefined;
+  if (!type) return undefined;
+  attachmentIndex(type);
+  return attachmentsById.get(id);
 }
 
 type SearchParamValue = string | string[] | undefined;

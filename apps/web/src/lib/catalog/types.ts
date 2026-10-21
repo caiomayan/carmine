@@ -25,3 +25,7 @@ export type Rarity = (typeof RARITIES)[number];
 
 /** Itens por página no catálogo e nas buscas de stickers e charms. */
 export const CATALOG_PAGE_SIZE = 48;
+
+/** Armas, facas e luvas têm skin: é o nome dela que distingue o cartão (a arma se repete). */
+export const hasSkinName = (type: CatalogType | null) =>
+  type === 'weapon' || type === 'knife' || type === 'glove';

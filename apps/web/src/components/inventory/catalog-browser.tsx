@@ -6,6 +6,8 @@ import { type ReactNode, useEffect, useId, useRef, useState, useTransition } fro
 import { SearchIcon } from '@/components/icons/animated/search';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
+import { type SelectOption, SimpleSelect } from '@/components/ui/select';
 import { CATALOG_TYPES, type CatalogType, type Rarity } from '@/lib/catalog/types';
 import { cn } from '@/lib/utils';
 
@@ -124,7 +126,7 @@ export function CatalogBrowser({
           />
         </div>
 
-        <fieldset className="flex flex-wrap items-center gap-1">
+        <fieldset className="flex flex-wrap items-center gap-1 max-md:-mx-(--mx) max-md:flex-nowrap max-md:overflow-x-auto max-md:px-(--mx) max-md:pb-1 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
           <legend className="sr-only">{labels.type}</legend>
           <TypeButton active={!type} onClick={() => navigate({ tipo: null, arma: null })}>
             {labels.allTypes}
@@ -140,12 +142,12 @@ export function CatalogBrowser({
           ))}
         </fieldset>
 
-        <div className="grid grid-cols-3 gap-2 max-md:grid-cols-1">
-          <FilterSelect
+        <div className="grid grid-cols-3 gap-2 max-md:grid-cols-2">
+          <FilterCombobox
             label={labels.weapon}
             value={weapon}
             empty={labels.allWeapons}
-            options={facets.weapons.map((w) => [w, w])}
+            options={facets.weapons.map(named)}
             onChange={(value) => navigate({ arma: value || null, colecao: null })}
             disabled={facets.weapons.length === 0}
           />
@@ -153,16 +155,17 @@ export function CatalogBrowser({
             label={labels.rarity}
             value={rarity}
             empty={labels.allRarities}
-            options={facets.rarities.map((r) => [r, labels.rarities[r]])}
+            options={facets.rarities.map((r) => ({ value: r, label: labels.rarities[r] }))}
             onChange={(value) => navigate({ raridade: value || null })}
           />
-          <FilterSelect
+          <FilterCombobox
             label={labels.collection}
             value={collection}
             empty={labels.allCollections}
-            options={facets.collections.map((c) => [c, c])}
+            options={facets.collections.map(named)}
             onChange={(value) => navigate({ colecao: value || null })}
             disabled={facets.collections.length === 0}
+            className="max-md:col-span-2"
           />
         </div>
 
@@ -212,7 +215,7 @@ function TypeButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'min-h-(--tap) rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground',
+        'min-h-(--tap) shrink-0 whitespace-nowrap rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground',
         'aria-pressed:bg-surface-2 aria-pressed:font-semibold aria-pressed:text-foreground',
       )}
     >
@@ -221,55 +224,74 @@ function TypeButton({
   );
 }
 
+const labelClass = 'label-caps text-[11px] text-muted-foreground';
+
+/** Armas e Coleções vêm da API só como nome: o valor da URL é o próprio nome. */
+const named = (name: string): SelectOption => ({ value: name, label: name });
+
+/** Filtro de lista curta (Raridade): Select. Valor vazio = sem filtro. */
 function FilterSelect({
   label,
   value,
   empty,
   options,
   onChange,
-  disabled,
 }: {
   label: string;
   value: string;
   empty: string;
-  options: [string, string][];
+  options: SelectOption[];
   onChange: (value: string) => void;
-  disabled?: boolean;
 }) {
   const id = useId();
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={id} className="label-caps text-[10px] text-muted-foreground">
+      <label htmlFor={id} className={labelClass}>
         {label}
       </label>
-      <div className="relative">
-        <select
-          id={id}
-          value={value}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-h-(--tap) w-full appearance-none truncate rounded-md bg-surface pr-9 pl-3 text-sm transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2 focus-visible:bg-surface-2 disabled:text-faint disabled:hover:bg-surface"
-        >
-          <option value="">{empty}</option>
-          {options.map(([optionValue, optionLabel]) => (
-            <option key={optionValue} value={optionValue}>
-              {optionLabel}
-            </option>
-          ))}
-        </select>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
+      <SimpleSelect
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        emptyLabel={empty}
+        options={options}
+      />
+    </div>
+  );
+}
+
+/** Filtro de lista longa (Arma, Coleção): Combobox com busca. Valor vazio = sem filtro. */
+function FilterCombobox({
+  label,
+  value,
+  empty,
+  options,
+  onChange,
+  disabled,
+  className,
+}: {
+  label: string;
+  value: string;
+  empty: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const id = useId();
+  return (
+    <div className={cn('grid gap-1.5', className)}>
+      <label htmlFor={id} className={labelClass}>
+        {label}
+      </label>
+      <Combobox
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        emptyLabel={empty}
+        disabled={disabled}
+        options={options}
+      />
     </div>
   );
 }

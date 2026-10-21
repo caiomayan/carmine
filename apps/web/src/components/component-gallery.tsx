@@ -34,6 +34,9 @@ import { LiveCount } from '@/components/live-count';
 import { SectionTitle } from '@/components/section-title';
 import { StatusDot } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { SimpleSelect } from '@/components/ui/select';
 
 export type GalleryLabels = {
   close: string;
@@ -42,6 +45,14 @@ export type GalleryLabels = {
   menu: { title: string; open: string; heading: string; items: string[] };
   dialog: { title: string; open: string; heading: string; body: string; confirm: string };
   sheet: { title: string; open: string; heading: string; body: string };
+  select: {
+    title: string;
+    label: string;
+    empty: string;
+    options: { value: string; label: string }[];
+  };
+  combobox: { title: string; label: string; empty: string; options: string[] };
+  confirm: { title: string; open: string; heading: string; body: string; confirm: string };
   counter: { title: string; add: string; label: string };
   status: { title: string; online: string; warn: string; danger: string; offline: string };
 };
@@ -59,6 +70,9 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 export function ComponentGallery({ labels }: { labels: GalleryLabels }) {
   const [on, setOn] = useState(true);
   const [count, setCount] = useState(2431);
+  const [mode, setMode] = useState('');
+  const [weapon, setWeapon] = useState('');
+  const [confirming, setConfirming] = useState(false);
 
   return (
     <div className="grid gap-4 pb-16 md:grid-cols-2">
@@ -125,6 +139,50 @@ export function ComponentGallery({ labels }: { labels: GalleryLabels }) {
             </SheetHeader>
           </SheetContent>
         </Sheet>
+      </Block>
+
+      <Block title={labels.select.title}>
+        <div className="grid w-full max-w-64 gap-1.5">
+          <label htmlFor="galeria-modo" className="text-[12.5px] font-semibold">
+            {labels.select.label}
+          </label>
+          <SimpleSelect
+            id="galeria-modo"
+            value={mode}
+            onValueChange={setMode}
+            emptyLabel={labels.select.empty}
+            options={labels.select.options}
+          />
+        </div>
+      </Block>
+
+      <Block title={labels.combobox.title}>
+        <div className="grid w-full max-w-64 gap-1.5">
+          <label htmlFor="galeria-arma" className="text-[12.5px] font-semibold">
+            {labels.combobox.label}
+          </label>
+          <Combobox
+            id="galeria-arma"
+            value={weapon}
+            onValueChange={setWeapon}
+            emptyLabel={labels.combobox.empty}
+            options={labels.combobox.options.map((option) => ({ value: option, label: option }))}
+          />
+        </div>
+      </Block>
+
+      <Block title={labels.confirm.title}>
+        <Button variant="ghost" onClick={() => setConfirming(true)}>
+          {labels.confirm.open}
+        </Button>
+        <ConfirmDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={labels.confirm.heading}
+          description={labels.confirm.body}
+          confirmLabel={labels.confirm.confirm}
+          onConfirm={() => setConfirming(false)}
+        />
       </Block>
 
       <Block title={labels.counter.title}>

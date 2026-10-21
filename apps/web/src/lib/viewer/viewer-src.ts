@@ -45,7 +45,6 @@ export function stringifyViewerItem(item: Cs2Item): string {
  */
 export function buildViewerSrc(item: Cs2Item, options: { key?: string } = {}): string {
   const url = new URL(VIEWER_EMBED_URL);
-  url.searchParams.set('halfRotation', '1');
   url.searchParams.set('item', stringifyViewerItem(item));
   if (options.key) url.searchParams.set('key', options.key);
   return url.toString();

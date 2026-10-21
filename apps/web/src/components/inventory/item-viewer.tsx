@@ -45,7 +45,7 @@ export function ItemViewer({
   always2d: boolean;
   stickers: AttachmentLabel[];
   charm: AttachmentLabel | null;
-  /** Sticker ou charm que a pessoa está arrastando no 3D (o resto fica parado). */
+  /** Sticker ou chaveiro que o 3D deixa arrastar agora (fora dele, arrastar gira a arma). */
   selection?: ViewerSelection;
   /** O Item depois de um arrasto no 3D (o evento `change` do viewer). */
   onMove?: (item: Cs2Item) => void;
@@ -212,7 +212,17 @@ export function ItemViewer({
             {t('loading')}
           </span>
         ) : ready ? (
-          <span>{selection ? t('dragHint') : t('hint')}</span>
+          <span className="grid gap-0.5">
+            <span>
+              <span className="pointer-coarse:hidden">{t('hint')}</span>
+              <span className="hidden pointer-coarse:inline">{t('hintTouch')}</span>
+            </span>
+            {selection ? (
+              <span className="pointer-coarse:hidden" data-testid="viewer-drag-hint">
+                {t('dragHint')}
+              </span>
+            ) : null}
+          </span>
         ) : (
           <span />
         )}
