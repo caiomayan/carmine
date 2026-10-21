@@ -56,7 +56,7 @@ function SelectContent({
         position={position}
         sideOffset={sideOffset}
         className={cn(
-          'relative z-50 max-h-[min(20rem,var(--radix-select-content-available-height))] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-[0_24px_64px_-24px_var(--shadow),0_0_0_1px_var(--line)]',
+          'relative z-50 max-h-[min(20rem,var(--radix-select-content-available-height))] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground [scrollbar-color:var(--line-strong)_transparent] [scrollbar-width:thin] shadow-[0_24px_64px_-24px_var(--shadow),0_0_0_1px_var(--line)]',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 motion-reduce:animate-none',
           position === 'popper' && 'w-(--radix-select-trigger-width)',
           className,
@@ -163,9 +163,17 @@ function SimpleSelect({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {emptyLabel ? <SelectItem value={EMPTY}>{emptyLabel}</SelectItem> : null}
+          {emptyLabel ? (
+            <SelectItem value={EMPTY} data-testid="option-empty">
+              {emptyLabel}
+            </SelectItem>
+          ) : null}
           {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
+            <SelectItem
+              key={option.value}
+              value={option.value}
+              data-testid={`option-${option.value}`}
+            >
               {option.label}
             </SelectItem>
           ))}

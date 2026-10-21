@@ -96,6 +96,7 @@ export function Combobox({
                     key={option.value}
                     // `value` é o que o cmdk filtra e devolve: o rótulo, único dentro da lista.
                     value={option.label}
+                    data-testid={`option-${option.value || 'empty'}`}
                     data-checked={option.value === value ? '' : undefined}
                     onSelect={() => {
                       onValueChange(option.value);

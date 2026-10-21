@@ -601,6 +601,11 @@ function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: 
         description={t('hint')}
         submitLabel={t('submit')}
         doneLabel={t('done')}
+        confirm={{
+          title: t('confirmTitle'),
+          description: t('confirmBody'),
+          confirmLabel: t('confirmLabel'),
+        }}
         testId="erasure-form"
         onSubmit={async (reason) => {
           const result = await request(

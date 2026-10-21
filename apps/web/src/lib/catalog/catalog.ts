@@ -230,7 +230,9 @@ function attachmentIndex(type: AttachmentType): AttachmentEntry[] {
         id: item.id,
         type,
         name: clean(item.name),
-        category: item.categoryName ? clean(item.categoryName) : null,
+        // Chave de tradução que a lib não resolveu ("#CSGO_..."): sem categoria, em vez de crua.
+        category:
+          item.categoryName && !item.categoryName.startsWith('#') ? clean(item.categoryName) : null,
         rarity: RARITY_BY_COLOR[item.rarityColor] ?? 'consumer',
         image: item.getImageUrl(),
       }))

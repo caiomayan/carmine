@@ -215,9 +215,10 @@ test('as abas por Modo e o seletor de semana trocam a URL compartilhável', asyn
   await page.getByTestId('ranking-tab-deathmatch').click();
   await expect(page).toHaveURL(/\/ranking\?modo=deathmatch$/);
 
-  const options = await page.getByTestId('week-select').locator('option').all();
-  expect(options.length).toBeGreaterThanOrEqual(1);
-  expect(await options[0]?.innerText()).toContain('(atual)');
+  // Com uma semana só o seletor vira texto; com mais, o botão mostra a semana atual.
+  await expect(page.getByTestId('week-select').or(page.getByTestId('week-label'))).toContainText(
+    '(atual)',
+  );
 });
 
 test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de visitantes', async ({

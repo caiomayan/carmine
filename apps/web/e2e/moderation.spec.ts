@@ -7,7 +7,7 @@ import {
   signInByRequest,
   signInFromHeader,
 } from './accounts';
-import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
 import { connectPlayer, createServer, heartbeat, keepBeating } from './live-servers';
 
 /**
@@ -58,12 +58,12 @@ async function applySanction(
   adjust?: { type: string; value: string; unit: string },
   proof?: { witness?: string; evidenceUrl?: string },
 ) {
-  await page.getByTestId('sanction-category').selectOption(category);
+  await chooseOption(page, page.getByTestId('sanction-category'), category);
   if (adjust) {
     const row = page.getByTestId('measure-row').first();
-    await row.getByTestId('measure-type').selectOption(adjust.type);
+    await chooseOption(page, row.getByTestId('measure-type'), adjust.type);
     await row.getByTestId('measure-value').fill(adjust.value);
-    await row.getByTestId('measure-unit').selectOption(adjust.unit);
+    await chooseOption(page, row.getByTestId('measure-unit'), adjust.unit);
   }
   if (proof?.witness) await page.getByTestId('proof-witness').fill(proof.witness);
   if (proof?.evidenceUrl) await page.getByTestId('proof-evidence').fill(proof.evidenceUrl);
@@ -214,7 +214,7 @@ test.describe('Painel da Staff', () => {
     const form = owner.page.getByTestId('apply-sanction');
 
     const expectSuggestion = async (category: string, offense: number, text: string) => {
-      await owner.page.getByTestId('sanction-category').selectOption(category);
+      await chooseOption(owner.page, owner.page.getByTestId('sanction-category'), category);
       const suggestion = owner.page.getByTestId('sanction-suggestion');
       await expect(suggestion).toHaveAttribute('data-offense', String(offense));
       await expect(owner.page.getByTestId('suggested-measures')).toHaveText(text);
@@ -229,12 +229,12 @@ test.describe('Painel da Staff', () => {
     await expect(form.getByTestId('measure-permanent')).toBeChecked();
     // Ban por cheat pede a prova; fora dele, o campo some.
     await expect(form.getByTestId('cheat-proof')).toBeVisible();
-    await form.getByTestId('measure-type').selectOption('kick');
+    await chooseOption(owner.page, form.getByTestId('measure-type'), 'kick');
     await expect(form.getByTestId('cheat-proof')).toHaveCount(0);
 
     // Ajustar a duração marca "Ajustado"; "Voltar à sugestão" restaura a tabela.
     await expectSuggestion('offensive_chat', 1, 'Aviso');
-    await form.getByTestId('measure-type').selectOption('gag');
+    await chooseOption(owner.page, form.getByTestId('measure-type'), 'gag');
     await expect(owner.page.getByTestId('suggestion-state')).toHaveText('Ajustado pela Staff');
     await form.getByRole('button', { name: 'Voltar à sugestão' }).click();
     await expect(owner.page.getByTestId('suggestion-state')).toHaveText('Segue a tabela');
@@ -256,7 +256,7 @@ test.describe('Painel da Staff', () => {
     const form = owner.page.getByTestId('apply-sanction');
 
     // Sem prova, não chega à confirmação.
-    await owner.page.getByTestId('sanction-category').selectOption('cheat');
+    await chooseOption(owner.page, owner.page.getByTestId('sanction-category'), 'cheat');
     await form.getByTestId('reason').fill('Aimbot no SP·1');
     await owner.page.getByTestId('sanction-review').click();
     await expect(form.getByTestId('cheat-proof')).toContainText(
@@ -310,6 +310,16 @@ test.describe('Painel da Staff', () => {
     const form = owner.page.getByTestId('erasure-form');
     await form.getByTestId('reason').fill('Pedido pelo contato, protocolo E2E');
     await form.getByRole('button', { name: 'Anonimizar a Conta' }).click();
+    // Sem volta: pede confirmação, com o foco em "Cancelar"; cancelar não anonimiza.
+    const dialog = owner.page.getByRole('alertdialog', { name: 'Anonimizar esta Conta?' });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+    await dialog.getByRole('button', { name: 'Cancelar' }).click();
+    await expect(dialog).toBeHidden();
+    await expect(owner.page.getByTestId('erasure-done')).toHaveCount(0);
+
+    await form.getByRole('button', { name: 'Anonimizar a Conta' }).click();
+    await dialog.getByRole('button', { name: 'Anonimizar', exact: true }).click();
     await expect(owner.page.getByTestId('erasure-done')).toBeVisible();
 
     expect((await page.goto(`/${player.publicId}`))?.status()).toBe(404);
@@ -333,7 +343,7 @@ test.describe('Painel da Staff', () => {
     await expect(mod.page.getByTestId('role-readonly')).toHaveText('Papel atual: Sem papel');
     await expect(mod.page.getByText('Só o Dono altera papéis de Staff.')).toBeVisible();
     await expect(mod.page.getByTestId('role-form')).toHaveCount(0);
-    await mod.page.getByTestId('sanction-category').selectOption('exploit');
+    await chooseOption(mod.page, mod.page.getByTestId('sanction-category'), 'exploit');
     await expect(mod.page.getByTestId('measure-permanent')).toBeDisabled();
 
     // E a API também recusa, mesmo chamada direto.

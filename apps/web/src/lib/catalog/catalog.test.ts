@@ -117,6 +117,14 @@ describe('stickers e charms para aplicar', () => {
     expect(byCategory.facets.categories).toContain(category);
   });
 
+  it('nenhuma categoria é uma chave de tradução crua (#CSGO_...)', () => {
+    for (const type of ['sticker', 'charm'] as const) {
+      const { facets, items } = searchAttachments(type, { limit: 100000 });
+      expect(facets.categories.filter((c) => c.startsWith('#'))).toEqual([]);
+      expect(items.filter((i) => i.category?.startsWith('#'))).toEqual([]);
+    }
+  });
+
   it('busca charms separados dos stickers', () => {
     const charms = searchAttachments('charm', { q: '' });
     expect(charms.total).toBeGreaterThan(10);

@@ -6,6 +6,7 @@
   },
   "common": {
     "close": "Fechar",
+    "cancel": "Cancelar",
     "combobox": {
       "search": "Buscar na lista",
       "empty": "Nada encontrado"
@@ -321,6 +322,38 @@
       "title": "Painel",
       "heading": "Filtros",
       "body": "Painéis laterais servem para filtros e detalhes sem sair da página."
+    },
+    "select": {
+      "title": "Select",
+      "label": "Modo",
+      "empty": "Todos os Modos",
+      "options": {
+        "retake": "Retake",
+        "deathmatch": "Deathmatch"
+      }
+    },
+    "combobox": {
+      "title": "Combobox",
+      "label": "Arma",
+      "empty": "Todas",
+      "options": {
+        "ak47": "AK-47",
+        "aug": "AUG",
+        "awp": "AWP",
+        "bayonet": "Baioneta",
+        "deagle": "Desert Eagle",
+        "glock": "Glock-18",
+        "m4a1s": "M4A1-S",
+        "m4a4": "M4A4",
+        "usps": "USP-S"
+      }
+    },
+    "confirm": {
+      "title": "Confirmação",
+      "open": "Excluir Preset",
+      "heading": "Excluir o Preset Treino?",
+      "body": "Os Itens continuam no Inventário; só o Preset some.",
+      "confirm": "Excluir"
     },
     "counter": {
       "title": "Contador",
@@ -1103,6 +1136,9 @@
       "title": "Exclusão de dados",
       "anonymized": "Conta anonimizada por um pedido de exclusão de dados. O SteamID64 fica só enquanto o ban valer.",
       "submit": "Anonimizar a Conta",
+      "confirmTitle": "Anonimizar esta Conta?",
+      "confirmBody": "Isto apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta.",
+      "confirmLabel": "Anonimizar",
       "hint": "Para um pedido de exclusão que chegou pelo contato, depois de confirmar que a pessoa é dona da Conta. Apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta. Ficam as punições e o log de auditoria; com um ban valendo, o SteamID64 fica até ele acabar.",
       "staff": "Contas da Staff saem da Staff antes de serem anonimizadas.",
       "ownerOnly": "Só o Dono executa pedidos de exclusão de dados.",

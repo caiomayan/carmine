@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { expect, settle, test } from './fixtures';
+import { axeViolations, expect, saveTheme, settle, type Theme, test } from './fixtures';
 import { fakeServer, routeLiveServers } from './live-servers';
 
 /** Animações do Motion (WAAPI) rodando dentro do elemento; as de CSS ficam de fora. */
@@ -108,4 +108,71 @@ for (const reducedMotion of ['no-preference', 'reduce'] as const) {
     const rollers = page.locator('main [data-slot="sliding-number"]');
     await expect(rollers).toHaveCount(reducedMotion === 'reduce' ? 0 : 1);
   });
+}
+
+for (const theme of ['dark', 'light'] as Theme[]) {
+  for (const width of [390, 1440]) {
+    test(`Select, Combobox e confirmação: teclado, busca sem acento e axe (${theme}, ${width} px)`, async ({
+      page,
+    }) => {
+      await saveTheme(page, theme);
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto('/dev/componentes');
+      await settle(page);
+
+      // Select: abre pelo teclado, setas e Enter escolhem; o item vazio desfaz.
+      const mode = page.getByRole('combobox', { name: 'Modo', exact: true });
+      await expect(mode).toHaveText('Todos os Modos');
+      await mode.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('listbox').getByRole('option')).toHaveCount(3);
+      // O Select do Radix é modal: o resto da página fica aria-hidden e o foco preso no painel, o
+      // que o axe lê como "aria-hidden-focus" (falso positivo: nada fora do painel recebe foco).
+      expect(
+        await axeViolations(page, { ignore: ['aria-hidden-focus'] }),
+        'axe com o Select aberto',
+      ).toEqual([]);
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      await expect(mode).toHaveText('Retake');
+      await expect(mode).toBeFocused();
+      await mode.click();
+      await page.getByTestId('option-empty').click();
+      await expect(mode).toHaveText('Todos os Modos');
+
+      // Combobox: busca por palavras, sem acento nem ordem; Enter escolhe e fecha.
+      const weapon = page.getByRole('combobox', { name: 'Arma', exact: true });
+      await weapon.click();
+      const search = page.getByRole('combobox', { name: 'Buscar na lista' });
+      await expect(search).toBeFocused();
+      await expect(page.getByRole('option')).toHaveCount(10);
+      expect(await axeViolations(page), 'axe com o Combobox aberto').toEqual([]);
+      await search.fill('a1 m4');
+      await expect(page.getByRole('option')).toHaveText(['M4A1-S']);
+      await page.keyboard.press('Enter');
+      await expect(weapon).toHaveText('M4A1-S');
+      await expect(search).toBeHidden();
+      await expect(weapon).toBeFocused();
+
+      await weapon.click();
+      await search.fill('zzz');
+      await expect(page.getByText('Nada encontrado')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(search).toBeHidden();
+
+      // Confirmação: alertdialog, foco em "Cancelar", Esc fecha e devolve o foco.
+      const open = page.getByRole('button', { name: 'Excluir Preset' });
+      await open.click();
+      const dialog = page.getByRole('alertdialog', { name: 'Excluir o Preset Treino?' });
+      await expect(dialog).toBeVisible();
+      await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+      expect(await axeViolations(page), 'axe com a confirmação aberta').toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(dialog).toBeHidden();
+      await expect(open).toBeFocused();
+      await open.click();
+      await dialog.getByRole('button', { name: 'Excluir', exact: true }).click();
+      await expect(dialog).toBeHidden();
+    });
+  }
 }

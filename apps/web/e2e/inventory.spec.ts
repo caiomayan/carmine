@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { csrfToken, grantVip, newSteamId, signInFromHeader } from './accounts';
 import { viewerItem } from './fake-viewer';
-import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
 
 const AK_REDLINE = 222;
 const MUSIC_KIT = 1781;
@@ -71,8 +71,8 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
 
   await page.getByTestId('catalog-search').fill('');
   await page.getByRole('button', { name: 'Armas', exact: true }).click();
-  await page.getByLabel('Arma').selectOption('AK-47');
-  await page.getByLabel('Raridade').selectOption({ label: 'Confidencial' });
+  await chooseOption(page, page.getByLabel('Arma'), 'AK-47');
+  await chooseOption(page, page.getByLabel('Raridade'), 'classified');
   await expect(page).toHaveURL(/tipo=weapon/);
   await expect(page).toHaveURL(/arma=AK-47/);
   await expect(page).toHaveURL(/raridade=classified/);

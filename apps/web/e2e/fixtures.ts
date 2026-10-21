@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test as base, expect, type Page } from '@playwright/test';
+import { test as base, expect, type Locator, type Page } from '@playwright/test';
 import { routeViewer, type ViewerMode } from './fake-viewer';
 
 export type Theme = 'dark' | 'light';
@@ -81,6 +81,15 @@ export const test = base.extend<Fixtures>({
 
 export { expect };
 
+/**
+ * Escolhe uma opção de um Select ou Combobox pelo valor (as opções levam `data-testid="option-<valor>"`;
+ * o item "vazio" ("Todas") é `empty`). O botão é o que leva o rótulo ou o `data-testid` do campo.
+ */
+export async function chooseOption(page: Page, trigger: Locator, value: string) {
+  await trigger.click();
+  await page.getByTestId(`option-${value}`).click();
+}
+
 /** Grava o tema como se a pessoa já o tivesse escolhido numa visita anterior. */
 export async function saveTheme(page: Page, theme: Theme) {
   await page.addInitScript((t) => {
@@ -130,7 +139,7 @@ export async function scrollToEnd(page: Page) {
   await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
 }
 
-export async function axeViolations(page: Page) {
+export async function axeViolations(page: Page, { ignore = [] }: { ignore?: string[] } = {}) {
   // O rodapé só fica opaco quando entra na tela: rola até o fim para o axe medir o contraste dele.
   await scrollToEnd(page);
   await settle(page);
@@ -147,6 +156,7 @@ export async function axeViolations(page: Page) {
   try {
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .disableRules(ignore)
       .analyze();
     return violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
   } finally {
