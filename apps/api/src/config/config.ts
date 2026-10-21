@@ -59,6 +59,7 @@ const envSchema = z
     // Requisições por minuto de cada política de rate limit (src/rate-limit/policies.ts).
     RATE_LIMIT_LOGIN_PER_MINUTE: perMinute(20),
     RATE_LIMIT_PUBLIC_PER_MINUTE: perMinute(240),
+    RATE_LIMIT_SEARCH_PER_MINUTE: perMinute(60),
     RATE_LIMIT_EQUIPPED_PER_MINUTE: perMinute(120),
     RATE_LIMIT_MUTATIONS_PER_MINUTE: perMinute(60),
     RATE_LIMIT_SERVER_PER_MINUTE: perMinute(600),
@@ -232,6 +233,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     rateLimitsPerMinute: {
       login: e.RATE_LIMIT_LOGIN_PER_MINUTE,
       public: e.RATE_LIMIT_PUBLIC_PER_MINUTE,
+      search: e.RATE_LIMIT_SEARCH_PER_MINUTE,
       equipped: e.RATE_LIMIT_EQUIPPED_PER_MINUTE,
       mutations: e.RATE_LIMIT_MUTATIONS_PER_MINUTE,
       server: e.RATE_LIMIT_SERVER_PER_MINUTE,
