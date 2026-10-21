@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { BoardCard } from './board-card';
 import { SlotDock } from './slot-dock';
 import { SlotPicker } from './slot-picker';
+import { useLastSide } from './use-last-side';
 
 /** TR à esquerda, CT à direita, sempre. */
 const SIDES = ['t', 'ct'] as const;
@@ -53,7 +54,8 @@ const ARROWS: Record<string, Direction> = {
  * A tela do Loadout (S05) no desenho do menu de compra do CS2: a troca TR | CT no alto, uma
  * coluna por categoria com todas as armas (e, na última, faca, luvas, agente e kit de música), o
  * slot selecionado numa barra fixa embaixo e, para trocar o Item, uma folha com o Inventário.
- * `notices` (avisos do VIP e Presets) fica entre o título e o quadro.
+ * `notices` (avisos da Conta) fica entre o título e o quadro; `presets` vai na mesma linha da troca
+ * de lado. O lado em que abre é o último usado (CT se não houver nenhum).
  *
  * Abaixo de 1001 px mostra uma coluna por vez, escolhida numa fileira de categorias. O teclado
  * anda pelo quadro com as setas e 1 a 5 pulam de coluna (só com o foco num cartão).
@@ -64,17 +66,19 @@ export function LoadoutScreen({
   rarityLabels,
   subtitle,
   notices,
+  presets,
 }: {
   view: LoadoutView;
   candidates: CandidateView[];
   rarityLabels: Record<string, string>;
   subtitle: ReactNode;
   notices?: ReactNode;
+  presets?: ReactNode;
 }) {
   const t = useTranslations('loadout');
   const tc = useTranslations('common');
   const wide = useMediaQuery(WIDE);
-  const [side, setSide] = useState<LoadoutSide>('ct');
+  const [side, setSide] = useLastSide();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [chosenColumn, setChosenColumn] = useState<BoardColumnId | null>(null);
   const [picker, setPicker] = useState<'closed' | 'right' | 'bottom'>('closed');
@@ -209,43 +213,56 @@ export function LoadoutScreen({
       <PageHead title={t('title')} subtitle={subtitle} />
       {notices}
 
-      <div className="sticky top-0 z-20 -mx-1 bg-background px-1 pt-2 pb-2.5">
-        <div className="flex items-center justify-between gap-3">
-          <TabsList
-            aria-label={t('sidesLabel')}
-            className="max-md:w-full max-md:[&>*]:flex-1 rounded-lg bg-surface p-[3px]"
-          >
-            {SIDES.map((s) => (
-              <TabsTrigger key={s} value={s} data-testid={`side-${s}`} className="min-w-24 gap-2.5">
-                <span
-                  aria-hidden="true"
-                  className={cn('size-2.5 rounded-full', s === 't' ? 'bg-side-t' : 'bg-side-ct')}
-                />
-                {t(`sidesShort.${s}`)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
-        <nav
-          aria-label={t('board.categories')}
-          className="mt-2 flex gap-0.5 overflow-x-auto [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden"
-        >
-          {columns.map((column) => (
-            <button
-              key={column.id}
-              type="button"
-              aria-pressed={column.id === activeColumn}
-              onClick={() => setChosenColumn(column.id)}
-              data-testid={`category-${column.id}`}
-              className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
+      {/*
+        A barra de cima: a troca TR | CT e os Presets numa linha só, para o quadro aparecer sem
+        rolar. No celular os Presets rolam com a página e só a troca de lado e as categorias ficam
+        fixas (`contents` desfaz a barra e `sticky` fica no grupo de dentro).
+      */}
+      <div className="max-md:contents md:sticky md:top-0 md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5">
+        {presets ? <div className="min-w-0 max-md:pb-1 md:order-2 md:flex-1">{presets}</div> : null}
+        <div className="max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents">
+          <div className="md:order-1">
+            <TabsList
+              aria-label={t('sidesLabel')}
+              className="max-md:w-full max-md:[&>*]:flex-1 rounded-lg bg-surface p-[3px]"
             >
-              {t(`groups.${column.id}`)}
-              <span className="text-[11px] font-medium text-faint [[aria-pressed=true]_&]:text-muted-foreground">
-                {column.slots.length}
-              </span>
-            </button>
-          ))}
-        </nav>
+              {SIDES.map((s) => (
+                <TabsTrigger
+                  key={s}
+                  value={s}
+                  data-testid={`side-${s}`}
+                  className="min-w-24 gap-2.5"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn('size-2.5 rounded-full', s === 't' ? 'bg-side-t' : 'bg-side-ct')}
+                  />
+                  {t(`sidesShort.${s}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+          <nav
+            aria-label={t('board.categories')}
+            className="mt-2 flex gap-0.5 overflow-x-auto [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
+          >
+            {columns.map((column) => (
+              <button
+                key={column.id}
+                type="button"
+                aria-pressed={column.id === activeColumn}
+                onClick={() => setChosenColumn(column.id)}
+                data-testid={`category-${column.id}`}
+                className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
+              >
+                {t(`groups.${column.id}`)}
+                <span className="text-[11px] font-medium text-faint [[aria-pressed=true]_&]:text-muted-foreground">
+                  {column.slots.length}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
       <TabsContent

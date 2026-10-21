@@ -179,6 +179,8 @@ test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com
   // No next dev, o primeiro envio do editor baixa o chunk dos schemas e demora.
   await expect(page).toHaveURL('/loadout', { timeout: 45_000 });
   await boardReady(page);
+  // O Loadout abre no último lado usado, que aqui foi o TR.
+  await page.getByTestId('side-ct').click();
   await expect(slot(page, 'weapon_awp', 'ct')).toHaveAttribute('data-equipped', /.+/);
   await page.getByTestId('side-t').click();
   await expect(slot(page, 'weapon_awp', 't')).toHaveAttribute('data-equipped', /.+/);
@@ -404,6 +406,95 @@ test('no celular, as categorias trocam a coluna à vista, sem rolagem lateral', 
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
+});
+
+test('abre no CT e, depois, no último lado usado, guardado no navegador', async ({ page }) => {
+  await signIn(page);
+  await expect(page.getByTestId('side-ct')).toHaveAttribute('aria-selected', 'true');
+  await expect(slot(page, 'weapon_hkp2000', 'ct')).toBeVisible();
+
+  await page.getByTestId('side-t').click();
+  await expect(slot(page, 'weapon_glock', 't')).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByTestId('side-t')).toHaveAttribute('aria-selected', 'true');
+  await expect(slot(page, 'weapon_glock', 't')).toBeVisible();
+
+  await page.getByTestId('side-ct').click();
+  await page.reload();
+  await expect(page.getByTestId('side-ct')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('sem armazenamento no navegador, o Loadout abre no CT e a troca de lado continua valendo', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, 'localStorage', {
+      get() {
+        throw new DOMException('bloqueado', 'SecurityError');
+      },
+    });
+  });
+  await signIn(page);
+  await expect(page.getByTestId('side-ct')).toHaveAttribute('aria-selected', 'true');
+  await page.getByTestId('side-t').click();
+  await expect(page.getByTestId('side-t')).toHaveAttribute('aria-selected', 'true');
+  await expect(slot(page, 'weapon_glock', 't')).toBeVisible();
+});
+
+test('Presets e a troca TR | CT dividem a linha, e as armas aparecem sem rolar', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await signIn(page);
+  // Os Primeiros passos acabaram de fechar: espera o quadro parar de subir antes de medir.
+  const boardTop = () =>
+    page
+      .getByTestId('column-secondary')
+      .boundingBox()
+      .then((box) => box?.y ?? 0);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(boardTop).toBeLessThan(400);
+  const side = await page.getByTestId('side-t').boundingBox();
+  const presets = await page.getByTestId('presets').boundingBox();
+  expect(side).not.toBeNull();
+  expect(presets).not.toBeNull();
+  // Na mesma linha: o centro vertical de um cai dentro do outro.
+  const middle = (side?.y ?? 0) + (side?.height ?? 0) / 2;
+  expect(middle).toBeGreaterThan(presets?.y ?? 0);
+  expect(middle).toBeLessThan((presets?.y ?? 0) + (presets?.height ?? 0));
+
+  // O primeiro cartão de cada coluna de armas cabe acima da barra do slot, sem rolar.
+  const dockTop = (await dock(page).boundingBox())?.y ?? 0;
+  for (const id of ['secondary', 'smg', 'rifle', 'heavy']) {
+    const card = await page
+      .getByTestId(`column-${id}`)
+      .locator('[data-card]')
+      .first()
+      .boundingBox();
+    expect(card).not.toBeNull();
+    expect((card?.y ?? 0) + (card?.height ?? 0)).toBeLessThanOrEqual(dockTop);
+  }
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+test('no celular, os Presets rolam com a página e a troca de lado fica fixa no alto', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  await expect(page.getByTestId('presets')).toBeVisible();
+  await page.getByTestId('category-rifle').click();
+  // Rola até logo depois dos Presets (onde estiverem: os Primeiros passos podem ainda estar abertos).
+  await page.getByTestId('presets').evaluate((el) => {
+    window.scrollTo(0, el.getBoundingClientRect().bottom + window.scrollY + 40);
+  });
+  await expect
+    .poll(async () => (await page.getByTestId('presets').boundingBox())?.y ?? 0)
+    .toBeLessThan(0);
+  const side = await page.getByTestId('side-t').boundingBox();
+  expect(side?.y ?? -1).toBeGreaterThanOrEqual(0);
+  expect(side?.y ?? 999).toBeLessThan(80);
 });
 
 test('os textos do quadro têm ao menos 11 px', async ({ page }) => {

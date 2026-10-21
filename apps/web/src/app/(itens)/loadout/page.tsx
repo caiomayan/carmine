@@ -95,26 +95,30 @@ export default async function LoadoutPage() {
         rarityLabels={rarityLabels}
         subtitle={subtitle}
         notices={
-          <div className="grid gap-4">
-            {vip ? <VipNotice vip={vip} /> : null}
-            {items.length === 0 ? (
-              <p
-                className="flex max-w-[80ch] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface px-4 py-3 text-[13px]"
-                data-testid="loadout-empty-inventory"
-              >
-                <span>{t('emptyInventory.body')}</span>
-                <Link
-                  href="/inventario"
-                  className="font-semibold underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-foreground"
+          vip || items.length === 0 ? (
+            <div className="mb-1 grid gap-2">
+              {vip ? <VipNotice vip={vip} /> : null}
+              {items.length === 0 ? (
+                <p
+                  className="flex max-w-[80ch] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface px-3 py-2 text-[12.5px]"
+                  data-testid="loadout-empty-inventory"
                 >
-                  {t('emptyInventory.action')}
-                </Link>
-              </p>
-            ) : null}
-            {presets.status === 'ok' ? (
-              <PresetBar list={presets.data} vip={vip?.active ?? false} />
-            ) : null}
-          </div>
+                  <span>{t('emptyInventory.body')}</span>
+                  <Link
+                    href="/inventario"
+                    className="font-semibold underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-foreground"
+                  >
+                    {t('emptyInventory.action')}
+                  </Link>
+                </p>
+              ) : null}
+            </div>
+          ) : null
+        }
+        presets={
+          presets.status === 'ok' ? (
+            <PresetBar list={presets.data} vip={vip?.active ?? false} />
+          ) : null
         }
       />
     </div>

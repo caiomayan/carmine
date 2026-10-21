@@ -20,11 +20,11 @@ export async function VipNotice({ vip, className }: { vip: VipStatus; className?
       data-testid="vip-notice"
       data-notice={notice}
       className={cn(
-        'flex max-w-[80ch] animate-fade-up items-start gap-3 rounded-lg bg-surface px-4 py-3 text-[13px] leading-[1.55]',
+        'flex max-w-[80ch] animate-fade-up items-start gap-2.5 rounded-lg bg-surface px-3 py-2 text-[12.5px] leading-[1.5]',
         className,
       )}
     >
-      <span aria-hidden="true" className="mt-1.75 size-1.5 shrink-0 rounded-full bg-status-vip" />
+      <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-status-vip" />
       <span>
         {notice === 'ending_soon' && endsAt
           ? t('ending_soon', { date: format.dateTime(endsAt, { day: 'numeric', month: 'long' }) })
