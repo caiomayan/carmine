@@ -40,7 +40,8 @@ export class FriendsPlayingController {
     summary: 'Amigos Steam da Conta jogando agora num Servidor Carmine',
   })
   @ApiOkResponse({
-    description: 'Amigos jogando (ok), lista de amigos privada ou Steam indisponível',
+    description:
+      'Amigos jogando (ok), lista de amigos privada (com os amigos achados pelas listas de quem joga) ou Steam indisponível',
     standardSchema: friendsPlayingSchema,
   })
   @ApiUnauthorizedResponse({ description: 'Sem sessão, ou ela expirou' })

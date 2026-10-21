@@ -96,24 +96,33 @@ export function updatedSecondsAgo(state: LiveState, now: number): number | null 
   return Math.max(0, Math.floor((now - state.confirmedAt) / 1000));
 }
 
-/** O bloco "Seus amigos jogando agora": a resposta da API, mais o carregando e a lista antiga. */
+/**
+ * O bloco "Seus amigos jogando agora": a resposta da API, mais o carregando e a lista antiga.
+ * `private` é a lista de amigos da Conta privada; `friends` são os achados pelas listas de quem
+ * está jogando (vazio: ninguém achado).
+ */
 export type FriendsView =
   | { status: 'loading' }
-  | { status: 'ok'; friends: PlayingFriend[]; stale: boolean }
-  | { status: 'private' }
+  | { status: 'ok' | 'private'; friends: PlayingFriend[]; stale: boolean }
   | { status: 'unavailable' };
 
 /**
  * O próximo estado do bloco a cada leitura (`failed`: nem a API respondeu). Uma falha depois
- * de uma lista boa não apaga a lista: ela fica, marcada como a última vista.
+ * de uma lista com amigos (ou "nenhum jogando", na lista própria) não apaga a lista: ela fica,
+ * marcada como a última vista.
  */
 export function nextFriends(previous: FriendsView, result: FriendsPlaying | 'failed'): FriendsView {
-  if (result !== 'failed' && result.status === 'ok') {
-    return { status: 'ok', friends: result.friends, stale: false };
+  if (result !== 'failed' && result.status !== 'unavailable') {
+    return { status: result.status, friends: result.friends, stale: false };
   }
-  const failed = result === 'failed' || result.status === 'unavailable';
-  if (failed && previous.status === 'ok') return { ...previous, stale: true };
-  return failed ? { status: 'unavailable' } : { status: 'private' };
+  const keep =
+    previous.status === 'ok' || (previous.status === 'private' && previous.friends.length > 0);
+  return keep ? { ...previous, stale: true } : { status: 'unavailable' };
+}
+
+/** Os amigos jogando que o estado traz (da lista própria ou achados pelas listas deles). */
+export function viewFriends(view: FriendsView | { status: 'anonymous' }): PlayingFriend[] {
+  return 'friends' in view ? view.friends : [];
 }
 
 /** Nome que a home mostra: o nome de vitrine (S07) ou, sem ele, o identificador da Staff. */
