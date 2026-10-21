@@ -244,6 +244,29 @@ describe('posições arrastadas no 3D', () => {
     expect(moved?.charm).toMatchObject({ x: 1.5, y: 0.3, z: -1 });
   });
 
+  it('limita o que o viewer devolve aos limites da arma, que a API também confere', () => {
+    const bounded: FormSpec = {
+      ...AK,
+      stickerOffset: { x: { min: -0.4, max: 0.6 }, y: { min: -0.03, max: 0.2 } },
+      charm: {
+        seed: { min: 1, max: 100_000 },
+        position: {
+          x: { min: -11.0706, max: 24.7254 },
+          y: { min: -0.0194, max: 1.0222 },
+          z: { min: -2.7949, max: 4.28 },
+        },
+      },
+    };
+    const moved = positionsFromViewer(bounded, base(), {
+      id: 222,
+      stickers: { '0': { id: 1, schema: 0, x: 0.9, y: -0.5 } },
+      // Medido no viewer real: arrastar o chaveiro passa do limite da cs2-lib.
+      keychains: { '0': { id: 13113, seed: 3, x: -11.5196, y: 0.4775, z: 9 } },
+    });
+    expect(moved?.stickers[0]).toMatchObject({ x: 0.6, y: -0.03 });
+    expect(moved?.charm).toMatchObject({ x: -11.0706, y: 0.4775, z: 4.28 });
+  });
+
   it('nada mudou: devolve null (sem laço entre o editor e o viewer)', () => {
     expect(positionsFromViewer(AK, base(), { id: 222 })).toBeNull();
     const form = { ...base(), stickers: base().stickers.map((s) => ({ ...s, x: 0.1, y: 0.2 })) };

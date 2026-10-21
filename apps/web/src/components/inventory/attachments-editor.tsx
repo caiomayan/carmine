@@ -166,7 +166,7 @@ function StickerRow({
   const error = issue ? errorText(issue) : undefined;
   return (
     <fieldset
-      className="mb-2 grid gap-3 rounded-lg bg-surface-2/50 p-3 transition-shadow duration-(--dur-fast) ease-std data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
+      className="mb-2 grid gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
       data-testid={`sticker-${index}`}
       data-selected={selected || undefined}
       onFocus={onSelect}
@@ -339,7 +339,7 @@ function OnViewerTag({ testId }: { testId: string }) {
   return (
     <span
       data-testid={testId}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-sm px-1.5 py-1 text-[11px] font-medium text-muted-foreground max-md:hidden"
+      className="inline-flex shrink-0 animate-fade-up items-center gap-1.5 rounded-sm px-1.5 py-1 text-[11px] font-medium text-muted-foreground max-md:hidden"
     >
       <svg
         aria-hidden="true"
@@ -378,7 +378,7 @@ function FineAdjust({ children }: { children: React.ReactNode }) {
         </svg>
         {t('moreOptions')}
       </summary>
-      {children}
+      <div className="group-open/fine:animate-fade-up">{children}</div>
     </details>
   );
 }
@@ -418,7 +418,10 @@ export function CharmEditor({
   const selected = drag.selected?.kind === 'keychain';
 
   function place(value: string) {
-    if (!charm || !bounds || value === CUSTOM_PLACEMENT) return;
+    // O Select do Radix também avisa com um valor vazio quando o valor controlado muda para uma
+    // opção que ainda não montou (a "Personalizada"): só vale o que a lista oferece.
+    const isSlot = /^\d+$/.test(value) && Number(value) < CHARM_SLOTS;
+    if (!charm || !bounds || !(isSlot || value === DEFAULT_PLACEMENT)) return;
     if (value === DEFAULT_PLACEMENT) {
       onChange({ id: charm.id, name: charm.name, image: charm.image, seed: charm.seed });
       return;
@@ -433,7 +436,7 @@ export function CharmEditor({
       </h3>
       {charm ? (
         <fieldset
-          className="grid gap-3 rounded-lg bg-surface-2/50 p-3 transition-shadow duration-(--dur-fast) ease-std animate-fade-up data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
+          className="grid gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std animate-fade-up data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
           data-testid="charm"
           data-selected={selected || undefined}
           onFocus={() => drag.dispatch({ type: 'focus-charm' })}
@@ -469,7 +472,7 @@ export function CharmEditor({
               <AnimatedIcon icon={DeleteIcon} size={16} />
             </Button>
           </div>
-          <div className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
+          <div className="grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
             <FieldShell
               id={seedId}
               label={t('charmSeed')}

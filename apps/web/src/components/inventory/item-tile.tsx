@@ -117,7 +117,7 @@ export function ItemTile({
       style={{ '--i': index } as CSSProperties}
       className={cn(
         'group/tile relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5',
-        'transition-[background-color,box-shadow] duration-(--dur-fast) ease-std hover:bg-surface-2',
+        'transition-[background-color,box-shadow] duration-(--dur-base) ease-std hover:bg-surface-2',
         selected && 'bg-surface-2 shadow-[inset_0_0_0_1.5px_var(--text)]',
         className,
       )}
@@ -125,7 +125,7 @@ export function ItemTile({
       <span className="relative block overflow-hidden rounded-md">
         <ItemArt
           src={image}
-          className="transition-transform duration-(--dur-slow) ease-out group-hover/tile:scale-[1.04] motion-reduce:transform-none"
+          className="transition-transform duration-500 ease-(--ease-out) group-hover/tile:scale-[1.04] motion-reduce:transform-none motion-reduce:duration-150"
         />
         {stickers?.length || charm ? (
           <span
@@ -193,7 +193,13 @@ function AttachmentIcon({
       height={30}
       loading="lazy"
       decoding="async"
-      className={cn('w-auto object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]', className)}
+      className={cn(
+        'w-auto object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]',
+        // Entra suave e dá um passo à frente com o cartão; sem movimento, só o fade curto.
+        'transition-[transform,opacity] duration-(--dur-base) ease-(--ease-out) starting:translate-y-1 starting:opacity-0',
+        'group-hover/tile:scale-110 motion-reduce:transform-none motion-reduce:starting:translate-y-0',
+        className,
+      )}
     />
   );
 }

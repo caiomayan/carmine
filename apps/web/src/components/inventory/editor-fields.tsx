@@ -251,7 +251,7 @@ export function FloatField({
                     style={{ width: `${segment.width}%` }}
                     data-tier={segment.tier}
                     className={cn(
-                      'truncate border-l border-line pl-1 first:border-l-0 first:pl-0',
+                      'truncate border-l border-line pl-1 transition-colors duration-(--dur-base) ease-std first:border-l-0 first:pl-0',
                       segment.tier === tier && 'text-foreground',
                     )}
                   >
