@@ -5,7 +5,11 @@
     "description": "Servidores comunitários de Counter-Strike 2. Entre, equipe e veja o seu Loadout no jogo."
   },
   "common": {
-    "close": "Fechar"
+    "close": "Fechar",
+    "combobox": {
+      "search": "Buscar na lista",
+      "empty": "Nada encontrado"
+    }
   },
   "shell": {
     "skipToContent": "Pular para o conteúdo",

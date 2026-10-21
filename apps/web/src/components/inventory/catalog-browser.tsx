@@ -6,6 +6,8 @@ import { type ReactNode, useEffect, useId, useRef, useState, useTransition } fro
 import { SearchIcon } from '@/components/icons/animated/search';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
+import { SimpleSelect } from '@/components/ui/select';
 import { CATALOG_TYPES, type CatalogType, type Rarity } from '@/lib/catalog/types';
 import { cn } from '@/lib/utils';
 
@@ -141,11 +143,11 @@ export function CatalogBrowser({
         </fieldset>
 
         <div className="grid grid-cols-3 gap-2 max-md:grid-cols-1">
-          <FilterSelect
+          <FilterCombobox
             label={labels.weapon}
             value={weapon}
             empty={labels.allWeapons}
-            options={facets.weapons.map((w) => [w, w])}
+            options={facets.weapons}
             onChange={(value) => navigate({ arma: value || null, colecao: null })}
             disabled={facets.weapons.length === 0}
           />
@@ -156,11 +158,11 @@ export function CatalogBrowser({
             options={facets.rarities.map((r) => [r, labels.rarities[r]])}
             onChange={(value) => navigate({ raridade: value || null })}
           />
-          <FilterSelect
+          <FilterCombobox
             label={labels.collection}
             value={collection}
             empty={labels.allCollections}
-            options={facets.collections.map((c) => [c, c])}
+            options={facets.collections}
             onChange={(value) => navigate({ colecao: value || null })}
             disabled={facets.collections.length === 0}
           />
@@ -221,7 +223,44 @@ function TypeButton({
   );
 }
 
+const labelClass = 'label-caps text-[10px] text-muted-foreground';
+
+/** Filtro de lista curta (Raridade): Select. Valor vazio = sem filtro. */
 function FilterSelect({
+  label,
+  value,
+  empty,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  empty: string;
+  options: [string, string][];
+  onChange: (value: string) => void;
+}) {
+  const id = useId();
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor={id} className={labelClass}>
+        {label}
+      </label>
+      <SimpleSelect
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        emptyLabel={empty}
+        options={options.map(([optionValue, optionLabel]) => ({
+          value: optionValue,
+          label: optionLabel,
+        }))}
+      />
+    </div>
+  );
+}
+
+/** Filtro de lista longa (Arma, Coleção): Combobox com busca. Valor vazio = sem filtro. */
+function FilterCombobox({
   label,
   value,
   empty,
@@ -232,44 +271,24 @@ function FilterSelect({
   label: string;
   value: string;
   empty: string;
-  options: [string, string][];
+  options: string[];
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
   const id = useId();
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={id} className="label-caps text-[10px] text-muted-foreground">
+      <label htmlFor={id} className={labelClass}>
         {label}
       </label>
-      <div className="relative">
-        <select
-          id={id}
-          value={value}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-h-(--tap) w-full appearance-none truncate rounded-md bg-surface pr-9 pl-3 text-sm transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2 focus-visible:bg-surface-2 disabled:text-faint disabled:hover:bg-surface"
-        >
-          <option value="">{empty}</option>
-          {options.map(([optionValue, optionLabel]) => (
-            <option key={optionValue} value={optionValue}>
-              {optionLabel}
-            </option>
-          ))}
-        </select>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
+      <Combobox
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        placeholder={empty}
+        disabled={disabled}
+        options={[{ value: '', label: empty }, ...options.map((o) => ({ value: o, label: o }))]}
+      />
     </div>
   );
 }

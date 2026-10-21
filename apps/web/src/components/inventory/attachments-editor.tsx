@@ -8,6 +8,7 @@ import { DeleteIcon } from '@/components/icons/animated/delete';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { SimpleSelect } from '@/components/ui/select';
 import type { ItemSpec } from '@/lib/catalog/catalog';
 import { formatDecimal } from '@/lib/decimal';
 import {
@@ -196,21 +197,18 @@ function StickerRow({
 
       <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
         <FieldShell id={slotId} label={t('slot')} error={error}>
-          <select
+          <SimpleSelect
             id={slotId}
-            value={sticker.schema}
-            onChange={(event) => onChange({ schema: Number(event.target.value) })}
+            value={String(sticker.schema)}
+            onValueChange={(next) => onChange({ schema: Number(next) })}
             aria-invalid={!!error || undefined}
             aria-describedby={describedBy(slotId, { error })}
-            className="min-h-(--tap) w-full appearance-none rounded-md bg-surface-2 px-3 text-[14px] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)]"
-          >
-            {Array.from({ length: slots }, (_, slot) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: o slot é o próprio índice.
-              <option key={slot} value={slot}>
-                {t('slotN', { n: slot + 1 })}
-              </option>
-            ))}
-          </select>
+            className="bg-surface-2 text-[14px] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] hover:bg-line"
+            options={Array.from({ length: slots }, (_, slot) => ({
+              value: String(slot),
+              label: t('slotN', { n: slot + 1 }),
+            }))}
+          />
         </FieldShell>
         <SliderField
           label={t('rotation')}

@@ -21,11 +21,12 @@ import { PlusIcon } from '@/components/icons/animated/plus';
 import { XIcon } from '@/components/icons/animated/x';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { SimpleSelect } from '@/components/ui/select';
 import { type DurationUnit, durationParts, sameMeasures, toMinutes } from '@/lib/moderation';
 import { measureOptions, type StaffViewer } from '@/lib/staff';
 import { cn } from '@/lib/utils';
 import { REASON_MIN, ReasonField } from './action-form';
-import { Field, FieldError, Select, TextInput } from './fields';
+import { Field, FieldError, TextInput } from './fields';
 import { useMeasureLabel } from './use-measure-label';
 import { useStaffRequest } from './use-staff-request';
 
@@ -201,22 +202,21 @@ export function ApplySanctionForm({
         </p>
       ) : null}
       <Field id={`${id}-category`} label={t('apply.category')}>
-        <Select
+        <SimpleSelect
           id={`${id}-category`}
           value={category}
-          onChange={(event) => pickCategory(event.target.value)}
+          onValueChange={pickCategory}
+          placeholder={t('apply.chooseCategory')}
           data-testid="sanction-category"
-        >
-          <option value="">{t('apply.chooseCategory')}</option>
-          {sanctionCategorySchema.options.map((c) => (
-            <option key={c} value={c}>
-              {tm(`staffCategories.${c}`)}
-              {offenses(c) > 0
+          options={sanctionCategorySchema.options.map((c) => ({
+            value: c,
+            label:
+              tm(`staffCategories.${c}`) +
+              (offenses(c) > 0
                 ? ` · ${t('apply.offenses', { count: offenses(c), days: RECIDIVISM_WINDOW_DAYS })}`
-                : ''}
-            </option>
-          ))}
-        </Select>
+                : ''),
+          }))}
+        />
       </Field>
 
       <AnimatePresence initial={false}>
@@ -498,18 +498,16 @@ function MeasureRow({
       className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-3 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)_auto]"
     >
       <Field id={`${id}-type`} label={t('type')}>
-        <Select
+        <SimpleSelect
           id={`${id}-type`}
           value={draft.type}
-          onChange={(event) => onChange({ type: event.target.value as SanctionType })}
+          onValueChange={(next) => onChange({ type: next as SanctionType })}
           data-testid="measure-type"
-        >
-          {types.map((type) => (
-            <option key={type} value={type}>
-              {tm(`types.${type}`)} — {tm(`typeHints.${type}`)}
-            </option>
-          ))}
-        </Select>
+          options={types.map((type) => ({
+            value: type,
+            label: `${tm(`types.${type}`)} — ${tm(`typeHints.${type}`)}`,
+          }))}
+        />
       </Field>
       <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
         {lasting ? (
@@ -534,20 +532,15 @@ function MeasureRow({
               <label htmlFor={`${id}-unit`} className="sr-only">
                 {t('durationUnit')}
               </label>
-              <Select
+              <SimpleSelect
                 id={`${id}-unit`}
                 value={draft.unit}
                 disabled={draft.permanent}
-                onChange={(event) => onChange({ unit: event.target.value as DurationUnit })}
+                onValueChange={(next) => onChange({ unit: next as DurationUnit })}
                 className="w-32"
                 data-testid="measure-unit"
-              >
-                {UNITS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {t(`units.${unit}`)}
-                  </option>
-                ))}
-              </Select>
+                options={UNITS.map((unit) => ({ value: unit, label: t(`units.${unit}`) }))}
+              />
               <label
                 className={cn(
                   'inline-flex min-h-(--tap) cursor-pointer items-center gap-2 rounded-md px-2 text-sm transition-colors duration-(--dur-fast) ease-std hover:bg-hover',
