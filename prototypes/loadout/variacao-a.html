@@ -1,0 +1,455 @@
+<!doctype html>
+<!--
+  Loadout · Variação A — "Menu de compra".
+  A grade do CS2 como ela é: cinco colunas lado a lado, cartões numerados (número no canto superior
+  esquerdo, nome da arma no direito), a skin equipada no centro e a skin pelo nome no canto inferior.
+  Tokens da Liberty importados de ../identity; só o par azul/laranja de CT e TR é novo (abaixo).
+  Dados reais da @ianlucas/cs2-lib: `node prototypes/loadout/gen-data.mjs` reescreve o bloco #data.
+-->
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>Carmine · Loadout, variação A</title>
+<script>try{var t=localStorage.getItem('carmine-proto-theme');document.documentElement.dataset.theme=(t==='light'||t==='dark')?t:'dark'}catch(e){}</script>
+<link rel="icon" href="../identity/brand/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;550;600;650;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://cdn.cstrike.app" crossorigin>
+<link rel="stylesheet" href="../identity/liberty/tokens-exportados-dono-v2.css">
+<link rel="stylesheet" href="../identity/shared/liberty-status.css">
+<style>
+/* ---------- tokens locais ---------- */
+:root{
+  --font-ui:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-display:"DM Serif Display",Georgia,serif;
+  --radius:.625rem;--radius-sm:calc(var(--radius) - 4px);--radius-md:calc(var(--radius) - 2px);--radius-lg:var(--radius);--radius-xl:calc(var(--radius) + 4px);
+  --hover:color-mix(in srgb,var(--text) 9%,transparent);
+  --ease-std:cubic-bezier(.2,0,0,1);--ease-out:cubic-bezier(.16,1,.3,1);
+  --dur-fast:140ms;--dur-slow:320ms;
+  --mx:36px;--tap:44px;
+}
+/* CT e TR: cores de contexto, no mesmo critério de liberty-status.css (sinais pequenos, ≥4,5:1 sobre
+   --bg, --surface e --surface-2) mas mais vivas que os status, porque são o código principal do lado. */
+:root,[data-theme="dark"]{--side-ct:#5BA3E6;--side-t:#EE9A3A}
+[data-theme="light"]{--side-ct:#1D5CA8;--side-t:#A24E05}
+@media (max-width:640px){:root{--mx:21px}}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%;scrollbar-color:var(--line-strong) transparent}
+body{background:var(--bg);color:var(--text);font:400 14px/1.45 var(--font-ui);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100dvh;transition:background-color 260ms var(--ease-std),color 260ms var(--ease-std)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--text);color:var(--bg)}
+:focus-visible{outline:2px solid var(--text);outline-offset:2px;border-radius:var(--radius-sm)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.container{width:min(1080px,calc(100% - 2 * var(--mx)));margin-inline:auto}
+.ic{width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- barra do protótipo (não faz parte do produto) ---------- */
+.proto{background:var(--proto-bg);color:var(--proto-fg);font:500 12px/1 var(--font-ui)}
+.proto .container{display:flex;align-items:center;gap:2px;min-height:40px;overflow-x:auto;scrollbar-width:none}
+.proto a,.proto button{padding:9px 11px;border-radius:var(--radius-md);white-space:nowrap;color:color-mix(in srgb,var(--proto-fg) 70%,transparent);transition:background-color var(--dur-fast) var(--ease-std),color var(--dur-fast) var(--ease-std)}
+.proto a:hover,.proto button:hover,.proto [aria-current=page],.proto [aria-pressed=true]{background:color-mix(in srgb,var(--proto-fg) 13%,transparent);color:var(--proto-fg)}
+.proto :focus-visible{outline-color:var(--proto-fg);outline-offset:-2px}
+.proto .sp{flex:1;min-width:8px}
+.proto .grp{display:flex;align-items:center;gap:2px}
+.proto .lbl{padding:0 6px 0 12px;color:color-mix(in srgb,var(--proto-fg) 50%,transparent)}
+
+/* ---------- cabeçalho do site ---------- */
+.hdr .container{display:flex;align-items:center;gap:20px;height:60px}
+.wm{font:400 27px/1 var(--font-display);letter-spacing:-.005em}
+.nav{display:flex;gap:2px;margin-left:12px}
+.nav a{padding:8px 12px;border-radius:var(--radius-md);color:var(--muted);transition:background-color var(--dur-fast) var(--ease-std),color var(--dur-fast) var(--ease-std)}
+.nav a:hover,.nav a[aria-current=page]{background:var(--hover);color:var(--text)}
+.hdr .sp{flex:1}
+.ibtn{display:grid;place-items:center;width:40px;height:40px;border-radius:var(--radius-md);color:var(--muted);transition:background-color var(--dur-fast) var(--ease-std),color var(--dur-fast) var(--ease-std)}
+.ibtn:hover{background:var(--hover);color:var(--text)}
+.ibtn .ic{width:18px;height:18px}
+[data-theme=dark] .i-moon,[data-theme=light] .i-sun{display:none}
+
+/* ---------- barra fixa: título e troca de lado ---------- */
+.bar{position:sticky;top:0;z-index:20;background:var(--bg)}
+.bar-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px}
+h1{font:620 clamp(22px,3vw,30px)/1.1 var(--font-ui);letter-spacing:-.015em}
+.sub{color:var(--muted);max-width:68ch;padding-bottom:18px;text-wrap:pretty}
+.sub code{background:var(--surface);color:var(--text);border-radius:var(--radius-sm);padding:1px 6px;font:600 .92em ui-monospace,Consolas,monospace}
+
+/* TR à esquerda, CT à direita, sempre */
+.seg{position:relative;display:flex;gap:2px;padding:3px;border-radius:var(--radius-lg);background:var(--surface)}
+.seg .thumb{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 4px);border-radius:var(--radius-md);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line);transition:transform 260ms var(--ease-out)}
+.seg[data-side=ct] .thumb{transform:translateX(calc(100% + 2px))}
+.seg button{position:relative;display:flex;align-items:center;justify-content:center;gap:9px;min-width:92px;min-height:38px;padding:0 16px;border-radius:var(--radius-md);color:var(--muted);font-weight:600;letter-spacing:.04em;transition:color var(--dur-fast) var(--ease-std)}
+.seg button:hover{color:var(--text)}
+.seg button[aria-pressed=true]{color:var(--text)}
+.side-dot{display:inline-block;width:9px;height:9px;border-radius:50%;flex:none}
+.side-dot.t{background:var(--side-t)}.side-dot.ct{background:var(--side-ct)}
+
+/* ---------- aviso de Loadout vazio ---------- */
+.note{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin-bottom:12px;padding:12px 16px;border-radius:var(--radius-lg);background:var(--surface);font-size:13px}
+.note a{font-weight:600;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:4px;transition:text-decoration-color var(--dur-fast) var(--ease-std)}
+.note a:hover{text-decoration-color:var(--text)}
+
+/* ---------- abas das colunas (só abaixo de 1080 px) ---------- */
+.tabs{display:none}
+.tab{display:flex;align-items:center;gap:7px;min-height:var(--tap);padding:0 14px;border-radius:var(--radius-md);color:var(--muted);font-weight:600;white-space:nowrap;transition:background-color var(--dur-fast) var(--ease-std),color var(--dur-fast) var(--ease-std)}
+.tab small{font:500 11px var(--font-ui);color:var(--faint)}
+.tab:hover{background:var(--hover);color:var(--text)}
+.tab[aria-selected=true]{background:var(--hover);color:var(--text)}
+.tab[aria-selected=true] small{color:var(--muted)}
+
+/* ---------- o quadro: cinco colunas ---------- */
+.board{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:16px 14px 14px;border-radius:calc(var(--radius) + 6px);background:var(--surface)}
+.col{display:grid;align-content:start;gap:8px;min-width:0}
+.col-h{display:grid;grid-template-columns:1fr auto 1fr;align-items:baseline;padding:0 4px 6px}
+.col-h .n{font-size:11px;color:var(--muted)}
+.col-h h2{font:650 14px/1.2 var(--font-ui);letter-spacing:.01em;text-align:center}
+.col-h .c{justify-self:end;font-size:11px;color:var(--muted)}
+
+.card{position:relative;display:block;width:100%;aspect-ratio:3/2;border-radius:var(--radius-md);background:color-mix(in srgb,var(--surface-2) 72%,transparent);text-align:left;overflow:hidden;
+  transition:background-color var(--dur-fast) var(--ease-std),box-shadow var(--dur-fast) var(--ease-std)}
+.card:hover{background:var(--surface-2)}
+.card[aria-pressed=true]{background:var(--surface-2);box-shadow:inset 0 0 0 1.5px var(--text)}
+.card:focus-visible{outline-offset:-3px;outline-color:var(--text)}
+.card .no{position:absolute;top:8px;left:10px;font-size:11px;font-weight:500;color:var(--muted);z-index:2}
+.card .nm{position:absolute;top:7px;right:10px;max-width:calc(100% - 44px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;font-weight:650;letter-spacing:.01em;z-index:2}
+.card .art{position:absolute;inset:20px 8px 14px;display:grid;place-items:center}
+.card .art img{width:100%;height:100%;object-fit:contain;transition:transform var(--dur-slow) var(--ease-out),opacity var(--dur-fast) var(--ease-std),filter var(--dur-fast) var(--ease-std)}
+.card:hover .art img{transform:scale(1.05)}
+/* base do cartão: lado e skin em pastilhas, para ler por cima do desenho da arma */
+.card .foot{position:absolute;left:7px;right:7px;bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:6px;z-index:2;pointer-events:none}
+.card .chip{display:inline-flex;align-items:center;gap:6px;min-width:0;height:20px;padding:0 7px;border-radius:6px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(6px);font-size:11.5px;font-weight:550;color:var(--text);transition:background-color var(--dur-fast) var(--ease-std)}
+.card:hover .chip,.card[aria-pressed=true] .chip{background:color-mix(in srgb,var(--surface-2) 88%,transparent)}
+.card .chip:not(.sk){flex:none}
+.card .chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card .chip.sk{margin-left:auto}
+.card .chip i.rar{width:10px;height:3px;border-radius:2px;flex:none;background:var(--rc)}
+.card .st{font-size:10.5px;font-weight:650;letter-spacing:.08em;color:var(--muted)}
+/* sem skin: a arma padrão em tom neutro */
+.card.empty .art img{opacity:.38;filter:grayscale(1)}
+[data-theme=light] .card.empty .art img{opacity:.5;filter:grayscale(1) brightness(.72) contrast(1.15)}
+.card.empty:hover .art img{opacity:.6}
+.card.empty .nm{color:var(--muted);font-weight:600}
+.silhouette{width:56%;color:var(--faint);opacity:.55}
+
+/* ---------- a barra de baixo: o slot selecionado ---------- */
+.dock-wrap{position:sticky;bottom:0;z-index:30;padding-block:14px calc(14px + env(safe-area-inset-bottom));pointer-events:none}
+.dock{pointer-events:auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 16px;padding:10px 12px 10px 10px;border-radius:calc(var(--radius) + 6px);background:var(--surface-2);box-shadow:0 10px 32px -6px rgb(0 0 0/.5),inset 0 0 0 1px var(--line)}
+[data-theme=light] .dock{box-shadow:0 10px 28px -8px rgb(28 27 23/.3),inset 0 0 0 1px var(--line)}
+.dock .thumb{width:76px;height:56px;border-radius:var(--radius-md);background:var(--surface);display:grid;place-items:center;overflow:hidden}
+.dock .thumb img{width:100%;height:100%;object-fit:contain}
+.dock .thumb.empty img{opacity:.4;filter:grayscale(1)}
+.dock .tx{min-width:0;display:grid;gap:2px}
+.dock .t1{display:flex;align-items:center;gap:10px;min-width:0;font-weight:650;font-size:15px}
+.dock .t1 span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dock .t2{color:var(--muted);font-size:13px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dock .t2 i{width:10px;height:3px;border-radius:2px;background:var(--rc);flex:none}
+.dots-l{display:inline-flex;align-items:center;gap:5px;flex:none}
+.dots-l .tag{font-size:11px;font-weight:650;letter-spacing:.06em;color:var(--muted)}
+.acts{display:flex;gap:4px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 14px;border-radius:var(--radius-md);color:var(--text);font-weight:600;white-space:nowrap;transition:background-color var(--dur-fast) var(--ease-std),color var(--dur-fast) var(--ease-std)}
+.btn:hover{background:var(--hover)}
+.btn.pri{background:var(--text);color:var(--bg)}
+.btn.pri:hover{background:var(--accent-hover)}
+.btn[disabled]{color:var(--faint);cursor:default;background:none}
+.dock.flash{animation:flash 520ms var(--ease-out)}
+@keyframes flash{from{background:color-mix(in srgb,var(--text) 16%,var(--surface-2))}to{background:var(--surface-2)}}
+
+/* ---------- entrada escalonada ---------- */
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{animation:rise 360ms var(--ease-out) backwards;animation-delay:calc(var(--i,0) * 14ms)}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:1ms!important}
+  .card:hover .art img{transform:none}
+}
+
+/* ---------- abaixo de 1080 px: as colunas viram abas ---------- */
+@media (max-width:1080px){
+  .tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;padding-bottom:10px;margin-inline:calc(var(--mx) * -1);padding-inline:var(--mx)}
+  .tabs::-webkit-scrollbar{display:none}
+  .board{display:block;padding:12px}
+  .col{display:none}
+  .col.on{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px}
+  .col-h{display:none}
+}
+@media (max-width:640px){
+  .nav,.proto .hide-sm{display:none}
+  .proto .container{flex-wrap:wrap;padding-block:4px}
+  .proto .sp{flex-basis:100%;min-width:0;height:0}
+  .hdr .container{height:52px}
+  .bar-row{padding-block:10px}
+  .seg button{min-width:78px;min-height:44px;padding:0 12px}
+  .col.on{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .card .nm{font-size:12.5px}
+  .dock{grid-template-columns:auto minmax(0,1fr);padding:10px}
+  .dock .thumb{width:64px;height:48px}
+  .dock .acts{grid-column:1/-1;flex-wrap:wrap}
+  .dock .btn{min-height:44px;flex:1}
+  .sub{padding-bottom:12px;font-size:13.5px}
+}
+</style>
+</head>
+<body>
+
+<div class="proto">
+  <div class="container">
+    <a href="index.html">← Protótipos</a>
+    <a href="variacao-a.html" aria-current="page">Variação A</a>
+    <a href="variacao-b.html">Variação B</a>
+    <span class="sp"></span>
+    <span class="lbl hide-sm">Estado</span>
+    <span class="grp" role="group" aria-label="Estado do Loadout de demonstração">
+      <button type="button" data-mode="full" aria-pressed="true">Com skins</button>
+      <button type="button" data-mode="empty" aria-pressed="false">Vazio</button>
+    </span>
+  </div>
+</div>
+
+<header class="hdr">
+  <div class="container">
+    <a class="wm" href="index.html" aria-label="Carmine">Carmine</a>
+    <nav class="nav" aria-label="Principal">
+      <a href="#">Servidores</a><a href="#">Inventário</a><a href="#" aria-current="page">Loadout</a><a href="#">Ranking</a>
+    </nav>
+    <span class="sp"></span>
+    <button class="ibtn" id="theme" type="button" aria-label="Alternar tema claro e escuro">
+      <svg class="ic i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.07-2.93 1.41-1.41m11.32-11.32 1.41-1.41M2 12h2m16 0h2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41"/></svg>
+      <svg class="ic i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+  <div class="bar">
+    <div class="container">
+      <div class="bar-row">
+        <h1>Loadout</h1>
+        <div class="seg" id="seg" data-side="ct" role="group" aria-label="Lado">
+          <span class="thumb" aria-hidden="true"></span>
+          <button type="button" data-side="t" aria-pressed="false"><i class="side-dot t" aria-hidden="true"></i>TR</button>
+          <button type="button" data-side="ct" aria-pressed="true"><i class="side-dot ct" aria-hidden="true"></i>CT</button>
+        </div>
+      </div>
+      <div class="tabs" id="tabs" role="tablist" aria-label="Categorias"></div>
+    </div>
+  </div>
+
+  <div class="container">
+    <p class="sub">O que você usa nos Servidores Carmine. Vale no próximo connect ou quando você digita <code>!ws</code> no servidor.</p>
+    <div id="note"></div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <div class="dock-wrap"><div class="container"><div class="dock" id="dock" aria-live="polite"></div></div></div>
+</main>
+
+<script id="data" type="application/json">{"slots":[{"slot":"weapon_glock","group":"secondary","name":"Glock-18","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_glock_ad06a162.webp"},{"slot":"weapon_hkp2000","group":"secondary","name":"P2000","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_hkp2000_92ecb767.webp"},{"slot":"weapon_usp_silencer","group":"secondary","name":"USP-S","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_usp_silencer_cbda7a1a.webp"},{"slot":"weapon_elite","group":"secondary","name":"Berettas Duplas","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_elite_924c24ba.webp"},{"slot":"weapon_p250","group":"secondary","name":"P250","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_p250_86f05d48.webp"},{"slot":"weapon_tec9","group":"secondary","name":"Tec-9","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_tec9_3ea1607d.webp"},{"slot":"weapon_fiveseven","group":"secondary","name":"Five-SeveN","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_fiveseven_bfb64dd9.webp"},{"slot":"weapon_cz75a","group":"secondary","name":"CZ75-Auto","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_cz75a_f9b19b3a.webp"},{"slot":"weapon_deagle","group":"secondary","name":"Desert Eagle","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_deagle_41f66480.webp"},{"slot":"weapon_revolver","group":"secondary","name":"Revólver R8","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_revolver_02c9f32c.webp"},{"slot":"weapon_mac10","group":"smg","name":"MAC-10","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_mac10_685221e4.webp"},{"slot":"weapon_mp9","group":"smg","name":"MP9","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_mp9_a58814dc.webp"},{"slot":"weapon_mp7","group":"smg","name":"MP7","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_mp7_b79b0cc6.webp"},{"slot":"weapon_mp5sd","group":"smg","name":"MP5-SD","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_mp5sd_2c0dc576.webp"},{"slot":"weapon_ump45","group":"smg","name":"UMP-45","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_ump45_bb12747a.webp"},{"slot":"weapon_bizon","group":"smg","name":"PP-Bizon","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_bizon_c8c6bce8.webp"},{"slot":"weapon_p90","group":"smg","name":"P90","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_p90_67a88377.webp"},{"slot":"weapon_galilar","group":"rifle","name":"Galil AR","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_galilar_0e49c767.webp"},{"slot":"weapon_famas","group":"rifle","name":"FAMAS","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_famas_d8ae9f65.webp"},{"slot":"weapon_ak47","group":"rifle","name":"AK-47","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_ak47_4797ec49.webp"},{"slot":"weapon_m4a1","group":"rifle","name":"M4A4","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_m4a1_8016e51b.webp"},{"slot":"weapon_m4a1_silencer","group":"rifle","name":"M4A1-S","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_m4a1_silencer_dee5d868.webp"},{"slot":"weapon_ssg08","group":"rifle","name":"SSG 08","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_ssg08_8f8315c8.webp"},{"slot":"weapon_sg556","group":"rifle","name":"SG 553","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_sg556_56355567.webp"},{"slot":"weapon_aug","group":"rifle","name":"AUG","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_aug_4d2e4b19.webp"},{"slot":"weapon_awp","group":"rifle","name":"AWP","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_awp_4a413916.webp"},{"slot":"weapon_g3sg1","group":"rifle","name":"G3SG1","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_g3sg1_ac6ac0c2.webp"},{"slot":"weapon_scar20","group":"rifle","name":"SCAR-20","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_scar20_01bcd7f3.webp"},{"slot":"weapon_nova","group":"heavy","name":"Nova","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_nova_dc080d10.webp"},{"slot":"weapon_xm1014","group":"heavy","name":"XM1014","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_xm1014_42b36f2a.webp"},{"slot":"weapon_mag7","group":"heavy","name":"MAG-7","sides":["ct"],"image":"https://cdn.cstrike.app/images/weapon_mag7_219dfc3e.webp"},{"slot":"weapon_sawedoff","group":"heavy","name":"Cano Curto","sides":["t"],"image":"https://cdn.cstrike.app/images/weapon_sawedoff_b870adea.webp"},{"slot":"weapon_m249","group":"heavy","name":"M249","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_m249_50a70862.webp"},{"slot":"weapon_negev","group":"heavy","name":"Negev","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_negev_bc35bd23.webp"},{"slot":"weapon_taser","group":"equipment","name":"Zeus x27","sides":["t","ct"],"image":"https://cdn.cstrike.app/images/weapon_taser_abc5a131.webp"}],"gear":{"knife":{"t":"https://cdn.cstrike.app/images/weapon_knife_t_7351f72c.webp","ct":"https://cdn.cstrike.app/images/weapon_knife_a6715cc6.webp"},"gloves":{"t":"https://cdn.cstrike.app/images/t_gloves_9fa0afdc.webp","ct":"https://cdn.cstrike.app/images/ct_gloves_a111a39b.webp"},"musicKit":{"all":"https://cdn.cstrike.app/images/valve_cs2_01_5e2dc56b.webp"}},"items":{"67":{"id":67,"title":"Desert Eagle","subtitle":"Chamas","rarity":"restricted","image":"https://cdn.cstrike.app/images/weapon_deagle_aa_flames_1662b4fe.webp","sides":["t","ct"]},"171":{"id":171,"title":"Glock-18","subtitle":"Degradê","rarity":"restricted","image":"https://cdn.cstrike.app/images/weapon_glock_aa_fade_c84215d6.webp","sides":["t"]},"224":{"id":224,"title":"AK-47","subtitle":"Vulcan","rarity":"covert","image":"https://cdn.cstrike.app/images/weapon_ak47_cu_ak47_rubber_660fc050.webp","sides":["t"]},"306":{"id":306,"title":"AWP","subtitle":"Asiimov","rarity":"covert","image":"https://cdn.cstrike.app/images/weapon_awp_cu_awp_asimov_586a77f7.webp","sides":["t","ct"]},"882":{"id":882,"title":"MP9","subtitle":"Escavadeira","rarity":"restricted","image":"https://cdn.cstrike.app/images/weapon_mp9_so_yellow_973e66fd.webp","sides":["ct"]},"950":{"id":950,"title":"P250","subtitle":"Fumaça","rarity":"industrial","image":"https://cdn.cstrike.app/images/weapon_p250_hy_gelpen_01963b5a.webp","sides":["t","ct"]},"1089":{"id":1089,"title":"M4A1-S","subtitle":"Água Escura","rarity":"restricted","image":"https://cdn.cstrike.app/images/weapon_m4a1_silencer_am_zebra_dark_c9982b22.webp","sides":["ct"]},"1125":{"id":1125,"title":"USP-S","subtitle":"Exuberância","rarity":"restricted","image":"https://cdn.cstrike.app/images/weapon_usp_silencer_hy_siege_bravo_fcc02ba9.webp","sides":["ct"]},"1327":{"id":1327,"title":"Karambit","subtitle":"Degradê","rarity":"covert","image":"https://cdn.cstrike.app/images/weapon_knife_karambit_aa_fade_0c50f938.webp","sides":["t","ct"]},"1715":{"id":1715,"title":"Luvas Esportivas","subtitle":"Supercondutora","rarity":"covert","image":"https://cdn.cstrike.app/images/sporty_gloves_sporty_light_blue_a57d2eb3.webp","sides":["t","ct"]},"1781":{"id":1781,"title":"Noisia, Sharpened","subtitle":null,"rarity":"milspec","image":"https://cdn.cstrike.app/images/noisia_01_04063f90.webp","sides":[]},"8621":{"id":8621,"title":"Osíris","subtitle":"Equipe de Elite","rarity":"restricted","image":"https://cdn.cstrike.app/images/customplayer_tm_leet_varianth_e078476c.webp","sides":["t"]},"8630":{"id":8630,"title":"Markus Delrow","subtitle":"FBI HRT","rarity":"restricted","image":"https://cdn.cstrike.app/images/customplayer_ctm_fbi_variantg_75ce48c7.webp","sides":["ct"]},"11428":{"id":11428,"title":"Zeus x27","subtitle":"Olimpo","rarity":"classified","image":"https://cdn.cstrike.app/images/weapon_taser_zeus_thunder_god_ff04663b.webp","sides":["t","ct"]}},"rarities":{"consumer":"Nível Consumidor","industrial":"Nível Industrial","milspec":"Nível Militar","restricted":"Restrito","classified":"Confidencial","covert":"Secreto","contraband":"Contrabando"}}</script>
+<script>
+(function(){
+'use strict';
+const D = JSON.parse(document.getElementById('data').textContent);
+const SIDES = ['t','ct'];                       // ordem fixa: TR à esquerda, CT à direita
+const SIDE = {t:{short:'TR',long:'Terroristas'}, ct:{short:'CT',long:'Contra-Terroristas'}};
+const COLS = [
+  {id:'secondary', name:'Pistolas'},
+  {id:'smg', name:'Submetralhadoras'},
+  {id:'rifle', name:'Rifles'},
+  {id:'heavy', name:'Pesadas'},
+  {id:'equipment', name:'Equipamento'},
+];
+// Faca, luvas, agente e music kit fecham a última coluna, depois das armas.
+const GEAR = [
+  {slot:'knife', group:'equipment', name:'Faca', sides:['t','ct'], image:D.gear.knife},
+  {slot:'gloves', group:'equipment', name:'Luvas', sides:['t','ct'], image:D.gear.gloves},
+  {slot:'agent', group:'equipment', name:'Agente', sides:['t','ct'], image:null},
+  {slot:'musicKit', group:'equipment', name:'Music kit', sides:['t','ct'], image:{t:D.gear.musicKit.all, ct:D.gear.musicKit.all}},
+];
+const SLOTS = [...D.slots, ...GEAR];
+const bySlot = new Map(SLOTS.map(s => [s.slot, s]));
+const imageOf = (s, side) => typeof s.image === 'string' ? s.image : (s.image ? s.image[side] : null);
+
+// Loadout de demonstração: itens reais do catálogo; `ST` = StatTrak. Chave: slot -> lado -> item.
+const E = (id, st) => ({id, st: !!st});
+const FULL = {
+  weapon_glock:{t:E(171)}, weapon_p250:{t:E(950), ct:E(950)}, weapon_deagle:{t:E(67), ct:E(67)},
+  weapon_ak47:{t:E(224,true)}, weapon_awp:{t:E(306), ct:E(306)},
+  weapon_usp_silencer:{ct:E(1125)}, weapon_m4a1_silencer:{ct:E(1089)}, weapon_mp9:{ct:E(882)},
+  weapon_taser:{t:E(11428), ct:E(11428)},
+  knife:{t:E(1327,true), ct:E(1327,true)}, gloves:{t:E(1715), ct:E(1715)},
+  agent:{t:E(8621), ct:E(8630)}, musicKit:{t:E(1781), ct:E(1781)},
+};
+let equip = clone(FULL);
+function clone(o){return JSON.parse(JSON.stringify(o))}
+const at = (slot, side) => (equip[slot] && equip[slot][side]) || null;
+
+const state = {side:'ct', mode:'full', sel:'weapon_usp_silencer', col:'secondary'};
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function columnSlots(colId, side){
+  return SLOTS.filter(s => s.group === colId && s.sides.includes(side));
+}
+const rc = r => `var(--rc-${r})`;
+const RARITY_COLOR = {consumer:'#b0c3d9',industrial:'#5e98d9',milspec:'#4b69ff',restricted:'#8847ff',classified:'#d32ce6',covert:'#eb4b4b',contraband:'#e4ae39'};
+function itemOf(entry){ return entry ? D.items[entry.id] : null }
+function sidesWith(slot, item){
+  return SIDES.filter(x => bySlot.get(slot).sides.includes(x) && at(slot, x) && at(slot, x).id === item.id);
+}
+function dotsHtml(sides){
+  return sides.map(x => `<i class="side-dot ${x}" aria-hidden="true"></i>`).join('');
+}
+const SILHOUETTE = '<svg class="silhouette" aria-hidden="true" viewBox="0 0 64 48" fill="currentColor"><circle cx="32" cy="15" r="7"/><path d="M18 46c0-9 6-16 14-16s14 7 14 16z"/></svg>';
+function artHtml(src, alt){
+  return src ? `<img src="${esc(src)}" alt="" width="256" height="192" loading="lazy" decoding="async" onerror="this.style.visibility='hidden'">` : SILHOUETTE;
+}
+
+// No cartão, o canto superior direito diz o que é (a arma; na faca e nas luvas, o modelo) e o inferior, a skin.
+const cardName = (s, item) => item && (s.slot === 'knife' || s.slot === 'gloves') ? item.title : s.name;
+const cardSkin = (s, item) => s.slot === 'knife' || s.slot === 'gloves' ? (item.subtitle || item.title) : (isWeapon(s) ? (item.subtitle || item.title) : item.title);
+const isWeapon = s => String(s.slot).startsWith('weapon_');
+function cardHtml(s, n, i){
+  const entry = at(s.slot, state.side), item = itemOf(entry);
+  const sides = item ? sidesWith(s.slot, item) : [];
+  const label = item
+    ? `${s.name}, ${item.title}${item.subtitle ? ', ' + item.subtitle : ''}, equipado em ${sides.map(x => SIDE[x].short).join(' e ')}`
+    : `${s.name}, padrão do jogo`;
+  const art = item ? item.image : imageOf(s, state.side);
+  const skin = item ? cardSkin(s, item) : '';
+  const nm = cardName(s, item);
+  const tabindex = s.slot === state.sel ? 0 : -1;
+  return `<button type="button" class="card${item ? '' : ' empty'}" data-slot="${s.slot}" aria-pressed="${s.slot === state.sel}" aria-label="${esc(label)}" tabindex="${tabindex}" style="--i:${i};${item ? '--rc:' + RARITY_COLOR[item.rarity] : ''}">
+    <span class="no" aria-hidden="true">${n}</span>
+    <span class="nm" aria-hidden="true">${esc(nm)}</span>
+    <span class="art">${artHtml(art)}</span>
+    ${item ? `<span class="foot" aria-hidden="true"><span class="chip">${dotsHtml(sides)}${entry.st ? '<span class="st">ST™</span>' : ''}</span><span class="chip sk" title="${esc(skin)}"><span>${esc(skin)}</span><i class="rar"></i></span></span>` : ''}
+  </button>`;
+}
+
+function renderBoard(){
+  let idx = 0;
+  $('#board').innerHTML = COLS.map((c, ci) => {
+    const list = columnSlots(c.id, state.side);
+    const eq = list.filter(s => at(s.slot, state.side)).length;
+    return `<section class="col${c.id === state.col ? ' on' : ''}" data-col="${c.id}" aria-labelledby="h-${c.id}">
+      <header class="col-h"><span class="n" aria-hidden="true">${ci + 1}</span><h2 id="h-${c.id}">${c.name}</h2><span class="c" aria-label="${eq} de ${list.length} com skin">${eq}/${list.length}</span></header>
+      ${list.map((s, i) => cardHtml(s, i + 1, idx++)).join('')}
+    </section>`;
+  }).join('');
+  $('#tabs').innerHTML = COLS.map((c, ci) => {
+    const list = columnSlots(c.id, state.side);
+    return `<button type="button" class="tab" role="tab" id="tab-${c.id}" data-col="${c.id}" aria-selected="${c.id === state.col}">${c.name}<small>${list.length}</small></button>`;
+  }).join('');
+}
+
+function renderNote(){
+  const any = SLOTS.some(s => SIDES.some(x => at(s.slot, x)));
+  $('#note').innerHTML = any ? '' : `<p class="note" data-testid="loadout-empty"><span>Nada equipado ainda: no jogo você usa as armas padrão.</span><a href="#">Montar o Inventário</a></p>`;
+}
+
+function renderDock(flash){
+  const s = bySlot.get(state.sel) || SLOTS[0];
+  const entry = at(s.slot, state.side), item = itemOf(entry);
+  const dock = $('#dock');
+  const other = state.side === 'ct' ? 't' : 'ct';
+  let html;
+  if (item){
+    const sides = sidesWith(s.slot, item);
+    const canBoth = s.sides.includes(other) && item.sides.includes(other) && !sides.includes(other) && s.slot !== 'agent';
+    html = `<div class="thumb">${artHtml(item.image)}</div>
+      <div class="tx" style="--rc:${RARITY_COLOR[item.rarity]}">
+        <div class="t1"><span>${esc(item.title)}${item.subtitle ? ' · ' + esc(item.subtitle) : ''}</span><span class="dots-l">${dotsHtml(sides)}<span class="tag">${sides.map(x => SIDE[x].short).join(' · ')}</span></span></div>
+        <div class="t2"><span>${esc(s.name)}</span><i aria-hidden="true"></i><span>${D.rarities[item.rarity]}${entry.st ? ' · StatTrak™' : ''}</span></div>
+      </div>
+      <div class="acts">
+        ${canBoth ? `<button class="btn" type="button" data-act="both"><i class="side-dot ${other}" aria-hidden="true"></i>Equipar também no ${SIDE[other].short}</button>` : ''}
+        <button class="btn" type="button" data-act="unequip">Desequipar</button>
+      </div>`;
+  } else {
+    const only = s.sides.length === 1 ? s.sides[0] : null;
+    html = `<div class="thumb empty">${artHtml(imageOf(s, state.side))}</div>
+      <div class="tx">
+        <div class="t1"><span>${esc(s.name)}</span></div>
+        <div class="t2"><span>${s.slot === 'agent' ? 'Nada equipado: no jogo vale o agente do mapa.' : 'Nada equipado: no jogo você usa o padrão.'}</span>${only ? `<span class="dots-l"><i class="side-dot ${only}" aria-hidden="true"></i><span class="tag">só ${SIDE[only].short}</span></span>` : ''}</div>
+      </div>`;
+  }
+  dock.innerHTML = html;
+  if (flash){ dock.classList.remove('flash'); void dock.offsetWidth; dock.classList.add('flash'); }
+}
+
+function renderAll(){ renderNote(); renderBoard(); renderDock(); }
+
+function setSide(side){
+  state.side = side;
+  $('#seg').dataset.side = side;
+  document.querySelectorAll('#seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.side === side)));
+  // O slot selecionado continua o mesmo se existe do outro lado; senão, o primeiro da coluna.
+  if (!bySlot.get(state.sel).sides.includes(side)){
+    const g = bySlot.get(state.sel).group;
+    state.sel = columnSlots(g, side)[0].slot;
+  }
+  renderAll();
+}
+function select(slot, focus){
+  state.sel = slot;
+  state.col = bySlot.get(slot).group;
+  document.querySelectorAll('.card').forEach(c => { const on = c.dataset.slot === slot; c.setAttribute('aria-pressed', String(on)); c.tabIndex = on ? 0 : -1; });
+  renderDock();
+  if (focus) $(`.card[data-slot="${slot}"]`).focus();
+}
+
+document.addEventListener('click', e => {
+  const card = e.target.closest('.card');
+  if (card) return select(card.dataset.slot);
+  const tab = e.target.closest('.tab');
+  if (tab){ state.col = tab.dataset.col; document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t === tab))); document.querySelectorAll('.col').forEach(c => c.classList.toggle('on', c.dataset.col === state.col)); return; }
+  const sb = e.target.closest('#seg button');
+  if (sb) return setSide(sb.dataset.side);
+  const mb = e.target.closest('[data-mode]');
+  if (mb){
+    state.mode = mb.dataset.mode; equip = state.mode === 'full' ? clone(FULL) : {};
+    document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b === mb)));
+    return renderAll();
+  }
+  const act = e.target.closest('[data-act]');
+  if (act){
+    const s = bySlot.get(state.sel), entry = at(s.slot, state.side);
+    if (!entry) return;
+    equip[s.slot] = equip[s.slot] || {};
+    if (act.dataset.act === 'unequip'){
+      // O music kit vale nos dois lados; o resto, só no lado visto.
+      s.slot === 'musicKit' ? SIDES.forEach(x => delete equip[s.slot][x]) : delete equip[s.slot][state.side];
+    } else {
+      equip[s.slot][state.side === 'ct' ? 't' : 'ct'] = {...entry};
+    }
+    renderNote(); renderBoard(); renderDock(true);
+    const c = $(`.card[data-slot="${s.slot}"]`); if (c) c.tabIndex = 0;
+  }
+});
+$('#theme').addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = next;
+  try{ localStorage.setItem('carmine-proto-theme', next) }catch(e){}
+});
+
+// Teclado: setas andam pela grade; 1–5 pulam para a coluna (só com o foco no quadro).
+$('#board').addEventListener('keydown', e => {
+  const card = e.target.closest('.card'); if (!card) return;
+  const col = card.closest('.col'), cards = [...col.querySelectorAll('.card')], i = cards.indexOf(card);
+  const cols = [...document.querySelectorAll('.col')], ci = cols.indexOf(col);
+  const go = c => { if (c){ e.preventDefault(); select(c.dataset.slot, true); } };
+  if (e.key === 'ArrowDown') go(cards[i + 1]);
+  else if (e.key === 'ArrowUp') go(cards[i - 1]);
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft'){
+    const nc = cols[ci + (e.key === 'ArrowRight' ? 1 : -1)];
+    if (nc && getComputedStyle(nc).display !== 'none'){ const t = nc.querySelectorAll('.card'); go(t[Math.min(i, t.length - 1)]); }
+  } else if (/^[1-5]$/.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey){
+    const nc = cols[Number(e.key) - 1];
+    if (nc && getComputedStyle(nc).display !== 'none') go(nc.querySelector('.card'));
+  }
+});
+renderAll();
+})();
+</script>
+</body>
+</html>
