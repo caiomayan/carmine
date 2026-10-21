@@ -460,7 +460,8 @@
  * campo clareia um degrau (a camada --hover por dentro do que ele já tem), com uma transição curta.
  * O foco continua sempre visível (WCAG 2.4.7): o anel passa de 3:1 sobre o fundo nos dois temas e,
  * no modo de alto contraste (onde a sombra some), volta o contorno do sistema. Botões e links
- * seguem com o anel de 2 px, só no teclado (:focus-visible).
+ * seguem com o anel de 2 px, só no teclado (:focus-visible). Nos campos vale :focus (não :focus-visible): digitar
+ * exige ver onde se está, venha o foco do mouse, do teclado ou de um script (o "Alterar nome" foca o campo).
  *
  * Fora das camadas de propósito: vale para todo campo, mesmo os que trazem `transition-colors` ou
  * `hover:bg-*` próprios (uma regra de camada perderia para os utilitários do Tailwind).
@@ -486,7 +487,7 @@
     background-color var(--dur-fast) var(--ease-std),
     color var(--dur-fast) var(--ease-std);
 
-  &:focus-visible {
+  &:focus {
     outline: none;
     box-shadow:
       var(--focus-field),
@@ -494,7 +495,7 @@
   }
 
   @media (forced-colors: active) {
-    &:focus-visible {
+    &:focus {
       outline: 2px solid CanvasText;
       outline-offset: 2px;
     }

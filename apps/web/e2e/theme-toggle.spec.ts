@@ -1,4 +1,4 @@
-import { BG, expect, test } from './fixtures';
+import { BG, expect, saveTheme, test } from './fixtures';
 
 const toggle = (page: import('@playwright/test').Page) => page.getByTestId('theme-toggle');
 
@@ -52,4 +52,16 @@ test('a troca de tema funciona com movimento reduzido', async ({ page }) => {
   await page.getByRole('button', { name: 'Usar tema claro' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await expect(page.locator('html')).not.toHaveClass(/no-tx/);
+});
+
+test('a página 404 respeita o tema salvo', async ({ page, expectedConsoleErrors }) => {
+  expectedConsoleErrors.push(/404 \(Not Found\)/);
+  await saveTheme(page, 'light');
+  const response = await page.goto('/pagina-que-nao-existe');
+  expect(response?.status()).toBe(404);
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Página não encontrada' }),
+  ).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await expect(page.locator('body')).toHaveCSS('background-color', BG.light);
 });
