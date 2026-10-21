@@ -45,6 +45,8 @@
   --color-status-info: var(--status-info);
   --color-status-vip: var(--status-vip);
   --color-status-offline: var(--status-offline);
+  --color-side-ct: var(--side-ct);
+  --color-side-t: var(--side-t);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);

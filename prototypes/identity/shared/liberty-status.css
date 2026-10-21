@@ -11,6 +11,10 @@
   --status-info: #82A6C2;
   --status-vip: #CDAA62;
   --status-offline: var(--faint);
+  /* Lados do jogo (bolinhas CT e TR): cor de contexto, mais viva que as de status para
+     distinguir os dois lados num relance. Contraste >= 4,5:1 sobre --bg, --surface e --surface-2. */
+  --side-ct: #6AAAF5;
+  --side-t: #F29A45;
 }
 [data-theme="light"] {
   --status-online: #3F6930;
@@ -20,4 +24,6 @@
   --status-info: #386287;
   --status-vip: #765C1A;
   --status-offline: var(--faint);
+  --side-ct: #1F5EA8;
+  --side-t: #9C4807;
 }

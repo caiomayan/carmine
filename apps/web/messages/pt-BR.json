@@ -739,6 +739,12 @@
     "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado.",
     "addAndEquip": "Adicionar e equipar"
   },
+  "team": {
+    "equippedIn": {
+      "ct": "Equipada no CT",
+      "t": "Equipada no TR"
+    }
+  },
   "loadout": {
     "title": "Loadout",
     "subtitle": "O que você usa nos Servidores Carmine. Vale no próximo connect ou quando você digita <cmd>!ws</cmd> no servidor.",

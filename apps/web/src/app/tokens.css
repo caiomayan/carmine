@@ -36,6 +36,9 @@
   --status-danger: #db8274;
   --status-info: #82a6c2;
   --status-vip: #cdaa62;
+  /* lados do jogo (bolinhas CT e TR): cor de contexto, ver shared/liberty-status.css */
+  --side-ct: #6aaaf5;
+  --side-t: #f29a45;
 }
 
 [data-theme="light"] {
@@ -57,6 +60,8 @@
   --status-danger: #a3382c;
   --status-info: #386287;
   --status-vip: #765c1a;
+  --side-ct: #1f5ea8;
+  --side-t: #9c4807;
 }
 
 /*
