@@ -365,10 +365,12 @@
   }
 }
 
-/* ---------- Loadout: o slot que acabou de mudar acende uma vez (S05) ---------- */
-@keyframes slot-flash {
+/* ---------- Loadout: a barra do slot acende uma vez quando ele muda (S05) ---------- */
+@keyframes dock-flash {
   from {
-    box-shadow: inset 0 0 0 1.5px var(--text);
-    background-color: var(--surface-2);
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }

@@ -760,7 +760,6 @@
       "both": "CT e TR"
     },
     "groups": {
-      "gear": "Faca, luvas e personagem",
       "secondary": "Pistolas",
       "smg": "Submetralhadoras",
       "rifle": "Rifles",
@@ -787,10 +786,21 @@
       "nameTag": "nametag",
       "body": "Sem Período VIP ativo, {attributes} não vão para o jogo. O Item vai, e eles voltam com o VIP."
     },
+    "board": {
+      "categories": "Categorias",
+      "columnCount": "{equipped} de {total} com Item",
+      "cardEquipped": "{slot}: {item}. Equipado em {sides}.",
+      "cardEmpty": "{slot}: padrão do jogo.",
+      "cardOutOfGame": "Fora do jogo."
+    },
     "panel": {
       "label": "Slot selecionado",
       "empty": "Nada equipado: no jogo você usa a Arma padrão.",
       "emptyGear": "Nada equipado: no jogo você usa o padrão do jogo.",
+      "pick": "Trocar item",
+      "pickEmpty": "Equipar item",
+      "pickerTitle": "Escolher: {slot}",
+      "pickerDescription": "Itens do seu Inventário que cabem neste slot.",
       "choose": "Do seu Inventário",
       "none": "Você não tem Itens para este slot.",
       "addFromCatalog": "Adicionar do catálogo",

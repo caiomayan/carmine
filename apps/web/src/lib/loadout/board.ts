@@ -1,5 +1,5 @@
 import type { LoadoutSide } from '@carmine/contracts';
-import { orderedSides } from '../team-sides';
+import { equippedTeamSides } from '../team-sides';
 import type { SlotView, SlotViewGroup } from './view';
 
 /**
@@ -102,11 +102,12 @@ export function buildBoard(slots: SlotView[], side: LoadoutSide): BoardColumn[] 
 export function equippedSidesOf(slots: SlotView[], slot: SlotView): LoadoutSide[] {
   const uid = slot.item?.uid;
   if (!uid) return [];
-  if (slot.side === null) return orderedSides(['t', 'ct']);
-  return orderedSides(
-    slots
-      .filter((other) => other.slot === slot.slot && other.item?.uid === uid)
-      .flatMap((other) => (other.side ? [other.side] : [])),
+  return equippedTeamSides(
+    slot.side === null
+      ? [null]
+      : slots
+          .filter((other) => other.slot === slot.slot && other.item?.uid === uid)
+          .map((other) => other.side),
   );
 }
 

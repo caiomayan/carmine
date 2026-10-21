@@ -155,7 +155,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-(--mx) pb-[max(16px,env(safe-area-inset-bottom))]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-(--mx) pb-[calc(max(16px,env(safe-area-inset-bottom))+var(--dock-h,0px))]"
       >
         <AnimatePresence>
           {notice ? (
