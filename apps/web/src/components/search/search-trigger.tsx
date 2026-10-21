@@ -34,7 +34,9 @@ const anotherDialogOpen = () =>
 
 /**
  * O campo de busca do cabeçalho (U3d): abre a paleta de comandos. No desktop é um campo com o
- * atalho à vista; no celular (e em telas estreitas) vira só o ícone, num alvo de 44 px. O
+ * atalho à vista, a partir de 1152 px (onde o container já tem os 1080 px e a coluna das ações
+ * comporta o campo ao lado do tema e da Conta sem empurrar a navegação do centro); abaixo disso, e
+ * no celular, vira só o ícone (alvo de 44 px no celular). O
  * atalho vale em qualquer página: Ctrl+K (⌘K no Mac) e "/" quando nenhum campo está em foco.
  */
 export function SearchTrigger() {
@@ -113,15 +115,18 @@ export function SearchTrigger() {
         onClick={show}
         onPointerEnter={loadPalette}
         onFocus={loadPalette}
-        className="animate-fade-up lg:min-h-8 lg:w-44 lg:justify-start lg:gap-2 lg:px-3 lg:font-normal"
+        className="animate-fade-up min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal"
       >
-        <SearchIcon aria-hidden="true" className="size-[18px] lg:size-4 lg:text-muted-foreground" />
-        <span className="flex-1 text-left text-sm text-muted-foreground max-lg:hidden">
+        <SearchIcon
+          aria-hidden="true"
+          className="size-[18px] min-[1152px]:size-4 min-[1152px]:text-muted-foreground"
+        />
+        <span className="flex-1 text-left text-sm text-muted-foreground max-[1151px]:hidden">
           {t('label')}
         </span>
         <kbd
           suppressHydrationWarning
-          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-[11px] leading-none font-medium text-[color-mix(in_srgb,var(--text)_72%,var(--muted))] max-lg:hidden"
+          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-[11px] leading-none font-medium text-[color-mix(in_srgb,var(--text)_72%,var(--muted))] max-[1151px]:hidden"
         >
           {mac ? '⌘K' : 'Ctrl K'}
         </kbd>
