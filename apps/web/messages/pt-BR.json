@@ -166,9 +166,6 @@
       }
     },
     "hints": {
-      "add": "Adicionar",
-      "edit": "Abrir",
-      "profile": "Perfil",
       "server": "{players}/{max}",
       "serverFull": "Lotado",
       "serverOffline": "Offline",

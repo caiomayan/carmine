@@ -241,6 +241,8 @@ function PaletteBody({
   const total = groups.reduce((sum, group) => sum + group.hits.length, 0);
   const loading =
     data.searching && (data.items.status === 'loading' || data.players.status === 'loading');
+  // Com resultados da busca anterior na tela, a lista só se atenua até a nova chegar.
+  const hasRemote = hits.some((hit) => hit.group !== 'pages' && hit.group !== 'actions');
   const failed =
     data.searching &&
     [data.items, data.players, data.servers].some((source) => source.status === 'error');
@@ -351,7 +353,11 @@ function PaletteBody({
 
       <CommandList
         label={t('palette.listLabel')}
-        className="max-h-none min-h-0 flex-[0_1_auto] px-2 pb-2 md:max-h-[min(28rem,60dvh)]"
+        className={cn(
+          'max-h-none min-h-0 flex-[0_1_auto] px-2 pb-2 transition-opacity duration-(--dur-base) ease-std md:max-h-[min(28rem,60dvh)]',
+          loading && hasRemote && 'opacity-60',
+        )}
+        aria-busy={loading || undefined}
         data-testid="palette-list"
       >
         {showRecent ? (
@@ -395,6 +401,7 @@ function PaletteBody({
         text={text}
         total={total}
         loading={loading}
+        skeleton={loading && !hasRemote}
         failed={failed}
         signOutFailed={signOutFailed}
         sources={[data.items, data.players, data.servers]}
@@ -514,16 +521,19 @@ function RowView({ row }: { row: Row }) {
             subtitle={skin ? hit.title : hit.subtitle}
             dot={RARITY_COLOR[hit.rarity]}
           />
-          <Trailing>{row.source === 'inventory' ? t('hints.edit') : t('hints.add')}</Trailing>
         </>
       );
     }
     case 'player':
       return (
         <>
-          <Avatar src={row.hit.avatarUrl} name={row.hit.displayName} size={32} />
+          <Avatar
+            src={row.hit.avatarUrl}
+            name={row.hit.displayName}
+            size={32}
+            className="bg-(--fill-hover)"
+          />
           <RowText title={row.hit.displayName} />
-          <Trailing>{t('hints.profile')}</Trailing>
         </>
       );
     case 'server': {
@@ -562,6 +572,7 @@ function Status({
   text,
   total,
   loading,
+  skeleton,
   failed,
   signOutFailed,
   sources,
@@ -571,6 +582,8 @@ function Status({
   text: string;
   total: number;
   loading: boolean;
+  /** O esqueleto só aparece quando não há nenhum resultado da busca para mostrar. */
+  skeleton: boolean;
   failed: boolean;
   signOutFailed: boolean;
   sources: Remote<unknown>[];
@@ -583,7 +596,7 @@ function Status({
   return (
     <>
       {/* Quando a lista só tem as páginas e ações, a busca ainda traz Itens e jogadores. */}
-      {loading ? (
+      {skeleton ? (
         <div data-testid="palette-loading" className="grid gap-2 px-2.5 py-3" aria-hidden="true">
           {[0, 1, 2].map((index) => (
             <span key={index} className="flex items-center gap-3">
