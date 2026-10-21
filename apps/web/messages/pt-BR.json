@@ -167,11 +167,12 @@
       },
       "private": {
         "title": "Sua lista de amigos da Steam é privada",
-        "body": "Sem ver a lista, não dá para saber quais amigos estão jogando.",
+        "body": "Só achamos os amigos que têm você na lista deles, e nenhum está jogando agora. Com a sua lista visível, aparecem todos.",
+        "foundBody": "Sua lista de amigos da Steam é privada: estes são os amigos que achamos pelas listas deles. Com a lista visível, aparecem todos.",
         "howTo": "Como deixar a lista visível",
         "step1": "Na Steam, abra o seu perfil e vá em Editar perfil › Privacidade.",
         "step2": "Em Lista de amigos, escolha Pública.",
-        "consequence": "Com a lista pública, qualquer pessoa vê os seus amigos no seu perfil da Steam. Deixar privada também é uma escolha válida: só este bloco fica sem dados.",
+        "consequence": "Com a lista pública, qualquer pessoa vê os seus amigos no seu perfil da Steam. Deixar privada também é uma escolha válida: este bloco mostra só os amigos que têm você na lista deles.",
         "open": "Abrir a privacidade na Steam"
       },
       "unavailable": {

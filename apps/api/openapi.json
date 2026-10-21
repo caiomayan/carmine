@@ -2487,7 +2487,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Amigos jogando (ok), lista de amigos privada ou Steam indisponível",
+            "description": "Amigos jogando (ok), lista de amigos privada (com os amigos achados pelas listas de quem joga) ou Steam indisponível",
             "content": {
               "application/json": {
                 "schema": {
@@ -6368,10 +6368,17 @@
                 "enum": [
                   "private"
                 ]
+              },
+              "friends": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PlayingFriend"
+                }
               }
             },
             "required": [
-              "status"
+              "status",
+              "friends"
             ],
             "additionalProperties": false
           },

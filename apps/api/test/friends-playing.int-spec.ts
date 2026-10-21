@@ -98,11 +98,106 @@ describe('Seus amigos jogando agora (S06)', () => {
     expect(await friendsPlaying(lonely)).toEqual({ status: 'ok', friends: [] });
   });
 
-  it('lista de amigos privada na Steam: private', async () => {
-    const me = await signedInPlayer(t, 120);
-    steam.friendLists.set(me.steamId, 'private');
+  it('lista própria pública: não consulta a lista de quem está jogando', async () => {
+    const me = await signedInPlayer(t, 160);
+    const friend = steamIdFor(161);
+    const other = steamIdFor(162);
+    steam.friendLists.set(me.steamId, [friend]);
+    steam.friendLists.set(other, [me.steamId]);
+    const { key } = await t.app
+      .get(GameServerRegistry)
+      .register({ name: 'retake-publica', mode: 'retake', address: '127.0.0.1:27032' });
+    await playing(key, [friend, other]);
 
-    expect(await friendsPlaying(me)).toEqual({ status: 'private' });
+    const result = await friendsPlaying(me);
+
+    expect(result.status === 'ok' && result.friends.map((f) => f.steamId)).toEqual([friend]);
+    expect(steam.friendListRequestsFor(other)).toHaveLength(0);
+    expect(steam.friendListRequestsFor(friend)).toHaveLength(0);
+  });
+
+  describe('lista de amigos privada na Steam', () => {
+    it('acha o jogador que tem a Conta na lista dele, com o servidor onde está', async () => {
+      const me = await signedInPlayer(t, 120);
+      const mutual = steamIdFor(121);
+      const oneWay = steamIdFor(122);
+      steam.friendLists.set(me.steamId, 'private');
+      steam.friendLists.set(mutual, [steamIdFor(129), me.steamId]);
+      // Sem a Conta de quem olha na lista dele, não é amizade mútua: não aparece.
+      steam.friendLists.set(oneWay, [steamIdFor(129)]);
+      const { server, key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'retake-privada', mode: 'retake', address: '127.0.0.1:27033' });
+      await playing(key, [mutual, oneWay]);
+
+      const result = await friendsPlaying(me);
+
+      const account = await t.accounts.findBySteamId(mutual);
+      expect(result).toEqual({
+        status: 'private',
+        friends: [
+          {
+            steamId: mutual,
+            publicId: account?.publicId,
+            displayName: account?.displayName,
+            avatarUrl: null,
+            serverId: server.id,
+          },
+        ],
+      });
+    });
+
+    it('ninguém jogando tem a Conta na lista: private com a lista vazia', async () => {
+      const me = await signedInPlayer(t, 123);
+      const other = steamIdFor(124);
+      steam.friendLists.set(me.steamId, 'private');
+      steam.friendLists.set(other, [steamIdFor(129)]);
+      const { key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'retake-ninguem', mode: 'retake', address: '127.0.0.1:27034' });
+      await playing(key, [other]);
+
+      expect(await friendsPlaying(me)).toEqual({ status: 'private', friends: [] });
+    });
+
+    it('sem ninguém jogando: private com a lista vazia', async () => {
+      const me = await signedInPlayer(t, 125);
+      steam.friendLists.set(me.steamId, 'private');
+
+      expect(await friendsPlaying(me)).toEqual({ status: 'private', friends: [] });
+    });
+
+    it('amigo que também tem a lista privada não aparece', async () => {
+      const me = await signedInPlayer(t, 126);
+      const friend = steamIdFor(127);
+      steam.friendLists.set(me.steamId, 'private');
+      steam.friendLists.set(friend, 'private');
+      const { key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'retake-duas-privadas', mode: 'retake', address: '127.0.0.1:27035' });
+      await playing(key, [friend]);
+
+      expect(await friendsPlaying(me)).toEqual({ status: 'private', friends: [] });
+    });
+
+    it('as listas dos jogadores ficam em cache: a Steam é consultada uma vez por jogador', async () => {
+      const me = await signedInPlayer(t, 170);
+      const friend = steamIdFor(171);
+      steam.friendLists.set(me.steamId, 'private');
+      steam.friendLists.set(friend, [me.steamId]);
+      const { key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'retake-cache-privada', mode: 'retake', address: '127.0.0.1:27036' });
+      await playing(key, [friend]);
+
+      const first = await friendsPlaying(me);
+      const second = await friendsPlaying(me);
+
+      expect(first.status === 'private' && first.friends.map((f) => f.steamId)).toEqual([friend]);
+      expect(second).toEqual(first);
+      expect(steam.friendListRequestsFor(friend)).toHaveLength(1);
+      expect(steam.friendListRequestsFor(me.steamId)).toHaveLength(1);
+    });
   });
 
   it.each([

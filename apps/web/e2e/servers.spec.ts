@@ -264,11 +264,55 @@ test.describe('Seus amigos jogando agora', () => {
     await expect(block.getByText('Nenhum amigo jogando agora')).toBeVisible();
   });
 
-  test('lista de amigos privada orienta, com a consequência de privacidade', async ({ page }) => {
+  test('lista privada: mostra o amigo achado pela lista dele e mantém a orientação discreta', async ({
+    page,
+    request,
+  }) => {
+    const server = createServer();
+    const friend = friendSteamId();
+    await connectPlayer(request, server, friend, 'Amigo mútuo');
+    const stop = keepBeating(request, server, () => [friend]);
+    try {
+      await heartbeat(request, server, [friend]);
+      await signIn(page, PRIVATE_FRIENDS_STEAM_ID);
+      const block = page.getByTestId('friends-playing');
+      await expect(block).toHaveAttribute('data-status', 'private');
+      // Outros testes podem ter amigos jogando ao mesmo tempo: abre a lista inteira.
+      const more = block.getByRole('button', { name: /Ver mais/ });
+      if (await more.isVisible()) await more.click();
+      const entry = block.locator(`[data-friend="${friend}"]`);
+      await expect(entry).toBeVisible();
+      await expect(entry).toContainText(server.name);
+      await expect(
+        entry.getByRole('link', { name: /^Jogar junto: entrar no mesmo servidor que / }),
+      ).toHaveAttribute('href', `steam://connect/${server.address}`);
+      // Os avatares do cartão do servidor usam a mesma leitura.
+      await expect(row(page, server.name).getByTestId('card-friends')).toBeVisible();
+
+      const hint = block.getByTestId('friends-private-hint');
+      await expect(hint).toContainText('Sua lista de amigos da Steam é privada');
+      await expect(hint).toContainText('aparecem todos');
+      await hint.getByRole('button', { name: 'Como deixar a lista visível' }).click();
+      await expect(block.getByText(/qualquer pessoa vê os seus amigos/)).toBeVisible();
+      expect(await axeViolations(page)).toEqual([]);
+    } finally {
+      stop();
+    }
+  });
+
+  test('lista privada e ninguém achado orienta, com a consequência de privacidade', async ({
+    page,
+  }) => {
+    // Outros testes ligam amigos em paralelo e a Steam falsa os faz amigos do …9001: a resposta
+    // "privada, ninguém achado" vem fixa. A leitura real é coberta pela API.
+    await page.route('**/api/me/friends-playing', (route) =>
+      route.fulfill({ json: { status: 'private', friends: [] } }),
+    );
     await signIn(page, PRIVATE_FRIENDS_STEAM_ID);
     const block = page.getByTestId('friends-playing');
     await expect(block).toHaveAttribute('data-status', 'private');
     await expect(block.getByText('Sua lista de amigos da Steam é privada')).toBeVisible();
+    await expect(block.getByText(/Com a sua lista visível, aparecem todos/)).toBeVisible();
 
     const howTo = block.getByRole('button', { name: 'Como deixar a lista visível' });
     await expect(howTo).toHaveAttribute('aria-expanded', 'false');

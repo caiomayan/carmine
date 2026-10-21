@@ -76,7 +76,7 @@ describe('liveServerListSchema', () => {
 });
 
 describe('friendsPlayingSchema', () => {
-  it('distingue os três estados', () => {
+  it('distingue os estados, e a privada traz os amigos achados (ou nenhum)', () => {
     const playing = {
       status: 'ok',
       friends: [
@@ -95,7 +95,15 @@ describe('friendsPlayingSchema', () => {
       status: 'ok',
       friends: [],
     });
-    expect(friendsPlayingSchema.parse({ status: 'private' })).toEqual({ status: 'private' });
+    expect(friendsPlayingSchema.parse({ ...playing, status: 'private' })).toEqual({
+      ...playing,
+      status: 'private',
+    });
+    expect(friendsPlayingSchema.parse({ status: 'private', friends: [] })).toEqual({
+      status: 'private',
+      friends: [],
+    });
+    expect(friendsPlayingSchema.safeParse({ status: 'private' }).success).toBe(false);
     expect(friendsPlayingSchema.parse({ status: 'unavailable' })).toEqual({
       status: 'unavailable',
     });

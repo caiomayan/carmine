@@ -22,6 +22,7 @@ import {
   friendsWithServers,
   serverFullLabel,
   steamConnectUrl,
+  viewFriends,
 } from '@/lib/live-servers';
 import { mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
@@ -38,9 +39,11 @@ const VISIBLE_FRIENDS = 6;
 
 /**
  * "Seus amigos jogando agora" (S06): os amigos Steam da Conta que estão num Servidor Carmine,
- * com "Entrar" no mesmo servidor. Três estados distintos além da lista: nenhum amigo jogando,
- * lista de amigos privada (com a orientação opcional e a consequência de privacidade) e Steam
- * indisponível. Sem sessão, um convite para entrar.
+ * com "Entrar" no mesmo servidor. Estados além da lista: nenhum amigo jogando, lista de amigos
+ * privada e Steam indisponível. Com a lista privada, o bloco mostra os amigos achados pelas
+ * listas de quem está jogando (a amizade é mútua) e mantém, discreta, a orientação opcional de
+ * tornar a lista visível, com a consequência de privacidade; sem achados, a orientação é o
+ * próprio estado. Sem sessão, um convite para entrar.
  */
 export function FriendsPlaying({
   servers,
@@ -51,7 +54,7 @@ export function FriendsPlaying({
 }) {
   const t = useTranslations('servers.friends');
   const titleId = useId();
-  const playing = view.status === 'ok' ? friendsWithServers(view.friends, servers) : [];
+  const playing = friendsWithServers(viewFriends(view), servers);
   const [expanded, setExpanded] = useState(false);
   const listId = useId();
   const hidden = Math.max(0, playing.length - VISIBLE_FRIENDS);
@@ -100,8 +103,8 @@ export function FriendsPlaying({
         </div>
       ) : view.status === 'anonymous' ? (
         <Anonymous />
-      ) : view.status === 'private' ? (
-        <PrivateList />
+      ) : view.status === 'private' && playing.length === 0 ? (
+        <PrivateList found={false} />
       ) : view.status === 'unavailable' ? (
         <Notice icon={RefreshCWIcon} title={t('unavailable.title')} body={t('unavailable.body')}>
           <Button variant="ghost" size="sm" className="-ml-3" onClick={refresh}>
@@ -130,7 +133,8 @@ export function FriendsPlaying({
               {expanded ? t('showLess') : t('showAll', { count: hidden })}
             </Button>
           ) : null}
-          {view.stale ? (
+          {view.status === 'private' ? <PrivateList found /> : null}
+          {'stale' in view && view.stale ? (
             <p role="status" className="px-3 pt-1 pb-2.5 text-[12px] text-muted-foreground">
               {t('unavailable.stale')}
             </p>
@@ -234,16 +238,38 @@ function Notice({
   );
 }
 
-function PrivateList() {
+/**
+ * A lista de amigos da Conta é privada. Sem achados, é o estado do bloco; com achados, vem
+ * discreta embaixo da lista, só explicando que tornar a lista visível mostra todos.
+ */
+function PrivateList({ found }: { found: boolean }) {
+  const t = useTranslations('servers.friends.private');
+  return found ? (
+    <div
+      data-testid="friends-private-hint"
+      className="grid gap-1 px-3 pt-1.5 pb-2.5 text-[12px] leading-[1.5] text-muted-foreground"
+    >
+      <p>{t('foundBody')}</p>
+      <PrivacyHowTo className="-ml-3 text-muted-foreground" />
+    </div>
+  ) : (
+    <Notice icon={LockIcon} title={t('title')} body={t('body')}>
+      <PrivacyHowTo className="-ml-3" />
+    </Notice>
+  );
+}
+
+/** "Como deixar a lista visível": os passos e a consequência de privacidade, sob demanda. */
+function PrivacyHowTo({ className }: { className?: string }) {
   const t = useTranslations('servers.friends.private');
   const [open, setOpen] = useState(false);
   const panelId = useId();
   return (
-    <Notice icon={LockIcon} title={t('title')} body={t('body')}>
+    <div>
       <Button
         variant="ghost"
         size="sm"
-        className="-ml-3"
+        className={className}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
@@ -276,7 +302,7 @@ function PrivateList() {
             transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="grid gap-2.5 pt-2 text-[13px] leading-[1.5]">
+            <div className="grid gap-2.5 pt-2 text-[13px] leading-[1.5] text-foreground">
               <ol className="grid list-decimal gap-1 pl-5 marker:text-muted-foreground">
                 <li>{t('step1')}</li>
                 <li>{t('step2')}</li>
@@ -297,7 +323,7 @@ function PrivateList() {
           </m.div>
         ) : null}
       </AnimatePresence>
-    </Notice>
+    </div>
   );
 }
 

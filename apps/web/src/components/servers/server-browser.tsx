@@ -25,6 +25,7 @@ import {
   serversLayout,
   serversOfMode,
   updatedSecondsAgo,
+  viewFriends,
 } from '@/lib/live-servers';
 import { MODE_FILTERS, type ModeFilter } from '@/lib/modes';
 import { cmd } from './connect';
@@ -55,10 +56,7 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
   const { state, retry } = useLiveServers(initial);
   const friends = useFriendsPlaying();
   const servers = state.list?.servers ?? [];
-  const friendsOnServer = useMemo(
-    () => friendsByServer(friends.view.status === 'ok' ? friends.view.friends : []),
-    [friends.view],
-  );
+  const friendsOnServer = useMemo(() => friendsByServer(viewFriends(friends.view)), [friends.view]);
 
   return (
     <Tabs value={mode} onValueChange={(v) => setMode(v as ModeFilter)} className="gap-0">

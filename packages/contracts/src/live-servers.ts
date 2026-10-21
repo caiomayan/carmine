@@ -137,15 +137,17 @@ export const playingFriendSchema = z
 export type PlayingFriend = z.infer<typeof playingFriendSchema>;
 
 /**
- * `GET /api/me/friends-playing` (com sessão; 401 sem ela). Os três estados do bloco:
+ * `GET /api/me/friends-playing` (com sessão; 401 sem ela). Os estados do bloco:
  * - `ok`: a lista de amigos Steam é visível; `friends` vazio é "nenhum amigo jogando";
- * - `private`: a lista de amigos Steam da Conta é privada;
+ * - `private`: a lista de amigos Steam da Conta é privada. `friends` traz os amigos achados
+ *   pelas listas públicas de quem está jogando agora (a amizade na Steam é mútua); vazio é
+ *   "privada e ninguém achado". Só aparecem amigos mútuos, e só quem está jogando agora;
  * - `unavailable`: a Steam não respondeu (ou a API está sem chave da Steam Web API).
  */
 export const friendsPlayingSchema = z
   .discriminatedUnion('status', [
     z.object({ status: z.literal('ok'), friends: z.array(playingFriendSchema) }),
-    z.object({ status: z.literal('private') }),
+    z.object({ status: z.literal('private'), friends: z.array(playingFriendSchema) }),
     z.object({ status: z.literal('unavailable') }),
   ])
   .meta({ id: 'FriendsPlaying' });
