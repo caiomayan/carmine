@@ -10,7 +10,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "biome check .",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "maps": "node scripts/maps.mjs"
   },
   "dependencies": {
     "@carmine/contracts": "workspace:*",

@@ -180,6 +180,22 @@ curl -X POST http://localhost:3333/api/server/heartbeat -H "Authorization: Beare
 curl -N http://localhost:3333/api/servers/live   # Ctrl+C para sair
 ```
 
+### Cartões de servidor e imagens dos mapas (U2)
+
+A home mostra cada servidor no ar como um **cartão** (o mapa atual ao fundo, escurecido pelo degradê da superfície até o texto passar no AA nos dois temas; nome, Modo, estado, jogadores/vagas, avatares dos amigos que estão lá e Jogar). Com mais de 6 servidores no ar (`MAX_CARD_SERVERS` em `apps/web/src/lib/live-servers.ts`) a mesma tela vira lista. Os offline nunca ganham cartão: ficam no grupo "Offline (n)" no fim, sem botão. Mapa sem imagem cai num fundo neutro.
+
+As imagens ficam em `apps/web/public/maps/<mapa>-<largura>.<avif|webp>` (800 e 1600 px, ~100–165 KB a de 1600) e saem das miniaturas originais da Valve, que **não entram no git** (149 PNGs, ~390 MB em `assets/thumbs/`). O script usa o `sharp` que vem com o Next:
+
+```sh
+pnpm --filter @carmine/web maps                          # lê <raiz>/assets/thumbs
+pnpm --filter @carmine/web maps -- --src D:/thumbs       # ou MAPS_SRC=D:/thumbs
+pnpm --filter @carmine/web maps -- --only mirage nuke    # só alguns mapas
+```
+
+Para **adicionar um mapa novo** à rotação: ponha `de_<mapa>_png.png` na pasta das miniaturas, acrescente `<mapa>` em `MAPS` (`apps/web/scripts/maps.mjs`) e em `ROTATION_MAPS` (`apps/web/src/lib/map-art.ts`), rode o script e commite os 4 arquivos gerados. O teste `map-art.test.ts` falha se um mapa da lista ficar sem arquivo.
+
+Para ver o web de um worktree ao lado de outro ambiente (sem subir outra API): `API_URL=http://localhost:3333 pnpm --filter @carmine/web exec next dev -p 3001`. O `API_URL` é lido pelo `next.config.ts` (o rewrite de `/api/*`) e pelos Server Components; o navegador chama sempre `/api` na própria origem (ADR 0015).
+
 ## Moderação e painel da Staff
 
 A S07 traz os papéis da Staff (Dono, Admin, Moderador), as Punições (ban, mute, gag, kick e aviso, com Categoria de infração e motivo interno) e o painel em `/api/staff/*` (documentação em `/api/docs`, permissões em `STAFF_PERMISSIONS` de `packages/contracts/src/staff.ts`). Toda ação de Staff vai para o `staff_audit_log`, consultável em `GET /api/staff/audit`.

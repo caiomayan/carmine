@@ -88,6 +88,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* chegadas */
   --ease-in: cubic-bezier(0.7, 0, 0.84, 0); /* saídas */
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1); /* tema, crossfade */
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1); /* movimento longo e contínuo (zoom, abrir) */
 
   --animate-rise: rise var(--dur-enter) var(--ease-out) backwards;
   --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
@@ -162,6 +163,85 @@
     )
     0 0 / 240% 100%;
   animation: var(--animate-shimmer);
+}
+
+/*
+ * Cartão de servidor da home (U2). O mapa vai ao fundo e o degradê da superfície o escurece (no
+ * claro, o encobre de creme) até o texto passar no AA mesmo no mapa mais claro (dust2): o texto
+ * fica na parte de baixo, onde o degradê é mais forte. As chips do alto têm fundo próprio.
+ */
+@utility map-scrim {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--bg) var(--scrim-0), transparent) 0%,
+    color-mix(in srgb, var(--bg) var(--scrim-40), transparent) 40%,
+    color-mix(in srgb, var(--bg) var(--scrim-70), transparent) 70%,
+    color-mix(in srgb, var(--bg) var(--scrim-100), transparent) 100%
+  );
+}
+
+/* um cartão sozinho é largo: o texto fica à esquerda e a imagem respira à direita */
+@utility map-scrim-solo {
+  @variant md {
+    background:
+      linear-gradient(
+        to right,
+        color-mix(in srgb, var(--bg) var(--scrim-0), transparent) 0%,
+        color-mix(in srgb, var(--bg) var(--scrim-40), transparent) 38%,
+        color-mix(in srgb, var(--bg) calc(var(--scrim-70) * 0.55), transparent) 72%,
+        color-mix(in srgb, var(--bg) calc(var(--scrim-100) * 0.4), transparent) 100%
+      ),
+      linear-gradient(
+        to top,
+        color-mix(in srgb, var(--bg) calc(var(--scrim-40) * 0.7), transparent) 0%,
+        transparent 45%
+      );
+  }
+}
+
+/* mapa sem imagem: um fundo neutro, só com uma textura quase invisível */
+@utility map-neutral {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 14px,
+      color-mix(in srgb, var(--text) 3.5%, transparent) 14px 15px
+    ),
+    linear-gradient(160deg, var(--surface-2), var(--surface));
+}
+
+/* chip com fundo próprio, para o texto não depender da imagem que está por baixo */
+@utility chip-solid {
+  border-radius: var(--radius-sm);
+  padding: 5px 9px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--bg) 93%, transparent);
+}
+
+/*
+ * A imagem do mapa assenta ao entrar e se aproxima devagar com o mouse (ou o foco do teclado) no
+ * cartão. O Tailwind 4 aplica `scale` pela propriedade `scale`, não por `transform`: a transição
+ * tem de ser de `scale`, senão o zoom salta. Com movimento reduzido não há animação nem zoom.
+ */
+@utility map-art {
+  animation: map-settle 1100ms var(--ease-out) backwards;
+  transition: scale var(--dur-zoom) var(--ease-soft);
+  @media (prefers-reduced-motion: no-preference) {
+    .group\/card:is(:hover, :has(:focus-visible)) & {
+      scale: 1.035;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transition: none;
+  }
+}
+
+@keyframes map-settle {
+  from {
+    transform: scale(1.06);
+    opacity: 0.4;
+  }
 }
 
 @layer base {

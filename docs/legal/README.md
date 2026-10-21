@@ -10,3 +10,11 @@ Textos publicados pelo web, um markdown por documento, lidos em tempo de requisi
 | `politica-de-reembolso.md` | `/reembolso` |
 
 Formato: front-matter com `title`, `updatedAt` (AAAA-MM-DD) e `version` (semver), e markdown básico (`##`/`###`, listas, **negrito**, links relativos como `/termos`, tabelas GFM). HTML cru é ignorado. Abaixo da versão 1.0.0 o documento é rascunho: a página mostra um aviso, tira os marcadores `[VALIDAR COM ADVOGADO]` e o bloco `>` final, e destaca como pendência as lacunas `[DONO: ...]` e `[CONFIRMAR: ...]`. Enquanto um arquivo não existe, a página mostra o aviso de redação.
+
+## Rascunhos que ainda não são publicados
+
+O web só publica os quatro arquivos da tabela acima (lista fixa em `apps/web/src/lib/legal/load.ts`). Texto que depende de uma implementação futura fica aqui como rascunho, fora da lista, até entrar no documento certo junto com o código:
+
+| Arquivo | Entra com | Em |
+|---|---|---|
+| `rascunho-a1-analytics.md` | A1 (analytics de produto, PostHog) e, o bloco final, a abertura (GA4) | `politica-de-privacidade.md` |

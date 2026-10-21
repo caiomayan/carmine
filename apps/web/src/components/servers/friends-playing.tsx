@@ -23,9 +23,10 @@ import {
   serverFullLabel,
   steamConnectUrl,
 } from '@/lib/live-servers';
+import { mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { useCopy } from './use-copy';
-import { useFriendsPlaying } from './use-friends-playing';
+import type { FriendsPlayingState } from './use-friends-playing';
 
 /** Onde a Steam guarda a privacidade da lista de amigos (a pessoa já está logada lá). */
 const STEAM_PRIVACY_URL = 'https://steamcommunity.com/my/edit/settings';
@@ -41,9 +42,14 @@ const VISIBLE_FRIENDS = 6;
  * lista de amigos privada (com a orientação opcional e a consequência de privacidade) e Steam
  * indisponível. Sem sessão, um convite para entrar.
  */
-export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
+export function FriendsPlaying({
+  servers,
+  friends: { view, refresh },
+}: {
+  servers: LiveServer[];
+  friends: FriendsPlayingState;
+}) {
   const t = useTranslations('servers.friends');
-  const { view, refresh } = useFriendsPlaying();
   const titleId = useId();
   const playing = view.status === 'ok' ? friendsWithServers(view.friends, servers) : [];
   const [expanded, setExpanded] = useState(false);
@@ -57,7 +63,7 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
       aria-busy={view.status === 'loading'}
       data-testid="friends-playing"
       data-status={view.status}
-      className="self-start rounded-xl bg-surface p-1.5 xl:sticky xl:top-24"
+      className="rounded-xl bg-surface p-1.5"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 px-3 pt-3 pb-2.5">
         <h2
@@ -107,7 +113,7 @@ export function FriendsPlaying({ servers }: { servers: LiveServer[] }) {
         <Notice icon={UsersIcon} title={t('none.title')} body={t('none.body')} />
       ) : (
         <>
-          <ul id={listId} className="grid">
+          <ul id={listId} className="grid sm:grid-cols-2 lg:grid-cols-3">
             {shown.map((entry, i) => (
               <FriendRow key={entry.friend.steamId} entry={entry} index={i} />
             ))}
@@ -142,7 +148,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
   const where = server
     ? server.state === 'offline'
       ? t('serverOffline')
-      : t('on', { server: serverFullLabel(server), map: server.map ?? '' })
+      : t('on', { server: serverFullLabel(server), map: mapDisplayName(server.map) ?? '' })
     : t('serverUnknown');
 
   return (
@@ -150,7 +156,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
       data-testid="friend-row"
       data-friend={friend.steamId}
       style={{ '--i': index } as CSSProperties}
-      className="flex enter-stagger items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2"
+      className="relative flex enter-stagger items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-(--dur-base) ease-std hover:bg-surface-2 has-focus-visible:bg-surface-2"
     >
       <span className="relative shrink-0">
         <Avatar src={friend.avatarUrl} name={friend.displayName} size={36} />
@@ -162,7 +168,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
         <Link
           href={`/${friend.publicId}`}
           aria-label={t('profile', { name: friend.displayName })}
-          className="w-fit max-w-full truncate rounded-xs text-[13.5px] font-semibold underline-offset-4 hover:underline"
+          className="w-fit max-w-full truncate rounded-xs text-[13.5px] font-semibold underline-offset-4 outline-offset-4 after:absolute after:inset-0 after:rounded-lg hover:underline"
         >
           {friend.displayName}
         </Link>
@@ -170,7 +176,12 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
       </span>
       {joinable && server ? (
         <>
-          <Button asChild variant="ghost" size="sm" className="shrink-0 pointer-coarse:hidden">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="relative z-10 shrink-0 pointer-coarse:hidden"
+          >
             <a
               href={steamConnectUrl(server.address)}
               aria-label={t('joinAria', { name: friend.displayName })}
@@ -183,7 +194,7 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
             size="icon"
             aria-label={t('copyAria', { name: friend.displayName })}
             onClick={() => copy(server.address)}
-            className="hidden shrink-0 pointer-coarse:inline-flex"
+            className="relative z-10 hidden shrink-0 pointer-coarse:inline-flex"
           >
             {copyStatus === 'copied' ? (
               <span className="text-status-success">
@@ -242,7 +253,7 @@ function PrivateList() {
           aria-hidden="true"
           viewBox="0 0 16 16"
           className={cn(
-            'size-3.5 transition-transform duration-(--dur-base) ease-out motion-reduce:transition-none',
+            'size-3.5 transition-transform duration-(--dur-slow) ease-soft motion-reduce:transition-none',
             open && 'rotate-180',
           )}
           fill="none"
