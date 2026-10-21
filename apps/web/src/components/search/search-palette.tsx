@@ -333,7 +333,7 @@ function PaletteBody({
           autoCorrect="off"
           spellCheck={false}
           wrapperClassName="m-0 flex-1"
-          className="min-h-(--tap) bg-(--fill-rest) text-sm max-md:text-base focus:bg-(--fill-hover) focus:shadow-none"
+          className="min-h-(--tap) bg-(--fill-rest) text-sm max-md:text-base"
           data-testid="palette-input"
         />
         <Dialog.Close asChild>
@@ -487,7 +487,6 @@ function RowView({ row }: { row: Row }) {
             <Icon aria-hidden="true" className="size-4" />
           </Leading>
           <RowText title={row.entry.label} />
-          {row.entry.group === 'pages' ? <Trailing>{t('hints.page')}</Trailing> : null}
         </>
       );
     }
