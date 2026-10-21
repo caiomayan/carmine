@@ -1,7 +1,7 @@
 ---
 title: Termos de Uso
-updatedAt: 2026-10-12
-version: 0.3.0
+updatedAt: 2026-10-21
+version: 0.3.1
 ---
 
 Estes Termos explicam como funciona o Carmine, o que você pode esperar de nós e o que esperamos de você. Escrevemos em linguagem direta de propósito: se algo não ficar claro, fale com a gente pela página de [contato](/contato).
@@ -38,7 +38,7 @@ Se não concordar, não use o Carmine. Você pode pedir a exclusão dos seus dad
 
 O Carmine oferece:
 
-- **Servidores Carmine** de CS2 (no lançamento, Retake e Deathmatch), em que você entra pelo IP ou pelo botão Conectar do site.
+- **Servidores Carmine** de CS2 (no lançamento, Retake e Deathmatch), em que você entra pelo IP ou pelo botão Jogar do site.
 - **Site** com Perfil, Inventário, Loadout, Presets, Estatísticas, Ranking e a lista de servidores ao vivo.
 - **VIP**, um plano pago opcional com benefícios extras (seção 8).
 

@@ -351,13 +351,13 @@ test.describe('Servidores com nome de vitrine e código', () => {
     expectedConsoleErrors.push(NOT_FOUND);
   });
 
-  test('o nome de vitrine e o código da Staff aparecem na home e no Conectar', async ({
+  test('o nome de vitrine e o código da Staff aparecem na home e no Jogar', async ({
     browser,
     page,
     request,
   }) => {
     const server = createServer();
-    // Online durante o teste inteiro (offline desabilita o Conectar).
+    // Online durante o teste inteiro (offline não tem o botão Jogar).
     const stop = keepBeating(request, server, () => []);
     const admin = await staffMember(browser, 'admin');
     await admin.page.goto('/staff/servidores');
@@ -378,7 +378,7 @@ test.describe('Servidores com nome de vitrine e código', () => {
     await expect(row.getByRole('status').last()).toHaveText('Salvo.');
 
     await page.goto('/');
-    const home = page.locator(`[data-testid=server-row][data-server="${server.name}"]`);
+    const home = page.locator(`li[data-server="${server.name}"]`);
     await expect(home.getByRole('heading', { name: 'Retake · Rotação' })).toBeVisible();
     await expect(home.getByTestId('server-code')).toHaveText(code);
     await expect(

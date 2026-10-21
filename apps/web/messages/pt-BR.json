@@ -99,8 +99,6 @@
     "row": {
       "currentMap": "Mapa atual",
       "noMap": "Sem mapa",
-      "seen": "Visto {ago}",
-      "neverSeen": "Nunca esteve no ar",
       "players": "{players} de {max} jogadores",
       "fullHint": "Lotado: com VIP você entra pela Vaga reservada."
     },
@@ -115,8 +113,8 @@
       "backAnnounce": "Conexão ao vivo de volta."
     },
     "connect": {
-      "button": "Conectar",
-      "aria": "Conectar ao {server}",
+      "button": "Jogar",
+      "aria": "Jogar em {server}",
       "copy": "Copiar IP",
       "copyAria": "Copiar o IP do {server}",
       "copied": "IP copiado",
@@ -129,9 +127,10 @@
     "empty": {
       "title": "Nenhum servidor no ar ainda",
       "titleMode": "Nenhum servidor de {mode} por enquanto",
-      "body": "Assim que os Servidores Carmine entrarem no ar, eles aparecem aqui com o mapa, os jogadores e o botão de conectar.",
+      "body": "Assim que os Servidores Carmine entrarem no ar, eles aparecem aqui com o mapa, os jogadores e o botão Jogar.",
       "bodyMode": "Os servidores de {mode} aparecem aqui assim que entrarem no ar.",
-      "showAll": "Ver todos os servidores"
+      "showAll": "Ver todos os servidores",
+      "allOffline": "Nenhum servidor no ar agora. Os que estão fora do ar aparecem abaixo."
     },
     "unavailable": {
       "title": "Não conseguimos carregar os servidores",
@@ -142,8 +141,8 @@
       "title": "Seus amigos jogando agora",
       "count": "{count, plural, one {# jogando} other {# jogando}}",
       "loading": "Carregando seus amigos",
-      "join": "Entrar",
-      "joinAria": "Entrar no mesmo servidor que {name}",
+      "join": "Jogar junto",
+      "joinAria": "Jogar junto: entrar no mesmo servidor que {name}",
       "copyAria": "Copiar o IP do servidor de {name}",
       "on": "{server} · {map}",
       "serverOffline": "Servidor offline",
@@ -175,6 +174,18 @@
         "body": "Entre com a Steam para ver aqui os seus amigos nos Servidores Carmine e entrar no mesmo servidor.",
         "cta": "Entrar com a Steam"
       }
+    },
+    "card": {
+      "playersUnit": "jogadores",
+      "fullNote": "Vaga reservada: só VIP",
+      "friendsAria": "Amigos no {server}",
+      "friendsHere": "{others, plural, =0 {{name} está aqui} other {{name} e mais # estão aqui}}"
+    },
+    "offline": {
+      "title": "Offline ({count})",
+      "listLabel": "Servidores offline",
+      "since": "Offline {ago}",
+      "never": "Nunca ficou online"
     }
   },
   "inventory": {
@@ -1158,7 +1169,7 @@
     },
     "servers": {
       "title": "Servidores Carmine",
-      "subtitle": "Nome de vitrine e código aparecem na home, no Conectar e no hostname do jogo (aplicado no próximo batimento, em até 10 s).",
+      "subtitle": "Nome de vitrine e código aparecem na home, no botão Jogar e no hostname do jogo (aplicado no próximo batimento, em até 10 s).",
       "showcaseName": "Nome de vitrine",
       "showcaseHint": "Descreve a variante, ex.: Retake · Rotação",
       "code": "Código",

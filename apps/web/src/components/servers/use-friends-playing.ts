@@ -10,14 +10,17 @@ export const FRIENDS_PLAYING_URL = '/api/me/friends-playing';
 /** A API guarda a lista de amigos por 60 s; ler mais vezes que isso só repete a resposta. */
 const REFRESH_MS = 30_000;
 
-/**
- * "Seus amigos jogando agora" (S06), só com sessão. Relê a cada {@link REFRESH_MS} com a aba
- * visível e na volta para a aba. `anonymous` quando não há sessão (ou ela expirou).
- */
-export function useFriendsPlaying(): {
+export type FriendsPlayingState = {
   view: FriendsView | { status: 'anonymous' };
   refresh: () => void;
-} {
+};
+
+/**
+ * "Seus amigos jogando agora" (S06), só com sessão. Relê a cada {@link REFRESH_MS} com a aba
+ * visível e na volta para a aba. `anonymous` quando não há sessão (ou ela expirou). A home lê
+ * uma vez e reparte: o bloco de amigos e os avatares dos cartões usam o mesmo estado.
+ */
+export function useFriendsPlaying(): FriendsPlayingState {
   const { status: session } = useSession();
   const [view, setView] = useState<FriendsView>({ status: 'loading' });
   const [expired, setExpired] = useState(false);

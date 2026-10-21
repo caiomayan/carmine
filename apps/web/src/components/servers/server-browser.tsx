@@ -1,8 +1,8 @@
 'use client';
 
-import type { LiveServerList } from '@carmine/contracts';
+import type { LiveServer, LiveServerList, PlayingFriend } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Tabs,
   TabsContent,
@@ -18,55 +18,167 @@ import { LiveCount } from '@/components/live-count';
 import { PageHead } from '@/components/page-head';
 import { StatusDot } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
-import { type LiveState, serversOfMode, updatedSecondsAgo } from '@/lib/live-servers';
+import {
+  friendsByServer,
+  type LiveState,
+  offlineGroupOpen,
+  serversLayout,
+  serversOfMode,
+  updatedSecondsAgo,
+} from '@/lib/live-servers';
 import { MODE_FILTERS, type ModeFilter } from '@/lib/modes';
+import { cmd } from './connect';
 import { FriendsPlaying } from './friends-playing';
-import { ServerListColumns, ServerRowSkeleton } from './server-list';
-import { cmd, ServerRow } from './server-row';
+import { ServerCard } from './server-card';
+import {
+  cardsGridClass,
+  cardsImageSizes,
+  ServerCardsSkeleton,
+  ServerListColumns,
+} from './server-list';
+import { OfflineGroup } from './server-offline';
+import { ServerRow } from './server-row';
+import { useFriendsPlaying } from './use-friends-playing';
 import { useLiveServers } from './use-live-servers';
 
-const GHOST_ROWS = ['ghost-1', 'ghost-2', 'ghost-3', 'ghost-4'];
+/** Cartões da primeira tela carregam a imagem na hora; os de baixo, só ao chegar perto. */
+const EAGER_CARDS = 2;
 
 /**
- * Home = Servidores ao vivo (S06): a lista por Modo, que começa com a leitura do servidor do
- * site e segue o SSE da API, e ao lado "Seus amigos jogando agora".
+ * Home = Servidores ao vivo (S06, U2): cartões grandes por Modo (lista acima de 6 servidores no
+ * ar), que começam com a leitura do servidor do site e seguem o SSE da API, e abaixo "Seus
+ * amigos jogando agora", cujos avatares também aparecem no cartão do servidor onde estão.
  */
 export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
   const t = useTranslations('servers');
   const [mode, setMode] = useState<ModeFilter>('all');
   const { state, retry } = useLiveServers(initial);
+  const friends = useFriendsPlaying();
   const servers = state.list?.servers ?? [];
+  const friendsOnServer = useMemo(
+    () => friendsByServer(friends.view.status === 'ok' ? friends.view.friends : []),
+    [friends.view],
+  );
 
   return (
     <Tabs value={mode} onValueChange={(v) => setMode(v as ModeFilter)} className="gap-0">
-      <PageHead
-        title={t('title')}
-        subtitle={t('subtitle')}
-        aside={
-          <TabsList aria-label={t('modeFilter')} className="max-md:w-full">
-            {MODE_FILTERS.map((m) => (
-              <TabsTrigger key={m} value={m}>
-                {t(`modes.${m}`)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        }
-      />
-      <div className="grid gap-x-8 gap-y-10 pt-2 pb-4 xl:grid-cols-[minmax(0,1fr)_288px]">
+      <PageHead title={t('title')} subtitle={t('subtitle')} />
+      <div className="grid gap-y-10 pt-2 pb-4">
         <section aria-labelledby="regiao-sao-paulo" className="min-w-0">
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pb-3">
-            <h2
-              id="regiao-sao-paulo"
-              className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
-            >
-              <span aria-hidden="true" className="size-1.5 rotate-45 bg-foreground" />
-              {t('regions.sao-paulo')}
-            </h2>
-            <LiveStatus state={state} />
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <h2
+                id="regiao-sao-paulo"
+                className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
+              >
+                <span aria-hidden="true" className="size-1.5 rotate-45 bg-foreground" />
+                {t('regions.sao-paulo')}
+              </h2>
+              <LiveStatus state={state} />
+            </div>
+            <TabsList aria-label={t('modeFilter')} className="max-md:w-full">
+              {MODE_FILTERS.map((m) => (
+                <TabsTrigger key={m} value={m}>
+                  {t(`modes.${m}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
           </div>
           <p className="mb-3 hidden rounded-md bg-surface px-3 py-2.5 text-[13px] text-muted-foreground pointer-coarse:block">
             {t.rich('connect.mobileHint', { cmd })}
           </p>
+          {state.list === null ? (
+            <Unavailable connecting={state.connection === 'connecting'} onRetry={retry} />
+          ) : (
+            <TabsContents>
+              {MODE_FILTERS.map((m) => (
+                <TabsContent
+                  key={m}
+                  value={m}
+                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <ServersOfMode
+                    mode={m}
+                    servers={serversOfMode(servers, m)}
+                    allCount={servers.length}
+                    friendsOnServer={friendsOnServer}
+                    onShowAll={() => setMode('all')}
+                  />
+                </TabsContent>
+              ))}
+            </TabsContents>
+          )}
+        </section>
+        <FriendsPlaying servers={servers} friends={friends} />
+      </div>
+    </Tabs>
+  );
+}
+
+/**
+ * Os servidores de um Modo: cartões (até 6 no ar) ou lista (acima disso), e os offline num
+ * grupo leve no fim. Sem nenhum servidor, o estado vazio do Modo.
+ */
+function ServersOfMode({
+  mode,
+  servers,
+  allCount,
+  friendsOnServer,
+  onShowAll,
+}: {
+  mode: ModeFilter;
+  servers: LiveServer[];
+  allCount: number;
+  friendsOnServer: Map<string, PlayingFriend[]>;
+  onShowAll: () => void;
+}) {
+  const t = useTranslations('servers');
+  if (servers.length === 0) {
+    return (
+      <EmptyList
+        title={
+          mode === 'all' ? t('empty.title') : t('empty.titleMode', { mode: t(`modes.${mode}`) })
+        }
+        body={mode === 'all' ? t('empty.body') : t('empty.bodyMode', { mode: t(`modes.${mode}`) })}
+        action={
+          mode !== 'all' && allCount > 0 ? (
+            <Button variant="ghost" onClick={onShowAll}>
+              {t('empty.showAll')}
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
+
+  const layout = serversLayout(servers);
+  const sizes = cardsImageSizes(layout.columns);
+
+  return (
+    <div data-testid="server-list" data-layout={layout.kind}>
+      {layout.live.length === 0 ? (
+        <p
+          role="status"
+          className="rounded-xl bg-surface px-4 py-5 text-[14px] text-muted-foreground"
+        >
+          {t('empty.allOffline')}
+        </p>
+      ) : layout.kind === 'cards' ? (
+        <ul aria-label={t('listLabel')} className={cardsGridClass(layout.columns)}>
+          {layout.live.map((server, i) => (
+            <ServerCard
+              key={server.id}
+              server={server}
+              friends={friendsOnServer.get(server.id) ?? []}
+              index={i}
+              solo={layout.live.length === 1}
+              sizes={sizes}
+              priority={i < EAGER_CARDS}
+            />
+          ))}
+        </ul>
+      ) : (
+        <>
           <ServerListColumns
             labels={{
               server: t('columns.server'),
@@ -75,54 +187,18 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
               state: t('columns.state'),
             }}
           />
-          {state.list === null ? (
-            <Unavailable connecting={state.connection === 'connecting'} onRetry={retry} />
-          ) : (
-            <TabsContents>
-              {MODE_FILTERS.map((m) => {
-                const list = serversOfMode(servers, m);
-                return (
-                  <TabsContent
-                    key={m}
-                    value={m}
-                    transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    {list.length > 0 ? (
-                      <ul aria-label={t('listLabel')} data-testid="server-list">
-                        {list.map((server, i) => (
-                          <ServerRow key={server.id} server={server} index={i} />
-                        ))}
-                      </ul>
-                    ) : (
-                      <EmptyList
-                        title={
-                          m === 'all'
-                            ? t('empty.title')
-                            : t('empty.titleMode', { mode: t(`modes.${m}`) })
-                        }
-                        body={
-                          m === 'all'
-                            ? t('empty.body')
-                            : t('empty.bodyMode', { mode: t(`modes.${m}`) })
-                        }
-                        action={
-                          m !== 'all' && servers.length > 0 ? (
-                            <Button variant="ghost" onClick={() => setMode('all')}>
-                              {t('empty.showAll')}
-                            </Button>
-                          ) : undefined
-                        }
-                      />
-                    )}
-                  </TabsContent>
-                );
-              })}
-            </TabsContents>
-          )}
-        </section>
-        <FriendsPlaying servers={servers} />
-      </div>
-    </Tabs>
+          <ul aria-label={t('listLabel')}>
+            {layout.live.map((server, i) => (
+              <ServerRow key={server.id} server={server} index={i} />
+            ))}
+          </ul>
+        </>
+      )}
+      <OfflineGroup
+        servers={layout.offline}
+        defaultOpen={offlineGroupOpen(layout.live.length, layout.offline.length)}
+      />
+    </div>
   );
 }
 
@@ -212,9 +288,7 @@ function EmptyList({ title, body, action }: { title: string; body: string; actio
         aria-hidden="true"
         className="[grid-area:1/1] mask-[linear-gradient(180deg,#000_0%,rgb(0_0_0/0.55)_45%,transparent_100%)]"
       >
-        {GHOST_ROWS.map((id, i) => (
-          <ServerRowSkeleton key={id} index={i} />
-        ))}
+        <ServerCardsSkeleton count={2} />
       </div>
       <EmptyState
         icon={ServerIcon}
@@ -239,11 +313,7 @@ function Unavailable({ connecting, onRetry }: { connecting: boolean; onRetry: ()
         <p className="sr-only" role="status">
           {t('loading')}
         </p>
-        <div aria-hidden="true">
-          {GHOST_ROWS.map((id, i) => (
-            <ServerRowSkeleton key={id} index={i} loading />
-          ))}
-        </div>
+        <ServerCardsSkeleton loading />
       </div>
     );
   }

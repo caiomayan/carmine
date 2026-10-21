@@ -1,11 +1,12 @@
 import type { CSSProperties } from 'react';
+import type { ServersLayout } from '@/lib/live-servers';
 import { cn } from '@/lib/utils';
 
 type Columns = { server: string; map: string; players: string; state: string };
 
 /**
- * Grade da lista da Liberty: servidor, mapa, jogadores, estado e ações (Conectar e copiar o
- * IP). Fica aqui, fora do módulo de cliente, para o skeleton do servidor usar a mesma.
+ * Grade da lista da Liberty (acima de 6 servidores no ar): servidor, mapa, jogadores, estado e
+ * ações (Jogar e copiar o IP). Fica aqui, fora do módulo de cliente, para o servidor também usar.
  */
 export const SERVER_GRID = cn(
   'md:grid md:items-center md:gap-4',
@@ -31,10 +32,33 @@ export function ServerListColumns({ labels }: { labels: Columns }) {
 }
 
 /**
- * Linha de servidor sem dados. `loading` liga a varredura do skeleton; sem ela a linha é só a
- * silhueta da lista (fundo do estado vazio). Sempre decorativa para leitores de tela.
+ * A grade dos cartões: 1 coluna no celular, 2 a partir do `md` e, com 3 ou 6 servidores, 3 no
+ * `xl`. Um cartão sozinho na última linha (colunas ímpares) ocupa a linha inteira.
  */
-export function ServerRowSkeleton({
+export function cardsGridClass(columns: ServersLayout['columns']): string {
+  const base = 'grid grid-cols-1 gap-3 md:gap-4';
+  if (columns === 1) return base;
+  if (columns === 2) {
+    return cn(base, 'md:grid-cols-2 md:[&>li:last-child:nth-child(odd)]:col-span-2');
+  }
+  return cn(
+    base,
+    'md:grid-cols-2 xl:grid-cols-3 md:max-xl:[&>li:last-child:nth-child(odd)]:col-span-2',
+  );
+}
+
+/** `sizes` da imagem do mapa conforme a grade: o navegador escolhe 800 ou 1600 px. */
+export function cardsImageSizes(columns: ServersLayout['columns']): string {
+  if (columns === 1) return '(max-width: 760px) 100vw, 1080px';
+  if (columns === 2) return '(max-width: 760px) 100vw, 540px';
+  return '(max-width: 760px) 100vw, (max-width: 1180px) 50vw, 360px';
+}
+
+/**
+ * Silhueta de um cartão. `loading` liga a varredura do skeleton; sem ela é só a forma (fundo do
+ * estado vazio). Sempre decorativa para leitores de tela.
+ */
+export function ServerCardSkeleton({
   index = 0,
   loading = false,
 }: {
@@ -43,39 +67,41 @@ export function ServerRowSkeleton({
 }) {
   const bone = cn('block rounded-sm', loading ? 'shimmer' : 'bg-surface-2');
   return (
-    <div
-      className={cn(
-        SERVER_GRID,
-        'mb-0.5 grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg px-3 py-4 enter-stagger [grid-template-areas:"main_main""map_players""state_btn"] md:min-h-[68px] md:py-3.5 md:[grid-template-areas:none]',
-      )}
+    <li
+      aria-hidden="true"
+      className="enter-stagger flex min-h-[264px] flex-col justify-between rounded-2xl bg-surface p-4 md:p-5"
       style={{ '--i': index } as CSSProperties}
     >
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 [grid-area:main] md:[grid-area:auto]">
-        <span className={cn(bone, 'h-[18px] w-[64px]')} />
-        <span className="grid gap-1.5">
-          <span className={cn(bone, 'h-[13px] w-[min(180px,80%)]')} />
-          <span className={cn(bone, 'h-[10px] w-[min(110px,55%)]')} />
-        </span>
+      <div className="flex items-start justify-between">
+        <span className={cn(bone, 'h-[22px] w-[72px]')} />
+        <span className={cn(bone, 'h-[22px] w-[84px]')} />
       </div>
-      <div className="flex min-w-0 items-center gap-2.5 [grid-area:map] md:[grid-area:auto]">
-        <span className="grid flex-1 gap-1.5">
-          <span className={cn(bone, 'h-[13px] w-[72px]')} />
-          <span className={cn(bone, 'h-[10px] w-[min(110px,55%)]')} />
+      <div className="grid gap-4">
+        <span className="grid gap-2">
+          <span className={cn(bone, 'h-[18px] w-[min(200px,70%)]')} />
+          <span className={cn(bone, 'h-[12px] w-[min(140px,50%)]')} />
         </span>
-      </div>
-      <div className="grid gap-2 [grid-area:players] md:[grid-area:auto]">
-        <span className={cn(bone, 'h-[13px] w-11')} />
         <span className={cn(bone, 'h-[3px] w-full')} />
+        <span className={cn(bone, 'h-(--tap) w-[104px] max-md:w-full md:ml-auto')} />
       </div>
-      <div className="self-center [grid-area:state] md:[grid-area:auto]">
-        <span className={cn(bone, 'h-[10px] w-14')} />
-      </div>
-      <span
-        className={cn(
-          bone,
-          'h-(--tap) w-full rounded-md [grid-area:btn] md:w-[100px] md:justify-self-end md:[grid-area:auto]',
-        )}
-      />
-    </div>
+    </li>
+  );
+}
+
+/** Os cartões fantasma do carregamento (e do estado vazio, esmaecidos por quem os usa). */
+export function ServerCardsSkeleton({
+  count = 3,
+  loading = false,
+}: {
+  count?: number;
+  loading?: boolean;
+}) {
+  return (
+    <ul aria-hidden="true" className={cardsGridClass(count === 3 ? 3 : 2)}>
+      {Array.from({ length: count }, (_, i) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: silhuetas idênticas e sem estado.
+        <ServerCardSkeleton key={i} index={i} loading={loading} />
+      ))}
+    </ul>
   );
 }

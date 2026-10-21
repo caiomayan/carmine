@@ -198,9 +198,9 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 
 ### S06 · Servidores ao vivo e amigos jogando
 
-- **Home = lista de servidores ao vivo:** Modo, mapa, jogadores/máximo, região (São Paulo), estado (online, lotado, offline) e Conectar.
-- **Conectar:** abre `steam://connect`; ao lado, o IP copiável com uma instrução curta ("no console do CS2: `connect <ip>`"). No celular, mostra só o IP e a instrução para abrir no PC.
-- Lotado mostra o estado claramente; offline desabilita Conectar.
+- **Home = servidores ao vivo:** Modo, mapa, jogadores/máximo, região (São Paulo), estado (online, lotado, offline) e Jogar. Desde a U2, cartões grandes (até 6 servidores no ar) ou lista; os offline ficam num grupo leve no fim.
+- **Jogar:** abre `steam://connect`; ao lado, o IP copiável com uma instrução curta ("no console do CS2: `connect <ip>`"). No celular, mostra só o IP e a instrução para abrir no PC.
+- Lotado mostra o estado claramente e mantém o Jogar (o VIP entra pela Vaga reservada); offline não tem botão.
 - O Carmine.Core envia batimento a cada ~10 s com mapa e jogadores conectados; servidor sem batimento por 45 s fica offline.
 - Atualização ao vivo por WebSocket ou SSE, com transição numérica suave. Se a conexão ao vivo cair, a home mostra o último estado conhecido com "atualizado há X s".
 - **"Seus amigos jogando agora"** para Contas reivindicadas, com botão de entrar no mesmo servidor. Três estados distintos: nenhum amigo jogando; lista de amigos Steam privada (orientação opcional de como torná-la visível, explicando a consequência de privacidade); Steam indisponível.
@@ -442,6 +442,14 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 ### U2 · Home com cartões de servidor
 - Com até ~6 servidores, cada um vira um **cartão grande**: o mapa atual ao fundo (escurecido para o texto ficar legível), nome, Modo, status, jogadores/vagas, avatares dos amigos e o botão Jogar. Acima disso, a mesma tela vira lista. "Amigos jogando" continua abaixo.
 - As imagens dos mapas vêm de `assets/thumbs/` (fora do git): só os mapas da rotação, uma imagem por mapa, em AVIF/WebP com ~1600 px, em `apps/web/public/maps/`. Mapa sem imagem cai num fundo neutro.
+
+**Decidido na implementação**
+- **Cartão ou lista:** só contam os servidores **no ar** (online ou lotado) **do Modo filtrado**: até 6, cartões; 7 ou mais, lista (a aba "Todos" pode ser lista enquanto uma aba de Modo é cartões). Os offline nunca ganham cartão: ficam num grupo "Offline (n)" no fim, sem imagem e sem botão (um "Jogar" desabilitado só parece quebrado), com o motivo por extenso ("Offline há 2 horas", "Nunca ficou online"). O grupo nasce aberto com até 2 offline ou quando nada está no ar; com mais, recolhido.
+- **Colunas:** 1, 2 ou 3 conforme a quantidade (1 → cartão largo; 2, 4 e 5 → 2 colunas; 3 e 6 → 3 no desktop), sem buraco na última linha.
+- **Botão:** "Jogar" (era "Conectar") no cartão e na linha; no bloco de amigos, "Jogar junto". Lotado mantém o botão, sem o preenchido: o VIP entra pela Vaga reservada.
+- **Amigos:** o bloco "Seus amigos jogando agora" desceu para baixo da lista e a mesma leitura alimenta os avatares empilhados do cartão do servidor onde cada um está.
+- **Filtro por Modo** passou para a linha "◆ São Paulo · Ao vivo", junto da lista que ele filtra.
+- **Imagens:** 8 mapas × 800 e 1600 px × AVIF e WebP (~100–165 KB a de 1600 px; ~2,7 MB no total); `srcset` deixa o celular com a de 800 px. O degradê usa tokens (`--scrim-*`, `--on-map-muted`) calibrados medindo o pior pixel atrás de cada texto nos 8 mapas, nos dois temas.
 
 ### U3 · Polimento e animações sutis
 - Espaçamento, hierarquia, estados vazios e de erro, e animações sutis no site inteiro, a partir da crítica com a skill impeccable e das anotações do dono no beta.
