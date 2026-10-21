@@ -5,6 +5,12 @@
     "description": "Servidores comunitários de Counter-Strike 2. Entre, equipe e veja o seu Loadout no jogo."
   },
   "common": {
+    "team": {
+      "equippedIn": {
+        "ct": "Equipada no CT",
+        "t": "Equipada no TR"
+      }
+    },
     "close": "Fechar",
     "cancel": "Cancelar",
     "combobox": {
@@ -218,10 +224,7 @@
       "edit": "Editar",
       "remove": "Remover",
       "statTrak": "StatTrak™",
-      "stickers": "{count, plural, one {# sticker} other {# stickers}}",
-      "charm": "1 charm",
       "vip": "VIP",
-      "equipped": "Equipado: {sides}",
       "equipIn": {
         "ct": "Equipar em CT",
         "t": "Equipar em TR",
@@ -582,7 +585,7 @@
       "knife": "Facas",
       "glove": "Luvas",
       "agent": "Agentes",
-      "musickit": "Music kits"
+      "musickit": "Kits de música"
     },
     "rarities": {
       "consumer": "Nível Consumidor",
@@ -646,7 +649,7 @@
     "nameTagHint": "Até 20 caracteres.",
     "vipLocked": "Exclusivo do VIP",
     "vipAttributes": "StatTrak e nametag fazem parte do VIP. Você pode ver como ficam, mas só salva com um Período VIP ativo.",
-    "vipItem": "Agentes e music kits fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
+    "vipItem": "Agentes e kits de música fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
     "noAttributes": "Este Item não tem float, seed nem stickers: é só adicionar.",
     "stickers": "Stickers",
     "stickersCount": "{count} de {max}",
@@ -739,12 +742,6 @@
     "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado.",
     "addAndEquip": "Adicionar e equipar"
   },
-  "team": {
-    "equippedIn": {
-      "ct": "Equipada no CT",
-      "t": "Equipada no TR"
-    }
-  },
   "loadout": {
     "title": "Loadout",
     "subtitle": "O que você usa nos Servidores Carmine. Vale no próximo connect ou quando você digita <cmd>!ws</cmd> no servidor.",
@@ -770,14 +767,14 @@
       "knife": "Faca",
       "gloves": "Luvas",
       "agent": "Agente",
-      "musicKit": "Music kit"
+      "musicKit": "Kit de música"
     },
     "defaultWeapon": "Arma padrão",
     "defaultGear": "Padrão do jogo",
     "defaultAgent": "Agente do mapa",
     "notInGame": {
       "short": "Fora do jogo",
-      "vip_inactive": "Agentes e music kits são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
+      "vip_inactive": "Agentes e kits de música são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
       "plugin_unsupported": "O servidor ainda não consegue aplicar este Item no jogo. Ele continua equipado e no seu Inventário."
     },
     "stripped": {
@@ -812,8 +809,8 @@
       "inGame": "{item} equipado em {sides}. No servidor, digite !ws ou reconecte para ver no jogo."
     },
     "vip": {
-      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
-      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, kits de música, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, kits de música, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
       "ended_today": "Seu VIP acabou hoje. Os Itens VIP continuam no seu Inventário, mas não vão para o jogo, e os Presets extras ficaram somente leitura."
     },
     "presets": {

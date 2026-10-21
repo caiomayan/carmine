@@ -245,6 +245,7 @@ export function searchCatalog(filters: CatalogFilters): CatalogPage {
 }
 
 const attachments: Partial<Record<AttachmentType, AttachmentEntry[]>> = {};
+const attachmentsById = new Map<number, AttachmentEntry>();
 
 function attachmentIndex(type: AttachmentType): AttachmentEntry[] {
   let list = attachments[type];
@@ -264,6 +265,7 @@ function attachmentIndex(type: AttachmentType): AttachmentEntry[] {
       // Os mais novos primeiro: são os que a pessoa mais procura.
       .sort((a, b) => b.id - a.id);
     attachments[type] = list;
+    for (const entry of list) attachmentsById.set(entry.id, entry);
   }
   return list;
 }
@@ -305,7 +307,9 @@ export function attachmentEntry(id: number): AttachmentEntry | undefined {
   const item = economy().items.get(id);
   if (!item) return undefined;
   const type = item.isSticker() ? 'sticker' : item.isKeychain() ? 'charm' : null;
-  return type ? attachmentIndex(type).find((entry) => entry.id === id) : undefined;
+  if (!type) return undefined;
+  attachmentIndex(type);
+  return attachmentsById.get(id);
 }
 
 type SearchParamValue = string | string[] | undefined;

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import type { CatalogEntry } from '@/lib/catalog/catalog';
+import { hasSkinName } from '@/lib/catalog/types';
 import { cn } from '@/lib/utils';
 import { ItemTile, TileBadge } from './item-tile';
 
@@ -33,6 +34,7 @@ export function CatalogGrid({
             testId={`catalog-item-${entry.id}`}
             title={entry.title}
             subtitle={entry.subtitle}
+            skinFirst={hasSkinName(entry.type)}
             image={entry.image}
             rarity={entry.rarity}
             rarityLabel={rarityLabels[entry.rarity] ?? ''}

@@ -11,7 +11,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/animate-ui/components/radix/dropdown-menu';
 import { LoadoutApiError, useEquip } from '@/components/loadout/use-equip';
+import { hasSkinName } from '@/lib/catalog/types';
 import type { CandidateView } from '@/lib/loadout/view';
+import { equippedTeamSides } from '@/lib/team-sides';
 import { VipBadge } from './catalog-grid';
 import { useInventory } from './inventory-provider';
 import { ItemTile, TileBadge } from './item-tile';
@@ -38,7 +40,7 @@ export function InventoryGrid({
   const tl = useTranslations('loadout');
   const router = useRouter();
   const { highlight, notify } = useInventory();
-  const { equip, sidesText } = useEquip();
+  const { equip } = useEquip();
   const [removing, setRemoving] = useState<CandidateView | null>(null);
   const names = (uid: string) => cards.find((card) => card.uid === uid)?.name;
 
@@ -69,6 +71,10 @@ export function InventoryGrid({
               href={`/inventario/${card.uid}`}
               title={card.title}
               subtitle={card.subtitle}
+              skinFirst={hasSkinName(card.type)}
+              sides={equippedTeamSides(equipped[card.uid])}
+              stickers={card.stickers}
+              charm={card.charm}
               image={card.image}
               rarity={card.rarity}
               rarityLabel={rarityLabels[card.rarity] ?? ''}
@@ -85,24 +91,11 @@ export function InventoryGrid({
                   </>
                 ) : null
               }
-              meta={
-                card.stickers || card.charm || equipped[card.uid]
-                  ? [
-                      equipped[card.uid]
-                        ? t('equipped', { sides: sidesText(equipped[card.uid] ?? []) })
-                        : null,
-                      card.stickers ? t('stickers', { count: card.stickers }) : null,
-                      card.charm ? t('charm') : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')
-                  : undefined
-              }
             />
             <DropdownMenu>
               <DropdownMenuTrigger
                 aria-label={t('actions', { name: card.name })}
-                className="absolute right-2 bottom-2.5 grid size-8 place-items-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-expanded:bg-hover max-md:size-(--tap) max-md:right-1 max-md:bottom-1"
+                className="absolute right-1 bottom-1.5 grid size-(--tap) place-items-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-expanded:bg-hover"
                 data-testid="item-menu"
               >
                 <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="currentColor">

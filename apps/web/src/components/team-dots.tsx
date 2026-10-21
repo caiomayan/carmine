@@ -28,7 +28,7 @@ export function TeamDots({
   size?: keyof typeof SIZE;
   className?: string;
 }) {
-  const t = useTranslations('team.equippedIn');
+  const t = useTranslations('common.team.equippedIn');
   const shown = orderedSides(sides);
   if (shown.length === 0) return null;
   return (
