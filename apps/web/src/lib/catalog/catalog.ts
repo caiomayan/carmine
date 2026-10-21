@@ -7,6 +7,7 @@ import {
   CATALOG_PAGE_SIZE,
   CATALOG_TYPES,
   type CatalogType,
+  type FacetOption,
   RARITIES,
   type Rarity,
 } from './types';
@@ -163,7 +164,7 @@ export type CatalogFilters = {
 export type CatalogPage = {
   items: CatalogEntry[];
   total: number;
-  facets: { weapons: string[]; collections: string[]; rarities: Rarity[] };
+  facets: { weapons: FacetOption[]; collections: FacetOption[]; rarities: Rarity[] };
 };
 
 /** O que a busca acha além do nome: o tipo nos dois idiomas ("knife" acha as facas). */
@@ -214,8 +215,33 @@ function rank<T extends CatalogEntry | AttachmentEntry>(
   return scored.sort((a, b) => b.score - a.score || a.order - b.order).map(({ entry }) => entry);
 }
 
-const distinct = (values: (string | null)[]) =>
-  [...new Set(values.filter((value): value is string => !!value))].sort(collator.compare);
+/**
+ * Opções de um filtro de lista (Arma, Coleção, categoria): os valores distintos, em ordem
+ * alfabética, cada um com os outros nomes dele (o original em inglês, o tipo) para o Combobox
+ * achar "knife" na Arma e "kilowatt" na Coleção, que em PT-BR é "Quilowatt".
+ */
+function facetOptions<T extends CatalogEntry | AttachmentEntry>(
+  entries: readonly T[],
+  pick: (entry: T) => string | null,
+  aliasesOf: (entry: T) => (string | undefined)[],
+): FacetOption[] {
+  const options = new Map<string, FacetOption>();
+  for (const entry of entries) {
+    const value = pick(entry);
+    if (!value) continue;
+    const option = options.get(value) ?? { value, label: value, keywords: [] };
+    options.set(value, option);
+    for (const alias of aliasesOf(entry)) {
+      if (alias && !alias.startsWith('#') && !option.keywords.includes(alias)) {
+        option.keywords.push(alias);
+      }
+    }
+  }
+  return [...options.values()].sort((a, b) => collator.compare(a.value, b.value));
+}
+
+/** O nome da arma em inglês ("Dual Berettas"): o que vem antes da skin no nome original. */
+const englishWeapon = (entry: CatalogEntry) => english[entry.id]?.name.split(' | ')[0];
 
 const pageLimit = (limit: number | undefined) =>
   Math.min(Math.max(limit ?? CATALOG_PAGE_SIZE, 1), CATALOG_PAGE_SIZE * MAX_PAGES);
@@ -237,8 +263,16 @@ export function searchCatalog(filters: CatalogFilters): CatalogPage {
     items: matches.slice(0, pageLimit(filters.limit)),
     total: matches.length,
     facets: {
-      weapons: distinct(ofType.map((entry) => entry.weapon)),
-      collections: distinct(ofWeapon.map((entry) => entry.collection)),
+      weapons: facetOptions(
+        ofType,
+        (entry) => entry.weapon,
+        (entry) => [englishWeapon(entry), TYPE_WORDS[entry.type]],
+      ),
+      collections: facetOptions(
+        ofWeapon,
+        (entry) => entry.collection,
+        (entry) => [english[entry.id]?.collectionName],
+      ),
       rarities: RARITIES.filter((rarity) => rarities.has(rarity)),
     },
   };
@@ -280,7 +314,7 @@ export type AttachmentFilters = {
 export type AttachmentPage = {
   items: AttachmentEntry[];
   total: number;
-  facets: { categories: string[] };
+  facets: { categories: FacetOption[] };
 };
 
 export function searchAttachments(
@@ -299,7 +333,13 @@ export function searchAttachments(
   return {
     items: matches.slice(0, pageLimit(filters.limit)),
     total: matches.length,
-    facets: { categories: distinct(all.map((entry) => entry.category)) },
+    facets: {
+      categories: facetOptions(
+        all,
+        (entry) => entry.category,
+        (entry) => [english[entry.id]?.categoryName],
+      ),
+    },
   };
 }
 

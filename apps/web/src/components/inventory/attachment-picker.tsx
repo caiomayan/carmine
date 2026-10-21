@@ -13,7 +13,11 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
 import type { AttachmentEntry, AttachmentPage } from '@/lib/catalog/catalog';
-import { type AttachmentType, CATALOG_PAGE_SIZE } from '@/lib/catalog/types';
+import {
+  ATTACHMENTS_PAYLOAD_VERSION,
+  type AttachmentType,
+  CATALOG_PAGE_SIZE,
+} from '@/lib/catalog/types';
 import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { RarityDot } from './item-tile';
 
@@ -58,7 +62,11 @@ export function AttachmentPicker({
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
-    const params = new URLSearchParams({ tipo: type, mostrar: String(limit) });
+    const params = new URLSearchParams({
+      tipo: type,
+      mostrar: String(limit),
+      v: ATTACHMENTS_PAYLOAD_VERSION,
+    });
     if (debounced) params.set('q', debounced);
     if (category) params.set('categoria', category);
     setStatus('loading');
@@ -133,7 +141,7 @@ export function AttachmentPicker({
                 onValueChange={setCategory}
                 emptyLabel={t('allCategories')}
                 triggerClassName="bg-surface-2 text-[14px] hover:bg-line"
-                options={page.facets.categories.map((value) => ({ value, label: value }))}
+                options={page.facets.categories}
               />
             </div>
           ) : null}

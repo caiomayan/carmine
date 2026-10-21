@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { matchesSearch } from '../option-search';
 import {
   CATALOG_PAGE_SIZE,
   catalogEntry,
@@ -8,6 +9,7 @@ import {
   searchAttachments,
   searchCatalog,
 } from './catalog';
+import type { FacetOption } from './types';
 
 // Ids da @ianlucas/cs2-lib 9.5.0 (fixada no package.json).
 const DEAGLE_DEFAULT = 0;
@@ -99,10 +101,73 @@ describe('busca no catálogo', () => {
 
   it('oferece as armas e as coleções do tipo escolhido como opções de filtro', () => {
     const { facets } = searchCatalog({ type: 'weapon' });
-    expect(facets.weapons).toContain('AK-47');
-    expect(facets.weapons).not.toContain('Karambit');
+    const weapons = facets.weapons.map((option) => option.value);
+    expect(weapons).toContain('AK-47');
+    expect(weapons).not.toContain('Karambit');
     expect(facets.collections.length).toBeGreaterThan(10);
-    expect(searchCatalog({ type: 'knife' }).facets.weapons).toContain('Karambit');
+    expect(searchCatalog({ type: 'knife' }).facets.weapons.map((option) => option.value)).toContain(
+      'Karambit',
+    );
+  });
+});
+
+/** Como o Combobox acha uma opção: o rótulo e os outros nomes dela. */
+const found = (options: FacetOption[], query: string) =>
+  options.filter((option) => matchesSearch([option.label, ...option.keywords], query));
+
+describe('opções dos filtros de Arma e Coleção: PT-BR e inglês', () => {
+  const weapons = searchCatalog({}).facets.weapons;
+  const knives = searchCatalog({ type: 'knife' }).facets.weapons;
+
+  it('"knife" acha todas as facas na Arma, e "faca" também; "luvas" e "gloves", as luvas', () => {
+    expect(found(knives, 'knife')).toHaveLength(knives.length);
+    expect(found(knives, 'faca').length).toBeGreaterThan(10);
+    expect(found(weapons, 'knife').map((o) => o.value)).toContain('Karambit');
+    expect(found(weapons, 'gloves').map((o) => o.label)).toContain('Luvas da Hidra');
+    expect(found(weapons, 'luvas').map((o) => o.label)).toContain('Luvas da Hidra');
+    // Arma de fogo não é faca.
+    expect(found(weapons, 'knife').map((o) => o.value)).not.toContain('AK-47');
+  });
+
+  it('acha a arma pelo nome original em inglês quando o PT-BR é outro', () => {
+    expect(found(weapons, 'dual berettas').map((o) => o.value)).toEqual(['Berettas Duplas']);
+    expect(found(weapons, 'sawed off').map((o) => o.value)).toContain('Cano Curto');
+    expect(found(weapons, 'butterfly').map((o) => o.value)).toEqual(['Canivete Borboleta']);
+  });
+
+  it('"a1 m4" acha a M4A1-S, em qualquer ordem', () => {
+    expect(found(weapons, 'a1 m4').map((o) => o.value)).toEqual(['M4A1-S']);
+    expect(found(weapons, 'm4 a1').map((o) => o.value)).toEqual(['M4A1-S']);
+    expect(found(weapons, 'm4').map((o) => o.value)).toEqual(
+      expect.arrayContaining(['M4A1-S', 'M4A4']),
+    );
+  });
+
+  it('a Coleção acha sem acento, por palavra parcial, com erro e pelo nome em inglês', () => {
+    const collections = searchCatalog({}).facets.collections;
+    const names = (query: string) => found(collections, query).map((o) => o.value);
+    expect(names('colecao')).toEqual(
+      collections.filter((o) => o.value.includes('Coleção')).map((o) => o.value),
+    );
+    // "Quilowatt" em PT-BR, "Kilowatt" em inglês.
+    expect(names('kilowatt')).toEqual(['A Coleção Quilowatt']);
+    expect(names('quilowat')).toEqual(['A Coleção Quilowatt']);
+    expect(names('quilowatt colecao')).toEqual(['A Coleção Quilowatt']);
+    expect(names('kilowtat')).toEqual(['A Coleção Quilowatt']);
+    expect(names('anubis')).toEqual(['A Coleção Anubis']);
+    expect(names('dust 2 2021')).toEqual(['A Coleção Dust 2 de 2021']);
+    expect(names('zzzzzz')).toEqual([]);
+  });
+
+  it('a categoria de sticker acha pelo nome em inglês e nunca vira chave crua', () => {
+    const { categories } = searchAttachments('sticker', { limit: 1 }).facets;
+    expect(
+      categories.every((c) => c.value === c.label && !c.keywords.some((k) => k.startsWith('#'))),
+    ).toBe(true);
+    expect(found(categories, 'dreamhack winter 2013').map((c) => c.value)).toContain(
+      'DreamHack Winter 2013',
+    );
+    expect(found(categories, 'antuerpia').length).toBeGreaterThan(0);
   });
 });
 
@@ -188,7 +253,7 @@ describe('stickers e charms para aplicar', () => {
     expect(category).toBe('DreamHack Winter 2013');
     const byCategory = searchAttachments('sticker', { category, limit: 1000 });
     expect(byCategory.items.every((s) => s.category === category)).toBe(true);
-    expect(byCategory.facets.categories).toContain(category);
+    expect(byCategory.facets.categories.map((c) => c.value)).toContain(category);
   });
 
   it('a busca de stickers também é tolerante e ordena por relevância', () => {
@@ -206,7 +271,7 @@ describe('stickers e charms para aplicar', () => {
   it('nenhuma categoria é uma chave de tradução crua (#CSGO_...)', () => {
     for (const type of ['sticker', 'charm'] as const) {
       const { facets, items } = searchAttachments(type, { limit: 100000 });
-      expect(facets.categories.filter((c) => c.startsWith('#'))).toEqual([]);
+      expect(facets.categories.filter((c) => c.value.startsWith('#'))).toEqual([]);
       expect(items.filter((i) => i.category?.startsWith('#'))).toEqual([]);
     }
   });

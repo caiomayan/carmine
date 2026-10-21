@@ -81,13 +81,20 @@ const tolerance = (length: number) => (length >= 8 ? 2 : length >= 4 ? 1 : 0);
 const SCORE = { exact: 1, prefix: 0.7, middle: 0.55, fuzzy: 0.4, secondary: 0.9 };
 
 /**
+ * Pedaço no meio da palavra: de 3 letras em diante, ou de 2 se misturar letra e número ("a1" em
+ * "m4a1"; os códigos das armas são assim). Duas letras soltas seriam só ruído ("ra" em "karambit").
+ */
+const canMatchInside = (query: string) =>
+  query.length >= 3 || (query.length === 2 && /\p{L}/u.test(query) && /\p{N}/u.test(query));
+
+/**
  * Uma palavra da busca contra uma palavra do texto: 0 se não casa. O erro de digitação só vale
  * para palavras soltas (`fuzzy`), não para as coladas ("ak47"), que só casam exato ou parcial.
  */
 function wordScore(query: string, word: string, fuzzy: boolean): number {
   if (word === query) return SCORE.exact;
   if (word.startsWith(query)) return SCORE.prefix + 0.15 * (query.length / word.length);
-  if (query.length >= 3 && word.includes(query)) return SCORE.middle;
+  if (canMatchInside(query) && word.includes(query)) return SCORE.middle;
   if (!fuzzy) return 0;
   const allowed = tolerance(query.length);
   // Número tem que ser exato ("2026" não é "2025").
@@ -180,12 +187,15 @@ export function scoreDoc(doc: SearchDoc, query: string): number {
   return total / words.length + bonus;
 }
 
-/** Relevância de um texto avulso (rótulo de uma opção). */
-export function searchScore(text: string, query: string): number {
+/**
+ * Relevância de uma opção de lista: o rótulo e, se houver, outros nomes dela (o original em inglês,
+ * o tipo). Todos valem como nome da opção.
+ */
+export function searchScore(text: string | string[], query: string): number {
   return scoreDoc(indexText(text), query);
 }
 
 /** O texto casa com a busca (palavras parciais, sem acento, com erro de digitação). */
-export function matchesSearch(text: string, query: string): boolean {
+export function matchesSearch(text: string | string[], query: string): boolean {
   return searchScore(text, query) > 0;
 }

@@ -117,7 +117,8 @@ function SelectSeparator({
   );
 }
 
-export type SelectOption = { value: string; label: string };
+/** `keywords`: outros nomes que a busca do Combobox acha (o original em inglês, o tipo). */
+export type SelectOption = { value: string; label: string; keywords?: string[] };
 
 /** Valor interno do item "vazio": o Radix não aceita `value=""` num item. */
 const EMPTY = '__empty__';

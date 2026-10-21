@@ -8,7 +8,12 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
 import { type SelectOption, SimpleSelect } from '@/components/ui/select';
-import { CATALOG_TYPES, type CatalogType, type Rarity } from '@/lib/catalog/types';
+import {
+  CATALOG_TYPES,
+  type CatalogType,
+  type FacetOption,
+  type Rarity,
+} from '@/lib/catalog/types';
 import { cn } from '@/lib/utils';
 
 export type CatalogBrowserLabels = {
@@ -29,7 +34,7 @@ export type CatalogBrowserLabels = {
   rarities: Record<Rarity, string>;
 };
 
-type Facets = { weapons: string[]; collections: string[]; rarities: Rarity[] };
+type Facets = { weapons: FacetOption[]; collections: FacetOption[]; rarities: Rarity[] };
 
 const SEARCH_DELAY_MS = 250;
 
@@ -147,7 +152,7 @@ export function CatalogBrowser({
             label={labels.weapon}
             value={weapon}
             empty={labels.allWeapons}
-            options={facets.weapons.map(named)}
+            options={facets.weapons}
             onChange={(value) => navigate({ arma: value || null, colecao: null })}
             disabled={facets.weapons.length === 0}
           />
@@ -162,7 +167,7 @@ export function CatalogBrowser({
             label={labels.collection}
             value={collection}
             empty={labels.allCollections}
-            options={facets.collections.map(named)}
+            options={facets.collections}
             onChange={(value) => navigate({ colecao: value || null })}
             disabled={facets.collections.length === 0}
             className="max-md:col-span-2"
@@ -225,9 +230,6 @@ function TypeButton({
 }
 
 const labelClass = 'label-caps text-[11px] text-muted-foreground';
-
-/** Armas e Coleções vêm da API só como nome: o valor da URL é o próprio nome. */
-const named = (name: string): SelectOption => ({ value: name, label: name });
 
 /** Filtro de lista curta (Raridade): Select. Valor vazio = sem filtro. */
 function FilterSelect({
