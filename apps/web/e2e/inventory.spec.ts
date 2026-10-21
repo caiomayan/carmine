@@ -376,6 +376,15 @@ test('a seleção do 3D segue o foco: outra linha, o chaveiro e fora do bloco', 
   expect(await dragSelectedInViewer(page)).toBe(false);
   await expect(page.getByTestId('viewer-drag-hint')).toHaveCount(0);
 
+  // Focar fora do formulário (um link da navegação) também sai do bloco; clicar no 3D, não.
+  await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
+  await page
+    .getByRole('navigation', { name: 'Principal' })
+    .getByRole('link', { name: 'Ranking' })
+    .focus();
+  await expect.poll(() => viewerSelection(page)).toBeNull();
+
   // Voltar a uma linha seleciona de novo.
   await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
@@ -430,7 +439,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
   expect(await dragSelectedInViewer(page)).toBe(true);
   await expect(placement).toContainText('Personalizada');
-  await expect(sliderX).toHaveAttribute('aria-valuetext', '1,00');
+  await expect(sliderX).toHaveAttribute('aria-valuetext', '1');
 
   // Voltar ao padrão da arma tira a posição.
   await chooseOption(page, placement, 'default');
@@ -448,6 +457,40 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
   });
   // O cartão mostra o chaveiro como ícone no canto inferior direito da imagem.
   await expect(page.getByTestId('tile-charm').locator('img')).toHaveCount(1);
+});
+
+test('a barra do float tem uma faixa por fase da faixa real da skin', async ({ page }) => {
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  // A AK Linhas Vermelhas vai de 0,10 a 0,70: sem a Nova de Fábrica, com as outras quatro fases.
+  const track = (await page.getByTestId('field-wear-range').getAttribute('style')) ?? '';
+  for (const tier of ['mw', 'ft', 'ww', 'bs']) expect(track).toContain(`var(--wear-${tier})`);
+  expect(track).not.toContain('var(--wear-fn)');
+  await expect(page.getByTestId('wear-ruler').locator('[data-tier]')).toHaveCount(4);
+  // Cada fase tem o nome completo num Tooltip.
+  await page.getByTestId('wear-ruler').locator('[data-tier="ft"]').hover();
+  await expect(page.getByRole('tooltip')).toContainText('Testada em Campo');
+});
+
+test('em 390 px o editor com stickers e chaveiro não rola na horizontal', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  const { uid } = await addItemByApi(page, {
+    id: AK_REDLINE,
+    wear: 0.2,
+    seed: 7,
+    stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
+    keychains: { '0': { id: 13113, seed: 5 } },
+  });
+  await page.goto(`/inventario/${uid}`);
+  await expect(page.getByTestId('charm')).toBeVisible();
+  await page.getByTestId('charm').getByText('Ajuste fino').click();
+  const overflow = () =>
+    page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  await page.goto('/inventario');
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  await page.goto('/inventario/adicionar');
+  expect(await overflow()).toBeLessThanOrEqual(0);
 });
 
 test('a dica do 3D lista girar, mover (Shift) e aproximar; no toque, só girar', async ({
@@ -584,11 +627,16 @@ for (const theme of ['dark', 'light'] as const) {
       seed: 661,
       statTrak: 0,
       stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
+      // Um chaveiro numa posição pronta: o ícone no cartão e o ajuste fino do editor entram no axe.
+      keychains: { '0': { id: 13113, seed: 5 } },
     });
     await page.reload();
     expect(await axeViolations(page), `inventário (${theme})`).toEqual([]);
     await page.goto(`/inventario/${uid}`);
     await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+    await page.getByTestId('charm').getByText('Ajuste fino').click();
+    await chooseOption(page, page.getByTestId('charm-placement'), '2');
+    await expect(page.getByTestId('charm').getByRole('slider', { name: 'X' })).toBeVisible();
     expect(await axeViolations(page), `editor (${theme})`).toEqual([]);
   });
 }

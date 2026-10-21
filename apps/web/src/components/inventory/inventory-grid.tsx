@@ -43,6 +43,7 @@ export function InventoryGrid({
   const { highlight, notify } = useInventory();
   const { equip } = useEquip();
   const [removing, setRemoving] = useState<CandidateView | null>(null);
+  const few = cards.length <= 2;
   const names = (uid: string) => cards.find((card) => card.uid === uid)?.name;
 
   async function equipCard(card: CandidateView, sides?: LoadoutSide[]) {
@@ -61,12 +62,11 @@ export function InventoryGrid({
         className={cn(
           'grid gap-2.5',
           // Um ou dois Itens não ficam perdidos numa grade de quatro colunas: cartões maiores.
-          cards.length <= 2
+          few
             ? 'grid-cols-2 max-md:grid-cols-1'
             : 'grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2',
         )}
         data-testid="inventory-grid"
-        data-few={cards.length <= 2 || undefined}
       >
         {cards.map((card, index) => (
           <li

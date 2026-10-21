@@ -249,6 +249,20 @@ export function ItemEditor(props: EditorProps) {
             dispatchDrag({ type: 'leave' });
           }
         }}
+        onBlur={(event) => {
+          // O foco foi para fora do formulário (o menu, um link): também é sair do bloco. Clicar
+          // no próprio 3D não conta (o foco vai para o iframe e a seleção tem de ficar), nem
+          // as janelas e listas que abrem fora do formulário.
+          const next = event.relatedTarget as HTMLElement | null;
+          if (
+            next &&
+            !event.currentTarget.contains(next) &&
+            next.dataset.testid !== 'viewer-iframe' &&
+            !next.closest('[role="dialog"], [role="listbox"]')
+          ) {
+            dispatchDrag({ type: 'leave' });
+          }
+        }}
         className="grid gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
@@ -331,7 +345,8 @@ export function ItemEditor(props: EditorProps) {
                     id={statTrakId}
                     checked={form.statTrak}
                     onCheckedChange={(statTrak) => change({ statTrak })}
-                    aria-describedby={describedBy(statTrakId, {})}
+                    // Alvo de toque de 44 px: a área clicável passa do desenho do interruptor (36×20).
+                    className="after:absolute after:-inset-x-1.5 after:-inset-y-3.5 after:content-['']"
                     data-testid="field-stattrak"
                   />
                 </div>

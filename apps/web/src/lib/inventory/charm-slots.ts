@@ -21,7 +21,7 @@ const POSITION_DECIMALS = 4;
 // fica abaixo do passo do ajuste fino (0,0001): o menor toque no controle já sai do slot.
 const TOLERANCE = 10 ** -(POSITION_DECIMALS + 1);
 const round = (value: number) => Number(value.toFixed(POSITION_DECIMALS));
-const middle = (range: Range) => (range.min + range.max) / 2;
+export const middle = (range: Range) => (range.min + range.max) / 2;
 
 /** A posição do slot (0 a {@link CHARM_SLOTS} - 1); um índice fora vira o mais próximo. */
 export function charmSlotPosition(bounds: CharmBounds, slot: number): CharmPosition {

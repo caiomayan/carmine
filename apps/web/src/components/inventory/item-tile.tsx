@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { TeamDots } from '@/components/team-dots';
 import type { Rarity } from '@/lib/catalog/types';
-import type { CardAttachment } from '@/lib/inventory/cards';
+import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
 
 /**
@@ -78,7 +78,6 @@ export function ItemTile({
   sides,
   stickers,
   charm,
-  meta,
   index = 0,
   selected = false,
   actionSpace = false,
@@ -97,11 +96,9 @@ export function ItemTile({
   /** Lados em que o Item está equipado: viram as bolinhas CT/TR no canto superior direito. */
   sides?: readonly LoadoutSide[];
   /** Stickers aplicados, em ícones no canto inferior esquerdo da imagem. */
-  stickers?: readonly CardAttachment[];
+  stickers?: readonly AttachmentLabel[];
   /** Chaveiro aplicado, em ícone no canto inferior direito da imagem. */
-  charm?: CardAttachment | null;
-  /** Linha de detalhe (ex.: "2 stickers · charm"). */
-  meta?: string;
+  charm?: AttachmentLabel | null;
   index?: number;
   selected?: boolean;
   /** Reserva o canto inferior direito para um botão sobreposto (o menu do cartão). */
@@ -160,9 +157,6 @@ export function ItemTile({
             {skinFirst && subtitle ? title : (subtitle ?? rarityLabel)}
           </span>
         </span>
-        {meta ? (
-          <span className="truncate pt-0.5 text-[11.5px] text-muted-foreground">{meta}</span>
-        ) : null}
       </span>
       {badges || sides?.length ? (
         <span className="absolute top-2.5 right-2.5 flex items-center gap-2">
@@ -179,7 +173,7 @@ function AttachmentIcon({
   attachment,
   className,
 }: {
-  attachment: CardAttachment;
+  attachment: AttachmentLabel;
   className?: string;
 }) {
   if (!attachment.image) return <span className="sr-only">{attachment.name}</span>;
