@@ -39,7 +39,8 @@ env:
 jobs:
   deploy:
     name: deploy
-    runs-on: ubuntu-24.04
+    # Mesmo runner do CI (variável CI_RUNNER; sem ela, o do GitHub).
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 25
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -99,19 +100,22 @@ jobs:
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_SSH_HOST_KEY: ${{ secrets.DEPLOY_SSH_HOST_KEY }}
+        # A chave fica no RUNNER_TEMP, que o runner apaga ao fim de cada job: no runner próprio
+        # o ~/.ssh sobreviveria ao job.
         run: |
           set -euo pipefail
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          printf 'ssh.stcarmine.com %s\n' "$DEPLOY_SSH_HOST_KEY" > ~/.ssh/known_hosts
-          cat > ~/.ssh/config <<'EOF'
+          dir="$RUNNER_TEMP/ssh"
+          install -d -m 700 "$dir"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$dir/deploy_key"
+          chmod 600 "$dir/deploy_key"
+          printf 'ssh.stcarmine.com %s\n' "$DEPLOY_SSH_HOST_KEY" > "$dir/known_hosts"
+          cat > "$dir/config" <<EOF
           Host ssh.stcarmine.com
             User deploy
-            IdentityFile ~/.ssh/deploy_key
+            IdentityFile $dir/deploy_key
             IdentitiesOnly yes
             StrictHostKeyChecking yes
-            UserKnownHostsFile ~/.ssh/known_hosts
+            UserKnownHostsFile $dir/known_hosts
             ServerAliveInterval 20
             ProxyCommand cloudflared access ssh --hostname %h
           EOF
@@ -129,4 +133,4 @@ jobs:
           # shellcheck disable=SC2029  # o SHA deve expandir aqui, no cliente
           # stdin: usuário, token (só vale durante este job) e o tar de infra/prod do commit.
           { printf '%s\n%s\n' "$GH_USER" "$GH_TOKEN"; tar -czf - infra/prod; } \
-            | ssh ssh.stcarmine.com "sha-$SHA"
+            | ssh -F "$RUNNER_TEMP/ssh/config" ssh.stcarmine.com "sha-$SHA"
