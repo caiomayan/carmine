@@ -6,6 +6,19 @@ import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
 
 const AT = () => new Date().toISOString();
 
+/**
+ * Liga o Perfil privado pelo interruptor da página aberta. Um clique logo depois do `goto` pode
+ * cair antes de a página hidratar e não fazer nada; então repete até ligar (sem desligar o que já
+ * ligou: só clica enquanto está desligado).
+ */
+async function turnPrivateProfileOn(page: import('@playwright/test').Page) {
+  const toggle = page.getByTestId('privacy-switch');
+  await expect(async () => {
+    if (!(await toggle.isChecked())) await toggle.click();
+    await expect(toggle).toBeChecked({ timeout: 2_000 });
+  }).toPass();
+}
+
 /** A segunda-feira (Brasília) da semana atual, como a API a conta. */
 function thisWeek(): string {
   const local = new Date(Date.now() - 3 * 60 * 60 * 1000);
@@ -111,8 +124,7 @@ test('o Perfil privado aparece como "Jogador privado", sem link, nome nem avatar
   // A Conta entra no site e liga o Perfil privado pela interface.
   await signInByRequest(page, quiet.steamId);
   await page.goto(`/${quiet.publicId}`);
-  await page.getByTestId('privacy-switch').click();
-  await expect(page.getByTestId('privacy-switch')).toBeChecked();
+  await turnPrivateProfileOn(page);
 
   await page.goto('/ranking');
   const own = page
@@ -261,8 +273,7 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   // O dono liga o Perfil privado: vê as suas com "Só você vê"; o visitante vê o aviso.
   await signInByRequest(page, killer.steamId);
   await page.goto(`/${killer.publicId}`);
-  await page.getByTestId('privacy-switch').click();
-  await expect(page.getByTestId('privacy-switch')).toBeChecked();
+  await turnPrivateProfileOn(page);
   await page.reload();
   await expect(page.getByTestId('stats-only-you')).toHaveText('Só você vê');
   await expect(page.getByTestId('stats-total').locator('[data-stat="kills"]')).toContainText('1');
