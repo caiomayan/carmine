@@ -127,3 +127,48 @@ export function serverFullLabel(
 ): string {
   return server.code ? `${serverLabel(server)} (${server.code})` : serverLabel(server);
 }
+
+/** Até este número de servidores no ar a home mostra cartões grandes; acima, lista (U2). */
+export const MAX_CARD_SERVERS = 6;
+
+export type ServersLayout = {
+  kind: 'cards' | 'list';
+  /** Os servidores no ar (online ou lotados), na ordem recebida. */
+  live: LiveServer[];
+  /** Os offline, que nunca ganham cartão: viram linhas leves no fim. */
+  offline: LiveServer[];
+  /** Colunas da grade de cartões em telas largas: nenhuma linha termina com buraco. */
+  columns: 1 | 2 | 3;
+  /** Com 5 cartões em 2 colunas, o último ocupa a linha inteira. */
+  spanLast: boolean;
+};
+
+const COLUMNS: Record<number, 1 | 2 | 3> = { 1: 1, 2: 2, 3: 3, 4: 2, 5: 2, 6: 3 };
+
+/**
+ * Cartões ou lista. Só contam os servidores no ar: os offline (de teste, em manutenção) não
+ * empurram a home para a lista e não pesam na tela.
+ */
+export function serversLayout(servers: LiveServer[]): ServersLayout {
+  const live = servers.filter((s) => s.state !== 'offline');
+  const offline = servers.filter((s) => s.state === 'offline');
+  const kind = live.length > MAX_CARD_SERVERS ? 'list' : 'cards';
+  const columns = COLUMNS[live.length] ?? 1;
+  return { kind, live, offline, columns, spanLast: kind === 'cards' && live.length === 5 };
+}
+
+/** O grupo "Offline (n)" já nasce aberto com poucos servidores ou quando nada está no ar. */
+export function offlineGroupOpen(liveCount: number, offlineCount: number): boolean {
+  return liveCount === 0 || offlineCount <= 2;
+}
+
+/** Os amigos de cada servidor (pelo `id`), na ordem recebida: os avatares do cartão. */
+export function friendsByServer(friends: PlayingFriend[]): Map<string, PlayingFriend[]> {
+  const grouped = new Map<string, PlayingFriend[]>();
+  for (const friend of friends) {
+    const list = grouped.get(friend.serverId);
+    if (list) list.push(friend);
+    else grouped.set(friend.serverId, [friend]);
+  }
+  return grouped;
+}

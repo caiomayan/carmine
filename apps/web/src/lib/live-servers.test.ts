@@ -2,13 +2,17 @@ import type { LiveServer, LiveServerList, PlayingFriend } from '@carmine/contrac
 import { describe, expect, it } from 'vitest';
 import {
   type FriendsView,
+  friendsByServer,
   friendsWithServers,
   initialLive,
   liveReducer,
+  MAX_CARD_SERVERS,
   nextFriends,
   occupancy,
+  offlineGroupOpen,
   serverFullLabel,
   serverLabel,
+  serversLayout,
   serversOfMode,
   steamConnectUrl,
   updatedSecondsAgo,
@@ -247,5 +251,90 @@ describe('nome do Servidor Carmine na home', () => {
   it('sem nome de vitrine, cai no identificador da Staff', () => {
     expect(serverLabel(server())).toBe('retake-1');
     expect(serverFullLabel(server())).toBe('retake-1');
+  });
+});
+
+describe('cartões ou lista', () => {
+  const many = (n: number, over: Partial<LiveServer> = {}) =>
+    Array.from({ length: n }, (_, i) =>
+      server({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, ...over }),
+    );
+
+  it('até 6 servidores no ar viram cartões; com 7 ou mais, lista', () => {
+    expect(serversLayout(many(1)).kind).toBe('cards');
+    expect(serversLayout(many(MAX_CARD_SERVERS)).kind).toBe('cards');
+    expect(serversLayout(many(MAX_CARD_SERVERS + 1)).kind).toBe('list');
+  });
+
+  it('só os servidores no ar contam: os offline nunca empurram a home para a lista', () => {
+    const layout = serversLayout([...many(3), ...many(8, { state: 'offline', map: null })]);
+    expect(layout.kind).toBe('cards');
+    expect(layout.live).toHaveLength(3);
+    expect(layout.offline).toHaveLength(8);
+  });
+
+  it('lotado conta como no ar (é um cartão com a vaga reservada)', () => {
+    const layout = serversLayout([...many(2), ...many(1, { state: 'full' })]);
+    expect(layout.live).toHaveLength(3);
+  });
+
+  it('separa no ar e offline sem mudar a ordem de cada grupo', () => {
+    const [a, b, c] = many(3);
+    const off = { ...b, state: 'offline' as const };
+    const layout = serversLayout([off, a, c]);
+    expect(layout.live).toEqual([a, c]);
+    expect(layout.offline).toEqual([off]);
+  });
+
+  it('as colunas acompanham a quantidade, sem deixar buraco no fim', () => {
+    const columns = (n: number) => serversLayout(many(n)).columns;
+    expect([1, 2, 3, 4, 5, 6].map(columns)).toEqual([1, 2, 3, 2, 2, 3]);
+  });
+
+  it('com 5 cartões em 2 colunas o último ocupa a linha inteira', () => {
+    expect(serversLayout(many(5)).spanLast).toBe(true);
+    expect(serversLayout(many(3)).spanLast).toBe(false);
+    expect(serversLayout(many(4)).spanLast).toBe(false);
+  });
+
+  it('sem nenhum servidor, sem colunas a inventar', () => {
+    const layout = serversLayout([]);
+    expect(layout).toMatchObject({ live: [], offline: [], columns: 1, spanLast: false });
+  });
+});
+
+describe('grupo offline', () => {
+  it('abre sozinho quando são poucos ou quando não há nada no ar', () => {
+    expect(offlineGroupOpen(3, 1)).toBe(true);
+    expect(offlineGroupOpen(3, 2)).toBe(true);
+    expect(offlineGroupOpen(0, 6)).toBe(true);
+  });
+
+  it('fica recolhido quando são muitos e há servidores no ar', () => {
+    expect(offlineGroupOpen(3, 3)).toBe(false);
+    expect(offlineGroupOpen(1, 6)).toBe(false);
+  });
+});
+
+describe('amigos em cada servidor', () => {
+  const friend = (n: number, serverId: string): PlayingFriend => ({
+    steamId: String(76561198000000000n + BigInt(n)),
+    publicId: n,
+    displayName: `Amigo ${n}`,
+    avatarUrl: null,
+    serverId,
+  });
+
+  it('agrupa os amigos pelo servidor onde estão, na ordem recebida', () => {
+    const a = '00000000-0000-4000-8000-00000000000a';
+    const b = '00000000-0000-4000-8000-00000000000b';
+    const grouped = friendsByServer([friend(1, a), friend(2, b), friend(3, a)]);
+    expect(grouped.get(a)?.map((f) => f.publicId)).toEqual([1, 3]);
+    expect(grouped.get(b)?.map((f) => f.publicId)).toEqual([2]);
+    expect(grouped.get('00000000-0000-4000-8000-00000000000c')).toBeUndefined();
+  });
+
+  it('sem amigos, o mapa vem vazio', () => {
+    expect(friendsByServer([]).size).toBe(0);
   });
 });
