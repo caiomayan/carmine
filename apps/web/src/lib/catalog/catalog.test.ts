@@ -6,6 +6,8 @@ import {
   catalogIndex,
   itemSpec,
   parseCatalogFilters,
+  quickSearchCatalog,
+  quickSearchOwned,
   searchAttachments,
   searchCatalog,
 } from './catalog';
@@ -402,5 +404,62 @@ describe('formato da resposta de /inventario/aplicaveis', () => {
     }
 
     expect({ version: ATTACHMENTS_PAYLOAD_VERSION, paths: [...paths].sort() }).toEqual(LOCKED);
+  });
+});
+
+describe('busca rápida da paleta (Ctrl+K)', () => {
+  it('devolve os mais relevantes primeiro, com a relevância, e respeita o limite', () => {
+    const hits = quickSearchCatalog('linhas vermelhas', 3);
+
+    expect(hits.length).toBeLessThanOrEqual(3);
+    expect(hits[0]?.entry.id).toBe(AK_REDLINE);
+    const scores = hits.map((hit) => hit.score);
+    expect(scores).toEqual([...scores].sort((a, b) => b - a));
+    expect(scores.every((score) => score > 0)).toBe(true);
+  });
+
+  it('acha em inglês e com erro de digitação, como o catálogo', () => {
+    expect(quickSearchCatalog('redline', 5).map((hit) => hit.entry.id)).toContain(AK_REDLINE);
+    expect(quickSearchCatalog('karambti', 5).map((hit) => hit.entry.type)).toContain('knife');
+  });
+
+  it('busca curta demais ou vazia não devolve nada', () => {
+    expect(quickSearchCatalog('', 5)).toEqual([]);
+    expect(quickSearchCatalog(' a ', 5)).toEqual([]);
+  });
+
+  it('nada casa: lista vazia', () => {
+    expect(quickSearchCatalog('zzzzqqqq', 5)).toEqual([]);
+  });
+});
+
+describe('busca rápida no Inventário da Conta', () => {
+  const inventory = [
+    { uid: 'u-awp', itemId: AWP_ASIIMOV },
+    { uid: 'u-ak', itemId: AK_REDLINE },
+    { uid: 'u-ak-2', itemId: AK_REDLINE },
+    { uid: 'u-ghost', itemId: 99_999_999 },
+  ];
+
+  it('acha só o que a Conta tem, com o uid do Item para abrir o editor', () => {
+    const hits = quickSearchOwned(inventory, 'asiimov', 5);
+
+    expect(hits.map((hit) => [hit.uid, hit.entry.id])).toEqual([['u-awp', AWP_ASIIMOV]]);
+  });
+
+  it('cada cópia é um resultado (o Inventário pode ter várias da mesma skin)', () => {
+    expect(quickSearchOwned(inventory, 'redline', 5).map((hit) => hit.uid)).toEqual([
+      'u-ak',
+      'u-ak-2',
+    ]);
+  });
+
+  it('ignora Item que não está no catálogo e respeita o limite', () => {
+    expect(quickSearchOwned(inventory, 'redline', 1)).toHaveLength(1);
+    expect(quickSearchOwned(inventory, 'ghost', 5)).toEqual([]);
+  });
+
+  it('busca curta demais não devolve nada', () => {
+    expect(quickSearchOwned(inventory, 'a', 5)).toEqual([]);
   });
 });

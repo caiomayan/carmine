@@ -89,6 +89,111 @@
       "signOutFailed": "Não deu para sair agora. Tente de novo em instantes."
     }
   },
+  "search": {
+    "trigger": {
+      "label": "Buscar",
+      "aria": "Buscar páginas, skins, jogadores e servidores",
+      "shortcut": "Atalho: Ctrl K",
+      "shortcutMac": "Atalho: ⌘ K"
+    },
+    "palette": {
+      "title": "Buscar no Carmine",
+      "description": "Páginas, ações, skins, jogadores e servidores. Use as setas para escolher, Enter para abrir e Esc para fechar.",
+      "placeholder": "Buscar páginas, skins, jogadores…",
+      "close": "Fechar a busca",
+      "listLabel": "Resultados"
+    },
+    "groups": {
+      "pages": "Páginas",
+      "actions": "Ações",
+      "inventory": "No seu Inventário",
+      "catalog": "Catálogo",
+      "players": "Jogadores",
+      "servers": "Servidores",
+      "recent": "Buscas recentes"
+    },
+    "recent": {
+      "clear": "Limpar",
+      "clearAria": "Limpar as buscas recentes"
+    },
+    "entries": {
+      "servers": {
+        "label": "Servidores",
+        "keywords": "servers jogar partida mapas retake deathmatch início home"
+      },
+      "inventory": {
+        "label": "Inventário",
+        "keywords": "inventory skins itens adicionar"
+      },
+      "loadout": {
+        "label": "Loadout",
+        "keywords": "equipar armas facas luvas presets"
+      },
+      "ranking": {
+        "label": "Ranking",
+        "keywords": "placar semana classificação leaderboard"
+      },
+      "profile": {
+        "label": "Meu perfil",
+        "keywords": "profile perfil estatísticas"
+      },
+      "settings": {
+        "label": "Configurações",
+        "keywords": "settings ajustes conta nome privacidade discord aparência"
+      },
+      "staff": {
+        "label": "Painel da Staff",
+        "keywords": "staff moderação denúncias painel admin"
+      },
+      "themeToLight": {
+        "label": "Usar tema claro",
+        "keywords": "tema claro escuro aparência theme light dark alternar"
+      },
+      "themeToDark": {
+        "label": "Usar tema escuro",
+        "keywords": "tema claro escuro aparência theme light dark alternar"
+      },
+      "firstSteps": {
+        "label": "Primeiros passos",
+        "keywords": "tutorial começar ajuda guia como funciona"
+      },
+      "signOut": {
+        "label": "Sair",
+        "keywords": "logout encerrar sessão sign out"
+      },
+      "signIn": {
+        "label": "Entrar",
+        "keywords": "login steam conta sign in"
+      }
+    },
+    "hints": {
+      "page": "Ir",
+      "add": "Adicionar",
+      "edit": "Abrir",
+      "profile": "Perfil",
+      "server": "{players}/{max}",
+      "serverFull": "Lotado",
+      "serverOffline": "Offline",
+      "vip": "VIP"
+    },
+    "playerAvatar": "Foto de {name}",
+    "status": {
+      "count": "{count, plural, =0 {Nenhum resultado} one {# resultado} other {# resultados}}",
+      "loading": "Buscando…",
+      "empty": "Nada encontrado para “{query}”.",
+      "emptyHint": "Confira a ortografia ou tente outro nome. Skins também se acham em inglês.",
+      "error": "Não deu para buscar agora.",
+      "partialError": "Parte dos resultados não carregou.",
+      "retry": "Tentar de novo",
+      "signOutFailed": "Não deu para sair agora. Tente de novo em instantes."
+    },
+    "keys": {
+      "navigate": "Navegar",
+      "open": "Abrir",
+      "close": "Fechar",
+      "esc": "Esc"
+    }
+  },
   "servers": {
     "title": "Servidores",
     "subtitle": "Retake e Deathmatch com o seu Loadout.",

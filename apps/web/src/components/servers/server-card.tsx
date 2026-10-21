@@ -6,7 +6,7 @@ import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/avatar';
 import { LiveCount } from '@/components/live-count';
 import { StatusDot } from '@/components/status-dot';
-import { serverFullLabel, serverLabel } from '@/lib/live-servers';
+import { serverAnchor, serverFullLabel, serverLabel } from '@/lib/live-servers';
 import { mapArt, mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ConnectButtons, ConnectHelp, useConnect } from './connect';
@@ -77,13 +77,14 @@ export function ServerCard({
 
   return (
     <li
+      id={serverAnchor(server.id)}
       data-testid="server-card"
       data-server={server.name}
       data-state={server.state}
       data-map={server.map ?? ''}
       style={{ '--i': index } as CSSProperties}
       className={cn(
-        'group/card relative isolate flex min-h-[264px] enter-stagger flex-col overflow-hidden rounded-2xl bg-surface-2',
+        'group/card target-veil relative isolate flex min-h-[264px] enter-stagger scroll-mt-24 flex-col overflow-hidden rounded-2xl bg-surface-2',
         solo && 'md:min-h-[320px]',
       )}
     >
