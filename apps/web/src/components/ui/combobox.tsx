@@ -12,16 +12,23 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { type SelectOption, selectTriggerClass } from '@/components/ui/select';
 import { matchesSearch } from '@/lib/option-search';
 import { cn } from '@/lib/utils';
 
-export type ComboboxOption = { value: string; label: string };
+/** Chave cmdk do item "vazio" (o cmdk não distingue bem um `value` vazio). */
+const EMPTY_KEY = '__empty__';
 
 /**
  * Select com busca para listas longas (Arma, Coleção, categorias de sticker): um botão que abre
  * um Popover com campo de busca e a lista filtrada, tudo por teclado (setas, Enter, Esc). A
  * busca ignora acentos e maiúsculas e aceita as palavras em qualquer ordem. O botão leva o
- * `id` (para o `<label htmlFor>`) e, com `name`, o valor vai no formulário como num `<select>`.
+ * `id` (para o `<label htmlFor>`) e, com `name`, o valor vai no formulário (e nada vai enquanto
+ * estiver vazio), como no `SimpleSelect`. O valor vazio (`''`) é "nada escolhido": com
+ * `emptyLabel` vira o primeiro item da lista ("Todas").
+ *
+ * Os textos de busca vêm de `common.combobox`: a rota precisa entregar o namespace `common` às
+ * mensagens do cliente (como fazem os layouts de `(itens)` e `staff`).
  */
 export function Combobox({
   id,
@@ -29,6 +36,7 @@ export function Combobox({
   value,
   onValueChange,
   options,
+  emptyLabel,
   placeholder,
   disabled,
   invalid,
@@ -40,9 +48,10 @@ export function Combobox({
   name?: string;
   value: string;
   onValueChange: (value: string) => void;
-  options: ComboboxOption[];
-  /** Texto do botão quando o valor não está na lista (ex.: "Todas"). */
-  placeholder: string;
+  options: SelectOption[];
+  emptyLabel?: string;
+  /** Texto do botão quando o valor não está na lista e não há `emptyLabel`. */
+  placeholder?: string;
   disabled?: boolean;
   invalid?: boolean;
   className?: string;
@@ -52,7 +61,8 @@ export function Combobox({
   const t = useTranslations('common.combobox');
   const [open, setOpen] = useState(false);
   const listId = useId();
-  const selected = options.find((option) => option.value === value);
+  const items = emptyLabel ? [{ value: '', label: emptyLabel }, ...options] : options;
+  const selected = items.find((item) => item.value === value);
 
   return (
     <div className={className}>
@@ -62,18 +72,14 @@ export function Combobox({
             type="button"
             id={id}
             role="combobox"
+            aria-haspopup="listbox"
             aria-expanded={open}
             aria-controls={open ? listId : undefined}
             aria-invalid={invalid || undefined}
             aria-describedby={describedBy}
             disabled={disabled}
             data-placeholder={selected ? undefined : ''}
-            className={cn(
-              'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
-              'hover:bg-surface-2 data-[state=open]:bg-surface-2 data-[placeholder]:text-muted-foreground',
-              'disabled:pointer-events-none disabled:text-faint aria-invalid:outline-1 aria-invalid:outline-status-danger',
-              triggerClassName,
-            )}
+            className={cn(selectTriggerClass, triggerClassName)}
           >
             <span className="truncate">{selected?.label ?? placeholder}</span>
             <ChevronsUpDownIcon
@@ -84,28 +90,31 @@ export function Combobox({
         </PopoverTrigger>
         <PopoverContent className="w-(--radix-popover-trigger-width) min-w-56 p-0">
           <Command
-            // O filtro é nosso (cmdk: valor = rótulo): acento, caixa e ordem das palavras.
-            filter={(optionLabel, search) => (matchesSearch(optionLabel, search) ? 1 : 0)}
+            // Filtro nosso: o cmdk chaveia o item pelo valor e a busca olha o rótulo (palavras
+            // soltas, sem acento nem caixa).
+            filter={(_key, search, keywords) =>
+              matchesSearch((keywords ?? []).join(' '), search) ? 1 : 0
+            }
           >
             <CommandInput placeholder={t('search')} aria-label={t('search')} />
             <CommandList id={listId}>
               <CommandEmpty>{t('empty')}</CommandEmpty>
               <CommandGroup>
-                {options.map((option) => (
+                {items.map((item) => (
                   <CommandItem
-                    key={option.value}
-                    // `value` é o que o cmdk filtra e devolve: o rótulo, único dentro da lista.
-                    value={option.label}
-                    data-testid={`option-${option.value || 'empty'}`}
-                    data-checked={option.value === value ? '' : undefined}
+                    key={item.value || EMPTY_KEY}
+                    value={item.value || EMPTY_KEY}
+                    keywords={[item.label]}
+                    data-testid={`option-${item.value || 'empty'}`}
+                    data-checked={item.value === value ? '' : undefined}
                     onSelect={() => {
-                      onValueChange(option.value);
+                      onValueChange(item.value);
                       setOpen(false);
                     }}
                     className="justify-between data-[checked]:font-semibold"
                   >
-                    <span className="truncate">{option.label}</span>
-                    {option.value === value ? (
+                    <span className="truncate">{item.label}</span>
+                    {item.value === value ? (
                       <CheckIcon aria-hidden="true" className="size-4 shrink-0" />
                     ) : null}
                   </CommandItem>
@@ -115,7 +124,7 @@ export function Combobox({
           </Command>
         </PopoverContent>
       </Popover>
-      {name ? <input type="hidden" name={name} value={value} /> : null}
+      {name && value !== '' ? <input type="hidden" name={name} value={value} /> : null}
     </div>
   );
 }

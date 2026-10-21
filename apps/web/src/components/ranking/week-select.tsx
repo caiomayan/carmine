@@ -49,7 +49,7 @@ export function WeekSelect({
           const next = options.find((option) => option.value === selected);
           if (next) router.push(next.href as '/ranking');
         }}
-        options={options.map((option) => ({ value: option.value, label: option.label }))}
+        options={options}
       />
     </div>
   );

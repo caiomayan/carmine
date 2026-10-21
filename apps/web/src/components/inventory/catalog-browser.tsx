@@ -7,7 +7,7 @@ import { SearchIcon } from '@/components/icons/animated/search';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
-import { SimpleSelect } from '@/components/ui/select';
+import { type SelectOption, SimpleSelect } from '@/components/ui/select';
 import { CATALOG_TYPES, type CatalogType, type Rarity } from '@/lib/catalog/types';
 import { cn } from '@/lib/utils';
 
@@ -147,7 +147,7 @@ export function CatalogBrowser({
             label={labels.weapon}
             value={weapon}
             empty={labels.allWeapons}
-            options={facets.weapons}
+            options={facets.weapons.map(named)}
             onChange={(value) => navigate({ arma: value || null, colecao: null })}
             disabled={facets.weapons.length === 0}
           />
@@ -155,14 +155,14 @@ export function CatalogBrowser({
             label={labels.rarity}
             value={rarity}
             empty={labels.allRarities}
-            options={facets.rarities.map((r) => [r, labels.rarities[r]])}
+            options={facets.rarities.map((r) => ({ value: r, label: labels.rarities[r] }))}
             onChange={(value) => navigate({ raridade: value || null })}
           />
           <FilterCombobox
             label={labels.collection}
             value={collection}
             empty={labels.allCollections}
-            options={facets.collections}
+            options={facets.collections.map(named)}
             onChange={(value) => navigate({ colecao: value || null })}
             disabled={facets.collections.length === 0}
           />
@@ -225,6 +225,9 @@ function TypeButton({
 
 const labelClass = 'label-caps text-[10px] text-muted-foreground';
 
+/** Armas e Coleções vêm da API só como nome: o valor da URL é o próprio nome. */
+const named = (name: string): SelectOption => ({ value: name, label: name });
+
 /** Filtro de lista curta (Raridade): Select. Valor vazio = sem filtro. */
 function FilterSelect({
   label,
@@ -236,7 +239,7 @@ function FilterSelect({
   label: string;
   value: string;
   empty: string;
-  options: [string, string][];
+  options: SelectOption[];
   onChange: (value: string) => void;
 }) {
   const id = useId();
@@ -250,10 +253,7 @@ function FilterSelect({
         value={value}
         onValueChange={onChange}
         emptyLabel={empty}
-        options={options.map(([optionValue, optionLabel]) => ({
-          value: optionValue,
-          label: optionLabel,
-        }))}
+        options={options}
       />
     </div>
   );
@@ -271,7 +271,7 @@ function FilterCombobox({
   label: string;
   value: string;
   empty: string;
-  options: string[];
+  options: SelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
@@ -285,9 +285,9 @@ function FilterCombobox({
         id={id}
         value={value}
         onValueChange={onChange}
-        placeholder={empty}
+        emptyLabel={empty}
         disabled={disabled}
-        options={[{ value: '', label: empty }, ...options.map((o) => ({ value: o, label: o }))]}
+        options={options}
       />
     </div>
   );

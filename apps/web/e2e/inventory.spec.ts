@@ -86,6 +86,49 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
   await expect(page).toHaveURL('/inventario/adicionar');
 });
 
+test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot é um Select', async ({
+  page,
+}) => {
+  await signIn(page, { vip: true });
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.getByTestId('add-sticker').click();
+  const picker = page.getByTestId('picker-sticker');
+  const category = picker.getByRole('combobox', { name: 'Campeonato ou coleção' });
+  await category.click();
+  // Sem chave de tradução crua na lista; a busca acha sem acento e sem ordem.
+  await expect(page.getByRole('option', { name: /^#CSGO/ })).toHaveCount(0);
+  await page.getByRole('combobox', { name: 'Buscar na lista' }).fill('2013 dreamhack winter');
+  await page.getByRole('option').first().click();
+  await expect(category).toContainText('DreamHack Winter 2013');
+  await expect(picker.getByText(/\d+ resultados?/)).toBeVisible();
+  // Esc fecha só o Popover; o Dialog continua.
+  await category.click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('combobox', { name: 'Buscar na lista' })).toBeHidden();
+  await expect(picker).toBeVisible();
+  await picker
+    .getByRole('button', { name: /^Escolher / })
+    .first()
+    .click();
+  await expect(picker).toHaveCount(0);
+
+  await addSticker(page, 'vitality');
+  await chooseOption(page, page.getByTestId('sticker-1').getByRole('combobox'), '3');
+  await expect
+    .poll(() => viewerItem(page))
+    .toMatchObject({ stickers: { '0': { schema: 0 }, '1': { schema: 3 } } });
+});
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`axe com o Combobox do catálogo aberto (${theme})`, async ({ page }) => {
+    await saveTheme(page, theme);
+    await page.goto('/inventario/adicionar');
+    await page.getByLabel('Arma').click();
+    await expect(page.getByRole('combobox', { name: 'Buscar na lista' })).toBeFocused();
+    expect(await axeViolations(page), `catálogo com o Combobox aberto (${theme})`).toEqual([]);
+  });
+}
+
 test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igual no 3D e depois de recarregar', async ({
   page,
 }) => {

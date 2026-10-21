@@ -14,6 +14,14 @@ const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
+/** Visual do botão de Select e de Combobox: um só vocabulário para os dois. */
+export const selectTriggerClass = [
+  'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
+  'hover:bg-surface-2 data-[state=open]:bg-surface-2 data-[placeholder]:text-muted-foreground',
+  'disabled:pointer-events-none disabled:text-faint aria-invalid:outline-1 aria-invalid:outline-status-danger',
+  '*:data-[slot=select-value]:truncate [&_svg]:pointer-events-none [&_svg]:shrink-0',
+].join(' ');
+
 function SelectTrigger({
   className,
   children,
@@ -22,13 +30,7 @@ function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
-      className={cn(
-        'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
-        'hover:bg-surface-2 data-[state=open]:bg-surface-2 data-[placeholder]:text-muted-foreground',
-        'disabled:pointer-events-none disabled:text-faint aria-invalid:outline-1 aria-invalid:outline-status-danger',
-        '*:data-[slot=select-value]:truncate [&_svg]:pointer-events-none [&_svg]:shrink-0',
-        className,
-      )}
+      className={cn(selectTriggerClass, className)}
       {...props}
     >
       {children}
@@ -154,7 +156,7 @@ function SimpleSelect({
         value={current === '' && emptyLabel ? EMPTY : current}
         onValueChange={(next) => {
           const resolved = next === EMPTY ? '' : next;
-          setInner(resolved);
+          if (value === undefined) setInner(resolved);
           onValueChange?.(resolved);
         }}
         disabled={disabled}

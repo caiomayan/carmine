@@ -314,6 +314,7 @@ test.describe('Painel da Staff', () => {
     const dialog = owner.page.getByRole('alertdialog', { name: 'Anonimizar esta Conta?' });
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+    expect(await axeViolations(owner.page), 'axe com a confirmação aberta').toEqual([]);
     await dialog.getByRole('button', { name: 'Cancelar' }).click();
     await expect(dialog).toBeHidden();
     await expect(owner.page.getByTestId('erasure-done')).toHaveCount(0);
@@ -327,6 +328,23 @@ test.describe('Painel da Staff', () => {
     expect((await page.request.get('/api/me')).status()).toBe(401);
     await owner.page.goto('/staff/auditoria?acao=account_anonymize');
     await expect(owner.page.getByTestId('audit-entries').first()).toContainText('protocolo E2E');
+    await owner.page.context().close();
+  });
+
+  test('o filtro da Auditoria escolhe a ação pelo Select e manda o GET', async ({ browser }) => {
+    const owner = await staffMember(browser, 'owner');
+    await owner.page.goto('/staff/auditoria');
+    await chooseOption(
+      owner.page,
+      owner.page.getByLabel('Ação', { exact: true }),
+      'account_anonymize',
+    );
+    await owner.page.getByRole('button', { name: 'Filtrar' }).click();
+    await expect(owner.page).toHaveURL(/\/staff\/auditoria\?acao=account_anonymize(&|$)/);
+    // Voltar a "Todas as ações" não manda o filtro.
+    await chooseOption(owner.page, owner.page.getByLabel('Ação', { exact: true }), 'empty');
+    await owner.page.getByRole('button', { name: 'Filtrar' }).click();
+    await expect(owner.page).not.toHaveURL(/acao=/);
     await owner.page.context().close();
   });
 

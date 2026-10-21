@@ -15,7 +15,8 @@ import { Button } from '@/components/ui/button';
  * Confirmação de uma ação sem volta: Dialog do Animate UI com `role="alertdialog"`. O foco
  * inicial fica em "Cancelar" (Enter sem querer não confirma) e clicar fora não fecha; Esc fecha.
  * Como é aberto por estado (sem `DialogTrigger`), guarda quem tinha o foco e o devolve ao fechar.
- * O resultado da ação (erro, sucesso) é de quem usa: este componente só pergunta.
+ * O resultado da ação (erro, sucesso) é de quem usa: este componente só pergunta. Os textos fixos
+ * vêm de `common`: a rota precisa entregá-lo às mensagens do cliente.
  */
 export function ConfirmDialog({
   open,
@@ -39,7 +40,8 @@ export function ConfirmDialog({
   const t = useTranslations('common');
   const opener = useRef<HTMLElement | null>(null);
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    // Com a ação em curso o diálogo não fecha: o resultado chega aqui e não se perde.
+    <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
       <DialogContent
         role="alertdialog"
         closeLabel={t('close')}
@@ -63,7 +65,12 @@ export function ConfirmDialog({
           </DialogDescription>
         </div>
         <DialogFooter>
-          <Button variant="ghost" data-cancel onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            data-cancel
+            disabled={pending}
+            onClick={() => onOpenChange(false)}
+          >
             {t('cancel')}
           </Button>
           <Button

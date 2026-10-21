@@ -601,7 +601,7 @@ function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: 
         description={t('hint')}
         submitLabel={t('submit')}
         doneLabel={t('done')}
-        confirm={{
+        confirmation={{
           title: t('confirmTitle'),
           description: t('confirmBody'),
           confirmLabel: t('confirmLabel'),

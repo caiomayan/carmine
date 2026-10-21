@@ -131,12 +131,9 @@ export function AttachmentPicker({
                 id={categoryId}
                 value={category}
                 onValueChange={setCategory}
-                placeholder={t('allCategories')}
+                emptyLabel={t('allCategories')}
                 triggerClassName="bg-surface-2 text-[14px] hover:bg-line"
-                options={[
-                  { value: '', label: t('allCategories') },
-                  ...page.facets.categories.map((value) => ({ value, label: value })),
-                ]}
+                options={page.facets.categories.map((value) => ({ value, label: value }))}
               />
             </div>
           ) : null}

@@ -165,11 +165,8 @@ export function ComponentGallery({ labels }: { labels: GalleryLabels }) {
             id="galeria-arma"
             value={weapon}
             onValueChange={setWeapon}
-            placeholder={labels.combobox.empty}
-            options={[
-              { value: '', label: labels.combobox.empty },
-              ...labels.combobox.options.map((option) => ({ value: option, label: option })),
-            ]}
+            emptyLabel={labels.combobox.empty}
+            options={labels.combobox.options.map((option) => ({ value: option, label: option }))}
           />
         </div>
       </Block>

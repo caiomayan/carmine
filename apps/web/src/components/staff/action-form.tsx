@@ -62,7 +62,7 @@ export function ReasonField({
 /**
  * Uma ação da Staff com motivo: campos próprios (opcionais), o motivo e o botão. Com `collapsed`,
  * começa como um botão que abre o formulário ali mesmo (sem modal). Mostra o erro pelo código
- * da API e confirma o sucesso em texto (região viva). Com `confirm`, a ação sem volta pede uma
+ * da API e confirma o sucesso em texto (região viva). Com `confirmation`, a ação sem volta pede uma
  * confirmação num Dialog depois de validar os campos e o motivo.
  */
 export function ActionForm({
@@ -75,7 +75,7 @@ export function ActionForm({
   collapsed = false,
   disabled = false,
   validate,
-  confirm,
+  confirmation,
   onSubmit,
   testId,
 }: {
@@ -90,7 +90,7 @@ export function ActionForm({
   /** Erro dos campos próprios, antes de enviar; nulo se está tudo certo. */
   validate?: () => string | null;
   /** Ação sem volta: o que o Dialog de confirmação diz antes de executar. */
-  confirm?: { title: string; description: ReactNode; confirmLabel: string };
+  confirmation?: { title: string; description: ReactNode; confirmLabel: string };
   onSubmit: (reason: string) => Promise<StaffResult<unknown>>;
   testId?: string;
 }) {
@@ -120,7 +120,7 @@ export function ActionForm({
       return;
     }
     setReasonError(null);
-    if (confirm) setConfirming(true);
+    if (confirmation) setConfirming(true);
     else await run();
   };
 
@@ -207,13 +207,13 @@ export function ActionForm({
       ) : (
         form
       )}
-      {confirm ? (
+      {confirmation ? (
         <ConfirmDialog
           open={confirming}
           onOpenChange={setConfirming}
-          title={confirm.title}
-          description={confirm.description}
-          confirmLabel={confirm.confirmLabel}
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmLabel={confirmation.confirmLabel}
           onConfirm={run}
           pending={pending}
           testId={testId ? `${testId}-confirm` : undefined}
