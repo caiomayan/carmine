@@ -178,8 +178,8 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 - Presets: o plano grátis tem 1 (o Loadout atual); o VIP tem até 20, com nome, ativáveis de uma vez.
 - `equipped/v5` passa a devolver o Loadout real; Itens VIP só entram na resposta se a Conta tiver Período VIP ativo.
 - O `cs2-css-inventory-simulator`, sem modificação, aplica o Loadout no connect e com `!ws`.
-- **Fim do Período VIP:** quem está conectado mantém os Itens VIP até a próxima troca de mapa, `!ws` ou reconexão (o que vier primeiro). Os Itens VIP continuam no Inventário, mas deixam de ir para o jogo. Presets extras ficam somente leitura; se um Preset extra estava ativo, o Loadout atual continua, só sem os Itens VIP. O site avisa 3 dias antes e no dia do fim.
-- **Renovação:** os Itens VIP voltam no próximo `!ws` ou connect.
+- **Fim do Período VIP:** quem está conectado mantém os Itens VIP até a próxima troca de mapa, `!ws` ou reconexão (o que vier primeiro). Os Itens VIP **saem do Inventário e do Loadout** (deixam de aparecer e de ir para o jogo) e ficam **guardados por 30 dias**; depois disso, são apagados. Decisão do dono de 2026-10-21; até a S14, vale a regra antiga (ficam no Inventário sem ir para o jogo). Presets extras ficam somente leitura; se um Preset extra estava ativo, o Loadout atual continua, só sem os Itens VIP. O site avisa 3 dias antes e no dia do fim.
+- **Renovação:** se a renovação vier dentro dos 30 dias, os Itens VIP guardados voltam ao Inventário como estavam (stickers, nametag, float) e vão para o jogo no próximo `!ws` ou connect. O aviso do fim diz isso ("seus Itens VIP ficam guardados por 30 dias").
 - **API fora do ar:** quem já está conectado mantém o Loadout carregado; um novo connect recebe Armas padrão e a mensagem "Não conseguimos carregar seu Loadout agora; tente !ws em alguns minutos".
 - Itens ou atributos que o plugin não consegue aplicar no jogo são sinalizados no editor antes de salvar.
 
@@ -453,6 +453,10 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 
 ### U3 · Polimento e animações sutis
 - Espaçamento, hierarquia, estados vazios e de erro, e animações sutis no site inteiro, a partir da crítica com a skill impeccable e das anotações do dono no beta.
+- Fatias: **U3a** Inventário e editor, **U3b** Loadout no estilo do CS2, **U3c** polimento geral (proposta aprovada pelo dono antes) e **U3d** busca global.
+- **Fundos em vez de anéis** (dono, 2026-10-21): os componentes evitam anéis e bordas. Selecionado e foco viram um fundo mais claro, e o hover reforça um fundo que já existe em repouso. O foco do teclado continua visível, por fundo distinto.
+- **U3d · Busca global (Ctrl+K):** um campo no header que abre uma paleta de comandos e busca páginas, itens do catálogo, jogadores (por nome), servidores e ações como "ir para Configurações". O código carrega só ao abrir, para respeitar o orçamento de JS.
+- **Amigos jogando agora com lista Steam privada** (dono, 2026-10-21, entra com a Fase de UI): quando a lista de quem olha é privada, a API confere a lista pública dos jogadores que estão nos servidores. Quem tem você na lista é seu amigo, porque a amizade na Steam é mútua. Não expõe nada novo, porque só aparecem amigos mútuos e só quem está jogando agora.
 
 ### U4 · Auditoria final
 - Auditoria impeccable: WCAG 2.2 AA, 390 px sem scroll horizontal, tema claro e escuro, orçamento de JS.
@@ -471,7 +475,10 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 Amadurecido com o dono em 2026-10-20; detalhes na nota Maestri "Carmine · Roadmap futuro". Nada disto está em implementação.
 - **Coleta para o futuro**, logo depois da S14: posição de quem matou e de quem morreu, dano, resultado do round, economia e utilitárias pela fila do ADR 0018, e gravação de demos (SourceTV) no R2 por algumas semanas.
 - **Card de boas-vindas no jogo** (HUD Panorama, `custom_hud_layout`, CS2 de 24/08/2026; exige MultiAddonManager e um addon da Workshop): Retake, Deathmatch e 5v5 Casual, nunca em Lobby/Partida privada.
-- **Foto de perfil própria** para todos (R2, refeita no servidor sem EXIF, moderada, com volta à foto da Steam).
+- **Foto de perfil própria** para todos (R2, refeita no servidor sem EXIF, moderada, com volta à foto da Steam). É uma fatia própria **logo depois da Fase de UI, antes da S14** (dono, 2026-10-21). A troca fica em /configuracoes e no clique no próprio avatar, no Perfil.
+- **Ping até o servidor** no cartão: o navegador mede o tempo de HTTPS até um endereço leve no mesmo host do servidor de jogo, fora da Cloudflare, como fazem os sites de ping. Entra com a abertura na VPS.
+- **Quem está no servidor** (futuro distante): os jogadores, o tempo no servidor e as estatísticas da partida. Perfil privado aparece como "Jogador privado".
+- **Amigos dentro do Carmine** (seguir ou adicionar, futuro distante): para quem tem a lista de amigos da Steam privada dos dois lados.
 - **5v5 Casual** sempre ligado; depois a **Lobby de 10** (Partida privada sob demanda, Fase 2 do ADR 0001) e, no futuro distante, **Times**.
 - **Agente de IA**, o diferencial do projeto: Treinador e Assistente primeiro, depois Estilista, Organizador e Guardião (Staff). Serviço TypeScript separado, que age com as permissões de quem pediu e nunca pune. No início, só para o Dono (sem limite) e a Staff (cota por custo).
 - **Highlights em vídeo** a partir das demos (futuro mais distante).
