@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { csrfToken, grantVip, newSteamId, signInFromHeader } from './accounts';
-import { viewerItem } from './fake-viewer';
+import { dragSelectedInViewer, viewerItem, viewerSelection, viewerSelections } from './fake-viewer';
 import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
 
 const AK_REDLINE = 222;
@@ -18,6 +18,14 @@ async function signIn(page: Page, { vip = false } = {}) {
     await page.reload();
   }
   return steamId;
+}
+
+/** O X do chaveiro que o viewer (falso) está mostrando (`undefined` no padrão da arma). */
+async function viewerCharmX(page: Page): Promise<number | undefined> {
+  const keychains = (await viewerItem(page))?.keychains as
+    | Record<string, { x?: number }>
+    | undefined;
+  return keychains?.['0']?.x;
 }
 
 /** Escolhe no seletor o primeiro sticker que a busca encontrar. */
@@ -188,7 +196,10 @@ test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igua
   const card = page.getByTestId('inventory-item');
   await expect(card).toHaveCount(1);
   await expect(card).toContainText('ST™');
-  await expect(card).toContainText('2 stickers');
+  // Os stickers e o chaveiro viram ícones dentro da área da imagem, não texto.
+  await expect(card.getByTestId('tile-stickers').locator('img')).toHaveCount(2);
+  await expect(card.getByTestId('tile-charm')).toHaveCount(0);
+  await expect(card).not.toContainText('stickers');
   await expect(page.getByTestId('inventory-count')).toHaveText('1 Item de 300');
 
   await page.reload();
@@ -252,7 +263,9 @@ test('o erro de validação da API vira mensagem no campo', async ({
   await expect(page.getByTestId('field-wear')).toHaveAttribute('aria-invalid', 'true');
 });
 
-test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ page }) => {
+test('3D sem botão de modo: o sticker é selecionado sozinho, arrasta e o ajuste fino acompanha', async ({
+  page,
+}) => {
   await signIn(page);
   await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
   await addSticker(page, 'furia');
@@ -260,10 +273,15 @@ test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ pag
   // O 3D precisa ter recebido o sticker antes de arrastá-lo.
   await expect.poll(() => viewerItem(page)).toMatchObject({ stickers: { '0': {} } });
 
-  const drag = page.getByTestId('drag-sticker-0');
-  await drag.click();
-  await expect(drag).toHaveAttribute('aria-pressed', 'true');
-  // O ajuste fino abre e acompanha a posição que veio do 3D.
+  // Não há botão "Arrastar no 3D": o sticker novo já é o selecionado.
+  await expect(page.getByRole('button', { name: /Arrastar/ })).toHaveCount(0);
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 0 });
+  await expect(page.getByTestId('on-viewer-sticker-0')).toBeVisible();
+  await expect(page.getByTestId('viewer-drag-hint')).toBeVisible();
+
+  // Arrastar o selecionado devolve a posição; o ajuste fino mostra o valor que veio do 3D.
+  await page.getByTestId('sticker-0').getByText('Ajuste fino').click();
+  expect(await dragSelectedInViewer(page)).toBe(true);
   await expect(
     page.getByTestId('sticker-0').getByRole('slider', { name: 'Ajuste horizontal' }),
   ).toHaveAttribute('aria-valuetext', '0,25');
@@ -275,6 +293,140 @@ test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ pag
   await expect(page).toHaveURL('/inventario');
   const inventory = await (await page.request.get('/api/inventory')).json();
   expect(inventory.items[0].item.stickers['0']).toMatchObject({ x: 0.25, y: 0.1 });
+});
+
+test('a seleção do 3D segue o foco: outra linha, o chaveiro e fora do bloco', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await addSticker(page, 'furia');
+  await addSticker(page, 'vitality');
+  await page.getByTestId('add-charm').click();
+  await page
+    .getByTestId('picker-charm')
+    .getByRole('button', { name: /^Escolher / })
+    .first()
+    .click();
+  await expect(page.getByTestId('charm')).toBeVisible();
+  await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+
+  // Focar a linha do primeiro sticker seleciona esse; a do segundo, o segundo.
+  await page.getByTestId('sticker-0').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 0 });
+  await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
+  await expect(page.getByTestId('sticker-1')).toHaveAttribute('data-selected', 'true');
+  await expect(page.getByTestId('sticker-0')).not.toHaveAttribute('data-selected');
+
+  // O chaveiro só é selecionado enquanto a linha dele tem o foco.
+  await page.getByTestId('charm').getByLabel('Padrão do chaveiro').focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
+  await expect(page.getByTestId('on-viewer-charm')).toBeVisible();
+
+  // Sair do bloco manda a seleção nula: aí arrastar só gira a arma.
+  await page.getByTestId('field-seed').focus();
+  await expect.poll(() => viewerSelection(page)).toBeNull();
+  expect(await dragSelectedInViewer(page)).toBe(false);
+  await expect(page.getByTestId('viewer-drag-hint')).toHaveCount(0);
+
+  // Voltar a uma linha seleciona de novo.
+  await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
+  const history = await viewerSelections(page);
+  expect(history).toContainEqual(null);
+});
+
+test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira "Personalizada"', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.getByTestId('add-charm').click();
+  await page
+    .getByTestId('picker-charm')
+    .getByRole('button', { name: /^Escolher / })
+    .first()
+    .click();
+  const charm = page.getByTestId('charm');
+  const placement = charm.getByTestId('charm-placement');
+  await expect(placement).toContainText('Padrão da arma');
+  await expect(page.getByRole('button', { name: /Arrastar no 3D/ })).toHaveCount(0);
+  await expect.poll(() => viewerItem(page)).toMatchObject({ keychains: { '0': {} } });
+  expect((await viewerItem(page))?.keychains).not.toHaveProperty('0.x');
+
+  // No padrão da arma o ajuste fino só pede para escolher uma posição.
+  await charm.getByText('Ajuste fino').click();
+  await expect(charm.getByRole('slider')).toHaveCount(0);
+
+  // Uma posição pronta guarda X, Y e Z e vai ao 3D; os extremos são os limites da arma.
+  await chooseOption(page, placement, '2');
+  await expect(placement).toContainText('Posição 3');
+  await expect
+    .poll(async () => (await viewerItem(page))?.keychains)
+    .toMatchObject({
+      '0': { x: expect.any(Number), y: expect.any(Number), z: expect.any(Number) },
+    });
+  const middle = (await viewerCharmX(page)) ?? 0;
+  await chooseOption(page, placement, '0');
+  await expect.poll(() => viewerCharmX(page)).toBeLessThan(middle);
+
+  // O ajuste fino mexe numa posição pronta e a deixa personalizada.
+  const sliderX = charm.getByRole('slider', { name: 'X' });
+  await expect(sliderX).toBeVisible();
+  await sliderX.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(placement).toContainText('Personalizada');
+
+  // Arrastar o chaveiro no 3D é só atalho: o resultado também é "Personalizada".
+  await chooseOption(page, placement, '1');
+  await charm.getByLabel('Padrão do chaveiro').focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
+  expect(await dragSelectedInViewer(page)).toBe(true);
+  await expect(placement).toContainText('Personalizada');
+  await expect(sliderX).toHaveAttribute('aria-valuetext', '1,00');
+
+  // Voltar ao padrão da arma tira a posição.
+  await chooseOption(page, placement, 'default');
+  await expect(placement).toContainText('Padrão da arma');
+  await expect.poll(async () => (await viewerItem(page))?.keychains).not.toHaveProperty('0.x');
+
+  await chooseOption(page, placement, '4');
+  await page.getByTestId('save-item').click();
+  await expect(page).toHaveURL('/inventario');
+  const inventory = await (await page.request.get('/api/inventory')).json();
+  expect(inventory.items[0].item.keychains['0']).toMatchObject({
+    x: expect.any(Number),
+    y: expect.any(Number),
+    z: expect.any(Number),
+  });
+  // O cartão mostra o chaveiro como ícone no canto inferior direito da imagem.
+  await expect(page.getByTestId('tile-charm').locator('img')).toHaveCount(1);
+});
+
+test('a dica do 3D lista girar, mover (Shift) e aproximar; no toque, só girar', async ({
+  page,
+}) => {
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+  await expect(page.getByTestId('item-viewer')).toContainText(
+    'Arraste para girar · Shift + arraste para mover · Roda para aproximar',
+  );
+  // O endereço do viewer não leva o halfRotation (a build dele não lê).
+  const src = await page.getByTestId('viewer-iframe').getAttribute('src');
+  expect(new URL(src ?? '').searchParams.has('halfRotation')).toBe(false);
+});
+
+test.describe('no toque', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test('a dica do 3D diz só "Arraste para girar"', async ({ page }) => {
+    await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+    await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+    const hint = page.getByTestId('item-viewer').locator('figcaption');
+    await expect(hint).toContainText('Arraste para girar');
+    // O texto do mouse existe no HTML, mas fica escondido no toque.
+    await expect(hint.getByText(/Shift/)).toBeHidden();
+    await expect(hint.getByText(/Roda/)).toBeHidden();
+  });
 });
 
 test.describe('com o 3D bloqueado', () => {

@@ -5,7 +5,7 @@ import type { Route } from 'next';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { siSteam } from 'simple-icons';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
 import { HistoryIcon } from '@/components/icons/animated/history';
@@ -34,6 +34,7 @@ import {
   validateForm,
 } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
+import { dragReducer, initialDragState, selectionFor } from '@/lib/viewer/drag-selection';
 import { CharmEditor, StickersEditor } from './attachments-editor';
 import { DecimalInput, describedBy, FieldShell, FloatField, TextInput } from './editor-fields';
 import { useInventory } from './inventory-provider';
@@ -94,11 +95,10 @@ export function ItemEditor(props: EditorProps) {
   const [saving, setSaving] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [removing, setRemoving] = useState(false);
-  // Arrasto no 3D (última tarefa da S04): um sticker ou o charm por vez, só com o 3D pronto.
+  // Arrasto no 3D: o viewer só arrasta o que está selecionado; a seleção segue o foco das
+  // linhas de sticker e de chaveiro, sem botão de modo (lib/viewer/drag-selection.ts).
   const [viewerReady, setViewerReady] = useState(false);
-  const [dragging, setDragging] = useState<
-    { kind: 'sticker'; index: number } | { kind: 'keychain'; index: 0 } | null
-  >(null);
+  const [dragState, dispatchDrag] = useReducer(dragReducer, initialDragState);
   const formRef = useRef<HTMLFormElement>(null);
   const hydrated = useHydrated();
   const barEnd = useRef<HTMLDivElement>(null);
@@ -122,6 +122,11 @@ export function ItemEditor(props: EditorProps) {
     () => formToItem(formSpec, form, props.saved),
     [formSpec, form, props.saved],
   );
+  const dragSelection = selectionFor(dragState, {
+    ready: viewerReady,
+    stickers: form.stickers.length,
+    hasCharm: form.charm !== null,
+  });
   const dirty = useMemo(
     () => JSON.stringify(item) !== JSON.stringify(formToItem(formSpec, initial, props.saved)),
     [item, formSpec, initial, props.saved],
@@ -222,7 +227,7 @@ export function ItemEditor(props: EditorProps) {
           always2d={spec.viewer === '2d'}
           stickers={form.stickers}
           charm={form.charm}
-          selection={viewerReady ? dragging : null}
+          selection={dragSelection}
           onReadyChange={setViewerReady}
           onMove={(moved) => {
             const next = positionsFromViewer(formSpec, form, moved);
@@ -236,6 +241,14 @@ export function ItemEditor(props: EditorProps) {
         onSubmit={submit}
         noValidate
         // Um campo que recebe foco rola acima da barra fixa de salvar, com o texto de ajuda dele.
+        onFocus={(event) => {
+          // Foco num campo fora do bloco de stickers e chaveiro: o 3D deixa de arrastar (só
+          // gira). Janelas e listas (o seletor de sticker, o Select) abrem fora do formulário.
+          const target = event.target as HTMLElement;
+          if (!target.closest('[data-drag-block], [role="dialog"], [role="listbox"]')) {
+            dispatchDrag({ type: 'leave' });
+          }
+        }}
         className="grid gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
@@ -318,7 +331,7 @@ export function ItemEditor(props: EditorProps) {
                     id={statTrakId}
                     checked={form.statTrak}
                     onCheckedChange={(statTrak) => change({ statTrak })}
-                    aria-describedby={describedBy(statTrakId, { locked: !vip })}
+                    aria-describedby={describedBy(statTrakId, {})}
                     data-testid="field-stattrak"
                   />
                 </div>
@@ -349,7 +362,6 @@ export function ItemEditor(props: EditorProps) {
               aria-describedby={describedBy(nameTagId, {
                 error: visibleIssues.some((i) => i.field === 'nameTag'),
                 hint: true,
-                locked: !vip,
               })}
               onChange={(event) => change({ nameTag: event.target.value })}
               data-testid="field-nametag"
@@ -365,11 +377,7 @@ export function ItemEditor(props: EditorProps) {
             issues={issues}
             errorText={errorText}
             onChange={(stickers) => change({ stickers })}
-            drag={{
-              available: viewerReady,
-              active: dragging?.kind === 'sticker' ? dragging.index : null,
-              set: (index) => setDragging(index === null ? null : { kind: 'sticker', index }),
-            }}
+            drag={{ selected: dragSelection, dispatch: dispatchDrag }}
           />
         ) : null}
 
@@ -380,11 +388,7 @@ export function ItemEditor(props: EditorProps) {
             issue={issueOf('charm.seed') ?? issues.find((i) => i.field.startsWith('charm'))}
             errorText={errorText}
             onChange={(charm) => change({ charm })}
-            drag={{
-              available: viewerReady,
-              active: dragging?.kind === 'keychain' ? 0 : null,
-              set: (index) => setDragging(index === null ? null : { kind: 'keychain', index: 0 }),
-            }}
+            drag={{ selected: dragSelection, dispatch: dispatchDrag }}
           />
         ) : null}
 

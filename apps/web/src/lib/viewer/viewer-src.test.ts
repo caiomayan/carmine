@@ -13,6 +13,10 @@ describe('endereço do viewer 3D', () => {
     );
   });
 
+  it('não manda o halfRotation: a build do viewer não lê esse parâmetro', () => {
+    expect(new URL(buildViewerSrc({ id: 1 })).searchParams.has('halfRotation')).toBe(false);
+  });
+
   it('manda a partner key só quando existe', () => {
     expect(new URL(buildViewerSrc({ id: 1 })).searchParams.has('key')).toBe(false);
     expect(new URL(buildViewerSrc({ id: 1 }, { key: 'k' })).searchParams.get('key')).toBe('k');

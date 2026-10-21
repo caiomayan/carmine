@@ -14,6 +14,7 @@ import { LoadoutApiError, useEquip } from '@/components/loadout/use-equip';
 import { hasSkinName } from '@/lib/catalog/types';
 import type { CandidateView } from '@/lib/loadout/view';
 import { equippedTeamSides } from '@/lib/team-sides';
+import { cn } from '@/lib/utils';
 import { VipBadge } from './catalog-grid';
 import { useInventory } from './inventory-provider';
 import { ItemTile, TileBadge } from './item-tile';
@@ -57,8 +58,15 @@ export function InventoryGrid({
   return (
     <>
       <ul
-        className="grid grid-cols-4 gap-2.5 max-lg:grid-cols-3 max-md:grid-cols-2"
+        className={cn(
+          'grid gap-2.5',
+          // Um ou dois Itens não ficam perdidos numa grade de quatro colunas: cartões maiores.
+          cards.length <= 2
+            ? 'grid-cols-2 max-md:grid-cols-1'
+            : 'grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2',
+        )}
         data-testid="inventory-grid"
+        data-few={cards.length <= 2 || undefined}
       >
         {cards.map((card, index) => (
           <li

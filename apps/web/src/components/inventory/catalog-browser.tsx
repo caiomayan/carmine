@@ -126,7 +126,7 @@ export function CatalogBrowser({
           />
         </div>
 
-        <fieldset className="flex flex-wrap items-center gap-1">
+        <fieldset className="flex flex-wrap items-center gap-1 max-md:-mx-(--mx) max-md:flex-nowrap max-md:overflow-x-auto max-md:px-(--mx) max-md:pb-1 max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
           <legend className="sr-only">{labels.type}</legend>
           <TypeButton active={!type} onClick={() => navigate({ tipo: null, arma: null })}>
             {labels.allTypes}
@@ -142,7 +142,7 @@ export function CatalogBrowser({
           ))}
         </fieldset>
 
-        <div className="grid grid-cols-3 gap-2 max-md:grid-cols-1">
+        <div className="grid grid-cols-3 gap-2 max-md:grid-cols-2">
           <FilterCombobox
             label={labels.weapon}
             value={weapon}
@@ -165,6 +165,7 @@ export function CatalogBrowser({
             options={facets.collections.map(named)}
             onChange={(value) => navigate({ colecao: value || null })}
             disabled={facets.collections.length === 0}
+            className="max-md:col-span-2"
           />
         </div>
 
@@ -214,7 +215,7 @@ function TypeButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'min-h-(--tap) rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground',
+        'min-h-(--tap) shrink-0 whitespace-nowrap rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground',
         'aria-pressed:bg-surface-2 aria-pressed:font-semibold aria-pressed:text-foreground',
       )}
     >
@@ -223,7 +224,7 @@ function TypeButton({
   );
 }
 
-const labelClass = 'label-caps text-[10px] text-muted-foreground';
+const labelClass = 'label-caps text-[11px] text-muted-foreground';
 
 /** Armas e Coleções vêm da API só como nome: o valor da URL é o próprio nome. */
 const named = (name: string): SelectOption => ({ value: name, label: name });
@@ -267,6 +268,7 @@ function FilterCombobox({
   options,
   onChange,
   disabled,
+  className,
 }: {
   label: string;
   value: string;
@@ -274,10 +276,11 @@ function FilterCombobox({
   options: SelectOption[];
   onChange: (value: string) => void;
   disabled?: boolean;
+  className?: string;
 }) {
   const id = useId();
   return (
-    <div className="grid gap-1.5">
+    <div className={cn('grid gap-1.5', className)}>
       <label htmlFor={id} className={labelClass}>
         {label}
       </label>

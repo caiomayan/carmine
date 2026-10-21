@@ -2,9 +2,14 @@
 
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/animate-ui/components/radix/tooltip';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
-import { WEAR_TIER_MAX, WEAR_TIERS, wearTier } from '@/lib/catalog/wear';
+import { wearGradient, wearSegments, wearTier } from '@/lib/catalog/wear';
 import { formatDecimal, parseDecimal } from '@/lib/decimal';
 import { cn } from '@/lib/utils';
 
@@ -36,11 +41,12 @@ export function FieldShell({
   return (
     <div className={cn('grid gap-2', className)} data-field={id}>
       <div className="flex min-h-4 items-baseline justify-between gap-3">
-        <label htmlFor={id} className="inline-flex items-center gap-1.5 label-caps text-[10.5px]">
+        <label htmlFor={id} className="inline-flex items-center gap-1.5 label-caps text-[11px]">
           {label}
           {locked ? (
             <span data-icon-trigger className="inline-flex text-status-vip">
               <AnimatedIcon icon={LockIcon} size={11} />
+              <span className="sr-only">{locked}</span>
             </span>
           ) : null}
         </label>
@@ -60,22 +66,12 @@ export function FieldShell({
           {hint}
         </p>
       ) : null}
-      {locked ? (
-        <p id={`${id}-locked`} className="text-[12.5px] text-muted-foreground">
-          {locked}
-        </p>
-      ) : null}
     </div>
   );
 }
 
-export const describedBy = (
-  id: string,
-  { error, hint, locked }: { error?: unknown; hint?: unknown; locked?: unknown },
-) =>
-  [error ? `${id}-error` : hint ? `${id}-hint` : null, locked ? `${id}-locked` : null]
-    .filter(Boolean)
-    .join(' ') || undefined;
+export const describedBy = (id: string, { error, hint }: { error?: unknown; hint?: unknown }) =>
+  error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
 const inputClass =
   'min-h-(--tap) w-full rounded-md bg-surface-2 px-3 text-[14px] tabular-nums transition-[background-color,box-shadow] duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-[color-mix(in_srgb,var(--text)_12%,var(--surface))] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] disabled:text-faint';
@@ -156,6 +152,7 @@ export function RangeInput({
   valueText,
   testId,
   disabled,
+  track,
 }: {
   min: number;
   max: number;
@@ -166,6 +163,8 @@ export function RangeInput({
   valueText?: string;
   testId?: string;
   disabled?: boolean;
+  /** Fundo próprio do trilho (ex.: a faixa colorida por fase do float). */
+  track?: string;
 }) {
   const span = max - min || 1;
   const percent = Math.min(Math.max(((value - min) / span) * 100, 0), 100);
@@ -181,15 +180,22 @@ export function RangeInput({
       aria-valuetext={valueText}
       data-testid={testId}
       onChange={(event) => onChange(Number(event.target.value))}
-      style={{ '--p': `${percent}%` } as CSSProperties}
+      style={
+        {
+          '--p': `${percent}%`,
+          ...(track ? { '--range-bg': track, '--range-h': '6px' } : {}),
+        } as CSSProperties
+      }
       className="range"
     />
   );
 }
 
 /**
- * O float: valor digitado, slider dentro da faixa da skin e a régua das faixas de desgaste
- * (NF a VG) recortada nessa faixa, para ver em que desgaste o valor cai.
+ * O float: valor digitado, slider dentro da faixa da skin e a régua das fases do desgaste
+ * (NF a VG) recortada nessa faixa. O trilho do slider é uma faixa colorida por fase, da Nova de
+ * Fábrica (verde) à Veterana de Guerra (vermelho), cor de contexto: o nome da fase atual vem
+ * escrito ao lado do valor e cada fase da régua tem o nome completo num Tooltip.
  */
 export function FloatField({
   range,
@@ -210,13 +216,7 @@ export function FloatField({
     min: formatDecimal(range.min, 2, { fixed: true }),
     max: formatDecimal(range.max, 2, { fixed: true }),
   });
-  const span = range.max - range.min || 1;
-  const segments = WEAR_TIERS.map((key, index) => {
-    const start = index === 0 ? 0 : WEAR_TIER_MAX[WEAR_TIERS[index - 1] ?? 'fn'];
-    const from = Math.max(start, range.min);
-    const to = Math.min(WEAR_TIER_MAX[key], range.max);
-    return { key, width: to > from ? ((to - from) / span) * 100 : 0 };
-  }).filter((segment) => segment.width > 0);
+  const segments = wearSegments(range);
 
   return (
     <FieldShell
@@ -236,22 +236,32 @@ export function FloatField({
             onChange={(next) => onChange(Number(next.toFixed(6)))}
             label={t('float')}
             valueText={`${formatDecimal(current, 6)} · ${t(`wear.${tier}`)}`}
+            track={wearGradient(segments)}
+            testId="field-wear-range"
           />
           <div
             aria-hidden="true"
-            className="flex text-[10px] font-semibold tracking-[0.08em] text-muted-foreground"
+            data-testid="wear-ruler"
+            className="flex text-[11px] font-semibold tracking-[0.06em] text-muted-foreground"
           >
             {segments.map((segment) => (
-              <span
-                key={segment.key}
-                style={{ width: `${segment.width}%` }}
-                className={cn(
-                  'truncate border-l border-line pl-1 first:border-l-0 first:pl-0',
-                  segment.key === tier && 'text-foreground',
-                )}
-              >
-                {segment.width > 7 ? t(`wearShort.${segment.key}`) : ''}
-              </span>
+              <Tooltip key={segment.tier}>
+                <TooltipTrigger asChild>
+                  <span
+                    style={{ width: `${segment.width}%` }}
+                    data-tier={segment.tier}
+                    className={cn(
+                      'truncate border-l border-line pl-1 first:border-l-0 first:pl-0',
+                      segment.tier === tier && 'text-foreground',
+                    )}
+                  >
+                    {segment.width > 8 ? t(`wearShort.${segment.tier}`) : ' '}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={4}>
+                  {t(`wear.${segment.tier}`)}
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>

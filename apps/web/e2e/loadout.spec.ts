@@ -141,7 +141,10 @@ test('equipar pelo menu do cartão no Inventário oferece só os lados do Item',
   await expect(page.getByTestId('menu-equip-t')).toHaveCount(0);
   await page.getByTestId('menu-equip-ct').click();
   await expect(toast(page, 'equipado em CT')).toBeVisible();
-  await expect(card).toContainText('Equipado: CT');
+  // Sem texto "equipado": só a bolinha azul do CT, com nome acessível.
+  await expect(card).not.toContainText('Equipado');
+  await expect(card.getByTestId('team-dots')).toHaveAttribute('data-sides', 'ct');
+  await expect(card.getByText('Equipada no CT')).toBeAttached();
 });
 
 test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras ficam somente leitura', async ({
