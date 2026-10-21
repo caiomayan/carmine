@@ -36,3 +36,6 @@ next-env.d.ts
 # Playwright
 test-results/
 playwright-report/
+
+# Imagens originais dos mapas (390 MB); só as otimizadas entram em apps/web/public/maps
+assets/thumbs/
