@@ -9,7 +9,7 @@ import {
   searchAttachments,
   searchCatalog,
 } from './catalog';
-import type { FacetOption } from './types';
+import { ATTACHMENTS_PAYLOAD_VERSION, type FacetOption } from './types';
 
 // Ids da @ianlucas/cs2-lib 9.5.0 (fixada no package.json).
 const DEAGLE_DEFAULT = 0;
@@ -326,5 +326,81 @@ describe('especificação de edição do Item', () => {
 
   it('não existe para Armas padrão', () => {
     expect(itemSpec(DEAGLE_DEFAULT)).toBeUndefined();
+  });
+});
+
+describe('facetas em cache', () => {
+  it('a busca reaproveita as facetas do mesmo recorte, qualquer que seja o texto digitado', () => {
+    const first = searchCatalog({ type: 'weapon', weapon: 'AK-47' });
+    const typed = searchCatalog({ type: 'weapon', weapon: 'AK-47', q: 'redline' });
+    const rarer = searchCatalog({ type: 'weapon', weapon: 'AK-47', rarity: 'covert' });
+
+    expect(typed.facets.weapons).toBe(first.facets.weapons);
+    expect(typed.facets.collections).toBe(first.facets.collections);
+    expect(rarer.facets.collections).toBe(first.facets.collections);
+  });
+
+  it('recortes diferentes têm facetas próprias', () => {
+    const ak = searchCatalog({ type: 'weapon', weapon: 'AK-47' }).facets;
+    const knives = searchCatalog({ type: 'knife' }).facets;
+
+    expect(knives.weapons).not.toBe(ak.weapons);
+    expect(searchCatalog({ type: 'weapon' }).facets.collections).not.toBe(ak.collections);
+  });
+
+  it('as categorias de sticker e de charm são montadas uma vez por tipo', () => {
+    const sticker = searchAttachments('sticker', { q: 'cat' }).facets.categories;
+
+    expect(searchAttachments('sticker', { limit: 1 }).facets.categories).toBe(sticker);
+    expect(searchAttachments('charm', {}).facets.categories).not.toBe(sticker);
+  });
+});
+
+/** Os caminhos e tipos de um valor JSON (`items[].image:string`); nulos não contam. */
+function shapePaths(value: unknown, path = '', into = new Set<string>()): string[] {
+  if (value === null || value === undefined) return [...into];
+  if (Array.isArray(value)) {
+    into.add(`${path}[]`);
+    for (const element of value) shapePaths(element, `${path}[]`, into);
+  } else if (typeof value === 'object') {
+    for (const [key, inner] of Object.entries(value)) {
+      shapePaths(inner, path ? `${path}.${key}` : key, into);
+    }
+  } else {
+    into.add(`${path}:${typeof value}`);
+  }
+  return [...into].sort();
+}
+
+describe('formato da resposta de /inventario/aplicaveis', () => {
+  // A resposta fica em cache no navegador e na borda, e a versão vai na URL do pedido. Mudou o
+  // formato (AttachmentPage)? Suba ATTACHMENTS_PAYLOAD_VERSION e atualize este registro: sem isso,
+  // o cache antigo chegaria ao código novo no formato velho.
+  const LOCKED = {
+    version: '2',
+    paths: [
+      'facets.categories[]',
+      'facets.categories[].keywords[]',
+      'facets.categories[].keywords[]:string',
+      'facets.categories[].label:string',
+      'facets.categories[].value:string',
+      'items[]',
+      'items[].category:string',
+      'items[].id:number',
+      'items[].image:string',
+      'items[].name:string',
+      'items[].rarity:string',
+      'items[].type:string',
+      'total:number',
+    ],
+  };
+
+  it('só muda junto com ATTACHMENTS_PAYLOAD_VERSION', () => {
+    const paths = new Set<string>();
+    for (const type of ['sticker', 'charm'] as const) {
+      shapePaths(searchAttachments(type, { limit: 100000 }), '', paths);
+    }
+
+    expect({ version: ATTACHMENTS_PAYLOAD_VERSION, paths: [...paths].sort() }).toEqual(LOCKED);
   });
 });

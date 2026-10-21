@@ -26,6 +26,7 @@ export function FieldShell({
   hint,
   error,
   locked,
+  lockedBadge,
   children,
   className,
 }: {
@@ -34,7 +35,10 @@ export function FieldShell({
   aside?: ReactNode;
   hint?: ReactNode;
   error?: ReactNode;
+  /** Texto completo para leitor de tela, quando o campo é exclusivo do VIP e a Conta não tem. */
   locked?: ReactNode;
+  /** A forma curta e à vista ao lado do cadeado ("VIP"). */
+  lockedBadge?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
@@ -44,8 +48,14 @@ export function FieldShell({
         <label htmlFor={id} className="inline-flex items-center gap-1.5 label-caps text-[11px]">
           {label}
           {locked ? (
-            <span data-icon-trigger className="inline-flex text-status-vip">
+            <span
+              data-icon-trigger
+              data-testid="field-vip-lock"
+              className="inline-flex items-center gap-1 text-status-vip"
+            >
               <AnimatedIcon icon={LockIcon} size={11} />
+              {/* O cadeado sozinho não diz por quê: "VIP" à vista, a frase inteira para leitor de tela. */}
+              <span aria-hidden="true">{lockedBadge}</span>
               <span className="sr-only">{locked}</span>
             </span>
           ) : null}

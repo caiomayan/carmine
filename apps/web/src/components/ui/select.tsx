@@ -3,6 +3,7 @@
 import { CheckIcon, ChevronDownIcon } from 'lucide-react';
 import { Select as SelectPrimitive } from 'radix-ui';
 import { type ComponentProps, useState } from 'react';
+import { chosenSelectValue, EMPTY_SELECT_VALUE } from '@/lib/select-value';
 import { cn } from '@/lib/utils';
 
 /**
@@ -120,9 +121,6 @@ function SelectSeparator({
 /** `keywords`: outros nomes que a busca do Combobox acha (o original em inglês, o tipo). */
 export type SelectOption = { value: string; label: string; keywords?: string[] };
 
-/** Valor interno do item "vazio": o Radix não aceita `value=""` num item. */
-const EMPTY = '__empty__';
-
 /**
  * O caso comum do Select, por lista de opções. O valor vazio (`''`) é "nada escolhido": com
  * `emptyLabel` vira um item que desfaz a escolha ("Todas"); sem ele, o botão mostra o
@@ -154,9 +152,10 @@ function SimpleSelect({
   return (
     <>
       <Select
-        value={current === '' && emptyLabel ? EMPTY : current}
+        value={current === '' && emptyLabel ? EMPTY_SELECT_VALUE : current}
         onValueChange={(next) => {
-          const resolved = next === EMPTY ? '' : next;
+          const resolved = chosenSelectValue(next);
+          if (resolved === null) return;
           if (value === undefined) setInner(resolved);
           onValueChange?.(resolved);
         }}
@@ -167,7 +166,7 @@ function SimpleSelect({
         </SelectTrigger>
         <SelectContent>
           {emptyLabel ? (
-            <SelectItem value={EMPTY} data-testid="option-empty">
+            <SelectItem value={EMPTY_SELECT_VALUE} data-testid="option-empty">
               {emptyLabel}
             </SelectItem>
           ) : null}

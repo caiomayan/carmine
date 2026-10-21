@@ -377,6 +377,26 @@ test('o teclado anda pelo quadro com as setas e os números pulam de coluna', as
   await expect(page.getByTestId('column-smg').locator('[data-card]:focus')).toHaveCount(1);
 });
 
+test('o número da coluna do cartão em foco não deixa foco preso para o próximo clique', async ({
+  page,
+}) => {
+  await signIn(page);
+  const first = slot(page, 'weapon_hkp2000', 'ct');
+  // O clique já escolhe a coluna; o primeiro cartão da coluna 1 é o selecionado: apertar 1 não
+  // muda estado nenhum, e o foco já está nele.
+  await first.click();
+  await page.keyboard.press('1');
+  await expect(first).toBeFocused();
+
+  const other = slot(page, 'weapon_usp_silencer', 'ct');
+  await other.click();
+  await expect(other).toHaveAttribute('aria-pressed', 'true');
+  await expect(other).toBeFocused();
+  // E a seta parte do cartão clicado, não do primeiro.
+  await page.keyboard.press('ArrowDown');
+  await expect(slot(page, 'weapon_elite', 'ct')).toBeFocused();
+});
+
 test('no celular, as categorias trocam a coluna à vista, sem rolagem lateral', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page);

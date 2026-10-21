@@ -161,3 +161,23 @@ describe('relevância: exato, depois prefixo, depois trecho, depois aproximado',
     expect(scoreDoc(indexText('AK-47'), '')).toBeGreaterThan(0);
   });
 });
+
+describe('texto indexado uma vez (o Combobox guarda um SearchDoc por opção)', () => {
+  it('pontuar o texto indexado dá o mesmo que pontuar o texto cru, para qualquer busca', () => {
+    const names = ['Quilowatt', 'Kilowatt', 'Coleção'];
+    const doc = indexText(names);
+
+    for (const query of ['kilo', 'quilowat', 'kilowaat', 'colecao', 'zzz', '', 'col qui']) {
+      expect(scoreDoc(doc, query)).toBe(searchScore(names, query));
+    }
+  });
+
+  it('o mesmo SearchDoc serve a várias buscas seguidas', () => {
+    const doc = indexText(['AK-47', 'AK-47'], 'Coleção Fenda');
+
+    expect(scoreDoc(doc, 'ak47')).toBeGreaterThan(0);
+    expect(scoreDoc(doc, 'fenda')).toBeGreaterThan(0);
+    expect(scoreDoc(doc, 'awp')).toBe(0);
+    expect(scoreDoc(doc, 'ak47')).toBeGreaterThan(0);
+  });
+});
