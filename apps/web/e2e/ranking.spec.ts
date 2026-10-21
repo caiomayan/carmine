@@ -221,6 +221,21 @@ test('as abas por Modo e o seletor de semana trocam a URL compartilhável', asyn
   );
 });
 
+test('com uma semana antiga na URL, o Select oferece a semana atual e volta para ela', async ({
+  page,
+}) => {
+  await page.goto('/ranking?semana=2020-01-06');
+  const select = page.getByTestId('week-select');
+  await expect(select).not.toContainText('(atual)');
+  await select.click();
+  expect(await page.getByRole('option').count()).toBeGreaterThanOrEqual(2);
+  await page.getByRole('option', { name: /\(atual\)/ }).click();
+  await expect(page).toHaveURL(/\/ranking\?modo=retake$/);
+  await expect(page.getByTestId('week-select').or(page.getByTestId('week-label'))).toContainText(
+    '(atual)',
+  );
+});
+
 test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de visitantes', async ({
   page,
   request,
