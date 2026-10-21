@@ -140,17 +140,23 @@ for (const theme of ['dark', 'light'] as Theme[]) {
       await page.getByTestId('option-empty').click();
       await expect(mode).toHaveText('Todos os Modos');
 
-      // Combobox: busca por palavras, sem acento nem ordem; Enter escolhe e fecha.
+      // Combobox: busca tolerante (erro de digitação, palavra parcial); Enter escolhe e fecha.
       const weapon = page.getByRole('combobox', { name: 'Arma', exact: true });
       await weapon.click();
       const search = page.getByRole('combobox', { name: 'Buscar na lista' });
       await expect(search).toBeFocused();
       await expect(page.getByRole('option')).toHaveCount(10);
       expect(await axeViolations(page), 'axe com o Combobox aberto').toEqual([]);
-      await search.fill('a1 m4');
-      await expect(page.getByRole('option')).toHaveText(['M4A1-S']);
+      await search.fill('glok 18');
+      await expect(page.getByRole('option')).toHaveText(['Glock-18']);
+      // Palavra parcial; o exato vem antes do aproximado (ordem por relevância).
+      await search.fill('m4');
+      await expect(page.getByRole('option')).toHaveText(['M4A1-S', 'M4A4']);
+      await search.fill('m4a4');
+      await expect(page.getByRole('option').first()).toHaveText('M4A4');
+      await search.fill('glok 18');
       await page.keyboard.press('Enter');
-      await expect(weapon).toHaveText('M4A1-S');
+      await expect(weapon).toHaveText('Glock-18');
       await expect(search).toBeHidden();
       await expect(weapon).toBeFocused();
 

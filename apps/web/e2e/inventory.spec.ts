@@ -86,6 +86,29 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
   await expect(page).toHaveURL('/inventario/adicionar');
 });
 
+test('catálogo: busca tolerante (parcial, erro de digitação, inglês) e ordenada por relevância', async ({
+  page,
+}) => {
+  await page.goto('/inventario/adicionar');
+  const search = page.getByTestId('catalog-search');
+  const first = page.locator('[data-testid^="catalog-item-"]').first();
+
+  await search.fill('ak redlin');
+  await expect(page.getByTestId(`catalog-item-${AK_REDLINE}`)).toBeVisible();
+  // O nome original em inglês acha o PT-BR ("Linhas Vermelhas"), e o exato vem primeiro.
+  await search.fill('ak47 redline');
+  await expect(first).toHaveAttribute('data-testid', `catalog-item-${AK_REDLINE}`);
+  // Erro de digitação: a faca sem pintura é o resultado mais relevante.
+  await search.fill('karambti');
+  await expect(first).toHaveAttribute('data-testid', 'catalog-item-41');
+  // O tipo nos dois idiomas.
+  // (as "Faixas de Mão", ou Hand Wraps, também são luvas)
+  await search.fill('gloves');
+  await expect(first).toContainText(/Luvas|Faixas/);
+  await search.fill('luvas');
+  await expect(first).toContainText(/Luvas|Faixas/);
+});
+
 test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot é um Select', async ({
   page,
 }) => {
@@ -112,7 +135,8 @@ test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot 
     .click();
   await expect(picker).toHaveCount(0);
 
-  await addSticker(page, 'vitality');
+  // Erro de digitação também acha no seletor.
+  await addSticker(page, 'vitalty');
   await chooseOption(page, page.getByTestId('sticker-1').getByRole('combobox'), '3');
   await expect
     .poll(() => viewerItem(page))

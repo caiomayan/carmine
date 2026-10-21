@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { type SelectOption, selectTriggerClass } from '@/components/ui/select';
-import { matchesSearch } from '@/lib/option-search';
+import { searchScore } from '@/lib/option-search';
 import { cn } from '@/lib/utils';
 
 /** Chave cmdk do item "vazio" (o cmdk não distingue bem um `value` vazio). */
@@ -22,7 +22,8 @@ const EMPTY_KEY = '__empty__';
 /**
  * Select com busca para listas longas (Arma, Coleção, categorias de sticker): um botão que abre
  * um Popover com campo de busca e a lista filtrada, tudo por teclado (setas, Enter, Esc). A
- * busca ignora acentos e maiúsculas e aceita as palavras em qualquer ordem. O botão leva o
+ * busca ignora acentos e maiúsculas, aceita palavras parciais e erros de digitação, em qualquer
+ * ordem, e ordena por relevância (`lib/option-search.ts`). O botão leva o
  * `id` (para o `<label htmlFor>`) e, com `name`, o valor vai no formulário (e nada vai enquanto
  * estiver vazio), como no `SimpleSelect`. O valor vazio (`''`) é "nada escolhido": com
  * `emptyLabel` vira o primeiro item da lista ("Todas").
@@ -90,11 +91,10 @@ export function Combobox({
         </PopoverTrigger>
         <PopoverContent className="w-(--radix-popover-trigger-width) min-w-56 p-0">
           <Command
-            // Filtro nosso: o cmdk chaveia o item pelo valor e a busca olha o rótulo (palavras
-            // soltas, sem acento nem caixa).
-            filter={(_key, search, keywords) =>
-              matchesSearch((keywords ?? []).join(' '), search) ? 1 : 0
-            }
+            // Filtro nosso: o cmdk chaveia o item pelo valor, e a busca olha o rótulo (palavras
+            // parciais, sem acento, com erro de digitação). O número devolvido é a relevância: o
+            // cmdk ordena por ele e esconde os de zero.
+            filter={(_key, search, keywords) => searchScore((keywords ?? []).join(' '), search)}
           >
             <CommandInput placeholder={t('search')} aria-label={t('search')} />
             <CommandList id={listId}>

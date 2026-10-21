@@ -66,7 +66,8 @@ describe('índice do catálogo', () => {
 describe('busca no catálogo', () => {
   it('ignora acentos e caixa e aceita várias palavras em qualquer ordem', () => {
     expect(ids(searchCatalog({ q: 'LINHAS vermelhas' }))).toContain(AK_REDLINE);
-    expect(ids(searchCatalog({ q: 'vermelhas ak' }))).toEqual([AK_REDLINE]);
+    // Com a busca tolerante outras skins parecidas também entram; a exata vem primeiro.
+    expect(ids(searchCatalog({ q: 'vermelhas ak' }))[0]).toBe(AK_REDLINE);
     expect(ids(searchCatalog({ q: 'serpênte' }))).toContain(AK_FIRE_SERPENT);
   });
 
@@ -105,6 +106,79 @@ describe('busca no catálogo', () => {
   });
 });
 
+describe('busca tolerante no catálogo (Q16)', () => {
+  it('acha com palavra parcial e com erro de digitação', () => {
+    expect(ids(searchCatalog({ q: 'ak redlin' }))).toContain(AK_REDLINE);
+    expect(searchCatalog({ q: 'karambti' }).items.some((e) => e.weapon === 'Karambit')).toBe(true);
+    const hyper = searchCatalog({ q: 'm4 hyper' }).items;
+    expect(hyper.length).toBeGreaterThan(0);
+    expect(hyper.every((e) => e.weapon === 'M4A1-S' || e.weapon === 'M4A4')).toBe(true);
+  });
+
+  it('acha pelo nome original em inglês, além do PT-BR da lib', () => {
+    // "Linhas Vermelhas" em PT-BR; "Redline" no original.
+    expect(catalogEntry(AK_REDLINE)?.name).toBe('AK-47 | Linhas Vermelhas');
+    expect(ids(searchCatalog({ q: 'redline' }))).toContain(AK_REDLINE);
+    expect(ids(searchCatalog({ q: 'ak47 redline' }))).toContain(AK_REDLINE);
+    expect(ids(searchCatalog({ q: 'asiimov awp' }))).toContain(AWP_ASIIMOV);
+  });
+
+  it('"knife" acha as facas e "gloves" acha as luvas, em qualquer idioma do tipo', () => {
+    // Outras coisas podem entrar (skins da "Coleção Luvas"), mas todas as facas e luvas vêm antes.
+    const countOf = (type: 'knife' | 'glove') =>
+      catalogIndex().filter((e) => e.type === type).length;
+    for (const [q, type, pt] of [
+      ['knife', 'knife', 'faca'],
+      ['gloves', 'glove', 'luvas'],
+    ] as const) {
+      const found = searchCatalog({ q, limit: 100000 });
+      // A página vai até CATALOG_PAGE_SIZE × 10 itens.
+      const count = Math.min(countOf(type), CATALOG_PAGE_SIZE * 10);
+      expect(count).toBeGreaterThan(50);
+      expect(found.items.slice(0, count).every((e) => e.type === type)).toBe(true);
+      // O nome do tipo em português acha o mesmo conjunto.
+      const portuguese = searchCatalog({ q: pt, limit: 100000 });
+      expect(
+        portuguese.items
+          .slice(0, count)
+          .map((e) => e.id)
+          .sort(),
+      ).toEqual(
+        found.items
+          .slice(0, count)
+          .map((e) => e.id)
+          .sort(),
+      );
+    }
+  });
+
+  it('o tipo combina com o nome: "knife karambit" traz só as Karambit', () => {
+    const found = searchCatalog({ q: 'knife karambit' }).items;
+    expect(found.length).toBeGreaterThan(5);
+    expect(found.every((e) => e.type === 'knife' && e.weapon === 'Karambit')).toBe(true);
+  });
+
+  it('ordena por relevância: o nome exato vem antes do aproximado', () => {
+    // Vários itens têm "karambit" no nome; a faca sem pintura é a que é só "Karambit".
+    expect(searchCatalog({ q: 'karambit' }).items[0]?.id).toBe(KARAMBIT_VANILLA);
+    // Com erro de digitação, o que casa de verdade ainda vem primeiro.
+    expect(searchCatalog({ q: 'karambti' }).items[0]?.weapon).toBe('Karambit');
+    // Prefixo "ak 47 redline" fica no topo dos que têm "AK-47".
+    expect(searchCatalog({ q: 'ak redline' }).items[0]?.id).toBe(AK_REDLINE);
+  });
+
+  it('não devolve lixo para uma busca sem relação', () => {
+    expect(searchCatalog({ q: 'zzzzzzzzz qqqqqqq' }).total).toBe(0);
+  });
+
+  it('aguenta a busca em milhares de entradas em poucos milissegundos', () => {
+    searchCatalog({ q: 'warmup' });
+    const start = performance.now();
+    for (const q of ['ak redlin', 'karambti', 'm4 hyper', 'gloves', 'sporty']) searchCatalog({ q });
+    expect(performance.now() - start).toBeLessThan(1500);
+  });
+});
+
 describe('stickers e charms para aplicar', () => {
   it('busca stickers por nome e por categoria (o campeonato ou a coleção)', () => {
     const found = searchAttachments('sticker', { q: 'atirador dreamhack' });
@@ -115,6 +189,18 @@ describe('stickers e charms para aplicar', () => {
     const byCategory = searchAttachments('sticker', { category, limit: 1000 });
     expect(byCategory.items.every((s) => s.category === category)).toBe(true);
     expect(byCategory.facets.categories).toContain(category);
+  });
+
+  it('a busca de stickers também é tolerante e ordena por relevância', () => {
+    // Erro de digitação e palavra parcial; o nome em inglês e o PT-BR.
+    expect(searchAttachments('sticker', { q: 'vitalty' }).items.length).toBeGreaterThan(0);
+    const vitality = searchAttachments('sticker', { q: 'vitality' }).items;
+    expect(vitality.length).toBeGreaterThan(0);
+    expect(vitality[0]?.name.toLowerCase()).toContain('vitality');
+    expect(searchAttachments('sticker', { q: 'dreamhak wintr 2013' }).items.length).toBeGreaterThan(
+      0,
+    );
+    expect(searchAttachments('sticker', { q: 'zzzzzzzzz qqqqqqq' }).total).toBe(0);
   });
 
   it('nenhuma categoria é uma chave de tradução crua (#CSGO_...)', () => {
