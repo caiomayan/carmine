@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { ArrowLeftIcon } from '@/components/icons/animated/arrow-left';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import {
   activeSettingsSection,
   SETTINGS_BASE,
@@ -37,7 +38,10 @@ export function SettingsShell({
 }) {
   const pathname = usePathname();
   const active = activeSettingsSection(pathname);
-  const current = active ?? 'perfil';
+  // Na raiz, o desktop mostra o Perfil (e o marca como atual); o celular mostra a lista, onde nenhuma
+  // seção é a atual.
+  const desktop = useMediaQuery('(min-width: 768px)');
+  const current = active ?? (desktop ? 'perfil' : null);
 
   return (
     <div className="container-page pb-16">
