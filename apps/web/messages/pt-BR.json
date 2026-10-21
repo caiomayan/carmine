@@ -300,7 +300,7 @@
       "title": "Recurso",
       "steps": {
         "ticket": "Abra um ticket no Discord da Carmine.",
-        "details": "Informe o seu ID público (o número do seu Perfil), a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.",
+        "details": "Informe o link do seu Perfil, a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.",
         "answer": "A Staff responde em até {hours} h."
       },
       "notes": "A punição continua valendo enquanto o recurso é analisado. Cada ban permanente tem direito a um recurso. Recurso aceito retira a punição do seu Perfil.",

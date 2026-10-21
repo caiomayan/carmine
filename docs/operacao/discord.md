@@ -2,7 +2,7 @@
 
 O que a integração faz: a pessoa vincula o Discord em Configurações > Conexões, o bot dá os cargos **Jogador**, **VIP**, **Staff** e **Dono** no servidor do Carmine (e os atualiza sozinho em até 1 minuto) e mantém uma mensagem com o status dos servidores num canal. As decisões estão no [ADR 0020](../adr/0020-discord-vinculo-rest-e-reconciliacao.md).
 
-Sem as variáveis `DISCORD_*` a integração fica **desligada, sem erro**: o botão do Perfil aparece desabilitado e nenhum job roda. Dá para fazer este passo a passo com calma; nada quebra enquanto ele não termina.
+Sem as variáveis `DISCORD_*` a integração fica **desligada, sem erro**: em Configurações > Conexões aparece o selo "Em breve" no lugar do botão e nenhum job roda. Dá para fazer este passo a passo com calma; nada quebra enquanto ele não termina.
 
 Você vai precisar de uma conta Discord com a permissão de administrar o servidor do Carmine e do acesso ao `/opt/carmine/.env` na VPS.
 
