@@ -317,41 +317,6 @@
     outline: 2px solid var(--ring);
     outline-offset: 2px;
   }
-
-  /*
-   * Campos de texto: em vez do contorno de 2 px do navegador, um anel fino e suave (--focus-field)
-   * e o campo clareia um degrau (a camada --hover sobre o fundo que ele já tem). O foco continua
-   * sempre visível (WCAG 2.4.7): o anel passa de 3:1 sobre o fundo nos dois temas e, no modo de
-   * alto contraste (onde a sombra some), volta o contorno do sistema. Botões e links seguem com o
-   * anel de 2 px, só no teclado (:focus-visible).
-   */
-  input:not(
-    [type="checkbox"],
-    [type="radio"],
-    [type="range"],
-    [type="file"],
-    [type="button"],
-    [type="submit"],
-    [type="reset"],
-    [type="image"],
-    [type="color"],
-    [type="hidden"]
-  ):focus-visible,
-  textarea:focus-visible,
-  select:focus-visible {
-    outline: none;
-    box-shadow: var(--focus-field);
-    background-image: linear-gradient(var(--hover), var(--hover));
-  }
-
-  @media (forced-colors: active) {
-    input:focus-visible,
-    textarea:focus-visible,
-    select:focus-visible {
-      outline: 2px solid CanvasText;
-      outline-offset: 2px;
-    }
-  }
 }
 
 /* ---------- rodapé: sobe suave conforme entra na tela (só CSS, ligado à rolagem) ---------- */
@@ -487,5 +452,51 @@
   }
   to {
     opacity: 0;
+  }
+}
+
+/*
+ * Campos de texto: em vez do contorno de 2 px do navegador, um anel fino e suave (--focus-field) e o
+ * campo clareia um degrau (a camada --hover por dentro do que ele já tem), com uma transição curta.
+ * O foco continua sempre visível (WCAG 2.4.7): o anel passa de 3:1 sobre o fundo nos dois temas e,
+ * no modo de alto contraste (onde a sombra some), volta o contorno do sistema. Botões e links
+ * seguem com o anel de 2 px, só no teclado (:focus-visible).
+ *
+ * Fora das camadas de propósito: vale para todo campo, mesmo os que trazem `transition-colors` ou
+ * `hover:bg-*` próprios (uma regra de camada perderia para os utilitários do Tailwind).
+ */
+:is(
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"],
+    [type="image"],
+    [type="color"],
+    [type="hidden"]
+  ),
+  textarea,
+  select
+) {
+  transition:
+    box-shadow var(--dur-fast) var(--ease-std),
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      var(--focus-field),
+      inset 0 0 0 100vmax var(--hover);
+  }
+
+  @media (forced-colors: active) {
+    &:focus-visible {
+      outline: 2px solid CanvasText;
+      outline-offset: 2px;
+    }
   }
 }
