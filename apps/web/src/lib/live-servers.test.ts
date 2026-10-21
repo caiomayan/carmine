@@ -10,7 +10,9 @@ import {
   nextFriends,
   occupancy,
   offlineGroupOpen,
+  serverAnchor,
   serverFullLabel,
+  serverHref,
   serverLabel,
   serversLayout,
   serversOfMode,
@@ -359,5 +361,19 @@ describe('amigos em cada servidor', () => {
 
   it('sem amigos, o mapa vem vazio', () => {
     expect(friendsByServer([]).size).toBe(0);
+  });
+});
+
+describe('âncora do cartão do servidor', () => {
+  it('o id do cartão vem do id do servidor, e o link leva até ele', () => {
+    const live = server({ id: '0b9b1f2e-0000-4000-8000-000000000001', state: 'online' });
+
+    expect(serverAnchor(live.id)).toBe('servidor-0b9b1f2e-0000-4000-8000-000000000001');
+    expect(serverHref(live)).toBe('/#servidor-0b9b1f2e-0000-4000-8000-000000000001');
+  });
+
+  it('lotado também tem cartão; offline fica no grupo recolhido, então o link só leva à home', () => {
+    expect(serverHref(server({ state: 'full' }))).toMatch(/^\/#servidor-/);
+    expect(serverHref(server({ state: 'offline' }))).toBe('/');
   });
 });

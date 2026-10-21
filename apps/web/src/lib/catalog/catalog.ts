@@ -215,6 +215,64 @@ function rank<T extends CatalogEntry | AttachmentEntry>(
   return scored.sort((a, b) => b.score - a.score || a.order - b.order).map(({ entry }) => entry);
 }
 
+/** Menos que isto não é busca (uma letra casaria quase tudo). */
+const QUICK_MIN_LENGTH = 2;
+const QUICK_MAX_LENGTH = 80;
+
+/** Um Item do catálogo achado pela paleta de comandos, com a relevância na escala da busca. */
+export type QuickHit = { entry: CatalogEntry; score: number };
+
+function quickQuery(query: string): string | null {
+  const text = query.trim().slice(0, QUICK_MAX_LENGTH);
+  return text.length >= QUICK_MIN_LENGTH ? text : null;
+}
+
+/**
+ * Os Itens que mais combinam com a busca da paleta (Ctrl+K), com a relevância de cada um para o
+ * navegador poder ordená-los junto de páginas e jogadores. Mesma busca tolerante e bilíngue do
+ * catálogo, sem montar as facetas (a paleta não usa). Busca curta demais não devolve nada.
+ */
+export function quickSearchCatalog(query: string, limit: number): QuickHit[] {
+  const text = quickQuery(query);
+  if (!text) return [];
+  const scored: (QuickHit & { order: number })[] = [];
+  catalogIndex().forEach((entry, order) => {
+    const score = scoreDoc(docOf(entry), text);
+    if (score > 0) scored.push({ entry, score, order });
+  });
+  return scored
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .slice(0, limit)
+    .map(({ entry, score }) => ({ entry, score }));
+}
+
+/** Um Item do Inventário da Conta achado pela paleta; `uid` abre o editor dele. */
+export type OwnedHit = QuickHit & { uid: string };
+
+/**
+ * Os Itens do Inventário da Conta que combinam com a busca da paleta. Cada cópia é um resultado
+ * (o Inventário aceita várias da mesma skin). Item que o catálogo não conhece é ignorado.
+ */
+export function quickSearchOwned(
+  items: readonly { uid: string; itemId: number }[],
+  query: string,
+  limit: number,
+): OwnedHit[] {
+  const text = quickQuery(query);
+  if (!text) return [];
+  const scored: (OwnedHit & { order: number })[] = [];
+  items.forEach(({ uid, itemId }, order) => {
+    const entry = catalogEntry(itemId);
+    if (!entry) return;
+    const score = scoreDoc(docOf(entry), text);
+    if (score > 0) scored.push({ entry, score, uid, order });
+  });
+  return scored
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .slice(0, limit)
+    .map(({ entry, score, uid }) => ({ entry, score, uid }));
+}
+
 /**
  * Opções de um filtro de lista (Arma, Coleção, categoria): os valores distintos, em ordem
  * alfabética, cada um com os outros nomes dele (o original em inglês, o tipo) para o Combobox
