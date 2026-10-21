@@ -116,6 +116,8 @@ for (const route of ['/regras', '/contato'] as const) {
 
 for (const width of WIDTHS) {
   test(`sem scroll horizontal em ${width}px`, async ({ page }) => {
+    // Uma carga por rota: com mais rotas que o teste de 30 s comporta, ele passa a depender da máquina.
+    test.setTimeout(90_000);
     await page.setViewportSize({ width, height: 900 });
     for (const route of ROUTES) {
       await page.goto(route);

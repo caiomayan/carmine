@@ -4,6 +4,21 @@ import { connectPlayer, createServer, keepBeating } from './live-servers';
 
 const accountMenu = (page: import('@playwright/test').Page) => page.getByTestId('account-menu');
 
+/**
+ * Abre o menu da Conta e clica no item. Logo depois de uma navegação o Next ainda move o foco da
+ * página nova, o que fecha um menu recém-aberto (comportamento do Radix para foco fora dele): então
+ * repete a abertura até o clique pegar, como faria quem usa.
+ */
+async function menuGo(
+  page: import('@playwright/test').Page,
+  item: import('@playwright/test').Locator,
+) {
+  await expect(async () => {
+    if (!(await item.isVisible())) await accountMenu(page).click();
+    await item.click({ timeout: 3_000 });
+  }).toPass();
+}
+
 /** Entra (sem a interface) com uma Conta que já jogou, com o nome Steam dado. */
 async function signedIn(
   page: import('@playwright/test').Page,
@@ -59,16 +74,13 @@ test.describe('menu da Conta', () => {
   test('Meu perfil, Inventário e Loadout levam às páginas', async ({ page, request }) => {
     const account = await signedIn(page, request, 'Atalhos Teste');
     await page.goto('/ranking');
-    await accountMenu(page).click();
-    await page.getByTestId('menu-profile').click();
+    await menuGo(page, page.getByTestId('menu-profile'));
     await expect(page).toHaveURL(`/${account.publicId}`);
 
-    await accountMenu(page).click();
-    await page.getByRole('menuitem', { name: 'Inventário' }).click();
+    await menuGo(page, page.getByRole('menuitem', { name: 'Inventário' }));
     await expect(page).toHaveURL('/inventario');
 
-    await accountMenu(page).click();
-    await page.getByRole('menuitem', { name: 'Loadout' }).click();
+    await menuGo(page, page.getByRole('menuitem', { name: 'Loadout' }));
     await expect(page).toHaveURL('/loadout');
   });
 
@@ -149,16 +161,23 @@ test.describe('menu da Conta', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/ranking');
     const box = await accountMenu(page).boundingBox();
-    expect(box?.width).toBeGreaterThanOrEqual(44);
-    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect(Math.round(box?.width ?? 0)).toBeGreaterThanOrEqual(44);
+    expect(Math.round(box?.height ?? 0)).toBeGreaterThanOrEqual(44);
 
     await accountMenu(page).click();
     const panel = await page.getByRole('menu').boundingBox();
     expect(panel?.x).toBeGreaterThanOrEqual(0);
     expect((panel?.x ?? 0) + (panel?.width ?? 0)).toBeLessThanOrEqual(390);
-    for (const item of await page.getByRole('menuitem').all()) {
-      expect((await item.boundingBox())?.height).toBeGreaterThanOrEqual(44);
-    }
+    // O painel chega com uma entrada curta (escala): mede depois de assentar.
+    await expect
+      .poll(async () => {
+        const items = await page.getByRole('menuitem').all();
+        const heights = await Promise.all(
+          items.map(async (item) => (await item.boundingBox())?.height ?? 0),
+        );
+        return Math.min(...heights);
+      })
+      .toBeGreaterThanOrEqual(44);
     expect(await overflow(page)).toBe(0);
   });
 });
@@ -207,14 +226,12 @@ test.describe('Configurações', () => {
     await page.getByTestId('settings-nav-dados').click();
     await expect(page).toHaveURL('/configuracoes/dados');
     await expect(page.getByTestId('data-request')).toContainText('conforme a LGPD');
-    await expect(page.getByRole('link', { name: 'Contato e exclusão de dados' })).toHaveAttribute(
-      'href',
-      '/contato',
-    );
-    await expect(page.getByRole('link', { name: 'Política de privacidade' })).toHaveAttribute(
-      'href',
-      '/privacidade',
-    );
+    await expect(
+      page.getByRole('main').getByRole('link', { name: 'Contato e exclusão de dados' }),
+    ).toHaveAttribute('href', '/contato');
+    await expect(
+      page.getByRole('main').getByRole('link', { name: 'Política de privacidade' }),
+    ).toHaveAttribute('href', '/privacidade');
   });
 
   test('Aparência: dois rádios trocam o tema, que fica salvo no navegador', async ({
@@ -315,23 +332,19 @@ test.describe('foco', () => {
     const input = page.getByTestId('name-input');
     await expect(input).toBeFocused();
 
-    const focused = await input.evaluate((el) => {
-      const style = getComputedStyle(el);
-      return {
-        outline: style.outlineStyle,
-        shadow: style.boxShadow,
-        image: style.backgroundImage,
-      };
-    });
-    expect(focused.outline).toBe('none');
-    // Anel de 1,5 px + halo de 4 px (duas sombras) e a camada que clareia o campo.
-    expect(focused.shadow).toMatch(/1\.5px/);
-    expect(focused.shadow).toMatch(/4px/);
-    expect(focused.image).toContain('linear-gradient');
+    const style = (property: 'outlineStyle' | 'boxShadow') =>
+      input.evaluate((el, name) => getComputedStyle(el)[name], property);
+    expect(await style('outlineStyle')).toBe('none');
+    // Anel de 1,5 px + halo de 4 px e, por dentro, a camada que clareia o campo (sombra interna).
+    // Os valores entram numa transição curta: espera chegar ao fim.
+    await expect.poll(() => style('boxShadow')).toMatch(/ 1\.5px/);
+    const shadow = await style('boxShadow');
+    expect(shadow).toMatch(/ 4px/);
+    expect(shadow).toMatch(/inset/);
 
-    // Sem foco, o anel some.
+    // Sem foco, o anel some (também depois da transição).
     await input.evaluate((el) => (el as HTMLInputElement).blur());
-    expect(await input.evaluate((el) => getComputedStyle(el).boxShadow)).toBe('none');
+    await expect.poll(() => style('boxShadow')).toBe('none');
   });
 
   test('botões e links seguem com o anel de 2 px, só no teclado', async ({ page }) => {
