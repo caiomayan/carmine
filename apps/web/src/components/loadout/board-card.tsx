@@ -14,8 +14,6 @@ export type BoardCardLabels = {
   skin: string | null;
   /** O que o leitor de tela ouve: slot, Item, lados e o aviso de fora do jogo. */
   accessible: string;
-  rarity: string;
-  notInGame: string;
 };
 
 /**

@@ -142,8 +142,7 @@ export function SlotDock({
                 style={{ background: RARITY_COLOR[item.rarity] }}
               />
               <span>
-                {rarityLabel}
-                {item.statTrak ? ' · StatTrak™' : ''}
+                {item.statTrak ? t('panel.rarityStatTrak', { rarity: rarityLabel }) : rarityLabel}
               </span>
             </>
           ) : (
@@ -211,7 +210,11 @@ export function SlotDock({
           <p>
             {slot.notInGame
               ? t(`notInGame.${slot.notInGame}`)
-              : t('stripped.body', { attributes: strippedNames.join(' e ') })}
+              : t('stripped.body', {
+                  attributes: new Intl.ListFormat('pt-BR', { type: 'conjunction' }).format(
+                    strippedNames,
+                  ),
+                })}
           </p>
         </div>
       ) : null}

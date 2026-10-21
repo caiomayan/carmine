@@ -9,6 +9,7 @@ import { CheckIcon } from '@/components/icons/animated/check';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { ItemArt, RarityDot, TileBadge } from '@/components/inventory/item-tile';
+import { TeamDots } from '@/components/team-dots';
 import { Button } from '@/components/ui/button';
 import type { CandidateView, SlotView } from '@/lib/loadout/view';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ import { LoadoutApiError, useEquip } from './use-equip';
 export function SlotPicker({
   slot,
   otherSide,
+  equippedSides,
   candidates,
   catalogHref,
   rarityLabels,
@@ -31,6 +33,8 @@ export function SlotPicker({
   slot: SlotView;
   /** O outro lado, se o slot também existe nele. */
   otherSide: LoadoutSide | null;
+  /** Os lados em que o Item atual do slot está equipado (as bolinhas na linha dele). */
+  equippedSides: LoadoutSide[];
   candidates: CandidateView[];
   catalogHref: string;
   rarityLabels: Record<string, string>;
@@ -150,7 +154,7 @@ export function SlotPicker({
                       </span>
                     </span>
                     {current ? (
-                      <TileBadge>{t('panel.current')}</TileBadge>
+                      <TeamDots sides={equippedSides} />
                     ) : candidate.statTrak ? (
                       <TileBadge>ST™</TileBadge>
                     ) : (

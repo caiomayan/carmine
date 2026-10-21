@@ -7,6 +7,8 @@ import {
   equippedSidesOf,
   MENU_ORDER,
   moveInBoard,
+  otherSideOf,
+  slotNameOfKey,
 } from './board';
 import type { SlotView, SlotViewGroup } from './view';
 
@@ -208,5 +210,23 @@ describe('menu do CS2 contra o catálogo', () => {
       .map((item) => `weapon_${item.modelKey}`);
     const known = MENU_ORDER.filter((name) => name.startsWith('weapon_'));
     expect([...offered].sort()).toEqual([...known].sort());
+  });
+});
+
+describe('slot de uma chave e o outro lado', () => {
+  it('acha o nome do slot pela chave, de qualquer lado', () => {
+    expect(slotNameOfKey(slots, 'weapon_p250:t')).toBe('weapon_p250');
+    expect(slotNameOfKey(slots, 'musicKit:all')).toBe('musicKit');
+    expect(slotNameOfKey(slots, 'weapon_nao_existe:ct')).toBeNull();
+    expect(slotNameOfKey(slots, null)).toBeNull();
+  });
+
+  it('o outro lado só existe quando o slot também está nele', () => {
+    const find = (key: string) => slots.find((s) => s.key === key) as SlotView;
+    expect(otherSideOf(slots, find('weapon_p250:ct'))).toBe('t');
+    expect(otherSideOf(slots, find('weapon_p250:t'))).toBe('ct');
+    expect(otherSideOf(slots, find('weapon_glock:t'))).toBeNull();
+    expect(otherSideOf(slots, find('weapon_hkp2000:ct'))).toBeNull();
+    expect(otherSideOf(slots, find('musicKit:all'))).toBeNull();
   });
 });

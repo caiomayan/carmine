@@ -26,6 +26,8 @@ import {
   defaultSelection,
   equippedSidesOf,
   moveInBoard,
+  otherSideOf,
+  slotNameOfKey,
 } from '@/lib/loadout/board';
 import type { CandidateView, LoadoutView, SlotView } from '@/lib/loadout/view';
 import { useMediaQuery } from '@/lib/use-media-query';
@@ -90,7 +92,7 @@ export function LoadoutScreen({
   const selected: SlotView | undefined =
     allSlots.find((slot) => slot.key === selectedKey) ??
     // Trocar de lado mantém o mesmo slot, se ele existe do outro lado.
-    allSlots.find((slot) => slot.slot === selectedKey?.split(':')[0]) ??
+    allSlots.find((slot) => slot.slot === slotNameOfKey(view.slots, selectedKey)) ??
     allSlots.find((slot) => slot.key === defaultSelection(columns));
   const columnOfSelected = columns.find((column) =>
     column.slots.some((slot) => slot.key === selected?.key),
@@ -154,9 +156,10 @@ export function LoadoutScreen({
           ]
             .filter(Boolean)
             .join(' ')
-        : t('board.cardEmpty', { slot: title }),
-      rarity: item ? (rarityLabels[item.rarity] ?? '') : '',
-      notInGame: t('notInGame.short'),
+        : t('board.cardEmpty', {
+            slot: title,
+            default: slot.group === 'gear' ? t('defaultGear') : t('defaultWeapon'),
+          }),
     };
   }
 
@@ -186,10 +189,10 @@ export function LoadoutScreen({
   }
 
   function openPicker() {
-    setPicker(window.matchMedia(WIDE).matches ? 'right' : 'bottom');
+    setPicker(wide ? 'right' : 'bottom');
   }
 
-  const pickerOther = selected ? otherSideOf(selected, view.slots) : null;
+  const pickerOther = selected ? otherSideOf(view.slots, selected) : null;
   const equippedSides = selected ? equippedSidesOf(view.slots, selected) : [];
   const equippedCandidate =
     selected?.item && candidates.find((candidate) => candidate.uid === selected.item?.uid);
@@ -351,6 +354,7 @@ export function LoadoutScreen({
                   key={selected.key}
                   slot={selected}
                   otherSide={pickerOther}
+                  equippedSides={equippedSides}
                   candidates={candidates.filter(
                     (candidate) =>
                       candidate.slot === selected.slot &&
@@ -372,15 +376,6 @@ export function LoadoutScreen({
       </Sheet>
     </Tabs>
   );
-}
-
-/** O outro lado, quando o slot também existe nele (a AWP existe nos dois; a AK, só no TR). */
-function otherSideOf(slot: SlotView, all: SlotView[]): LoadoutSide | null {
-  if (!slot.side) return null;
-  const other: LoadoutSide = slot.side === 'ct' ? 't' : 'ct';
-  return all.some((candidate) => candidate.slot === slot.slot && candidate.side === other)
-    ? other
-    : null;
 }
 
 /** O catálogo já filtrado para o slot: a arma, ou o tipo (faca, luvas, agente, kit de música). */

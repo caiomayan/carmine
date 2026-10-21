@@ -141,3 +141,17 @@ export function moveInBoard(columns: BoardColumn[], key: string, direction: Dire
 export function columnStartKey(columns: BoardColumn[], number: number): string | null {
   return columns[number - 1]?.slots[0]?.key ?? null;
 }
+
+/** O nome do slot de uma chave `slot:lado`, em qualquer lado; nulo se a chave não é de um slot. */
+export function slotNameOfKey(slots: SlotView[], key: string | null): string | null {
+  return slots.find((slot) => slot.key === key)?.slot ?? null;
+}
+
+/** O outro lado, quando o slot também existe nele (a AWP existe nos dois; a AK, só no TR). */
+export function otherSideOf(slots: SlotView[], slot: SlotView): LoadoutSide | null {
+  if (!slot.side) return null;
+  const other: LoadoutSide = slot.side === 'ct' ? 't' : 'ct';
+  return slots.some((candidate) => candidate.slot === slot.slot && candidate.side === other)
+    ? other
+    : null;
+}
