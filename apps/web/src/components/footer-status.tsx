@@ -2,8 +2,6 @@
 
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
-import { MapPinIcon } from '@/components/icons/animated/map-pin';
-import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { LiveCount } from '@/components/live-count';
 import { StatusDot } from '@/components/status-dot';
 import { isLive, type ServersSummary, useServersSummary } from '@/lib/servers';
@@ -49,11 +47,6 @@ export function FooterStatus({ initial }: { initial: ServersSummary | null }) {
       ) : (
         <span>{t('unavailable')}</span>
       )}
-      <Sep />
-      <span className="inline-flex items-center gap-1.5">
-        <AnimatedIcon icon={MapPinIcon} size={13} />
-        {t('region')}
-      </span>
     </div>
   );
 }

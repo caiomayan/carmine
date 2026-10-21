@@ -1,4 +1,4 @@
-import { type FriendsPlaying, friendsPlayingSchema } from '@carmine/contracts';
+import { type FriendsPlaying, friendsPlayingSchema, nowPlayingSchema } from '@carmine/contracts';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
@@ -227,6 +227,47 @@ describe('Seus amigos jogando agora (S06)', () => {
     expect(steam.friendListRequestsFor(me.steamId)[0]?.searchParams.get('key')).toBe(
       'chave-de-teste',
     );
+  });
+
+  describe('onde a própria Conta está jogando (menu da Conta)', () => {
+    it('sem sessão: 401', async () => {
+      const response = await t.app.inject({ method: 'GET', url: '/api/me/playing' });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it('conectada num servidor: devolve nome, Modo e mapa dele, sem endereço nem lotação', async () => {
+      const me = await signedInPlayer(t, 160);
+      const { server, key } = await t.app.get(GameServerRegistry).register({
+        name: 'retake-menu',
+        mode: 'retake',
+        address: '127.0.0.1:27040',
+      });
+      await playing(key, [me.steamId]);
+
+      const response = await me.call('GET', '/api/me/playing');
+
+      expect(response.statusCode, response.body).toBe(200);
+      expect(nowPlayingSchema.parse(response.json())).toEqual({
+        server: {
+          id: server.id,
+          name: 'retake-menu',
+          showcaseName: null,
+          mode: 'retake',
+          map: 'de_mirage',
+        },
+      });
+      expect(response.body).not.toContain('127.0.0.1');
+    });
+
+    it('fora de qualquer servidor: server nulo', async () => {
+      const me = await signedInPlayer(t, 161);
+
+      const response = await me.call('GET', '/api/me/playing');
+
+      expect(response.statusCode, response.body).toBe(200);
+      expect(response.json()).toEqual({ server: null });
+    });
   });
 });
 

@@ -16,6 +16,7 @@ import {
   staffServerSchema,
 } from '@carmine/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { placeholderNameFor } from '../src/accounts/placeholder-names.js';
 import { SessionStore } from '../src/auth/sessions.js';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
 import { Sanctions } from '../src/moderation/sanctions.js';
@@ -611,7 +612,7 @@ describe('Moderação (S07)', () => {
       expect((await t.app.get(VipPeriods).statusOf(target.account.id)).active).toBe(false);
     });
 
-    it('reset do nome: "Jogador #ID" enquanto o nome Steam não mudar', async () => {
+    it('reset do nome: o nome fictício enquanto o nome Steam não mudar', async () => {
       const steamId = steamIdFor(next++);
       await connect(steamId, 'nome horrível');
       const account = await t.accounts.findBySteamId(steamId);
@@ -623,9 +624,11 @@ describe('Moderação (S07)', () => {
 
       expect(reset.statusCode, reset.body).toBe(200);
       expect(staffAccountDetailSchema.parse(reset.json()).account.displayName).toBe(
-        `Jogador #${publicId}`,
+        placeholderNameFor(publicId),
       );
-      expect((await connect(steamId, 'nome horrível')).displayName).toBe(`Jogador #${publicId}`);
+      expect((await connect(steamId, 'nome horrível')).displayName).toBe(
+        placeholderNameFor(publicId),
+      );
       expect((await connect(steamId, 'nome limpo')).displayName).toBe('nome limpo');
     });
   });

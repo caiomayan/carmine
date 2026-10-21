@@ -69,9 +69,9 @@ Se você abre um ticket no Discord ou usa a página de contato, usamos o que voc
 
 ### Se você vincula o Discord
 
-Nos ajustes do seu Perfil você pode ligar o seu Discord à sua Conta. Para isso você autoriza o Carmine na tela do próprio Discord, com permissão apenas para ver quem você é (identify) e para entrar no nosso servidor (guilds.join). Usamos a autorização uma única vez, na hora, para ler o seu ID e o seu nome de usuário e colocar você no servidor; depois ela é descartada. Guardamos só o ID e o nome de usuário do Discord, para saber a quem dar os cargos. O Discord não recebe o seu SteamID64 nem o seu Nome de exibição: o servidor só vê que você é um jogador, VIP ou da Staff, pelos cargos. Um Discord só pode estar ligado a uma Conta.
+Em Configurações, na seção Conexões, você pode ligar o seu Discord à sua Conta. Para isso você autoriza o Carmine na tela do próprio Discord, com permissão apenas para ver quem você é (identify) e para entrar no nosso servidor (guilds.join). Usamos a autorização uma única vez, na hora, para ler o seu ID e o seu nome de usuário e colocar você no servidor; depois ela é descartada. Guardamos só o ID e o nome de usuário do Discord, para saber a quem dar os cargos. O Discord não recebe o seu SteamID64 nem o seu Nome de exibição: o servidor só vê que você é um jogador, VIP ou da Staff, pelos cargos. Um Discord só pode estar ligado a uma Conta.
 
-**Para desvincular:** use o botão "Desvincular" nos ajustes do seu Perfil. Os cargos do Carmine são retirados na hora e o vínculo é apagado do nosso banco. Também dá para revogar a autorização nas configurações do próprio Discord (Aplicativos autorizados); nesse caso o vínculo e os cargos continuam até você desvincular no site. Se você pedir a exclusão da Conta, o vínculo é apagado junto.
+**Para desvincular:** use o botão "Desvincular" em Configurações, na seção Conexões. Os cargos do Carmine são retirados na hora e o vínculo é apagado do nosso banco. Também dá para revogar a autorização nas configurações do próprio Discord (Aplicativos autorizados); nesse caso o vínculo e os cargos continuam até você desvincular no site. Se você pedir a exclusão da Conta, o vínculo é apagado junto.
 
 ## 3. Por que podemos usar esses dados (bases legais)
 

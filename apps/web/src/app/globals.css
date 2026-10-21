@@ -313,8 +313,17 @@
     border-radius: 8px;
   }
 
+  /*
+   * Foco do teclado: um anel fino (--focus-ring, 3:1 sobre as superfícies nos dois temas, medido em
+   * lib/focus-contrast.test.ts) só quando o foco vem do teclado (`html[data-kbd]`, ligado por
+   * components/input-modality.tsx). Mouse e toque nunca mostram anel, nem num campo de texto, que o
+   * navegador trata como :focus-visible até depois de um clique.
+   */
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: none;
+  }
+  [data-kbd] :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
     outline-offset: 2px;
   }
 }
@@ -453,4 +462,66 @@
   to {
     opacity: 0;
   }
+}
+
+/*
+ * Campos de texto: regra do dono, fundos em vez de anéis. No foco o campo clareia (o degrau
+ * --fill-focus por dentro do fundo que ele já tem), com uma transição curta; sem contorno do navegador
+ * e sem anel. O foco continua visível (WCAG 2.4.7): o degrau é o mais forte da escala, o texto segue
+ * acima de 4,5:1 e o placeholder sobe para 90% do texto (lib/focus-contrast.test.ts mede os dois
+ * temas). No modo de alto contraste (onde o fundo some) volta o contorno do sistema. Nos campos vale
+ * :focus (não :focus-visible): digitar exige ver onde se está, venha o foco do mouse, do teclado ou de
+ * um script (o "Alterar nome" foca o campo).
+ *
+ * Fora das camadas de propósito: vale para todo campo, mesmo os que trazem `transition-colors` ou
+ * `hover:bg-*` próprios (uma regra de camada perderia para os utilitários do Tailwind).
+ */
+:is(
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"],
+    [type="image"],
+    [type="color"],
+    [type="hidden"]
+  ),
+  textarea,
+  select
+) {
+  transition:
+    box-shadow var(--dur-fast) var(--ease-std),
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+
+  &:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 100vmax var(--fill-focus);
+  }
+
+  &:focus::placeholder {
+    color: color-mix(in srgb, var(--text) 90%, transparent);
+  }
+
+  /* O fundo que clareia não chega a 3:1: com o teclado, o anel fino entra também no campo. */
+  [data-kbd] &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  @media (forced-colors: active) {
+    &:focus {
+      outline: 2px solid CanvasText;
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* Um grupo cujo controle de dentro (rádio escondido) recebeu o foco do teclado ganha o anel no grupo. */
+[data-kbd] .kbd-ring-within:has(:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
 }

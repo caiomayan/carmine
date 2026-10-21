@@ -3,8 +3,6 @@
 import type { LiveServer } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
-import { MapPinIcon } from '@/components/icons/animated/map-pin';
-import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { LiveCount } from '@/components/live-count';
 import { SERVER_GRID } from '@/components/servers/server-list';
 import { StatusDot } from '@/components/status-dot';
@@ -47,9 +45,6 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
             <h3 className="truncate text-[14.5px] font-semibold">{serverLabel(server)}</h3>
           </div>
           <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
-            <AnimatedIcon icon={MapPinIcon} size={13} />
-            <span className="shrink-0">{t(`regions.${server.region}`)}</span>
-            <span aria-hidden="true">·</span>
             <span data-testid="server-address" className="truncate tabular-nums select-all">
               {server.address}
             </span>

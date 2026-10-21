@@ -3,6 +3,7 @@ import {
   chooseSteamAccount,
   createUnclaimedAccount,
   newSteamId,
+  reconnectPlayer,
   signInFromHeader,
 } from './accounts';
 import { runApiCli } from './api-cli';
@@ -10,7 +11,7 @@ import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
 
 const NOT_FOUND = /404 \(Not Found\)/;
 
-test('Perfil mostra Nome de exibição, #ID, avatar, link da Steam e o Loadout vazio', async ({
+test('Perfil mostra Nome de exibição, avatar, link da Steam e o Loadout vazio, sem o #ID', async ({
   page,
   request,
 }) => {
@@ -18,18 +19,20 @@ test('Perfil mostra Nome de exibição, #ID, avatar, link da Steam e o Loadout v
   await page.goto(`/${account.publicId}`);
 
   await expect(page.getByRole('heading', { level: 1, name: 'Perfil Visitado' })).toBeVisible();
-  await expect(page.getByText(`#${account.publicId}`)).toBeVisible();
+  // O ID público fica só na URL: nenhuma tela o mostra (spec, "ID público fora da interface").
+  await expect(page.getByText(`#${account.publicId}`)).toHaveCount(0);
+  await expect(page.getByRole('main')).not.toContainText(String(account.publicId));
   await expect(page.getByRole('img', { name: 'Avatar de Perfil Visitado' })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Perfil de Perfil Visitado na Steam (abre em outra aba)' }),
   ).toHaveAttribute('href', `https://steamcommunity.com/profiles/${account.steamId}`);
   await expect(page.getByTestId('loadout-showcase')).toContainText('Nenhum Item equipado ainda');
-  await expect(page).toHaveTitle(`Perfil Visitado · #${account.publicId} · Carmine`);
+  await expect(page).toHaveTitle('Perfil Visitado · Carmine');
 
   // Prévia simples do link.
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     'content',
-    `Perfil Visitado · #${account.publicId}`,
+    'Perfil Visitado',
   );
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'profile');
   await expect(page.locator('meta[name="description"]')).toHaveAttribute(
@@ -57,13 +60,34 @@ test('Conta não reivindicada: sinal discreto e convite "É você?" que entra na
   await chooseSteamAccount(page.context(), account.steamId);
   await invite.getByRole('link', { name: 'Entrar com a Steam' }).click();
 
-  // Quem jogou antes vê a mesma Conta, com o mesmo ID público.
+  // Quem jogou antes vê a mesma Conta, no mesmo endereço, agora com as ações de dono.
   await expect(page).toHaveURL(`/${account.publicId}`);
-  await expect(page.getByText('Este é o seu Perfil.')).toBeVisible();
+  await expect(page.getByTestId('edit-profile')).toBeVisible();
   await expect(page.getByTestId('claim-invite')).toHaveCount(0);
   await expect(page.locator('header[data-claimed="true"]')).toBeVisible();
   await page.getByTestId('account-menu').click();
-  await expect(page.getByRole('menu')).toContainText(`#${account.publicId}`);
+  await expect(page.getByRole('menu')).toContainText('Jogou Antes');
+  await expect(page.getByRole('menu')).not.toContainText('#');
+});
+
+test('nome ofensivo na Steam: a Conta aparece com um nome fictício fixo, nunca com o #ID', async ({
+  page,
+  request,
+}) => {
+  const account = await createUnclaimedAccount(request, 'Filho da Puta');
+
+  expect(account.displayName).toMatch(/^\p{Lu}\p{L}+$/u);
+  expect(account.displayName).not.toContain('Jogador');
+  await page.goto(`/${account.publicId}`);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(account.displayName);
+  await expect(page.getByRole('main')).not.toContainText('#');
+  await expect(page).toHaveTitle(`${account.displayName} · Carmine`);
+
+  // Fixo por Conta: a mesma pessoa, o mesmo nome, a cada visita e a cada connect.
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(account.displayName);
+  const again = await reconnectPlayer(request, account.steamId, 'Filho da Puta');
+  expect(again.displayName).toBe(account.displayName);
 });
 
 test('visitante logado não vê o convite no Perfil de outra Conta não reivindicada', async ({

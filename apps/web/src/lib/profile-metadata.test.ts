@@ -10,13 +10,13 @@ const profile = {
 const description = 'Perfil de coldzera na Carmine: o Loadout que aparece nos Servidores Carmine.';
 
 describe('profileMetadata (prévia do link)', () => {
-  it('leva só nome, ID público e avatar', () => {
+  it('leva só nome e avatar, sem o ID público (que fica só na URL)', () => {
     const metadata = profileMetadata(profile, description);
 
-    expect(metadata.title).toBe('coldzera · #10016');
+    expect(metadata.title).toBe('coldzera');
     expect(metadata.description).toBe(description);
     expect(metadata.openGraph).toMatchObject({
-      title: 'coldzera · #10016',
+      title: 'coldzera',
       description,
       images: [{ url: profile.avatarUrl, alt: '' }],
     });

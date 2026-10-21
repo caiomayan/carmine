@@ -4,14 +4,17 @@ import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Botão no padrão do shadcn/ui com a linguagem Liberty: sem borda, ação primária no preenchido
- * invertido e os demais com fundo transparente que clareia no hover e no estado ativo.
+ * Botão no padrão do shadcn/ui com a linguagem Liberty: sem borda e sem anel. A ação primária é o
+ * preenchido invertido; `ghost` tem fundo em repouso (a escala `--fill-*`: repouso, hover, ativo e
+ * foco; o hover só reforça o fundo que já existe) e `quiet`, para ícones e ações terciárias, só ganha
+ * fundo no hover. O foco do teclado é um anel fino só no modo teclado (`html[data-kbd]`, ver
+ * `globals.css`); mouse e toque nunca o mostram (WCAG 2.4.7 e 1.4.11, medido em `lib/focus-contrast.test.ts`).
  */
 const buttonVariants = cva(
   [
     'inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-semibold whitespace-nowrap select-none',
-    'transition-[background-color,color,transform] duration-(--dur-fast) ease-std',
-    'active:translate-y-px active:scale-[0.985] motion-reduce:active:transform-none',
+    'transition-[background-color,color,translate,scale] duration-(--dur-fast) ease-std',
+    'active:translate-y-px active:scale-[0.985] motion-reduce:active:translate-y-0 motion-reduce:active:scale-100',
     'disabled:pointer-events-none disabled:bg-transparent disabled:text-faint',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   ],
@@ -20,9 +23,9 @@ const buttonVariants = cva(
       variant: {
         primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
         ghost:
-          'bg-transparent text-foreground hover:bg-hover aria-pressed:bg-hover aria-expanded:bg-hover',
+          'bg-(--fill-rest) text-foreground hover:bg-(--fill-hover) aria-pressed:bg-(--fill-active) aria-expanded:bg-(--fill-active)',
         quiet:
-          'bg-transparent font-medium text-muted-foreground hover:bg-hover hover:text-foreground aria-expanded:bg-hover aria-expanded:text-foreground',
+          'bg-transparent font-medium text-muted-foreground hover:bg-(--fill-hover) hover:text-foreground aria-expanded:bg-(--fill-active) aria-expanded:text-foreground',
       },
       size: {
         default: 'min-h-(--tap) px-4 text-sm',

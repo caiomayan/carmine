@@ -146,7 +146,7 @@ Cada Conta é presa a uma conta Steam. Para pegar quem volta com outra conta, a 
 Achou a punição injusta? Você pode recorrer de qualquer punição:
 
 1. Abra um ticket no Discord do Carmine (o link fica no rodapé do site). Sem Discord, use a página de [contato](/contato).
-2. Informe o seu ID público (o número do seu Perfil), a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.
+2. Informe o link do seu Perfil, a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.
 3. A Staff responde em até 72 h.
 
 Algumas regras do recurso:

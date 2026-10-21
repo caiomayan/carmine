@@ -22,6 +22,7 @@ export const ROUTES = [
   '/entrar',
   '/entrar?erro=indisponivel&motivo=sessao-expirada',
   '/entrar?erro=limite',
+  '/configuracoes',
   '/dev/componentes',
 ] as const;
 export const WIDTHS = [390, 820, 1100, 1440] as const;

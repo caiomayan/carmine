@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { ArrowLeftIcon } from '@/components/icons/animated/arrow-left';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
+import { SavedTheme } from '@/components/saved-theme';
 import { Button } from '@/components/ui/button';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,6 +16,7 @@ export default async function NotFound() {
 
   return (
     <div className="container-page grid min-h-[min(60vh,520px)] animate-fade-up place-items-center py-12">
+      <SavedTheme />
       <div className="grid w-full max-w-[520px] gap-3">
         <h1 className="text-display max-md:text-[26px]">{t('title')}</h1>
         <p className="max-w-[48ch] text-md text-muted-foreground">{t('body')}</p>

@@ -93,7 +93,6 @@ test('o editor com o viewer 3D abre o iframe do cstrike.app sem violar a CSP', a
   await page.goto('/inventario');
   await signInFromHeader(page, newSteamId());
   await expect(page).toHaveURL('/inventario');
-  await page.getByRole('button', { name: 'Entendi' }).click();
 
   await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
   await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');

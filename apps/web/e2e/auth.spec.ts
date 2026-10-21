@@ -108,27 +108,68 @@ test('quem já entrou e abre /entrar segue para a página de origem', async ({ p
   await expect(page).toHaveURL('/inventario');
 });
 
-test('primeiros passos: aparecem depois do login, fecham, ficam fechados e reabrem', async ({
+test('primeiros passos: a faixa aparece depois do login, abre o Dialog, dispensa e não volta', async ({
   page,
 }) => {
   await page.goto('/');
   await signInFromHeader(page, newSteamId());
-  const guide = page.getByTestId('first-steps');
-  await expect(guide).toBeVisible();
-  await expect(guide).toContainText('Adicionar não é equipar');
-  await expect(guide).toContainText('!ws');
+  const strip = page.getByTestId('first-steps-strip');
+  await expect(strip).toBeVisible();
+  // Uma linha só: o texto não é a parede de antes.
+  await expect(strip).toContainText('Primeira vez por aqui?');
+  await expect(strip).not.toContainText('Adicionar não é equipar');
 
-  await guide.getByRole('button', { name: 'Fechar primeiros passos' }).click();
-  await expect(guide).toHaveCount(0);
+  await strip.getByRole('button', { name: 'Ver como funciona' }).click();
+  const dialog = page.getByRole('dialog', { name: /Boas-vindas à Carmine/ });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText('Adicionar não é equipar');
+  await expect(dialog).toContainText('!ws');
+  await expect(dialog).toContainText('Para rever, abra o menu da sua Conta');
+
+  // Esc fecha o Dialog e o foco volta ao botão da faixa; a faixa continua.
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(strip.getByRole('button', { name: 'Ver como funciona' })).toBeFocused();
+  await expect(strip).toBeVisible();
+
+  await strip.getByRole('button', { name: 'Fechar primeiros passos' }).click();
+  await expect(strip).toHaveCount(0);
 
   await page.reload();
   await expect(accountMenu(page)).toBeVisible();
-  await expect(page.getByTestId('first-steps')).toHaveCount(0);
+  await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
+});
+
+test('primeiros passos: o menu abre o Dialog em qualquer rota e "Entendi" encerra a faixa', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await signInFromHeader(page, newSteamId());
+  await expect(page.getByTestId('first-steps-strip')).toBeVisible();
+
+  // Fora da home e do Perfil a faixa não aparece, mas o Dialog continua a um clique.
+  await page.goto('/ranking');
+  await expect(accountMenu(page)).toBeVisible();
+  await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
   await accountMenu(page).click();
   await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
-  await expect(guide).toBeVisible();
-  await expect(guide.getByRole('heading', { level: 2 })).toBeFocused();
+  const dialog = page.getByTestId('first-steps');
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('button', { name: 'Entendi' }).click();
+  await expect(dialog).toHaveCount(0);
+
+  await page.goto('/');
+  await expect(accountMenu(page)).toBeVisible();
+  await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
+
+  // Dispensado, reabre pelo menu e o foco volta ao botão do menu.
+  await accountMenu(page).click();
+  await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
+  await expect(page.getByTestId('first-steps')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByTestId('first-steps')).toHaveCount(0);
+  await expect(accountMenu(page)).toBeFocused();
 });
 
 test('primeiros passos só abrem sozinhos no primeiro login; depois, só pelo menu', async ({
@@ -137,14 +178,14 @@ test('primeiros passos só abrem sozinhos no primeiro login; depois, só pelo me
   const steamId = newSteamId();
   await page.goto('/');
   await signInFromHeader(page, steamId);
-  // Sem fechar: o que decide é o primeiro login, não o cookie de quem fechou.
-  await expect(page.getByTestId('first-steps')).toBeVisible();
+  // Sem dispensar: o que decide é o primeiro login, não o cookie de quem dispensou.
+  await expect(page.getByTestId('first-steps-strip')).toBeVisible();
 
   await accountMenu(page).click();
   await page.getByRole('menuitem', { name: 'Sair' }).click();
   await signInFromHeader(page, steamId);
   await expect(accountMenu(page)).toBeVisible();
-  await expect(page.getByTestId('first-steps')).toHaveCount(0);
+  await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
   await accountMenu(page).click();
   await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
@@ -156,13 +197,13 @@ test('primeiros passos são por Conta: outra Conta no mesmo navegador ainda os v
 }) => {
   await page.goto('/');
   await signInFromHeader(page, newSteamId());
-  await page.getByRole('button', { name: 'Entendi' }).click();
-  await expect(page.getByTestId('first-steps')).toHaveCount(0);
+  await page.getByTestId('first-steps-dismiss').click();
+  await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
   await accountMenu(page).click();
   await page.getByRole('menuitem', { name: 'Sair' }).click();
   await signInFromHeader(page, newSteamId());
-  await expect(page.getByTestId('first-steps')).toBeVisible();
+  await expect(page.getByTestId('first-steps-strip')).toBeVisible();
 });
 
 test('sessão expirada durante a edição: o rascunho volta depois do novo login', async ({
@@ -175,7 +216,6 @@ test('sessão expirada durante a edição: o rascunho volta depois do novo login
   await page.goto('/dev/rascunho');
   await signInFromHeader(page, steamId);
   await expect(page).toHaveURL('/dev/rascunho');
-  await page.getByRole('button', { name: 'Entendi' }).click();
 
   await page.getByLabel('Nametag').fill('Fuzil do Caio');
   // A sessão morre no servidor enquanto a pessoa edita.
@@ -200,7 +240,6 @@ test('sessão expirada durante a edição: o rascunho volta depois do novo login
 test('o rascunho de uma Conta não aparece para outra', async ({ page }) => {
   await page.goto('/dev/rascunho');
   await signInFromHeader(page, newSteamId());
-  await page.getByRole('button', { name: 'Entendi' }).click();
   await page.getByLabel('Nametag').fill('Só meu');
   await page.waitForTimeout(400);
 
@@ -213,15 +252,21 @@ test('o rascunho de uma Conta não aparece para outra', async ({ page }) => {
 
 for (const theme of ['dark', 'light'] as const) {
   for (const width of [390, 1440] as const) {
-    test(`logado: barra, menu e primeiros passos sem violações do axe (${theme}, ${width}px)`, async ({
+    test(`logado: barra, faixa, Dialog e menu sem violações do axe (${theme}, ${width}px)`, async ({
       page,
     }) => {
       await saveTheme(page, theme);
       await page.setViewportSize({ width, height: 900 });
       await page.goto('/');
       await signInFromHeader(page, newSteamId());
+      await expect(page.getByTestId('first-steps-strip')).toBeVisible();
+      expect(await axeViolations(page)).toEqual([]);
+
+      await page.getByRole('button', { name: 'Ver como funciona' }).click();
       await expect(page.getByTestId('first-steps')).toBeVisible();
       expect(await axeViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('first-steps')).toHaveCount(0);
 
       await page.evaluate(() => window.scrollTo({ top: 0 }));
       await accountMenu(page).click();

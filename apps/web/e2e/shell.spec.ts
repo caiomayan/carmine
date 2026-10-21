@@ -11,7 +11,7 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.getByRole('heading', { level: 1, name: 'Servidores' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect(page.locator('body')).toHaveCSS('background-color', BG[theme]);
-    await expect(page.getByRole('heading', { level: 2, name: 'São Paulo' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Servidores Carmine' })).toBeVisible();
 
     await expect(mainNav(page).getByRole('link')).toHaveCount(4);
     await expect(mainNav(page).getByRole('link', { name: 'Servidores' })).toHaveAttribute(
@@ -116,6 +116,8 @@ for (const route of ['/regras', '/contato'] as const) {
 
 for (const width of WIDTHS) {
   test(`sem scroll horizontal em ${width}px`, async ({ page }) => {
+    // Uma carga por rota: com mais rotas que o teste de 30 s comporta, ele passa a depender da máquina.
+    test.setTimeout(90_000);
     await page.setViewportSize({ width, height: 900 });
     for (const route of ROUTES) {
       await page.goto(route);

@@ -55,7 +55,19 @@ type SessionContextValue = SessionState & {
   signOut: () => Promise<boolean>;
   /** Mutação na API com o token CSRF; uma sessão expirada leva para entrar de novo. */
   mutate: (path: `/api/${string}`, init?: RequestInit) => Promise<Response>;
-  firstSteps: { open: boolean; show: () => void; dismiss: () => void };
+  firstSteps: {
+    /** A faixa de uma linha (home e Perfil): só na sessão do primeiro login, até ser dispensada. */
+    strip: boolean;
+    /** O Dialog com os passos, aberto pela faixa ou pelo menu da Conta. */
+    dialogOpen: boolean;
+    /** Abre o Dialog; `opener` é quem recebe o foco de volta ao fechar. */
+    openDialog: (opener?: HTMLElement | null) => void;
+    closeDialog: () => void;
+    /** Quem tinha o foco ao abrir o Dialog (para devolvê-lo ao fechar). */
+    opener: { current: HTMLElement | null };
+    /** "Entendi" ou fechar a faixa: não abre mais sozinho nesta Conta. */
+    dismiss: () => void;
+  };
 };
 
 /** Intervalo mínimo entre as conferências de `/api/me` ao voltar para a aba. */
@@ -104,6 +116,8 @@ export function SessionProvider({
   const pathname = usePathname();
   const [state, setState] = useState(() => stateFrom(initialSession, initialStatus));
   const [guideOpen, setGuideOpen] = useState(firstStepsOpen);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const opener = useRef<HTMLElement | null>(null);
   const pathRef = useRef(pathname);
   pathRef.current = pathname;
   const statusRef = useRef(state.status);
@@ -172,6 +186,7 @@ export function SessionProvider({
     }
     setState(stateFrom(null, 'anonymous'));
     setGuideOpen(false);
+    setDialogOpen(false);
     router.refresh();
     return true;
   }, [csrfToken, router]);
@@ -213,17 +228,24 @@ export function SessionProvider({
   const publicId = state.account?.publicId;
   const firstSteps = useMemo(
     () => ({
-      open: guideOpen && state.status === 'authenticated',
-      show: () => setGuideOpen(true),
+      strip: guideOpen && state.status === 'authenticated',
+      dialogOpen: dialogOpen && state.status === 'authenticated',
+      openDialog: (from?: HTMLElement | null) => {
+        opener.current = from ?? (document.activeElement as HTMLElement | null);
+        setDialogOpen(true);
+      },
+      closeDialog: () => setDialogOpen(false),
+      opener,
       dismiss: () => {
         setGuideOpen(false);
+        setDialogOpen(false);
         if (publicId !== undefined) {
           // biome-ignore lint/suspicious/noDocumentCookie: cookie simples lido pelo servidor; a Cookie Store API não existe em todos os navegadores.
           document.cookie = firstStepsCookie(readCookie(FIRST_STEPS_COOKIE), publicId);
         }
       },
     }),
-    [guideOpen, publicId, state.status],
+    [guideOpen, dialogOpen, publicId, state.status],
   );
 
   const value = useMemo(

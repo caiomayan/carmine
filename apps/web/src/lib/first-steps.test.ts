@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { FIRST_STEPS_COOKIE, firstStepsCookie, hasDismissedFirstSteps } from './first-steps';
+import {
+  FIRST_STEPS_COOKIE,
+  firstStepsCookie,
+  hasDismissedFirstSteps,
+  showsFirstStepsStrip,
+} from './first-steps';
 
 describe('primeiros passos', () => {
   it('abre para quem ainda não fechou', () => {
@@ -37,5 +42,20 @@ describe('primeiros passos', () => {
   it('ignora lixo no cookie', () => {
     expect(hasDismissedFirstSteps('abc.10016.-1', 10016)).toBe(true);
     expect(firstStepsCookie('abc.x', 7)).toContain('=7;');
+  });
+});
+
+describe('showsFirstStepsStrip', () => {
+  it('aparece só na home e no Perfil da própria Conta', () => {
+    expect(showsFirstStepsStrip('/', 10_017)).toBe(true);
+    expect(showsFirstStepsStrip('/10017', 10_017)).toBe(true);
+    expect(showsFirstStepsStrip('/10017/', 10_017)).toBe(true);
+  });
+
+  it('não aparece em outras rotas, nem no Perfil de outra Conta', () => {
+    expect(showsFirstStepsStrip('/inventario', 10_017)).toBe(false);
+    expect(showsFirstStepsStrip('/termos', 10_017)).toBe(false);
+    expect(showsFirstStepsStrip('/10018', 10_017)).toBe(false);
+    expect(showsFirstStepsStrip('/staff', 10_017)).toBe(false);
   });
 });

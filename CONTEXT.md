@@ -19,7 +19,7 @@ Conta cuja pessoa já fez login Steam no site ao menos uma vez. É a mesma Conta
 _Evitar_: conta registrada, conta ativada
 
 **Vínculo do Discord** (`DiscordLink`):
-A ligação opcional de uma Conta a um usuário do Discord (ID e nome), feita pelo OAuth2 nos ajustes do Perfil. É só um vínculo: a Steam continua a única autenticação (ADR 0007). Um Discord liga a uma única Conta.
+A ligação opcional de uma Conta a um usuário do Discord (ID e nome), feita pelo OAuth2 em Configurações > Conexões. É só um vínculo: a Steam continua a única autenticação (ADR 0007). Um Discord liga a uma única Conta.
 _Evitar_: login com Discord, conta Discord
 
 **Cargo do Discord** (`DiscordRole`):

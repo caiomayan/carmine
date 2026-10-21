@@ -6,13 +6,12 @@ import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures
 const AK_REDLINE = 222;
 const MUSIC_KIT = 1781;
 
-/** Entra com uma Conta nova (Steam falsa), fecha os Primeiros passos e, se pedido, dá VIP. */
+/** Entra com uma Conta nova (Steam falsa) e, se pedido, dá VIP. */
 async function signIn(page: Page, { vip = false } = {}) {
   const steamId = newSteamId();
   await page.goto('/inventario');
   await signInFromHeader(page, steamId);
   await expect(page).toHaveURL('/inventario');
-  await page.getByRole('button', { name: 'Entendi' }).click();
   if (vip) {
     grantVip(steamId);
     await page.reload();

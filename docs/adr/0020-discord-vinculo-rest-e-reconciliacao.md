@@ -12,7 +12,7 @@ A S15 liga o Discord ao Carmine em três frentes: o vínculo da Conta, os cargos
 
 ## Consequences
 
-- Sem as variáveis `DISCORD_*` (as quatro base) a integração é nula: o botão do Perfil fica desabilitado e nenhum job roda. Variáveis pela metade desligam também e a API avisa no boot o que falta.
+- Sem as variáveis `DISCORD_*` (as quatro base) a integração é nula: em Configurações > Conexões aparece o selo "Em breve" no lugar do botão e nenhum job roda. Variáveis pela metade desligam também e a API avisa no boot o que falta.
 - O vínculo é dado pessoal (ID e nome de usuário do Discord): consta na Política de Privacidade e é apagado ao desvincular e na anonimização da Conta (S08).
 - Uma pessoa que revoga o app nas configurações do Discord continua com o vínculo e os cargos até desvincular no site, porque não guardamos token nem escutamos eventos.
 - Quem sai e volta ao servidor recebe os cargos em até 30 min, não na hora.

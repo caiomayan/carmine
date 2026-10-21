@@ -479,7 +479,7 @@ function DisplayNamePanel({
       <ActionForm
         collapsed
         label={t('submit')}
-        description={t('hint', { publicId: account.publicId })}
+        description={t('hint')}
         submitLabel={t('submit')}
         doneLabel={t('done')}
         testId="name-reset"

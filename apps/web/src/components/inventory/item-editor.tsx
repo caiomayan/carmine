@@ -338,7 +338,11 @@ export function ItemEditor(props: EditorProps) {
                     : undefined
                 }
               >
-                <div className="flex h-(--tap) items-center justify-between gap-3 rounded-md bg-surface-2 px-3">
+                {/* A faixa inteira liga e desliga: o alvo de toque é ela, não os 36 px do interruptor. */}
+                <label
+                  htmlFor={statTrakId}
+                  className="flex h-(--tap) cursor-pointer items-center justify-between gap-3 rounded-md bg-surface-2 px-3"
+                >
                   <span aria-hidden="true" className="text-[14px]">
                     {form.statTrak ? t('statTrakOn') : t('statTrakOff')}
                   </span>
@@ -350,7 +354,7 @@ export function ItemEditor(props: EditorProps) {
                     className="after:absolute after:-inset-x-1.5 after:-inset-y-3.5 after:content-['']"
                     data-testid="field-stattrak"
                   />
-                </div>
+                </label>
               </FieldShell>
             ) : null}
           </div>

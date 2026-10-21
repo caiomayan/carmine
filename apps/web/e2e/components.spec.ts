@@ -132,7 +132,10 @@ for (const theme of ['dark', 'light'] as Theme[]) {
         await axeViolations(page, { ignore: ['aria-hidden-focus'] }),
         'axe com o Select aberto',
       ).toEqual([]);
+      // O Radix leva o foco ao item atual ao abrir: só então as setas andam a partir dele.
+      await expect(page.getByRole('option', { name: 'Todos os Modos' })).toBeFocused();
       await page.keyboard.press('ArrowDown');
+      await expect(page.getByRole('option', { name: 'Retake' })).toBeFocused();
       await page.keyboard.press('Enter');
       await expect(mode).toHaveText('Retake');
       await expect(mode).toBeFocused();

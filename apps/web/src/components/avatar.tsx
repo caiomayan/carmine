@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-/** Iniciais das duas primeiras palavras que começam com letra ("Jogador #10123" vira "J"). */
+/** Iniciais das duas primeiras palavras que começam com letra ("Alfredo" vira "A"). */
 function initials(name: string): string {
   const letters = name
     .trim()

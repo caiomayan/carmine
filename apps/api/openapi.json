@@ -2537,6 +2537,62 @@
         ]
       }
     },
+    "/api/me/playing": {
+      "get": {
+        "operationId": "getNowPlaying",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O servidor (nome, Modo e mapa) ou `server` nulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NowPlaying"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Presença indisponível no momento"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Servidor Carmine em que a Conta da sessão está jogando agora, se estiver",
+        "tags": [
+          "friends"
+        ]
+      }
+    },
     "/api/staff/accounts": {
       "get": {
         "operationId": "searchStaffAccounts",
@@ -3206,7 +3262,7 @@
             "cookie": []
           }
         ],
-        "summary": "Troca o Nome de exibição por \"Jogador #ID\" enquanto o nome Steam não mudar",
+        "summary": "Troca o Nome de exibição por um nome fictício fixo enquanto o nome Steam não mudar",
         "tags": [
           "staff"
         ]
@@ -6432,6 +6488,51 @@
           "displayName",
           "avatarUrl",
           "serverId"
+        ],
+        "additionalProperties": false
+      },
+      "NowPlaying": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "showcaseName": {
+                "nullable": true,
+                "type": "string",
+                "minLength": 1
+              },
+              "mode": {
+                "$ref": "#/components/schemas/GameMode"
+              },
+              "map": {
+                "nullable": true,
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "showcaseName",
+              "mode",
+              "map"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "server"
         ],
         "additionalProperties": false
       },

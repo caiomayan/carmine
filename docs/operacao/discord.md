@@ -1,8 +1,8 @@
 # Discord integrado (S15): passo a passo do dono
 
-O que a integração faz: a pessoa vincula o Discord nos ajustes do Perfil, o bot dá os cargos **Jogador**, **VIP**, **Staff** e **Dono** no servidor do Carmine (e os atualiza sozinho em até 1 minuto) e mantém uma mensagem com o status dos servidores num canal. As decisões estão no [ADR 0020](../adr/0020-discord-vinculo-rest-e-reconciliacao.md).
+O que a integração faz: a pessoa vincula o Discord em Configurações > Conexões, o bot dá os cargos **Jogador**, **VIP**, **Staff** e **Dono** no servidor do Carmine (e os atualiza sozinho em até 1 minuto) e mantém uma mensagem com o status dos servidores num canal. As decisões estão no [ADR 0020](../adr/0020-discord-vinculo-rest-e-reconciliacao.md).
 
-Sem as variáveis `DISCORD_*` a integração fica **desligada, sem erro**: o botão do Perfil aparece desabilitado e nenhum job roda. Dá para fazer este passo a passo com calma; nada quebra enquanto ele não termina.
+Sem as variáveis `DISCORD_*` a integração fica **desligada, sem erro**: em Configurações > Conexões aparece o selo "Em breve" no lugar do botão e nenhum job roda. Dá para fazer este passo a passo com calma; nada quebra enquanto ele não termina.
 
 Você vai precisar de uma conta Discord com a permissão de administrar o servidor do Carmine e do acesso ao `/opt/carmine/.env` na VPS.
 
@@ -93,7 +93,7 @@ sudo /opt/carmine/bin/dc up -d api
 
 ## 9. Conferir
 
-1. Abra o seu Perfil logado (`https://stcarmine.com/<seu ID>`): em **Ajustes do Perfil**, a linha **Discord** deve ter o botão **Vincular Discord** habilitado.
+1. Abra Configurações logado (`https://stcarmine.com/configuracoes/conexoes`): a linha **Discord** deve ter o botão **Vincular Discord** (sem o selo "Em breve").
 2. Clique, autorize no Discord e volte: o aviso "Discord ligado" aparece e o seu usuário fica na linha. Você ganha o cargo **Jogador** na hora (e, se não estava no servidor, entra nele).
 3. Dê um VIP de teste (painel da Staff ou `vip grant --steam-id ... --days 1 --by ... --reason ...`, ver o README) ou um papel de Staff pelo painel: o cargo muda em até 1 minuto.
 4. O canal de status mostra os servidores e o horário da última atualização (o carimbo "Hoje às ..." do embed muda a cada minuto).

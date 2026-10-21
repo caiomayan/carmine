@@ -304,7 +304,7 @@ export type StaffVipGrant = z.infer<typeof staffVipGrantSchema>;
 
 /**
  * Corpo só com o motivo: `POST .../vip/revoke` (`vip.manage`) e `POST .../display-name/reset`
- * (`displayName.reset`). O reset troca o Nome de exibição por "Jogador #ID" enquanto a Conta
+ * (`displayName.reset`). O reset troca o Nome de exibição por um nome fictício fixo enquanto a Conta
  * mantiver o mesmo nome Steam (até a S11 não há nome próprio); vale no jogo no próximo connect.
  */
 export const staffReasonBodySchema = z

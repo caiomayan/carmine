@@ -1,4 +1,4 @@
-import type { LiveServerList, ServerHeartbeat } from '@carmine/contracts';
+import type { LiveServer, LiveServerList, ServerHeartbeat } from '@carmine/contracts';
 import { Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import type { GameServerRegistry } from '../game-servers/game-server-registry.js';
 import { buildLiveServerList } from './live-server-list.js';
@@ -89,6 +89,16 @@ export class LiveServers implements OnModuleInit, OnApplicationShutdown {
       for (const steamId of presence.players) playing.set(steamId, serverId);
     }
     return playing;
+  }
+
+  /** O servidor onde este SteamID64 está jogando agora (não offline), ou `null`. */
+  async serverOf(steamId: string): Promise<LiveServer | null> {
+    const serverId = (await this.whereArePlaying([steamId])).get(steamId);
+    if (serverId === undefined) {
+      return null;
+    }
+    const { servers } = await this.current();
+    return servers.find((server) => server.id === serverId) ?? null;
   }
 
   /**
