@@ -12,7 +12,8 @@
   --status-vip: #CDAA62;
   --status-offline: var(--faint);
   /* Lados do jogo (bolinhas CT e TR): cor de contexto, mais viva que as de status para
-     distinguir os dois lados num relance. Contraste >= 4,5:1 sobre --bg, --surface e --surface-2. */
+     distinguir os dois lados num relance. Contraste >= 3:1 (elemento gráfico) sobre --bg, --surface e --surface-2;
+     o laranja do tema claro é um laranja de verdade, não um marrom. */
   --side-ct: #6AAAF5;
   --side-t: #F29A45;
   /* Fases do desgaste (barra do float): da Nova de Fábrica (verde) à Veterana de Guerra
@@ -31,8 +32,8 @@
   --status-info: #386287;
   --status-vip: #765C1A;
   --status-offline: var(--faint);
-  --side-ct: #1F5EA8;
-  --side-t: #9C4807;
+  --side-ct: #2D6FD6;
+  --side-t: #C75A00;
   --wear-fn: var(--status-online);
   --wear-mw: #6B6A1C;
   --wear-ft: var(--status-warn);
