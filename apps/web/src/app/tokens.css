@@ -26,6 +26,16 @@
   --shadow: rgb(0 0 0 / 0.5);
 
   /*
+   * Escala de fundos (regra do dono: fundos, não anéis): repouso, hover, ativo/selecionado e foco são
+   * camadas do texto sobre a superfície onde o controle está, então valem em qualquer fundo. O foco
+   * é o degrau mais forte e nunca é só o hover (ver lib/focus-contrast.test.ts, que mede os dois temas).
+   */
+  --fill-rest: color-mix(in srgb, var(--text) 7%, transparent);
+  --fill-hover: color-mix(in srgb, var(--text) 12%, transparent);
+  --fill-active: color-mix(in srgb, var(--text) 17%, transparent);
+  --fill-focus: color-mix(in srgb, var(--text) 28%, transparent);
+
+  /*
    * Cores de contexto: NÃO fazem parte da identidade. Só em sinais pequenos (pontos, barras
    * finas, ícones de ping e de mensagem, selo VIP); nunca em botões, navegação ou superfícies.
    * Contraste >= 4,5:1 sobre --bg, --surface e --surface-2 (offline é o próprio --faint e
@@ -67,6 +77,11 @@
   --faint: #a69e89;
   --accent-hover: #3f3d35;
   --raised: var(--bg);
+  /* no papel claro a mesma camada rende menos: o degrau de foco sobe para manter a distância do hover */
+  --fill-rest: color-mix(in srgb, var(--text) 8%, transparent);
+  --fill-hover: color-mix(in srgb, var(--text) 13%, transparent);
+  --fill-active: color-mix(in srgb, var(--text) 18%, transparent);
+  --fill-focus: color-mix(in srgb, var(--text) 34%, transparent);
   --shadow: rgb(60 45 20 / 0.2);
 
   --status-online: #3f6930;
@@ -117,10 +132,6 @@
   --border: var(--line);
   --input: var(--surface);
   --ring: var(--text);
-  /* foco dos campos: anel de 1,5 px (3:1 sobre o fundo nos dois temas) e um halo suave */
-  --focus-ring: color-mix(in srgb, var(--text) 60%, transparent);
-  --focus-halo: color-mix(in srgb, var(--text) 10%, transparent);
-  --focus-field: 0 0 0 1.5px var(--focus-ring), 0 0 0 4px var(--focus-halo);
 }
 
 :root {

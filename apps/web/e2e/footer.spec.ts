@@ -54,7 +54,7 @@ test('o rodapé leva marca, links, estado dos servidores e o aviso sobre a Valve
   expect(spoken).toMatch(/Ao vivo|Em breve/);
   expect(spoken).toMatch(/\d+ servidor(es)? online/);
   expect(spoken).toMatch(/\d+ jogador(es)?/);
-  expect(spoken).toContain('São Paulo');
+  expect(spoken).not.toContain('São Paulo');
 
   await expect(footer).toContainText(`© ${new Date().getFullYear()} Carmine`);
   await expect(footer).toContainText('a Carmine não é afiliada nem endossada por ela');

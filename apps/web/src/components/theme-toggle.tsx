@@ -8,19 +8,16 @@ import {
 import { MoonIcon } from '@/components/icons/animated/moon';
 import { SunIcon } from '@/components/icons/animated/sun';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
-import { useSession } from '@/components/session/session-provider';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/use-theme';
 import { DEFAULT_THEME, oppositeTheme } from '@/lib/theme';
 
 /**
- * Alterna escuro e claro. O ícone mostra o destino da troca: sol no escuro, lua no claro. Só para
- * visitantes: com a Conta aberta, o tema vive no menu da Conta e em Configurações.
+ * Alterna escuro e claro, com ou sem Conta. O ícone mostra o destino da troca: sol no escuro, lua
+ * no claro. Em Configurações > Aparência a escolha também está, com a prévia de cada tema.
  */
 export function ThemeToggle({ labels }: { labels: { light: string; dark: string } }) {
-  const { status } = useSession();
   const { theme, setTheme } = useTheme();
-  if (status === 'authenticated') return null;
   const label = theme === 'light' ? labels.dark : labels.light;
 
   return (

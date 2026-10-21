@@ -114,14 +114,11 @@ export function ServerCard({
           </h3>
           <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-(--on-map-muted)">
             {mapName ? (
-              <>
-                <span data-testid="server-map" className="font-medium text-foreground">
-                  {mapName}
-                </span>
-                <span aria-hidden="true">·</span>
-              </>
+              <span data-testid="server-map" className="font-medium text-foreground">
+                {mapName}
+              </span>
             ) : null}
-            <span>{t(`regions.${server.region}`)}</span>
+            {mapName && server.code ? <span aria-hidden="true">·</span> : null}
             {server.code ? (
               <span
                 data-testid="server-code"

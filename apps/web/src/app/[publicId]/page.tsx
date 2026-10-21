@@ -227,12 +227,12 @@ async function ProfileHeader({
         ) : null}
         {isOwner ? (
           <div className="flex flex-wrap gap-2 pt-1">
-            <Button asChild variant="ghost" size="sm" className="bg-surface-2 hover:bg-line">
+            <Button asChild variant="ghost" size="sm">
               <Link href={settingsHref('perfil') as Route} data-testid="edit-profile">
                 {t('editProfile')}
               </Link>
             </Button>
-            <Button asChild variant="quiet" size="sm">
+            <Button asChild variant="ghost" size="sm">
               <Link
                 href={`/${profile.publicId}?visitante=1` as Route}
                 data-testid="view-as-visitor"

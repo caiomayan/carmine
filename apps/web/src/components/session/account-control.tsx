@@ -8,11 +8,8 @@ import { useRef, useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/animate-ui/components/radix/dropdown-menu';
@@ -26,11 +23,9 @@ import { UsersIcon } from '@/components/icons/animated/users';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { StatusDot } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/hooks/use-theme';
 import { vipDaysLeft } from '@/lib/account-menu';
 import { SIGN_IN_PATH, signInHref } from '@/lib/auth-links';
 import { SETTINGS_BASE } from '@/lib/settings-nav';
-import { parseTheme } from '@/lib/theme';
 import { useSession } from './session-provider';
 import { useNowPlaying } from './use-now-playing';
 
@@ -42,7 +37,6 @@ export type AccountControlLabels = {
   inventory: string;
   loadout: string;
   settings: string;
-  theme: { label: string; light: string; dark: string };
   home: string;
   firstSteps: string;
   staffPanel: string;
@@ -59,15 +53,14 @@ const ITEM = 'min-h-(--tap) gap-2.5';
 /**
  * Canto direito da barra superior: "Entrar" para visitantes; para quem entrou, avatar e Nome
  * de exibição com o menu da Conta. O painel abre com a Conta (avatar, nome, selo VIP com os dias
- * e onde está jogando), os atalhos (Perfil, Inventário, Loadout, Configurações), o tema, o painel
- * da Staff para quem é da Staff, Início e Primeiros passos, e Sair separado no fim. O `#ID` não
+ * e onde está jogando), os atalhos (Perfil, Inventário, Loadout, Configurações), o painel da
+ * Staff para quem é da Staff, Início e Primeiros passos, e Sair separado no fim. O `#ID` não
  * aparece aqui (spec, "ID público fora da interface").
  */
 export function AccountControl({ labels }: { labels: AccountControlLabels }) {
   const { status, account, staffRole, vip, signOut, firstSteps } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
   const playing = useNowPlaying();
   const [failed, setFailed] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -88,12 +81,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
     if (pathname === SIGN_IN_PATH) return null;
     return (
       // Discreto na barra: o preenchido invertido fica para a ação principal de cada página.
-      <Button
-        asChild
-        variant="ghost"
-        size="sm"
-        className="animate-fade-up bg-surface-2 hover:bg-line"
-      >
+      <Button asChild variant="ghost" size="sm" className="animate-fade-up">
         <Link href={signInHref(pathname) as Route} data-testid="sign-in">
           {labels.signIn}
         </Link>
@@ -207,36 +195,6 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             <SlidersHorizontalIcon aria-hidden="true" />
             {labels.settings}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            {/* O grupo já leva o nome (aria-label): o rótulo visível não se repete para o leitor de tela. */}
-            <DropdownMenuLabel
-              aria-hidden="true"
-              className="px-2 pt-1.5 pb-0.5 label-caps text-[11px] font-normal text-muted-foreground"
-            >
-              {labels.theme.label}
-            </DropdownMenuLabel>
-            <DropdownMenuRadioGroup
-              value={theme ?? ''}
-              onValueChange={(value) => setTheme(parseTheme(value))}
-              aria-label={labels.theme.label}
-            >
-              <DropdownMenuRadioItem
-                value="light"
-                className="min-h-(--tap)"
-                data-testid="menu-theme-light"
-              >
-                {labels.theme.light}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem
-                value="dark"
-                className="min-h-(--tap)"
-                data-testid="menu-theme-dark"
-              >
-                {labels.theme.dark}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           {staffRole ? (
             <DropdownMenuItem

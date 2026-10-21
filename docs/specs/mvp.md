@@ -198,7 +198,7 @@ O jogo em si precisa ser bom, não só os plugins carregados.
 
 ### S06 · Servidores ao vivo e amigos jogando
 
-- **Home = servidores ao vivo:** Modo, mapa, jogadores/máximo, região (São Paulo), estado (online, lotado, offline) e Jogar. Desde a U2, cartões grandes (até 6 servidores no ar) ou lista; os offline ficam num grupo leve no fim.
+- **Home = servidores ao vivo:** Modo, mapa, jogadores/máximo, estado (online, lotado, offline) e Jogar. Desde a U2, cartões grandes (até 6 servidores no ar) ou lista; os offline ficam num grupo leve no fim.
 - **Jogar:** abre `steam://connect`; ao lado, o IP copiável com uma instrução curta ("no console do CS2: `connect <ip>`"). No celular, mostra só o IP e a instrução para abrir no PC.
 - Lotado mostra o estado claramente e mantém o Jogar (o VIP entra pela Vaga reservada); offline não tem botão.
 - O Carmine.Core envia batimento a cada ~10 s com mapa e jogadores conectados; servidor sem batimento por 45 s fica offline.
@@ -440,10 +440,11 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 - Tira o `#ID` de todas as telas (princípio "ID público fora da interface").
 
 **Decisões da U1b** (dono, 2026-10-20; o que o código fez)
-- **Menu:** o "jogando agora" vem de `GET /api/me/playing` (sessão; nome, Modo e mapa do servidor, sem endereço), lido quando o ponteiro ou o foco chega ao botão e ao abrir, não em toda página. O tema do menu tem **Claro e Escuro** (o escuro é o padrão do produto e a preferência do sistema não o muda, então não há "Sistema"); logado, o botão de tema solto sai da barra e fica só para o visitante. Itens e botão com 44 px no celular.
+- **Menu:** o "jogando agora" vem de `GET /api/me/playing` (sessão; nome, Modo e mapa do servidor, sem endereço), lido quando o ponteiro ou o foco chega ao botão e ao abrir, não em toda página. O tema **não** mora no menu (ajuste do dono, 2026-10-21): o botão de tema (sol/lua) fica na barra, logado ou não; a escolha também está em Configurações > Aparência, com **Claro e Escuro** (o escuro é o padrão do produto e a preferência do sistema não o muda, então não há "Sistema"). A navegação principal (Servidores, Loadout, Inventário, Ranking) fica no **centro** do cabeçalho no desktop; no celular segue em baixo, em linha própria. Itens e botão com 44 px no celular.
 - **`/configuracoes`:** `/configuracoes/{perfil,conexoes,aparencia,dados}`. A raiz abre o Perfil no desktop e é a lista de seções no celular (padrão iOS), com "voltar" dentro de cada seção. Sem sessão, convida a entrar. **Dados e conta** ainda não baixa nem exclui nada: leva ao canal de Contato e à Política de privacidade (o pedido segue o canal "Contato e exclusão de dados", em preparação); a seção **VIP e compras** chega com a S14.
 - **Perfil:** sem `#ID`; o dono vê "Editar perfil" (leva a Configurações > Perfil) e "Ver como visitante" (`?visitante=1`, a visão que os outros têm). "Perfil privado" aparece como um selo curto no cabeçalho; a explicação mora numa frase só, sob o interruptor.
-- **Foco dos campos:** os campos de texto trocam o contorno do navegador por um anel fino de 1,5 px com halo suave (`--focus-field`), e o campo clareia um degrau; o anel passa de 3:1 sobre o fundo nos dois temas (teste unitário nos tokens) e, no modo de alto contraste, volta o contorno do sistema. Botões e links seguem com o anel de 2 px, só no teclado (`:focus-visible`). O foco visível nunca é removido (WCAG 2.4.7).
+- **Fundos em vez de anéis (regra do dono para o site todo, 2026-10-21):** evitar anéis e bordas nos componentes; o foco e o selecionado viram um **fundo mais claro**. Os fundos seguem uma escala em tokens (`--fill-rest`, `--fill-hover`, `--fill-active`, `--fill-focus`: camadas do texto sobre a superfície, 7/12/17/28% no escuro e 8/13/18/34% no claro). Botões têm fundo em repouso (o hover só reforça) e o foco do teclado é um fundo mais forte que o hover, nunca um anel; ações só de ícone (tema, fechar) só ganham fundo no hover e no foco. Nos campos de texto o campo clareia ao focar, com transição curta (:focus, para valer também no foco por script), o placeholder sobe para 90% do texto e, no alto contraste, volta o contorno do sistema. O contraste está em `lib/focus-contrast.test.ts` (texto ≥ 4,5:1 no foco, foco ≥ 1,8:1 sobre o repouso nos dois temas); o 3:1 do WCAG 1.4.11 entre foco e repouso não cabe só com fundo sem tirar a leitura do texto, e é um ponto da U3c. Na U1b a regra cobre o que ela tocou (campos, `Button`, cabeçalho, menu, `/configuracoes`); o resto do site vai para a U3c.
+- **Sem "São Paulo" na interface (dono, 2026-10-21):** o local do servidor não importa para o jogador; some do subtítulo da home, do rótulo da seção, do cartão e da linha do servidor e do rodapé. O dado `region` segue na API; os documentos legais (a Política de Privacidade diz onde os dados ficam) não mudam.
 
 ### U2 · Home com cartões de servidor
 - Com até ~6 servidores, cada um vira um **cartão grande**: o mapa atual ao fundo (escurecido para o texto ficar legível), nome, Modo, status, jogadores/vagas, avatares dos amigos e o botão Jogar. Acima disso, a mesma tela vira lista. "Amigos jogando" continua abaixo.
@@ -454,7 +455,7 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 - **Colunas:** 1, 2 ou 3 conforme a quantidade (1 → cartão largo; 2, 4 e 5 → 2 colunas; 3 e 6 → 3 no desktop), sem buraco na última linha.
 - **Botão:** "Jogar" (era "Conectar") no cartão e na linha; no bloco de amigos, "Jogar junto". Lotado mantém o botão, sem o preenchido: o VIP entra pela Vaga reservada.
 - **Amigos:** o bloco "Seus amigos jogando agora" desceu para baixo da lista e a mesma leitura alimenta os avatares empilhados do cartão do servidor onde cada um está.
-- **Filtro por Modo** passou para a linha "◆ São Paulo · Ao vivo", junto da lista que ele filtra.
+- **Filtro por Modo** passou para a linha "Ao vivo", junto da lista que ele filtra.
 - **Imagens:** 8 mapas × 800 e 1600 px × AVIF e WebP (~100–165 KB a de 1600 px; ~2,7 MB no total); `srcset` deixa o celular com a de 800 px. O degradê usa tokens (`--scrim-*`, `--on-map-muted`) calibrados medindo o pior pixel atrás de cada texto nos 8 mapas, nos dois temas.
 
 ### U3 · Polimento e animações sutis

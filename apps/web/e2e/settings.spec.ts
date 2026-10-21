@@ -34,7 +34,7 @@ const overflow = (page: import('@playwright/test').Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 test.describe('menu da Conta', () => {
-  test('mostra a Conta, os atalhos, o tema e o Sair separado, sem o #ID', async ({
+  test('mostra a Conta, os atalhos e o Sair separado, sem o #ID e sem o tema', async ({
     page,
     request,
   }) => {
@@ -61,11 +61,8 @@ test.describe('menu da Conta', () => {
       'Primeiros passos',
       'Sair',
     ]);
-    await expect(menu.getByRole('menuitemradio')).toHaveText(['Claro', 'Escuro']);
-    await expect(menu.getByRole('menuitemradio', { name: 'Escuro' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    // O tema não mora no menu: fica no botão da barra e em Configurações > Aparência.
+    await expect(menu.getByRole('menuitemradio')).toHaveCount(0);
 
     await page.getByTestId('menu-settings').click();
     await expect(page).toHaveURL('/configuracoes');
@@ -84,29 +81,31 @@ test.describe('menu da Conta', () => {
     await expect(page).toHaveURL('/loadout');
   });
 
-  test('o tema vive no menu: troca, salva e o botão solto some da barra', async ({
+  test('o botão de tema fica na barra com a Conta aberta e o menu não o repete', async ({
     page,
     request,
   }) => {
-    await signedIn(page, request, 'Tema Menu');
+    await signedIn(page, request, 'Barra Superior');
     await page.goto('/ranking');
-    // Logado, o botão de tema da barra sai (ele continua para o visitante).
     await expect(accountMenu(page)).toBeVisible();
-    await expect(page.getByTestId('theme-toggle')).toHaveCount(0);
+    const toggle = page.getByTestId('theme-toggle');
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAccessibleName('Usar tema claro');
 
-    await accountMenu(page).click();
-    await page.getByTestId('menu-theme-light').click();
+    await toggle.click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate(() => localStorage.getItem('carmine-theme'))).toBe('light');
+    await expect(toggle).toHaveAccessibleName('Usar tema escuro');
 
     await page.reload();
-    await accountMenu(page).click();
-    await expect(page.getByRole('menuitemradio', { name: 'Claro' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    await page.getByTestId('menu-theme-dark').click();
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+    await toggle.click();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+
+    // O menu da Conta já não traz o tema.
+    await accountMenu(page).click();
+    await expect(page.getByRole('menu')).not.toContainText('Tema');
+    await expect(page.getByRole('menuitemradio')).toHaveCount(0);
   });
 
   test('com VIP ativo mostra o selo com os dias que faltam', async ({ page, request }) => {
@@ -321,7 +320,7 @@ test.describe('Configurações', () => {
 });
 
 test.describe('foco', () => {
-  test('campo de texto: sem o contorno do navegador, com anel fino e o campo clareia', async ({
+  test('campo de texto: sem contorno nem anel, o campo clareia o fundo ao focar', async ({
     page,
     request,
   }) => {
@@ -335,35 +334,46 @@ test.describe('foco', () => {
     const style = (property: 'outlineStyle' | 'boxShadow') =>
       input.evaluate((el, name) => getComputedStyle(el)[name], property);
     expect(await style('outlineStyle')).toBe('none');
-    // Anel de 1,5 px + halo de 4 px e, por dentro, a camada que clareia o campo (sombra interna).
-    // Os valores entram numa transição curta: espera chegar ao fim.
-    await expect.poll(() => style('boxShadow')).toMatch(/ 1\.5px/);
+    // Só a camada interna que clareia o campo (sombra interna, sem espalhamento de anel); a
+    // transição curta leva a cor até o fim.
+    await expect.poll(() => style('boxShadow')).toMatch(/inset/);
     const shadow = await style('boxShadow');
-    expect(shadow).toMatch(/ 4px/);
-    expect(shadow).toMatch(/inset/);
+    expect(shadow.split('inset')).toHaveLength(2);
 
-    // Sem foco, o anel some (também depois da transição).
+    // Sem foco, o fundo volta (também depois da transição).
     await input.evaluate((el) => (el as HTMLInputElement).blur());
     await expect.poll(() => style('boxShadow')).toBe('none');
   });
 
-  test('botões e links seguem com o anel de 2 px, só no teclado', async ({ page }) => {
+  test('botões: o foco do teclado é um fundo mais forte que o hover, nunca um anel', async ({
+    page,
+  }) => {
     await page.goto('/regras');
-    // Clique do mouse num botão: o foco fica nele, mas sem anel.
+    // Clique do mouse no botão de tema: o foco fica nele, mas sem fundo de foco nem anel.
     await page.getByTestId('theme-toggle').click();
     await expect(page.getByTestId('theme-toggle')).toBeFocused();
-    const afterMouse = await page.evaluate(
-      () => getComputedStyle(document.activeElement as Element).outlineStyle,
-    );
-    expect(afterMouse).toBe('none');
-
-    // Tab: o foco do teclado desenha o anel.
-    await page.keyboard.press('Tab');
-    const ring = await page.evaluate(() => {
+    const afterMouse = await page.evaluate(() => {
       const style = getComputedStyle(document.activeElement as Element);
-      return { style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
+      return { outline: style.outlineStyle, background: style.backgroundColor };
     });
-    expect(ring.style).toBe('solid');
-    expect(ring.width).toBeGreaterThanOrEqual(2);
+    expect(afterMouse.outline).toBe('none');
+    expect(afterMouse.background).toBe('rgba(0, 0, 0, 0)');
+
+    // Tab: o foco do teclado vai para "Entrar" e o fundo dele é o degrau de foco da escala.
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('sign-in')).toBeFocused();
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const style = getComputedStyle(document.activeElement as Element);
+          const probe = document.createElement('div');
+          probe.style.backgroundColor = 'var(--fill-focus)';
+          document.body.append(probe);
+          const expected = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return { outline: style.outlineStyle, same: style.backgroundColor === expected };
+        }),
+      )
+      .toEqual({ outline: 'none', same: true });
   });
 });

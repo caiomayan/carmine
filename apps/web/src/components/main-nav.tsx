@@ -55,7 +55,7 @@ export function MainNav({
                   className={cn(
                     'inline-flex min-h-9 items-center rounded-md px-3 text-sm font-[550] tracking-[0.01em] whitespace-nowrap',
                     'text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:text-foreground',
-                    'focus-visible:outline-offset-0 max-md:min-h-11',
+                    'focus-visible:bg-(--fill-focus) focus-visible:text-foreground focus-visible:outline-none max-md:min-h-11',
                     isCurrent && 'text-foreground',
                   )}
                 >

@@ -91,7 +91,6 @@ function FirstStepsStrip({ labels }: { labels: FirstStepsLabels }) {
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="bg-surface-2 hover:bg-line"
                 data-testid="first-steps-open"
                 onClick={(event) => firstSteps.openDialog(event.currentTarget)}
               >

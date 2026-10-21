@@ -4,25 +4,30 @@ import type { ComponentProps } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
- * Botão no padrão do shadcn/ui com a linguagem Liberty: sem borda, ação primária no preenchido
- * invertido e os demais com fundo transparente que clareia no hover e no estado ativo.
+ * Botão no padrão do shadcn/ui com a linguagem Liberty: sem borda e sem anel. A ação primária é o
+ * preenchido invertido; `ghost` tem fundo em repouso (a escala `--fill-*`: repouso, hover, ativo e
+ * foco; o hover só reforça o fundo que já existe) e `quiet`, para ícones e ações terciárias, só ganha
+ * fundo no hover. O foco do teclado (:focus-visible) é sempre um fundo mais forte que o hover, nunca
+ * um anel (WCAG 2.4.7; contraste medido em `lib/focus-contrast.test.ts`).
  */
 const buttonVariants = cva(
   [
     'inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-semibold whitespace-nowrap select-none',
-    'transition-[background-color,color,transform] duration-(--dur-fast) ease-std',
-    'active:translate-y-px active:scale-[0.985] motion-reduce:active:transform-none',
+    'transition-[background-color,color,box-shadow,translate,scale] duration-(--dur-fast) ease-std',
+    'focus-visible:outline-none',
+    'active:translate-y-px active:scale-[0.985] motion-reduce:active:translate-y-0 motion-reduce:active:scale-100',
     'disabled:pointer-events-none disabled:bg-transparent disabled:text-faint',
     '[&_svg]:pointer-events-none [&_svg]:shrink-0',
   ],
   {
     variants: {
       variant: {
-        primary: 'bg-primary text-primary-foreground hover:bg-primary-hover',
+        primary:
+          'bg-primary text-primary-foreground hover:bg-primary-hover focus-visible:bg-primary-hover focus-visible:shadow-[inset_0_0_0_100vmax_color-mix(in_srgb,var(--primary-foreground)_18%,transparent)]',
         ghost:
-          'bg-transparent text-foreground hover:bg-hover aria-pressed:bg-hover aria-expanded:bg-hover',
+          'bg-(--fill-rest) text-foreground hover:bg-(--fill-hover) focus-visible:bg-(--fill-focus) aria-pressed:bg-(--fill-active) aria-expanded:bg-(--fill-active)',
         quiet:
-          'bg-transparent font-medium text-muted-foreground hover:bg-hover hover:text-foreground aria-expanded:bg-hover aria-expanded:text-foreground',
+          'bg-transparent font-medium text-muted-foreground hover:bg-(--fill-hover) hover:text-foreground focus-visible:bg-(--fill-focus) focus-visible:text-foreground aria-expanded:bg-(--fill-active) aria-expanded:text-foreground',
       },
       size: {
         default: 'min-h-(--tap) px-4 text-sm',

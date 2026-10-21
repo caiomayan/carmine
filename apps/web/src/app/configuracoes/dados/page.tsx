@@ -50,7 +50,7 @@ function Block({
         <p className="max-w-[60ch] text-[13px] text-muted-foreground">{body}</p>
       </div>
       <div>
-        <Button asChild variant="ghost" size="sm" className="bg-surface-2 hover:bg-line">
+        <Button asChild variant="ghost" size="sm">
           <Link href={href}>{action}</Link>
         </Button>
       </div>

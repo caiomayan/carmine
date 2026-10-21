@@ -64,16 +64,9 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
     <Tabs value={mode} onValueChange={(v) => setMode(v as ModeFilter)} className="gap-0">
       <PageHead title={t('title')} subtitle={t('subtitle')} />
       <div className="grid gap-y-10 pt-2 pb-4">
-        <section aria-labelledby="regiao-sao-paulo" className="min-w-0">
+        <section aria-label={t('listLabel')} className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <h2
-                id="regiao-sao-paulo"
-                className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
-              >
-                <span aria-hidden="true" className="size-1.5 rotate-45 bg-foreground" />
-                {t('regions.sao-paulo')}
-              </h2>
               <LiveStatus state={state} />
             </div>
             <TabsList aria-label={t('modeFilter')} className="max-md:w-full">

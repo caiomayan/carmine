@@ -11,7 +11,7 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.getByRole('heading', { level: 1, name: 'Servidores' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
     await expect(page.locator('body')).toHaveCSS('background-color', BG[theme]);
-    await expect(page.getByRole('heading', { level: 2, name: 'São Paulo' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Servidores Carmine' })).toBeVisible();
 
     await expect(mainNav(page).getByRole('link')).toHaveCount(4);
     await expect(mainNav(page).getByRole('link', { name: 'Servidores' })).toHaveAttribute(

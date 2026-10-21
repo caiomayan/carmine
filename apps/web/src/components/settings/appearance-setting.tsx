@@ -26,8 +26,8 @@ export function AppearanceSetting() {
             <label
               key={option}
               className={cn(
-                'relative grid cursor-pointer gap-2 rounded-lg bg-surface-2 p-2.5 transition-colors duration-(--dur-fast) ease-std hover:bg-hover',
-                'has-checked:outline-2 has-checked:outline-foreground has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ring',
+                'relative grid cursor-pointer gap-2 rounded-lg bg-(--fill-rest) p-2.5 transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover)',
+                'has-checked:bg-(--fill-active) has-focus-visible:bg-(--fill-focus)',
               )}
             >
               <input
