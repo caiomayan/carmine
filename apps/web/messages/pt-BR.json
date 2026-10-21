@@ -113,8 +113,7 @@
       "recent": "Buscas recentes"
     },
     "recent": {
-      "clear": "Limpar",
-      "clearAria": "Limpar as buscas recentes"
+      "clear": "Limpar buscas recentes"
     },
     "entries": {
       "servers": {

@@ -10,9 +10,13 @@ import { indexText, scoreDoc, searchScore } from '../option-search';
 export const GROUPS = ['pages', 'actions', 'inventory', 'catalog', 'players', 'servers'] as const;
 export type PaletteGroup = (typeof GROUPS)[number];
 
-/** Quantos resultados cada grupo mostra: a paleta é um atalho, não uma página de busca. */
+/**
+ * Quantos resultados cada grupo mostra: a paleta é um atalho, não uma página de busca. As páginas
+ * cabem todas (são 7 no máximo, com Meu perfil e o Painel da Staff), para a lista sem busca servir
+ * de menu.
+ */
 export const GROUP_LIMIT: Record<PaletteGroup, number> = {
-  pages: 6,
+  pages: 8,
   actions: 4,
   inventory: 4,
   catalog: 6,
