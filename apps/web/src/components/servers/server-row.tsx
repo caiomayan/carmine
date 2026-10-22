@@ -6,7 +6,7 @@ import type { CSSProperties } from 'react';
 import { LiveCount } from '@/components/live-count';
 import { SERVER_GRID } from '@/components/servers/server-list';
 import { StatusDot } from '@/components/status-dot';
-import { serverLabel } from '@/lib/live-servers';
+import { serverAnchor, serverLabel } from '@/lib/live-servers';
 import { mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ConnectButtons, ConnectHelp, useConnect } from './connect';
@@ -25,11 +25,12 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
 
   return (
     <li
+      id={serverAnchor(server.id)}
       data-testid="server-row"
       data-server={server.name}
       data-state={server.state}
       style={{ '--i': index } as CSSProperties}
-      className="group/row mb-0.5 enter-stagger rounded-lg transition-colors duration-(--dur-base) ease-std hover:bg-surface has-[[data-help]]:bg-surface has-focus-visible:bg-surface"
+      className="group/row target-veil relative mb-0.5 scroll-mt-24 enter-stagger rounded-lg transition-colors duration-(--dur-base) ease-std hover:bg-surface has-[[data-help]]:bg-surface has-focus-visible:bg-surface"
     >
       <div
         className={cn(

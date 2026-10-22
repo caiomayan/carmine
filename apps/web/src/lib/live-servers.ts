@@ -5,6 +5,16 @@
 import type { FriendsPlaying, LiveServer, LiveServerList, PlayingFriend } from '@carmine/contracts';
 import type { ModeFilter } from './modes';
 
+/** O `id` do cartão (ou linha) do servidor na home: destino do resultado da busca (Ctrl+K). */
+export const serverAnchor = (id: string) => `servidor-${id}`;
+
+/**
+ * Para onde a busca leva a um servidor: ao cartão dele na home. O offline fica no grupo "Offline"
+ * (talvez recolhido), sem cartão para ir: só a home.
+ */
+export const serverHref = (server: Pick<LiveServer, 'id' | 'state'>) =>
+  server.state === 'offline' ? '/' : `/#${serverAnchor(server.id)}`;
+
 /** Abre o CS2 já conectando ao Servidor Carmine. */
 export const steamConnectUrl = (address: string) => `steam://connect/${address}`;
 

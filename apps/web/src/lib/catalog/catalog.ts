@@ -1,3 +1,4 @@
+import { SEARCH_MIN_LENGTH } from '@carmine/contracts/rules';
 import { CS2_ITEMS, CS2Economy, type CS2EconomyItem } from '@ianlucas/cs2-lib';
 import { brazilian } from '@ianlucas/cs2-lib/translations/brazilian';
 import { english } from '@ianlucas/cs2-lib/translations/english';
@@ -213,6 +214,61 @@ function rank<T extends CatalogEntry | AttachmentEntry>(
     if (score > 0) scored.push({ entry, score, order });
   });
   return scored.sort((a, b) => b.score - a.score || a.order - b.order).map(({ entry }) => entry);
+}
+
+const QUICK_MAX_LENGTH = 80;
+
+/** Os `limit` de maior relevância (os de zero não casam); no empate, a ordem em que vieram. */
+function topScored<T extends { score: number }>(hits: T[], limit: number): T[] {
+  return hits
+    .map((hit, order) => ({ hit, order }))
+    .filter(({ hit }) => hit.score > 0)
+    .sort((a, b) => b.hit.score - a.hit.score || a.order - b.order)
+    .slice(0, limit)
+    .map(({ hit }) => hit);
+}
+
+/** Um Item do catálogo achado pela paleta de comandos, com a relevância na escala da busca. */
+export type QuickHit = { entry: CatalogEntry; score: number };
+
+function quickQuery(query: string): string | null {
+  const text = query.trim().slice(0, QUICK_MAX_LENGTH);
+  return text.length >= SEARCH_MIN_LENGTH ? text : null;
+}
+
+/**
+ * Os Itens que mais combinam com a busca da paleta (Ctrl+K), com a relevância de cada um para o
+ * navegador poder ordená-los junto de páginas e jogadores. Mesma busca tolerante e bilíngue do
+ * catálogo, sem montar as facetas (a paleta não usa). Busca curta demais não devolve nada.
+ */
+export function quickSearchCatalog(query: string, limit: number): QuickHit[] {
+  const text = quickQuery(query);
+  if (!text) return [];
+  return topScored(
+    catalogIndex().map((entry) => ({ entry, score: scoreDoc(docOf(entry), text) })),
+    limit,
+  );
+}
+
+/** Um Item do Inventário da Conta achado pela paleta; `uid` abre o editor dele. */
+export type OwnedHit = QuickHit & { uid: string };
+
+/**
+ * Os Itens do Inventário da Conta que combinam com a busca da paleta. Cada cópia é um resultado
+ * (o Inventário aceita várias da mesma skin). Item que o catálogo não conhece é ignorado.
+ */
+export function quickSearchOwned(
+  items: readonly { uid: string; itemId: number }[],
+  query: string,
+  limit: number,
+): OwnedHit[] {
+  const text = quickQuery(query);
+  if (!text) return [];
+  const scored = items.flatMap(({ uid, itemId }) => {
+    const entry = catalogEntry(itemId);
+    return entry ? [{ entry, uid, score: scoreDoc(docOf(entry), text) }] : [];
+  });
+  return topScored(scored, limit);
 }
 
 /**
