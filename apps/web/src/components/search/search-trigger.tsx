@@ -121,12 +121,12 @@ export function SearchTrigger() {
           aria-hidden="true"
           className="size-[18px] min-[1152px]:size-4 min-[1152px]:text-muted-foreground"
         />
-        <span className="flex-1 text-left text-sm text-muted-foreground max-[1151px]:hidden">
+        <span className="flex-1 text-left text-body-sm text-muted-foreground max-[1151px]:hidden">
           {t('label')}
         </span>
         <kbd
           suppressHydrationWarning
-          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-[11px] leading-none font-medium muted-on-fill max-[1151px]:hidden"
+          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-caption leading-none font-medium muted-on-fill max-[1151px]:hidden"
         >
           {mac ? t('keysMac') : t('keys')}
         </kbd>

@@ -24,7 +24,6 @@ import { useTranslations } from 'next-intl';
 import { Dialog } from 'radix-ui';
 import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar } from '@/components/avatar';
-import { RARITY_COLOR } from '@/components/inventory/item-tile';
 import { useSession } from '@/components/session/session-provider';
 import { StatusDot } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
@@ -37,6 +36,7 @@ import {
 } from '@/components/ui/command';
 import { useTheme } from '@/hooks/use-theme';
 import { signInHref } from '@/lib/auth-links';
+import type { Rarity } from '@/lib/catalog/types';
 import { serverHref } from '@/lib/live-servers';
 import { mapDisplayName } from '@/lib/map-art';
 import { searchScore } from '@/lib/option-search';
@@ -90,19 +90,30 @@ function rowKey(row: Row): string {
   }
 }
 
+/** O ponto de raridade ao lado do nome: sinal pequeno, nos tokens `--rarity-*`. */
+const RARITY_DOT: Record<Rarity, string> = {
+  consumer: 'bg-rarity-consumer',
+  industrial: 'bg-rarity-industrial',
+  milspec: 'bg-rarity-milspec',
+  restricted: 'bg-rarity-restricted',
+  classified: 'bg-rarity-classified',
+  covert: 'bg-rarity-covert',
+  contraband: 'bg-rarity-contraband',
+};
+
 /** Painel: tela cheia no celular; no desktop, uma folha centrada perto do alto. */
 const PANEL = cn(
   'palette-panel fixed z-50 flex flex-col bg-popover text-popover-foreground outline-none',
   'max-md:inset-0',
   'md:inset-x-0 md:top-[10vh] md:mx-auto md:max-h-[min(36rem,78dvh)] md:w-[min(40rem,calc(100vw-2rem))] md:rounded-xl',
-  'md:shadow-[0_28px_72px_-24px_var(--shadow)]',
+  'md:shadow-(--shadow-overlay)',
 );
 
 const GROUP_HEADING =
-  '[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase';
+  '[&_[cmdk-group-heading]]:label-caps [&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-muted-foreground';
 
 const ROW =
-  'min-h-12 gap-3 px-2.5 transition-colors duration-(--dur-fast) ease-std data-[selected=true]:bg-(--fill-active) max-md:min-h-14';
+  'min-h-12 gap-3 px-2.5 transition-colors duration-(--dur-fast) ease-std data-[selected=true]:bg-(--fill-selected) max-md:min-h-14';
 
 /**
  * A paleta de comandos (Ctrl+K, U3d). Carrega só ao abrir (o botão do cabeçalho a importa sob
@@ -357,7 +368,7 @@ function PaletteBody({
           autoCorrect="off"
           spellCheck={false}
           wrapperClassName="m-0 flex-1"
-          className="min-h-(--tap) bg-(--fill-rest) text-sm max-md:text-base"
+          className="min-h-(--tap) bg-(--fill-rest) text-body-sm max-md:text-[16px]"
           data-testid="palette-input"
         />
         <Dialog.Close asChild>
@@ -404,7 +415,7 @@ function PaletteBody({
                 clearRecent(publicId);
                 setRecent([]);
               }}
-              className={cn(ROW, 'min-h-10 text-[13px]', 'muted-on-fill')}
+              className={cn(ROW, 'min-h-10 text-body-sm', 'muted-on-fill')}
               data-testid="palette-recent-clear"
             >
               <Leading>
@@ -431,7 +442,7 @@ function PaletteBody({
 
       <p
         aria-hidden="true"
-        className="hidden items-center gap-4 px-4 py-2.5 text-[12px] text-muted-foreground md:flex"
+        className="hidden items-center gap-4 px-4 py-2.5 text-caption text-muted-foreground md:flex"
       >
         <Hint keys={['↑', '↓']} label={t('keys.navigate')} />
         <Hint keys={['↵']} label={t('keys.open')} />
@@ -462,7 +473,7 @@ function Hint({ keys, label }: { keys: string[]; label: string }) {
         <kbd
           key={key}
           className={cn(
-            'grid min-w-5 place-items-center rounded-sm bg-(--fill-rest) px-1 py-0.5 font-sans text-[11px] leading-none font-medium',
+            'grid min-w-5 place-items-center rounded-sm bg-(--fill-rest) px-1 py-0.5 font-sans text-caption leading-none font-medium',
             'muted-on-fill',
           )}
         >
@@ -485,7 +496,7 @@ function RowText({
 }) {
   return (
     <span className="grid min-w-0 flex-1 gap-0.5">
-      <span className="flex items-center gap-1.5 truncate text-sm font-medium">
+      <span className="flex items-center gap-1.5 truncate text-body-sm font-medium">
         {dot ? (
           <span
             aria-hidden="true"
@@ -496,7 +507,7 @@ function RowText({
         <span className="truncate">{title}</span>
       </span>
       {subtitle ? (
-        <span className={cn('truncate text-[12px]', 'muted-on-fill')}>{subtitle}</span>
+        <span className={cn('truncate text-caption', 'muted-on-fill')}>{subtitle}</span>
       ) : null}
     </span>
   );
@@ -504,7 +515,7 @@ function RowText({
 
 function Trailing({ children }: { children: ReactNode }) {
   return (
-    <span className={cn('shrink-0 text-[12px] tabular-nums', 'muted-on-fill')}>{children}</span>
+    <span className={cn('shrink-0 text-caption tabular-nums', 'muted-on-fill')}>{children}</span>
   );
 }
 
@@ -544,7 +555,7 @@ function RowView({ row }: { row: Row }) {
           <RowText
             title={skin ? (hit.subtitle as string) : hit.title}
             subtitle={skin ? hit.title : hit.subtitle}
-            dot={RARITY_COLOR[hit.rarity]}
+            dot={RARITY_DOT[hit.rarity]}
           />
         </>
       );
@@ -635,15 +646,15 @@ function Status({
 
       {empty ? (
         <div data-testid="palette-empty" className="grid gap-1 px-4 py-8 text-center">
-          <p className="text-sm font-medium break-words">{t('empty', { query: text })}</p>
-          <p className="text-[13px] text-muted-foreground">{t('emptyHint')}</p>
+          <p className="text-body-sm font-medium break-words">{t('empty', { query: text })}</p>
+          <p className="text-body-sm text-muted-foreground">{t('emptyHint')}</p>
         </div>
       ) : null}
 
       {failed && !loading ? (
         <div
           data-testid="palette-error"
-          className="flex items-center justify-between gap-3 px-2.5 py-3 text-[13px]"
+          className="flex items-center justify-between gap-3 px-2.5 py-3 text-body-sm"
         >
           <span className="flex items-center gap-2">
             <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-status-danger" />
@@ -659,7 +670,7 @@ function Status({
         <p
           data-testid="palette-signout-failed"
           role="alert"
-          className="flex items-center gap-2 px-2.5 py-3 text-[13px]"
+          className="flex items-center gap-2 px-2.5 py-3 text-body-sm"
         >
           <span aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-status-danger" />
           {t('signOutFailed')}
