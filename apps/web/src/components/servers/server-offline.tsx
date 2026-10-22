@@ -35,7 +35,7 @@ export function OfflineGroup({
         aria-expanded={open}
         aria-controls={listId}
         onClick={() => setChosen(!open)}
-        className="-ml-3"
+        className="px-3.5"
       >
         <span className="tabular-nums">{t('title', { count: servers.length })}</span>
         <svg

@@ -669,7 +669,9 @@
       "body": "Nenhum Item combina com a busca e os filtros. Tente outra palavra ou limpe os filtros."
     },
     "vip": "VIP",
-    "vipHint": "Exige Período VIP"
+    "vipHint": "Exige Período VIP",
+    "region": "Busca e filtros do catálogo",
+    "filtersActive": "Filtros ({count})"
   },
   "itemEditor": {
     "metaNew": "Adicionar {name}",

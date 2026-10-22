@@ -248,7 +248,7 @@ export function LoadoutScreen({
           </div>
           <nav
             aria-label={t('board.categories')}
-            className="mt-2 flex gap-0.5 overflow-x-auto [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
+            className="mt-2 flex gap-0.5 overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
           >
             {columns.map((column) => (
               <button
