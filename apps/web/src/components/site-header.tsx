@@ -19,7 +19,7 @@ export async function SiteHeader() {
         <Link
           href="/"
           aria-label={t('homeLink')}
-          className="-mx-2 inline-flex items-center justify-self-start rounded-md px-2 py-1.5 text-foreground transition-opacity duration-(--dur-fast) ease-std hover:opacity-80 focus-visible:opacity-100"
+          className="-mx-2 inline-flex min-h-(--tap) items-center justify-self-start rounded-md px-2 text-foreground transition-opacity duration-(--dur-fast) ease-std hover:opacity-80 focus-visible:opacity-100"
         >
           <Wordmark className="h-(--wm-h) w-auto overflow-visible" />
         </Link>

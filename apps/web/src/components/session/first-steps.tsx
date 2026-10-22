@@ -28,8 +28,7 @@ export type FirstStepsLabels = {
   close: string;
   done: string;
   toInventory: string;
-  reopenHint: string;
-  steps: { what: Step; steam: Step; equip: Step; ingame: Step };
+  steps: { add: Step; equip: Step; play: Step };
 };
 
 /**

@@ -30,9 +30,9 @@ function MapBackdrop({
   priority: boolean;
 }) {
   const art = mapArt(map);
-  if (!art) return <span aria-hidden="true" className="map-neutral absolute inset-0 -z-20" />;
+  if (!art) return <span aria-hidden="true" className="map-neutral absolute -inset-px" />;
   return (
-    <picture className="absolute inset-0 -z-20">
+    <picture className="absolute -inset-px">
       <source type="image/avif" srcSet={art.avif} sizes={sizes} />
       <source type="image/webp" srcSet={art.webp} sizes={sizes} />
       <img
@@ -84,18 +84,23 @@ export function ServerCard({
       data-map={server.map ?? ''}
       style={{ '--i': index } as CSSProperties}
       className={cn(
-        'group/card target-veil relative isolate flex min-h-[264px] enter-stagger scroll-mt-24 flex-col overflow-hidden rounded-2xl bg-surface-2',
+        'group/card target-veil relative isolate flex min-h-[264px] enter-stagger scroll-mt-24 flex-col rounded-2xl',
         solo && 'md:min-h-[320px]',
       )}
     >
-      <MapBackdrop map={server.map} sizes={sizes} priority={priority} />
-      <span
-        aria-hidden="true"
-        className={cn('map-scrim absolute inset-0 -z-10', solo && 'map-scrim-solo')}
-      />
+      {/*
+        A imagem e o escurecido moram na MESMA camada, e é ela que recorta no canto arredondado:
+        recortando em dois lugares (o cartão e a imagem escalada, que vira camada própria no zoom),
+        a borda antialiased deixava o fundo e o anel do cartão aparecerem como um filete. O fundo
+        da camada é só o que se vê enquanto a imagem carrega.
+      */}
+      <div aria-hidden="true" className="map-layer absolute inset-0 -z-10 bg-surface-2">
+        <MapBackdrop map={server.map} sizes={sizes} priority={priority} />
+        <span className={cn('map-scrim absolute -inset-px', solo && 'map-scrim-solo')} />
+      </div>
 
       <div className="flex items-start justify-between gap-3 p-4 pb-0 md:p-5 md:pb-0">
-        <span className="chip-solid label-caps text-[11px]">{t(`modes.${server.mode}`)}</span>
+        <span className="chip-solid label-caps">{t(`modes.${server.mode}`)}</span>
         <span className="chip-solid inline-flex items-center gap-2 text-caption font-medium">
           <StatusDot tone={STATE_TONE[server.state]} pulse={server.state === 'online'} />
           {t(`states.${server.state}`)}

@@ -99,9 +99,9 @@ describe('Seus amigos jogando agora (S06)', () => {
   });
 
   it('lista própria pública: não consulta a lista de quem está jogando', async () => {
-    const me = await signedInPlayer(t, 160);
-    const friend = steamIdFor(161);
-    const other = steamIdFor(162);
+    const me = await signedInPlayer(t, 260);
+    const friend = steamIdFor(261);
+    const other = steamIdFor(262);
     steam.friendLists.set(me.steamId, [friend]);
     steam.friendLists.set(other, [me.steamId]);
     const { key } = await t.app

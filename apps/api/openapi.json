@@ -4408,6 +4408,70 @@
         ]
       }
     },
+    "/api/header-previews": {
+      "get": {
+        "operationId": "getHeaderPreviews",
+        "parameters": [
+          {
+            "name": "side",
+            "required": false,
+            "in": "query",
+            "description": "O último lado usado no Loadout (o navegador o guarda); sem ele vale ct",
+            "schema": {
+              "enum": [
+                "ct",
+                "t"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "As prévias. Cada seção é independente: uma fonte que falha esvazia só a sua seção. Com sessão, Cache-Control: private",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HeaderPreviews"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Prévias dos painéis do header (Jogar, Loadout, Inventário, Ranking); a parte pessoal vem com a sessão",
+        "tags": [
+          "header"
+        ]
+      }
+    },
     "/api/server/reports": {
       "post": {
         "operationId": "createReport",
@@ -8403,6 +8467,318 @@
         "required": [
           "unit",
           "missing"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderPreviews": {
+        "type": "object",
+        "properties": {
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "signedIn": {
+            "type": "boolean"
+          },
+          "play": {
+            "$ref": "#/components/schemas/HeaderPlay"
+          },
+          "loadout": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HeaderLoadout"
+              }
+            ]
+          },
+          "inventory": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HeaderInventory"
+              }
+            ]
+          },
+          "ranking": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HeaderRanking"
+              }
+            ]
+          }
+        },
+        "required": [
+          "generatedAt",
+          "signedIn",
+          "play",
+          "loadout",
+          "inventory",
+          "ranking"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderPlay": {
+        "type": "object",
+        "properties": {
+          "recommended": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HeaderRecommendedServer"
+              }
+            ]
+          },
+          "others": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LiveServer"
+            }
+          },
+          "friendsPlaying": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "recommended",
+          "others",
+          "friendsPlaying"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderRecommendedServer": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "$ref": "#/components/schemas/LiveServer"
+          },
+          "reason": {
+            "$ref": "#/components/schemas/HeaderRecommendationReason"
+          },
+          "friends": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayingFriend"
+            }
+          }
+        },
+        "required": [
+          "server",
+          "reason",
+          "friends"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderRecommendationReason": {
+        "type": "string",
+        "enum": [
+          "friends",
+          "favorite_mode",
+          "fullest"
+        ]
+      },
+      "HeaderLoadout": {
+        "type": "object",
+        "properties": {
+          "side": {
+            "$ref": "#/components/schemas/LoadoutSide"
+          },
+          "presetId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "presetName": {
+            "type": "string"
+          },
+          "slots": {
+            "minItems": 4,
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderLoadoutSlot"
+            }
+          }
+        },
+        "required": [
+          "side",
+          "presetId",
+          "presetName",
+          "slots"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderLoadoutSlot": {
+        "type": "object",
+        "properties": {
+          "slot": {
+            "$ref": "#/components/schemas/LoadoutSlot"
+          },
+          "itemId": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "uid": {
+            "nullable": true,
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "statTrak": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slot",
+          "itemId",
+          "uid",
+          "statTrak"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderInventory": {
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "latest": {
+            "maxItems": 4,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderLatestItem"
+            }
+          }
+        },
+        "required": [
+          "total",
+          "limit",
+          "latest"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderLatestItem": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "itemId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "statTrak": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "uid",
+          "itemId",
+          "statTrak",
+          "createdAt"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderRanking": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "weekEnd": {
+            "type": "string",
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$"
+          },
+          "closesAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "modes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HeaderRankingMode"
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "weekEnd",
+          "closesAt",
+          "modes"
+        ],
+        "additionalProperties": false
+      },
+      "HeaderRankingMode": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "top": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankingEntry"
+            }
+          },
+          "mine": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "position": {
+                "nullable": true,
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "progress": {
+                "nullable": true,
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/RankingProgress"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "position",
+              "progress"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "mode",
+          "top",
+          "mine"
         ],
         "additionalProperties": false
       },
