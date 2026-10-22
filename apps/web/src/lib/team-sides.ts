@@ -27,3 +27,8 @@ export function sidesLabelKey(sides: readonly (LoadoutSide | null)[]): LoadoutSi
   const shown = equippedTeamSides(sides);
   return shown.length === 1 ? (shown[0] as LoadoutSide) : 'both';
 }
+
+/** Os lados de um Item na vitrine: um Item sem lado (o kit de música) vale nos dois. */
+export function showcaseSides(sides: readonly LoadoutSide[]): LoadoutSide[] {
+  return sides.length === 0 ? orderedSides(ORDER) : orderedSides(sides);
+}
