@@ -88,6 +88,8 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
   await openFilters(page);
   await chooseOption(page, page.getByLabel('Arma'), 'AK-47');
   await chooseOption(page, page.getByLabel('Raridade'), 'classified');
+  // O botão conta os filtros que moram dentro do Popover (Arma e Raridade).
+  await expect(page.getByTestId('catalog-filters')).toHaveText('Filtros (2)');
   await expect(page).toHaveURL(/tipo=weapon/);
   await expect(page).toHaveURL(/arma=AK-47/);
   await expect(page).toHaveURL(/raridade=classified/);
