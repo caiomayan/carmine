@@ -2,11 +2,23 @@
 # pelo ruleset do main; não renomeie sem atualizar o ruleset (infra/github/main-ruleset.json).
 # web-image e ops-image ainda não são exigidos pelo ruleset. O deploy (deploy.yml) só roda
 # depois que este workflow inteiro termina verde no main.
+#
+# Runner: a variável do repositório CI_RUNNER escolhe onde os jobs rodam (JSON, ex.:
+# ["self-hosted","carmine"] para o runner próprio, docs/operacao/runner-proprio.md). Sem ela,
+# rodam nos runners do GitHub.
+#
+# node e dotnet só rodam no PR: o ruleset exige o branch atualizado com o main, então o squash
+# no main tem a mesma árvore que o PR já testou. No push ficam só as imagens, que o deploy usa.
+#
+# PRs para a fase-ui (integração da Fase de UI) também rodam a CI completa, no runner próprio.
+# Neles não há ruleset: o maestro confere os checks antes do merge.
+# No PR, as imagens são construídas só em amd64 (nativo, rápido); amd64 + arm64 só no push que
+# publica (a VM de produção é ARM). O dotnet só compila e testa se o PR mexe em plugins/.
 name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, fase-ui]
   push:
     branches: [main]
 
@@ -24,8 +36,12 @@ env:
 jobs:
   node:
     name: node
-    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 35
+    env:
+      # Os 4 vCPUs do runner do GitHub; no runner próprio evita 11 bancos de teste ao mesmo tempo.
+      VITEST_MAX_WORKERS: "4"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -52,31 +68,63 @@ jobs:
             echo "::error::apps/api/openapi.json desatualizado. Rode 'pnpm --filter @carmine/api openapi:generate' e faça commit."
             exit 1
           }
+      # No runner próprio o Docker é persistente: não deixar o Postgres e o Valkey do E2E de pé.
+      - if: always()
+        run: docker compose -f infra/docker-compose.yml down -v
 
   dotnet:
     name: dotnet
-    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: read
     defaults:
       run:
         working-directory: plugins
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      # O check "dotnet" é exigido pelo ruleset, então o job sempre roda e termina verde; só
+      # compila e testa quando o PR toca nos plugins (ou na própria CI).
+      - name: O PR mexe nos plugins?
+        id: changes
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          if gh pr diff "$PR" --repo "$REPO" --name-only | grep -qE '^(plugins/|\.github/workflows/ci\.yml$)'; then
+            echo "plugins=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "plugins=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Nenhuma mudança em plugins/: build e testes do .NET pulados."
+          fi
+      - if: steps.changes.outputs.plugins == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - if: steps.changes.outputs.plugins == 'true'
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        env:
+          # Fora do /usr/share/dotnet, que no runner próprio não é gravável.
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: plugins/global.json
-      - run: dotnet build Carmine.Plugins.slnx -c Release
-      - run: dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
+      - if: steps.changes.outputs.plugins == 'true'
+        run: dotnet build Carmine.Plugins.slnx -c Release
+      - if: steps.changes.outputs.plugins == 'true'
+        run: dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
 
   api-image:
     name: api-image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     permissions:
       contents: read
       packages: write
     env:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      PLATFORMS: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -93,12 +141,12 @@ jobs:
           tags: |
             type=sha,format=long
             type=raw,value=latest,enable={{is_default_branch}}
-      # Em PR só constrói (amd64 + arm64); publica no GHCR apenas no push para o main.
+      # Em PR só constrói (amd64); no push para o main constrói amd64 + arm64 e publica no GHCR.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: infra/docker/api.Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -107,13 +155,14 @@ jobs:
 
   web-image:
     name: web-image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     permissions:
       contents: read
       packages: write
     env:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      PLATFORMS: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -130,12 +179,12 @@ jobs:
           tags: |
             type=sha,format=long
             type=raw,value=latest,enable={{is_default_branch}}
-      # Em PR só constrói (amd64 + arm64); publica no GHCR apenas no push para o main.
+      # Em PR só constrói (amd64); no push para o main constrói amd64 + arm64 e publica no GHCR.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: infra/docker/web.Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -144,13 +193,14 @@ jobs:
 
   ops-image:
     name: ops-image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     permissions:
       contents: read
       packages: write
     env:
       PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      PLATFORMS: ${{ github.event_name == 'push' && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -167,12 +217,12 @@ jobs:
           tags: |
             type=sha,format=long
             type=raw,value=latest,enable={{is_default_branch}}
-      # Em PR só constrói (amd64 + arm64); publica no GHCR apenas no push para o main.
+      # Em PR só constrói (amd64); no push para o main constrói amd64 + arm64 e publica no GHCR.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
           file: infra/docker/ops.Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: ${{ env.PLATFORMS }}
           push: ${{ env.PUBLISH == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
