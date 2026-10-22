@@ -4,6 +4,7 @@ export * from './auth.js';
 export * from './discord.js';
 export * from './equipped.js';
 export * from './game-server.js';
+export * from './header-previews.js';
 export * from './health.js';
 export * from './inventory.js';
 export * from './live-servers.js';
