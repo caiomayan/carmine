@@ -66,6 +66,7 @@ export default defineConfig({
         // Todo pedido do E2E chega à API do mesmo IP (o Next repassa /api/*): sem limite real.
         RATE_LIMIT_LOGIN_PER_MINUTE: '100000',
         RATE_LIMIT_PUBLIC_PER_MINUTE: '100000',
+        RATE_LIMIT_SEARCH_PER_MINUTE: '100000',
         RATE_LIMIT_EQUIPPED_PER_MINUTE: '100000',
         RATE_LIMIT_MUTATIONS_PER_MINUTE: '100000',
         RATE_LIMIT_SERVER_PER_MINUTE: '100000',

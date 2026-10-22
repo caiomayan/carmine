@@ -1,12 +1,16 @@
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { MainNav } from './main-nav';
+import { SearchTrigger } from './search/search-trigger';
 import { AccountControl } from './session/account-control';
 import { ThemeToggle } from './theme-toggle';
 import { Wordmark } from './wordmark';
 
 export async function SiteHeader() {
   const t = await getTranslations('shell');
+  // Só as mensagens da busca vão ao cliente (o botão e a paleta, que carrega ao abrir).
+  const { search } = await getMessages();
 
   return (
     <header className="border-b border-line">
@@ -30,6 +34,9 @@ export async function SiteHeader() {
           className="md:justify-self-center max-md:order-last max-md:-mx-3 max-md:w-[calc(100%+1.5rem)] max-md:pb-1"
         />
         <div className="ml-auto flex items-center gap-2.5 md:ml-0 md:justify-self-end">
+          <NextIntlClientProvider messages={{ search }}>
+            <SearchTrigger />
+          </NextIntlClientProvider>
           <ThemeToggle labels={{ light: t('theme.useLight'), dark: t('theme.useDark') }} />
           <AccountControl
             labels={{

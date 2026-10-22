@@ -19,9 +19,13 @@ function Command({ className, ...props }: ComponentProps<typeof CommandPrimitive
   );
 }
 
-function CommandInput({ className, ...props }: ComponentProps<typeof CommandPrimitive.Input>) {
+function CommandInput({
+  className,
+  wrapperClassName,
+  ...props
+}: ComponentProps<typeof CommandPrimitive.Input> & { wrapperClassName?: string }) {
   return (
-    <div data-slot="command-input-wrapper" className="relative m-1 mb-0">
+    <div data-slot="command-input-wrapper" className={cn('relative m-1 mb-0', wrapperClassName)}>
       <SearchIcon
         aria-hidden="true"
         className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"

@@ -32,6 +32,7 @@ export async function startTestApp(env: Record<string, string> = {}): Promise<Te
     // Os testes fazem muitas requisições do mesmo IP; quem testa o limite passa os seus.
     RATE_LIMIT_LOGIN_PER_MINUTE: '10000',
     RATE_LIMIT_PUBLIC_PER_MINUTE: '10000',
+    RATE_LIMIT_SEARCH_PER_MINUTE: '10000',
     RATE_LIMIT_EQUIPPED_PER_MINUTE: '10000',
     RATE_LIMIT_MUTATIONS_PER_MINUTE: '10000',
     RATE_LIMIT_SERVER_PER_MINUTE: '10000',

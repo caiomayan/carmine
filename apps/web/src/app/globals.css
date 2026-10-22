@@ -554,3 +554,120 @@
   outline: var(--focus-ring-width) solid var(--focus-ring);
   outline-offset: 2px;
 }
+
+/*
+ * Texto de apoio que pode cair sobre o fundo de uma linha selecionada ou de um botão com fundo: o
+ * --muted sozinho ali passa de 4,5:1 só sobre a superfície, não sobre o degrau --fill-active.
+ */
+@utility muted-on-fill {
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+}
+
+/* ---------- paleta de comandos (Ctrl+K): entra com um deslocamento curto e sai mais rápida ---------- */
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+    scale: 0.985;
+  }
+}
+
+@keyframes palette-out {
+  to {
+    opacity: 0;
+    translate: 0 -4px;
+    scale: 0.99;
+  }
+}
+
+@keyframes palette-sheet-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+@keyframes palette-sheet-out {
+  to {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@keyframes palette-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes palette-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.palette-overlay[data-state="open"] {
+  animation: palette-fade-in var(--dur-base) var(--ease-out);
+}
+
+.palette-overlay[data-state="closed"] {
+  animation: palette-fade-out var(--dur-fast) var(--ease-in) forwards;
+}
+
+.palette-panel[data-state="open"] {
+  animation: palette-in var(--dur-base) var(--ease-out);
+}
+
+.palette-panel[data-state="closed"] {
+  animation: palette-out var(--dur-fast) var(--ease-in) forwards;
+}
+
+/* o mesmo ponto do `md` do Tailwind (768 px): tela cheia no celular */
+@media (max-width: 767.98px) {
+  .palette-panel[data-state="open"] {
+    animation-name: palette-sheet-in;
+  }
+
+  .palette-panel[data-state="closed"] {
+    animation-name: palette-sheet-out;
+  }
+}
+
+/* movimento reduzido: só o fade, sem deslocamento nem escala */
+@media (prefers-reduced-motion: reduce) {
+  .palette-panel[data-state="open"] {
+    animation-name: palette-fade-in;
+    animation-duration: var(--dur-fast);
+  }
+
+  .palette-panel[data-state="closed"] {
+    animation-name: palette-fade-out;
+  }
+}
+
+/* destino de um link com âncora (a busca leva ao cartão do servidor): um véu de fundo que se desfaz */
+@keyframes target-veil {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.target-veil:target::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border-radius: inherit;
+  background: var(--fill-selected);
+  pointer-events: none;
+  animation: target-veil 1400ms var(--ease-out) 200ms forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .target-veil:target::after {
+    animation-duration: 600ms;
+  }
+}

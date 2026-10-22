@@ -439,6 +439,67 @@
         ]
       }
     },
+    "/api/players/search": {
+      "get": {
+        "description": "Só o que o Perfil mostra a qualquer visitante. O Perfil privado aparece pelo nome (só as Estatísticas ficam escondidas); a Conta anonimizada não aparece.",
+        "operationId": "searchPlayers",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Parte do nome (2 a 50 caracteres)",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Os jogadores achados",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerSearch"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Busca curta demais ou longa demais"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"search\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"search\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"search\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Jogadores pelo Nome de exibição (até 8): ID público, nome e avatar, sem SteamID64",
+        "tags": [
+          "players"
+        ]
+      }
+    },
     "/api/profiles/former-ids": {
       "get": {
         "operationId": "getFormerPublicIds",
@@ -4810,6 +4871,48 @@
         },
         "required": [
           "hidden"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerSearch": {
+        "type": "object",
+        "properties": {
+          "players": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlayerSearchHit"
+            }
+          }
+        },
+        "required": [
+          "players"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerSearchHit": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "avatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "publicId",
+          "displayName",
+          "avatarUrl"
         ],
         "additionalProperties": false
       },

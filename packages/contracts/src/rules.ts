@@ -130,6 +130,13 @@ export function isSteamId64(value: string): boolean {
   return id >= MIN_INDIVIDUAL_STEAM_ID && id <= MAX_INDIVIDUAL_STEAM_ID;
 }
 
+/**
+ * Tamanho da busca da paleta (Ctrl+K, U3d): menos que o mínimo casaria metade das Contas e dos
+ * Itens; mais que o máximo não é um nome (o Nome de exibição tem no máximo 24).
+ */
+export const SEARCH_MIN_LENGTH = 2;
+export const SEARCH_MAX_LENGTH = 50;
+
 /** Tamanho do Nome de exibição próprio, em caracteres depois de normalizado (S11). */
 export const DISPLAY_NAME_MIN_LENGTH = 2;
 export const DISPLAY_NAME_MAX_LENGTH = 24;
