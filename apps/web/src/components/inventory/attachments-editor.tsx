@@ -361,7 +361,7 @@ function FineAdjust({ children }: { children: React.ReactNode }) {
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className="size-3.5 transition-transform duration-(--dur-fast) group-open/fine:rotate-90"
+          className="size-3.5 transition-[rotate] duration-(--dur-fast) ease-std motion-reduce:transition-none group-open/fine:rotate-90"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"

@@ -190,7 +190,7 @@ function AttachmentIcon({
       className={cn(
         'w-auto object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]',
         // Entra suave e dá um passo à frente com o cartão; sem movimento, só o fade curto.
-        // `scale` e `translate` são propriedades próprias no Tailwind v4: `transform` não as anima.
+        // `transition-[transform,...]` arbitrário não inclui `scale` nem `translate` (propriedades próprias).
         'transition-[scale,translate,opacity] duration-(--dur-base) ease-(--ease-out) starting:translate-y-1 starting:opacity-0',
         'group-hover/tile:scale-110 motion-reduce:starting:translate-y-0 motion-reduce:group-hover/tile:scale-100',
         className,
