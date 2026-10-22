@@ -35,7 +35,7 @@ export default async function StaffReportsPage({ searchParams }: { searchParams:
         <h2 id="denuncias" className="text-lg font-semibold">
           {t('title')}
         </h2>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-body-sm text-muted-foreground">
           {result.status === 'ok'
             ? t('subtitle', { count: result.data.openCount })
             : t('subtitleBare')}
@@ -52,8 +52,8 @@ export default async function StaffReportsPage({ searchParams }: { searchParams:
             }
             aria-current={option === status ? 'page' : undefined}
             className={cn(
-              'rounded-sm px-3 py-1.5 text-[13.5px] whitespace-nowrap hover:bg-surface-2',
-              option === status ? 'bg-surface-2 font-semibold' : 'text-muted-foreground',
+              'inline-flex min-h-(--tap) items-center rounded-md bg-(--fill-rest) px-3 text-body-sm whitespace-nowrap transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover)',
+              option === status ? 'bg-(--fill-active) font-semibold' : 'text-muted-foreground',
             )}
           >
             {t(`tabs.${option}`)}

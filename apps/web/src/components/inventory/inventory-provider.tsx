@@ -172,7 +172,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
               onPointerLeave={() => setPaused(false)}
               onFocus={() => setPaused(true)}
               onBlur={() => setPaused(false)}
-              className="pointer-events-auto relative flex w-full max-w-[460px] items-center gap-3 overflow-hidden rounded-xl bg-popover py-2.5 pr-2.5 pl-4 text-[13.5px] shadow-[0_18px_48px_-18px_var(--shadow),0_0_0_1px_var(--line)]"
+              className="pointer-events-auto relative flex w-full max-w-[460px] items-center gap-3 overflow-hidden rounded-xl bg-popover py-2.5 pr-2.5 pl-4 text-body-sm shadow-[0_18px_48px_-18px_var(--shadow),0_0_0_1px_var(--line)]"
               data-icon-trigger
             >
               <AnimatedIcon

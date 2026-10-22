@@ -172,7 +172,7 @@ function HelpBody({
       <div
         id={connect.helpId}
         role="status"
-        className="min-w-0 flex-1 text-[13px] text-muted-foreground max-md:basis-full"
+        className="min-w-0 flex-1 text-body-sm text-muted-foreground max-md:basis-full"
       >
         {connect.help === 'connect' ? (
           <span className="text-foreground">{t('connect.opening')} </span>

@@ -143,7 +143,7 @@ export function ComponentGallery({ labels }: { labels: GalleryLabels }) {
 
       <Block title={labels.select.title}>
         <div className="grid w-full max-w-64 gap-1.5">
-          <label htmlFor="galeria-modo" className="text-[12.5px] font-semibold">
+          <label htmlFor="galeria-modo" className="text-body-sm font-semibold">
             {labels.select.label}
           </label>
           <SimpleSelect
@@ -158,7 +158,7 @@ export function ComponentGallery({ labels }: { labels: GalleryLabels }) {
 
       <Block title={labels.combobox.title}>
         <div className="grid w-full max-w-64 gap-1.5">
-          <label htmlFor="galeria-arma" className="text-[12.5px] font-semibold">
+          <label htmlFor="galeria-arma" className="text-body-sm font-semibold">
             {labels.combobox.label}
           </label>
           <Combobox

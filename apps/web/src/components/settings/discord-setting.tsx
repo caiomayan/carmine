@@ -114,11 +114,11 @@ export function DiscordSetting() {
     <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="discord-setting">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="grid min-w-0 gap-0.5">
-          <h3 className="flex items-center gap-2 text-[14px] font-semibold">
+          <h3 className="flex items-center gap-2 text-body font-semibold">
             <BrandIcon icon={siDiscord} size={15} />
             {t('title')}
           </h3>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             {status?.link ? t('linked', { username: status.link.username }) : t('description')}
           </p>
         </div>
@@ -162,7 +162,7 @@ export function DiscordSetting() {
 
       <div aria-live="polite">
         {notice?.tone === 'ok' ? (
-          <p className="text-[13px]" data-testid="discord-notice">
+          <p className="text-body-sm" data-testid="discord-notice">
             {t(`results.${notice.text}`)}
           </p>
         ) : null}

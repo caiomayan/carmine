@@ -83,8 +83,7 @@ export function ServerCard({
       data-map={server.map ?? ''}
       style={{ '--i': index } as CSSProperties}
       className={cn(
-        'group/card relative isolate flex min-h-[264px] enter-stagger flex-col overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-line ring-inset',
-        'transition-shadow duration-(--dur-slow) ease-soft hover:ring-line-strong has-focus-visible:ring-line-strong',
+        'group/card relative isolate flex min-h-[264px] enter-stagger flex-col overflow-hidden rounded-2xl bg-surface-2',
         solo && 'md:min-h-[320px]',
       )}
     >
@@ -95,8 +94,8 @@ export function ServerCard({
       />
 
       <div className="flex items-start justify-between gap-3 p-4 pb-0 md:p-5 md:pb-0">
-        <span className="chip-solid label-caps text-[9.5px]">{t(`modes.${server.mode}`)}</span>
-        <span className="chip-solid inline-flex items-center gap-2 text-[12px] font-medium">
+        <span className="chip-solid label-caps text-[11px]">{t(`modes.${server.mode}`)}</span>
+        <span className="chip-solid inline-flex items-center gap-2 text-caption font-medium">
           <StatusDot tone={STATE_TONE[server.state]} pulse={server.state === 'online'} />
           {t(`states.${server.state}`)}
         </span>
@@ -112,7 +111,7 @@ export function ServerCard({
           <h3 className={cn('text-[19px] leading-tight font-semibold', solo && 'md:text-[24px]')}>
             {serverLabel(server)}
           </h3>
-          <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-(--on-map-muted)">
+          <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-(--on-map-muted)">
             {mapName ? (
               <span data-testid="server-map" className="font-medium text-foreground">
                 {mapName}
@@ -142,12 +141,12 @@ export function ServerCard({
             >
               <LiveCount value={server.players} className="font-semibold" />
               <span className="text-(--on-map-muted)">/{server.maxPlayers}</span>
-              <span className="pl-1.5 text-[12.5px] text-(--on-map-muted)">
+              <span className="pl-1.5 text-body-sm text-(--on-map-muted)">
                 {t('card.playersUnit')}
               </span>
             </span>
             {full ? (
-              <span className="text-right text-[12px] whitespace-nowrap text-(--on-map-muted)">
+              <span className="text-right text-caption whitespace-nowrap text-(--on-map-muted)">
                 {t('card.fullNote')}
               </span>
             ) : null}
@@ -204,7 +203,7 @@ function FriendsHere({ friends, server }: { friends: PlayingFriend[]; server: Li
           </li>
         ) : null}
       </ul>
-      <span className="min-w-0 truncate text-[12.5px] text-foreground">
+      <span className="min-w-0 truncate text-body-sm text-foreground">
         {t('friendsHere', { name: first.displayName, others: friends.length - 1 })}
       </span>
     </div>

@@ -46,8 +46,8 @@ function Block({
   return (
     <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid={testId}>
       <div className="grid gap-0.5">
-        <h3 className="text-[14px] font-semibold">{title}</h3>
-        <p className="max-w-[60ch] text-[13px] text-muted-foreground">{body}</p>
+        <h3 className="text-body font-semibold">{title}</h3>
+        <p className="max-w-[60ch] text-body-sm text-muted-foreground">{body}</p>
       </div>
       <div>
         <Button asChild variant="ghost" size="sm">

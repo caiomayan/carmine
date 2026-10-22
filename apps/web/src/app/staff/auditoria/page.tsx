@@ -46,7 +46,7 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
         <h2 id="log" className="text-lg font-semibold">
           {t('title')}
         </h2>
-        <p className="text-[13px] text-muted-foreground">{t('subtitle')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
       <form
         action="/staff/auditoria"
@@ -96,7 +96,7 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
             className="tabular-nums"
           />
         </Field>
-        <Button type="submit" variant="ghost" className="bg-surface-2 hover:bg-line">
+        <Button type="submit" variant="ghost">
           {t('apply')}
         </Button>
       </form>

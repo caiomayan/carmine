@@ -70,7 +70,7 @@ function SheetContent({
       <SheetOverlay />
       <SheetContentPrimitive
         className={cn(
-          'bg-popover text-popover-foreground fixed z-50 flex flex-col gap-4 shadow-[0_24px_64px_-24px_var(--shadow),0_0_0_1px_var(--line)]',
+          'bg-popover text-popover-foreground fixed z-50 flex flex-col gap-4 shadow-(--shadow-overlay)',
           side === 'right' && 'h-full w-[min(360px,100%-48px)]',
           side === 'left' && 'h-full w-[min(360px,100%-48px)]',
           side === 'top' && 'w-full h-[min(360px,100%-48px)]',
@@ -82,7 +82,7 @@ function SheetContent({
       >
         {children}
         {showCloseButton && (
-          <SheetClose className="absolute top-3 right-3 grid size-9 place-items-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0">
+          <SheetClose className="absolute top-3 right-3 grid size-(--tap) place-items-center rounded-md text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0">
             <XIcon />
             <span className="sr-only">{closeLabel}</span>
           </SheetClose>

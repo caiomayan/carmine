@@ -234,7 +234,7 @@ export function ItemViewer({
           data-testid="viewer-fallback"
           data-reason={reason}
           data-icon-trigger
-          className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-background/85 px-3 py-2 text-[12.5px] animate-fade-up"
+          className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-background/85 px-3 py-2 text-body-sm animate-fade-up"
         >
           <AnimatedIcon icon={HistoryIcon} size={14} className="text-status-info" />
           <span className="min-w-0 flex-1">{t(`reasons.${reason}`)}</span>

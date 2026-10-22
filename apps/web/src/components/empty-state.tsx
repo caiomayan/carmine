@@ -31,7 +31,7 @@ export function EmptyState({
         <AnimatedIcon icon={icon} size={20} />
       </span>
       <p className="text-md font-semibold">{title}</p>
-      <p className="max-w-[42ch] text-[13.5px] text-muted-foreground">{body}</p>
+      <p className="max-w-[42ch] text-body-sm text-muted-foreground">{body}</p>
       {action ? <div className="mt-3">{action}</div> : null}
     </div>
   );

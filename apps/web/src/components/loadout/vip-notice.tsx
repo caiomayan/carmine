@@ -20,7 +20,7 @@ export async function VipNotice({ vip, className }: { vip: VipStatus; className?
       data-testid="vip-notice"
       data-notice={notice}
       className={cn(
-        'flex max-w-[80ch] animate-fade-up items-start gap-2.5 rounded-lg bg-surface px-3 py-2 text-[12.5px] leading-[1.5]',
+        'flex max-w-[80ch] animate-fade-up items-start gap-2.5 rounded-lg bg-surface px-3 py-2 text-body-sm leading-[1.5]',
         className,
       )}
     >

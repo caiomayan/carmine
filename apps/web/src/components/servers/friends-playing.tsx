@@ -78,7 +78,7 @@ export function FriendsPlaying({
           {t('title')}
         </h2>
         {playing.length > 0 ? (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-surface-2 px-1.5 py-[3px] label-caps text-[9.5px] text-foreground">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-sm bg-surface-2 px-1.5 py-[3px] label-caps text-[11px] text-foreground">
             <StatusDot tone="online" />
             {t('count', { count: playing.length })}
           </span>
@@ -136,7 +136,7 @@ export function FriendsPlaying({
           ) : null}
           {view.status === 'private' ? <PrivateList found /> : null}
           {'stale' in view && view.stale ? (
-            <p role="status" className="px-3 pt-1 pb-2.5 text-[12px] text-muted-foreground">
+            <p role="status" className="px-3 pt-1 pb-2.5 text-caption text-muted-foreground">
               {t('unavailable.stale')}
             </p>
           ) : null}
@@ -173,11 +173,11 @@ function FriendRow({ entry, index }: { entry: FriendOnServer; index: number }) {
         <Link
           href={`/${friend.publicId}`}
           aria-label={t('profile', { name: friend.displayName })}
-          className="w-fit max-w-full truncate rounded-xs text-[13.5px] font-semibold underline-offset-4 outline-offset-4 after:absolute after:inset-0 after:rounded-lg hover:underline"
+          className="w-fit max-w-full truncate rounded-xs text-body-sm font-semibold underline-offset-4 outline-offset-4 after:absolute after:inset-0 after:rounded-lg hover:underline"
         >
           {friend.displayName}
         </Link>
-        <span className="truncate text-[12px] text-muted-foreground">{where}</span>
+        <span className="truncate text-caption text-muted-foreground">{where}</span>
       </span>
       {joinable && server ? (
         <>
@@ -232,8 +232,8 @@ function Notice({
       <span className="mb-1.5 grid size-9 place-items-center rounded-full bg-surface-2 text-foreground">
         <AnimatedIcon icon={icon} size={17} />
       </span>
-      <p className="text-[14px] font-semibold">{title}</p>
-      <p className="text-[13px] leading-[1.5] text-muted-foreground">{body}</p>
+      <p className="text-body font-semibold">{title}</p>
+      <p className="text-body-sm leading-[1.5] text-muted-foreground">{body}</p>
       {children ? <div className="pt-1.5">{children}</div> : null}
     </div>
   );
@@ -248,7 +248,7 @@ function PrivateList({ found }: { found: boolean }) {
   return found ? (
     <div
       data-testid="friends-private-hint"
-      className="grid gap-1 px-3 pt-1.5 pb-2.5 text-[12px] leading-[1.5] text-muted-foreground"
+      className="grid gap-1 px-3 pt-1.5 pb-2.5 text-caption leading-[1.5] text-muted-foreground"
     >
       <p>{t('foundBody')}</p>
       <PrivacyHowTo className="-ml-3" />
@@ -296,7 +296,7 @@ function PrivacyHowTo({ className }: { className?: string }) {
       <AnimatePresence initial={false}>
         {open ? (
           <m.div key="how" id={panelId} {...reveal} className="overflow-hidden">
-            <div className="grid gap-2.5 pt-2 text-[13px] leading-[1.5] text-foreground">
+            <div className="grid gap-2.5 pt-2 text-body-sm leading-[1.5] text-foreground">
               <ol className="grid list-decimal gap-1 pl-5 marker:text-muted-foreground">
                 <li>{t('step1')}</li>
                 <li>{t('step2')}</li>

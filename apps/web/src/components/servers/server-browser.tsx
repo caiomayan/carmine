@@ -75,7 +75,7 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
               ))}
             </TabsList>
           </div>
-          <p className="mb-3 hidden rounded-md bg-surface px-3 py-2.5 text-[13px] text-muted-foreground pointer-coarse:block">
+          <p className="mb-3 hidden rounded-md bg-surface px-3 py-2.5 text-body-sm text-muted-foreground pointer-coarse:block">
             {t.rich('connect.mobileHint', { cmd })}
           </p>
           {state.list === null ? (
@@ -146,7 +146,7 @@ function ServersOfMode({
       {layout.live.length === 0 ? (
         <p
           role="status"
-          className="rounded-xl bg-surface px-4 py-5 text-[14px] text-muted-foreground"
+          className="rounded-xl bg-surface px-4 py-5 text-body text-muted-foreground"
         >
           {t('empty.allOffline')}
         </p>
@@ -217,9 +217,9 @@ function LiveStatus({ state }: { state: LiveState }) {
     <div
       data-testid="live-status"
       data-connection={connection}
-      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted-foreground"
     >
-      <span className="inline-flex items-center gap-2 label-caps text-[10.5px] text-foreground">
+      <span className="inline-flex items-center gap-2 label-caps text-[11px] text-foreground">
         <StatusDot
           tone={connection === 'live' ? 'online' : connection === 'lost' ? 'warn' : 'offline'}
           pulse={connection === 'live'}

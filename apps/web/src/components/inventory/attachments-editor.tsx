@@ -80,7 +80,7 @@ export function StickersEditor({
         <h3 id="stickers-title" className="label-caps text-[11px]">
           {t('stickers')}
         </h3>
-        <span className="text-[12.5px] text-muted-foreground tabular-nums">
+        <span className="text-body-sm text-muted-foreground tabular-nums">
           {t('stickersCount', { count: stickers.length, max: MAX_STICKERS })}
         </span>
       </div>
@@ -117,7 +117,7 @@ export function StickersEditor({
       <Button
         type="button"
         variant="ghost"
-        className="justify-self-start bg-surface-2/60"
+        className="justify-self-start"
         disabled={full}
         onClick={() => setPicking(true)}
         data-testid="add-sticker"
@@ -175,7 +175,7 @@ function StickerRow({
             <img src={sticker.image} alt="" width={40} height={30} className="w-9 object-contain" />
           ) : null}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium" title={sticker.name}>
+        <span className="min-w-0 flex-1 truncate text-body-sm font-medium" title={sticker.name}>
           {name}
         </span>
         {selected ? <OnViewerTag testId={`on-viewer-sticker-${index}`} /> : null}
@@ -198,7 +198,7 @@ function StickerRow({
             onValueChange={(next) => onChange({ schema: Number(next) })}
             aria-invalid={!!error || undefined}
             aria-describedby={describedBy(slotId, { error })}
-            className="bg-surface-2 text-[14px] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] hover:bg-line"
+            className="bg-surface-2 text-body aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] hover:bg-line"
             options={Array.from({ length: slots }, (_, slot) => ({
               value: String(slot),
               label: t('slotN', { n: slot + 1 }),
@@ -299,7 +299,7 @@ function SliderField({
         <span aria-hidden="true" className="label-caps text-[11px]">
           {label}
         </span>
-        <span aria-hidden="true" className="text-[12.5px] font-semibold tabular-nums">
+        <span aria-hidden="true" className="text-body-sm font-semibold tabular-nums">
           {display}
         </span>
       </div>
@@ -357,7 +357,7 @@ function FineAdjust({ children }: { children: React.ReactNode }) {
   const t = useTranslations('itemEditor');
   return (
     <details className="group/fine">
-      <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 -ml-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-hover hover:text-foreground max-md:min-h-(--tap)">
+      <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 -ml-2 text-body-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-hover hover:text-foreground max-md:min-h-(--tap)">
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
@@ -449,7 +449,7 @@ export function CharmEditor({
                 />
               ) : null}
             </span>
-            <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium" title={charm.name}>
+            <span className="min-w-0 flex-1 truncate text-body-sm font-medium" title={charm.name}>
               {charm.name.replace(/^Chaveiro \| /, '')}
             </span>
             {selected ? <OnViewerTag testId="on-viewer-charm" /> : null}
@@ -494,7 +494,7 @@ export function CharmEditor({
                         : DEFAULT_PLACEMENT
                   }
                   onValueChange={place}
-                  className="bg-surface-2 text-[14px] hover:bg-line"
+                  className="bg-surface-2 text-body hover:bg-line"
                   data-testid="charm-placement"
                   options={[
                     { value: DEFAULT_PLACEMENT, label: t('positionDefault') },
@@ -520,7 +520,7 @@ export function CharmEditor({
           {bounds && placement ? (
             <FineAdjust>
               {placement.kind === 'default' ? (
-                <p className="pt-2 text-[12.5px] text-muted-foreground">{t('charmFineHint')}</p>
+                <p className="pt-2 text-body-sm text-muted-foreground">{t('charmFineHint')}</p>
               ) : (
                 <div className="grid grid-cols-3 gap-3 pt-2 max-md:grid-cols-1">
                   {(['x', 'y', 'z'] as const).map((axis) => {
@@ -556,7 +556,7 @@ export function CharmEditor({
         <Button
           type="button"
           variant="ghost"
-          className={cn('justify-self-start bg-surface-2/60')}
+          className={cn('justify-self-start')}
           onClick={() => setPicking(true)}
           data-testid="add-charm"
         >

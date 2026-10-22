@@ -127,7 +127,7 @@ export function AttachmentPicker({
               autoComplete="off"
               spellCheck={false}
               data-testid="picker-search"
-              className="min-h-(--tap) w-full rounded-md bg-surface-2 pr-3 pl-9 text-[14px] placeholder:text-muted-foreground"
+              className="min-h-(--tap) w-full rounded-md bg-surface-2 pr-3 pl-9 text-body placeholder:text-muted-foreground"
             />
           </div>
           {type === 'sticker' && page && page.facets.categories.length > 0 ? (
@@ -140,7 +140,7 @@ export function AttachmentPicker({
                 value={category}
                 onValueChange={setCategory}
                 emptyLabel={t('allCategories')}
-                triggerClassName="bg-surface-2 text-[14px] hover:bg-line"
+                triggerClassName="bg-surface-2 text-body hover:bg-line"
                 options={page.facets.categories}
               />
             </div>
@@ -150,7 +150,7 @@ export function AttachmentPicker({
         <div className="-mx-1 min-h-48 overflow-y-auto overscroll-contain px-1 pb-1">
           {status === 'failed' ? (
             <div role="alert" className="grid justify-items-center gap-3 py-10 text-center">
-              <p className="text-[13.5px]">{t('failed')}</p>
+              <p className="text-body-sm">{t('failed')}</p>
               <Button variant="ghost" size="sm" onClick={() => setAttempt((n) => n + 1)}>
                 {t('retry')}
               </Button>
@@ -162,7 +162,7 @@ export function AttachmentPicker({
               ))}
             </ul>
           ) : items.length === 0 ? (
-            <p className="py-10 text-center text-[13.5px] text-muted-foreground">{t('empty')}</p>
+            <p className="py-10 text-center text-body-sm text-muted-foreground">{t('empty')}</p>
           ) : (
             <>
               <ul className="grid grid-cols-4 gap-2 max-md:grid-cols-3">

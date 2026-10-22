@@ -76,7 +76,7 @@ function CommandItem({ className, ...props }: ComponentProps<typeof CommandPrimi
     <CommandPrimitive.Item
       data-slot="command-item"
       className={cn(
-        'relative flex min-h-9 cursor-default items-center gap-2 rounded-md px-2.5 py-1.5 text-sm outline-hidden select-none max-md:min-h-(--tap)',
+        'relative flex min-h-9 cursor-default items-center gap-2 rounded-md px-2.5 py-1.5 text-sm outline-hidden select-none transition-colors duration-(--dur-instant) ease-std motion-reduce:transition-none max-md:min-h-(--tap)',
         'data-[selected=true]:bg-accent data-[disabled=true]:pointer-events-none data-[disabled=true]:text-faint',
         className,
       )}

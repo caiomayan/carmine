@@ -61,7 +61,7 @@ export default async function StaffAccountsPage({ searchParams }: { searchParams
               aria-describedby="staff-q-hint"
               aria-invalid={tooShort || undefined}
               data-testid="staff-search"
-              className="min-h-11 w-full rounded-lg bg-surface pr-4 pl-10 text-[14.5px] transition-colors duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-surface-2 focus-visible:bg-surface-2"
+              className="min-h-11 w-full rounded-lg bg-surface pr-4 pl-10 text-body transition-colors duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-surface-2 focus-visible:bg-surface-2"
             />
           </div>
           <Button type="submit" className="min-h-11">
@@ -72,7 +72,7 @@ export default async function StaffAccountsPage({ searchParams }: { searchParams
           {tooShort ? (
             <FieldError>{t('search.tooShort', { min: STAFF_SEARCH_MIN_LENGTH })}</FieldError>
           ) : (
-            <p className="text-[12.5px] text-muted-foreground">
+            <p className="text-body-sm text-muted-foreground">
               {t('search.hint', { min: STAFF_SEARCH_MIN_LENGTH, limit: STAFF_SEARCH_LIMIT })}
             </p>
           )}
@@ -141,19 +141,19 @@ async function AccountList({ accounts }: { accounts: StaffAccountSummary[] }) {
             <span className="grid min-w-0 gap-0.5">
               <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="truncate font-semibold">{account.displayName}</span>
-                <span className="text-[12.5px] text-muted-foreground tabular-nums">
+                <span className="text-body-sm text-muted-foreground tabular-nums">
                   #{account.publicId}
                 </span>
                 {account.staffRole ? <RoleTag role={account.staffRole} /> : null}
                 <SanctionTypeTags types={account.activeSanctions} />
               </span>
-              <span className="truncate text-[12.5px] text-muted-foreground tabular-nums">
+              <span className="truncate text-body-sm text-muted-foreground tabular-nums">
                 {account.steamId}
                 {account.steamName !== account.displayName ? ` · ${account.steamName}` : ''}
                 {account.claimed ? '' : ` · ${t('search.unclaimed')}`}
               </span>
             </span>
-            <span className="text-right text-[12.5px] text-muted-foreground max-md:hidden">
+            <span className="text-right text-body-sm text-muted-foreground max-md:hidden">
               {account.lastConnectedAt
                 ? t('search.lastSeen', {
                     ago: format.relativeTime(new Date(account.lastConnectedAt), now),
@@ -178,12 +178,12 @@ async function MemberList({ members }: { members: StaffMember[] }) {
             <Avatar src={member.avatarUrl} name={member.displayName} size={32} />
             <span className="flex min-w-0 items-center gap-2">
               <span className="truncate font-semibold">{member.displayName}</span>
-              <span className="text-[12.5px] text-muted-foreground tabular-nums">
+              <span className="text-body-sm text-muted-foreground tabular-nums">
                 #{member.publicId}
               </span>
               <RoleTag role={member.role} />
             </span>
-            <span className="text-[12.5px] text-muted-foreground max-md:hidden">
+            <span className="text-body-sm text-muted-foreground max-md:hidden">
               {t('members.since', {
                 date: format.dateTime(new Date(member.since), { dateStyle: 'medium' }),
               })}
