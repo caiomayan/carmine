@@ -14,7 +14,7 @@ type FooterLink = { label: string; href: Route } | { label: string; href: string
 /** Link do rodapé: texto pleno e um sublinhado que cresce da esquerda no hover e no foco. */
 function FooterLinkItem({ link }: { link: FooterLink }) {
   const className =
-    'group inline-flex min-h-(--tap) items-center rounded-xs text-[13.5px] text-foreground';
+    'group inline-flex min-h-(--tap) items-center rounded-xs text-body-sm text-foreground';
   const label = (
     <span className="bg-[linear-gradient(currentColor,currentColor)] bg-[length:0%_1px] bg-[position:0_100%] bg-no-repeat pb-px transition-[background-size] duration-(--dur-base) ease-out group-hover:bg-[length:100%_1px] group-focus-visible:bg-[length:100%_1px] motion-reduce:transition-none">
       {link.label}

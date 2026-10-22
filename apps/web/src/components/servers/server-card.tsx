@@ -99,7 +99,7 @@ export function ServerCard({
       </div>
 
       <div className="flex items-start justify-between gap-3 p-4 pb-0 md:p-5 md:pb-0">
-        <span className="chip-solid label-caps text-[11px]">{t(`modes.${server.mode}`)}</span>
+        <span className="chip-solid label-caps">{t(`modes.${server.mode}`)}</span>
         <span className="chip-solid inline-flex items-center gap-2 text-caption font-medium">
           <StatusDot tone={STATE_TONE[server.state]} pulse={server.state === 'online'} />
           {t(`states.${server.state}`)}

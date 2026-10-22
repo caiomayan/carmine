@@ -260,7 +260,7 @@ export function LoadoutScreen({
                 className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
               >
                 {t(`groups.${column.id}`)}
-                <span className="text-[11px] font-medium text-muted-foreground">
+                <span className="text-caption font-medium text-muted-foreground">
                   {column.slots.length}
                 </span>
               </button>

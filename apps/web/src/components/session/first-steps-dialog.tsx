@@ -44,9 +44,7 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
       >
         <div className="grid max-w-[60ch] gap-1.5 pr-8">
           <DialogTitle>{labels.title.replace('{name}', account?.displayName ?? '')}</DialogTitle>
-          <DialogDescription className="text-[13.5px] leading-[1.55]">
-            {labels.intro}
-          </DialogDescription>
+          <DialogDescription className="text-body-sm">{labels.intro}</DialogDescription>
         </div>
 
         {/* Três passos numerados, de uma linha cada: a ordem importa (adicionar, equipar, jogar). */}

@@ -15,10 +15,7 @@ export function SectionTitle({
 }) {
   return (
     <div className="flex items-center justify-between gap-4 pb-3">
-      <h2
-        id={id}
-        className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
-      >
+      <h2 id={id} className="inline-flex items-center gap-2.5 label-caps text-foreground">
         <span aria-hidden="true" className="size-1.5 rotate-45 bg-carmine" />
         {children}
       </h2>
