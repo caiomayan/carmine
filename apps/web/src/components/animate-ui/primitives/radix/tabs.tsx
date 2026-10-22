@@ -15,6 +15,7 @@ import {
 } from '@/components/animate-ui/primitives/effects/highlight';
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
+import { enterTransition, heightTransition } from '@/lib/motion';
 
 type TabsContextType = {
   value: string | undefined;
@@ -84,7 +85,7 @@ type TabsContentProps = React.ComponentProps<typeof TabsPrimitive.Content> & HTM
 function TabsContent({
   value,
   forceMount,
-  transition = { duration: 0.5, ease: 'easeInOut' },
+  transition = enterTransition(),
   ...props
 }: TabsContentProps) {
   return (
@@ -119,11 +120,7 @@ type TabsContentsLayoutProps = Omit<HTMLMotionProps<'div'>, 'transition'> & {
 
 type TabsContentsProps = TabsContentsAutoProps | TabsContentsLayoutProps;
 
-const defaultTransition: Transition = {
-  type: 'spring',
-  stiffness: 200,
-  damping: 30,
-};
+const defaultTransition: Transition = heightTransition;
 
 function isAutoMode(props: TabsContentsProps): props is TabsContentsAutoProps {
   return !('mode' in props) || props.mode === 'auto-height';

@@ -13,6 +13,10 @@ import {
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { useDataState } from '@/hooks/use-data-state';
 import { getStrictContext } from '@/lib/get-strict-context';
+import { floatingMotion } from '@/lib/motion';
+
+/** Menus abrem do gatilho: só opacidade e uma escala pequena, sem deslocamento. */
+const menuMotion = floatingMotion({ y: 0, scale: 0.96 });
 
 type DropdownMenuContextType = {
   isOpen: boolean;
@@ -142,7 +146,7 @@ function DropdownMenuSubContent({
   arrowPadding,
   sticky,
   hideWhenDetached,
-  transition = { duration: 0.2 },
+  transition,
   style,
   container,
   ...props
@@ -173,9 +177,9 @@ function DropdownMenuSubContent({
             <m.div
               key="dropdown-menu-sub-content"
               data-slot="dropdown-menu-sub-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={menuMotion.initial}
+              animate={menuMotion.animate}
+              exit={menuMotion.exit}
               transition={transition}
               style={{ willChange: 'opacity, transform', ...style }}
               {...props}
@@ -233,7 +237,7 @@ function DropdownMenuContent({
   arrowPadding,
   sticky,
   hideWhenDetached,
-  transition = { duration: 0.2 },
+  transition,
   style,
   container,
   ...props
@@ -266,9 +270,9 @@ function DropdownMenuContent({
             <m.div
               key="dropdown-menu-content"
               data-slot="dropdown-menu-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              initial={menuMotion.initial}
+              animate={menuMotion.animate}
+              exit={menuMotion.exit}
               transition={transition}
               style={{ willChange: 'opacity, transform', ...style }}
               {...props}

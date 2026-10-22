@@ -5,6 +5,7 @@ import { Dialog as SheetPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
+import { DURATION, enterTransition, exitTransition } from '@/lib/motion';
 
 type SheetContextType = {
   isOpen: boolean;
@@ -59,19 +60,16 @@ type SheetOverlayProps = Omit<
 > &
   HTMLMotionProps<'div'>;
 
-function SheetOverlay({
-  transition = { duration: 0.2, ease: 'easeInOut' },
-  ...props
-}: SheetOverlayProps) {
+/** Como o fundo do Dialog: entra em `base`, sai em `fast`. */
+function SheetOverlay(props: SheetOverlayProps) {
   return (
     <SheetPrimitive.Overlay asChild forceMount>
       <m.div
         key="sheet-overlay"
         data-slot="sheet-overlay"
         initial={{ opacity: 0, filter: 'blur(4px)' }}
-        animate={{ opacity: 1, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, filter: 'blur(4px)' }}
-        transition={transition}
+        animate={{ opacity: 1, filter: 'blur(0px)', transition: enterTransition() }}
+        exit={{ opacity: 0, filter: 'blur(4px)', transition: exitTransition() }}
         {...props}
       />
     </SheetPrimitive.Overlay>
@@ -85,14 +83,15 @@ type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Content> &
     side?: Side;
   };
 
+/** Desliza da borda: chega em `slow` com a curva de chegada e sai em `base`, sem mola. */
 function SheetContent({
   side = 'right',
-  transition = { type: 'spring', stiffness: 150, damping: 22 },
+  transition,
   style,
   children,
   ...props
 }: SheetContentProps) {
-  const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+  const arrived = side === 'left' || side === 'right' ? { x: 0, opacity: 1 } : { y: 0, opacity: 1 };
 
   const offscreen: Record<Side, { x?: string; y?: string; opacity: number }> = {
     right: { x: '100%', opacity: 0 },
@@ -115,14 +114,13 @@ function SheetContent({
         data-slot="sheet-content"
         data-side={side}
         initial={offscreen[side]}
-        animate={{ [axis]: 0, opacity: 1 }}
-        exit={offscreen[side]}
+        animate={{ ...arrived, transition: transition ?? enterTransition(DURATION.slow) }}
+        exit={{ ...offscreen[side], transition: transition ?? exitTransition(DURATION.base) }}
         style={{
           position: 'fixed',
           ...positionStyle[side],
           ...style,
         }}
-        transition={transition}
       >
         {children}
       </m.div>

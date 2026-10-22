@@ -45,7 +45,7 @@ export function TeamDots({
               <span
                 aria-hidden="true"
                 className={cn(
-                  'rounded-full transition-[transform,opacity,background-color] duration-(--dur-base) ease-(--ease-out)',
+                  'rounded-full transition-[scale,opacity,background-color] duration-(--dur-base) ease-(--ease-out)',
                   // A bolinha entra crescendo quando o Item passa a estar equipado nesse lado.
                   'starting:scale-50 starting:opacity-0 motion-reduce:starting:scale-100',
                   SIZE[size],

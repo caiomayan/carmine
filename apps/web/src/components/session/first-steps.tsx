@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, m, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, m } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
@@ -8,6 +8,7 @@ import { XIcon } from '@/components/icons/animated/x';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { showsFirstStepsStrip } from '@/lib/first-steps';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { useSession } from './session-provider';
 
 const FirstStepsDialog = dynamic(
@@ -30,8 +31,6 @@ export type FirstStepsLabels = {
   reopenHint: string;
   steps: { what: Step; steam: Step; equip: Step; ingame: Step };
 };
-
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 /**
  * Primeiros passos (S03): na sessão do primeiro login, uma faixa de uma linha no alto da home e do
@@ -57,9 +56,7 @@ export function FirstSteps({ labels }: { labels: FirstStepsLabels }) {
 function FirstStepsStrip({ labels }: { labels: FirstStepsLabels }) {
   const { firstSteps, account } = useSession();
   const pathname = usePathname();
-  // Movimento reduzido: sem encolher a altura (o conteúdo abaixo pularia); só um fade curto.
-  const reduce = useReducedMotion();
-  const hidden = reduce ? { opacity: 0 } : { height: 0, opacity: 0 };
+  const reveal = useRevealMotion();
   const visible = Boolean(
     firstSteps.strip && account && showsFirstStepsStrip(pathname, account.publicId),
   );
@@ -72,14 +69,7 @@ function FirstStepsStrip({ labels }: { labels: FirstStepsLabels }) {
   return (
     <AnimatePresence initial={false}>
       {visible ? (
-        <m.div
-          key="first-steps-strip"
-          initial={hidden}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={hidden}
-          transition={{ duration: reduce ? 0.16 : 0.36, ease: EASE_OUT }}
-          className="overflow-hidden"
-        >
+        <m.div key="first-steps-strip" {...reveal} className="overflow-hidden">
           <section
             aria-label={labels.title.replace('{name}', account?.displayName ?? '')}
             data-testid="first-steps-strip"

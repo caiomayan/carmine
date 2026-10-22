@@ -15,6 +15,7 @@ import { XIcon } from '@/components/icons/animated/x';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { serverFullLabel, steamConnectUrl } from '@/lib/live-servers';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import { type CopyStatus, useCopy } from './use-copy';
 
@@ -136,18 +137,11 @@ export function ConnectHelp({
   showFullHint: boolean;
   className?: string;
 }) {
+  const reveal = useRevealMotion();
   return (
     <AnimatePresence initial={false}>
       {connect.help !== 'closed' ? (
-        <m.div
-          key="help"
-          data-help
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-          className="overflow-hidden"
-        >
+        <m.div key="help" data-help {...reveal} className="overflow-hidden">
           <HelpBody
             server={server}
             connect={connect}

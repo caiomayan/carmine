@@ -7,19 +7,13 @@ import { CheckIcon } from '@/components/icons/animated/check';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { Field, FieldError, Textarea } from './fields';
 import type { StaffResult } from './use-staff-request';
 
 /** Limites do motivo (`staffReasonSchema`): vai para o log de auditoria. */
 export const REASON_MIN = 3;
 export const REASON_MAX = 500;
-
-const reveal = {
-  initial: { height: 0, opacity: 0 },
-  animate: { height: 'auto', opacity: 1 },
-  exit: { height: 0, opacity: 0 },
-  transition: { duration: 0.24, ease: [0.16, 1, 0.3, 1] as const },
-};
 
 /** O motivo de toda ação da Staff, com contador e a dica de que é interno. */
 export function ReasonField({
@@ -96,6 +90,7 @@ export function ActionForm({
 }) {
   const t = useTranslations('staff');
   const id = useId();
+  const reveal = useRevealMotion();
   const [open, setOpen] = useState(!collapsed);
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string | null>(null);
