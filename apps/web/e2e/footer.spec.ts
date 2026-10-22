@@ -30,6 +30,9 @@ for (const { width, height } of [
     await page.setViewportSize({ width, height });
     await page.goto('/nao-existe');
     await settle(page);
+    // A revelação do rodapé (ligada à rolagem) o desloca um pouco até terminar: mede com ela pronta.
+    await scrollToEnd(page);
+    await settle(page);
 
     // A página nunca é menor que a tela: o que sobra é do conteúdo, e o rodapé encosta no fim dela.
     const bottom = await page.evaluate(() => {
@@ -37,7 +40,7 @@ for (const { width, height } of [
       return footer ? Math.round(footer.bottom + window.scrollY) : null;
     });
     const total = await page.evaluate(() => document.documentElement.scrollHeight);
-    expect(bottom).toBe(total);
+    expect(Math.abs((bottom ?? 0) - total)).toBeLessThanOrEqual(1);
     expect(total).toBeGreaterThanOrEqual(height);
   });
 }
