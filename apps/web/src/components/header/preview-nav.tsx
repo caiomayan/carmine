@@ -117,6 +117,14 @@ export function PreviewNav({
                         setValue('');
                         router.push(item.href);
                       }}
+                      // Seta para baixo abre o painel (com ele aberto, a seta leva o foco para dentro: o
+                      // Radix cuida); Enter, que é um clique no link, navega; Esc fecha.
+                      onKeyDown={(event) => {
+                        if (event.key === 'ArrowDown' && panel && value !== panel) {
+                          event.preventDefault();
+                          setValue(panel);
+                        }
+                      }}
                     >
                       <Link
                         href={item.href}
@@ -140,6 +148,7 @@ export function PreviewNav({
                     <NavigationMenu.Content
                       className="nav-content absolute top-0 left-0 w-[34rem] max-w-[calc(100vw-2rem)] p-3"
                       data-testid={`panel-${panel}`}
+                      role="group"
                       aria-label={t(`panels.${panel}`)}
                     >
                       <View />
