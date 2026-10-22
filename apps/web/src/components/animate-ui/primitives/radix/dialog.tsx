@@ -6,6 +6,7 @@ import type * as React from 'react';
 
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
+import { dialogMotion, enterTransition, exitTransition } from '@/lib/motion';
 
 type DialogContextType = {
   isOpen: boolean;
@@ -54,48 +55,41 @@ type DialogOverlayProps = Omit<
 > &
   HTMLMotionProps<'div'>;
 
-function DialogOverlay({
-  transition = { duration: 0.2, ease: 'easeInOut' },
-  ...props
-}: DialogOverlayProps) {
+/** O fundo escurece no mesmo tempo do painel: entra em `base`, sai em `fast`. */
+function DialogOverlay(props: DialogOverlayProps) {
   return (
     <DialogPrimitive.Overlay data-slot="dialog-overlay" asChild forceMount>
       <m.div
         key="dialog-overlay"
         initial={{ opacity: 0, filter: 'blur(4px)' }}
-        animate={{ opacity: 1, filter: 'blur(0px)' }}
-        exit={{ opacity: 0, filter: 'blur(4px)' }}
-        transition={transition}
+        animate={{ opacity: 1, filter: 'blur(0px)', transition: enterTransition() }}
+        exit={{ opacity: 0, filter: 'blur(4px)', transition: exitTransition() }}
         {...props}
       />
     </DialogPrimitive.Overlay>
   );
 }
 
-type DialogFlipDirection = 'top' | 'bottom' | 'left' | 'right';
-
 type DialogContentProps = Omit<
   React.ComponentProps<typeof DialogPrimitive.Content>,
   'forceMount' | 'asChild'
 > &
-  HTMLMotionProps<'div'> & {
-    from?: DialogFlipDirection;
-  };
+  HTMLMotionProps<'div'>;
 
+/**
+ * Entra com opacidade, 8 px de baixo para cima e escala de 98% a 100% (`dialogMotion`), em
+ * `--dur-base`; sai em `--dur-fast`. Só `opacity`, `y` e `scale`: com `prefers-reduced-motion` o
+ * Motion tira o deslocamento e a escala e sobra a opacidade (a chave `transform` bruta não era
+ * coberta, e o diálogo ainda girava).
+ */
 function DialogContent({
-  from = 'top',
   onOpenAutoFocus,
   onCloseAutoFocus,
   onEscapeKeyDown,
   onPointerDownOutside,
   onInteractOutside,
-  transition = { type: 'spring', stiffness: 150, damping: 25 },
   ...props
 }: DialogContentProps) {
-  const initialRotation = from === 'bottom' || from === 'left' ? '20deg' : '-20deg';
-  const isVertical = from === 'top' || from === 'bottom';
-  const rotateAxis = isVertical ? 'rotateX' : 'rotateY';
-
   return (
     <DialogPrimitive.Content
       asChild
@@ -109,22 +103,9 @@ function DialogContent({
       <m.div
         key="dialog-content"
         data-slot="dialog-content"
-        initial={{
-          opacity: 0,
-          filter: 'blur(4px)',
-          transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
-        }}
-        animate={{
-          opacity: 1,
-          filter: 'blur(0px)',
-          transform: `perspective(500px) ${rotateAxis}(0deg) scale(1)`,
-        }}
-        exit={{
-          opacity: 0,
-          filter: 'blur(4px)',
-          transform: `perspective(500px) ${rotateAxis}(${initialRotation}) scale(0.8)`,
-        }}
-        transition={transition}
+        initial={dialogMotion.initial}
+        animate={dialogMotion.animate}
+        exit={dialogMotion.exit}
         {...props}
       />
     </DialogPrimitive.Content>
@@ -170,7 +151,6 @@ export {
   type DialogContextType,
   DialogDescription,
   type DialogDescriptionProps,
-  type DialogFlipDirection,
   DialogFooter,
   type DialogFooterProps,
   DialogHeader,

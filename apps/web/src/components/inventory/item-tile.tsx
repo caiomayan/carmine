@@ -122,7 +122,7 @@ export function ItemTile({
       <span className="relative block overflow-hidden rounded-md">
         <ItemArt
           src={image}
-          className="transition-transform duration-500 ease-(--ease-out) group-hover/tile:scale-[1.04] motion-reduce:transform-none motion-reduce:duration-150"
+          className="transition-[scale] duration-(--dur-zoom) ease-(--ease-soft) group-hover/tile:scale-[1.04] motion-reduce:group-hover/tile:scale-100"
         />
         {stickers?.length || charm ? (
           <span
@@ -190,8 +190,9 @@ function AttachmentIcon({
       className={cn(
         'w-auto object-contain drop-shadow-[0_1px_2px_rgb(0_0_0/0.5)]',
         // Entra suave e dá um passo à frente com o cartão; sem movimento, só o fade curto.
-        'transition-[transform,opacity] duration-(--dur-base) ease-(--ease-out) starting:translate-y-1 starting:opacity-0',
-        'group-hover/tile:scale-110 motion-reduce:transform-none motion-reduce:starting:translate-y-0',
+        // `scale` e `translate` são propriedades próprias no Tailwind v4: `transform` não as anima.
+        'transition-[scale,translate,opacity] duration-(--dur-base) ease-(--ease-out) starting:translate-y-1 starting:opacity-0',
+        'group-hover/tile:scale-110 motion-reduce:starting:translate-y-0 motion-reduce:group-hover/tile:scale-100',
         className,
       )}
     />
