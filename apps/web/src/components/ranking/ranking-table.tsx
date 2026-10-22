@@ -107,7 +107,7 @@ async function Row({
   // O fundo vai nas células (a linha não arredonda): hover e "Você" cobrem a linha toda.
   const cell = cn(
     'h-14 px-3 py-2 text-sm tabular-nums transition-colors duration-(--dur-fast) ease-std first:rounded-l-lg last:rounded-r-lg',
-    entry.self ? 'bg-(--fill-active)' : 'group-hover/row:bg-surface',
+    entry.self ? 'bg-(--fill-selected)' : 'group-hover/row:bg-surface',
   );
 
   return (

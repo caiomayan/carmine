@@ -159,7 +159,7 @@ export function ItemTile({
       className={cn(
         'group/tile relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5',
         'transition-[background-color,box-shadow] duration-(--dur-base) ease-std hover:bg-surface-2',
-        selected && 'bg-surface-2 shadow-[inset_0_0_0_1.5px_var(--text)]',
+        selected && 'bg-surface-2 shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
         className,
       )}
     >
