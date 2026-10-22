@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/avatar';
+import { ONE_DECIMAL, TWO_DECIMALS } from '@/lib/profile-stats';
 import { playedParts } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 
@@ -93,11 +94,10 @@ async function Row({
   const format = await getFormatter();
   const { player } = entry;
   const time = playedParts(entry.secondsPlayed);
-  const two = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
   const headshot =
     entry.headshotPercent === null
       ? tp('none')
-      : `${format.number(entry.headshotPercent, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
+      : `${format.number(entry.headshotPercent, ONE_DECIMAL)}%`;
   const played = retake
     ? format.number(entry.roundsPlayed)
     : time.hours > 0
@@ -156,7 +156,7 @@ async function Row({
                   {t('you')}
                 </span>
               ) : null}
-              <span className="truncate md:hidden" data-testid="ranking-row-extra">
+              <span className="min-w-0 truncate md:hidden" data-testid="ranking-row-extra">
                 {t(retake ? 'table.extraRetake' : 'table.extraDeathmatch', {
                   hs: headshot,
                   value: played,
@@ -167,9 +167,9 @@ async function Row({
         </div>
       </th>
       <td className={cn(cell, 'text-right font-semibold')}>
-        {retake ? format.number(entry.score) : format.number(entry.score, two)}
+        {retake ? format.number(entry.score) : format.number(entry.score, TWO_DECIMALS)}
       </td>
-      <td className={cn(cell, 'text-right')}>{format.number(entry.kd, two)}</td>
+      <td className={cn(cell, 'text-right')}>{format.number(entry.kd, TWO_DECIMALS)}</td>
       <td className={cn(cell, 'text-right text-muted-foreground max-md:hidden')}>{headshot}</td>
       <td className={cn(cell, 'text-right text-muted-foreground max-md:hidden')}>{played}</td>
     </tr>

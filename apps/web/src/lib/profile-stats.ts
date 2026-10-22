@@ -20,3 +20,7 @@ export type HighlightKey = (typeof HIGHLIGHT_KEYS)[number];
 export function highlightsOf(total: TotalStats): { key: HighlightKey; value: number | null }[] {
   return HIGHLIGHT_KEYS.map((key) => ({ key, value: total[key] }));
 }
+
+/** Casas decimais dos números das Estatísticas (K/D e KPM: 2; HS% e ADR: 1), iguais no Perfil e no Ranking. */
+export const ONE_DECIMAL = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
+export const TWO_DECIMALS = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
