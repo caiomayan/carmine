@@ -27,5 +27,6 @@ import { NowPlayingController } from './now-playing.controller.js';
       },
     },
   ],
+  exports: [FriendsPlayingFinder],
 })
 export class FriendsModule {}

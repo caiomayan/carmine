@@ -35,5 +35,6 @@ import { WeeklyRanking } from './weekly-ranking.js';
         new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
     },
   ],
+  exports: [WeeklyRanking],
 })
 export class StatsModule {}
