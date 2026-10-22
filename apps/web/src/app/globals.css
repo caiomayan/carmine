@@ -649,7 +649,7 @@
   inset: 0;
   z-index: 10;
   border-radius: inherit;
-  background: var(--fill-active);
+  background: var(--fill-selected);
   pointer-events: none;
   animation: target-veil 1400ms var(--ease-out) 200ms forwards;
 }
