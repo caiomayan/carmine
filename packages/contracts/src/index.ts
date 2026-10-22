@@ -1,5 +1,6 @@
 import './zod-jitless.js';
 
+export * from './activity.js';
 export * from './auth.js';
 export * from './discord.js';
 export * from './equipped.js';

@@ -63,6 +63,8 @@ export default defineConfig({
         RANKING_CACHE_TTL_SECONDS: '0',
         // Idem para as prévias do header (U3e): os testes precisam ver o dado novo na hora.
         HEADER_PREVIEWS_CACHE_TTL_SECONDS: '0',
+        // E a faixa de atividade ao vivo: sem cache, o E2E vê o evento na hora.
+        ACTIVITY_CACHE_TTL_SECONDS: '0',
         // Todo pedido do E2E chega à API do mesmo IP (o Next repassa /api/*): sem limite real.
         RATE_LIMIT_LOGIN_PER_MINUTE: '100000',
         RATE_LIMIT_PUBLIC_PER_MINUTE: '100000',

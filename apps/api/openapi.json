@@ -4472,6 +4472,51 @@
         ]
       }
     },
+    "/api/activity/recent": {
+      "get": {
+        "operationId": "getRecentActivity",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Até 20 eventos, do mais novo ao mais antigo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecentActivity"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Os últimos acontecimentos interessantes nos servidores (entrar, multi-kill, novo primeiro lugar, skin rara equipada), sem SteamID; Perfil privado não aparece (exceto como \"Jogador privado\" no primeiro lugar)",
+        "tags": [
+          "activity"
+        ]
+      }
+    },
     "/api/server/reports": {
       "post": {
         "operationId": "createReport",
@@ -8786,6 +8831,228 @@
           "mode",
           "top",
           "mine"
+        ],
+        "additionalProperties": false
+      },
+      "RecentActivity": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityEvent"
+            }
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "events",
+          "generatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "ActivityEvent": {
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/JoinedActivity"
+          },
+          {
+            "$ref": "#/components/schemas/MultiKillActivity"
+          },
+          {
+            "$ref": "#/components/schemas/NewLeaderActivity"
+          },
+          {
+            "$ref": "#/components/schemas/SkinEquippedActivity"
+          }
+        ]
+      },
+      "JoinedActivity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "joined"
+            ]
+          },
+          "player": {
+            "$ref": "#/components/schemas/RankingPlayer"
+          },
+          "server": {
+            "$ref": "#/components/schemas/ActivityServer"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "type",
+          "player",
+          "server"
+        ],
+        "additionalProperties": false
+      },
+      "ActivityServer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "showcaseName": {
+            "nullable": true,
+            "type": "string",
+            "minLength": 1
+          },
+          "code": {
+            "nullable": true,
+            "type": "string",
+            "minLength": 1
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "showcaseName",
+          "code",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "MultiKillActivity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "multi_kill"
+            ]
+          },
+          "player": {
+            "$ref": "#/components/schemas/RankingPlayer"
+          },
+          "server": {
+            "$ref": "#/components/schemas/ActivityServer"
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 3,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "type",
+          "player",
+          "server",
+          "kills"
+        ],
+        "additionalProperties": false
+      },
+      "NewLeaderActivity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "new_leader"
+            ]
+          },
+          "player": {
+            "$ref": "#/components/schemas/RankingPlayer"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "type",
+          "player",
+          "mode"
+        ],
+        "additionalProperties": false
+      },
+      "SkinEquippedActivity": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "skin_equipped"
+            ]
+          },
+          "player": {
+            "$ref": "#/components/schemas/RankingPlayer"
+          },
+          "itemId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "type",
+          "player",
+          "itemId"
         ],
         "additionalProperties": false
       },

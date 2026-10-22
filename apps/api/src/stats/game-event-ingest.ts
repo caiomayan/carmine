@@ -6,6 +6,8 @@ import {
   type GameMode,
 } from '@carmine/contracts';
 import { inArray, sql } from 'drizzle-orm';
+import type { ActivityRecorder } from '../activity/activity-feed.js';
+import { detectMultiKills } from '../activity/multi-kills.js';
 import type { Database } from '../database/database.js';
 import {
   accountStatsWeekly,
@@ -32,13 +34,17 @@ const EVENT_KEYS = ['kills', 'damages', 'roundEnds', 'sessionStarts', 'sessionEn
  * dela (`chat_messages`), e mensagem de Conta desconhecida não entra.
  */
 export class GameEventIngest {
-  constructor(private readonly db: Database) {}
+  /** `activity`: a faixa de atividade ao vivo da home, alimentada depois que o lote é gravado. */
+  constructor(
+    private readonly db: Database,
+    private readonly activity: ActivityRecorder | null = null,
+  ) {}
 
   async ingest(server: EventSource, batch: EventBatch): Promise<EventBatchResult> {
     const total = countEvents(batch);
     if (total === 0) return { accepted: 0, duplicates: 0, ignored: 0 };
 
-    return this.db.transaction(async (tx) => {
+    const { result, news, accountBySteamId } = await this.db.transaction(async (tx) => {
       // `on conflict do nothing` também resolve o ID repetido dentro do próprio lote.
       const eventIds = EVENT_KEYS.flatMap((key) =>
         batch[key].map(({ id }) => ({ id, serverId: server.id })),
@@ -145,8 +151,48 @@ export class GameEventIngest {
               .returning({ id: chatMessages.id });
 
       const accepted = inserted.length + savedChat.length + unknownChat;
-      return { accepted, duplicates: total - accepted, ignored: ignored + unknownChat };
+      return {
+        result: { accepted, duplicates: total - accepted, ignored: ignored + unknownChat },
+        news,
+        accountBySteamId,
+      };
     });
+    await this.announce(server, news, accountBySteamId);
+    return result;
+  }
+
+  /**
+   * Entrar no servidor e multi-kill vão para a faixa de atividade. Só o que o lote trouxe de novo
+   * (o que já tinha sido visto não repete) e nunca falha: a faixa é um extra.
+   */
+  private async announce(
+    server: EventSource,
+    news: EventBatch,
+    accountBySteamId: ReadonlyMap<string, string>,
+  ): Promise<void> {
+    if (!this.activity) return;
+    const activity = this.activity;
+    const announcements: Promise<void>[] = [];
+    for (const start of news.sessionStarts) {
+      const accountId = accountBySteamId.get(start.steamId);
+      if (accountId) announcements.push(activity.joined(accountId, server.id, new Date(start.at)));
+    }
+    const multiKills = detectMultiKills({
+      mode: server.mode,
+      kills: news.kills,
+      roundEnds: news.roundEnds,
+    });
+    for (const multi of multiKills) {
+      const accountId = accountBySteamId.get(multi.steamId);
+      if (accountId) {
+        announcements.push(
+          activity.multiKill(accountId, server.id, multi.count, new Date(multi.at)),
+        );
+      }
+    }
+    // Em paralelo e cada um por si: um que falha não impede os outros, e o lote espera no máximo o
+    // tempo de um comando ao Valkey (o gravador nunca lança).
+    await Promise.allSettled(announcements);
   }
 }
 
@@ -161,6 +207,7 @@ function steamIdsOf(batch: EventBatch, chat: ChatMessageEvent[]): string[] {
   for (const round of batch.roundEnds) {
     for (const player of round.players) ids.add(player.steamId);
   }
+  for (const start of batch.sessionStarts) ids.add(start.steamId);
   for (const end of batch.sessionEnds) ids.add(end.steamId);
   return [...ids];
 }

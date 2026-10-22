@@ -18,6 +18,8 @@ import {
   type UnequipInput,
 } from '@carmine/contracts';
 import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
+import type { ActivityRecorder } from '../activity/activity-feed.js';
+import { isNotableSkin } from '../activity/notable-skin.js';
 import type { Catalog } from '../catalog/catalog.js';
 import type { Database } from '../database/database.js';
 import { accounts, inventoryItems, loadoutSlots, presets } from '../database/schema.js';
@@ -66,6 +68,8 @@ export class Loadouts {
     private readonly vipPeriods: VipPeriods,
     private readonly listener: LoadoutChangeListener,
     private readonly clock: () => Date = () => new Date(),
+    /** A faixa de atividade ao vivo da home; sem ela, equipar não anuncia nada. */
+    private readonly activity: ActivityRecorder | null = null,
   ) {}
 
   /** O Loadout (o Preset ativo) ou outro Preset, com todos os slots. */
@@ -78,9 +82,11 @@ export class Loadouts {
 
   /** Equipa o Item no slot dele, nos lados pedidos; o que estava lá é substituído. */
   async equip(accountId: string, input: EquipInput): Promise<LoadoutChange> {
-    return this.change(accountId, input.presetId, async (tx) => {
+    const equipped = { itemId: null as number | null };
+    const change = await this.change(accountId, input.presetId, async (tx) => {
       const [item] = await this.activeItems(tx, accountId, [input.uid]);
       if (!item) throw new LoadoutRejection('item_not_found', 'Item não encontrado', 'uid');
+      equipped.itemId = item.item.id;
       const target = this.catalog.slotOf(item.item.id);
       if (!target) throw new LoadoutRejection('invalid_slot', 'Item não se equipa', 'uid');
       const sides = sidesToApply(target.sides, input.sides);
@@ -89,6 +95,16 @@ export class Loadouts {
       }
       return sides.sides.map((side) => ({ slot: target.slot, side, itemId: item.id }));
     });
+    // Skin rara no Loadout que vai para o jogo (Preset ativo): vira destaque na faixa de atividade.
+    try {
+      const skin = equipped.itemId === null ? undefined : this.catalog.find(equipped.itemId);
+      if (skin && isNotableSkin(skin) && change.loadout.active && change.previous.length > 0) {
+        await this.activity?.skinEquipped(accountId, skin.id, this.clock());
+      }
+    } catch {
+      // A faixa de atividade é um extra: o equipar já foi gravado e não pode virar erro.
+    }
+    return change;
   }
 
   /** O slot volta à Arma padrão nos lados pedidos (todos, sem pedido). */
