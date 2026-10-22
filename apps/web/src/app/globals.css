@@ -543,6 +543,14 @@
   outline-offset: 2px;
 }
 
+/*
+ * Texto de apoio que pode cair sobre o fundo de uma linha selecionada ou de um botão com fundo: o
+ * --muted sozinho ali passa de 4,5:1 só sobre a superfície, não sobre o degrau --fill-active.
+ */
+@utility muted-on-fill {
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+}
+
 /* ---------- paleta de comandos (Ctrl+K): entra com um deslocamento curto e sai mais rápida ---------- */
 @keyframes palette-in {
   from {
@@ -602,7 +610,8 @@
   animation: palette-out var(--dur-fast) var(--ease-in) forwards;
 }
 
-@media (max-width: 760px) {
+/* o mesmo ponto do `md` do Tailwind (768 px): tela cheia no celular */
+@media (max-width: 767.98px) {
   .palette-panel[data-state="open"] {
     animation-name: palette-sheet-in;
   }

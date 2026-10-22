@@ -1,6 +1,7 @@
 'use client';
 
 import type { LiveServer, PlayerSearchHit } from '@carmine/contracts';
+import { SEARCH_MIN_LENGTH } from '@carmine/contracts/rules';
 import {
   CompassIcon,
   CrosshairIcon,
@@ -21,7 +22,7 @@ import type { Route } from 'next';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Dialog } from 'radix-ui';
-import { type ReactNode, type RefObject, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar } from '@/components/avatar';
 import { RARITY_COLOR } from '@/components/inventory/item-tile';
 import { useSession } from '@/components/session/session-provider';
@@ -52,7 +53,7 @@ import {
 } from '@/lib/search/palette';
 import { oppositeTheme } from '@/lib/theme';
 import { cn } from '@/lib/utils';
-import { MIN_QUERY_LENGTH, type Remote, usePaletteData } from './use-palette-data';
+import { usePaletteData } from './use-palette-data';
 
 type Entry = StaticEntry & Searchable;
 
@@ -94,11 +95,8 @@ const PANEL = cn(
   'palette-panel fixed z-50 flex flex-col bg-popover text-popover-foreground outline-none',
   'max-md:inset-0',
   'md:inset-x-0 md:top-[10vh] md:mx-auto md:max-h-[min(36rem,78dvh)] md:w-[min(40rem,calc(100vw-2rem))] md:rounded-xl',
-  'md:shadow-[0_28px_72px_-24px_var(--shadow),0_0_0_1px_var(--line)]',
+  'md:shadow-[0_28px_72px_-24px_var(--shadow)]',
 );
-
-/** Texto de apoio que também aparece sobre o fundo da linha selecionada: o cinza de sempre ali cai abaixo de 4,5:1. */
-const MUTED = 'text-[color-mix(in_srgb,var(--text)_72%,var(--muted))]';
 
 const GROUP_HEADING =
   '[&_[cmdk-group-heading]]:px-2.5 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:tracking-[0.14em] [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-group-heading]]:uppercase';
@@ -170,6 +168,8 @@ function PaletteBody({
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
   const [selected, setSelected] = useState('');
+  // A pessoa moveu a seleção (setas ou ponteiro) para fora do primeiro resultado.
+  const moved = useRef(false);
   const [signOutFailed, setSignOutFailed] = useState(false);
   const data = usePaletteData(query);
   const text = query.trim();
@@ -235,20 +235,28 @@ function PaletteBody({
   );
   const firstKey = keys[0] ?? '';
 
-  // A seleção volta ao primeiro resultado quando o topo muda (nova busca, resposta que chegou).
-  useEffect(() => setSelected(firstKey), [firstKey]);
+  // A seleção volta ao primeiro resultado quando o topo muda (nova busca, resposta que chegou),
+  // a menos que a pessoa já tenha andado pela lista: a resposta lenta não troca o que ela escolheu.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: só o topo da lista reposiciona a seleção
+  useEffect(() => {
+    if (!moved.current || !keys.includes(selected)) {
+      moved.current = false;
+      setSelected(firstKey);
+    }
+  }, [firstKey]);
 
   const total = groups.reduce((sum, group) => sum + group.hits.length, 0);
   const loading =
     data.searching && (data.items.status === 'loading' || data.players.status === 'loading');
   // Com resultados da busca anterior na tela, a lista só se atenua até a nova chegar.
   const hasRemote = hits.some((hit) => hit.group !== 'pages' && hit.group !== 'actions');
-  const failed =
-    data.searching &&
-    [data.items, data.players, data.servers].some((source) => source.status === 'error');
+  const sources = [data.items, data.players, data.servers];
+  const failed = data.searching && sources.some((source) => source.status === 'error');
+  // Nenhuma fonte ainda por responder (os servidores contam: o vazio não pode piscar antes deles).
+  const settled = data.searching && sources.every((source) => source.status !== 'loading');
 
   function remember() {
-    if (text.length < MIN_QUERY_LENGTH) return;
+    if (text.length < SEARCH_MIN_LENGTH) return;
     const next = addRecent(recent, text);
     setRecent(next);
     saveRecent(publicId, next);
@@ -258,6 +266,16 @@ function PaletteBody({
     remember();
     onClose();
     router.push(href as Route);
+  }
+
+  /**
+   * Link com âncora: o realce do cartão (`:target`) só acompanha a navegação do navegador, não o
+   * `pushState` do roteador. Na própria home é só trocar o fragmento; vindo de fora, carrega a home.
+   */
+  function goToAnchor(href: string) {
+    remember();
+    onClose();
+    window.location.assign(href);
   }
 
   async function choose(row: Row) {
@@ -291,7 +309,7 @@ function PaletteBody({
       case 'player':
         return go(`/${row.hit.publicId}`);
       case 'server':
-        return go(serverHref(row.server));
+        return goToAnchor(serverHref(row.server));
     }
   }
 
@@ -317,7 +335,10 @@ function PaletteBody({
       loop
       vimBindings={false}
       value={selected}
-      onValueChange={setSelected}
+      onValueChange={(next) => {
+        moved.current = next !== firstKey;
+        setSelected(next);
+      }}
       label={t('palette.title')}
       className="min-h-0 flex-1 rounded-none bg-transparent md:rounded-xl"
     >
@@ -325,6 +346,7 @@ function PaletteBody({
         <CommandInput
           value={query}
           onValueChange={(next) => {
+            moved.current = false;
             setQuery(next);
             setSignOutFailed(false);
           }}
@@ -382,7 +404,7 @@ function PaletteBody({
                 clearRecent(publicId);
                 setRecent([]);
               }}
-              className={cn(ROW, 'min-h-10 text-[13px]', MUTED)}
+              className={cn(ROW, 'min-h-10 text-[13px]', 'muted-on-fill')}
               data-testid="palette-recent-clear"
             >
               <Leading>
@@ -397,14 +419,13 @@ function PaletteBody({
       </CommandList>
 
       <Status
-        searching={data.searching}
         text={text}
         total={total}
         loading={loading}
         skeleton={loading && !hasRemote}
         failed={failed}
         signOutFailed={signOutFailed}
-        sources={[data.items, data.players, data.servers]}
+        settled={settled}
         onRetry={data.retry}
       />
 
@@ -426,7 +447,7 @@ function Leading({ children }: { children: ReactNode }) {
       aria-hidden="true"
       className={cn(
         'grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-(--fill-rest)',
-        MUTED,
+        'muted-on-fill',
       )}
     >
       {children}
@@ -442,7 +463,7 @@ function Hint({ keys, label }: { keys: string[]; label: string }) {
           key={key}
           className={cn(
             'grid min-w-5 place-items-center rounded-sm bg-(--fill-rest) px-1 py-0.5 font-sans text-[11px] leading-none font-medium',
-            MUTED,
+            'muted-on-fill',
           )}
         >
           {key}
@@ -474,13 +495,17 @@ function RowText({
         ) : null}
         <span className="truncate">{title}</span>
       </span>
-      {subtitle ? <span className={cn('truncate text-[12px]', MUTED)}>{subtitle}</span> : null}
+      {subtitle ? (
+        <span className={cn('truncate text-[12px]', 'muted-on-fill')}>{subtitle}</span>
+      ) : null}
     </span>
   );
 }
 
 function Trailing({ children }: { children: ReactNode }) {
-  return <span className={cn('shrink-0 text-[12px] tabular-nums', MUTED)}>{children}</span>;
+  return (
+    <span className={cn('shrink-0 text-[12px] tabular-nums', 'muted-on-fill')}>{children}</span>
+  );
 }
 
 function RowView({ row }: { row: Row }) {
@@ -568,17 +593,15 @@ function RowView({ row }: { row: Row }) {
  * outras trouxeram.
  */
 function Status({
-  searching,
   text,
   total,
   loading,
   skeleton,
   failed,
   signOutFailed,
-  sources,
+  settled,
   onRetry,
 }: {
-  searching: boolean;
   text: string;
   total: number;
   loading: boolean;
@@ -586,11 +609,11 @@ function Status({
   skeleton: boolean;
   failed: boolean;
   signOutFailed: boolean;
-  sources: Remote<unknown>[];
+  /** Todas as fontes responderam (ou falharam) para a busca de agora. */
+  settled: boolean;
   onRetry: () => void;
 }) {
   const t = useTranslations('search.status');
-  const settled = searching && !loading && sources.every((source) => source.status !== 'loading');
   const empty = settled && !failed && total === 0;
 
   return (
@@ -644,7 +667,7 @@ function Status({
       ) : null}
 
       <div role="status" aria-live="polite" className="sr-only">
-        {loading ? t('loading') : searching && !failed ? t('count', { count: total }) : ''}
+        {loading ? t('loading') : settled && !failed ? t('count', { count: total }) : ''}
       </div>
     </>
   );

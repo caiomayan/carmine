@@ -126,9 +126,9 @@ export function SearchTrigger() {
         </span>
         <kbd
           suppressHydrationWarning
-          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-[11px] leading-none font-medium text-[color-mix(in_srgb,var(--text)_72%,var(--muted))] max-[1151px]:hidden"
+          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-[11px] leading-none font-medium muted-on-fill max-[1151px]:hidden"
         >
-          {mac ? '⌘K' : 'Ctrl K'}
+          {mac ? t('keysMac') : t('keys')}
         </kbd>
       </Button>
       {Palette ? <Palette open={open} onOpenChange={setOpen} openerRef={opener} /> : null}

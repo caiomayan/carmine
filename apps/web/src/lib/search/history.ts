@@ -1,3 +1,4 @@
+import { SEARCH_MIN_LENGTH } from '@carmine/contracts/rules';
 import { normalizeSearch } from '../option-search';
 
 /**
@@ -7,8 +8,6 @@ import { normalizeSearch } from '../option-search';
  */
 
 export const RECENT_MAX = 6;
-/** Busca de uma letra só não vale guardar. */
-const RECENT_MIN_LENGTH = 2;
 
 export const recentKey = (publicId: number | null) =>
   `carmine-search-recent:${publicId ?? 'visitante'}`;
@@ -18,7 +17,7 @@ const clean = (text: string) => text.replace(/\s+/g, ' ').trim();
 /** Põe a busca no começo da lista, sem repetir (ignora maiúsculas, acento e espaços). */
 export function addRecent(list: readonly string[], query: string): string[] {
   const text = clean(query);
-  if (text.length < RECENT_MIN_LENGTH) return [...list];
+  if (text.length < SEARCH_MIN_LENGTH) return [...list];
   const key = normalizeSearch(text);
   return [text, ...list.filter((entry) => normalizeSearch(entry) !== key)].slice(0, RECENT_MAX);
 }

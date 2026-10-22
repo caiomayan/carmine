@@ -94,7 +94,9 @@
       "label": "Buscar",
       "aria": "Buscar páginas, skins, jogadores e servidores",
       "shortcut": "Atalho: Ctrl K",
-      "shortcutMac": "Atalho: ⌘ K"
+      "shortcutMac": "Atalho: ⌘ K",
+      "keys": "Ctrl K",
+      "keysMac": "⌘K"
     },
     "palette": {
       "title": "Buscar no Carmine",
@@ -168,10 +170,8 @@
     "hints": {
       "server": "{players}/{max}",
       "serverFull": "Lotado",
-      "serverOffline": "Offline",
-      "vip": "VIP"
+      "serverOffline": "Offline"
     },
-    "playerAvatar": "Foto de {name}",
     "status": {
       "count": "{count, plural, =0 {Nenhum resultado} one {# resultado} other {# resultados}}",
       "loading": "Buscando…",
