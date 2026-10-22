@@ -15,6 +15,7 @@ import {
 } from '@/components/animate-ui/primitives/effects/highlight';
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
+import { enterTransition, exitTransition, heightTransition } from '@/lib/motion';
 
 type TabsContextType = {
   value: string | undefined;
@@ -81,12 +82,7 @@ function TabsTrigger(props: TabsTriggerProps) {
 
 type TabsContentProps = React.ComponentProps<typeof TabsPrimitive.Content> & HTMLMotionProps<'div'>;
 
-function TabsContent({
-  value,
-  forceMount,
-  transition = { duration: 0.5, ease: 'easeInOut' },
-  ...props
-}: TabsContentProps) {
+function TabsContent({ value, forceMount, transition, ...props }: TabsContentProps) {
   return (
     <AnimatePresence mode="wait">
       <TabsPrimitive.Content asChild forceMount={forceMount} value={value}>
@@ -95,9 +91,8 @@ function TabsContent({
           layout
           layoutDependency={value}
           initial={{ opacity: 0, filter: 'blur(4px)' }}
-          animate={{ opacity: 1, filter: 'blur(0px)' }}
-          exit={{ opacity: 0, filter: 'blur(4px)' }}
-          transition={transition}
+          animate={{ opacity: 1, filter: 'blur(0px)', transition: transition ?? enterTransition() }}
+          exit={{ opacity: 0, filter: 'blur(4px)', transition: transition ?? exitTransition() }}
           {...props}
         />
       </TabsPrimitive.Content>
@@ -119,12 +114,6 @@ type TabsContentsLayoutProps = Omit<HTMLMotionProps<'div'>, 'transition'> & {
 
 type TabsContentsProps = TabsContentsAutoProps | TabsContentsLayoutProps;
 
-const defaultTransition: Transition = {
-  type: 'spring',
-  stiffness: 200,
-  damping: 30,
-};
-
 function isAutoMode(props: TabsContentsProps): props is TabsContentsAutoProps {
   return !('mode' in props) || props.mode === 'auto-height';
 }
@@ -133,14 +122,14 @@ function TabsContents(props: TabsContentsProps) {
   const { value } = useTabs();
 
   if (isAutoMode(props)) {
-    const { transition = defaultTransition, ...autoProps } = props;
+    const { transition = heightTransition, ...autoProps } = props;
 
     return (
       <AutoHeight data-slot="tabs-contents" deps={[value]} transition={transition} {...autoProps} />
     );
   }
 
-  const { transition = defaultTransition, style, ...layoutProps } = props;
+  const { transition = heightTransition, style, ...layoutProps } = props;
 
   return (
     <m.div

@@ -210,7 +210,8 @@ describe('menu do CS2 contra o catálogo', () => {
       .map((item) => `weapon_${item.modelKey}`);
     const known = MENU_ORDER.filter((name) => name.startsWith('weapon_'));
     expect([...offered].sort()).toEqual([...known].sort());
-  });
+    // Carregar a economia da cs2-lib passa de 5 s com os outros testes disputando a CPU.
+  }, 30_000);
 });
 
 describe('slot de uma chave e o outro lado', () => {
