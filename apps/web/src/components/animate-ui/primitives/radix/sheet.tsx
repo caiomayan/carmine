@@ -5,7 +5,13 @@ import { Dialog as SheetPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
-import { DURATION, enterTransition, exitTransition } from '@/lib/motion';
+import {
+  DURATION,
+  enterTransition,
+  exitTransition,
+  overlayMotion,
+  withTransition,
+} from '@/lib/motion';
 
 type SheetContextType = {
   isOpen: boolean;
@@ -61,15 +67,16 @@ type SheetOverlayProps = Omit<
   HTMLMotionProps<'div'>;
 
 /** Como o fundo do Dialog: entra em `base`, sai em `fast`. */
-function SheetOverlay(props: SheetOverlayProps) {
+function SheetOverlay({ transition, ...props }: SheetOverlayProps) {
+  const motion = withTransition(overlayMotion, transition);
   return (
     <SheetPrimitive.Overlay asChild forceMount>
       <m.div
         key="sheet-overlay"
         data-slot="sheet-overlay"
-        initial={{ opacity: 0, filter: 'blur(4px)' }}
-        animate={{ opacity: 1, filter: 'blur(0px)', transition: enterTransition() }}
-        exit={{ opacity: 0, filter: 'blur(4px)', transition: exitTransition() }}
+        initial={motion.initial}
+        animate={motion.animate}
+        exit={motion.exit}
         {...props}
       />
     </SheetPrimitive.Overlay>

@@ -13,10 +13,10 @@ import {
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { useDataState } from '@/hooks/use-data-state';
 import { getStrictContext } from '@/lib/get-strict-context';
-import { floatingMotion } from '@/lib/motion';
+import { scaleMotion, withTransition } from '@/lib/motion';
 
 /** Menus abrem do gatilho: só opacidade e uma escala pequena, sem deslocamento. */
-const menuMotion = floatingMotion({ y: 0, scale: 0.96 });
+const menuMotion = scaleMotion({ scale: 0.96 });
 
 type DropdownMenuContextType = {
   isOpen: boolean;
@@ -152,6 +152,7 @@ function DropdownMenuSubContent({
   ...props
 }: DropdownMenuSubContentProps) {
   const { isOpen } = useDropdownMenuSub();
+  const motion = withTransition(menuMotion, transition);
 
   return (
     <AnimatePresence>
@@ -177,10 +178,9 @@ function DropdownMenuSubContent({
             <m.div
               key="dropdown-menu-sub-content"
               data-slot="dropdown-menu-sub-content"
-              initial={menuMotion.initial}
-              animate={menuMotion.animate}
-              exit={menuMotion.exit}
-              transition={transition}
+              initial={motion.initial}
+              animate={motion.animate}
+              exit={motion.exit}
               style={{ willChange: 'opacity, transform', ...style }}
               {...props}
             />
@@ -243,6 +243,7 @@ function DropdownMenuContent({
   ...props
 }: DropdownMenuContentProps) {
   const { isOpen } = useDropdownMenu();
+  const motion = withTransition(menuMotion, transition);
 
   return (
     <AnimatePresence>
@@ -270,10 +271,9 @@ function DropdownMenuContent({
             <m.div
               key="dropdown-menu-content"
               data-slot="dropdown-menu-content"
-              initial={menuMotion.initial}
-              animate={menuMotion.animate}
-              exit={menuMotion.exit}
-              transition={transition}
+              initial={motion.initial}
+              animate={motion.animate}
+              exit={motion.exit}
               style={{ willChange: 'opacity, transform', ...style }}
               {...props}
             />

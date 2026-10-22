@@ -13,7 +13,7 @@ import { Tooltip as TooltipPrimitive } from 'radix-ui';
 import type * as React from 'react';
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
-import { DURATION, enterTransition, exitTransition } from '@/lib/motion';
+import { DURATION, scaleMotion, withTransition } from '@/lib/motion';
 
 type TooltipContextType = {
   isOpen: boolean;
@@ -110,6 +110,9 @@ function TooltipPortal(props: TooltipPortalProps) {
   );
 }
 
+/** O Tooltip aparece rápido e some mais rápido ainda; sem deslocamento (o seguir-cursor usa o `y`). */
+const tooltipMotion = scaleMotion({ scale: 0.92, enter: DURATION.fast, exit: DURATION.instant });
+
 type TooltipContentProps = Omit<
   React.ComponentProps<typeof TooltipPrimitive.Content>,
   'forceMount' | 'asChild'
@@ -136,6 +139,7 @@ function TooltipContent({
   const { x, y, followCursor, followCursorSpringOptions } = useTooltip();
   const translateX = useSpring(x, followCursorSpringOptions);
   const translateY = useSpring(y, followCursorSpringOptions);
+  const motion = withTransition(tooltipMotion, transition);
 
   return (
     <TooltipPrimitive.Content
@@ -157,10 +161,9 @@ function TooltipContent({
       <m.div
         key="popover-content"
         data-slot="popover-content"
-        initial={{ opacity: 0, scale: 0.92 }}
-        animate={{ opacity: 1, scale: 1, transition: enterTransition(DURATION.fast) }}
-        exit={{ opacity: 0, scale: 0.92, transition: exitTransition(DURATION.instant) }}
-        transition={transition}
+        initial={motion.initial}
+        animate={motion.animate}
+        exit={motion.exit}
         style={{
           x: followCursor === 'x' || followCursor === true ? translateX : undefined,
           y: followCursor === 'y' || followCursor === true ? translateY : undefined,
