@@ -226,9 +226,9 @@ test.describe('o que a paleta acha', () => {
     await openPalette(page);
 
     await input(page).fill('asiimov');
-    const mine = page.getByTestId('palette-item').filter({ hasText: 'Abrir' }).first();
+    // O grupo do Inventário vem antes do Catálogo no empate: a primeira linha é a cópia da Conta.
     await expect(page.getByTestId('palette-list')).toContainText('No seu Inventário');
-    await mine.click();
+    await page.getByTestId('palette-item').first().click();
 
     await expect(page).toHaveURL(new RegExp(`/inventario/${uid}$`));
   });
