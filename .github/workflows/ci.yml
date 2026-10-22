@@ -2,6 +2,13 @@
 # pelo ruleset do main; não renomeie sem atualizar o ruleset (infra/github/main-ruleset.json).
 # web-image e ops-image ainda não são exigidos pelo ruleset. O deploy (deploy.yml) só roda
 # depois que este workflow inteiro termina verde no main.
+#
+# Runner: a variável do repositório CI_RUNNER escolhe onde os jobs rodam (JSON, ex.:
+# ["self-hosted","carmine"] para o runner próprio, docs/operacao/runner-proprio.md). Sem ela,
+# rodam nos runners do GitHub.
+#
+# node e dotnet só rodam no PR: o ruleset exige o branch atualizado com o main, então o squash
+# no main tem a mesma árvore que o PR já testou. No push ficam só as imagens, que o deploy usa.
 name: CI
 
 on:
@@ -24,8 +31,12 @@ env:
 jobs:
   node:
     name: node
-    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 35
+    env:
+      # Os 4 vCPUs do runner do GitHub; no runner próprio evita 11 bancos de teste ao mesmo tempo.
+      VITEST_MAX_WORKERS: "4"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -52,10 +63,14 @@ jobs:
             echo "::error::apps/api/openapi.json desatualizado. Rode 'pnpm --filter @carmine/api openapi:generate' e faça commit."
             exit 1
           }
+      # No runner próprio o Docker é persistente: não deixar o Postgres e o Valkey do E2E de pé.
+      - if: always()
+        run: docker compose -f infra/docker-compose.yml down -v
 
   dotnet:
     name: dotnet
-    runs-on: ubuntu-24.04
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     defaults:
       run:
@@ -63,6 +78,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        env:
+          # Fora do /usr/share/dotnet, que no runner próprio não é gravável.
+          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: plugins/global.json
       - run: dotnet build Carmine.Plugins.slnx -c Release
@@ -70,7 +88,7 @@ jobs:
 
   api-image:
     name: api-image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -107,7 +125,7 @@ jobs:
 
   web-image:
     name: web-image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     permissions:
       contents: read
@@ -144,7 +162,7 @@ jobs:
 
   ops-image:
     name: ops-image
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 20
     permissions:
       contents: read
