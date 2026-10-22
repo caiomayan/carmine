@@ -20,6 +20,7 @@ describe('loadConfig', () => {
       trustedProxies: [],
       rateLimitsPerMinute: { login: 20, public: 240, equipped: 120, mutations: 60, server: 600 },
       rankingCacheTtlSeconds: 45,
+      headerPreviewsCacheTtlSeconds: 15,
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
       reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },

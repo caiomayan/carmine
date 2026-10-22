@@ -62,3 +62,10 @@ export function parseWeekStart(value: string): string | null {
 export function weekEndOf(weekStart: string): string {
   return new Date(Date.parse(`${weekStart}T00:00:00Z`) + 6 * DAY_MS).toISOString().slice(0, 10);
 }
+
+/** O instante em que a semana que começa em `weekStart` fecha: a segunda-feira seguinte, 00:00 de Brasília. */
+export function weekClosesAt(weekStart: string): string {
+  return new Date(
+    Date.parse(`${weekStart}T00:00:00Z`) + 7 * DAY_MS - BRASILIA_OFFSET_MS,
+  ).toISOString();
+}

@@ -7,7 +7,8 @@ import { rankingEntrySchema, rankingProgressSchema, weekStartSchema } from './ra
 /**
  * Prévias do header (U3e): o que cada painel do menu mostra, numa resposta só. Cada seção é
  * independente: se a Steam, o Ranking ou outra fonte falhar, só aquela seção vem vazia, e o
- * endpoint responde 200. As partes pessoais (`loadout`, `inventory`, `mine`, `friends`) vêm
+ * endpoint responde 200 (o retrato do Loadout usa os Itens do Inventário: sem eles, vem vazio
+ * também). As partes pessoais (`loadout`, `inventory`, `mine`, `friends`) vêm
  * `null` ou vazias sem sessão. Só ids e dados de domínio: nome e imagem das skins o web resolve
  * pelo catálogo dele (PT-BR).
  */
@@ -140,3 +141,7 @@ export type HeaderPlay = z.infer<typeof headerPlaySchema>;
 export type HeaderLoadout = z.infer<typeof headerLoadoutSchema>;
 export type HeaderInventory = z.infer<typeof headerInventorySchema>;
 export type HeaderRanking = z.infer<typeof headerRankingSchema>;
+export type HeaderLoadoutSlot = z.infer<typeof headerLoadoutSlotSchema>;
+export type HeaderRankingMode = z.infer<typeof headerRankingModeSchema>;
+export type HeaderLatestItem = z.infer<typeof headerLatestItemSchema>;
+export type HeaderRecommendedServer = z.infer<typeof headerRecommendedServerSchema>;
