@@ -187,6 +187,18 @@
  * claro, o encobre de creme) até o texto passar no AA mesmo no mapa mais claro (dust2): o texto
  * fica na parte de baixo, onde o degradê é mais forte. As chips do alto têm fundo próprio.
  */
+/*
+ * A camada de fundo do cartão de servidor: recorta imagem e escurecido de uma vez só, no mesmo raio
+ * do cartão (overflow, clip-path e camada própria para o zoom não criar uma segunda borda).
+ */
+@utility map-layer {
+  overflow: hidden;
+  border-radius: inherit;
+  isolation: isolate;
+  clip-path: inset(0 round var(--radius-2xl));
+  transform: translateZ(0);
+}
+
 @utility map-scrim {
   background: linear-gradient(
     to top,
