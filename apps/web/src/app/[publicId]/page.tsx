@@ -14,6 +14,7 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
+import { ProfileEmpty } from '@/components/profile/profile-empty';
 import { ProfileStats } from '@/components/profile/profile-stats';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
 import { RARITIES } from '@/lib/catalog/types';
 import { buildShowcase } from '@/lib/loadout/build';
 import { NOINDEX, profileMetadata } from '@/lib/profile-metadata';
+import { statsState } from '@/lib/profile-stats';
 import { settingsHref } from '@/lib/settings-nav';
 import { cn } from '@/lib/utils';
 
@@ -99,6 +101,8 @@ export default async function ProfilePage({
   const showcase = buildShowcase(profile.loadoutShowcase.items);
   const tc = await getTranslations('catalog');
   const stats = await getProfileStats(profile.publicId);
+  // Sem Itens equipados nem jogos: um bloco só no lugar das duas caixas vazias.
+  const bare = showcase.length === 0 && statsState(stats) === 'empty';
 
   return (
     <div className="container-page pb-16">
@@ -106,59 +110,63 @@ export default async function ProfilePage({
 
       {invite ? <ClaimInvite profile={profile} /> : null}
 
-      <section aria-labelledby="loadout" className="animate-fade-up pt-8 [animation-delay:80ms]">
-        <SectionTitle
-          id="loadout"
-          aside={
-            isOwner ? (
-              <Button asChild variant="quiet" size="sm" className="-my-1">
-                <Link href="/loadout">{t('loadout.toLoadout')}</Link>
-              </Button>
-            ) : null
-          }
-        >
-          {t('loadout.title')}
-        </SectionTitle>
-        {showcase.length > 0 ? (
-          <div data-testid="loadout-showcase">
-            <ShowcaseGrid
-              items={showcase}
-              rarityLabels={Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]))}
-              sideLabels={{
-                ct: t('loadout.sides.ct'),
-                t: t('loadout.sides.t'),
-                both: t('loadout.sides.both'),
-              }}
-            />
-          </div>
-        ) : (
-          <div className="rounded-xl bg-surface" data-testid="loadout-showcase">
-            <EmptyState
-              icon={BoxIcon}
-              title={t('loadout.emptyTitle')}
-              body={
-                isOwner
-                  ? t('loadout.emptyOwner')
-                  : t('loadout.emptyVisitor', { name: profile.displayName })
-              }
-              action={
+      {bare ? (
+        <ProfileEmpty name={profile.displayName} isOwner={isOwner} />
+      ) : (
+        <>
+          <ProfileStats
+            stats={stats}
+            name={profile.displayName}
+            isOwner={isOwner}
+            isPrivate={profile.isPrivate}
+          />
+
+          <section
+            aria-labelledby="loadout"
+            className="animate-fade-up pt-10 [animation-delay:120ms]"
+          >
+            <SectionTitle
+              id="loadout"
+              aside={
                 isOwner ? (
-                  <Button asChild variant="ghost" size="sm">
-                    <Link href="/inventario">{t('loadout.toInventory')}</Link>
+                  <Button asChild variant="quiet" size="sm" className="-my-1">
+                    <Link href="/loadout">{t('loadout.toLoadout')}</Link>
                   </Button>
                 ) : null
               }
-            />
-          </div>
-        )}
-      </section>
-
-      <ProfileStats
-        stats={stats}
-        name={profile.displayName}
-        isOwner={isOwner}
-        isPrivate={profile.isPrivate}
-      />
+            >
+              {t('loadout.title')}
+            </SectionTitle>
+            {showcase.length > 0 ? (
+              <div data-testid="loadout-showcase">
+                <ShowcaseGrid
+                  items={showcase}
+                  rarityLabels={Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]))}
+                />
+              </div>
+            ) : (
+              <div className="rounded-xl bg-surface" data-testid="loadout-showcase">
+                <EmptyState
+                  icon={BoxIcon}
+                  title={t('loadout.emptyTitle')}
+                  body={
+                    isOwner
+                      ? t('loadout.emptyOwner')
+                      : t('loadout.emptyVisitor', { name: profile.displayName })
+                  }
+                  action={
+                    isOwner ? (
+                      <Button asChild variant="ghost" size="sm">
+                        <Link href="/inventario">{t('loadout.toInventory')}</Link>
+                      </Button>
+                    ) : null
+                  }
+                />
+              </div>
+            )}
+          </section>
+        </>
+      )}
 
       <SanctionHistory sanctions={profile.sanctions} />
     </div>

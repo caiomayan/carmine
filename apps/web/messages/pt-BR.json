@@ -325,7 +325,6 @@
     "empty": {
       "title": "Seu Inventário está vazio",
       "body": "Escolha uma skin, ajuste do seu jeito e veja no jogo. Comece por uma das mais usadas:",
-      "browse": "Ver o catálogo inteiro",
       "suggestions": "Sugestões para começar",
       "pathTitle": "Da escolha ao jogo",
       "step1": "Adicione uma skin ao Inventário, com float, seed e stickers do seu jeito.",
@@ -527,12 +526,13 @@
       "emptyVisitor": "Quando {name} equipar Itens, o Loadout aparece aqui do jeito que fica no jogo.",
       "emptyOwner": "Monte o Inventário e equipe Itens: o Loadout aparece aqui do jeito que fica no jogo.",
       "toInventory": "Ir para o Inventário",
-      "sides": {
-        "ct": "CT",
-        "t": "TR",
-        "both": "CT e TR"
-      },
       "toLoadout": "Editar o Loadout"
+    },
+    "empty": {
+      "title": "Ainda não há nada para mostrar",
+      "owner": "Monte o Loadout com os Itens do seu Inventário e jogue num Servidor Carmine: o Loadout e as Estatísticas aparecem aqui.",
+      "visitor": "Quando {name} equipar Itens e jogar num Servidor Carmine, o Loadout e as Estatísticas aparecem aqui.",
+      "action": "Montar o Loadout"
     },
     "unavailable": {
       "title": "Não conseguimos carregar este Perfil agora",
@@ -1501,7 +1501,9 @@
       "kd": "K/D",
       "headshotPercent": "HS%",
       "roundsPlayed": "Rounds",
-      "timePlayed": "Tempo"
+      "timePlayed": "Tempo",
+      "extraRetake": "HS% {hs} · {value} rounds",
+      "extraDeathmatch": "HS% {hs} · {value}"
     },
     "rowPosition": "{position}º",
     "you": "Você",
