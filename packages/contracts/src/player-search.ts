@@ -1,11 +1,11 @@
 import { z } from 'zod';
+import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH } from './rules.js';
 
 /** Quantos jogadores uma busca devolve. */
 export const PLAYER_SEARCH_LIMIT = 8;
 
-/** Menos que isto casaria metade das Contas; mais que isto não é um nome (o limite do nome é 24). */
-export const PLAYER_SEARCH_MIN_LENGTH = 2;
-export const PLAYER_SEARCH_MAX_LENGTH = 50;
+export const PLAYER_SEARCH_MIN_LENGTH = SEARCH_MIN_LENGTH;
+export const PLAYER_SEARCH_MAX_LENGTH = SEARCH_MAX_LENGTH;
 
 /** `GET /api/players/search?q=`: o que buscar, já sem os espaços das pontas. */
 export const playerSearchQuerySchema = z

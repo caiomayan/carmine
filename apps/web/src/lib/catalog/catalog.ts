@@ -1,3 +1,4 @@
+import { SEARCH_MIN_LENGTH } from '@carmine/contracts/rules';
 import { CS2_ITEMS, CS2Economy, type CS2EconomyItem } from '@ianlucas/cs2-lib';
 import { brazilian } from '@ianlucas/cs2-lib/translations/brazilian';
 import { english } from '@ianlucas/cs2-lib/translations/english';
@@ -215,16 +216,24 @@ function rank<T extends CatalogEntry | AttachmentEntry>(
   return scored.sort((a, b) => b.score - a.score || a.order - b.order).map(({ entry }) => entry);
 }
 
-/** Menos que isto não é busca (uma letra casaria quase tudo). */
-const QUICK_MIN_LENGTH = 2;
 const QUICK_MAX_LENGTH = 80;
+
+/** Os `limit` de maior relevância (os de zero não casam); no empate, a ordem em que vieram. */
+function topScored<T extends { score: number }>(hits: T[], limit: number): T[] {
+  return hits
+    .map((hit, order) => ({ hit, order }))
+    .filter(({ hit }) => hit.score > 0)
+    .sort((a, b) => b.hit.score - a.hit.score || a.order - b.order)
+    .slice(0, limit)
+    .map(({ hit }) => hit);
+}
 
 /** Um Item do catálogo achado pela paleta de comandos, com a relevância na escala da busca. */
 export type QuickHit = { entry: CatalogEntry; score: number };
 
 function quickQuery(query: string): string | null {
   const text = query.trim().slice(0, QUICK_MAX_LENGTH);
-  return text.length >= QUICK_MIN_LENGTH ? text : null;
+  return text.length >= SEARCH_MIN_LENGTH ? text : null;
 }
 
 /**
@@ -235,15 +244,10 @@ function quickQuery(query: string): string | null {
 export function quickSearchCatalog(query: string, limit: number): QuickHit[] {
   const text = quickQuery(query);
   if (!text) return [];
-  const scored: (QuickHit & { order: number })[] = [];
-  catalogIndex().forEach((entry, order) => {
-    const score = scoreDoc(docOf(entry), text);
-    if (score > 0) scored.push({ entry, score, order });
-  });
-  return scored
-    .sort((a, b) => b.score - a.score || a.order - b.order)
-    .slice(0, limit)
-    .map(({ entry, score }) => ({ entry, score }));
+  return topScored(
+    catalogIndex().map((entry) => ({ entry, score: scoreDoc(docOf(entry), text) })),
+    limit,
+  );
 }
 
 /** Um Item do Inventário da Conta achado pela paleta; `uid` abre o editor dele. */
@@ -260,17 +264,11 @@ export function quickSearchOwned(
 ): OwnedHit[] {
   const text = quickQuery(query);
   if (!text) return [];
-  const scored: (OwnedHit & { order: number })[] = [];
-  items.forEach(({ uid, itemId }, order) => {
+  const scored = items.flatMap(({ uid, itemId }) => {
     const entry = catalogEntry(itemId);
-    if (!entry) return;
-    const score = scoreDoc(docOf(entry), text);
-    if (score > 0) scored.push({ entry, score, uid, order });
+    return entry ? [{ entry, uid, score: scoreDoc(docOf(entry), text) }] : [];
   });
-  return scored
-    .sort((a, b) => b.score - a.score || a.order - b.order)
-    .slice(0, limit)
-    .map(({ entry, score, uid }) => ({ entry, score, uid }));
+  return topScored(scored, limit);
 }
 
 /**
