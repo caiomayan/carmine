@@ -25,6 +25,7 @@ import {
   viewFriends,
 } from '@/lib/live-servers';
 import { mapDisplayName } from '@/lib/map-art';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import { useCopy } from './use-copy';
 import type { FriendsPlayingState } from './use-friends-playing';
@@ -250,7 +251,7 @@ function PrivateList({ found }: { found: boolean }) {
       className="grid gap-1 px-3 pt-1.5 pb-2.5 text-[12px] leading-[1.5] text-muted-foreground"
     >
       <p>{t('foundBody')}</p>
-      <PrivacyHowTo className="-ml-3 text-muted-foreground" />
+      <PrivacyHowTo className="-ml-3" />
     </div>
   ) : (
     <Notice icon={LockIcon} title={t('title')} body={t('body')}>
@@ -261,6 +262,7 @@ function PrivateList({ found }: { found: boolean }) {
 
 /** "Como deixar a lista visível": os passos e a consequência de privacidade, sob demanda. */
 function PrivacyHowTo({ className }: { className?: string }) {
+  const reveal = useRevealMotion();
   const t = useTranslations('servers.friends.private');
   const [open, setOpen] = useState(false);
   const panelId = useId();
@@ -293,15 +295,7 @@ function PrivacyHowTo({ className }: { className?: string }) {
       </Button>
       <AnimatePresence initial={false}>
         {open ? (
-          <m.div
-            key="how"
-            id={panelId}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
+          <m.div key="how" id={panelId} {...reveal} className="overflow-hidden">
             <div className="grid gap-2.5 pt-2 text-[13px] leading-[1.5] text-foreground">
               <ol className="grid list-decimal gap-1 pl-5 marker:text-muted-foreground">
                 <li>{t('step1')}</li>

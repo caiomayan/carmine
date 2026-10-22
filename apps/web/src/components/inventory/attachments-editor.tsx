@@ -25,6 +25,7 @@ import {
   MAX_STICKERS,
   type StickerForm,
 } from '@/lib/inventory/item-form';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import type { DragAction } from '@/lib/viewer/drag-selection';
 
@@ -39,13 +40,6 @@ const AttachmentPicker = dynamic(
 import { DecimalInput, describedBy, FieldShell, RangeInput } from './editor-fields';
 
 type Bounds = { min: number | undefined; max: number | undefined };
-
-const listMotion = {
-  initial: { opacity: 0, height: 0 },
-  animate: { opacity: 1, height: 'auto' },
-  exit: { opacity: 0, height: 0 },
-  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
-};
 
 /** Até 5 stickers: cada um com posição na arma, rotação, desgaste e ajuste fino opcional. */
 export function StickersEditor({
@@ -66,6 +60,7 @@ export function StickersEditor({
   drag: DragBinding;
 }) {
   const t = useTranslations('itemEditor');
+  const reveal = useRevealMotion();
   const [picking, setPicking] = useState(false);
   const full = stickers.length >= MAX_STICKERS;
 
@@ -96,7 +91,7 @@ export function StickersEditor({
             <m.li
               // biome-ignore lint/suspicious/noArrayIndexKey: a ordem é a identidade do sticker (chave "0".."4" do contrato).
               key={`${index}-${sticker.id}`}
-              {...listMotion}
+              {...reveal}
               className="overflow-hidden"
             >
               <StickerRow
@@ -366,7 +361,7 @@ function FineAdjust({ children }: { children: React.ReactNode }) {
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className="size-3.5 transition-transform duration-(--dur-fast) group-open/fine:rotate-90"
+          className="size-3.5 transition-[rotate] duration-(--dur-fast) ease-std motion-reduce:transition-none group-open/fine:rotate-90"
           fill="none"
           stroke="currentColor"
           strokeWidth="2"

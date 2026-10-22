@@ -23,7 +23,9 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { SimpleSelect } from '@/components/ui/select';
 import { type DurationUnit, durationParts, sameMeasures, toMinutes } from '@/lib/moderation';
+import { enterTransition } from '@/lib/motion';
 import { measureOptions, type StaffViewer } from '@/lib/staff';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import { REASON_MIN, ReasonField } from './action-form';
 import { Field, FieldError, TextInput } from './fields';
@@ -76,6 +78,7 @@ export function ApplySanctionForm({
   const tm = useTranslations('moderation');
   const label = useMeasureLabel();
   const id = useId();
+  const reveal = useRevealMotion();
   const { request, pending } = useStaffRequest();
   const options = measureOptions(viewer.role);
   const [category, setCategory] = useState<SanctionCategory | ''>('');
@@ -221,14 +224,7 @@ export function ApplySanctionForm({
 
       <AnimatePresence initial={false}>
         {category ? (
-          <m.div
-            key="measures"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-            className="-mx-1 overflow-hidden px-1"
-          >
+          <m.div key="measures" {...reveal} className="-mx-1 overflow-hidden px-1">
             <div className="grid gap-5 pb-1">
               {suggestion ? (
                 <div
@@ -384,7 +380,7 @@ export function ApplySanctionForm({
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    transition={enterTransition()}
                     role="group"
                     aria-labelledby={`${id}-confirm`}
                     className="grid gap-3 rounded-lg bg-surface-2 px-4 py-3.5"

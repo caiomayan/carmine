@@ -134,8 +134,9 @@ export function BoardCard({
   );
 }
 
+// `scale` é uma propriedade própria: `transition-[transform,...]` arbitrário não a anima.
 const ART =
-  'absolute inset-0 aspect-auto h-full w-full transition-[transform,opacity] duration-(--dur-slow) ease-out group-hover/card:scale-105 motion-reduce:transform-none';
+  'absolute inset-0 aspect-auto h-full w-full transition-[scale,opacity] duration-(--dur-zoom) ease-(--ease-soft) group-hover/card:scale-105 motion-reduce:group-hover/card:scale-100';
 
 /** O agente padrão depende do mapa: uma silhueta neutra no lugar da imagem. */
 function AgentSilhouette() {

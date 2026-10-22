@@ -83,11 +83,7 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
           ) : (
             <TabsContents>
               {MODE_FILTERS.map((m) => (
-                <TabsContent
-                  key={m}
-                  value={m}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                >
+                <TabsContent key={m} value={m}>
                   <ServersOfMode
                     mode={m}
                     servers={serversOfMode(servers, m)}
