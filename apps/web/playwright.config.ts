@@ -22,6 +22,9 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  // Na CI, os fluxos longos (ex.: ban e recurso na moderação, ~20–30 s) ganham folga: o runner
+  // próprio divide a máquina com o desenvolvimento e fica mais lento que o do GitHub.
+  ...(process.env.CI ? { timeout: 60_000 } : {}),
   // O `next dev` compila cada rota na primeira visita.
   ...(process.env.E2E_DEV === '1' ? { timeout: 90_000, expect: { timeout: 15_000 } } : {}),
   // A stack inteira do login (S03): a Steam OpenID falsa, a API (com Postgres e Valkey do
