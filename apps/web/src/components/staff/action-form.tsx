@@ -7,8 +7,9 @@ import { CheckIcon } from '@/components/icons/animated/check';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { LabelTextarea } from '@/components/ui/label-input';
 import { useRevealMotion } from '@/lib/use-reveal-motion';
-import { Field, FieldError, Textarea } from './fields';
+import { FieldError } from './fields';
 import type { StaffResult } from './use-staff-request';
 
 /** Limites do motivo (`staffReasonSchema`): vai para o log de auditoria. */
@@ -29,27 +30,21 @@ export function ReasonField({
 }) {
   const t = useTranslations('staff.reason');
   return (
-    <Field
+    <LabelTextarea
       id={id}
       label={t('label')}
       hint={t('hint')}
       error={error}
       aside={t('count', { count: value.length, max: REASON_MAX })}
-    >
-      <Textarea
-        id={id}
-        name="reason"
-        value={value}
-        maxLength={REASON_MAX}
-        required
-        rows={2}
-        placeholder={t('placeholder')}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : `${id}-hint`}
-        onChange={(event) => onChange(event.target.value)}
-        data-testid="reason"
-      />
-    </Field>
+      name="reason"
+      value={value}
+      maxLength={REASON_MAX}
+      required
+      rows={2}
+      placeholder={t('placeholder')}
+      onChange={(event) => onChange(event.target.value)}
+      data-testid="reason"
+    />
   );
 }
 

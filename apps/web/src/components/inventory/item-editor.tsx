@@ -16,6 +16,7 @@ import { useEquip } from '@/components/loadout/use-equip';
 import { useSession } from '@/components/session/session-provider';
 import { useDraft } from '@/components/session/use-draft';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { signInHref } from '@/lib/auth-links';
 import type { ItemSpec } from '@/lib/catalog/catalog';
 import { loadContracts } from '@/lib/contracts-schemas';
@@ -36,7 +37,7 @@ import {
 import { cn } from '@/lib/utils';
 import { dragReducer, initialDragState, selectionFor } from '@/lib/viewer/drag-selection';
 import { CharmEditor, StickersEditor } from './attachments-editor';
-import { DecimalInput, describedBy, FieldShell, FloatField, TextInput } from './editor-fields';
+import { DecimalInput, FieldShell, FloatField, VipLock } from './editor-fields';
 import { useInventory } from './inventory-provider';
 import { ItemViewer } from './item-viewer';
 
@@ -309,22 +310,17 @@ export function ItemEditor(props: EditorProps) {
         {spec.seed || spec.statTrak ? (
           <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
             {spec.seed ? (
-              <FieldShell
+              <DecimalInput
                 id={seedId}
                 label={t('seed')}
                 hint={t('seedRange', { min: spec.seed.min, max: spec.seed.max })}
                 error={issueOf('seed') && errorText(issueOf('seed') as FormIssue)}
-              >
-                <DecimalInput
-                  id={seedId}
-                  value={form.seed}
-                  decimals={0}
-                  invalid={!!issueOf('seed')}
-                  describedBy={describedBy(seedId, { error: issueOf('seed'), hint: true })}
-                  onChange={(seed) => change({ seed: seed ?? Number.NaN })}
-                  testId="field-seed"
-                />
-              </FieldShell>
+                value={form.seed}
+                decimals={0}
+                invalid={!!issueOf('seed')}
+                onChange={(seed) => change({ seed: seed ?? Number.NaN })}
+                testId="field-seed"
+              />
             ) : null}
             {spec.statTrak ? (
               <FieldShell
@@ -361,33 +357,27 @@ export function ItemEditor(props: EditorProps) {
         ) : null}
 
         {spec.nameTag ? (
-          <FieldShell
+          <LabelInput
             id={nameTagId}
-            label={t('nameTag')}
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                {t('nameTag')}
+                {!vip ? <VipLock locked={t('vipLocked')} badge={t('vipBadge')} /> : null}
+              </span>
+            }
             hint={t('nameTagHint')}
-            locked={!vip ? t('vipLocked') : undefined}
-            lockedBadge={t('vipBadge')}
             error={
               visibleIssues.some((i) => i.field === 'nameTag')
                 ? errorText(issueOf('nameTag') as FormIssue)
                 : undefined
             }
-          >
-            <TextInput
-              id={nameTagId}
-              value={form.nameTag}
-              maxLength={20}
-              placeholder={t('nameTagPlaceholder')}
-              autoComplete="off"
-              aria-invalid={visibleIssues.some((i) => i.field === 'nameTag') || undefined}
-              aria-describedby={describedBy(nameTagId, {
-                error: visibleIssues.some((i) => i.field === 'nameTag'),
-                hint: true,
-              })}
-              onChange={(event) => change({ nameTag: event.target.value })}
-              data-testid="field-nametag"
-            />
-          </FieldShell>
+            value={form.nameTag}
+            maxLength={20}
+            placeholder={t('nameTagPlaceholder')}
+            autoComplete="off"
+            onChange={(event) => change({ nameTag: event.target.value })}
+            data-testid="field-nametag"
+          />
         ) : null}
 
         {spec.stickerSlots > 0 ? (

@@ -13,8 +13,9 @@ import {
 } from '@/components/animate-ui/components/radix/dialog';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
 import { useSession } from '@/components/session/session-provider';
-import { controlClass, Field, FieldError } from '@/components/staff/fields';
+import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { loadContracts } from '@/lib/contracts-schemas';
 import { cn } from '@/lib/utils';
 
@@ -152,8 +153,6 @@ function NameRow() {
     }
   }
 
-  const errorId = `${inputId}-error`;
-
   return (
     <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="name-setting">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -216,29 +215,22 @@ function NameRow() {
 
       {editing ? (
         <form onSubmit={submit} className="grid gap-3" data-testid="name-form" noValidate>
-          <Field
+          <LabelInput
+            ref={input}
             id={inputId}
             label={t('label')}
             hint={t('rules', { min: DISPLAY_NAME_MIN_LENGTH, max: DISPLAY_NAME_MAX_LENGTH })}
             error={state.kind === 'error' ? state.message : undefined}
-          >
-            <input
-              ref={input}
-              id={inputId}
-              type="text"
-              name="displayName"
-              autoComplete="nickname"
-              autoCapitalize="off"
-              spellCheck={false}
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              maxLength={DISPLAY_NAME_MAX_LENGTH * 4}
-              aria-invalid={state.kind === 'error' || undefined}
-              aria-describedby={state.kind === 'error' ? errorId : `${inputId}-hint`}
-              className={controlClass}
-              data-testid="name-input"
-            />
-          </Field>
+            type="text"
+            name="displayName"
+            autoComplete="nickname"
+            autoCapitalize="off"
+            spellCheck={false}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            maxLength={DISPLAY_NAME_MAX_LENGTH * 4}
+            data-testid="name-input"
+          />
           <p className="text-body-sm text-muted-foreground" data-testid="name-cooldown">
             {nextChangeAt ? t('cooldownActive', { when: when(nextChangeAt) }) : t('cooldownRule')}
           </p>

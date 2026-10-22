@@ -9,9 +9,9 @@ import {
 } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
+import { LabelInput } from '@/components/ui/label-input';
 import { normalizeServerCode } from '@/lib/staff';
 import { ActionForm } from './action-form';
-import { Field, TextInput } from './fields';
 import { useStaffRequest } from './use-staff-request';
 
 /**
@@ -66,31 +66,29 @@ export function ServerEditor({ initial }: { initial: StaffServer }) {
         }}
       >
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_160px]">
-          <Field id={`${id}-name`} label={t('showcaseName')} hint={t('showcaseHint')}>
-            <TextInput
-              id={`${id}-name`}
-              value={name}
-              maxLength={40}
-              aria-invalid={(name.length > 0 && !nameOk) || undefined}
-              aria-describedby={`${id}-name-hint`}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="server-showcase-name"
-            />
-          </Field>
-          <Field id={`${id}-code`} label={t('code')} hint={t('codeHint')}>
-            <TextInput
-              id={`${id}-code`}
-              value={code}
-              maxLength={8}
-              autoCapitalize="characters"
-              aria-invalid={(code.length > 0 && !codeOk) || undefined}
-              aria-describedby={`${id}-code-hint`}
-              onChange={(event) => setCode(event.target.value)}
-              onBlur={() => setCode((value) => normalizeServerCode(value))}
-              className="tabular-nums"
-              data-testid="server-code-input"
-            />
-          </Field>
+          <LabelInput
+            id={`${id}-name`}
+            label={t('showcaseName')}
+            hint={t('showcaseHint')}
+            value={name}
+            maxLength={40}
+            aria-invalid={(name.length > 0 && !nameOk) || undefined}
+            onChange={(event) => setName(event.target.value)}
+            data-testid="server-showcase-name"
+          />
+          <LabelInput
+            id={`${id}-code`}
+            label={t('code')}
+            hint={t('codeHint')}
+            value={code}
+            maxLength={8}
+            autoCapitalize="characters"
+            aria-invalid={(code.length > 0 && !codeOk) || undefined}
+            onChange={(event) => setCode(event.target.value)}
+            onBlur={() => setCode((value) => normalizeServerCode(value))}
+            className="tabular-nums"
+            data-testid="server-code-input"
+          />
         </div>
         <p className="text-body-sm text-muted-foreground" aria-live="polite">
           {t('hostname')}:{' '}

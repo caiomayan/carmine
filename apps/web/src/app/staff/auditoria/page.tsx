@@ -7,8 +7,9 @@ import {
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLog } from '@/components/staff/audit-log';
-import { Field, TextInput } from '@/components/staff/fields';
+import { Field } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { SimpleSelect } from '@/components/ui/select';
 import { getServerSession, readStaff } from '@/lib/api-server';
 
@@ -66,36 +67,26 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
             }))}
           />
         </Field>
-        <Field
+        <LabelInput
           id="autor"
           label={t('actor')}
           error={actorRaw && !actorOk ? t('steamIdInvalid') : undefined}
-        >
-          <TextInput
-            id="autor"
-            name="autor"
-            inputMode="numeric"
-            defaultValue={actorRaw}
-            placeholder={t('steamIdPlaceholder')}
-            aria-invalid={(actorRaw && !actorOk) || undefined}
-            className="tabular-nums"
-          />
-        </Field>
-        <Field
+          name="autor"
+          inputMode="numeric"
+          defaultValue={actorRaw}
+          placeholder={t('steamIdPlaceholder')}
+          className="tabular-nums"
+        />
+        <LabelInput
           id="alvo"
           label={t('target')}
           error={targetRaw && !targetOk ? t('steamIdInvalid') : undefined}
-        >
-          <TextInput
-            id="alvo"
-            name="alvo"
-            inputMode="numeric"
-            defaultValue={targetRaw}
-            placeholder={t('steamIdPlaceholder')}
-            aria-invalid={(targetRaw && !targetOk) || undefined}
-            className="tabular-nums"
-          />
-        </Field>
+          name="alvo"
+          inputMode="numeric"
+          defaultValue={targetRaw}
+          placeholder={t('steamIdPlaceholder')}
+          className="tabular-nums"
+        />
         <Button type="submit" variant="ghost">
           {t('apply')}
         </Button>

@@ -21,6 +21,7 @@ import { PlusIcon } from '@/components/icons/animated/plus';
 import { XIcon } from '@/components/icons/animated/x';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { SimpleSelect } from '@/components/ui/select';
 import { type DurationUnit, durationParts, sameMeasures, toMinutes } from '@/lib/moderation';
 import { enterTransition } from '@/lib/motion';
@@ -28,7 +29,7 @@ import { measureOptions, type StaffViewer } from '@/lib/staff';
 import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import { REASON_MIN, ReasonField } from './action-form';
-import { Field, FieldError, TextInput } from './fields';
+import { Field, FieldError } from './fields';
 import { useMeasureLabel } from './use-measure-label';
 import { useStaffRequest } from './use-staff-request';
 
@@ -325,38 +326,36 @@ export function ApplySanctionForm({
                     </span>
                   </legend>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Field id={`${id}-witness`} label={t('apply.proof.witness')}>
-                      <TextInput
-                        id={`${id}-witness`}
-                        value={witness}
-                        maxLength={200}
-                        placeholder={t('apply.proof.witnessPlaceholder')}
-                        aria-invalid={proofError ? true : undefined}
-                        onChange={(event) => {
-                          setWitness(event.target.value);
-                          setReviewing(false);
-                          setProofError(null);
-                        }}
-                        data-testid="proof-witness"
-                      />
-                    </Field>
-                    <Field id={`${id}-evidence`} label={t('apply.proof.evidence')}>
-                      <TextInput
-                        id={`${id}-evidence`}
-                        type="url"
-                        inputMode="url"
-                        value={evidenceUrl}
-                        maxLength={500}
-                        placeholder="https://"
-                        aria-invalid={proofError ? true : undefined}
-                        onChange={(event) => {
-                          setEvidenceUrl(event.target.value);
-                          setReviewing(false);
-                          setProofError(null);
-                        }}
-                        data-testid="proof-evidence"
-                      />
-                    </Field>
+                    <LabelInput
+                      id={`${id}-witness`}
+                      label={t('apply.proof.witness')}
+                      value={witness}
+                      maxLength={200}
+                      placeholder={t('apply.proof.witnessPlaceholder')}
+                      aria-invalid={proofError ? true : undefined}
+                      onChange={(event) => {
+                        setWitness(event.target.value);
+                        setReviewing(false);
+                        setProofError(null);
+                      }}
+                      data-testid="proof-witness"
+                    />
+                    <LabelInput
+                      id={`${id}-evidence`}
+                      label={t('apply.proof.evidence')}
+                      type="url"
+                      inputMode="url"
+                      value={evidenceUrl}
+                      maxLength={500}
+                      placeholder="https://"
+                      aria-invalid={proofError ? true : undefined}
+                      onChange={(event) => {
+                        setEvidenceUrl(event.target.value);
+                        setReviewing(false);
+                        setProofError(null);
+                      }}
+                      data-testid="proof-evidence"
+                    />
                   </div>
                   {proofError ? <FieldError>{proofError}</FieldError> : null}
                 </fieldset>
@@ -510,11 +509,10 @@ function MeasureRow({
           <fieldset className="grid gap-1.5">
             <legend className="pb-1.5 text-body-sm font-semibold">{t('duration')}</legend>
             <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor={`${id}-value`} className="sr-only">
-                {t('durationValue')}
-              </label>
-              <TextInput
+              <LabelInput
                 id={`${id}-value`}
+                label={t('durationValue')}
+                containerClassName="w-36"
                 type="number"
                 inputMode="numeric"
                 min={1}
@@ -522,7 +520,7 @@ function MeasureRow({
                 disabled={draft.permanent}
                 aria-invalid={invalidValue || undefined}
                 onChange={(event) => onChange({ value: event.target.value })}
-                className="w-20 tabular-nums"
+                className="tabular-nums"
                 data-testid="measure-value"
               />
               <label htmlFor={`${id}-unit`} className="sr-only">

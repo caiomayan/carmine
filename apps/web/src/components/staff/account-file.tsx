@@ -26,6 +26,7 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { SectionTitle } from '@/components/section-title';
 import { useCopy } from '@/components/servers/use-copy';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { SimpleSelect } from '@/components/ui/select';
 import { sanctionLength } from '@/lib/moderation';
 import { recentWeekStarts } from '@/lib/ranking';
@@ -34,7 +35,7 @@ import { cn } from '@/lib/utils';
 import { ActionForm } from './action-form';
 import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 import { AuditEntries } from './audit-entries';
-import { Field, TextInput } from './fields';
+import { Field } from './fields';
 import { RoleTag, SanctionTypeTags } from './tags';
 import { useStaffRequest } from './use-staff-request';
 
@@ -425,19 +426,19 @@ function VipPanel({
             return result;
           }}
         >
-          <Field id={`${id}-days`} label={t('vip.days')} hint={t('vip.grantHint')}>
-            <TextInput
-              id={`${id}-days`}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={3650}
-              value={days}
-              onChange={(event) => setDays(event.target.value)}
-              className="w-28 tabular-nums"
-              aria-describedby={`${id}-days-hint`}
-            />
-          </Field>
+          <LabelInput
+            id={`${id}-days`}
+            label={t('vip.days')}
+            hint={t('vip.grantHint')}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={3650}
+            value={days}
+            onChange={(event) => setDays(event.target.value)}
+            containerClassName="w-40"
+            className="tabular-nums"
+          />
         </ActionForm>
         {detail.vip.active ? (
           <ActionForm

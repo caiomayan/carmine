@@ -9,6 +9,7 @@ import {
 } from '@/components/animate-ui/components/radix/tooltip';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
+import { LabelInput } from '@/components/ui/label-input';
 import { wearGradient, wearSegments, wearTier } from '@/lib/catalog/wear';
 import { formatDecimal, parseDecimal } from '@/lib/decimal';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,21 @@ import { cn } from '@/lib/utils';
  * funciona com teclado e leitor de tela; o arrasto no 3D é só um atalho (Princípios
  * transversais). Cada campo liga o rótulo, a dica e o erro por `aria-describedby`.
  */
+
+/** Selo de campo exclusivo do VIP: o cadeado e "VIP" à vista; a frase inteira só para leitor de tela. */
+export function VipLock({ locked, badge }: { locked: ReactNode; badge: ReactNode }) {
+  return (
+    <span
+      data-icon-trigger
+      data-testid="field-vip-lock"
+      className="inline-flex items-center gap-1 text-status-vip"
+    >
+      <AnimatedIcon icon={LockIcon} size={11} />
+      <span aria-hidden="true">{badge}</span>
+      <span className="sr-only">{locked}</span>
+    </span>
+  );
+}
 
 export function FieldShell({
   id,
@@ -47,18 +63,7 @@ export function FieldShell({
       <div className="flex min-h-4 items-baseline justify-between gap-3">
         <label htmlFor={id} className="inline-flex items-center gap-1.5 label-caps text-[11px]">
           {label}
-          {locked ? (
-            <span
-              data-icon-trigger
-              data-testid="field-vip-lock"
-              className="inline-flex items-center gap-1 text-status-vip"
-            >
-              <AnimatedIcon icon={LockIcon} size={11} />
-              {/* O cadeado sozinho não diz por quê: "VIP" à vista, a frase inteira para leitor de tela. */}
-              <span aria-hidden="true">{lockedBadge}</span>
-              <span className="sr-only">{locked}</span>
-            </span>
-          ) : null}
+          {locked ? <VipLock locked={locked} badge={lockedBadge} /> : null}
         </label>
         {aside ? <span className="text-body-sm font-semibold tabular-nums">{aside}</span> : null}
       </div>
@@ -100,6 +105,9 @@ export function DecimalInput({
   testId,
   className,
   disabled,
+  label,
+  hint,
+  error,
 }: {
   id: string;
   value: number | null;
@@ -110,6 +118,10 @@ export function DecimalInput({
   testId?: string;
   className?: string;
   disabled?: boolean;
+  /** Com rótulo, o campo é o Label Input (rótulo flutuante, dica e erro embaixo). */
+  label?: ReactNode;
+  hint?: ReactNode;
+  error?: ReactNode;
 }) {
   const format = (n: number | null) => (n === null ? '' : formatDecimal(n, decimals));
   const [text, setText] = useState(() => format(value));
@@ -119,36 +131,50 @@ export function DecimalInput({
     if (!focused.current) setText(value === null ? '' : formatDecimal(value, decimals));
   }, [value, decimals]);
 
+  const field = {
+    id,
+    type: 'text' as const,
+    inputMode: decimals > 0 ? ('decimal' as const) : ('numeric' as const),
+    autoComplete: 'off',
+    spellCheck: false,
+    value: text,
+    disabled,
+    'data-testid': testId,
+    onFocus: () => {
+      focused.current = true;
+    },
+    onBlur: () => {
+      focused.current = false;
+      setText(format(value));
+    },
+    onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+      setText(event.target.value);
+      onChange(parseDecimal(event.target.value));
+    },
+  };
+
+  if (label) {
+    return (
+      <LabelInput
+        {...field}
+        label={label}
+        hint={hint}
+        error={error}
+        aria-invalid={invalid || undefined}
+        aria-describedby={described}
+        className={cn('tabular-nums', className)}
+      />
+    );
+  }
+
   return (
     <input
-      id={id}
-      type="text"
-      inputMode={decimals > 0 ? 'decimal' : 'numeric'}
-      autoComplete="off"
-      spellCheck={false}
-      value={text}
-      disabled={disabled}
-      data-testid={testId}
+      {...field}
       aria-invalid={invalid || undefined}
       aria-describedby={described}
-      onFocus={() => {
-        focused.current = true;
-      }}
-      onBlur={() => {
-        focused.current = false;
-        setText(format(value));
-      }}
-      onChange={(event) => {
-        setText(event.target.value);
-        onChange(parseDecimal(event.target.value));
-      }}
       className={cn(inputClass, className)}
     />
   );
-}
-
-export function TextInput({ className, ...props }: React.ComponentProps<'input'>) {
-  return <input type="text" className={cn(inputClass, className)} {...props} />;
 }
 
 /** Slider nativo com a parte preenchida acompanhando o valor. */
