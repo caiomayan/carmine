@@ -221,7 +221,7 @@ async function ProfileHeader({
         <SanctionBadges active={profile.sanctions.active} />
         {profile.isPrivate ? (
           <p
-            className="inline-flex items-center gap-2 text-[13px] text-muted-foreground"
+            className="inline-flex items-center gap-2 text-body-sm text-muted-foreground"
             data-testid="private-note"
           >
             <AnimatedIcon icon={LockIcon} size={13} />
@@ -229,7 +229,7 @@ async function ProfileHeader({
           </p>
         ) : null}
         {unclaimed && !isOwner ? (
-          <p className="text-[13px] text-muted-foreground" data-testid="unclaimed-note">
+          <p className="text-body-sm text-muted-foreground" data-testid="unclaimed-note">
             {t('unclaimed')}
           </p>
         ) : null}
@@ -251,7 +251,7 @@ async function ProfileHeader({
           </div>
         ) : asVisitor ? (
           <p
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted-foreground"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted-foreground"
             data-testid="as-visitor-note"
           >
             {t('asVisitorNote')}
@@ -277,7 +277,7 @@ async function ClaimInvite({ profile }: { profile: Profile }) {
         <h2 id="convite" className="text-md font-semibold">
           {t('title')}
         </h2>
-        <p className="text-[13px] text-muted-foreground">{t('body')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('body')}</p>
       </div>
       <Button asChild size="sm" className="max-md:w-full">
         <a href={steamLoginHref(`/${profile.publicId}`)}>

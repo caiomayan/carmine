@@ -34,7 +34,7 @@ export async function ProfileStats({
     isOwner && isPrivate ? (
       <span
         data-testid="stats-only-you"
-        className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2 py-[3px] label-caps text-[10px] text-foreground"
+        className="inline-flex items-center gap-1.5 rounded-sm bg-surface-2 px-2 py-[3px] label-caps text-foreground"
       >
         {t('onlyYou')}
       </span>
@@ -68,7 +68,7 @@ async function Body({
 
   if (stats === null) {
     return (
-      <p className="text-[13.5px] text-muted-foreground" data-testid="stats-unavailable">
+      <p className="text-body-sm text-muted-foreground" data-testid="stats-unavailable">
         {t('unavailable')}
       </p>
     );
@@ -128,7 +128,7 @@ async function Highlights({ total }: { total: TotalStats }) {
           data-highlight={key}
           className="flex min-w-0 flex-col-reverse gap-2 rounded-xl bg-surface px-5 py-4 max-md:px-3.5 max-md:py-3"
         >
-          <dt className="label-caps text-[11px] text-muted-foreground">{t(`labels.${key}`)}</dt>
+          <dt className="label-caps text-muted-foreground">{t(`labels.${key}`)}</dt>
           <dd className="truncate font-display text-[40px] leading-none font-normal tabular-nums max-md:text-[28px]">
             {show(key, value)}
           </dd>
@@ -150,7 +150,7 @@ async function Group({
   const t = await getTranslations('profile.stats');
   return (
     <section data-testid={testId} aria-label={t('groupLabel', { mode: label })}>
-      <h3 className="pb-2 label-caps text-[11px] text-muted-foreground">{label}</h3>
+      <h3 className="pb-2 label-caps text-muted-foreground">{label}</h3>
       <dl className="grid">{children}</dl>
     </section>
   );

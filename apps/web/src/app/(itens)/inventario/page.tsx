@@ -113,7 +113,7 @@ export default async function InventoryPage() {
               <h2 id="inventario-vazio" className="text-lg font-semibold">
                 {t('empty.title')}
               </h2>
-              <p className="text-[13.5px] text-muted-foreground">{t('empty.body')}</p>
+              <p className="text-body-sm text-muted-foreground">{t('empty.body')}</p>
             </div>
             <h3 className="sr-only">{t('empty.suggestions')}</h3>
             <CatalogGrid
@@ -132,16 +132,16 @@ export default async function InventoryPage() {
           </div>
 
           <div className="grid gap-3">
-            <h3 className="label-caps text-[11px]">{t('empty.pathTitle')}</h3>
+            <h3 className="label-caps">{t('empty.pathTitle')}</h3>
             <ol className="grid grid-cols-3 gap-x-8 gap-y-4 max-md:grid-cols-1">
               {(['step1', 'step2', 'step3'] as const).map((step, index) => (
                 <li
                   key={step}
-                  className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 text-[13.5px] leading-[1.55]"
+                  className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 text-body-sm leading-[1.55]"
                 >
                   <span
                     aria-hidden="true"
-                    className="grid size-6 place-items-center rounded-full bg-(--fill-rest) text-[12px] font-semibold"
+                    className="grid size-6 place-items-center rounded-full bg-(--fill-rest) text-caption font-semibold"
                   >
                     {index + 1}
                   </span>
@@ -171,7 +171,7 @@ export default async function InventoryPage() {
           id="seus-itens"
           aside={
             <span
-              className="text-[12.5px] text-muted-foreground tabular-nums"
+              className="text-caption text-muted-foreground tabular-nums"
               data-testid="inventory-count"
             >
               {t('count', { count: items.length, limit })}
@@ -181,7 +181,7 @@ export default async function InventoryPage() {
           {t('section')}
         </SectionTitle>
         {full ? (
-          <p role="status" className="mb-3 rounded-lg bg-surface px-4 py-3 text-[13px]">
+          <p role="status" className="mb-3 rounded-lg bg-surface px-4 py-3 text-body-sm">
             {t('full', { limit })}
           </p>
         ) : null}

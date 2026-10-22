@@ -172,6 +172,23 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
   ).toHaveAttribute('data-self', 'true');
 });
 
+test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em vez de sumir', async ({
+  page,
+  request,
+}) => {
+  const { high } = await tiedPair(request);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ranking');
+
+  const row = page.getByTestId('ranking-row').filter({ hasText: high.name });
+  await expect(row.getByRole('link', { name: high.name })).toBeVisible();
+  await expect(row.getByTestId('ranking-row-extra')).toContainText(/HS% .+ · d+ rounds/);
+
+  // No desktop as colunas voltam e a segunda linha some.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(row.getByTestId('ranking-row-extra')).toBeHidden();
+});
+
 test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil', async ({
   page,
   request,
@@ -269,6 +286,14 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   await expect(total.locator('[data-stat="kpm"]')).toHaveCount(0);
   await expect(page.getByTestId('stats-retake').locator('[data-stat="adr"]')).toBeVisible();
   await expect(page.getByTestId('stats-only-you')).toHaveCount(0);
+
+  // Os três números de destaque (K/D, Kills, HS%) vêm antes da tabela e do Loadout.
+  const highlights = page.getByTestId('stats-highlights');
+  await expect(highlights.locator('[data-highlight]')).toHaveCount(3);
+  await expect(highlights.locator('[data-highlight="kills"]')).toContainText('1');
+  const statsBox = await page.getByTestId('profile-stats').boundingBox();
+  const loadoutBox = await page.getByRole('region', { name: 'Loadout' }).boundingBox();
+  expect(statsBox?.y).toBeLessThan(loadoutBox?.y ?? 0);
 
   // O dono liga o Perfil privado: vê as suas com "Só você vê"; o visitante vê o aviso.
   await signInByRequest(page, killer.steamId);
