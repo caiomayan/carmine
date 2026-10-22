@@ -8,7 +8,10 @@ import {
   exitTransition,
   floatingMotion,
   heightTransition,
+  overlayMotion,
   revealMotion,
+  scaleMotion,
+  withTransition,
 } from './motion';
 
 const css = (file: string) => readFileSync(new URL(`../app/${file}`, import.meta.url), 'utf8');
@@ -65,17 +68,26 @@ describe('abrir e fechar de altura', () => {
     const reveal = revealMotion();
 
     expect(reveal.initial).toEqual({ height: 0, opacity: 0 });
-    expect(reveal.animate).toEqual({ height: 'auto', opacity: 1 });
-    expect(reveal.exit).toEqual({ height: 0, opacity: 0 });
-    expect(reveal.transition.duration).toBe(DURATION.base);
+    expect(reveal.animate).toMatchObject({ height: 'auto', opacity: 1 });
+    expect(reveal.exit).toMatchObject({ height: 0, opacity: 0 });
+    expect(reveal.animate.transition.duration).toBe(DURATION.base);
+    expect(reveal.animate.transition.ease).toEqual(EASE.out);
+  });
+
+  it('fecha mais depressa que abre, com a curva de saída', () => {
+    const reveal = revealMotion();
+
+    expect(reveal.exit.transition).toEqual(exitTransition());
+    expect(reveal.exit.transition.duration).toBeLessThan(reveal.animate.transition.duration);
   });
 
   it('com movimento reduzido não anima a altura: só um fade, mais curto', () => {
     const reveal = revealMotion(true);
 
     expect(reveal.initial).toEqual({ opacity: 0 });
-    expect(reveal.exit).toEqual({ opacity: 0 });
-    expect(reveal.transition.duration).toBe(DURATION.fast);
+    expect(reveal.exit).toMatchObject({ opacity: 0 });
+    expect(Object.keys(reveal.exit)).not.toContain('height');
+    expect(reveal.animate.transition.duration).toBe(DURATION.fast);
   });
 });
 
@@ -106,5 +118,42 @@ describe('painel flutuante (Dialog, menus, Tooltip)', () => {
     expect(tooltip.initial).toEqual({ opacity: 0, y: 0, scale: 0.92 });
     expect(tooltip.animate.transition.duration).toBe(DURATION.fast);
     expect(tooltip.exit.transition.duration).toBe(DURATION.instant);
+  });
+});
+
+describe('menus e Tooltip (só opacidade e escala)', () => {
+  it('não têm deslocamento: o Tooltip que segue o cursor usa o y por conta própria', () => {
+    const menu = scaleMotion({ scale: 0.96 });
+
+    expect(menu.initial).toEqual({ opacity: 0, scale: 0.96 });
+    expect(Object.keys(menu.animate)).not.toContain('y');
+    expect(menu.exit.transition.duration).toBeLessThan(menu.animate.transition.duration);
+  });
+});
+
+describe('fundo escurecido', () => {
+  it('entra em base e sai em fast, como o painel', () => {
+    expect(overlayMotion.animate.transition.duration).toBe(DURATION.base);
+    expect(overlayMotion.exit.transition.duration).toBe(DURATION.fast);
+    expect(overlayMotion.animate.transition.duration).toBe(
+      dialogMotion.animate.transition.duration,
+    );
+  });
+});
+
+describe('withTransition (o transition passado ao componente vale)', () => {
+  it('sem override devolve o movimento como está', () => {
+    expect(withTransition(dialogMotion)).toBe(dialogMotion);
+  });
+
+  it('com override troca o tempo de entrar e de sair, sem mexer nos estados', () => {
+    const spring = { type: 'spring', stiffness: 200 } as const;
+    const custom = withTransition(dialogMotion, spring);
+
+    expect(custom.animate.transition).toEqual(spring);
+    expect(custom.exit.transition).toEqual(spring);
+    expect(custom.initial).toBe(dialogMotion.initial);
+    expect(custom.animate).toMatchObject({ opacity: 1, y: 0, scale: 1 });
+    expect(custom.exit).toMatchObject({ opacity: 0, y: 8, scale: 0.98 });
   });
 });

@@ -27,26 +27,41 @@ const files = sources(SRC).map((path) => ({
 
 type Property = 'scale' | 'translate' | 'rotate';
 
+/** Quantos caracteres em volta contam como "o mesmo elemento" (o `cn(...)` ou o `className`). */
+const REACH = 600;
+
 /** Em variante (`hover:`, `group-open/x:`, `data-[state=open]:`...) ou escolhida por condição (`open && 'rotate-180'`). */
-const uses = (text: string, property: Property) =>
-  new RegExp(`:-?${property}-|&&\\s*'-?${property}-`).test(text);
+const usage = (property: Property) => new RegExp(`:-?${property}-|&&\\s*'-?${property}-`, 'g');
 const transitions = (text: string, property: Property) =>
   /transition-transform(?![-\w])/.test(text) ||
   new RegExp(`transition-\\[[^\\]]*\\b${property}\\b`).test(text);
 
+/** Cada uso de `property` sem transição por perto: `arquivo:linha`. */
+function withoutTransition(property: Property): string[] {
+  return files.flatMap((file) =>
+    [...file.text.matchAll(usage(property))]
+      .filter((match) => {
+        const at = match.index ?? 0;
+        const around = file.text.slice(Math.max(0, at - REACH), at + REACH);
+        return !transitions(around, property);
+      })
+      .map((match) => {
+        const line = file.text.slice(0, match.index).split('\n').length;
+        return `${file.name}:${line}`;
+      }),
+  );
+}
+
 describe('movimento em classes do Tailwind', () => {
   it('a varredura enxerga os componentes (não passa por vazio)', () => {
     expect(files.length).toBeGreaterThan(50);
-    expect(files.some((file) => uses(file.text, 'scale'))).toBe(true);
+    expect(files.some((file) => usage('scale').test(file.text))).toBe(true);
+    expect(files.some((file) => usage('rotate').test(file.text))).toBe(true);
   });
 
   for (const property of ['scale', 'translate', 'rotate'] as const) {
-    it(`quem anima ${property}-* em hover, active, starting ou estado transiciona ${property}`, () => {
-      const missing = files
-        .filter((file) => uses(file.text, property) && !transitions(file.text, property))
-        .map((file) => file.name);
-
-      expect(missing).toEqual([]);
+    it(`quem anima ${property}-* em hover, active, starting ou estado tem a transição de ${property} no mesmo elemento`, () => {
+      expect(withoutTransition(property)).toEqual([]);
     });
   }
 

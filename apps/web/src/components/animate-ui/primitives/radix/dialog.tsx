@@ -6,7 +6,7 @@ import type * as React from 'react';
 
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { getStrictContext } from '@/lib/get-strict-context';
-import { dialogMotion, enterTransition, exitTransition } from '@/lib/motion';
+import { dialogMotion, overlayMotion, withTransition } from '@/lib/motion';
 
 type DialogContextType = {
   isOpen: boolean;
@@ -56,14 +56,15 @@ type DialogOverlayProps = Omit<
   HTMLMotionProps<'div'>;
 
 /** O fundo escurece no mesmo tempo do painel: entra em `base`, sai em `fast`. */
-function DialogOverlay(props: DialogOverlayProps) {
+function DialogOverlay({ transition, ...props }: DialogOverlayProps) {
+  const motion = withTransition(overlayMotion, transition);
   return (
     <DialogPrimitive.Overlay data-slot="dialog-overlay" asChild forceMount>
       <m.div
         key="dialog-overlay"
-        initial={{ opacity: 0, filter: 'blur(4px)' }}
-        animate={{ opacity: 1, filter: 'blur(0px)', transition: enterTransition() }}
-        exit={{ opacity: 0, filter: 'blur(4px)', transition: exitTransition() }}
+        initial={motion.initial}
+        animate={motion.animate}
+        exit={motion.exit}
         {...props}
       />
     </DialogPrimitive.Overlay>
@@ -88,8 +89,10 @@ function DialogContent({
   onEscapeKeyDown,
   onPointerDownOutside,
   onInteractOutside,
+  transition,
   ...props
 }: DialogContentProps) {
+  const motion = withTransition(dialogMotion, transition);
   return (
     <DialogPrimitive.Content
       asChild
@@ -103,9 +106,9 @@ function DialogContent({
       <m.div
         key="dialog-content"
         data-slot="dialog-content"
-        initial={dialogMotion.initial}
-        animate={dialogMotion.animate}
-        exit={dialogMotion.exit}
+        initial={motion.initial}
+        animate={motion.animate}
+        exit={motion.exit}
         {...props}
       />
     </DialogPrimitive.Content>

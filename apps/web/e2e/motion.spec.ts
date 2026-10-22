@@ -2,14 +2,17 @@ import type { Page } from '@playwright/test';
 import { expect, settle, test } from './fixtures';
 
 /**
- * Abre o diálogo da vitrine e anota, a cada quadro, o `transform` do painel (o Motion escreve
- * `translateY`/`scale` ali) até ele assentar ou a janela acabar.
+ * Abre o diálogo da vitrine e anota, a cada quadro, o `transform` e a opacidade do painel (o
+ * Motion escreve `translateY`/`scale` no `transform`) durante 450 ms. O primeiro quadro pode
+ * mostrar o estado inicial com opacidade 0 (invisível): só contam os quadros visíveis.
  */
-async function transformsWhileOpening(page: Page): Promise<string[]> {
+type Sample = { transform: string; opacity: number };
+
+async function transformsWhileOpening(page: Page): Promise<Sample[]> {
   return page.evaluate(
     () =>
-      new Promise<string[]>((resolve) => {
-        const samples: string[] = [];
+      new Promise<Sample[]>((resolve) => {
+        const samples: { transform: string; opacity: number }[] = [];
         const button = [...document.querySelectorAll('button')].find(
           (b) => b.textContent?.trim() === 'Abrir diálogo',
         );
@@ -17,7 +20,10 @@ async function transformsWhileOpening(page: Page): Promise<string[]> {
         const start = performance.now();
         const tick = () => {
           const panel = document.querySelector('[data-slot="dialog-content"]');
-          if (panel) samples.push(getComputedStyle(panel).transform);
+          if (panel) {
+            const style = getComputedStyle(panel);
+            samples.push({ transform: style.transform, opacity: Number(style.opacity) });
+          }
           if (performance.now() - start < 450) requestAnimationFrame(tick);
           else resolve(samples);
         };
@@ -26,6 +32,7 @@ async function transformsWhileOpening(page: Page): Promise<string[]> {
   );
 }
 
+const visible = (samples: Sample[]) => samples.filter((sample) => sample.opacity > 0.01);
 const IDENTITY = new Set(['none', 'matrix(1, 0, 0, 1, 0, 0)']);
 
 test.describe('Dialog', () => {
@@ -37,10 +44,10 @@ test.describe('Dialog', () => {
 
     expect(samples.length).toBeGreaterThan(3);
     // Nunca rotação nem perspectiva (matrix3d): o painel não gira mais.
-    expect(samples.filter((value) => value.startsWith('matrix3d'))).toEqual([]);
+    expect(samples.filter(({ transform }) => transform.startsWith('matrix3d'))).toEqual([]);
     // Houve deslocamento no caminho (y de 8 px para 0) e termina assentado.
-    expect(samples.some((value) => !IDENTITY.has(value))).toBe(true);
-    expect(IDENTITY.has(samples.at(-1) as string)).toBe(true);
+    expect(samples.some(({ transform }) => !IDENTITY.has(transform))).toBe(true);
+    expect(IDENTITY.has((samples.at(-1) as Sample).transform)).toBe(true);
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 
@@ -54,7 +61,8 @@ test.describe('Dialog', () => {
     const samples = await transformsWhileOpening(page);
 
     expect(samples.length).toBeGreaterThan(3);
-    expect(samples.filter((value) => !IDENTITY.has(value))).toEqual([]);
+    expect(visible(samples).length).toBeGreaterThan(1);
+    expect(visible(samples).filter(({ transform }) => !IDENTITY.has(transform))).toEqual([]);
     await expect(page.getByRole('dialog')).toBeVisible();
   });
 
