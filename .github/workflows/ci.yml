@@ -1,14 +1,17 @@
-# CI do monorepo. Os nomes dos jobs (node, dotnet, api-image, web-image) são os checks exigidos
-# pelo ruleset do main; não renomeie sem atualizar o ruleset (infra/github/main-ruleset.json).
-# web-image e ops-image ainda não são exigidos pelo ruleset. O deploy (deploy.yml) só roda
-# depois que este workflow inteiro termina verde no main.
+# CI do monorepo em "modo beta" (decisão do dono, 2026-10-22, até o lançamento na VPS):
+#
+#   - PR para o main (o lote do dev): checagem rápida no job node (lint, tipagem, build,
+#     unitários, OpenAPI). É o único check exigido pelo ruleset (infra/github/main-ruleset.json).
+#   - PRs para o dev não rodam CI: o agente roda `pnpm verify` e os E2E das telas que mexeu.
+#   - Push no main: só as imagens, em arm64 (a VM de produção é ARM), que o deploy (deploy.yml)
+#     usa depois que este workflow termina verde.
+#   - CI completa (integração com Postgres/Valkey reais, E2E inteiro com axe e orçamento de JS,
+#     .NET): Actions > CI > Run workflow com "completa" marcado, em qualquer branch. Usar antes
+#     de entregas grandes. No lançamento, ela volta a ser obrigatória.
 #
 # Runner: a variável do repositório CI_RUNNER escolhe onde os jobs rodam (JSON, ex.:
 # ["self-hosted","carmine"] para o runner próprio, docs/operacao/runner-proprio.md). Sem ela,
 # rodam nos runners do GitHub.
-#
-# node e dotnet só rodam no PR: o ruleset exige o branch atualizado com o main, então o squash
-# no main tem a mesma árvore que o PR já testou. No push ficam só as imagens, que o deploy usa.
 name: CI
 
 on:
@@ -16,10 +19,16 @@ on:
     branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      completa:
+        description: "CI completa (integração, E2E e .NET)"
+        type: boolean
+        default: true
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name != 'push' }}
 
 permissions:
   contents: read
@@ -31,10 +40,11 @@ env:
 jobs:
   node:
     name: node
-    if: github.event_name == 'pull_request'
+    if: github.event_name != 'push'
     runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
+      COMPLETA: ${{ github.event_name == 'workflow_dispatch' && inputs.completa }}
       # Os 4 vCPUs do runner do GitHub; no runner próprio evita 11 bancos de teste ao mesmo tempo.
       VITEST_MAX_WORKERS: "4"
       # Portas próprias para o Postgres e o Valkey do E2E: no runner próprio, o WSL divide a rede
@@ -51,17 +61,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm build
-      # Integração com Postgres e Valkey reais via Testcontainers (Docker do runner).
-      - run: pnpm test
-      # E2E do web contra os builds de produção do passo anterior (smoke, temas, 404, axe e o
-      # login Steam completo da S03): o Playwright sobe a Steam OpenID falsa, a API e o web; a
-      # API precisa do Postgres e do Valkey do Compose.
-      - run: pnpm infra:up
-      - run: pnpm --filter @carmine/web exec playwright install --with-deps chromium
-      - run: pnpm --filter @carmine/web test:e2e
+      # A checagem rápida é o mesmo `pnpm verify` que os agentes rodam antes do PR.
+      - run: pnpm verify
       - name: OpenAPI versionado está atualizado
         run: |
           pnpm --filter @carmine/api openapi:generate
@@ -69,13 +70,26 @@ jobs:
             echo "::error::apps/api/openapi.json desatualizado. Rode 'pnpm --filter @carmine/api openapi:generate' e faça commit."
             exit 1
           }
+      # Daqui para baixo, só na CI completa.
+      # Integração com Postgres e Valkey reais via Testcontainers (Docker do runner).
+      - if: env.COMPLETA == 'true'
+        run: pnpm --filter @carmine/api test:integration
+      # E2E do web contra os builds de produção (smoke, temas, 404, axe e o login Steam completo):
+      # o Playwright sobe a Steam OpenID falsa, a API e o web; a API usa o Postgres e o Valkey do
+      # Compose.
+      - if: env.COMPLETA == 'true'
+        run: pnpm infra:up
+      - if: env.COMPLETA == 'true'
+        run: pnpm --filter @carmine/web exec playwright install --with-deps chromium
+      - if: env.COMPLETA == 'true'
+        run: pnpm --filter @carmine/web test:e2e
       # No runner próprio o Docker é persistente: não deixar o Postgres e o Valkey do E2E de pé.
-      - if: always()
+      - if: always() && env.COMPLETA == 'true'
         run: docker compose -f infra/docker-compose.yml down -v
 
   dotnet:
     name: dotnet
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'workflow_dispatch' && inputs.completa
     runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
     timeout-minutes: 15
     defaults:
@@ -92,20 +106,33 @@ jobs:
       - run: dotnet build Carmine.Plugins.slnx -c Release
       - run: dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
 
-  api-image:
-    name: api-image
+  # Imagens publicadas no GHCR a cada push no main, só em arm64 (a VM de produção). No runner
+  # próprio (x86) o arm64 é emulado pelo QEMU, por isso o limite de tempo é largo.
+  image:
+    name: ${{ matrix.name }}-image
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 20
+    timeout-minutes: 60
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: api
+            dockerfile: infra/docker/api.Dockerfile
+            scope: api
+          - name: web
+            dockerfile: infra/docker/web.Dockerfile
+            scope: web
+          - name: ops
+            dockerfile: infra/docker/ops.Dockerfile
+            scope: ops
     permissions:
       contents: read
       packages: write
-    env:
-      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - if: env.PUBLISH == 'true'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -113,92 +140,17 @@ jobs:
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ghcr.io/${{ github.repository_owner }}/carmine-api
+          images: ghcr.io/${{ github.repository_owner }}/carmine-${{ matrix.name }}
           tags: |
             type=sha,format=long
             type=raw,value=latest,enable={{is_default_branch}}
-      # Em PR só constrói (amd64 + arm64); publica no GHCR apenas no push para o main.
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: infra/docker/api.Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ env.PUBLISH == 'true' }}
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/arm64
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  web-image:
-    name: web-image
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      packages: write
-    env:
-      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - if: env.PUBLISH == 'true'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/carmine-web
-          tags: |
-            type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
-      # Em PR só constrói (amd64 + arm64); publica no GHCR apenas no push para o main.
-      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: infra/docker/web.Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ env.PUBLISH == 'true' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,mode=max,scope=web
-
-  ops-image:
-    name: ops-image
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 20
-    permissions:
-      contents: read
-      packages: write
-    env:
-      PUBLISH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-      - if: env.PUBLISH == 'true'
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ghcr.io/${{ github.repository_owner }}/carmine-ops
-          tags: |
-            type=sha,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
-      # Em PR só constrói (amd64 + arm64); publica no GHCR apenas no push para o main.
-      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
-        with:
-          context: .
-          file: infra/docker/ops.Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: ${{ env.PUBLISH == 'true' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=ops
-          cache-to: type=gha,mode=max,scope=ops
+          cache-from: type=gha,scope=${{ matrix.scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.scope }}
