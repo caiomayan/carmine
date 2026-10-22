@@ -11,7 +11,8 @@
     "lint": "biome check .",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "maps": "node scripts/maps.mjs"
+    "maps": "node scripts/maps.mjs",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@carmine/contracts": "workspace:*",
