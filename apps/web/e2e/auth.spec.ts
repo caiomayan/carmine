@@ -117,14 +117,15 @@ test('primeiros passos: a faixa aparece depois do login, abre o Dialog, dispensa
   await expect(strip).toBeVisible();
   // Uma linha só: o texto não é a parede de antes.
   await expect(strip).toContainText('Primeira vez por aqui?');
-  await expect(strip).not.toContainText('Adicionar não é equipar');
+  await expect(strip).not.toContainText('Equipe');
 
   await strip.getByRole('button', { name: 'Ver como funciona' }).click();
   const dialog = page.getByRole('dialog', { name: /Boas-vindas à Carmine/ });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('Adicionar não é equipar');
+  // Três passos numerados, de uma linha cada.
+  await expect(dialog.getByTestId('first-steps-list').getByRole('listitem')).toHaveCount(3);
+  await expect(dialog).toContainText('Equipe');
   await expect(dialog).toContainText('!ws');
-  await expect(dialog).toContainText('Para rever, abra o menu da sua Conta');
 
   // Esc fecha o Dialog e o foco volta ao botão da faixa; a faixa continua.
   await page.keyboard.press('Escape');

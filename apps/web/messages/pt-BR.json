@@ -595,29 +595,24 @@
   },
   "firstSteps": {
     "title": "Boas-vindas à Carmine, {name}",
-    "intro": "Sua Conta é a mesma dos Servidores Carmine: o que você montar aqui vai junto para o jogo.",
+    "intro": "Sua Conta é a mesma dos servidores: o que você monta aqui vai para o jogo.",
     "strip": "Primeira vez por aqui? Veja em um minuto como a Carmine funciona.",
     "open": "Ver como funciona",
     "close": "Fechar primeiros passos",
     "done": "Entendi",
     "toInventory": "Ir para o Inventário",
-    "reopenHint": "Para rever, abra o menu da sua Conta e escolha Primeiros passos.",
     "steps": {
-      "what": {
-        "title": "O que é a Carmine",
-        "body": "Servidores comunitários de CS2 com skins simuladas. Você entra pelo IP, joga Retake ou Deathmatch e usa o site para montar o Loadout."
-      },
-      "steam": {
-        "title": "Vínculo com a Steam",
-        "body": "Você entra pela Steam, e só por ela. A Carmine recebe o seu SteamID e os dados públicos do perfil, nunca a sua senha."
+      "add": {
+        "title": "Adicione",
+        "body": "Escolha skins no catálogo e guarde no seu Inventário."
       },
       "equip": {
-        "title": "Adicionar não é equipar",
-        "body": "Adicionar guarda o Item no Inventário, com float, seed e stickers. Equipar coloca o Item num slot, de CT, de TR ou dos dois: é isso que aparece no jogo."
+        "title": "Equipe",
+        "body": "Coloque o Item num slot, de CT, de TR ou dos dois."
       },
-      "ingame": {
-        "title": "Ver no jogo",
-        "body": "Já está num servidor? Digite <cmd>!ws</cmd> no chat para aplicar o Loadout, ou reconecte."
+      "play": {
+        "title": "Jogue",
+        "body": "No servidor, digite <cmd>!ws</cmd> no chat ou reconecte."
       }
     }
   },

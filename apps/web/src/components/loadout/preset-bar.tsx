@@ -128,7 +128,7 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
                   <DropdownMenuTrigger
                     aria-label={t('actions', { name: preset.name })}
                     disabled={preset.readOnly}
-                    className="mr-1 grid size-7 place-items-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground disabled:opacity-40 aria-expanded:bg-hover max-md:size-9"
+                    className="mr-1 grid size-(--tap) place-items-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground disabled:opacity-40 aria-expanded:bg-hover"
                     data-testid="preset-menu"
                   >
                     <svg

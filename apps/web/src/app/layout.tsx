@@ -69,7 +69,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
   const firstStepsOpen =
     session?.firstLogin === true && !hasDismissedFirstSteps(dismissed, session.account.publicId);
-  const step = (key: 'what' | 'steam' | 'equip' | 'ingame') => ({
+  const step = (key: 'add' | 'equip' | 'play') => ({
     title: tSteps(`steps.${key}.title`),
     body: tSteps.rich(`steps.${key}.body`, {
       cmd: (chunks) => (
@@ -107,7 +107,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               >
                 {t('skipToContent')}
               </a>
-              {/* Cabeçalho e conteúdo ocupam ao menos a tela inteira: o rodapé só aparece no fim real da página. */}
+              {/* Fluxo natural: o rodapé vem logo depois do conteúdo e, nas páginas curtas, o main ocupa o que sobra e o encosta no pé da tela. */}
               <div className="flex min-h-dvh flex-col">
                 <SiteHeader />
                 {/* Aviso da própria Punição (S07): só as mensagens dele vão ao cliente. */}
@@ -129,19 +129,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                       close: tSteps('close'),
                       done: tSteps('done'),
                       toInventory: tSteps('toInventory'),
-                      reopenHint: tSteps('reopenHint'),
                       steps: {
-                        what: step('what'),
-                        steam: step('steam'),
+                        add: step('add'),
                         equip: step('equip'),
-                        ingame: step('ingame'),
+                        play: step('play'),
                       },
                     }}
                   />
                   {children}
                 </main>
+                <SiteFooter />
               </div>
-              <SiteFooter />
               {sentry ? <ErrorReporting {...sentry} /> : null}
             </SessionProvider>
           </MotionProvider>

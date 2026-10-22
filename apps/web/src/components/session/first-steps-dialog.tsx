@@ -1,9 +1,7 @@
 'use client';
 
-import { BoxIcon, ServerIcon, SquareTerminalIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { siSteam } from 'simple-icons';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +9,6 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@/components/animate-ui/components/radix/dialog';
-import { BrandIcon } from '@/components/icons/brand-icon';
 import { Button } from '@/components/ui/button';
 import type { FirstStepsLabels } from './first-steps';
 import { useSession } from './session-provider';
@@ -24,16 +21,7 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
   const { firstSteps, account } = useSession();
   const pathname = usePathname();
 
-  const steps = [
-    { key: 'what', icon: <ServerIcon size={16} strokeWidth={2} />, ...labels.steps.what },
-    { key: 'steam', icon: <BrandIcon icon={siSteam} size={15} />, ...labels.steps.steam },
-    { key: 'equip', icon: <BoxIcon size={16} strokeWidth={2} />, ...labels.steps.equip },
-    {
-      key: 'ingame',
-      icon: <SquareTerminalIcon size={16} strokeWidth={2} />,
-      ...labels.steps.ingame,
-    },
-  ];
+  const steps = [labels.steps.add, labels.steps.equip, labels.steps.play];
 
   return (
     <Dialog
@@ -42,7 +30,7 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
     >
       <DialogContent
         closeLabel={labels.close}
-        className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto sm:max-w-2xl"
+        className="max-h-[calc(100dvh-2rem)] gap-5 overflow-y-auto sm:max-w-xl"
         data-testid="first-steps"
         // Aberto por estado (sem DialogTrigger): o foco volta a quem abriu; se ele saiu da tela
         // (a faixa some ao dispensar), vai para o conteúdo.
@@ -61,17 +49,21 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
           </DialogDescription>
         </div>
 
-        <ul className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
-          {steps.map((step) => (
-            <li key={step.key} className="grid content-start gap-1.5">
-              <span className="mb-1 grid size-8 place-items-center rounded-full bg-surface-2 text-foreground">
-                {step.icon}
+        {/* Três passos numerados, de uma linha cada: a ordem importa (adicionar, equipar, jogar). */}
+        <ol className="grid gap-x-6 gap-y-5 sm:grid-cols-3" data-testid="first-steps-list">
+          {steps.map((step, index) => (
+            <li key={step.title} className="grid content-start gap-1.5">
+              <span
+                aria-hidden="true"
+                className="mb-1 grid size-8 place-items-center rounded-full bg-(--fill-rest) text-body-sm font-semibold text-foreground tabular-nums"
+              >
+                {index + 1}
               </span>
-              <h3 className="text-sm font-semibold">{step.title}</h3>
-              <p className="text-[13px] leading-[1.55] text-muted-foreground">{step.body}</p>
+              <h3 className="text-body-sm font-semibold">{step.title}</h3>
+              <p className="text-body-sm text-muted-foreground">{step.body}</p>
             </li>
           ))}
-        </ul>
+        </ol>
 
         <DialogFooter className="items-center sm:justify-start">
           <Button
@@ -89,9 +81,6 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
               </Link>
             </Button>
           )}
-          <p className="text-xs text-muted-foreground max-sm:basis-full sm:ml-auto">
-            {labels.reopenHint}
-          </p>
         </DialogFooter>
       </DialogContent>
     </Dialog>

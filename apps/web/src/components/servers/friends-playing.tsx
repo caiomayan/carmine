@@ -74,7 +74,7 @@ export function FriendsPlaying({
           id={titleId}
           className="inline-flex items-center gap-2.5 label-caps text-[11px] tracking-[0.14em] text-foreground"
         >
-          <span aria-hidden="true" className="size-1.5 shrink-0 rotate-45 bg-foreground" />
+          <span aria-hidden="true" className="size-1.5 shrink-0 rotate-45 bg-carmine" />
           {t('title')}
         </h2>
         {playing.length > 0 ? (
