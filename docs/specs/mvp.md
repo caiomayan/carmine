@@ -465,6 +465,13 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 - **U3d · Busca global (Ctrl+K):** um campo no header que abre uma paleta de comandos e busca páginas, itens do catálogo, jogadores (por nome), servidores e ações como "ir para Configurações". O código carrega só ao abrir, para respeitar o orçamento de JS.
 - **Amigos jogando agora com lista Steam privada** (dono, 2026-10-21, entra com a Fase de UI): quando a lista de quem olha é privada, a API confere a lista pública dos jogadores que estão nos servidores. Quem tem você na lista é seu amigo, porque a amizade na Steam é mútua. Não expõe nada novo, porque só aparecem amigos mútuos e só quem está jogando agora. Na resposta, `private` traz os amigos achados (vazio: ninguém achado) e o site mantém, discreta, a orientação de tornar a lista visível. As listas de quem joga passam pelo mesmo cache de 60 s, com no máximo 6 consultas simultâneas à Steam e parada ao primeiro erro; Steam fora continua `unavailable`.
 
+**Decidido na implementação (U3c-4: alinhamento, filtros, Primeiros passos, rodapé e carmim)**
+- **Rodapé em fluxo natural** (dono, 2026-10-22; deixa de ser "escondido até o fim real"): o rodapé vem logo depois do conteúdo; em página curta o `main` ocupa o que sobra e o encosta no pé da tela (a página nunca é menor que a tela). Os links do rodapé e o logotipo do cabeçalho têm alvo de 44 px (`min-h-(--tap)`).
+- **Carmim A** (dono, 2026-10-22): só o losango ◆ dos títulos de seção (`SectionTitle` e o bloco de amigos), em `--carmine` (#c23a41 escuro, #a3262d claro); decoração de 6 px, nunca informação, e o resto do site segue monocromático.
+- **Filtros do catálogo:** Arma, Raridade e Coleção moram num Popover "Filtros (n)" ao lado da busca (o `n` conta só os três de dentro; a busca e o tipo já estão à vista), em vez de dez controles antes do primeiro Item. O tipo é uma linha rolável, com as bordas esmaecidas no celular; as linhas de Preset e de categorias do Loadout ganham o mesmo esmaecido à direita, para a rolagem não parecer um corte.
+- **Primeiros passos:** o Dialog passa de 4 blocos (146 palavras) a 3 passos numerados de uma linha (Adicione, Equipe, Jogue, com o `!ws`); a dica "Para rever, abra o menu" sai, porque o item do menu já se chama "Primeiros passos".
+- **Alinhamento:** o grupo "Offline (n)" da home perde o recuo negativo que cortava a pílula (agora tem 14 px de padding); o menu do Preset tem alvo de 44 px; a contagem de slots do Loadout usa `--muted` em vez de `--faint` (o `--faint` reprova AA em texto).
+
 ### U4 · Auditoria final
 - Auditoria impeccable: WCAG 2.2 AA, 390 px sem scroll horizontal, tema claro e escuro, orçamento de JS.
 

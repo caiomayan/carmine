@@ -68,6 +68,13 @@ test('sem sessão, o Inventário convida a entrar e o catálogo continua aberto'
   );
 });
 
+/** Abre o Popover "Filtros" do catálogo (Arma, Raridade e Coleção), se já não estiver aberto. */
+async function openFilters(page: Page) {
+  const trigger = page.getByTestId('catalog-filters');
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
+  await expect(page.getByTestId('catalog-filters-panel')).toBeVisible();
+}
+
 test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado vazio', async ({
   page,
 }) => {
@@ -78,8 +85,11 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
 
   await page.getByTestId('catalog-search').fill('');
   await page.getByRole('button', { name: 'Armas', exact: true }).click();
+  await openFilters(page);
   await chooseOption(page, page.getByLabel('Arma'), 'AK-47');
   await chooseOption(page, page.getByLabel('Raridade'), 'classified');
+  // O botão conta os filtros que moram dentro do Popover (Arma e Raridade).
+  await expect(page.getByTestId('catalog-filters')).toHaveText('Filtros (2)');
   await expect(page).toHaveURL(/tipo=weapon/);
   await expect(page).toHaveURL(/arma=AK-47/);
   await expect(page).toHaveURL(/raridade=classified/);
@@ -124,6 +134,7 @@ test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, 
   const options = page.getByRole('option');
 
   // Arma: "a1 m4" (código misturado, fora de ordem) acha só a M4A1-S; Enter escolhe e filtra.
+  await openFilters(page);
   await page.getByLabel('Arma').click();
   await search.fill('a1 m4');
   await expect(options).toHaveText(['M4A1-S']);
@@ -132,6 +143,7 @@ test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, 
   await expect(search).toBeHidden();
 
   // Ao reabrir, a opção atual vem destacada e à vista, e a busca começa vazia.
+  await openFilters(page);
   await page.getByLabel('Arma').click();
   await expect(search).toHaveValue('');
   const current = page.getByTestId('option-M4A1-S');
@@ -141,6 +153,7 @@ test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, 
 
   // "knife" (inglês) acha as facas; o nome original acha o PT-BR.
   await page.getByRole('button', { name: 'Facas', exact: true }).click();
+  await openFilters(page);
   await page.getByLabel('Arma').click();
   await search.fill('knife');
   await expect(options.first()).toBeVisible();
@@ -151,6 +164,7 @@ test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, 
 
   // Coleção: sem acento, parcial, com erro de digitação e pelo nome em inglês ("Quilowatt").
   await page.getByRole('button', { name: 'Armas', exact: true }).click();
+  await openFilters(page);
   await page.getByLabel('Coleção').click();
   for (const query of ['colecao quilowatt', 'quilowat', 'kilowatt', 'kilowtat']) {
     await search.fill(query);
@@ -202,6 +216,7 @@ for (const theme of ['dark', 'light'] as const) {
   test(`axe com o Combobox do catálogo aberto (${theme})`, async ({ page }) => {
     await saveTheme(page, theme);
     await page.goto('/inventario/adicionar');
+    await openFilters(page);
     await page.getByLabel('Arma').click();
     await expect(page.getByRole('combobox', { name: 'Buscar na lista' })).toBeFocused();
     expect(await axeViolations(page), `catálogo com o Combobox aberto (${theme})`).toEqual([]);

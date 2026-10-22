@@ -47,7 +47,9 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
         labels={{
           search: t('search'),
           searchPlaceholder: t('searchPlaceholder'),
+          region: t('region'),
           filters: t('filters'),
+          filtersActive: t('filtersActive', { count: '{count}' }),
           type: t('type'),
           allTypes: t('allTypes'),
           weapon: t('weapon'),

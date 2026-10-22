@@ -248,7 +248,7 @@ export function LoadoutScreen({
           </div>
           <nav
             aria-label={t('board.categories')}
-            className="mt-2 flex gap-0.5 overflow-x-auto [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
+            className="mt-2 flex gap-0.5 overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
           >
             {columns.map((column) => (
               <button
@@ -260,7 +260,7 @@ export function LoadoutScreen({
                 className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
               >
                 {t(`groups.${column.id}`)}
-                <span className="text-[11px] font-medium text-faint [[aria-pressed=true]_&]:text-muted-foreground">
+                <span className="text-caption font-medium text-muted-foreground">
                   {column.slots.length}
                 </span>
               </button>

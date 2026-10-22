@@ -83,7 +83,7 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
     >
       <div className="flex min-w-0 max-w-full items-center gap-1.5 max-md:w-full">
         <ul
-          className="flex min-w-0 items-center gap-1.5 max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-end"
+          className="flex min-w-0 items-center gap-1.5 max-md:overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-end"
           aria-label={t('label')}
         >
           {presets.map((preset) => (
@@ -128,7 +128,7 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
                   <DropdownMenuTrigger
                     aria-label={t('actions', { name: preset.name })}
                     disabled={preset.readOnly}
-                    className="mr-1 grid size-7 place-items-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground disabled:opacity-40 aria-expanded:bg-hover max-md:size-9"
+                    className="mr-1 grid size-(--tap) place-items-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground disabled:opacity-40 aria-expanded:bg-hover"
                     data-testid="preset-menu"
                   >
                     <svg
