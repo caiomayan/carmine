@@ -67,7 +67,7 @@ export function BoardCard({
       className={cn(
         'group/card relative block aspect-3/2 w-full enter-stagger overflow-hidden rounded-md bg-surface-2/70 text-left',
         'transition-[background-color,box-shadow] duration-(--dur-fast) ease-std hover:bg-surface-2',
-        'aria-pressed:bg-surface-2 aria-pressed:shadow-[inset_0_0_0_1.5px_var(--text)]',
+        'aria-pressed:bg-surface-2 aria-pressed:shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
         'focus-visible:outline-offset-[-3px]',
       )}
     >
@@ -126,7 +126,7 @@ export function BoardCard({
             className="ml-auto inline-flex h-5 min-w-0 items-center gap-1.5 rounded-[6px] bg-surface/85 px-1.5 text-[11.5px] leading-none font-[550] backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90"
           >
             <span className="truncate">{labels.skin}</span>
-            <i aria-hidden="true" className="h-[3px] w-2.5 flex-none rounded-full bg-(--rc)" />
+            <i aria-hidden="true" className="h-(--bar-h) w-2.5 flex-none rounded-full bg-(--rc)" />
           </span>
         </span>
       ) : null}

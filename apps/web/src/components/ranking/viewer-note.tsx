@@ -14,7 +14,7 @@ export const discordLink = (chunks: ReactNode) => (
     href={DISCORD_URL}
     target="_blank"
     rel="noopener noreferrer"
-    className="font-semibold underline decoration-line-strong underline-offset-[3px] hover:decoration-foreground"
+    className="font-semibold underline decoration-line-strong underline-offset-(--underline-offset) hover:decoration-foreground"
   >
     {chunks}
   </a>
@@ -39,7 +39,7 @@ export async function ViewerNote({ ranking }: { ranking: Ranking }) {
         data-testid="viewer-note"
         className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-xl bg-surface px-5 py-4"
       >
-        <p className="text-[13.5px] text-muted-foreground">{t('viewer.signIn')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('viewer.signIn')}</p>
         <Button asChild size="sm" className="max-md:w-full">
           <a href={steamLoginHref(rankingHref(ranking.mode, ranking.weekStart, ranking.weeks[0]))}>
             <BrandIcon icon={siSteam} size={15} />
@@ -75,7 +75,7 @@ export async function ViewerNote({ ranking }: { ranking: Ranking }) {
       aria-label={t('viewer.title')}
       className="grid gap-3 rounded-xl bg-surface px-5 py-4"
     >
-      <p className="text-[13.5px] [text-wrap:pretty]" aria-live="polite">
+      <p className="text-body-sm [text-wrap:pretty]" aria-live="polite">
         {message}
       </p>
       {progress !== null ? (

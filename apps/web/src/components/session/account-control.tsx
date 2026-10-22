@@ -137,7 +137,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
                 </span>
                 {days === null ? null : (
                   <span
-                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-status-vip"
+                    className="inline-flex items-center gap-1.5 text-caption font-medium text-status-vip"
                     data-testid="menu-vip"
                   >
                     <span
@@ -158,7 +158,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
                   <StatusDot tone="online" />
                   {labels.playing}
                 </span>
-                <span className="truncate text-[13px] font-medium">
+                <span className="truncate text-body-sm font-medium">
                   {playing.server.showcaseName ?? playing.server.name}
                   {playing.server.map ? (
                     <span className="font-normal text-muted-foreground">
@@ -206,7 +206,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
               {labels.staffPanel}
             </DropdownMenuItem>
           ) : null}
-          <DropdownMenuItem onSelect={go('/')} className={`${ITEM} text-[13px]`}>
+          <DropdownMenuItem onSelect={go('/')} className={`${ITEM} text-body-sm`}>
             <HouseIcon aria-hidden="true" />
             {labels.home}
           </DropdownMenuItem>
@@ -215,7 +215,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
               keepFocus.current = true;
               firstSteps.openDialog(trigger.current);
             }}
-            className={`${ITEM} text-[13px]`}
+            className={`${ITEM} text-body-sm`}
             data-testid="menu-first-steps"
           >
             <AnimatedIcon icon={CompassIcon} size={16} className="text-muted-foreground" />

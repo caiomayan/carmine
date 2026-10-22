@@ -40,7 +40,7 @@ function SelectTrigger({
       <SelectPrimitive.Icon asChild>
         <ChevronDownIcon
           aria-hidden="true"
-          className="size-4 text-muted-foreground transition-transform duration-(--dur-fast) ease-std group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+          className="size-4 text-muted-foreground transition-[rotate] duration-(--dur-fast) ease-std group-data-[state=open]:rotate-180 motion-reduce:transition-none"
         />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
@@ -61,7 +61,7 @@ function SelectContent({
         position={position}
         sideOffset={sideOffset}
         className={cn(
-          'relative z-50 max-h-[min(20rem,var(--radix-select-content-available-height))] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground [scrollbar-color:var(--line-strong)_transparent] [scrollbar-width:thin] shadow-[0_24px_64px_-24px_var(--shadow),0_0_0_1px_var(--line)]',
+          'relative z-50 max-h-[min(20rem,var(--radix-select-content-available-height))] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground [scrollbar-color:var(--line-strong)_transparent] [scrollbar-width:thin] shadow-(--shadow-overlay)',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 motion-reduce:animate-none',
           position === 'popper' && 'w-(--radix-select-trigger-width)',
           className,
@@ -93,7 +93,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'relative flex min-h-9 w-full cursor-default items-center rounded-md py-1.5 pr-8 pl-2.5 text-sm outline-hidden select-none max-md:min-h-(--tap)',
+        'relative flex min-h-9 w-full cursor-default items-center rounded-md py-1.5 pr-8 pl-2.5 text-sm outline-hidden select-none transition-colors duration-(--dur-instant) ease-std motion-reduce:transition-none max-md:min-h-(--tap)',
         'data-[highlighted]:bg-accent data-[state=checked]:font-semibold data-[disabled]:pointer-events-none data-[disabled]:text-faint',
         className,
       )}

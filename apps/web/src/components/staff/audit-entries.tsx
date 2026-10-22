@@ -10,7 +10,7 @@ function ActorName({ actor }: { actor: StaffActor }) {
   return (
     <Link
       href={`/staff/contas/${actor.publicId}` as Route}
-      className="font-semibold underline decoration-line-strong underline-offset-[3px] hover:decoration-foreground"
+      className="font-semibold underline decoration-line-strong underline-offset-(--underline-offset) hover:decoration-foreground"
     >
       {actor.displayName ?? `#${actor.publicId}`}
     </Link>
@@ -37,7 +37,7 @@ export function AuditEntries({
         <li
           key={entry.id}
           data-action={entry.action}
-          className="grid gap-1 border-b border-line/60 py-3 text-[13.5px] last:border-b-0"
+          className="grid gap-1 border-b border-line/60 py-3 text-body-sm last:border-b-0"
         >
           <p className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
             <ActorName actor={entry.actor} />
@@ -46,7 +46,7 @@ export function AuditEntries({
               entry.targetAccount.publicId !== null ? (
                 <Link
                   href={`/staff/contas/${entry.targetAccount.publicId}` as Route}
-                  className="font-semibold underline decoration-line-strong underline-offset-[3px] hover:decoration-foreground"
+                  className="font-semibold underline decoration-line-strong underline-offset-(--underline-offset) hover:decoration-foreground"
                 >
                   {entry.targetAccount.displayName ?? `#${entry.targetAccount.publicId}`}
                 </Link>
@@ -63,13 +63,13 @@ export function AuditEntries({
                 dateStyle: 'medium',
                 timeStyle: 'short',
               })}
-              className="ml-auto text-[12px] whitespace-nowrap text-muted-foreground"
+              className="ml-auto text-caption whitespace-nowrap text-muted-foreground"
               suppressHydrationWarning
             >
               {format.relativeTime(new Date(entry.createdAt), now)}
             </time>
           </p>
-          <p className="text-[13px] text-muted-foreground [overflow-wrap:anywhere]">
+          <p className="text-body-sm text-muted-foreground [overflow-wrap:anywhere]">
             {entry.reason}
           </p>
         </li>

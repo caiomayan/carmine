@@ -158,8 +158,8 @@ function NameRow() {
     <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="name-setting">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="grid min-w-0 gap-0.5">
-          <h3 className="text-[14px] font-semibold">{t('title')}</h3>
-          <p className="text-[13px] text-muted-foreground">
+          <h3 className="text-body font-semibold">{t('title')}</h3>
+          <p className="text-body-sm text-muted-foreground">
             {displayNameChange.custom ? t('customHint') : t('steamHint')}
           </p>
         </div>
@@ -196,7 +196,7 @@ function NameRow() {
         >
           <div className="grid gap-2 pr-8">
             <DialogTitle>{t('revert.title')}</DialogTitle>
-            <DialogDescription className="text-[13.5px] leading-[1.55]">
+            <DialogDescription className="text-body-sm leading-[1.55]">
               {t('revert.body')}{' '}
               {nextChangeAt
                 ? t('revert.cooldownActive', { when: when(nextChangeAt) })
@@ -239,7 +239,7 @@ function NameRow() {
               data-testid="name-input"
             />
           </Field>
-          <p className="text-[12.5px] text-muted-foreground" data-testid="name-cooldown">
+          <p className="text-body-sm text-muted-foreground" data-testid="name-cooldown">
             {nextChangeAt ? t('cooldownActive', { when: when(nextChangeAt) }) : t('cooldownRule')}
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -258,11 +258,11 @@ function NameRow() {
         className={cn(state.kind === 'saved' || state.kind === 'reverted' ? '' : 'sr-only')}
       >
         {state.kind === 'saved' ? (
-          <p className="text-[13px]" data-testid="name-saved">
+          <p className="text-body-sm" data-testid="name-saved">
             {t('saved', { name: state.name })}
           </p>
         ) : state.kind === 'reverted' ? (
-          <p className="text-[13px]" data-testid="name-reverted">
+          <p className="text-body-sm" data-testid="name-reverted">
             {t('revert.done', { name: state.name })}
           </p>
         ) : null}
@@ -312,8 +312,8 @@ function PrivacyRow() {
         className="flex min-h-(--tap) cursor-pointer items-center justify-between gap-4 py-1"
       >
         <span className="grid min-w-0 flex-1 gap-0.5">
-          <span className="text-[14px] font-semibold">{t('title')}</span>
-          <span className="text-[13px] text-muted-foreground">{t('description')}</span>
+          <span className="text-body font-semibold">{t('title')}</span>
+          <span className="text-body-sm text-muted-foreground">{t('description')}</span>
         </span>
         <Switch
           id={switchId}
@@ -325,7 +325,7 @@ function PrivacyRow() {
       </label>
       <p
         aria-live="polite"
-        className="text-[13px] text-muted-foreground"
+        className="text-body-sm text-muted-foreground"
         data-testid="privacy-status"
       >
         {announce === 'on' ? t('announceOn') : announce === 'off' ? t('announceOff') : null}

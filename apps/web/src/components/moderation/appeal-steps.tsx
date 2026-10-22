@@ -17,7 +17,7 @@ export async function AppealSteps() {
         <li className="pl-1">{t('steps.details')}</li>
         <li className="pl-1">{t('steps.answer', { hours: APPEAL_RESPONSE_HOURS })}</li>
       </ol>
-      <p className="text-[13.5px] text-muted-foreground">{t('notes')}</p>
+      <p className="text-body-sm text-muted-foreground">{t('notes')}</p>
       <div>
         <Button asChild variant="ghost" size="sm" className="-ml-3">
           <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" data-icon-trigger>

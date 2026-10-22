@@ -98,7 +98,7 @@ export function RemoveItemDialog({
         <div className="grid gap-2 pr-8">
           <DialogTitle>{t('title', { name })}</DialogTitle>
           <DialogDescription asChild>
-            <div className="grid gap-2 text-[13.5px] leading-[1.55]" aria-live="polite">
+            <div className="grid gap-2 text-body-sm leading-[1.55]" aria-live="polite">
               {usages.status === 'loading' ? (
                 <p className="inline-flex items-center gap-2">
                   <span aria-hidden="true" className="shimmer h-1 w-10 rounded-full" />
@@ -136,7 +136,7 @@ export function RemoveItemDialog({
           </DialogDescription>
         </div>
         {failed ? (
-          <p role="alert" className="flex items-start gap-2 text-[13px]">
+          <p role="alert" className="flex items-start gap-2 text-body-sm">
             <span
               aria-hidden="true"
               className="mt-1.5 size-1.5 shrink-0 rounded-full bg-status-danger"

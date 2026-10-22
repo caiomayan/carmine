@@ -60,11 +60,11 @@ export function FieldShell({
             </span>
           ) : null}
         </label>
-        {aside ? <span className="text-[13px] font-semibold tabular-nums">{aside}</span> : null}
+        {aside ? <span className="text-body-sm font-semibold tabular-nums">{aside}</span> : null}
       </div>
       {children}
       {error ? (
-        <p id={`${id}-error`} className="flex items-start gap-1.5 text-[12.5px] text-foreground">
+        <p id={`${id}-error`} className="flex items-start gap-1.5 text-body-sm text-foreground">
           <span
             aria-hidden="true"
             className="mt-1.5 size-1.5 shrink-0 rounded-full bg-status-danger"
@@ -72,7 +72,7 @@ export function FieldShell({
           {error}
         </p>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-[12.5px] text-muted-foreground">
+        <p id={`${id}-hint`} className="text-body-sm text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -84,7 +84,7 @@ export const describedBy = (id: string, { error, hint }: { error?: unknown; hint
   error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
 const inputClass =
-  'min-h-(--tap) w-full rounded-md bg-surface-2 px-3 text-[14px] tabular-nums transition-[background-color,box-shadow] duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-[color-mix(in_srgb,var(--text)_12%,var(--surface))] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] disabled:text-faint';
+  'min-h-(--tap) w-full rounded-md bg-surface-2 px-3 text-body tabular-nums transition-[background-color,box-shadow] duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-[color-mix(in_srgb,var(--text)_12%,var(--surface))] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] disabled:text-faint';
 
 /**
  * Número digitado (aceita "0,15" e "0.15"). Guarda o texto enquanto a pessoa digita; o valor

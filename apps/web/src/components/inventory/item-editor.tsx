@@ -294,7 +294,7 @@ export function ItemEditor(props: EditorProps) {
         ) : null}
 
         {!hasAttributes ? (
-          <p className="text-[13.5px] text-muted-foreground">{t('noAttributes')}</p>
+          <p className="text-body-sm text-muted-foreground">{t('noAttributes')}</p>
         ) : null}
 
         {spec.wear ? (
@@ -343,7 +343,7 @@ export function ItemEditor(props: EditorProps) {
                   htmlFor={statTrakId}
                   className="flex h-(--tap) cursor-pointer items-center justify-between gap-3 rounded-md bg-surface-2 px-3"
                 >
-                  <span aria-hidden="true" className="text-[14px]">
+                  <span aria-hidden="true" className="text-body">
                     {form.statTrak ? t('statTrakOn') : t('statTrakOff')}
                   </span>
                   <Switch
@@ -426,7 +426,7 @@ export function ItemEditor(props: EditorProps) {
           {failure || (attempted && visibleIssues.length > 0) || (itemIssue && !lockedItem) ? (
             <p
               role="alert"
-              className="flex items-start gap-2 text-[13px]"
+              className="flex items-start gap-2 text-body-sm"
               data-testid="editor-alert"
             >
               <span
@@ -552,7 +552,7 @@ function Banner({
       role="status"
       data-testid={testId}
       data-icon-trigger
-      className="flex animate-fade-up items-start gap-3 rounded-lg bg-surface px-4 py-3 text-[13px] leading-[1.55]"
+      className="flex animate-fade-up items-start gap-3 rounded-lg bg-surface px-4 py-3 text-body-sm leading-[1.55]"
     >
       <AnimatedIcon
         icon={icon}

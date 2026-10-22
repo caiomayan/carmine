@@ -149,3 +149,25 @@ describe('tokens de estrutura e a fonte de destaque', () => {
     expect(globalsCss).toContain('--color-rarity-covert: var(--rarity-covert)');
   });
 });
+
+describe('as classes antigas da escala seguem a escala com nomes', () => {
+  it('text-xs, text-sm e text-base apontam para legenda, corpo pequeno e corpo', () => {
+    expect(globalsCss).toMatch(/--text-xs:\s*var\(--text-caption\);/);
+    expect(globalsCss).toMatch(/--text-sm:\s*var\(--text-body-sm\);/);
+    expect(globalsCss).toMatch(/--text-base:\s*var\(--text-body\);/);
+  });
+
+  it('nenhum tamanho arbitrário abaixo de 11 px sobrou fora dos arquivos que outros PRs da U3c ainda mexem', () => {
+    // A varredura completa vem quando os PRs de hierarquia e acabamento entrarem; aqui só o que é do PR 2.
+    const owned = [
+      '../components/ui/select.tsx',
+      '../components/ui/command.tsx',
+      '../components/ui/button.tsx',
+      '../components/ui/combobox.tsx',
+    ];
+    for (const file of owned) {
+      const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+      expect(source, file).not.toMatch(/text-\[(9(\.5)?|10(\.5)?)px\]/);
+    }
+  });
+});

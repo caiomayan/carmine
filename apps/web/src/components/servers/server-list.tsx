@@ -81,7 +81,7 @@ export function ServerCardSkeleton({
           <span className={cn(bone, 'h-[18px] w-[min(200px,70%)]')} />
           <span className={cn(bone, 'h-[12px] w-[min(140px,50%)]')} />
         </span>
-        <span className={cn(bone, 'h-[3px] w-full')} />
+        <span className={cn(bone, 'h-(--bar-h) w-full')} />
         <span className={cn(bone, 'h-(--tap) w-[104px] max-md:w-full md:ml-auto')} />
       </div>
     </li>

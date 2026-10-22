@@ -43,7 +43,7 @@ export function ServerEditor({ initial }: { initial: StaffServer }) {
             {server.code}
           </span>
         ) : null}
-        <span className="text-[12.5px] text-muted-foreground tabular-nums">
+        <span className="text-body-sm text-muted-foreground tabular-nums">
           {server.name} · {tm(`servers.mode_${server.mode}`)} · {server.address}
         </span>
       </div>
@@ -92,7 +92,7 @@ export function ServerEditor({ initial }: { initial: StaffServer }) {
             />
           </Field>
         </div>
-        <p className="text-[12.5px] text-muted-foreground" aria-live="polite">
+        <p className="text-body-sm text-muted-foreground" aria-live="polite">
           {t('hostname')}:{' '}
           <span className="font-semibold text-foreground" data-testid="hostname-preview">
             {preview ?? server.hostname ?? t('hostnamePending')}

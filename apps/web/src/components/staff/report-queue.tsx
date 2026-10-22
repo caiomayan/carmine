@@ -18,7 +18,7 @@ import { FieldError } from './fields';
 import { useStaffRequest } from './use-staff-request';
 
 const personLink =
-  'font-semibold underline decoration-line-strong underline-offset-[3px] hover:decoration-foreground';
+  'font-semibold underline decoration-line-strong underline-offset-(--underline-offset) hover:decoration-foreground';
 
 /** A fila de Denúncias, de página em página (cursor `before`). */
 export function ReportQueue({
@@ -56,7 +56,7 @@ export function ReportQueue({
 
   if (reports.length === 0) {
     return (
-      <p className="text-[13.5px] text-muted-foreground" data-testid="reports-empty">
+      <p className="text-body-sm text-muted-foreground" data-testid="reports-empty">
         {t(`empty.${status}`)}
       </p>
     );
@@ -87,7 +87,7 @@ export function ReportQueue({
             {t('loadMore')}
           </Button>
         ) : (
-          <p className="text-[12.5px] text-muted-foreground">{t('end')}</p>
+          <p className="text-body-sm text-muted-foreground">{t('end')}</p>
         )}
         {failed ? <FieldError>{t('loadFailed')}</FieldError> : null}
       </div>
@@ -114,7 +114,7 @@ function ReportCard({
       aria-label={t('cardLabel', { name: report.target.displayName })}
       data-report-id={report.id}
       data-reason={report.reason}
-      className="grid gap-4 rounded-md border border-line bg-surface p-4"
+      className="grid gap-4 rounded-md bg-surface p-4"
     >
       <header className="grid gap-1">
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -124,19 +124,19 @@ function ReportCard({
           <Link href={`/staff/contas/${report.target.publicId}` as Route} className={personLink}>
             {report.target.displayName}
           </Link>
-          <span className="text-[13px] text-muted-foreground tabular-nums">
+          <span className="text-body-sm text-muted-foreground tabular-nums">
             #{report.target.publicId}
           </span>
           <time
             dateTime={report.createdAt}
             title={format.dateTime(at, { dateStyle: 'medium', timeStyle: 'short' })}
-            className="ml-auto text-[12px] whitespace-nowrap text-muted-foreground"
+            className="ml-auto text-caption whitespace-nowrap text-muted-foreground"
             suppressHydrationWarning
           >
             {format.relativeTime(at, now)}
           </time>
         </p>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-body-sm text-muted-foreground">
           {[
             report.server ? (report.server.code ?? report.server.name) : t('serverUnknown'),
             report.map,
@@ -160,14 +160,14 @@ function ReportCard({
           )}
         </p>
         {open && report.otherOpenAgainstTarget > 0 ? (
-          <p className="text-[12.5px] font-semibold" data-testid="report-others">
+          <p className="text-body-sm font-semibold" data-testid="report-others">
             {t('others', { count: report.otherOpenAgainstTarget })}
           </p>
         ) : null}
       </header>
 
       {report.needsEvidence ? (
-        <p className="rounded-sm bg-surface-2 px-3 py-2 text-[13px]" data-testid="report-evidence">
+        <p className="rounded-sm bg-surface-2 px-3 py-2 text-body-sm" data-testid="report-evidence">
           {t('needsEvidence')}
         </p>
       ) : null}
@@ -177,7 +177,7 @@ function ReportCard({
       {open ? (
         <div className="grid gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Button asChild variant="ghost" size="sm" className="bg-surface-2 hover:bg-line">
+            <Button asChild variant="ghost" size="sm">
               <Link href={`/staff/contas/${report.target.publicId}` as Route}>
                 {t('openAccount')}
               </Link>
@@ -211,7 +211,7 @@ function ReportCard({
           />
         </div>
       ) : report.resolution ? (
-        <p className="text-[13px] text-muted-foreground" data-testid="report-resolution">
+        <p className="text-body-sm text-muted-foreground" data-testid="report-resolution">
           {report.status === 'sanctioned'
             ? t('resolution.sanctioned', { name: report.resolution.by.displayName ?? '—' })
             : t('resolution.archived', {
@@ -229,15 +229,15 @@ function ReportChat({ report }: { report: StaffReport }) {
   const t = useTranslations('staff.reports');
   const format = useFormatter();
   if (report.chat.length === 0) {
-    return <p className="text-[13px] text-muted-foreground">{t('chat.empty')}</p>;
+    return <p className="text-body-sm text-muted-foreground">{t('chat.empty')}</p>;
   }
   return (
     <div className="grid gap-1.5">
-      <h3 className="text-[12px] font-semibold tracking-wide text-muted-foreground uppercase">
+      <h3 className="text-caption font-semibold tracking-wide text-muted-foreground uppercase">
         {t('chat.title', { count: report.chat.length })}
       </h3>
       <ol
-        className="grid max-h-64 gap-0.5 overflow-y-auto rounded-sm bg-surface-2 p-2 text-[13px]"
+        className="grid max-h-64 gap-0.5 overflow-y-auto rounded-sm bg-surface-2 p-2 text-body-sm"
         data-testid="report-chat"
       >
         {report.chat.map((line, index) => (

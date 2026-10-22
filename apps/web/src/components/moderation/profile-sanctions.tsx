@@ -35,7 +35,7 @@ export async function SanctionBadges({ active }: { active: PublicSanction[] }) {
           <li
             key={sanction.id}
             data-type={sanction.type}
-            className="inline-flex min-h-6 items-center gap-1.5 rounded-sm bg-status-danger/12 px-2 text-[12px] font-semibold text-foreground"
+            className="inline-flex min-h-6 items-center gap-1.5 rounded-sm bg-status-danger/12 px-2 text-caption font-semibold text-foreground"
           >
             <span aria-hidden="true" className="size-1.5 rounded-full bg-status-danger" />
             {t(`badge.${sanction.type as BadgeType}.${kind}`, { at })}
@@ -66,8 +66,8 @@ export async function SanctionHistory({ sanctions }: { sanctions: ProfileSanctio
       className="animate-fade-up pt-10 [animation-delay:120ms]"
     >
       <SectionTitle id="punicoes">{tp('title')}</SectionTitle>
-      <p className="-mt-1 pb-3 text-[13px] text-muted-foreground">{tp('subtitle')}</p>
-      <table className="w-full border-collapse text-left text-[13.5px]">
+      <p className="-mt-1 pb-3 text-body-sm text-muted-foreground">{tp('subtitle')}</p>
+      <table className="w-full border-collapse text-left text-body-sm">
         <thead className="text-xs text-muted-foreground max-md:sr-only">
           <tr>
             <th className="border-b border-line py-2 pr-3 font-semibold">{tp('columns.type')}</th>
@@ -94,7 +94,7 @@ export async function SanctionHistory({ sanctions }: { sanctions: ProfileSanctio
                   <span className="inline-flex items-center gap-2">
                     {t(`types.${sanction.type}`)}
                     {isActive ? (
-                      <span className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5 text-caption font-medium text-muted-foreground">
                         <span
                           aria-hidden="true"
                           className="size-1.5 rounded-full bg-status-danger"
@@ -120,7 +120,9 @@ export async function SanctionHistory({ sanctions }: { sanctions: ProfileSanctio
                 >
                   {t(`duration.${length.unit}`, { value: length.value })}
                   {sanction.revoked ? (
-                    <span className="block text-[12px] text-muted-foreground">{tp('revoked')}</span>
+                    <span className="block text-caption text-muted-foreground">
+                      {tp('revoked')}
+                    </span>
                   ) : null}
                 </td>
               </tr>

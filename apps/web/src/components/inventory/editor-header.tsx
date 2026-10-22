@@ -30,7 +30,7 @@ export function EditorHeader({
           </>
         ) : null}
       </h1>
-      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] text-muted-foreground">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-muted-foreground">
         <span className="inline-flex items-center gap-1.5">
           <RarityDot rarity={entry.rarity} label="" />
           {rarityLabel}

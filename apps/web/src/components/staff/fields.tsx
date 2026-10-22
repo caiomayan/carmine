@@ -29,18 +29,18 @@ export function Field({
   return (
     <div className={cn('grid content-start gap-1.5', className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-[12.5px] font-semibold">
+        <label htmlFor={id} className="text-body-sm font-semibold">
           {label}
         </label>
         {aside ? (
-          <span className="text-[12px] text-muted-foreground tabular-nums">{aside}</span>
+          <span className="text-caption text-muted-foreground tabular-nums">{aside}</span>
         ) : null}
       </div>
       {children}
       {error ? (
         <FieldError id={`${id}-error`}>{error}</FieldError>
       ) : hint ? (
-        <p id={`${id}-hint`} className="text-[12.5px] text-muted-foreground">
+        <p id={`${id}-hint`} className="text-body-sm text-muted-foreground">
           {hint}
         </p>
       ) : null}
@@ -51,7 +51,7 @@ export function Field({
 /** Erro na Liberty: o sinal de contexto é o ponto; o texto segue neutro. */
 export function FieldError({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <p id={id} className="flex items-start gap-1.5 text-[12.5px] text-foreground">
+    <p id={id} className="flex items-start gap-1.5 text-body-sm text-foreground">
       <span aria-hidden="true" className="mt-1.5 size-1.5 shrink-0 rounded-full bg-status-danger" />
       {children}
     </p>

@@ -17,7 +17,7 @@ export function DraftNotice({
       role="status"
       data-icon-trigger
       data-testid="draft-restored"
-      className="flex animate-fade-up flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-surface py-2 pr-2 pl-4 text-[13.5px]"
+      className="flex animate-fade-up flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-surface py-2 pr-2 pl-4 text-body-sm"
     >
       <AnimatedIcon icon={HistoryIcon} size={16} className="text-status-info" />
       <p className="min-w-0 flex-1">{labels.restored}</p>

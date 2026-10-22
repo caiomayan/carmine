@@ -20,7 +20,7 @@ export async function SettingsSection({
       className="animate-fade-up"
     >
       <SectionTitle id={titleId}>{t(`${section}.title`)}</SectionTitle>
-      <p className="-mt-1 mb-4 max-w-[60ch] text-[13px] text-muted-foreground">
+      <p className="-mt-1 mb-4 max-w-[60ch] text-body-sm text-muted-foreground">
         {t(`${section}.intro`)}
       </p>
       <div className="grid gap-1 rounded-xl bg-surface p-2 max-md:p-1">{children}</div>

@@ -17,7 +17,7 @@ function textOf(node: ReactNode): string {
 }
 
 const linkClass =
-  'font-medium text-foreground underline decoration-line-strong underline-offset-[3px] transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground [overflow-wrap:anywhere]';
+  'font-medium text-foreground underline decoration-line-strong underline-offset-(--underline-offset) transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground [overflow-wrap:anywhere]';
 
 function DocLink({ href = '', children, gapLabel }: ComponentProps<'a'> & { gapLabel: string }) {
   // Lacuna do dono num rascunho: pendência destacada, não um link.
@@ -74,7 +74,7 @@ function componentsFor(gapLabel: string): Components {
     ),
     p: ({ children }) => <p className="mt-3 text-md leading-[1.7] text-pretty">{children}</p>,
     ul: ({ children }) => (
-      <ul className="mt-3 grid list-disc gap-1.5 pl-5 text-md leading-[1.65] marker:text-faint">
+      <ul className="mt-3 grid list-disc gap-1.5 pl-5 text-md leading-[1.65] marker:text-line-strong">
         {children}
       </ul>
     ),
