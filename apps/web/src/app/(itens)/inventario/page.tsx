@@ -105,24 +105,22 @@ export default async function InventoryPage() {
         <PageHead title={t('title')} subtitle={t('subtitle')} aside={addButton} />
         <section
           aria-labelledby="inventario-vazio"
-          className="grid gap-8 rounded-xl bg-surface p-6 max-md:p-4"
+          className="grid gap-10 pt-2"
           data-testid="inventory-empty"
         >
-          <div className="grid max-w-[56ch] gap-2">
-            <h2 id="inventario-vazio" className="text-lg font-semibold">
-              {t('empty.title')}
-            </h2>
-            <p className="text-[13.5px] text-muted-foreground">{t('empty.body')}</p>
-          </div>
-
-          <div className="grid gap-3">
+          <div className="grid gap-6">
+            <div className="grid max-w-[56ch] gap-2">
+              <h2 id="inventario-vazio" className="text-lg font-semibold">
+                {t('empty.title')}
+              </h2>
+              <p className="text-[13.5px] text-muted-foreground">{t('empty.body')}</p>
+            </div>
             <h3 className="sr-only">{t('empty.suggestions')}</h3>
             <CatalogGrid
               entries={suggestions}
               rarityLabels={rarityLabels}
               vipLabel={tc('vip')}
               vipHint={tc('vipHint')}
-              tileClassName="bg-surface-2/60 hover:bg-surface-2"
               className="grid-cols-3"
               action={(entry) => {
                 const spec = itemSpec(entry.id);
@@ -131,29 +129,26 @@ export default async function InventoryPage() {
                 ) : null;
               }}
             />
-            <Button asChild variant="ghost" className="justify-self-start">
-              <Link href="/inventario/adicionar">{t('empty.browse')}</Link>
-            </Button>
           </div>
 
           <div className="grid gap-3">
             <h3 className="label-caps text-[11px]">{t('empty.pathTitle')}</h3>
-            <ol className="grid grid-cols-3 gap-2.5 max-md:grid-cols-1">
+            <ol className="grid grid-cols-3 gap-x-8 gap-y-4 max-md:grid-cols-1">
               {(['step1', 'step2', 'step3'] as const).map((step, index) => (
                 <li
                   key={step}
-                  className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-lg bg-surface-2/60 p-4 text-[13.5px] leading-[1.55]"
+                  className="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 text-[13.5px] leading-[1.55]"
                 >
                   <span
                     aria-hidden="true"
-                    className="grid size-6 place-items-center rounded-full bg-background text-[12px] font-semibold"
+                    className="grid size-6 place-items-center rounded-full bg-(--fill-rest) text-[12px] font-semibold"
                   >
                     {index + 1}
                   </span>
                   <span>
                     {t.rich(`empty.${step}`, {
                       cmd: (chunks) => (
-                        <code className="rounded-sm bg-background px-1.5 py-0.5 font-mono text-[0.95em] font-semibold">
+                        <code className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-mono text-[0.95em] font-semibold">
                           {chunks}
                         </code>
                       ),
