@@ -134,7 +134,7 @@ export function BoardCard({
   );
 }
 
-// `scale` é uma propriedade própria no Tailwind v4: `transition-[transform]` não a anima.
+// `scale` é uma propriedade própria: `transition-[transform,...]` arbitrário não a anima.
 const ART =
   'absolute inset-0 aspect-auto h-full w-full transition-[scale,opacity] duration-(--dur-zoom) ease-(--ease-soft) group-hover/card:scale-105 motion-reduce:group-hover/card:scale-100';
 
