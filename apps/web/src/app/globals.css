@@ -46,6 +46,14 @@
   --color-status-vip: var(--status-vip);
   --color-status-offline: var(--status-offline);
   --color-side-ct: var(--side-ct);
+  --color-carmine: var(--carmine);
+  --color-rarity-consumer: var(--rarity-consumer);
+  --color-rarity-industrial: var(--rarity-industrial);
+  --color-rarity-milspec: var(--rarity-milspec);
+  --color-rarity-restricted: var(--rarity-restricted);
+  --color-rarity-classified: var(--rarity-classified);
+  --color-rarity-covert: var(--rarity-covert);
+  --color-rarity-contraband: var(--rarity-contraband);
   --color-side-t: var(--side-t);
 
   --radius-sm: calc(var(--radius) * 0.6);
@@ -55,6 +63,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 
   --font-sans: var(--font-ui);
+  /* DM Serif Display: H1 de herói, numerais de destaque e o 1-3 do Ranking (o wordmark é SVG) */
+  --font-display: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
 }
 
 @theme {
@@ -64,10 +74,17 @@
   --breakpoint-xl: 1181px;
 
   /* escala tipográfica da Liberty (Inter) */
-  --text-label: 10.5px;
+  --text-label: 11px;
   --text-label--line-height: 1;
   --text-label--letter-spacing: 0.2em;
   --text-label--font-weight: 650;
+  /* a escala com nomes (U3c): rótulo 11 · legenda 12 · corpo pequeno 13 (14 no celular) · corpo 14 */
+  --text-caption: 12px;
+  --text-caption--line-height: 1.45;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 1.45;
+  --text-body: 14px;
+  --text-body--line-height: 1.5;
   --text-xs: 12px;
   --text-xs--line-height: 1.45;
   --text-sm: 13px;

@@ -19,11 +19,27 @@
   --line-strong: #655f53;
   --text: #ede2c7;
   --muted: #9d9582;
-  --faint: #655f53;
+  /* decoração e ponto offline (3:1 sobre bg e surface); texto de verdade usa --muted */
+  --faint: #6f6959;
   --accent-hover: #cac0a9;
   /* menus e popovers sobem um degrau acima das superfícies */
   --raised: var(--surface-2);
   --shadow: rgb(0 0 0 / 0.5);
+
+  /*
+   * Carmim (U3c, opção A do dono): só o losango dos títulos de seção, nunca informação. Mais fundo que
+   * o danger (salmão) e que o vermelho da raridade; 3:1 sobre as superfícies (lib/tokens.test.ts).
+   */
+  --carmine: #c23a41;
+
+  /* raridade: o ponto de cada Item (mesmas cores da cs2-lib no escuro; no claro, tons com 3:1 sobre as superfícies) */
+  --rarity-consumer: #b0c3d9;
+  --rarity-industrial: #5e98d9;
+  --rarity-milspec: #4b69ff;
+  --rarity-restricted: #8847ff;
+  --rarity-classified: #d32ce6;
+  --rarity-covert: #eb4b4b;
+  --rarity-contraband: #e4ae39;
 
   /*
    * Escala de fundos (regra do dono: fundos, não anéis): repouso, hover e ativo/selecionado são camadas
@@ -75,7 +91,7 @@
   --line-strong: #8f8776;
   --text: #1c1b17;
   --muted: #655f53;
-  --faint: #a69e89;
+  --faint: #857d6b;
   --accent-hover: #3f3d35;
   --raised: var(--bg);
   /* no papel claro a mesma camada rende menos: o degrau de foco sobe para manter a distância do hover */
@@ -84,6 +100,14 @@
   --fill-active: color-mix(in srgb, var(--text) 18%, transparent);
   --fill-focus: color-mix(in srgb, var(--text) 34%, transparent);
   --shadow: rgb(60 45 20 / 0.2);
+  --carmine: #a3262d;
+  --rarity-consumer: #537cac;
+  --rarity-industrial: #317bce;
+  --rarity-milspec: #4b69ff;
+  --rarity-restricted: #8847ff;
+  --rarity-classified: #ce1be3;
+  --rarity-covert: #e82f2f;
+  --rarity-contraband: #9d7215;
 
   --status-online: #3f6930;
   --status-warn: #7c560c;
@@ -145,6 +169,13 @@
   /* forma: arredondamento nível shadcn (sm 6 · md 8 · lg 10 · xl 14 px) */
   --radius: 0.625rem;
 
+  /* estrutura (U3c): a barra fina de lotação/float, o afastamento do sublinhado e a sombra dos painéis sobre a página */
+  --bar-h: 3px;
+  --underline-offset: 3px;
+  --shadow-overlay: 0 24px 64px -24px var(--shadow), 0 0 0 1px var(--line);
+  /* o fundo de "selecionado" é o degrau ativo da escala de fundos (--fill-*) */
+  --fill-selected: var(--fill-active);
+
   /* layout: container global de 1080 px com margem lateral mínima de 36 px */
   --page-max: 1080px;
   --mx: 36px;
@@ -183,5 +214,12 @@
     --dur-enter: 180ms;
     --dur-slow: 160ms;
     --dur-base: 140ms;
+  }
+}
+
+/* o texto corrido do celular sobe de 13 para 14 px (piso de leitura; ver --text-body-sm em globals.css) */
+@media (max-width: 760px) {
+  :root {
+    --text-body-sm: 14px;
   }
 }

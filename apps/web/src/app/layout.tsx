@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { DM_Serif_Display, Inter } from 'next/font/google';
 import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
@@ -27,6 +27,16 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+});
+
+// A fonte de destaque (H1 de herói e numerais). Fora do pré-carregamento: só baixa quando uma página a usa,
+// então não pesa na primeira carga das demais.
+const dmSerif = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-dm-serif',
+  display: 'swap',
+  preload: false,
 });
 
 const MAIN_CONTENT_ID = 'conteudo';
@@ -75,7 +85,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang={locale}
       data-theme={DEFAULT_THEME}
-      className={inter.variable}
+      className={`${inter.variable} ${dmSerif.variable}`}
       suppressHydrationWarning
     >
       <head>
