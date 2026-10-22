@@ -14,7 +14,7 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(page.getByRole('region', { name: 'Servidores Carmine' })).toBeVisible();
 
     await expect(mainNav(page).getByRole('link')).toHaveCount(4);
-    await expect(mainNav(page).getByRole('link', { name: 'Servidores' })).toHaveAttribute(
+    await expect(mainNav(page).getByRole('link', { name: 'Jogar' })).toHaveAttribute(
       'aria-current',
       'page',
     );

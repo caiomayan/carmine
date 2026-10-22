@@ -1,10 +1,13 @@
 import {
   type CurrentSession,
   currentSessionSchema,
+  type HeaderPreviews,
+  headerPreviewsSchema,
   type Inventory,
   inventorySchema,
   type LiveServerList,
   type Loadout,
+  type LoadoutSide,
   liveServerListSchema,
   loadoutSchema,
   type PresetList,
@@ -218,3 +221,22 @@ export const getProfileStats = cache(async (publicId: number): Promise<ProfileSt
     return null;
   }
 });
+
+/**
+ * As prévias dos painéis do header (U3e), com a sessão repassada (a parte pessoal só vem com ela).
+ * `side` é o último lado do Loadout, que só o navegador sabe. Nulo com a API fora: o painel diz
+ * que não carregou, não mostra vazio.
+ */
+export async function getHeaderPreviews(side: LoadoutSide): Promise<HeaderPreviews | null> {
+  try {
+    const cookie = await sessionCookie();
+    const response = await apiGet(`/header-previews?side=${side}`, {
+      ...(cookie && { cookie }),
+      visitorIp: await visitorIp(),
+    });
+    if (!response.ok) return null;
+    return headerPreviewsSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+}
