@@ -8,17 +8,18 @@ import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
 
 /**
- * Cores de raridade do CS2. Não são da identidade Liberty: aparecem só no ponto ao lado do
- * nome (sinal pequeno), sempre acompanhado do nome da raridade para leitores de tela.
+ * Cores de raridade do CS2 (tokens `--rarity-*`, com 3:1 nos dois temas). Não são da identidade
+ * Liberty: aparecem só no ponto ao lado do nome (sinal pequeno), sempre acompanhado do nome da
+ * raridade para leitores de tela.
  */
 export const RARITY_COLOR: Record<Rarity, string> = {
-  consumer: '#b0c3d9',
-  industrial: '#5e98d9',
-  milspec: '#4b69ff',
-  restricted: '#8847ff',
-  classified: '#d32ce6',
-  covert: '#eb4b4b',
-  contraband: '#e4ae39',
+  consumer: 'var(--rarity-consumer)',
+  industrial: 'var(--rarity-industrial)',
+  milspec: 'var(--rarity-milspec)',
+  restricted: 'var(--rarity-restricted)',
+  classified: 'var(--rarity-classified)',
+  covert: 'var(--rarity-covert)',
+  contraband: 'var(--rarity-contraband)',
 };
 
 export function RarityDot({ rarity, label }: { rarity: Rarity; label: string }) {
@@ -86,10 +87,10 @@ export function TileCaption({
 }) {
   return (
     <span className={cn('grid min-w-0 gap-0.5 pr-1', className)}>
-      <span className="truncate text-[14px] font-semibold">
+      <span className="truncate text-body font-semibold">
         {skinFirst && subtitle ? subtitle : title}
       </span>
-      <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
+      <span className="flex min-w-0 items-center gap-1.5 text-caption text-muted-foreground">
         <RarityDot rarity={rarity} label={rarityLabel} />
         <span className="truncate">
           {skinFirst && subtitle ? title : (subtitle ?? rarityLabel)}
@@ -247,7 +248,7 @@ export function TileBadge({ children, className }: { children: ReactNode; classN
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-sm bg-background/80 px-1.5 py-1 label-caps text-[11px] tracking-[0.1em] text-foreground',
+        'inline-flex items-center gap-1 rounded-sm bg-background/80 px-1.5 py-1 label-caps tracking-[0.1em] text-foreground',
         className,
       )}
     >

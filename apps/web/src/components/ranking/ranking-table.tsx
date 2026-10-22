@@ -8,7 +8,7 @@ import { playedParts } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 
 const HEAD =
-  'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-[11px] text-muted-foreground';
+  'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-muted-foreground';
 
 /**
  * O top 50 numa tabela de verdade (cabeçalhos e legenda para o leitor de tela), com números
@@ -145,14 +145,14 @@ async function Row({
             ) : (
               <Link
                 href={`/${player.publicId}` as Route}
-                className="min-w-0 truncate rounded-xs font-semibold underline decoration-foreground/30 underline-offset-[3px] transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground focus-visible:outline-offset-2"
+                className="min-w-0 truncate rounded-xs font-semibold underline decoration-foreground/30 underline-offset-(--underline-offset) transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground focus-visible:outline-offset-2"
               >
                 {player.displayName}
               </Link>
             )}
             <span className="flex items-center gap-2 text-xs text-muted-foreground md:contents">
               {entry.self ? (
-                <span className="shrink-0 rounded-sm bg-surface px-1.5 py-[3px] label-caps text-[9.5px] text-foreground">
+                <span className="shrink-0 rounded-sm bg-surface px-1.5 py-[3px] label-caps text-foreground">
                   {t('you')}
                 </span>
               ) : null}
