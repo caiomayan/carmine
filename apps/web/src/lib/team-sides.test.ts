@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { equippedTeamSides, orderedSides, sidesLabelKey } from './team-sides';
+import { equippedTeamSides, orderedSides, showcaseSides, sidesLabelKey } from './team-sides';
 
 describe('orderedSides', () => {
   it('põe o TR à esquerda e o CT à direita, qualquer que seja a ordem de entrada', () => {
@@ -52,5 +52,16 @@ describe('sidesLabelKey', () => {
 
   it('sem lados vale como os dois (ninguém pergunta isso: o Item sempre está em algum lado)', () => {
     expect(sidesLabelKey([])).toBe('both');
+  });
+});
+
+describe('showcaseSides', () => {
+  it('um Item sem lado (o kit de música) vale nos dois', () => {
+    expect(showcaseSides([])).toEqual(['t', 'ct']);
+  });
+
+  it('mantém o lado ou os lados em que o Item está, na ordem fixa', () => {
+    expect(showcaseSides(['ct'])).toEqual(['ct']);
+    expect(showcaseSides(['ct', 't'])).toEqual(['t', 'ct']);
   });
 });

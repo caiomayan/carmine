@@ -4,11 +4,8 @@ import { EmptyState } from '@/components/empty-state';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { UsersIcon } from '@/components/icons/animated/users';
 import { SectionTitle } from '@/components/section-title';
-import { highlightsOf, statsState } from '@/lib/profile-stats';
+import { highlightsOf, ONE_DECIMAL, statsState, TWO_DECIMALS } from '@/lib/profile-stats';
 import { playedParts } from '@/lib/ranking';
-
-const ONE = { minimumFractionDigits: 1, maximumFractionDigits: 1 };
-const TWO = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
 
 /**
  * Estatísticas do Perfil (S12): três números de destaque (K/D, Kills e HS%, em DM Serif) e, abaixo,
@@ -115,8 +112,8 @@ async function Highlights({ total }: { total: TotalStats }) {
   const format = await getFormatter();
   const show = (key: string, value: number | null) => {
     if (value === null) return t('none');
-    if (key === 'kd') return format.number(value, TWO);
-    if (key === 'headshotPercent') return `${format.number(value, ONE)}%`;
+    if (key === 'kd') return format.number(value, TWO_DECIMALS);
+    if (key === 'headshotPercent') return `${format.number(value, ONE_DECIMAL)}%`;
     return format.number(value);
   };
 
@@ -164,25 +161,27 @@ async function Rows({ stats, mode }: { stats: TotalStats; mode?: ModeStats }) {
     ['kills', t('labels.kills'), format.number(stats.kills)],
     ['deaths', t('labels.deaths'), format.number(stats.deaths)],
     ['assists', t('labels.assists'), format.number(stats.assists)],
-    ['kd', t('labels.kd'), format.number(stats.kd, TWO)],
+    ['kd', t('labels.kd'), format.number(stats.kd, TWO_DECIMALS)],
     [
       'headshotPercent',
       t('labels.headshotPercent'),
-      stats.headshotPercent === null ? t('none') : `${format.number(stats.headshotPercent, ONE)}%`,
+      stats.headshotPercent === null
+        ? t('none')
+        : `${format.number(stats.headshotPercent, ONE_DECIMAL)}%`,
     ],
   ];
   if (mode?.mode === 'retake') {
     rows.push([
       'adr',
       t('labels.adr'),
-      mode.adr === null ? t('none') : format.number(mode.adr, ONE),
+      mode.adr === null ? t('none') : format.number(mode.adr, ONE_DECIMAL),
     ]);
   }
   if (mode?.mode === 'deathmatch') {
     rows.push([
       'kpm',
       t('labels.kpm'),
-      mode.kpm === null ? t('none') : format.number(mode.kpm, TWO),
+      mode.kpm === null ? t('none') : format.number(mode.kpm, TWO_DECIMALS),
     ]);
   }
   rows.push([

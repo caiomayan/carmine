@@ -197,10 +197,10 @@ async function ProfileHeader({
         alt={t('avatarAlt', { name: profile.displayName })}
         className={cn(
           'max-md:[--avatar-size:72px]!',
-          // Sinal de Conta não reivindicada: o avatar fica mais quieto e com contorno tracejado.
-          // Discreto de propósito; nunca um selo (nada aqui parece "verificado").
-          unclaimed &&
-            'opacity-85 outline-1 outline-offset-3 outline-line-strong outline-dashed grayscale-[0.4]',
+          // Sinal de Conta não reivindicada: o avatar fica mais quieto, num fundo mais leve e com as
+          // iniciais em secundário (sem contorno nem opacidade, que desbotavam as letras). Discreto
+          // de propósito; nunca um selo (nada aqui parece "verificado"). A nota ao lado explica.
+          unclaimed && 'bg-(--fill-rest) text-muted-foreground grayscale-[0.4]',
         )}
       />
       <div className="grid min-w-0 gap-2">

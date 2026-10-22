@@ -182,7 +182,7 @@ test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em 
 
   const row = page.getByTestId('ranking-row').filter({ hasText: high.name });
   await expect(row.getByRole('link', { name: high.name })).toBeVisible();
-  await expect(row.getByTestId('ranking-row-extra')).toContainText(/HS% .+ · d+ rounds/);
+  await expect(row.getByTestId('ranking-row-extra')).toContainText(/HS% .+ · \d+ rounds/);
 
   // No desktop as colunas voltam e a segunda linha some.
   await page.setViewportSize({ width: 1440, height: 900 });

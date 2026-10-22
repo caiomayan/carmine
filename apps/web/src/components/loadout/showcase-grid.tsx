@@ -8,6 +8,7 @@ import {
 } from '@/components/inventory/item-tile';
 import { TeamDots } from '@/components/team-dots';
 import type { ShowcaseView } from '@/lib/loadout/build';
+import { showcaseSides } from '@/lib/team-sides';
 import { cn } from '@/lib/utils';
 
 /**
@@ -41,7 +42,7 @@ export function ShowcaseGrid({
           />
           <span className="absolute top-2.5 right-2.5 flex items-center gap-2">
             {item.statTrak ? <TileBadge>ST™</TileBadge> : null}
-            <TeamDots sides={item.sides.length === 0 ? ['ct', 't'] : item.sides} />
+            <TeamDots sides={showcaseSides(item.sides)} />
           </span>
         </li>
       ))}

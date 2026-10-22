@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { getTranslations } from 'next-intl/server';
 import { NotFoundView } from '@/components/not-found-view';
+import { SavedTheme } from '@/components/saved-theme';
 import { PROFILE_PATH_HEADER } from '@/lib/auth-links';
 import RootNotFound, { generateMetadata as rootMetadata } from '../not-found';
 
@@ -22,5 +23,10 @@ export default async function ProfileNotFound() {
   const t = await getTranslations('profile.notFound');
   const code = (await getTranslations('notFound'))('code');
 
-  return <NotFoundView code={code} title={t('title')} body={t('body')} back={t('back')} />;
+  return (
+    <>
+      <SavedTheme />
+      <NotFoundView code={code} title={t('title')} body={t('body')} back={t('back')} />
+    </>
+  );
 }
