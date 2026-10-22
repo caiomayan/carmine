@@ -17,7 +17,7 @@ export const STATE_TONE: Record<LiveServer['state'], StatusTone> = {
 export function OccupancyBar({ server }: { server: LiveServer }) {
   const { ratio, level } = occupancy(server);
   return (
-    <span aria-hidden="true" className="block h-[3px] overflow-hidden rounded-[2px] bg-line">
+    <span aria-hidden="true" className="block h-(--bar-h) overflow-hidden rounded-[2px] bg-line">
       <span
         className={cn(
           'block h-full origin-left rounded-[2px] transition-[transform,background-color] duration-(--dur-slow) ease-out motion-reduce:transition-none',

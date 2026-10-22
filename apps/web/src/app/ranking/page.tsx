@@ -94,7 +94,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Sear
           <WeekSelect label={t('week.label')} value={ranking.weekStart} options={options} />
         </div>
 
-        <p className="max-w-[68ch] text-[13.5px] text-muted-foreground [text-wrap:pretty]">
+        <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
           {t(`rules.${mode}`, { min: minimum })}
         </p>
 
@@ -121,7 +121,7 @@ export default async function RankingPage({ searchParams }: { searchParams: Sear
           </div>
         )}
 
-        <p className="max-w-[68ch] text-[12.5px] text-muted-foreground [text-wrap:pretty]">
+        <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
           {t.rich('integrity', { discord: discordLink })}
         </p>
       </div>

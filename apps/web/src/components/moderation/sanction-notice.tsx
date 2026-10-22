@@ -63,7 +63,7 @@ export function SanctionNotice() {
                       <span suppressHydrationWarning>{t(`notice.until.${kind}`, { at })}</span>
                     </span>
                   </p>
-                  <p className="text-[13.5px] text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     {t('notice.reason', { category: t(`categories.${sanction.category}`) })}
                     {' — '}
                     <span className="text-foreground [overflow-wrap:anywhere]">
@@ -74,7 +74,7 @@ export function SanctionNotice() {
               );
             })}
           </ul>
-          <p className="max-w-[72ch] text-[13px] text-muted-foreground">
+          <p className="max-w-[72ch] text-body-sm text-muted-foreground">
             {banned ? `${t('notice.bannedSite')} ` : null}
             {t('notice.appeal', { hours: APPEAL_RESPONSE_HOURS })}
           </p>

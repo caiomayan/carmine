@@ -85,11 +85,11 @@
   --text-body-sm--line-height: 1.45;
   --text-body: 14px;
   --text-body--line-height: 1.5;
-  --text-xs: 12px;
+  --text-xs: var(--text-caption);
   --text-xs--line-height: 1.45;
-  --text-sm: 13px;
+  --text-sm: var(--text-body-sm);
   --text-sm--line-height: 1.45;
-  --text-base: 14px;
+  --text-base: var(--text-body);
   --text-base--line-height: 1.45;
   --text-md: 15px;
   --text-md--line-height: 1.6;

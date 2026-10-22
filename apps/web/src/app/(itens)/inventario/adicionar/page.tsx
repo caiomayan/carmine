@@ -67,7 +67,7 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
           >,
         }}
       >
-        <p role="status" className="pb-3 text-[13px] text-muted-foreground">
+        <p role="status" className="pb-3 text-body-sm text-muted-foreground">
           {t('results', { total: page.total })}
         </p>
         {page.total === 0 ? (
@@ -84,10 +84,10 @@ export default async function CatalogPage({ searchParams }: { searchParams: Sear
             />
             {shown < page.total ? (
               <div className="grid justify-items-center gap-2 pt-6">
-                <p role="status" className="text-[13px] text-muted-foreground">
+                <p role="status" className="text-body-sm text-muted-foreground">
                   {t('showing', { shown, total: page.total })}
                 </p>
-                <Button asChild variant="ghost" className="bg-surface-2/60 px-6">
+                <Button asChild variant="ghost" className="px-6">
                   <Link href={`/inventario/adicionar?${moreParams}` as Route} scroll={false}>
                     {t('showMore')}
                   </Link>

@@ -100,7 +100,7 @@ export default async function LoadoutPage() {
               {vip ? <VipNotice vip={vip} /> : null}
               {items.length === 0 ? (
                 <p
-                  className="flex max-w-[80ch] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface px-3 py-2 text-[12.5px]"
+                  className="flex max-w-[80ch] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface px-3 py-2 text-body-sm"
                   data-testid="loadout-empty-inventory"
                 >
                   <span>{t('emptyInventory.body')}</span>

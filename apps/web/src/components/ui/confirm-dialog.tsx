@@ -61,7 +61,7 @@ export function ConfirmDialog({
         <div className="grid gap-2 pr-8">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription asChild>
-            <div className="text-[13.5px] leading-[1.55]">{description}</div>
+            <div className="text-body-sm leading-[1.55]">{description}</div>
           </DialogDescription>
         </div>
         <DialogFooter>

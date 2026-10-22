@@ -17,8 +17,8 @@ export function AppearanceSetting() {
   return (
     <fieldset className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="theme-setting">
       <legend className="grid gap-0.5 px-0">
-        <span className="text-[14px] font-semibold">{t('title')}</span>
-        <span className="text-[13px] font-normal text-muted-foreground">{t('description')}</span>
+        <span className="text-body font-semibold">{t('title')}</span>
+        <span className="text-body-sm font-normal text-muted-foreground">{t('description')}</span>
       </legend>
       <div className="grid grid-cols-2 gap-3 max-sm:gap-2">
         {THEMES.map((option) => {

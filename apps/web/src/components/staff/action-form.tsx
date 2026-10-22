@@ -135,7 +135,7 @@ export function ActionForm({
 
   const form = (
     <form ref={formRef} onSubmit={submit} noValidate className="grid gap-4" data-testid={testId}>
-      {description ? <div className="text-[13px] text-muted-foreground">{description}</div> : null}
+      {description ? <div className="text-body-sm text-muted-foreground">{description}</div> : null}
       {children}
       <ReasonField
         id={`${id}-reason`}
@@ -153,7 +153,6 @@ export function ActionForm({
           size="sm"
           disabled={disabled || pending}
           aria-busy={pending || undefined}
-          className={variant === 'ghost' ? 'bg-surface-2 hover:bg-line' : undefined}
         >
           {submitLabel}
         </Button>
@@ -214,7 +213,7 @@ export function ActionForm({
           testId={testId ? `${testId}-confirm` : undefined}
         />
       ) : null}
-      <p role="status" className="text-[12.5px] text-muted-foreground empty:hidden">
+      <p role="status" className="text-body-sm text-muted-foreground empty:hidden">
         {done ? (
           <span className="inline-flex items-center gap-1.5" data-icon-trigger>
             <span className="text-status-success">

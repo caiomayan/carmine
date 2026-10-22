@@ -30,14 +30,14 @@ export function WeekSelect({
   if (options.length <= 1) {
     return (
       <p className="flex items-center gap-2.5 text-sm" data-testid="week-label">
-        <span className="label-caps text-[10.5px] text-muted-foreground">{label}</span>
+        <span className="label-caps text-[11px] text-muted-foreground">{label}</span>
         {options.find((option) => option.value === value)?.label ?? options[0]?.label}
       </p>
     );
   }
   return (
     <div className="flex items-center gap-2.5 max-md:w-full">
-      <label htmlFor={id} className="label-caps text-[10.5px] text-muted-foreground">
+      <label htmlFor={id} className="label-caps text-[11px] text-muted-foreground">
         {label}
       </label>
       <SimpleSelect

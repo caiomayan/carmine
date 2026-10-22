@@ -103,7 +103,7 @@ export function SlotDock({
       data-slot-key={slot.key}
       className={cn(
         'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-xl bg-surface-2 p-2.5 pr-3',
-        'shadow-[0_10px_32px_-6px_var(--shadow),inset_0_0_0_1px_var(--line)]',
+        'shadow-[0_10px_32px_-6px_var(--shadow)]',
         'max-md:grid-cols-[auto_minmax(0,1fr)]',
       )}
     >
@@ -139,7 +139,7 @@ export function SlotDock({
               <span>{title}</span>
               <i
                 aria-hidden="true"
-                className="h-[3px] w-2.5 rounded-full"
+                className="h-(--bar-h) w-2.5 rounded-full"
                 style={{ background: RARITY_COLOR[item.rarity] }}
               />
               <span>

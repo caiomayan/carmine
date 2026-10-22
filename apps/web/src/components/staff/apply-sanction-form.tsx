@@ -198,7 +198,7 @@ export function ApplySanctionForm({
     <form onSubmit={review} noValidate className="grid gap-5" data-testid="apply-sanction">
       {report ? (
         <p
-          className="rounded-sm bg-surface-2 px-3 py-2 text-[13px]"
+          className="rounded-sm bg-surface-2 px-3 py-2 text-body-sm"
           data-testid="apply-from-report"
         >
           {report.needsEvidence ? t('apply.fromReportEvidence') : t('apply.fromReport')}
@@ -232,7 +232,7 @@ export function ApplySanctionForm({
                   data-offense={suggestion.offense}
                   className="grid gap-1 rounded-lg bg-surface px-4 py-3"
                 >
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     {t('apply.suggestion', {
                       offense: suggestion.offense,
                       days: RECIDIVISM_WINDOW_DAYS,
@@ -246,12 +246,12 @@ export function ApplySanctionForm({
 
               <fieldset className="grid gap-3">
                 <legend className="flex w-full items-center justify-between gap-3 pb-3">
-                  <span className="text-[12.5px] font-semibold">{t('apply.measures')}</span>
+                  <span className="text-body-sm font-semibold">{t('apply.measures')}</span>
                   {valid && suggestion ? (
                     <span
                       data-testid="suggestion-state"
                       data-follows={follows}
-                      className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground"
+                      className="inline-flex items-center gap-1.5 text-caption text-muted-foreground"
                     >
                       <span
                         aria-hidden="true"
@@ -319,8 +319,8 @@ export function ApplySanctionForm({
               {needsProof ? (
                 <fieldset className="grid gap-3" data-testid="cheat-proof">
                   <legend className="grid gap-1 pb-3">
-                    <span className="text-[12.5px] font-semibold">{t('apply.proof.title')}</span>
-                    <span className="text-[12.5px] text-muted-foreground">
+                    <span className="text-body-sm font-semibold">{t('apply.proof.title')}</span>
+                    <span className="text-body-sm text-muted-foreground">
                       {t('apply.proof.hint')}
                     </span>
                   </legend>
@@ -389,7 +389,7 @@ export function ApplySanctionForm({
                     <p id={`${id}-confirm`} className="text-sm font-semibold">
                       {t('apply.confirmTitle')}
                     </p>
-                    <p className="text-[13.5px]">
+                    <p className="text-body-sm">
                       {t('apply.confirmBody', {
                         name: detail.account.displayName,
                         measures: chosen.map(label).join(' + '),
@@ -397,14 +397,14 @@ export function ApplySanctionForm({
                       })}
                     </p>
                     {needsProof ? (
-                      <p className="text-[12.5px] text-muted-foreground" data-testid="proof-public">
+                      <p className="text-body-sm text-muted-foreground" data-testid="proof-public">
                         {t(
                           proof.evidenceUrl ? 'apply.proof.publicCheat' : 'apply.proof.publicRules',
                         )}
                       </p>
                     ) : null}
                     {chosen.some((m) => m.type === 'ban') ? (
-                      <p className="text-[12.5px] text-muted-foreground">{t('apply.banEffect')}</p>
+                      <p className="text-body-sm text-muted-foreground">{t('apply.banEffect')}</p>
                     ) : null}
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -449,7 +449,7 @@ export function ApplySanctionForm({
       <div role="status" className="empty:hidden">
         {done ? (
           <p
-            className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
+            className="inline-flex items-center gap-1.5 text-body-sm text-muted-foreground"
             data-icon-trigger
           >
             <span className="text-status-success">
@@ -508,7 +508,7 @@ function MeasureRow({
       <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
         {lasting ? (
           <fieldset className="grid gap-1.5">
-            <legend className="pb-1.5 text-[12.5px] font-semibold">{t('duration')}</legend>
+            <legend className="pb-1.5 text-body-sm font-semibold">{t('duration')}</legend>
             <div className="flex flex-wrap items-center gap-2">
               <label htmlFor={`${id}-value`} className="sr-only">
                 {t('durationValue')}
