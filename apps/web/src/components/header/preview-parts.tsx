@@ -1,5 +1,6 @@
 'use client';
 
+import type { Route } from 'next';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
@@ -59,7 +60,7 @@ export const rowLink =
   'group/row flex min-h-(--tap) items-center gap-3 rounded-lg px-2.5 py-2 transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover)';
 
 /** O atalho do painel para a página dele, no rodapé. */
-export function PanelFooterLink({ href, children }: { href: string; children: ReactNode }) {
+export function PanelFooterLink({ href, children }: { href: Route; children: ReactNode }) {
   return (
     <Link
       href={href}

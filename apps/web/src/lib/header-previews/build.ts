@@ -1,4 +1,5 @@
 import type { HeaderPreviews, LiveServer, LoadoutSide, RankingEntry } from '@carmine/contracts';
+import type { Route } from 'next';
 import { serverHref, serverLabel } from '../live-servers';
 import type {
   HeaderView,
@@ -38,7 +39,7 @@ function names(item: { title: string; subtitle: string | null; skinFirst: boolea
 
 const toServer = (server: LiveServer): PreviewServer => ({
   id: server.id,
-  href: serverHref(server),
+  href: serverHref(server) as Route,
   name: serverLabel(server),
   mode: server.mode,
   map: server.map,
@@ -59,7 +60,7 @@ function buildPlay(play: HeaderPreviews['play']): PlayView {
         key: String(friend.publicId),
         name: friend.displayName,
         avatarUrl: friend.avatarUrl,
-        href: `/${friend.publicId}`,
+        href: `/${friend.publicId}` as Route,
       })),
     },
     others: play.others.map(toServer),
@@ -79,7 +80,7 @@ function buildLoadout(
         equipped: true,
         ...names(item),
         image: item.image,
-        href: `/inventario/${slot.uid}`,
+        href: `/inventario/${slot.uid}` as Route,
         statTrak: slot.statTrak,
       };
     }
@@ -90,7 +91,7 @@ function buildLoadout(
       title: fallback.name,
       caption: null,
       image: fallback.image,
-      href: '/loadout',
+      href: '/loadout' as Route,
       statTrak: false,
     };
   });
@@ -109,7 +110,7 @@ function buildInventory(
         key: entry.uid,
         ...names(item),
         image: item.image,
-        href: `/inventario/${entry.uid}`,
+        href: `/inventario/${entry.uid}` as Route,
         statTrak: entry.statTrak,
       },
     ];
@@ -124,7 +125,7 @@ function toRow(entry: RankingEntry): RankingRowView {
     name: player.displayName,
     avatarUrl: player.private ? null : player.avatarUrl,
     // O Perfil privado continua anônimo: nada leva à Conta.
-    href: !player.private && player.publicId !== null ? `/${player.publicId}` : null,
+    href: !player.private && player.publicId !== null ? (`/${player.publicId}` as Route) : null,
     self: entry.self,
   };
 }
@@ -133,7 +134,7 @@ function buildRanking(ranking: NonNullable<HeaderPreviews['ranking']>): RankingV
   return {
     closesAt: ranking.closesAt,
     modes: ranking.modes.map((entry): RankingModeView => {
-      const href = `/ranking?modo=${entry.mode}`;
+      const href = `/ranking?modo=${entry.mode}` as Route;
       return {
         mode: entry.mode,
         href,
@@ -141,7 +142,7 @@ function buildRanking(ranking: NonNullable<HeaderPreviews['ranking']>): RankingV
         mine: entry.mine && {
           position: entry.mine.position,
           progress: entry.mine.progress,
-          href: entry.mine.position === null ? href : `${href}#minha-linha`,
+          href: entry.mine.position === null ? href : (`${href}#minha-linha` as Route),
         },
       };
     }),
@@ -166,7 +167,7 @@ function buildExample(lookup: CatalogLookup): LoadoutView {
         equipped: true,
         ...names(item),
         image: item.image,
-        href: '/loadout',
+        href: '/loadout' as Route,
         statTrak: false,
       };
     }
@@ -177,7 +178,7 @@ function buildExample(lookup: CatalogLookup): LoadoutView {
       title: fallback.name,
       caption: null,
       image: fallback.image,
-      href: '/loadout',
+      href: '/loadout' as Route,
       statTrak: false,
     };
   });

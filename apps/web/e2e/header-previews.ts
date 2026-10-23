@@ -1,5 +1,9 @@
 import type { Page } from '@playwright/test';
+import type { Route } from 'next';
 import type { HeaderView } from '../src/lib/header-previews/view';
+
+/** Os destinos dos painéis são rotas do site: as fixtures os escrevem como o servidor os monta. */
+const route = (href: string) => href as Route;
 
 /** Dados de mentira para os painéis do header: o E2E não depende da API nem do catálogo. */
 
@@ -11,7 +15,7 @@ const IMAGE = '/icon1.png';
 
 const server = (over: Partial<HeaderView['play']['others'][number]> = {}) => ({
   id: SERVER_ID,
-  href: `/#servidor-${SERVER_ID}`,
+  href: route(`/#servidor-${SERVER_ID}`),
   name: 'Retake · Rotação',
   mode: 'retake' as const,
   map: 'de_mirage',
@@ -30,14 +34,14 @@ export const SIGNED_IN: HeaderView = {
       ...server(),
       reason: 'friends',
       friends: [
-        { key: '10016', name: 'coldzera', avatarUrl: null, href: '/10016' },
-        { key: '10017', name: 'Aurélio', avatarUrl: null, href: '/10017' },
+        { key: '10016', name: 'coldzera', avatarUrl: null, href: route('/10016') },
+        { key: '10017', name: 'Aurélio', avatarUrl: null, href: route('/10017') },
       ],
     },
     others: [
       server({
         id: OTHER_ID,
-        href: `/#servidor-${OTHER_ID}`,
+        href: route(`/#servidor-${OTHER_ID}`),
         name: 'Deathmatch · FFA',
         mode: 'deathmatch',
         map: 'de_dust2',
@@ -46,7 +50,7 @@ export const SIGNED_IN: HeaderView = {
       }),
       server({
         id: '5d4f6e7a-8b92-4c0d-8e1f-2a3b4c5d6e7f',
-        href: '/#servidor-5d4f6e7a',
+        href: route('/#servidor-5d4f6e7a'),
         name: 'Retake · Treino',
         map: 'de_inferno',
         players: 2,
@@ -64,7 +68,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Fade',
         caption: 'Karambit',
         image: IMAGE,
-        href: `/inventario/${UID_KNIFE}`,
+        href: route(`/inventario/${UID_KNIFE}`),
         statTrak: false,
       },
       {
@@ -73,7 +77,7 @@ export const SIGNED_IN: HeaderView = {
         title: null,
         caption: null,
         image: null,
-        href: '/loadout',
+        href: route('/loadout'),
         statTrak: false,
       },
       {
@@ -82,7 +86,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Cadeia de Caracteres',
         caption: 'M4A1-S',
         image: IMAGE,
-        href: `/inventario/${UID_RIFLE}`,
+        href: route(`/inventario/${UID_RIFLE}`),
         statTrak: true,
       },
       {
@@ -91,7 +95,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'AWP',
         caption: null,
         image: IMAGE,
-        href: '/loadout',
+        href: route('/loadout'),
         statTrak: false,
       },
     ],
@@ -106,7 +110,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Cadeia de Caracteres',
         caption: 'M4A1-S',
         image: IMAGE,
-        href: `/inventario/${UID_RIFLE}`,
+        href: route(`/inventario/${UID_RIFLE}`),
         statTrak: true,
       },
       {
@@ -114,7 +118,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Fade',
         caption: 'Karambit',
         image: IMAGE,
-        href: `/inventario/${UID_KNIFE}`,
+        href: route(`/inventario/${UID_KNIFE}`),
         statTrak: false,
       },
     ],
@@ -125,22 +129,22 @@ export const SIGNED_IN: HeaderView = {
     modes: [
       {
         mode: 'retake',
-        href: '/ranking?modo=retake',
+        href: route('/ranking?modo=retake'),
         top: [
-          { position: 1, name: 'coldzera', avatarUrl: null, href: '/10016', self: false },
+          { position: 1, name: 'coldzera', avatarUrl: null, href: route('/10016'), self: false },
           { position: 2, name: 'Jogador privado', avatarUrl: null, href: null, self: false },
-          { position: 3, name: 'Eu mesmo', avatarUrl: null, href: '/10020', self: true },
+          { position: 3, name: 'Eu mesmo', avatarUrl: null, href: route('/10020'), self: true },
         ],
-        mine: { position: 3, progress: null, href: '/ranking?modo=retake#minha-linha' },
+        mine: { position: 3, progress: null, href: route('/ranking?modo=retake#minha-linha') },
       },
       {
         mode: 'deathmatch',
-        href: '/ranking?modo=deathmatch',
+        href: route('/ranking?modo=deathmatch'),
         top: [],
         mine: {
           position: null,
           progress: { unit: 'minutes', missing: 12 },
-          href: '/ranking?modo=deathmatch',
+          href: route('/ranking?modo=deathmatch'),
         },
       },
     ],
@@ -160,7 +164,7 @@ export const SIGNED_OUT: HeaderView = {
   example: {
     side: 't',
     presetName: '',
-    slots: (SIGNED_IN.loadout?.slots ?? []).map((slot) => ({ ...slot, href: '/loadout' })),
+    slots: (SIGNED_IN.loadout?.slots ?? []).map((slot) => ({ ...slot, href: route('/loadout') })),
   },
   inventory: null,
   ranking: SIGNED_IN.ranking && {

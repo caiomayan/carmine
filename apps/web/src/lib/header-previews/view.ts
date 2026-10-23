@@ -4,6 +4,7 @@ import type {
   LoadoutSide,
   RecommendationReason,
 } from '@carmine/contracts';
+import type { Route } from 'next';
 
 /**
  * O que os painéis do header (U3e) mostram, já pronto para desenhar: nomes e imagens resolvidos
@@ -14,7 +15,7 @@ import type {
 export type PreviewServer = {
   id: string;
   /** O cartão dele na home. */
-  href: string;
+  href: Route;
   name: string;
   mode: GameMode;
   map: string | null;
@@ -25,7 +26,7 @@ export type PreviewServer = {
   address: string;
 };
 
-export type PreviewFriend = { key: string; name: string; avatarUrl: string | null; href: string };
+export type PreviewFriend = { key: string; name: string; avatarUrl: string | null; href: Route };
 
 export type PlayView = {
   recommended: null | (PreviewServer & { reason: RecommendationReason; friends: PreviewFriend[] });
@@ -40,7 +41,7 @@ export type PreviewItem = {
   title: string;
   caption: string | null;
   image: string;
-  href: string;
+  href: Route;
   statTrak: boolean;
 };
 
@@ -51,7 +52,7 @@ export type LoadoutSlotView = {
   title: string | null;
   caption: string | null;
   image: string | null;
-  href: string;
+  href: Route;
   statTrak: boolean;
 };
 
@@ -64,19 +65,19 @@ export type RankingRowView = {
   name: string;
   avatarUrl: string | null;
   /** O Perfil; nulo no Perfil privado, que continua anônimo como no Ranking. */
-  href: string | null;
+  href: Route | null;
   self: boolean;
 };
 
 export type RankingModeView = {
   mode: GameMode;
-  href: string;
+  href: Route;
   top: RankingRowView[];
   mine: null | {
     position: number | null;
     progress: { unit: 'rounds' | 'minutes'; missing: number } | null;
     /** O Ranking do Modo, com a minha linha em foco quando tenho posição. */
-    href: string;
+    href: Route;
   };
 };
 
