@@ -10,6 +10,7 @@ import { ModeTabs } from '@/components/ranking/mode-tabs';
 import { RankingTable } from '@/components/ranking/ranking-table';
 import { discordLink, ViewerNote } from '@/components/ranking/viewer-note';
 import { WeekSelect } from '@/components/ranking/week-select';
+import { WeekTitle } from '@/components/ranking/week-title';
 import { Button } from '@/components/ui/button';
 import { getRanking } from '@/lib/api-server';
 import { parseRankingQuery, rankingHref } from '@/lib/ranking';
@@ -93,6 +94,14 @@ export default async function RankingPage({ searchParams }: { searchParams: Sear
           <ModeTabs active={mode} week={ranking.current ? undefined : ranking.weekStart} />
           <WeekSelect label={t('week.label')} value={ranking.weekStart} options={options} />
         </div>
+
+        <WeekTitle
+          currentWeek={currentWeek}
+          text={t(
+            ranking.current ? 'week.titleCurrent' : 'week.titlePast',
+            rangeOf(ranking.weekStart),
+          )}
+        />
 
         <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
           {t(`rules.${mode}`, { min: minimum })}

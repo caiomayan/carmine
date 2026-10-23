@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { useNow, useTranslations } from 'next-intl';
+import { useEffect, useRef, useState } from 'react';
 import { Avatar } from '@/components/avatar';
+import { EncryptedText } from '@/components/ui/encrypted-text';
 import { closesIn } from '@/lib/header-previews/countdown';
 import type { RankingModeView, RankingRowView, RankingView } from '@/lib/header-previews/view';
 import { cn } from '@/lib/utils';
@@ -126,23 +128,40 @@ function TopRow({ row }: { row: RankingRowView }) {
   );
 }
 
-/** A contagem até a semana fechar, atualizada a cada minuto com o painel aberto. */
+/**
+ * A contagem até a semana fechar, atualizada a cada minuto com o painel aberto. Se a contagem
+ * zera com o painel aberto (a virada da semana), "Semana encerrada" decifra no lugar dela; quem
+ * abre o painel com a semana já encerrada vê o texto parado.
+ */
 function Countdown({ closesAt }: { closesAt: string }) {
   const t = useTranslations('headerPreviews.ranking.closes');
   const now = useNow({ updateInterval: 60_000 });
   const left = closesIn(closesAt, now.getTime());
+  const closed = left.unit === 'closed';
+  const wasCounting = useRef(!closed);
+  const [turned, setTurned] = useState(false);
+  useEffect(() => {
+    if (closed && wasCounting.current) setTurned(true);
+    wasCounting.current = !closed;
+  }, [closed]);
   return (
     <p
       className="px-2.5 text-body-sm text-muted-foreground tabular-nums"
       data-testid="preview-countdown"
     >
-      {left.unit === 'closed'
-        ? t('closed')
-        : left.unit === 'days'
-          ? t('days', { days: left.days, hours: left.hours })
-          : left.unit === 'hours'
-            ? t('hours', { hours: left.hours, minutes: left.minutes })
-            : t('minutes', { minutes: left.minutes })}
+      {left.unit === 'closed' ? (
+        turned ? (
+          <EncryptedText text={t('closed')} />
+        ) : (
+          t('closed')
+        )
+      ) : left.unit === 'days' ? (
+        t('days', { days: left.days, hours: left.hours })
+      ) : left.unit === 'hours' ? (
+        t('hours', { hours: left.hours, minutes: left.minutes })
+      ) : (
+        t('minutes', { minutes: left.minutes })
+      )}
     </p>
   );
 }

@@ -390,6 +390,30 @@
   }
 }
 
+/*
+ * ---------- texto que decifra (EncryptedText) ----------
+ * O servidor já traz o texto final; até o React hidratar e decidir se anima, ele fica invisível
+ * (senão o texto apareceria inteiro e, um instante depois, embaralharia). Sem JS, o fallback o
+ * mostra em 1,5 s; com movimento reduzido ele aparece direto, sem espera.
+ */
+@keyframes encrypted-fallback {
+  to {
+    opacity: 1;
+  }
+}
+
+.encrypted-pending {
+  opacity: 0;
+  animation: encrypted-fallback 0s 1.5s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encrypted-pending {
+    opacity: 1;
+    animation: none;
+  }
+}
+
 /* ---------- troca de tema ---------- */
 ::view-transition-old(root),
 ::view-transition-new(root) {

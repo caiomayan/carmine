@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@/components/icons/animated/arrow-left';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { EncryptedText } from '@/components/ui/encrypted-text';
 
 /**
  * O 404 da Liberty (geral e de Perfil): alinhado ao container como as outras páginas, com o
  * código no eyebrow (◆ ERRO 404) acima do título em DM Serif, e o botão sozinho na linha de baixo.
+ * O título decifra ao chegar (EncryptedText); o eyebrow e o resto ficam parados.
  */
 export function NotFoundView({
   code,
@@ -26,7 +28,7 @@ export function NotFoundView({
           {code}
         </p>
         <h1 className="font-display text-[64px] leading-[1.04] font-normal tracking-[-0.015em] text-balance max-md:text-[40px]">
-          {title}
+          <EncryptedText text={title} />
         </h1>
         <p className="max-w-[48ch] text-md text-muted-foreground">{body}</p>
         <Button asChild className="mt-3">
