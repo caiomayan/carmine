@@ -1492,7 +1492,9 @@
       "label": "Semana",
       "current": "{start} a {end} (atual)",
       "past": "{start} a {end}",
-      "range": "{start} a {end}"
+      "range": "{start} a {end}",
+      "titleCurrent": "Esta semana, de {start} a {end}",
+      "titlePast": "Semana de {start} a {end}"
     },
     "rules": {
       "retake": "Quem vence mais rounds na semana fica na frente. Para entrar, jogue ao menos {min} rounds; em caso de empate, vale o K/D.",
