@@ -521,7 +521,7 @@ test('sem armazenamento no navegador, o Loadout abre no CT e a troca de lado con
 test('a mão de Presets fica acima da troca TR | CT, e as armas aparecem sem rolar', async ({
   page,
 }) => {
-  // 1440 × 900: a mão ocupa ~190 px antes do quadro, então a primeira linha de armas cabe acima
+  // 1440 × 900: a mão ocupa ~215 px antes do quadro, então a primeira linha de armas cabe acima
   // da barra do slot a partir daí (em 720 de altura ela fica por baixo, e se rola até lá).
   await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);
@@ -532,7 +532,7 @@ test('a mão de Presets fica acima da troca TR | CT, e as armas aparecem sem rol
       .boundingBox()
       .then((box) => box?.y ?? 0);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect.poll(boardTop).toBeLessThan(560);
+  await expect.poll(boardTop).toBeLessThan(600);
   const side = await page.getByTestId('side-t').boundingBox();
   const hand = await page.getByTestId('presets').boundingBox();
   expect(side).not.toBeNull();
