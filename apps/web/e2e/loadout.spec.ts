@@ -705,6 +705,22 @@ test.describe('mão de Presets', () => {
     await expect(face).toHaveAccessibleDescription(/Rifle: AK-47/);
   });
 
+  test('no celular, a carta do plano grátis cabe inteira, sem rolagem lateral', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page);
+    await handReady(page);
+
+    const card = await cards(page).first().boundingBox();
+    expect(card?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((card?.x ?? 0) + (card?.width ?? 999)).toBeLessThanOrEqual(390);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+  });
+
   test('plano grátis: uma carta só, com o convite do VIP discreto', async ({ page }) => {
     await signIn(page);
     await handReady(page);
@@ -748,6 +764,13 @@ test.describe('mão de Presets', () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow).toBe(0);
+    // Nada cortado: a mão cabe na tela e a primeira carta começa dentro dela, com o menu à vista.
+    const section = await page.getByTestId('presets').boundingBox();
+    expect(section?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((section?.x ?? 0) + (section?.width ?? 999)).toBeLessThanOrEqual(390);
+    const first = await cards(page).first().boundingBox();
+    expect(first?.x ?? -1).toBeGreaterThanOrEqual(0);
+    await expect(cards(page).first().getByTestId('preset-menu')).toBeVisible();
 
     await page.getByRole('button', { name: 'Ativar Retake' }).click();
     await expect(toast(page, 'Retake é o seu Loadout')).toBeVisible();
