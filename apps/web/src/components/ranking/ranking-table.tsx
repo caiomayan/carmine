@@ -114,10 +114,11 @@ async function Row({
     <tr
       data-testid="ranking-row"
       data-position={entry.position}
+      id={entry.self ? 'minha-linha' : undefined}
       data-self={entry.self || undefined}
       data-private={player.private || undefined}
       style={{ '--i': index } as CSSProperties}
-      className="group/row enter-stagger"
+      className="group/row enter-stagger scroll-mt-24"
     >
       <td
         className={cn(

@@ -170,6 +170,19 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
   await expect(
     page.getByTestId('ranking-row').filter({ hasText: 'Progresso Rank' }),
   ).toHaveAttribute('data-self', 'true');
+
+  // A U3e leva de "minha posição" para /ranking#minha-linha: só a linha própria tem o id, e o
+  // scroll-margin a mantém fora de baixo do header.
+  const mine = page.locator('#minha-linha');
+  await expect(mine).toHaveCount(1);
+  await expect(mine).toHaveAttribute('data-self', 'true');
+  await expect(mine).toContainText('Progresso Rank');
+  await page.goto('/ranking?modo=retake#minha-linha');
+  await expect(mine).toBeInViewport();
+  const header = await page.getByRole('banner').boundingBox();
+  const row = await mine.boundingBox();
+  if (!header || !row) throw new Error('header ou linha própria sem caixa');
+  expect(row.y).toBeGreaterThanOrEqual(header.y + header.height);
 });
 
 test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em vez de sumir', async ({
