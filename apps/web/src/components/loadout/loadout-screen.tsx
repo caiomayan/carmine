@@ -87,6 +87,8 @@ export function LoadoutScreen({
   const [flash, setFlash] = useState(0);
   const focusKey = useRef<string | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const barInnerRef = useRef<HTMLDivElement>(null);
 
   const columns = useMemo(() => buildBoard(view.slots, side), [view.slots, side]);
   const allSlots = useMemo(() => columns.flatMap((column) => column.slots), [columns]);
@@ -119,18 +121,31 @@ export function LoadoutScreen({
     focusCard(key);
   }, [selectedKey, activeColumn]);
 
-  // A barra de baixo avisa a altura dela, para o aviso de "Desfazer" subir acima dela.
+  // A barra de baixo avisa a altura dela, para o aviso de "Desfazer" subir acima dela e para o
+  // foco do teclado (e o scrollIntoView) trazer o cartão para cima dela (scroll-padding-bottom).
+  // A de cima, que fica fixa no alto, faz o mesmo para o lado de cima (--space-scroll).
   useEffect(() => {
-    const element = dockRef.current;
-    if (!element) return;
+    const dock = dockRef.current;
+    if (!dock) return;
     const root = document.documentElement;
-    const observer = new ResizeObserver(() =>
-      root.style.setProperty('--dock-h', `${element.offsetHeight}px`),
-    );
-    observer.observe(element);
+    // Na tela larga a barra fixa é a de fora; no celular, o grupo de dentro.
+    const sticky = () =>
+      [barRef.current, barInnerRef.current].find(
+        (element) => element && getComputedStyle(element).position === 'sticky',
+      );
+    const measure = () => {
+      root.style.setProperty('--dock-h', `${dock.offsetHeight}px`);
+      root.style.setProperty('--space-scroll', `${(sticky()?.offsetHeight ?? 0) + 8}px`);
+    };
+    const observer = new ResizeObserver(measure);
+    for (const element of [dock, barRef.current, barInnerRef.current]) {
+      if (element) observer.observe(element);
+    }
+    measure();
     return () => {
       observer.disconnect();
       root.style.removeProperty('--dock-h');
+      root.style.removeProperty('--space-scroll');
     };
   }, []);
 
@@ -225,8 +240,14 @@ export function LoadoutScreen({
         até o alto e fica fixa. No celular só a troca de lado e as categorias ficam fixas
         (`contents` desfaz a barra e `sticky` fica no grupo de dentro).
       */}
-      <div className="max-md:contents md:sticky md:top-0 md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5">
-        <div className="max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents">
+      <div
+        ref={barRef}
+        className="max-md:contents md:sticky md:top-0 md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5"
+      >
+        <div
+          ref={barInnerRef}
+          className="max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
+        >
           <div className="md:order-1">
             <TabsList
               aria-label={t('sidesLabel')}

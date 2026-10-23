@@ -21,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/animate-ui/components/radix/dropdown-menu';
-import { CheckIcon } from '@/components/icons/animated/check';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
@@ -272,6 +271,7 @@ export function PresetHand({
               side={side}
               sideLabel={sideLabel(side)}
               pending={pending === card.id}
+              menu={!(card.main && !vip) && !card.readOnly}
               tabStop={roving === index}
               buttonRef={(element) => {
                 buttons.current[index] = element;
@@ -286,7 +286,7 @@ export function PresetHand({
                   aria-label={t('actions', { name: card.name })}
                   disabled={card.readOnly}
                   tabIndex={roving === index ? 0 : -1}
-                  className="absolute top-1 right-1 grid size-(--tap) place-items-center rounded-md bg-surface-2 text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-(--dur-fast) ease-std group-focus-within/card:opacity-100 group-hover/card:opacity-100 hover:bg-(--fill-active) hover:text-foreground focus-visible:opacity-100 disabled:opacity-0 aria-expanded:bg-(--fill-active) aria-expanded:opacity-100 max-md:opacity-100 pointer-coarse:opacity-100"
+                  className="absolute top-1 right-1 grid h-(--tap) w-8 place-items-center rounded-md bg-surface-2 text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-(--dur-fast) ease-std group-focus-within/card:opacity-100 group-hover/card:opacity-100 hover:bg-(--fill-active) hover:text-foreground focus-visible:opacity-100 disabled:opacity-0 aria-expanded:bg-(--fill-active) aria-expanded:opacity-100 max-md:opacity-100 pointer-coarse:opacity-100"
                   data-testid="preset-menu"
                 >
                   <svg
@@ -494,6 +494,7 @@ function PresetFace({
   side,
   sideLabel,
   pending,
+  menu,
   tabStop,
   buttonRef,
   onActivate,
@@ -502,6 +503,8 @@ function PresetFace({
   side: LoadoutSide;
   sideLabel: string;
   pending: boolean;
+  /** O menu "…" fica no canto de cima: o nome deixa o espaço dele. */
+  menu: boolean;
   tabStop: boolean;
   buttonRef: (element: HTMLButtonElement | null) => void;
   onActivate: () => void;
@@ -531,21 +534,25 @@ function PresetFace({
         )}
         data-icon-trigger
       >
-        <span className="relative flex min-w-0 items-center gap-1.5 pr-5 text-body-sm font-[650]">
-          {card.active ? (
-            <span className="grid size-4 shrink-0 place-items-center rounded-full bg-(--fill-active)">
-              <AnimatedIcon icon={CheckIcon} size={11} />
-            </span>
-          ) : card.readOnly ? (
-            <AnimatedIcon icon={LockIcon} size={12} className="shrink-0 text-status-vip" />
+        <span
+          className={cn(
+            'flex min-w-0 items-start gap-1.5 text-body-sm leading-tight font-[650]',
+            menu && 'pr-8',
+          )}
+        >
+          {card.readOnly ? (
+            <AnimatedIcon icon={LockIcon} size={12} className="mt-0.5 shrink-0 text-status-vip" />
           ) : null}
-          <span className="truncate">{card.name}</span>
+          {/* Até 2 linhas e depois reticências; o nome inteiro fica na dica e no nome do botão. */}
           <span
-            aria-hidden="true"
-            className={cn('absolute top-1/2 right-0 size-2 -translate-y-1/2 rounded-full', sideDot)}
-          />
+            className="line-clamp-2 min-w-0 break-words"
+            title={card.name}
+            data-testid="preset-title"
+          >
+            {card.name}
+          </span>
         </span>
-        <Piece piece={front.knife} className="h-14" />
+        <Piece piece={front.knife} className="h-full max-h-14" />
         <span className="grid grid-cols-2 gap-1.5">
           <Piece piece={front.gloves} className="h-9" />
           <Piece piece={front.rifle} className="h-9" />

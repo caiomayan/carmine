@@ -278,6 +278,8 @@
     -webkit-text-size-adjust: 100%;
     background: var(--bg);
     scroll-padding-top: var(--space-scroll, 24px);
+    /* O /loadout avisa a altura da barra fixa de baixo: o foco não deixa um alvo atrás dela. */
+    scroll-padding-bottom: var(--dock-h, 0px);
     scrollbar-color: var(--line-strong) var(--bg);
     accent-color: var(--text);
   }
