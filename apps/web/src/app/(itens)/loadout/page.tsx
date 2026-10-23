@@ -7,7 +7,7 @@ import { BadgeAlertIcon } from '@/components/icons/animated/badge-alert';
 import { BoxIcon } from '@/components/icons/animated/box';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { LoadoutScreen } from '@/components/loadout/loadout-screen';
-import { PresetBar } from '@/components/loadout/preset-bar';
+import { PresetHand } from '@/components/loadout/preset-hand';
 import { VipNotice } from '@/components/loadout/vip-notice';
 import { PageHead } from '@/components/page-head';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { getInventory, getLoadout, getPresets, getServerSession } from '@/lib/ap
 import { signInHref } from '@/lib/auth-links';
 import { RARITIES } from '@/lib/catalog/types';
 import { buildCandidates, buildLoadoutView } from '@/lib/loadout/build';
+import { buildHand } from '@/lib/loadout/hand-build';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('loadout');
@@ -115,9 +116,13 @@ export default async function LoadoutPage() {
             </div>
           ) : null
         }
-        presets={
+        hand={
           presets.status === 'ok' ? (
-            <PresetBar list={presets.data} vip={vip?.active ?? false} />
+            <PresetHand
+              list={presets.data}
+              cards={buildHand(presets.data, items)}
+              vip={vip?.active ?? false}
+            />
           ) : null
         }
       />

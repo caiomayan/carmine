@@ -1037,7 +1037,14 @@
         "deleted": "Preset {name} apagado."
       },
       "saving": "Salvando",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "hand": {
+        "side": { "ct": "CT", "t": "TR" },
+        "activeBadge": "Ativo",
+        "items": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
+        "summary": "Faca: {knife}. Luvas: {gloves}. Rifle: {rifle}. {count, plural, =0 {Nenhum Item equipado.} one {# Item equipado.} other {# Itens equipados.}}",
+        "hint": "Passe o mouse ou use as setas para folhear. Clique, Enter ou jogue a carta para cima para ativar."
+      }
     },
     "errors": {
       "name": "Dê um nome de 1 a {max} caracteres.",
