@@ -6314,6 +6314,12 @@
             "minimum": 0,
             "maximum": 9007199254740991
           },
+          "highlights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LoadoutAssignment"
+            }
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time",
@@ -6333,6 +6339,7 @@
           "readOnly",
           "readOnlyReason",
           "equippedCount",
+          "highlights",
           "createdAt",
           "updatedAt"
         ],
