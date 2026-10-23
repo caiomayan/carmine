@@ -36,7 +36,10 @@ const HIGH_OCCUPANCY = 0.75;
 export type OccupancyLevel = 'none' | 'normal' | 'high' | 'full';
 
 /** A barra de jogadores: quanto está cheia (0 a 1) e o nível, que decide a cor de contexto. */
-export function occupancy(server: LiveServer): { ratio: number; level: OccupancyLevel } {
+export function occupancy(server: Pick<LiveServer, 'players' | 'maxPlayers' | 'state'>): {
+  ratio: number;
+  level: OccupancyLevel;
+} {
   if (server.state === 'offline') return { ratio: 0, level: 'none' };
   const ratio = Math.min(1, server.players / server.maxPlayers);
   if (server.state === 'full') return { ratio, level: 'full' };

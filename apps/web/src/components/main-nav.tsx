@@ -18,10 +18,13 @@ export function MainNav({
   label,
   items,
   className,
+  onIntent,
 }: {
   label: string;
   items: NavItem[];
   className?: string;
+  /** A pessoa se aproximou de um item (ponteiro ou foco): o cabeçalho aquece o que vem depois. */
+  onIntent?: (href: Route, source: 'pointer' | 'focus') => void;
 }) {
   const pathname = usePathname();
   // O item mais específico ganha: em /staff/auditoria, "Auditoria" e não "Contas" (/staff).
@@ -49,8 +52,14 @@ export function MainNav({
                 <Link
                   href={item.href}
                   aria-current={isCurrent ? 'page' : undefined}
-                  onPointerEnter={() => setHovered(item.href)}
-                  onFocus={() => setHovered(item.href)}
+                  onPointerEnter={() => {
+                    setHovered(item.href);
+                    onIntent?.(item.href, 'pointer');
+                  }}
+                  onFocus={() => {
+                    setHovered(item.href);
+                    onIntent?.(item.href, 'focus');
+                  }}
                   onBlur={() => setHovered(null)}
                   className={cn(
                     'inline-flex min-h-9 items-center rounded-md px-3 text-sm font-[550] tracking-[0.01em] whitespace-nowrap',

@@ -112,7 +112,7 @@ test.describe('o que a paleta acha', () => {
     await openPalette(page);
 
     const list = page.getByTestId('palette-list');
-    for (const name of ['Servidores', 'Inventário', 'Loadout', 'Ranking', 'Configurações']) {
+    for (const name of ['Jogar', 'Inventário', 'Loadout', 'Ranking', 'Configurações']) {
       await expect(list.getByRole('option', { name: new RegExp(`^${name}`) })).toBeVisible();
     }
     await expect(list.getByRole('option', { name: /^Entrar/ })).toBeVisible();

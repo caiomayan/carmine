@@ -686,3 +686,97 @@
     animation-duration: 600ms;
   }
 }
+
+/* ---------- painéis de prévia do header (U3e): o painel desliza na direção do movimento e ajusta a altura ---------- */
+.nav-viewport {
+  width: var(--radix-navigation-menu-viewport-width);
+  height: var(--radix-navigation-menu-viewport-height);
+  transition:
+    width var(--dur-base) var(--ease-out),
+    height var(--dur-base) var(--ease-out);
+}
+
+@keyframes nav-panel-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.985;
+  }
+}
+
+@keyframes nav-panel-out {
+  to {
+    opacity: 0;
+    translate: 0 -4px;
+    scale: 0.99;
+  }
+}
+
+@keyframes nav-from-start {
+  from {
+    opacity: 0;
+    translate: -2.5rem 0;
+  }
+}
+
+@keyframes nav-from-end {
+  from {
+    opacity: 0;
+    translate: 2.5rem 0;
+  }
+}
+
+@keyframes nav-to-start {
+  to {
+    opacity: 0;
+    translate: -2.5rem 0;
+  }
+}
+
+@keyframes nav-to-end {
+  to {
+    opacity: 0;
+    translate: 2.5rem 0;
+  }
+}
+
+.nav-viewport[data-state="open"] {
+  animation: nav-panel-in var(--dur-base) var(--ease-out);
+}
+
+.nav-viewport[data-state="closed"] {
+  animation: nav-panel-out var(--dur-fast) var(--ease-in) forwards;
+}
+
+.nav-content[data-motion="from-start"] {
+  animation: nav-from-start var(--dur-base) var(--ease-out);
+}
+
+.nav-content[data-motion="from-end"] {
+  animation: nav-from-end var(--dur-base) var(--ease-out);
+}
+
+.nav-content[data-motion="to-start"] {
+  animation: nav-to-start var(--dur-fast) var(--ease-in) forwards;
+}
+
+.nav-content[data-motion="to-end"] {
+  animation: nav-to-end var(--dur-fast) var(--ease-in) forwards;
+}
+
+/* movimento reduzido: só o fade, e o painel muda de altura de uma vez */
+@media (prefers-reduced-motion: reduce) {
+  .nav-viewport {
+    transition: none;
+  }
+
+  .nav-viewport[data-state="open"],
+  .nav-content[data-motion^="from-"] {
+    animation: palette-fade-in var(--dur-fast) var(--ease-out);
+  }
+
+  .nav-viewport[data-state="closed"],
+  .nav-content[data-motion^="to-"] {
+    animation: palette-fade-out var(--dur-fast) var(--ease-in) forwards;
+  }
+}

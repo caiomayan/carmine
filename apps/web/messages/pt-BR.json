@@ -24,7 +24,7 @@
     "homeLink": "Carmine, ir para Servidores",
     "mainNav": "Principal",
     "nav": {
-      "servers": "Servidores",
+      "servers": "Jogar",
       "loadout": "Loadout",
       "inventory": "Inventário",
       "ranking": "Ranking"
@@ -119,8 +119,8 @@
     },
     "entries": {
       "servers": {
-        "label": "Servidores",
-        "keywords": "servers jogar partida mapas retake deathmatch início home"
+        "label": "Jogar",
+        "keywords": "servidores servers partida mapas retake deathmatch início home play"
       },
       "inventory": {
         "label": "Inventário",
@@ -1540,5 +1540,89 @@
       "action": "Ver a semana atual"
     },
     "loading": "Carregando o Ranking"
+  },
+  "headerPreviews": {
+    "loading": "Carregando",
+    "error": "Não deu para carregar agora.",
+    "retry": "Tentar de novo",
+    "modes": {
+      "retake": "Retake",
+      "deathmatch": "Deathmatch"
+    },
+    "play": {
+      "reasons": {
+        "friends": "Seus amigos estão aqui",
+        "favorite_mode": "O Modo que você mais joga",
+        "fullest": "O mais cheio agora"
+      },
+      "join": "Jogar",
+      "joinAria": "Jogar em {server}",
+      "copy": "Copiar IP",
+      "copied": "IP copiado",
+      "copyAria": "Copiar o IP de {server}",
+      "players": "{players}/{max}",
+      "full": "Lotado",
+      "others": "Também no ar",
+      "friendsPlaying": "{count, plural, =0 {Nenhum amigo jogando agora} one {# amigo jogando agora} other {# amigos jogando agora}}",
+      "none": "Nenhum servidor no ar agora.",
+      "noneHint": "Quando um servidor abrir, ele aparece aqui.",
+      "signIn": "Entrar com a Steam",
+      "signInHint": "Entre para ver onde os seus amigos estão jogando.",
+      "all": "Ver todos os servidores"
+    },
+    "loadout": {
+      "title": "Seu Loadout",
+      "side": {
+        "ct": "CT",
+        "t": "TR"
+      },
+      "preset": "Preset {name}",
+      "open": "Abrir o Loadout",
+      "slots": {
+        "knife": "Faca",
+        "gloves": "Luvas"
+      },
+      "empty": "Padrão",
+      "statTrak": "StatTrak",
+      "exampleTitle": "Um exemplo de Loadout",
+      "exampleBody": "Escolha as skins que aparecem em todos os servidores.",
+      "build": "Monte o seu"
+    },
+    "inventory": {
+      "title": "Inventário",
+      "total": "{total} de {limit} Itens",
+      "latest": "Últimos adicionados",
+      "empty": "Seu Inventário está vazio.",
+      "emptyHint": "Escolha uma skin no catálogo para começar.",
+      "add": "Adicionar skin",
+      "open": "Ver o Inventário",
+      "signInTitle": "Guarde as suas skins",
+      "signInBody": "Entre com a Steam para montar o Inventário e equipar nos servidores.",
+      "signIn": "Entrar com a Steam",
+      "browse": "Ver o catálogo",
+      "statTrak": "StatTrak"
+    },
+    "ranking": {
+      "title": "Ranking da semana",
+      "mine": "Minha posição",
+      "position": "#{position}",
+      "progressRounds": "{missing, plural, one {Falta # round} other {Faltam # rounds}} para entrar",
+      "progressMinutes": "{missing, plural, one {Falta # minuto} other {Faltam # minutos}} para entrar",
+      "top": "Top 3",
+      "none": "Ninguém no Ranking ainda.",
+      "you": "Você",
+      "closes": {
+        "days": "A semana fecha em {days} d {hours} h",
+        "hours": "A semana fecha em {hours} h {minutes} min",
+        "minutes": "A semana fecha em {minutes} min",
+        "closed": "Semana encerrada"
+      },
+      "open": "Ver o Ranking"
+    },
+    "states": {
+      "online": "Online",
+      "full": "Lotado",
+      "offline": "Offline"
+    }
   }
 }

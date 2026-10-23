@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
-import { MainNav } from './main-nav';
+import { HeaderNav } from './header/header-nav';
 import { SearchTrigger } from './search/search-trigger';
 import { AccountControl } from './session/account-control';
 import { ThemeToggle } from './theme-toggle';
@@ -9,11 +9,11 @@ import { Wordmark } from './wordmark';
 
 export async function SiteHeader() {
   const t = await getTranslations('shell');
-  // Só as mensagens da busca vão ao cliente (o botão e a paleta, que carrega ao abrir).
-  const { search } = await getMessages();
+  // Só as mensagens da busca e dos painéis de prévia vão ao cliente (os dois carregam ao primeiro uso).
+  const { search, headerPreviews } = await getMessages();
 
   return (
-    <header className="border-b border-line">
+    <header className="relative border-b border-line">
       {/* Desktop: logotipo, páginas ao centro e ações à direita (3 colunas, o centro de verdade). Celular: logotipo e ações em cima, as páginas embaixo. */}
       <div className="container-page flex min-h-(--hdr-h) flex-wrap items-center gap-x-7 max-md:gap-x-3 max-md:pt-2 md:grid md:grid-cols-[1fr_auto_1fr]">
         <Link
@@ -23,16 +23,18 @@ export async function SiteHeader() {
         >
           <Wordmark className="h-(--wm-h) w-auto overflow-visible" />
         </Link>
-        <MainNav
-          label={t('mainNav')}
-          items={[
-            { href: '/', label: t('nav.servers') },
-            { href: '/loadout', label: t('nav.loadout') },
-            { href: '/inventario', label: t('nav.inventory') },
-            { href: '/ranking', label: t('nav.ranking') },
-          ]}
-          className="md:justify-self-center max-md:order-last max-md:-mx-3 max-md:w-[calc(100%+1.5rem)] max-md:pb-1"
-        />
+        <NextIntlClientProvider messages={{ headerPreviews }}>
+          <HeaderNav
+            label={t('mainNav')}
+            items={[
+              { href: '/', label: t('nav.servers') },
+              { href: '/loadout', label: t('nav.loadout') },
+              { href: '/inventario', label: t('nav.inventory') },
+              { href: '/ranking', label: t('nav.ranking') },
+            ]}
+            className="md:justify-self-center max-md:order-last max-md:-mx-3 max-md:w-[calc(100%+1.5rem)] max-md:pb-1"
+          />
+        </NextIntlClientProvider>
         <div className="ml-auto flex items-center gap-2.5 md:ml-0 md:justify-self-end">
           <NextIntlClientProvider messages={{ search }}>
             <SearchTrigger />
