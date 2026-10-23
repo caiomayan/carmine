@@ -2,6 +2,7 @@
 
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { type ComponentProps, type ReactNode, type Ref, useId, useState } from 'react';
+import { LABEL_COLOR } from '@/components/ui/floating-label';
 import { cn } from '@/lib/utils';
 
 /**
@@ -37,15 +38,23 @@ const FIELD =
   'peer block min-h-(--tap) w-full rounded-md bg-(--fill-rest) px-3 pt-5 pb-1.5 text-body text-foreground outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-transparent hover:bg-(--fill-hover) focus:outline-(--focus-ring) disabled:text-faint disabled:hover:bg-(--fill-rest) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger motion-reduce:transition-none';
 
 const LABEL =
-  'pointer-events-none absolute left-3 max-w-[calc(100%-1.5rem)] origin-top-left truncate text-body text-(--label-color) peer-focus:text-foreground peer-disabled:text-faint motion-reduce:transition-none';
+  'pointer-events-none absolute left-3 max-w-[calc((100%-1.5rem)/.78)] origin-top-left truncate text-body text-(--label-color) peer-focus:text-foreground peer-disabled:text-faint motion-reduce:transition-none';
 
 /** Uma linha: flutua para o alto (com texto ou foco) e repousa no meio do campo vazio. */
-const LABEL_LINE = `${LABEL} top-1/2 -translate-y-[calc(50%+9px)] scale-[.78] transition-[translate,scale,color] duration-(--dur-fast) ease-std peer-[:placeholder-shown:not(:focus)]:-translate-y-1/2 peer-[:placeholder-shown:not(:focus)]:scale-100`;
+const LABEL_LINE = `${LABEL} top-1/2 -translate-y-[calc(50%+9px)] scale-[.78] transition-[translate,scale,color] duration-(--dur-fast) ease-std peer-[:placeholder-shown:not(:focus)]:max-w-[calc(100%-1.5rem)] peer-[:placeholder-shown:not(:focus)]:-translate-y-1/2 peer-[:placeholder-shown:not(:focus)]:scale-100`;
 
 /** Texto longo: repousa na altura da primeira linha e flutua para o alto. */
-const LABEL_AREA = `${LABEL} top-5 -translate-y-3.5 scale-[.78] transition-[translate,scale,color] duration-(--dur-fast) ease-std peer-[:placeholder-shown:not(:focus)]:translate-y-0 peer-[:placeholder-shown:not(:focus)]:scale-100`;
+const LABEL_AREA = `${LABEL} top-5 -translate-y-3.5 scale-[.78] transition-[translate,scale,color] duration-(--dur-fast) ease-std peer-[:placeholder-shown:not(:focus)]:max-w-[calc(100%-1.5rem)] peer-[:placeholder-shown:not(:focus)]:translate-y-0 peer-[:placeholder-shown:not(:focus)]:scale-100`;
 
-function Message({ id, error, hint }: { id: string; error?: ReactNode; hint?: ReactNode }) {
+export function FieldMessage({
+  id,
+  error,
+  hint,
+}: {
+  id: string;
+  error?: ReactNode;
+  hint?: ReactNode;
+}) {
   if (error) {
     return (
       <p id={`${id}-error`} className="flex items-start gap-1.5 text-body-sm text-foreground">
@@ -65,7 +74,12 @@ function Message({ id, error, hint }: { id: string; error?: ReactNode; hint?: Re
 }
 
 /** Une o `aria-describedby` do chamador com a dica ou o erro do campo. */
-function describedBy(id: string, extra: string | undefined, error: ReactNode, hint: ReactNode) {
+export function describeField(
+  id: string,
+  extra: string | undefined,
+  error: ReactNode,
+  hint: ReactNode,
+) {
   const own = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   return [extra, own].filter(Boolean).join(' ') || undefined;
 }
@@ -94,7 +108,7 @@ export function LabelInput({
 
   return (
     <div className={cn('grid content-start gap-1.5', containerClassName)}>
-      <div className="relative [--label-color:color-mix(in_srgb,var(--text)_80%,transparent)]">
+      <div className={cn('relative', LABEL_COLOR)}>
         <input
           ref={ref}
           id={id}
@@ -104,7 +118,7 @@ export function LabelInput({
           placeholder={placeholder}
           data-label-input=""
           aria-invalid={error ? true : invalid}
-          aria-describedby={describedBy(id, describedByProp, error, hint)}
+          aria-describedby={describeField(id, describedByProp, error, hint)}
           className={cn(FIELD, password && 'pr-11', className)}
           {...props}
         />
@@ -132,7 +146,7 @@ export function LabelInput({
           </button>
         ) : null}
       </div>
-      <Message id={id} error={error} hint={hint} />
+      <FieldMessage id={id} error={error} hint={hint} />
     </div>
   );
 }
@@ -157,14 +171,14 @@ export function LabelTextarea({
 
   return (
     <div className={cn('grid content-start gap-1.5', containerClassName)}>
-      <div className="relative [--label-color:color-mix(in_srgb,var(--text)_80%,transparent)]">
+      <div className={cn('relative', LABEL_COLOR)}>
         <textarea
           ref={ref}
           id={id}
           placeholder={placeholder}
           data-label-input=""
           aria-invalid={error ? true : invalid}
-          aria-describedby={describedBy(id, describedByProp, error, hint)}
+          aria-describedby={describeField(id, describedByProp, error, hint)}
           className={cn(FIELD, 'min-h-24 resize-y leading-[1.5]', className)}
           {...props}
         />
@@ -177,7 +191,7 @@ export function LabelTextarea({
           </span>
         ) : null}
       </div>
-      <Message id={id} error={error} hint={hint} />
+      <FieldMessage id={id} error={error} hint={hint} />
     </div>
   );
 }

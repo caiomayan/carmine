@@ -5,6 +5,7 @@ import { Select as SelectPrimitive } from 'radix-ui';
 import { type ComponentProps, useState } from 'react';
 import { chosenSelectValue, EMPTY_SELECT_VALUE } from '@/lib/select-value';
 import { cn } from '@/lib/utils';
+import { fieldTriggerClass } from './floating-label';
 
 /**
  * Select do shadcn/ui (Radix) na linguagem Liberty: sem borda, fundo de superfície que clareia
@@ -28,12 +29,16 @@ export const selectTriggerClass = [
 function SelectTrigger({
   className,
   children,
+  variant = 'default',
   ...props
-}: ComponentProps<typeof SelectPrimitive.Trigger>) {
+}: ComponentProps<typeof SelectPrimitive.Trigger> & {
+  /** `field`: o botão na linguagem do Label Input (fundo, anel no foco, rótulo flutuante irmão). */
+  variant?: 'default' | 'field';
+}) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
-      className={cn(selectTriggerClass, className)}
+      className={cn(variant === 'field' ? fieldTriggerClass : selectTriggerClass, className)}
       {...props}
     >
       {children}

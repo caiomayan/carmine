@@ -22,14 +22,14 @@ import { XIcon } from '@/components/icons/animated/x';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
-import { SimpleSelect } from '@/components/ui/select';
+import { LabelSelect } from '@/components/ui/label-select';
 import { type DurationUnit, durationParts, sameMeasures, toMinutes } from '@/lib/moderation';
 import { enterTransition } from '@/lib/motion';
 import { measureOptions, type StaffViewer } from '@/lib/staff';
 import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import { REASON_MIN, ReasonField } from './action-form';
-import { Field, FieldError } from './fields';
+import { FieldError } from './fields';
 import { useMeasureLabel } from './use-measure-label';
 import { useStaffRequest } from './use-staff-request';
 
@@ -205,23 +205,21 @@ export function ApplySanctionForm({
           {report.needsEvidence ? t('apply.fromReportEvidence') : t('apply.fromReport')}
         </p>
       ) : null}
-      <Field id={`${id}-category`} label={t('apply.category')}>
-        <SimpleSelect
-          id={`${id}-category`}
-          value={category}
-          onValueChange={pickCategory}
-          placeholder={t('apply.chooseCategory')}
-          data-testid="sanction-category"
-          options={sanctionCategorySchema.options.map((c) => ({
-            value: c,
-            label:
-              tm(`staffCategories.${c}`) +
-              (offenses(c) > 0
-                ? ` · ${t('apply.offenses', { count: offenses(c), days: RECIDIVISM_WINDOW_DAYS })}`
-                : ''),
-          }))}
-        />
-      </Field>
+      <LabelSelect
+        label={t('apply.category')}
+        id={`${id}-category`}
+        value={category}
+        onValueChange={pickCategory}
+        data-testid="sanction-category"
+        options={sanctionCategorySchema.options.map((c) => ({
+          value: c,
+          label:
+            tm(`staffCategories.${c}`) +
+            (offenses(c) > 0
+              ? ` · ${t('apply.offenses', { count: offenses(c), days: RECIDIVISM_WINDOW_DAYS })}`
+              : ''),
+        }))}
+      />
 
       <AnimatePresence initial={false}>
         {category ? (
@@ -492,18 +490,17 @@ function MeasureRow({
       data-testid="measure-row"
       className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-3 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)_auto]"
     >
-      <Field id={`${id}-type`} label={t('type')}>
-        <SimpleSelect
-          id={`${id}-type`}
-          value={draft.type}
-          onValueChange={(next) => onChange({ type: next as SanctionType })}
-          data-testid="measure-type"
-          options={types.map((type) => ({
-            value: type,
-            label: `${tm(`types.${type}`)} — ${tm(`typeHints.${type}`)}`,
-          }))}
-        />
-      </Field>
+      <LabelSelect
+        label={t('type')}
+        id={`${id}-type`}
+        value={draft.type}
+        onValueChange={(next) => onChange({ type: next as SanctionType })}
+        data-testid="measure-type"
+        options={types.map((type) => ({
+          value: type,
+          label: `${tm(`types.${type}`)} — ${tm(`typeHints.${type}`)}`,
+        }))}
+      />
       <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
         {lasting ? (
           <fieldset className="grid gap-1.5">
@@ -523,15 +520,13 @@ function MeasureRow({
                 className="tabular-nums"
                 data-testid="measure-value"
               />
-              <label htmlFor={`${id}-unit`} className="sr-only">
-                {t('durationUnit')}
-              </label>
-              <SimpleSelect
+              <LabelSelect
                 id={`${id}-unit`}
+                label={t('durationUnit')}
+                containerClassName="w-36"
                 value={draft.unit}
                 disabled={draft.permanent}
                 onValueChange={(next) => onChange({ unit: next as DurationUnit })}
-                className="w-32"
                 data-testid="measure-unit"
                 options={UNITS.map((unit) => ({ value: unit, label: t(`units.${unit}`) }))}
               />
