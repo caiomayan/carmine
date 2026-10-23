@@ -307,36 +307,80 @@ test.describe('estados', () => {
 });
 
 test.describe('teclado', () => {
-  test('seta para baixo abre, Esc fecha, Enter navega', async ({ page }) => {
+  /** Põe o foco no item (com a navegação rica já no lugar) sem passar pelo mouse. */
+  async function focusItem(page: Page, name: keyof typeof PANELS) {
     await routePreviews(page);
     await page.goto('/inventario/adicionar');
     await hydrated(page);
-
-    await link(page, 'Ranking').focus();
+    await link(page, name).focus();
     await expect(page.getByTestId('header-nav')).toBeVisible();
-    await expect(link(page, 'Ranking')).toBeFocused();
+    await expect(link(page, name)).toBeFocused();
+  }
+
+  test('seta para baixo abre o painel e leva o foco ao 1º alvo; Esc fecha e devolve o foco ao item', async ({
+    page,
+  }) => {
+    await focusItem(page, 'Ranking');
 
     await page.keyboard.press('ArrowDown');
     await expect(panel(page, 'Ranking')).toBeVisible();
+    await expect(panel(page, 'Ranking').locator(':focus')).toHaveCount(1);
+
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('header-viewport')).toBeHidden();
+    await expect(link(page, 'Ranking')).toBeFocused();
 
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/ranking$/);
   });
 
-  test('dentro do painel a seta leva o foco aos destinos', async ({ page }) => {
-    await routePreviews(page);
-    await page.goto('/inventario/adicionar');
-    await hydrated(page);
+  test('o Tab só percorre os itens: não abre painel nem entra nele (U4 L2)', async ({ page }) => {
+    await focusItem(page, 'Jogar');
+    await expect(page.getByTestId('header-viewport')).toBeHidden();
 
-    await link(page, 'Inventário').focus();
-    await expect(page.getByTestId('header-nav')).toBeVisible();
+    for (const next of ['Loadout', 'Inventário', 'Ranking'] as const) {
+      await page.keyboard.press('Tab');
+      await expect(link(page, next)).toBeFocused();
+      await expect(page.getByTestId('header-viewport')).toBeHidden();
+    }
+  });
+
+  test('dentro do painel o Tab e as setas percorrem os alvos; o Tab além do último fecha e segue para o próximo item', async ({
+    page,
+  }) => {
+    await focusItem(page, 'Inventário');
     await page.keyboard.press('ArrowDown');
     await expect(panel(page, 'Inventário')).toBeVisible();
-    await page.keyboard.press('ArrowDown');
 
-    await expect(panel(page, 'Inventário').locator(':focus')).toHaveCount(1);
+    const targets = await panel(page, 'Inventário').locator('a[href], button').count();
+    expect(targets).toBeGreaterThan(1);
+    // Percorre os alvos pelo Tab, sem sair do painel até o último.
+    for (let i = 1; i < targets; i++) {
+      await page.keyboard.press('Tab');
+      await expect(panel(page, 'Inventário').locator(':focus')).toHaveCount(1);
+    }
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId('header-viewport')).toBeHidden();
+    await expect(link(page, 'Ranking')).toBeFocused();
+  });
+
+  test('Shift+Tab no 1º alvo volta ao item, e o proxy de foco do Radix não é parada do Tab (U4 L1)', async ({
+    page,
+  }) => {
+    await focusItem(page, 'Jogar');
+    await page.keyboard.press('ArrowDown');
+    await expect(panel(page, 'Jogar').locator(':focus')).toHaveCount(1);
+
+    await expect(nav(page).locator('span[aria-hidden="true"][tabindex="0"]')).toHaveCount(0);
+    await page.keyboard.press('Shift+Tab');
+    await expect(link(page, 'Jogar')).toBeFocused();
+  });
+
+  test('o mouse continua abrindo no hover, sem tirar o foco de onde está', async ({ page }) => {
+    await focusItem(page, 'Jogar');
+    await link(page, 'Loadout').hover();
+    await expect(panel(page, 'Loadout')).toBeVisible();
+    await expect(panel(page, 'Loadout').locator(':focus')).toHaveCount(0);
   });
 });
 
@@ -387,6 +431,26 @@ test.describe('acessibilidade', () => {
         expect(await axeViolations(page)).toEqual([]);
       });
     }
+  }
+
+  for (const theme of ['dark', 'light'] as const) {
+    test(`depois do Tab e com o painel aberto pela seta, sem violações do axe (${theme})`, async ({
+      page,
+    }) => {
+      await saveTheme(page, theme);
+      await routePreviews(page, SIGNED_IN);
+      await page.goto('/ranking');
+      await hydrated(page);
+      await link(page, 'Jogar').focus();
+      await expect(page.getByTestId('header-nav')).toBeVisible();
+      await page.keyboard.press('Tab');
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('ArrowDown');
+      await expect(panel(page, 'Jogar').locator(':focus')).toHaveCount(1);
+      await settle(page);
+
+      expect(await axeViolations(page)).toEqual([]);
+    });
   }
 
   test('a navegação tem nome, o item atual é anunciado e o painel é um grupo nomeado pelo item', async ({

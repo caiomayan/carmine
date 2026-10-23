@@ -61,7 +61,9 @@ function TabsContents(props: TabsContentsProps) {
 type TabsContentProps = TabsContentPrimitiveProps;
 
 function TabsContent({ className, ...props }: TabsContentProps) {
-  return <TabsContentPrimitive className={cn('flex-1 outline-none', className)} {...props} />;
+  // O painel é uma parada do Tab: o anel do teclado (globals.css) tem de aparecer, por dentro porque
+  // o contêiner dos painéis corta o que sobra para fora.
+  return <TabsContentPrimitive className={cn('flex-1 -outline-offset-2', className)} {...props} />;
 }
 
 export {
