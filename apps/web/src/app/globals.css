@@ -524,7 +524,8 @@
   transition:
     box-shadow var(--dur-fast) var(--ease-std),
     background-color var(--dur-fast) var(--ease-std),
-    color var(--dur-fast) var(--ease-std);
+    color var(--dur-fast) var(--ease-std),
+    outline-color var(--dur-fast) var(--ease-std);
 
   &:focus {
     outline: none;
@@ -539,6 +540,20 @@
   [data-kbd] &:focus-visible {
     outline: var(--focus-ring-width) solid var(--focus-ring);
     outline-offset: 2px;
+  }
+
+  /*
+   * Exceção do dono para o Label Input (components/ui/label-input.tsx): o campo de texto padrão ganha o anel
+   * fino da marca (--focus-ring, 3:1 nos dois temas) em qualquer foco, do mouse ou do teclado, colado ao
+   * campo e somado ao degrau de fundo. Com erro o anel é o --status-danger.
+   */
+  &[data-label-input]:focus {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 0;
+  }
+
+  &[data-label-input][aria-invalid="true"]:focus {
+    outline-color: var(--status-danger);
   }
 
   @media (forced-colors: active) {

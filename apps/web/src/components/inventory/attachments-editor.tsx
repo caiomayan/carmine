@@ -467,21 +467,16 @@ export function CharmEditor({
             </Button>
           </div>
           <div className="grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
-            <FieldShell
+            <DecimalInput
               id={seedId}
               label={t('charmSeed')}
-              error={error}
               hint={t('seedRange', { min: spec.seed.min, max: formatDecimal(spec.seed.max, 0) })}
-            >
-              <DecimalInput
-                id={seedId}
-                value={charm.seed}
-                decimals={0}
-                invalid={!!error}
-                describedBy={describedBy(seedId, { error, hint: true })}
-                onChange={(seed) => onChange({ ...charm, seed: seed ?? Number.NaN })}
-              />
-            </FieldShell>
+              error={error}
+              value={charm.seed}
+              decimals={0}
+              invalid={!!error}
+              onChange={(seed) => onChange({ ...charm, seed: seed ?? Number.NaN })}
+            />
             {bounds && placement ? (
               <FieldShell id={placementId} label={t('charmPosition')}>
                 <SimpleSelect

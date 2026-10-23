@@ -22,9 +22,9 @@ import { CheckIcon } from '@/components/icons/animated/check';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
-import { TextInput } from '@/components/inventory/editor-fields';
 import { useInventory } from '@/components/inventory/inventory-provider';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { cn } from '@/lib/utils';
 import { LoadoutApiError, useLoadoutApi } from './use-loadout-api';
 
@@ -313,26 +313,19 @@ function NameDialog({
             </DialogTitle>
             {preset ? null : <DialogDescription>{t('create.body')}</DialogDescription>}
           </div>
-          <div className="grid gap-2">
-            <label htmlFor={nameId} className="label-caps text-[10.5px]">
-              {t('create.name')}
-            </label>
-            <TextInput
-              id={nameId}
-              value={name}
-              maxLength={PRESET_NAME_MAX_LENGTH}
-              placeholder={t('create.namePlaceholder')}
-              autoComplete="off"
-              autoFocus
-              aria-invalid={!!error || undefined}
-              aria-describedby={`${nameId}-hint`}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="preset-name"
-            />
-            <p id={`${nameId}-hint`} className="text-[12.5px] text-muted-foreground">
-              {t('create.nameHint', { max: PRESET_NAME_MAX_LENGTH })}
-            </p>
-          </div>
+          <LabelInput
+            id={nameId}
+            label={t('create.name')}
+            hint={t('create.nameHint', { max: PRESET_NAME_MAX_LENGTH })}
+            value={name}
+            maxLength={PRESET_NAME_MAX_LENGTH}
+            placeholder={t('create.namePlaceholder')}
+            autoComplete="off"
+            autoFocus
+            aria-invalid={!!error || undefined}
+            onChange={(event) => setName(event.target.value)}
+            data-testid="preset-name"
+          />
           {preset ? null : (
             <fieldset className="grid gap-2">
               <legend id={fromId} className="pb-2 label-caps text-[10.5px]">
