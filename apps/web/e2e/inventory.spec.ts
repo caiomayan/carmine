@@ -573,6 +573,26 @@ test.describe('com o 3D bloqueado', () => {
   });
 });
 
+test('a grade do Inventário tem cinco colunas no desktop, três no tablet e duas no celular', async ({
+  page,
+}) => {
+  await signIn(page, { vip: true });
+  for (const id of [AK_REDLINE, MUSIC_KIT, 1327]) await addItemByApi(page, { id });
+  await page.goto('/inventario');
+  const grid = page.getByTestId('inventory-grid');
+  const columns = () =>
+    grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+
+  for (const [width, expected] of [
+    [1440, 5],
+    [820, 3],
+    [390, 2],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(columns).toBe(expected);
+  }
+});
+
 test('remover mostra onde o Item está em uso e "Desfazer" o devolve', async ({ page }) => {
   await signIn(page);
   const { uid } = await addItemByApi(page, { id: AK_REDLINE, wear: 0.2, seed: 7 });

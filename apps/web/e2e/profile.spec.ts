@@ -26,7 +26,11 @@ test('Perfil mostra Nome de exibição, avatar, link da Steam e o Loadout vazio,
   await expect(
     page.getByRole('link', { name: 'Perfil de Perfil Visitado na Steam (abre em outra aba)' }),
   ).toHaveAttribute('href', `https://steamcommunity.com/profiles/${account.steamId}`);
-  await expect(page.getByTestId('loadout-showcase')).toContainText('Nenhum Item equipado ainda');
+  // Sem Itens nem jogos: um bloco só no lugar do Loadout e das Estatísticas, sem caminho para o visitante.
+  await expect(page.getByTestId('profile-empty')).toContainText('Ainda não há nada para mostrar');
+  await expect(page.getByTestId('profile-empty').getByRole('link')).toHaveCount(0);
+  await expect(page.getByTestId('loadout-showcase')).toHaveCount(0);
+  await expect(page.getByTestId('profile-stats')).toHaveCount(0);
   await expect(page).toHaveTitle('Perfil Visitado · Carmine');
 
   // Prévia simples do link.

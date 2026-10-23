@@ -5,7 +5,7 @@ import type {
   LoadoutSlotGroup,
   ShowcaseItem,
 } from '@carmine/contracts';
-import type { Rarity } from '../catalog/types';
+import { hasSkinName, type Rarity } from '../catalog/types';
 import { toCard } from '../inventory/cards';
 import { slotDefault, slotOfItem } from './slots';
 import { type CandidateView, type LoadoutView, type SlotViewGroup, slotKey } from './view';
@@ -77,6 +77,8 @@ export type ShowcaseView = {
   name: string;
   title: string;
   subtitle: string | null;
+  /** Armas, facas e luvas: o nome da skin domina o cartão e a arma vira a linha de apoio. */
+  skinFirst: boolean;
   image: string;
   rarity: Rarity;
   statTrak: boolean;
@@ -102,6 +104,7 @@ export function buildShowcase(items: ShowcaseItem[]): ShowcaseView[] {
       name: card.name,
       title: card.title,
       subtitle: card.subtitle,
+      skinFirst: hasSkinName(card.type),
       image: card.image,
       rarity: card.rarity,
       statTrak: card.statTrak,

@@ -121,7 +121,10 @@ test('equipa uma faca em CT e TR, que fica depois de recarregar e aparece no Per
   const showcase = visitor.getByTestId('showcase-item');
   await expect(showcase).toHaveCount(1);
   await expect(showcase).toContainText('Karambit');
-  await expect(showcase).toContainText('CT e TR');
+  // Os lados são as bolinhas do site todo (TR à esquerda, CT à direita), com o texto para leitor de tela.
+  await expect(showcase.getByTestId('team-dots')).toHaveAttribute('data-sides', 't,ct');
+  await expect(showcase).toContainText('Equipada no TR');
+  await expect(showcase).toContainText('Equipada no CT');
   await visitor.close();
 });
 

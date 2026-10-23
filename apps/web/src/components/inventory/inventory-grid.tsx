@@ -17,7 +17,7 @@ import { equippedTeamSides } from '@/lib/team-sides';
 import { cn } from '@/lib/utils';
 import { VipBadge } from './catalog-grid';
 import { useInventory } from './inventory-provider';
-import { ItemTile, TileBadge } from './item-tile';
+import { GRID_COLUMNS, ItemTile, TileBadge } from './item-tile';
 import { RemoveItemDialog } from './remove-item-dialog';
 
 /**
@@ -61,10 +61,8 @@ export function InventoryGrid({
       <ul
         className={cn(
           'grid gap-2.5',
-          // Um ou dois Itens não ficam perdidos numa grade de quatro colunas: cartões maiores.
-          few
-            ? 'grid-cols-2 max-md:grid-cols-1'
-            : 'grid-cols-4 max-lg:grid-cols-3 max-md:grid-cols-2',
+          // Um ou dois Itens não ficam perdidos numa grade de cinco colunas: cartões maiores.
+          few ? 'grid-cols-2 max-md:grid-cols-1' : GRID_COLUMNS,
         )}
         data-testid="inventory-grid"
       >
@@ -89,6 +87,7 @@ export function InventoryGrid({
               index={index}
               selected={highlight === card.uid}
               actionSpace
+              compact={!few}
               badges={
                 card.statTrak || (card.vip && !vip.active) ? (
                   <>

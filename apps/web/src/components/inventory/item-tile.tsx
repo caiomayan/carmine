@@ -8,17 +8,18 @@ import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
 
 /**
- * Cores de raridade do CS2. Não são da identidade Liberty: aparecem só no ponto ao lado do
- * nome (sinal pequeno), sempre acompanhado do nome da raridade para leitores de tela.
+ * Cores de raridade do CS2 (tokens `--rarity-*`, com 3:1 nos dois temas). Não são da identidade
+ * Liberty: aparecem só no ponto ao lado do nome (sinal pequeno), sempre acompanhado do nome da
+ * raridade para leitores de tela.
  */
 export const RARITY_COLOR: Record<Rarity, string> = {
-  consumer: '#b0c3d9',
-  industrial: '#5e98d9',
-  milspec: '#4b69ff',
-  restricted: '#8847ff',
-  classified: '#d32ce6',
-  covert: '#eb4b4b',
-  contraband: '#e4ae39',
+  consumer: 'var(--rarity-consumer)',
+  industrial: 'var(--rarity-industrial)',
+  milspec: 'var(--rarity-milspec)',
+  restricted: 'var(--rarity-restricted)',
+  classified: 'var(--rarity-classified)',
+  covert: 'var(--rarity-covert)',
+  contraband: 'var(--rarity-contraband)',
 };
 
 export function RarityDot({ rarity, label }: { rarity: Rarity; label: string }) {
@@ -33,6 +34,12 @@ export function RarityDot({ rarity, label }: { rarity: Rarity; label: string }) 
     </>
   );
 }
+
+/** A imagem mais baixa das grades de cinco colunas (Inventário e vitrine do Perfil). */
+export const ART_COMPACT = 'aspect-2/1';
+
+/** As colunas das grades de Itens (Inventário e vitrine): cinco, como os cartões do Loadout. */
+export const GRID_COLUMNS = 'grid-cols-5 max-lg:grid-cols-3 max-md:grid-cols-2';
 
 /** A imagem do Item, contida e centrada; sem imagem, um vazio neutro do mesmo tamanho. */
 export function ItemArt({
@@ -60,6 +67,40 @@ export function ItemArt({
 }
 
 /**
+ * A legenda do cartão de Item: o nome da skin em destaque (nas armas, facas e luvas) e a arma em
+ * secundário, ou o contrário nos demais; o ponto da raridade vai na linha de apoio.
+ */
+export function TileCaption({
+  title,
+  subtitle,
+  skinFirst,
+  rarity,
+  rarityLabel,
+  className,
+}: {
+  title: string;
+  subtitle: string | null;
+  skinFirst: boolean;
+  rarity: Rarity;
+  rarityLabel: string;
+  className?: string;
+}) {
+  return (
+    <span className={cn('grid min-w-0 gap-0.5 pr-1', className)}>
+      <span className="truncate text-body font-semibold">
+        {skinFirst && subtitle ? subtitle : title}
+      </span>
+      <span className="flex min-w-0 items-center gap-1.5 text-caption text-muted-foreground">
+        <RarityDot rarity={rarity} label={rarityLabel} />
+        <span className="truncate">
+          {skinFirst && subtitle ? title : (subtitle ?? rarityLabel)}
+        </span>
+      </span>
+    </span>
+  );
+}
+
+/**
  * Cartão de Item da Liberty (tela Loadout da referência): superfície sem borda que clareia no
  * hover, imagem no alto, skin em destaque e a arma em secundário. No canto superior direito ficam
  * `badges` (StatTrak, VIP) e, por último, as bolinhas dos lados em que o Item está equipado
@@ -81,6 +122,7 @@ export function ItemTile({
   index = 0,
   selected = false,
   actionSpace = false,
+  compact = false,
   className,
   testId,
 }: {
@@ -103,6 +145,8 @@ export function ItemTile({
   selected?: boolean;
   /** Reserva o canto inferior direito para um botão sobreposto (o menu do cartão). */
   actionSpace?: boolean;
+  /** Imagem mais baixa (2:1) para grades de cinco colunas, no tamanho dos cartões do Loadout. */
+  compact?: boolean;
   className?: string;
   testId?: string;
 }) {
@@ -115,14 +159,17 @@ export function ItemTile({
       className={cn(
         'group/tile relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5',
         'transition-[background-color,box-shadow] duration-(--dur-base) ease-std hover:bg-surface-2',
-        selected && 'bg-surface-2 shadow-[inset_0_0_0_1.5px_var(--text)]',
+        selected && 'bg-surface-2 shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
         className,
       )}
     >
       <span className="relative block overflow-hidden rounded-md">
         <ItemArt
           src={image}
-          className="transition-[scale] duration-(--dur-zoom) ease-(--ease-soft) group-hover/tile:scale-[1.04] motion-reduce:group-hover/tile:scale-100"
+          className={cn(
+            compact && ART_COMPACT,
+            'transition-[scale] duration-(--dur-zoom) ease-(--ease-soft) group-hover/tile:scale-[1.04] motion-reduce:group-hover/tile:scale-100',
+          )}
         />
         {stickers?.length || charm ? (
           <span
@@ -147,17 +194,14 @@ export function ItemTile({
           </span>
         ) : null}
       </span>
-      <span className={cn('grid min-w-0 gap-0.5 pr-1', actionSpace && 'pr-12')}>
-        <span className="truncate text-[14px] font-semibold">
-          {skinFirst && subtitle ? subtitle : title}
-        </span>
-        <span className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
-          <RarityDot rarity={rarity} label={rarityLabel} />
-          <span className="truncate">
-            {skinFirst && subtitle ? title : (subtitle ?? rarityLabel)}
-          </span>
-        </span>
-      </span>
+      <TileCaption
+        title={title}
+        subtitle={subtitle}
+        skinFirst={skinFirst}
+        rarity={rarity}
+        rarityLabel={rarityLabel}
+        className={actionSpace ? 'pr-12' : undefined}
+      />
       {badges || sides?.length ? (
         <span className="absolute top-2.5 right-2.5 flex items-center gap-2">
           {badges}
@@ -204,7 +248,7 @@ export function TileBadge({ children, className }: { children: ReactNode; classN
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1 rounded-sm bg-background/80 px-1.5 py-1 label-caps text-[11px] tracking-[0.1em] text-foreground',
+        'inline-flex items-center gap-1 rounded-sm bg-background/80 px-1.5 py-1 label-caps tracking-[0.1em] text-foreground',
         className,
       )}
     >

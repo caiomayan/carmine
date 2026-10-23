@@ -4,16 +4,18 @@ import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/avatar';
+import { ONE_DECIMAL, TWO_DECIMALS } from '@/lib/profile-stats';
 import { playedParts } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 
 const HEAD =
-  'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-[11px] text-muted-foreground';
+  'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-muted-foreground';
 
 /**
  * O top 50 numa tabela de verdade (cabeçalhos e legenda para o leitor de tela), com números
- * tabulares alinhados à direita. O que não cabe no celular some em vez de rolar para o lado. A
- * linha de quem está vendo ganha o fundo e "Você".
+ * tabulares alinhados à direita. As posições 1 a 3 vão em DM Serif; a linha de quem está vendo
+ * ganha o fundo e "Você". O que não cabe no celular (HS% e rounds) desce para uma segunda linha
+ * sob o nome, em vez de sumir ou de rolar para o lado.
  */
 export async function RankingTable({ ranking }: { ranking: Ranking }) {
   const t = await getTranslations('ranking');
@@ -41,10 +43,10 @@ export async function RankingTable({ ranking }: { ranking: Ranking }) {
       <colgroup>
         <col className="w-10 md:w-14" />
         <col />
-        <col className="w-[4.5rem] md:w-36" />
+        <col className="w-[4.5rem] md:w-32" />
         <col className="w-14 md:w-20" />
         <col className="w-20 max-md:hidden" />
-        <col className="w-28 max-md:hidden" />
+        <col className="w-24 max-md:hidden" />
       </colgroup>
       <thead>
         <tr>
@@ -92,27 +94,38 @@ async function Row({
   const format = await getFormatter();
   const { player } = entry;
   const time = playedParts(entry.secondsPlayed);
-  const two = { minimumFractionDigits: 2, maximumFractionDigits: 2 };
+  const headshot =
+    entry.headshotPercent === null
+      ? tp('none')
+      : `${format.number(entry.headshotPercent, ONE_DECIMAL)}%`;
+  const played = retake
+    ? format.number(entry.roundsPlayed)
+    : time.hours > 0
+      ? tp('time.hoursMinutes', time)
+      : tp('time.minutes', { minutes: time.minutes });
+  const podium = entry.position <= 3;
   // O fundo vai nas células (a linha não arredonda): hover e "Você" cobrem a linha toda.
   const cell = cn(
     'h-14 px-3 py-2 text-sm tabular-nums transition-colors duration-(--dur-fast) ease-std first:rounded-l-lg last:rounded-r-lg',
-    entry.self ? 'bg-surface-2' : 'group-hover/row:bg-surface',
+    entry.self ? 'bg-(--fill-selected)' : 'group-hover/row:bg-surface',
   );
 
   return (
     <tr
       data-testid="ranking-row"
       data-position={entry.position}
+      id={entry.self ? 'minha-linha' : undefined}
       data-self={entry.self || undefined}
       data-private={player.private || undefined}
       style={{ '--i': index } as CSSProperties}
-      className="group/row enter-stagger"
+      className="group/row enter-stagger scroll-mt-24"
     >
       <td
         className={cn(
           cell,
-          'font-semibold',
-          entry.position === 1 ? 'text-foreground' : 'text-muted-foreground',
+          podium
+            ? 'font-display text-[26px] leading-none font-normal text-foreground'
+            : 'font-semibold text-muted-foreground',
         )}
       >
         {entry.position}
@@ -122,44 +135,44 @@ async function Row({
           {player.private ? (
             <span
               aria-hidden="true"
-              className="inline-block size-8 shrink-0 rounded-full bg-surface-2 ring-1 ring-line ring-inset"
+              className="inline-block size-8 shrink-0 rounded-full bg-surface-2"
             />
           ) : (
             <Avatar src={player.avatarUrl} name={player.displayName} size={32} />
           )}
-          {player.private ? (
-            <span className="truncate text-muted-foreground italic">{t('privatePlayer')}</span>
-          ) : (
-            <Link
-              href={`/${player.publicId}` as Route}
-              className="min-w-0 truncate rounded-xs font-semibold underline-offset-[3px] hover:underline focus-visible:outline-offset-2"
-            >
-              {player.displayName}
-            </Link>
-          )}
-          {entry.self ? (
-            <span className="shrink-0 rounded-sm bg-surface px-1.5 py-[3px] label-caps text-[9.5px] text-foreground">
-              {t('you')}
+          <div className="flex min-w-0 flex-col md:flex-row md:items-center md:gap-3">
+            {player.private ? (
+              <span className="truncate text-muted-foreground italic">{t('privatePlayer')}</span>
+            ) : (
+              <Link
+                href={`/${player.publicId}` as Route}
+                className="min-w-0 truncate rounded-xs font-semibold underline decoration-foreground/30 underline-offset-(--underline-offset) transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground focus-visible:outline-offset-2"
+              >
+                {player.displayName}
+              </Link>
+            )}
+            <span className="flex items-center gap-2 text-xs text-muted-foreground md:contents">
+              {entry.self ? (
+                <span className="shrink-0 rounded-sm bg-surface px-1.5 py-[3px] label-caps text-foreground">
+                  {t('you')}
+                </span>
+              ) : null}
+              <span className="min-w-0 truncate md:hidden" data-testid="ranking-row-extra">
+                {t(retake ? 'table.extraRetake' : 'table.extraDeathmatch', {
+                  hs: headshot,
+                  value: played,
+                })}
+              </span>
             </span>
-          ) : null}
+          </div>
         </div>
       </th>
       <td className={cn(cell, 'text-right font-semibold')}>
-        {retake ? format.number(entry.score) : format.number(entry.score, two)}
+        {retake ? format.number(entry.score) : format.number(entry.score, TWO_DECIMALS)}
       </td>
-      <td className={cn(cell, 'text-right')}>{format.number(entry.kd, two)}</td>
-      <td className={cn(cell, 'text-right text-muted-foreground max-md:hidden')}>
-        {entry.headshotPercent === null
-          ? tp('none')
-          : `${format.number(entry.headshotPercent, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`}
-      </td>
-      <td className={cn(cell, 'text-right text-muted-foreground max-md:hidden')}>
-        {retake
-          ? format.number(entry.roundsPlayed)
-          : time.hours > 0
-            ? tp('time.hoursMinutes', time)
-            : tp('time.minutes', { minutes: time.minutes })}
-      </td>
+      <td className={cn(cell, 'text-right')}>{format.number(entry.kd, TWO_DECIMALS)}</td>
+      <td className={cn(cell, 'text-right text-muted-foreground max-md:hidden')}>{headshot}</td>
+      <td className={cn(cell, 'text-right text-muted-foreground max-md:hidden')}>{played}</td>
     </tr>
   );
 }
