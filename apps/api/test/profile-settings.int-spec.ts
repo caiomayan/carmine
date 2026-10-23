@@ -8,6 +8,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DisplayNames } from '../src/accounts/display-names.js';
+import { placeholderNameFor } from '../src/accounts/placeholder-names.js';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
 import { SessionStore } from '../src/auth/sessions.js';
 import { accounts, staffAuditLog } from '../src/database/schema.js';
@@ -136,7 +137,7 @@ describe('Perfil completo (S11): Nome de exibição e Perfil privado', () => {
       expect(reverted).toEqual({ displayName: 'coldzera', nextChangeAt: null });
     });
 
-    it('um nome Steam bloqueado pela Staff segue como "Jogador #ID"', async () => {
+    it('um nome Steam bloqueado pela Staff segue com o nome fictício', async () => {
       const p = await player('coldzera');
       await rename(p, 'Nome Bom');
       await t.postgres.db
@@ -146,7 +147,7 @@ describe('Perfil completo (S11): Nome de exibição e Perfil privado', () => {
 
       const reverted = displayNameRevertedSchema.parse((await revert(p)).json());
 
-      expect(reverted.displayName).toBe(`Jogador #${p.account.publicId}`);
+      expect(reverted.displayName).toBe(placeholderNameFor(p.account.publicId));
     });
 
     it('exige sessão e CSRF', async () => {
@@ -316,14 +317,14 @@ describe('Perfil completo (S11): Nome de exibição e Perfil privado', () => {
       });
     });
 
-    it('sem nome próprio: "Jogador #ID" até mudar o nome Steam, e o prazo não é tocado', async () => {
+    it('sem nome próprio: o nome fictício até mudar o nome Steam, e o prazo não é tocado', async () => {
       const p = await player('nome horrível');
       const owner = await player('dono');
 
       await t.app.get(DisplayNames).reset(p.account.id, staff(owner.steamId));
 
       expect((await connect(p.steamId, 'nome horrível')).displayName).toBe(
-        `Jogador #${p.account.publicId}`,
+        placeholderNameFor(p.account.publicId),
       );
       expect((await connect(p.steamId, 'nome limpo')).displayName).toBe('nome limpo');
       expect((await rename(p, 'Meu Nome')).statusCode).toBe(200);

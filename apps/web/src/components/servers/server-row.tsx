@@ -3,12 +3,10 @@
 import type { LiveServer } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties } from 'react';
-import { MapPinIcon } from '@/components/icons/animated/map-pin';
-import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { LiveCount } from '@/components/live-count';
 import { SERVER_GRID } from '@/components/servers/server-list';
 import { StatusDot } from '@/components/status-dot';
-import { serverLabel } from '@/lib/live-servers';
+import { serverAnchor, serverLabel } from '@/lib/live-servers';
 import { mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ConnectButtons, ConnectHelp, useConnect } from './connect';
@@ -27,11 +25,12 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
 
   return (
     <li
+      id={serverAnchor(server.id)}
       data-testid="server-row"
       data-server={server.name}
       data-state={server.state}
       style={{ '--i': index } as CSSProperties}
-      className="group/row mb-0.5 enter-stagger rounded-lg transition-colors duration-(--dur-base) ease-std hover:bg-surface has-[[data-help]]:bg-surface has-focus-visible:bg-surface"
+      className="group/row target-veil relative mb-0.5 scroll-mt-24 enter-stagger rounded-lg transition-colors duration-(--dur-base) ease-std hover:bg-surface has-[[data-help]]:bg-surface has-focus-visible:bg-surface"
     >
       <div
         className={cn(
@@ -41,15 +40,12 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
       >
         <div className="grid min-w-0 gap-1.5 [grid-area:main] md:[grid-area:auto]">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="shrink-0 rounded-sm bg-surface-2 px-1.5 py-[3px] label-caps text-[9.5px] text-foreground">
+            <span className="shrink-0 rounded-sm bg-surface-2 px-1.5 py-[3px] label-caps text-[11px] text-foreground">
               {t(`modes.${server.mode}`)}
             </span>
-            <h3 className="truncate text-[14.5px] font-semibold">{serverLabel(server)}</h3>
+            <h3 className="truncate text-body font-semibold">{serverLabel(server)}</h3>
           </div>
-          <p className="flex min-w-0 items-center gap-1.5 text-[12.5px] text-muted-foreground">
-            <AnimatedIcon icon={MapPinIcon} size={13} />
-            <span className="shrink-0">{t(`regions.${server.region}`)}</span>
-            <span aria-hidden="true">·</span>
+          <p className="flex min-w-0 items-center gap-1.5 text-body-sm text-muted-foreground">
             <span data-testid="server-address" className="truncate tabular-nums select-all">
               {server.address}
             </span>
@@ -65,10 +61,10 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
         </div>
 
         <div className="grid min-w-0 gap-0.5 [grid-area:map] md:[grid-area:auto]">
-          <span data-testid="server-map" className="truncate text-[13.5px] font-semibold">
+          <span data-testid="server-map" className="truncate text-body-sm font-semibold">
             {mapDisplayName(server.map) ?? t('row.noMap')}
           </span>
-          <span className="truncate text-[12px] text-muted-foreground">{t('row.currentMap')}</span>
+          <span className="truncate text-caption text-muted-foreground">{t('row.currentMap')}</span>
         </div>
 
         <div className="grid min-w-0 content-center gap-2 [grid-area:players] md:[grid-area:auto]">
@@ -78,7 +74,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
           <span
             aria-hidden="true"
             data-testid="server-players"
-            className="text-[13.5px] text-foreground tabular-nums"
+            className="text-body-sm text-foreground tabular-nums"
           >
             <LiveCount value={server.players} className="font-semibold" />
             <span className="text-muted-foreground">/{server.maxPlayers}</span>
@@ -86,7 +82,7 @@ export function ServerRow({ server, index }: { server: LiveServer; index: number
           <OccupancyBar server={server} />
         </div>
 
-        <div className="flex items-center gap-2 self-center text-[12.5px] [grid-area:state] md:[grid-area:auto]">
+        <div className="flex items-center gap-2 self-center text-body-sm [grid-area:state] md:[grid-area:auto]">
           <StatusDot tone={STATE_TONE[server.state]} pulse={server.state === 'online'} />
           <span className="text-foreground">{t(`states.${server.state}`)}</span>
         </div>

@@ -18,6 +18,7 @@ import { UndoIcon } from '@/components/icons/animated/undo';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { useSession } from '@/components/session/session-provider';
 import { Button } from '@/components/ui/button';
+import { enterTransition, exitTransition } from '@/lib/motion';
 
 /** Por quanto tempo o "Desfazer" fica na tela (S04). A API guarda o Item por 30 s. */
 export const UNDO_WINDOW_MS = 8000;
@@ -155,7 +156,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       {children}
       <div
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-(--mx) pb-[max(16px,env(safe-area-inset-bottom))]"
+        className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-(--mx) pb-[calc(max(16px,env(safe-area-inset-bottom))+var(--dock-h,0px))]"
       >
         <AnimatePresence>
           {notice ? (
@@ -165,13 +166,13 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
               data-testid={notice.kind === 'undo' ? 'undo-toast' : 'notice-toast'}
               initial={{ opacity: 0, y: 12, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, transition: { duration: 0.16 } }}
-              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, y: 8, transition: exitTransition() }}
+              transition={enterTransition()}
               onPointerEnter={() => setPaused(true)}
               onPointerLeave={() => setPaused(false)}
               onFocus={() => setPaused(true)}
               onBlur={() => setPaused(false)}
-              className="pointer-events-auto relative flex w-full max-w-[460px] items-center gap-3 overflow-hidden rounded-xl bg-popover py-2.5 pr-2.5 pl-4 text-[13.5px] shadow-[0_18px_48px_-18px_var(--shadow),0_0_0_1px_var(--line)]"
+              className="pointer-events-auto relative flex w-full max-w-[460px] items-center gap-3 overflow-hidden rounded-xl bg-popover py-2.5 pr-2.5 pl-4 text-body-sm shadow-[0_18px_48px_-18px_var(--shadow),0_0_0_1px_var(--line)]"
               data-icon-trigger
             >
               <AnimatedIcon

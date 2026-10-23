@@ -26,6 +26,8 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { SectionTitle } from '@/components/section-title';
 import { useCopy } from '@/components/servers/use-copy';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
+import { LabelSelect } from '@/components/ui/label-select';
 import { sanctionLength } from '@/lib/moderation';
 import { recentWeekStarts } from '@/lib/ranking';
 import { canRevoke, type StaffViewer, sanctionGuard, sanctionState } from '@/lib/staff';
@@ -33,7 +35,6 @@ import { cn } from '@/lib/utils';
 import { ActionForm } from './action-form';
 import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 import { AuditEntries } from './audit-entries';
-import { Field, Select, TextInput } from './fields';
 import { RoleTag, SanctionTypeTags } from './tags';
 import { useStaffRequest } from './use-staff-request';
 
@@ -82,7 +83,7 @@ export function AccountFile({
                 {...(report && { report })}
               />
             ) : (
-              <p className="text-[13.5px] text-muted-foreground" data-testid="sanction-guard">
+              <p className="text-body-sm text-muted-foreground" data-testid="sanction-guard">
                 {guard === 'self' ? t('account.self') : t('account.protected')}
               </p>
             )}
@@ -102,7 +103,7 @@ export function AccountFile({
                 ))}
               </ol>
             ) : (
-              <p className="text-[13.5px] text-muted-foreground">{t('history.empty')}</p>
+              <p className="text-body-sm text-muted-foreground">{t('history.empty')}</p>
             )}
           </section>
         </div>
@@ -131,7 +132,7 @@ export function AccountFile({
             {detail.audit.length > 0 ? (
               <AuditEntries entries={detail.audit} showTarget={false} />
             ) : (
-              <p className="text-[13.5px] text-muted-foreground">{t('audit.empty')}</p>
+              <p className="text-body-sm text-muted-foreground">{t('audit.empty')}</p>
             )}
           </section>
         </aside>
@@ -161,7 +162,7 @@ function FileHeader({ detail }: { detail: StaffAccountDetail }) {
             </span>
             {account.staffRole ? <RoleTag role={account.staffRole} /> : null}
           </h2>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             {t('steamName', { name: account.steamName })}
             {' · '}
             {account.claimed ? t('claimed') : t('unclaimed')}
@@ -174,7 +175,7 @@ function FileHeader({ detail }: { detail: StaffAccountDetail }) {
                 : t('neverPlayed')}
             </span>
           </p>
-          <div className="-ml-2 flex flex-wrap items-center gap-1 text-[13px]">
+          <div className="-ml-2 flex flex-wrap items-center gap-1 text-body-sm">
             <Button
               variant="quiet"
               size="sm"
@@ -209,7 +210,7 @@ function FileHeader({ detail }: { detail: StaffAccountDetail }) {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-[13px]" data-testid="file-status">
+      <div className="flex flex-wrap items-center gap-2 text-body-sm" data-testid="file-status">
         {account.activeSanctions.length > 0 ? (
           <SanctionTypeTags types={account.activeSanctions} />
         ) : (
@@ -271,10 +272,10 @@ function SanctionItem({
     >
       <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
         <span className="font-semibold">{measure}</span>
-        <span className="text-[13px] text-muted-foreground">
+        <span className="text-body-sm text-muted-foreground">
           {tm(`staffCategories.${sanction.category}`)}
         </span>
-        <span className="ml-auto inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
+        <span className="ml-auto inline-flex items-center gap-1.5 text-caption text-muted-foreground">
           <span
             aria-hidden="true"
             className={cn(
@@ -285,12 +286,12 @@ function SanctionItem({
           {t(`states.${state}`)}
         </span>
       </div>
-      <p className="text-[13.5px] [overflow-wrap:anywhere]" data-testid="sanction-reason">
+      <p className="text-body-sm [overflow-wrap:anywhere]" data-testid="sanction-reason">
         {sanction.reason}
       </p>
       {sanction.witness || sanction.evidenceUrl ? (
         <p
-          className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]"
+          className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted-foreground [overflow-wrap:anywhere]"
           data-testid="sanction-proof"
         >
           {sanction.witness ? <span>{t('witness', { witness: sanction.witness })}</span> : null}
@@ -308,7 +309,7 @@ function SanctionItem({
           ) : null}
         </p>
       ) : null}
-      <p className="text-[12.5px] text-muted-foreground" suppressHydrationWarning>
+      <p className="text-body-sm text-muted-foreground" suppressHydrationWarning>
         {date(sanction.startsAt)}
         {sanction.endsAt ? ` · ${t('until', { date: date(sanction.endsAt) })}` : ''}
         {' · '}
@@ -316,7 +317,7 @@ function SanctionItem({
       </p>
       {sanction.revocation ? (
         <p
-          className="text-[12.5px] text-muted-foreground [overflow-wrap:anywhere]"
+          className="text-body-sm text-muted-foreground [overflow-wrap:anywhere]"
           suppressHydrationWarning
         >
           {t('revokedBy', {
@@ -357,7 +358,7 @@ function SanctionItem({
             />
             <span className="grid gap-0.5">
               <span className="text-sm font-semibold">{t('appealAccepted')}</span>
-              <span className="text-[12.5px] text-muted-foreground">{t('appealHint')}</span>
+              <span className="text-body-sm text-muted-foreground">{t('appealHint')}</span>
             </span>
           </label>
         </ActionForm>
@@ -393,7 +394,7 @@ function VipPanel({
   if (!staffCan(viewer.role, 'vip.manage')) {
     return (
       <Panel id="vip" title={t('vip.title')}>
-        <p className="text-[13px] text-muted-foreground">{t('vip.readOnly')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('vip.readOnly')}</p>
       </Panel>
     );
   }
@@ -424,19 +425,19 @@ function VipPanel({
             return result;
           }}
         >
-          <Field id={`${id}-days`} label={t('vip.days')} hint={t('vip.grantHint')}>
-            <TextInput
-              id={`${id}-days`}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={3650}
-              value={days}
-              onChange={(event) => setDays(event.target.value)}
-              className="w-28 tabular-nums"
-              aria-describedby={`${id}-days-hint`}
-            />
-          </Field>
+          <LabelInput
+            id={`${id}-days`}
+            label={t('vip.days')}
+            hint={t('vip.grantHint')}
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={3650}
+            value={days}
+            onChange={(event) => setDays(event.target.value)}
+            containerClassName="w-40"
+            className="tabular-nums"
+          />
         </ActionForm>
         {detail.vip.active ? (
           <ActionForm
@@ -474,11 +475,11 @@ function DisplayNamePanel({
   const { account } = detail;
   return (
     <Panel id="nome" title={t('title')}>
-      <p className="text-[13px]">{t('current', { name: account.displayName })}</p>
+      <p className="text-body-sm">{t('current', { name: account.displayName })}</p>
       <ActionForm
         collapsed
         label={t('submit')}
-        description={t('hint', { publicId: account.publicId })}
+        description={t('hint')}
         submitLabel={t('submit')}
         doneLabel={t('done')}
         testId="name-reset"
@@ -539,32 +540,23 @@ function RankingPanel({
         }}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id={`${id}-mode`} label={t('mode')}>
-            <Select
-              id={`${id}-mode`}
-              value={mode}
-              onChange={(event) => setMode(gameModeSchema.parse(event.target.value))}
-            >
-              {gameModeSchema.options.map((value) => (
-                <option key={value} value={value}>
-                  {tr(`modes.${value}`)}
-                </option>
-              ))}
-            </Select>
-          </Field>
-          <Field id={`${id}-week`} label={t('week')}>
-            <Select
-              id={`${id}-week`}
-              value={week}
-              onChange={(event) => setWeek(event.target.value)}
-            >
-              {weeks.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          <LabelSelect
+            label={t('mode')}
+            id={`${id}-mode`}
+            value={mode}
+            onValueChange={(next) => setMode(gameModeSchema.parse(next))}
+            options={gameModeSchema.options.map((value) => ({
+              value,
+              label: tr(`modes.${value}`),
+            }))}
+          />
+          <LabelSelect
+            label={t('week')}
+            id={`${id}-week`}
+            value={week}
+            onValueChange={setWeek}
+            options={weeks.map((value) => ({ value, label: value }))}
+          />
         </div>
       </ActionForm>
     </Panel>
@@ -584,7 +576,7 @@ function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: 
   if (erased) {
     return (
       <Panel id="exclusao" title={t('title')}>
-        <p className="text-[13px]" data-testid="erasure-done">
+        <p className="text-body-sm" data-testid="erasure-done">
           {t('anonymized')}
         </p>
       </Panel>
@@ -593,7 +585,7 @@ function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: 
   if (!staffCan(viewer.role, 'accounts.anonymize') || account.staffRole) {
     return (
       <Panel id="exclusao" title={t('title')}>
-        <p className="text-[12.5px] text-muted-foreground">
+        <p className="text-body-sm text-muted-foreground">
           {account.staffRole ? t('staff') : t('ownerOnly')}
         </p>
       </Panel>
@@ -607,6 +599,11 @@ function ErasurePanel({ detail, viewer }: { detail: StaffAccountDetail; viewer: 
         description={t('hint')}
         submitLabel={t('submit')}
         doneLabel={t('done')}
+        confirmation={{
+          title: t('confirmTitle'),
+          description: t('confirmBody'),
+          confirmLabel: t('confirmLabel'),
+        }}
         testId="erasure-form"
         onSubmit={async (reason) => {
           const result = await request(
@@ -642,17 +639,17 @@ function RolePanel({
   if (!staffCan(viewer.role, 'roles.manage')) {
     return (
       <Panel id="papel" title={t('role.title')}>
-        <p className="text-[13px]" data-testid="role-readonly">
+        <p className="text-body-sm" data-testid="role-readonly">
           {t('role.current', { role: current })}
         </p>
-        <p className="text-[12.5px] text-muted-foreground">{t('role.ownerOnly')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('role.ownerOnly')}</p>
       </Panel>
     );
   }
 
   return (
     <Panel id="papel" title={t('role.title')}>
-      <p className="text-[13px]">{t('role.current', { role: current })}</p>
+      <p className="text-body-sm">{t('role.current', { role: current })}</p>
       {account.claimed ? (
         <ActionForm
           collapsed
@@ -672,23 +669,22 @@ function RolePanel({
             return result;
           }}
         >
-          <Field id={`${id}-role`} label={t('role.label')}>
-            <Select
-              id={`${id}-role`}
-              value={role}
-              onChange={(event) => setRole(event.target.value)}
-            >
-              <option value="none">{t('roles.none')}</option>
-              {(['moderator', 'admin', 'owner'] as StaffRole[]).map((r) => (
-                <option key={r} value={r}>
-                  {t(`roles.${r}`)}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          <LabelSelect
+            label={t('role.label')}
+            id={`${id}-role`}
+            value={role}
+            onValueChange={setRole}
+            options={[
+              { value: 'none', label: t('roles.none') },
+              ...(['moderator', 'admin', 'owner'] as StaffRole[]).map((r) => ({
+                value: r,
+                label: t(`roles.${r}`),
+              })),
+            ]}
+          />
         </ActionForm>
       ) : (
-        <p className="text-[12.5px] text-muted-foreground">{t('role.unclaimed')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('role.unclaimed')}</p>
       )}
     </Panel>
   );

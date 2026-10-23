@@ -2,42 +2,64 @@
 
 import type { LoadoutSide } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useMemo, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Sheet,
   SheetContent,
   SheetDescription,
+  SheetHeader,
   SheetTitle,
 } from '@/components/animate-ui/components/radix/sheet';
 import {
   Tabs,
   TabsContent,
-  TabsContents,
   TabsList,
   TabsTrigger,
 } from '@/components/animate-ui/components/radix/tabs';
 import { PageHead } from '@/components/page-head';
-import { SectionTitle } from '@/components/section-title';
 import {
-  type CandidateView,
-  type LoadoutView,
-  SLOT_VIEW_GROUPS,
-  type SlotView,
-} from '@/lib/loadout/view';
+  type BoardColumn,
+  type BoardColumnId,
+  buildBoard,
+  columnStartKey,
+  type Direction,
+  defaultSelection,
+  equippedSidesOf,
+  moveInBoard,
+  otherSideOf,
+  slotNameOfKey,
+} from '@/lib/loadout/board';
+import type { CandidateView, LoadoutView, SlotView } from '@/lib/loadout/view';
+import { sidesLabelKey } from '@/lib/team-sides';
+import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
-import { SlotPanel } from './slot-panel';
-import { SlotTile } from './slot-tile';
+import { BoardCard } from './board-card';
+import { SlotDock } from './slot-dock';
+import { SlotPicker } from './slot-picker';
+import { useLastSide } from './use-last-side';
 
-const SIDES = ['ct', 't'] as const;
-/** Mesmo corte do `lg` do Tailwind: abaixo dele, o painel vira uma folha de baixo. */
+/** TR à esquerda, CT à direita, sempre. */
+const SIDES = ['t', 'ct'] as const;
+/** Mesmo corte do `lg` do Tailwind: abaixo dele, as cinco colunas viram uma por vez. */
 const WIDE = '(min-width: 1001px)';
 
 const GEAR_SLOTS = new Set(['knife', 'gloves', 'agent', 'musicKit']);
+const ARROWS: Record<string, Direction> = {
+  ArrowUp: 'up',
+  ArrowDown: 'down',
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+};
 
 /**
- * A tela do Loadout (S05): abas CT/TR, os slots agrupados como no jogo e, ao lado, o painel do
- * slot selecionado (no celular, numa folha que sobe). `header` fica entre o título e os slots
- * (avisos do VIP e Presets), `footer` depois deles.
+ * A tela do Loadout (S05) no desenho do menu de compra do CS2: a troca TR | CT no alto, uma
+ * coluna por categoria com todas as armas (e, na última, faca, luvas, agente e kit de música), o
+ * slot selecionado numa barra fixa embaixo e, para trocar o Item, uma folha com o Inventário.
+ * `notices` (avisos da Conta) fica entre o título e o quadro; `presets` vai na mesma linha da troca
+ * de lado. O lado em que abre é o último usado (CT se não houver nenhum).
+ *
+ * Abaixo de 1001 px mostra uma coluna por vez, escolhida numa fileira de categorias. O teclado
+ * anda pelo quadro com as setas e 1 a 5 pulam de coluna (só com o foco num cartão).
  */
 export function LoadoutScreen({
   view,
@@ -45,176 +67,346 @@ export function LoadoutScreen({
   rarityLabels,
   subtitle,
   notices,
+  presets,
 }: {
   view: LoadoutView;
   candidates: CandidateView[];
   rarityLabels: Record<string, string>;
   subtitle: ReactNode;
   notices?: ReactNode;
+  presets?: ReactNode;
 }) {
   const t = useTranslations('loadout');
   const tc = useTranslations('common');
-  const [side, setSide] = useState<LoadoutSide>('ct');
+  const wide = useMediaQuery(WIDE);
+  const [side, setSide] = useLastSide();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [flash, setFlash] = useState<string | null>(null);
+  const [chosenColumn, setChosenColumn] = useState<BoardColumnId | null>(null);
+  const [picker, setPicker] = useState<'closed' | 'right' | 'bottom'>('closed');
+  const [flash, setFlash] = useState(0);
+  const focusKey = useRef<string | null>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
 
-  const bySide = useMemo(
-    () =>
-      Object.fromEntries(
-        SIDES.map((s) => [s, view.slots.filter((slot) => slot.side === s || slot.side === null)]),
-      ) as Record<LoadoutSide, SlotView[]>,
-    [view.slots],
-  );
+  const columns = useMemo(() => buildBoard(view.slots, side), [view.slots, side]);
+  const allSlots = useMemo(() => columns.flatMap((column) => column.slots), [columns]);
   const names = useMemo(() => {
     const map = new Map(candidates.map((candidate) => [candidate.uid, candidate.name]));
     return (uid: string) => map.get(uid);
   }, [candidates]);
 
-  const slots = bySide[side];
-  const selected =
-    slots.find((slot) => slot.key === selectedKey) ??
+  const selected: SlotView | undefined =
+    allSlots.find((slot) => slot.key === selectedKey) ??
     // Trocar de lado mantém o mesmo slot, se ele existe do outro lado.
-    slots.find((slot) => slot.slot === selectedKey?.split(':')[0]) ??
-    slots.find((slot) => slot.slot === 'knife') ??
-    slots[0];
+    allSlots.find((slot) => slot.slot === slotNameOfKey(view.slots, selectedKey)) ??
+    allSlots.find((slot) => slot.key === defaultSelection(columns));
+  const columnOfSelected = columns.find((column) =>
+    column.slots.some((slot) => slot.key === selected?.key),
+  )?.id;
+  // Abaixo de 1001 px, a coluna à vista é a escolhida na fileira ou, antes disso, a do selecionado.
+  const activeColumn = chosenColumn ?? columnOfSelected ?? 'secondary';
+  const tabStopKey =
+    wide || columnOfSelected === activeColumn
+      ? selected?.key
+      : columns.find((column) => column.id === activeColumn)?.slots[0]?.key;
+
+  // Leva o foco ao cartão para onde a seta ou o número foi (a coluna pode ter acabado de aparecer).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: roda a cada seleção ou troca de coluna.
+  useEffect(() => {
+    const key = focusKey.current;
+    if (!key) return;
+    focusKey.current = null;
+    focusCard(key);
+  }, [selectedKey, activeColumn]);
+
+  // A barra de baixo avisa a altura dela, para o aviso de "Desfazer" subir acima dela.
+  useEffect(() => {
+    const element = dockRef.current;
+    if (!element) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() =>
+      root.style.setProperty('--dock-h', `${element.offsetHeight}px`),
+    );
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--dock-h');
+    };
+  }, []);
 
   const titleOf = (slot: SlotView) =>
     GEAR_SLOTS.has(slot.slot)
       ? t(`slots.${slot.slot as 'knife' | 'gloves' | 'agent' | 'musicKit'}`)
       : (slot.defaultName ?? slot.slot);
 
-  function select(slot: SlotView) {
-    setSelectedKey(slot.key);
-    if (!window.matchMedia(WIDE).matches) setSheetOpen(true);
+  function labelsOf(slot: SlotView) {
+    const { item } = slot;
+    const title = titleOf(slot);
+    const sides = equippedSidesOf(view.slots, slot);
+    const outOfGame = !!slot.notInGame || slot.strippedInGame.length > 0;
+    const hasModel = slot.slot === 'knife' || slot.slot === 'gloves';
+    const weapon = slot.slot.startsWith('weapon_') || hasModel;
+    return {
+      // No canto, o que é: a arma (na faca e nas luvas, o modelo, que a skin não repete).
+      name: item && hasModel ? item.title : title,
+      skin: item ? (weapon ? (item.subtitle ?? item.title) : item.title) : null,
+      accessible: item
+        ? [
+            t('board.cardEquipped', {
+              slot: title,
+              item: item.name,
+              sides: t(`sidesShort.${sidesLabelKey(sides)}`),
+            }),
+            outOfGame ? t('board.cardOutOfGame') : '',
+          ]
+            .filter(Boolean)
+            .join(' ')
+        : t('board.cardEmpty', {
+            slot: title,
+            default: slot.group === 'gear' ? t('defaultGear') : t('defaultWeapon'),
+          }),
+    };
   }
 
-  const panel = selected ? (
-    <SlotPanel
-      key={selected.key}
-      slot={selected}
-      title={titleOf(selected)}
-      sideName={selected.side ? t(`sides.${selected.side}`) : null}
-      otherSide={otherSideOf(selected, view.slots)}
-      candidates={candidates.filter(
-        (candidate) =>
-          candidate.slot === selected.slot &&
-          (candidate.sides === null ||
-            (selected.side !== null && candidate.sides.includes(selected.side))),
-      )}
-      readOnly={view.readOnly}
-      catalogHref={catalogHref(selected)}
-      rarityLabels={rarityLabels}
-      names={names}
-      onEquipped={() => setFlash(selected.key)}
-    />
-  ) : null;
+  function select(key: string, { focus = false } = {}) {
+    const column = columns.find((candidate) => candidate.slots.some((slot) => slot.key === key));
+    // Sem mudança de estado não há nova renderização, e o efeito acima nunca limparia o pedido
+    // de foco: ele sobraria para o próximo clique. Então o foco vai direto.
+    const unchanged = key === selectedKey && (!column || column.id === chosenColumn);
+    if (focus && unchanged) focusCard(key);
+    else if (focus) focusKey.current = key;
+    setSelectedKey(key);
+    if (column) setChosenColumn(column.id);
+  }
+
+  function onBoardKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    const card = (event.target as HTMLElement).closest<HTMLElement>('[data-card]');
+    if (!card?.dataset.key || event.metaKey || event.ctrlKey || event.altKey) return;
+    // Abaixo de 1001 px só uma coluna está à vista: as setas ficam nela.
+    const visible: BoardColumn[] = wide
+      ? columns
+      : columns.filter((column) => column.id === activeColumn);
+    const direction = ARROWS[event.key];
+    const next = direction
+      ? moveInBoard(visible, card.dataset.key, direction)
+      : /^[1-5]$/.test(event.key)
+        ? columnStartKey(columns, Number(event.key))
+        : null;
+    if (!next) return;
+    event.preventDefault();
+    if (next !== card.dataset.key || !direction) select(next, { focus: true });
+  }
+
+  function openPicker() {
+    setPicker(wide ? 'right' : 'bottom');
+  }
+
+  const pickerOther = selected ? otherSideOf(view.slots, selected) : null;
+  const equippedSides = selected ? equippedSidesOf(view.slots, selected) : [];
+  const equippedCandidate =
+    selected?.item && candidates.find((candidate) => candidate.uid === selected.item?.uid);
+  // "Equipar também no outro lado": o slot existe lá, o Item cabe lá e ainda não está.
+  const alsoSide =
+    selected?.side && pickerOther && !equippedSides.includes(pickerOther)
+      ? equippedCandidate?.sides?.includes(pickerOther)
+        ? pickerOther
+        : null
+      : null;
 
   return (
     <Tabs value={side} onValueChange={(value) => setSide(value as LoadoutSide)} className="gap-0">
-      <PageHead
-        title={t('title')}
-        subtitle={subtitle}
-        aside={
-          <TabsList aria-label={t('sidesLabel')} className="max-md:w-full">
-            {SIDES.map((s) => (
-              <TabsTrigger key={s} value={s} data-testid={`side-${s}`}>
-                {t(`sides.${s}`)}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        }
-      />
+      <PageHead title={t('title')} subtitle={subtitle} />
       {notices}
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(300px,340px)] items-start gap-8 pt-2 max-lg:grid-cols-1">
-        <TabsContents>
-          {SIDES.map((s) => (
-            <TabsContent
-              key={s}
-              value={s}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="grid gap-7"
-              data-testid={`loadout-${s}`}
-            >
-              {SLOT_VIEW_GROUPS.map((group) => {
-                const groupSlots = bySide[s].filter((slot) => slot.group === group);
-                if (groupSlots.length === 0) return null;
-                const id = `grupo-${s}-${group}`;
-                return (
-                  <section key={group} aria-labelledby={id}>
-                    <SectionTitle id={id}>{t(`groups.${group}`)}</SectionTitle>
-                    <ul
-                      className={cn(
-                        'grid grid-cols-4 gap-2.5 max-md:gap-2',
-                        // No celular, faca e luvas ficam grandes; as armas, em 3 colunas.
-                        group === 'gear' ? 'max-md:grid-cols-2' : 'max-md:grid-cols-3',
-                      )}
-                    >
-                      {groupSlots.map((slot, index) => (
-                        <li key={slot.key} className="grid">
-                          <SlotTile
-                            slot={slot}
-                            index={index}
-                            selected={slot.key === selected?.key}
-                            highlighted={slot.key === flash}
-                            onSelect={() => select(slot)}
-                            labels={{
-                              slotName: GEAR_SLOTS.has(slot.slot) ? titleOf(slot) : null,
-                              defaultLine:
-                                slot.group === 'gear' ? t('defaultGear') : t('defaultWeapon'),
-                              defaultTitle:
-                                slot.slot === 'agent' ? t('defaultAgent') : t('defaultGear'),
-                              rarity: slot.item ? (rarityLabels[slot.item.rarity] ?? '') : '',
-                              notInGame: slot.notInGame
-                                ? t('notInGame.short')
-                                : t('stripped.short'),
-                            }}
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                );
-              })}
-            </TabsContent>
-          ))}
-        </TabsContents>
 
-        <aside
-          aria-label={t('panel.label')}
-          className="sticky top-[calc(var(--hdr-h)+20px)] max-lg:hidden"
-        >
-          {panel}
-        </aside>
+      {/*
+        A barra de cima: a troca TR | CT e os Presets numa linha só, para o quadro aparecer sem
+        rolar. No celular os Presets rolam com a página e só a troca de lado e as categorias ficam
+        fixas (`contents` desfaz a barra e `sticky` fica no grupo de dentro).
+      */}
+      <div className="max-md:contents md:sticky md:top-0 md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5">
+        {presets ? <div className="min-w-0 max-md:pb-1 md:order-2 md:flex-1">{presets}</div> : null}
+        <div className="max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents">
+          <div className="md:order-1">
+            <TabsList
+              aria-label={t('sidesLabel')}
+              className="max-md:w-full max-md:[&>*]:flex-1 rounded-lg bg-surface p-[3px]"
+            >
+              {SIDES.map((s) => (
+                <TabsTrigger
+                  key={s}
+                  value={s}
+                  data-testid={`side-${s}`}
+                  className="min-w-24 gap-2.5"
+                >
+                  <span
+                    aria-hidden="true"
+                    className={cn('size-2.5 rounded-full', s === 't' ? 'bg-side-t' : 'bg-side-ct')}
+                  />
+                  {t(`sidesShort.${s}`)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
+          <nav
+            aria-label={t('board.categories')}
+            className="mt-2 flex gap-0.5 overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
+          >
+            {columns.map((column) => (
+              <button
+                key={column.id}
+                type="button"
+                aria-pressed={column.id === activeColumn}
+                onClick={() => setChosenColumn(column.id)}
+                data-testid={`category-${column.id}`}
+                className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
+              >
+                {t(`groups.${column.id}`)}
+                <span className="text-caption font-medium text-muted-foreground">
+                  {column.slots.length}
+                </span>
+              </button>
+            ))}
+          </nav>
+        </div>
       </div>
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <TabsContent
+        value={side}
+        data-testid={`loadout-${side}`}
+        onKeyDown={onBoardKeyDown}
+        className="grid grid-cols-5 items-start gap-3 rounded-2xl bg-surface p-3.5 max-lg:block max-lg:p-3"
+      >
+        {columns.map((column, columnIndex) => {
+          const id = `coluna-${side}-${column.id}`;
+          return (
+            <section
+              key={column.id}
+              aria-labelledby={id}
+              data-testid={`column-${column.id}`}
+              className={cn(
+                'grid min-w-0 content-start gap-2',
+                'max-md:grid-cols-2 md:max-lg:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]',
+                column.id !== activeColumn && 'max-lg:hidden',
+              )}
+            >
+              <div className="grid grid-cols-[1fr_auto_1fr] items-baseline px-1 pb-1.5 max-lg:sr-only">
+                <span aria-hidden="true" className="text-[11px] text-muted-foreground">
+                  {columnIndex + 1}
+                </span>
+                <h2 id={id} className="text-center text-base font-[650]">
+                  {t(`groups.${column.id}`)}
+                </h2>
+                <span
+                  role="img"
+                  aria-label={t('board.columnCount', {
+                    equipped: column.equipped,
+                    total: column.slots.length,
+                  })}
+                  className="justify-self-end text-[11px] text-muted-foreground"
+                >
+                  {column.equipped}/{column.slots.length}
+                </span>
+              </div>
+              {column.slots.map((slot, index) => (
+                <BoardCard
+                  key={slot.key}
+                  slot={slot}
+                  number={index + 1}
+                  index={index}
+                  sides={equippedSidesOf(view.slots, slot)}
+                  labels={labelsOf(slot)}
+                  selected={slot.key === selected?.key}
+                  tabStop={slot.key === tabStopKey}
+                  onSelect={() => select(slot.key)}
+                />
+              ))}
+            </section>
+          );
+        })}
+      </TabsContent>
+
+      <div
+        ref={dockRef}
+        className="pointer-events-none sticky bottom-0 z-30 pt-3.5 pb-[max(14px,env(safe-area-inset-bottom))]"
+      >
+        {selected ? (
+          <div className="pointer-events-auto">
+            <SlotDock
+              slot={selected}
+              title={titleOf(selected)}
+              sides={equippedSides}
+              otherSide={alsoSide}
+              equippedCandidate={equippedCandidate || null}
+              rarityLabel={selected.item ? (rarityLabels[selected.item.rarity] ?? '') : ''}
+              readOnly={view.readOnly}
+              flash={flash}
+              names={names}
+              onPick={openPicker}
+              onChanged={() => setFlash((n) => n + 1)}
+            />
+          </div>
+        ) : null}
+      </div>
+
+      <Sheet open={picker !== 'closed'} onOpenChange={(open) => !open && setPicker('closed')}>
         <SheetContent
-          side="bottom"
+          side={picker === 'bottom' ? 'bottom' : 'right'}
           closeLabel={tc('close')}
-          className="h-auto max-h-[88dvh] overflow-y-auto rounded-t-xl px-4 pt-5 pb-[max(20px,env(safe-area-inset-bottom))] lg:hidden"
+          className={cn(
+            'overflow-y-auto',
+            picker === 'bottom'
+              ? 'h-auto max-h-[88dvh] rounded-t-xl pb-[max(20px,env(safe-area-inset-bottom))]'
+              : 'w-[min(420px,100%-48px)]',
+          )}
         >
-          <SheetTitle className="sr-only">{t('panel.label')}</SheetTitle>
-          <SheetDescription className="sr-only">
-            {selected ? titleOf(selected) : ''}
-          </SheetDescription>
-          {sheetOpen ? panel : null}
+          {selected ? (
+            <>
+              <SheetHeader className="pr-14">
+                <SheetTitle>
+                  {t('panel.pickerTitle', {
+                    slot: selected.side
+                      ? `${titleOf(selected)} · ${t(`sidesShort.${selected.side}`)}`
+                      : titleOf(selected),
+                  })}
+                </SheetTitle>
+                <SheetDescription>{t('panel.pickerDescription')}</SheetDescription>
+              </SheetHeader>
+              <div className="px-4 pb-4">
+                <SlotPicker
+                  key={selected.key}
+                  slot={selected}
+                  otherSide={pickerOther}
+                  equippedSides={equippedSides}
+                  candidates={candidates.filter(
+                    (candidate) =>
+                      candidate.slot === selected.slot &&
+                      (candidate.sides === null ||
+                        (selected.side !== null && candidate.sides.includes(selected.side))),
+                  )}
+                  catalogHref={catalogHref(selected)}
+                  rarityLabels={rarityLabels}
+                  names={names}
+                  onDone={() => {
+                    setPicker('closed');
+                    setFlash((n) => n + 1);
+                  }}
+                />
+              </div>
+            </>
+          ) : null}
         </SheetContent>
       </Sheet>
     </Tabs>
   );
 }
 
-/** O outro lado, quando o slot também existe nele (a AWP existe nos dois; a AK, só no TR). */
-function otherSideOf(slot: SlotView, all: SlotView[]): LoadoutSide | null {
-  if (!slot.side) return null;
-  const other: LoadoutSide = slot.side === 'ct' ? 't' : 'ct';
-  return all.some((candidate) => candidate.slot === slot.slot && candidate.side === other)
-    ? other
-    : null;
+/** Leva o foco do teclado ao cartão desta chave. */
+function focusCard(key: string): void {
+  for (const card of document.querySelectorAll<HTMLElement>('[data-card]')) {
+    if (card.dataset.key === key) card.focus();
+  }
 }
 
-/** O catálogo já filtrado para o slot: a arma, ou o tipo (faca, luvas, agente, music kit). */
+/** O catálogo já filtrado para o slot: a arma, ou o tipo (faca, luvas, agente, kit de música). */
 function catalogHref(slot: SlotView): string {
   const type: Record<string, string> = {
     knife: 'knife',

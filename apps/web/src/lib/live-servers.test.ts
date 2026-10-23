@@ -10,12 +10,15 @@ import {
   nextFriends,
   occupancy,
   offlineGroupOpen,
+  serverAnchor,
   serverFullLabel,
+  serverHref,
   serverLabel,
   serversLayout,
   serversOfMode,
   steamConnectUrl,
   updatedSecondsAgo,
+  viewFriends,
 } from './live-servers';
 
 describe('Conectar a um Servidor Carmine', () => {
@@ -213,8 +216,15 @@ describe('bloco de amigos ao atualizar', () => {
   };
 
   it('a resposta da API vira o estado do bloco', () => {
-    expect(nextFriends({ status: 'loading' }, { status: 'private' })).toEqual({
+    expect(nextFriends({ status: 'loading' }, { status: 'private', friends: [] })).toEqual({
       status: 'private',
+      friends: [],
+      stale: false,
+    });
+    expect(nextFriends({ status: 'loading' }, { status: 'private', friends: ok.friends })).toEqual({
+      status: 'private',
+      friends: ok.friends,
+      stale: false,
     });
     expect(nextFriends({ status: 'loading' }, { status: 'ok', friends: [] })).toEqual({
       status: 'ok',
@@ -230,6 +240,27 @@ describe('bloco de amigos ao atualizar', () => {
   it('se a Steam ou a API falham depois, fica a última lista vista, marcada como antiga', () => {
     expect(nextFriends(ok, { status: 'unavailable' })).toEqual({ ...ok, stale: true });
     expect(nextFriends(ok, 'failed')).toEqual({ ...ok, stale: true });
+  });
+
+  it('a lista privada com amigos achados também fica, marcada como antiga, se a Steam falha', () => {
+    const found: FriendsView = { status: 'private', friends: ok.friends, stale: false };
+
+    expect(nextFriends(found, { status: 'unavailable' })).toEqual({ ...found, stale: true });
+  });
+
+  it('privada sem ninguém achado não guarda nada para mostrar como antigo', () => {
+    const none: FriendsView = { status: 'private', friends: [], stale: false };
+
+    expect(nextFriends(none, 'failed')).toEqual({ status: 'unavailable' });
+  });
+
+  it('os amigos do estado: da lista própria ou achados pelas listas deles', () => {
+    expect(viewFriends(ok)).toEqual(ok.friends);
+    expect(viewFriends({ status: 'private', friends: ok.friends, stale: false })).toEqual(
+      ok.friends,
+    );
+    expect(viewFriends({ status: 'loading' })).toEqual([]);
+    expect(viewFriends({ status: 'unavailable' })).toEqual([]);
   });
 
   it('a lista nova substitui a antiga e tira a marca', () => {
@@ -330,5 +361,19 @@ describe('amigos em cada servidor', () => {
 
   it('sem amigos, o mapa vem vazio', () => {
     expect(friendsByServer([]).size).toBe(0);
+  });
+});
+
+describe('âncora do cartão do servidor', () => {
+  it('o id do cartão vem do id do servidor, e o link leva até ele', () => {
+    const live = server({ id: '0b9b1f2e-0000-4000-8000-000000000001', state: 'online' });
+
+    expect(serverAnchor(live.id)).toBe('servidor-0b9b1f2e-0000-4000-8000-000000000001');
+    expect(serverHref(live)).toBe('/#servidor-0b9b1f2e-0000-4000-8000-000000000001');
+  });
+
+  it('lotado também tem cartão; offline fica no grupo recolhido, então o link só leva à home', () => {
+    expect(serverHref(server({ state: 'full' }))).toMatch(/^\/#servidor-/);
+    expect(serverHref(server({ state: 'offline' }))).toBe('/');
   });
 });

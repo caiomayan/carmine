@@ -8,8 +8,16 @@ import { DeleteIcon } from '@/components/icons/animated/delete';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { LabelSelect } from '@/components/ui/label-select';
 import type { ItemSpec } from '@/lib/catalog/catalog';
 import { formatDecimal } from '@/lib/decimal';
+import {
+  CHARM_SLOTS,
+  type CharmBounds,
+  charmPlacement,
+  charmSlotPosition,
+  middle,
+} from '@/lib/inventory/charm-slots';
 import {
   type AttachmentLabel,
   type CharmForm,
@@ -17,7 +25,9 @@ import {
   MAX_STICKERS,
   type StickerForm,
 } from '@/lib/inventory/item-form';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
+import type { DragAction } from '@/lib/viewer/drag-selection';
 
 // O seletor (diálogo, busca) só baixa quando a pessoa abre: não pesa na primeira carga do editor.
 const AttachmentPicker = dynamic(
@@ -27,16 +37,9 @@ const AttachmentPicker = dynamic(
   },
 );
 
-import { DecimalInput, describedBy, FieldShell, RangeInput } from './editor-fields';
+import { DecimalInput, RangeInput } from './editor-fields';
 
 type Bounds = { min: number | undefined; max: number | undefined };
-
-const listMotion = {
-  initial: { opacity: 0, height: 0 },
-  animate: { opacity: 1, height: 'auto' },
-  exit: { opacity: 0, height: 0 },
-  transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] as const },
-};
 
 /** Até 5 stickers: cada um com posição na arma, rotação, desgaste e ajuste fino opcional. */
 export function StickersEditor({
@@ -54,9 +57,10 @@ export function StickersEditor({
   issues: FormIssue[];
   errorText: (issue: FormIssue) => string;
   onChange: (stickers: StickerForm[]) => void;
-  drag: DragControl;
+  drag: DragBinding;
 }) {
   const t = useTranslations('itemEditor');
+  const reveal = useRevealMotion();
   const [picking, setPicking] = useState(false);
   const full = stickers.length >= MAX_STICKERS;
 
@@ -64,18 +68,19 @@ export function StickersEditor({
     const used = new Set(stickers.map((s) => s.schema));
     const free = Array.from({ length: slots }, (_, i) => i).find((i) => !used.has(i)) ?? 0;
     onChange([...stickers, { ...label, schema: free, rotation: 0, wear: 0 }]);
+    drag.dispatch({ type: 'sticker-added', index: stickers.length });
   }
 
   const update = (index: number, patch: Partial<StickerForm>) =>
     onChange(stickers.map((s, i) => (i === index ? { ...s, ...patch } : s)));
 
   return (
-    <section aria-labelledby="stickers-title" className="grid gap-3">
+    <section aria-labelledby="stickers-title" className="grid gap-3" data-drag-block>
       <div className="flex items-baseline justify-between gap-3">
-        <h3 id="stickers-title" className="label-caps text-[10.5px]">
+        <h3 id="stickers-title" className="label-caps text-[11px]">
           {t('stickers')}
         </h3>
-        <span className="text-[12.5px] text-muted-foreground tabular-nums">
+        <span className="text-body-sm text-muted-foreground tabular-nums">
           {t('stickersCount', { count: stickers.length, max: MAX_STICKERS })}
         </span>
       </div>
@@ -86,7 +91,7 @@ export function StickersEditor({
             <m.li
               // biome-ignore lint/suspicious/noArrayIndexKey: a ordem é a identidade do sticker (chave "0".."4" do contrato).
               key={`${index}-${sticker.id}`}
-              {...listMotion}
+              {...reveal}
               className="overflow-hidden"
             >
               <StickerRow
@@ -98,13 +103,11 @@ export function StickersEditor({
                 errorText={errorText}
                 onChange={(patch) => update(index, patch)}
                 onRemove={() => {
-                  if (drag.active !== null) drag.set(null);
+                  drag.dispatch({ type: 'sticker-removed', index });
                   onChange(stickers.filter((_, i) => i !== index));
                 }}
-                dragging={drag.active === index}
-                onDrag={
-                  drag.available ? () => drag.set(drag.active === index ? null : index) : null
-                }
+                selected={drag.selected?.kind === 'sticker' && drag.selected.index === index}
+                onSelect={() => drag.dispatch({ type: 'focus-sticker', index })}
               />
             </m.li>
           ))}
@@ -114,7 +117,7 @@ export function StickersEditor({
       <Button
         type="button"
         variant="ghost"
-        className="justify-self-start bg-surface-2/60"
+        className="justify-self-start"
         disabled={full}
         onClick={() => setPicking(true)}
         data-testid="add-sticker"
@@ -138,8 +141,8 @@ function StickerRow({
   errorText,
   onChange,
   onRemove,
-  dragging,
-  onDrag,
+  selected,
+  onSelect,
 }: {
   index: number;
   sticker: StickerForm;
@@ -149,9 +152,9 @@ function StickerRow({
   errorText: (issue: FormIssue) => string;
   onChange: (patch: Partial<StickerForm>) => void;
   onRemove: () => void;
-  dragging: boolean;
-  /** Liga ou desliga o arrasto deste sticker no 3D; nulo quando o 3D não está pronto. */
-  onDrag: (() => void) | null;
+  /** O 3D deixa arrastar este sticker agora (a seleção segue o foco da linha). */
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const t = useTranslations('itemEditor');
   const slotId = useId();
@@ -159,8 +162,10 @@ function StickerRow({
   const error = issue ? errorText(issue) : undefined;
   return (
     <fieldset
-      className="mb-2 grid gap-3 rounded-lg bg-surface-2/50 p-3"
+      className="mb-2 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
       data-testid={`sticker-${index}`}
+      data-selected={selected || undefined}
+      onFocus={onSelect}
     >
       <legend className="sr-only">{t('stickerLabel', { n: index + 1, name: sticker.name })}</legend>
       <div className="flex items-center gap-3">
@@ -170,19 +175,10 @@ function StickerRow({
             <img src={sticker.image} alt="" width={40} height={30} className="w-9 object-contain" />
           ) : null}
         </span>
-        <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium" title={sticker.name}>
+        <span className="min-w-0 flex-1 truncate text-body-sm font-medium" title={sticker.name}>
           {name}
         </span>
-        {onDrag ? (
-          <DragButton
-            active={dragging}
-            label={t('drag3dLabel', { name: sticker.name })}
-            onClick={onDrag}
-            testId={`drag-sticker-${index}`}
-          >
-            {t('drag3d')}
-          </DragButton>
-        ) : null}
+        {selected ? <OnViewerTag testId={`on-viewer-sticker-${index}`} /> : null}
         <Button
           type="button"
           variant="quiet"
@@ -195,23 +191,17 @@ function StickerRow({
       </div>
 
       <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
-        <FieldShell id={slotId} label={t('slot')} error={error}>
-          <select
-            id={slotId}
-            value={sticker.schema}
-            onChange={(event) => onChange({ schema: Number(event.target.value) })}
-            aria-invalid={!!error || undefined}
-            aria-describedby={describedBy(slotId, { error })}
-            className="min-h-(--tap) w-full appearance-none rounded-md bg-surface-2 px-3 text-[14px] aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)]"
-          >
-            {Array.from({ length: slots }, (_, slot) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: o slot é o próprio índice.
-              <option key={slot} value={slot}>
-                {t('slotN', { n: slot + 1 })}
-              </option>
-            ))}
-          </select>
-        </FieldShell>
+        <LabelSelect
+          label={t('slot')}
+          id={slotId}
+          value={String(sticker.schema)}
+          onValueChange={(next) => onChange({ schema: Number(next) })}
+          error={error}
+          options={Array.from({ length: slots }, (_, slot) => ({
+            value: String(slot),
+            label: t('slotN', { n: slot + 1 }),
+          }))}
+        />
         <SliderField
           label={t('rotation')}
           value={sticker.rotation}
@@ -233,22 +223,7 @@ function StickerRow({
       </div>
 
       {offset && hasBounds(offset.x) && hasBounds(offset.y) ? (
-        <details className="group/fine" open={dragging || undefined}>
-          <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 -ml-2 text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-hover hover:text-foreground max-md:min-h-(--tap)">
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="size-3.5 transition-transform duration-(--dur-fast) group-open/fine:rotate-90"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m9 18 6-6-6-6" />
-            </svg>
-            {t('moreOptions')}
-          </summary>
+        <FineAdjust>
           <div className="grid grid-cols-2 gap-3 pt-2 max-md:grid-cols-1">
             <OffsetSlider
               label={t('offsetX')}
@@ -263,7 +238,7 @@ function StickerRow({
               onChange={(y) => onChange({ y })}
             />
           </div>
-        </details>
+        </FineAdjust>
       ) : null}
     </fieldset>
   );
@@ -318,10 +293,10 @@ function SliderField({
   return (
     <div className="grid content-start gap-2">
       <div className="flex min-h-4 items-baseline justify-between gap-2">
-        <span aria-hidden="true" className="label-caps text-[10.5px]">
+        <span aria-hidden="true" className="label-caps text-[11px]">
           {label}
         </span>
-        <span aria-hidden="true" className="text-[12.5px] font-semibold tabular-nums">
+        <span aria-hidden="true" className="text-body-sm font-semibold tabular-nums">
           {display}
         </span>
       </div>
@@ -340,7 +315,73 @@ function SliderField({
   );
 }
 
-/** Um charm: padrão (seed) e posição na arma, padrão ou personalizada (X, Y, Z). */
+/**
+ * O que o editor liga ao 3D: a seleção que o viewer deixa arrastar agora (a linha com o foco) e
+ * o despacho dos eventos que a movem (ver `lib/viewer/drag-selection.ts`).
+ */
+export type DragBinding = {
+  selected: { kind: 'sticker' | 'keychain'; index: number } | null;
+  dispatch: (action: DragAction) => void;
+};
+
+/** Marca discreta de que a linha está selecionada e o 3D deixa arrastá-la. */
+function OnViewerTag({ testId }: { testId: string }) {
+  const t = useTranslations('itemEditor');
+  return (
+    <span
+      data-testid={testId}
+      className="inline-flex shrink-0 animate-fade-up items-center gap-1.5 rounded-sm px-1.5 py-1 text-[11px] font-medium text-muted-foreground max-md:hidden"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className="size-3.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20" />
+      </svg>
+      {t('onViewer')}
+    </span>
+  );
+}
+
+/** "Ajuste fino": os controles de precisão ficam recolhidos; o teclado chega a todos. */
+function FineAdjust({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('itemEditor');
+  return (
+    <details className="group/fine">
+      <summary className="inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded-md px-2 -ml-2 text-body-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-hover hover:text-foreground max-md:min-h-(--tap)">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="size-3.5 transition-[rotate] duration-(--dur-fast) ease-std motion-reduce:transition-none group-open/fine:rotate-90"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+        {t('moreOptions')}
+      </summary>
+      <div className="group-open/fine:animate-fade-up">{children}</div>
+    </details>
+  );
+}
+
+const DEFAULT_PLACEMENT = 'default';
+const CUSTOM_PLACEMENT = 'custom';
+
+/**
+ * O chaveiro: padrão (seed) e posição na arma, no mesmo modelo dos stickers: posições prontas
+ * ao longo da arma (lista) e ajuste fino em X, Y e Z. Arrastar no 3D é só um atalho e leva à
+ * posição "Personalizada". A seleção no 3D segue o foco da linha.
+ */
 export function CharmEditor({
   charm,
   spec,
@@ -354,27 +395,44 @@ export function CharmEditor({
   issue: FormIssue | undefined;
   errorText: (issue: FormIssue) => string;
   onChange: (charm: CharmForm | null) => void;
-  drag: DragControl;
+  drag: DragBinding;
 }) {
   const t = useTranslations('itemEditor');
   const [picking, setPicking] = useState(false);
-  const dragging = drag.active === 0;
   const seedId = useId();
+  const placementId = useId();
   const error = issue ? errorText(issue) : undefined;
   const { x, y, z } = spec.position;
-  const canPlace = hasBounds(x) && hasBounds(y) && hasBounds(z);
-  const custom = charm?.x !== undefined;
+  const bounds: CharmBounds | null =
+    hasBounds(x) && hasBounds(y) && hasBounds(z) ? { x, y, z } : null;
+  const placement = bounds && charm ? charmPlacement(bounds, charm) : null;
+  const selected = drag.selected?.kind === 'keychain';
+
+  function place(value: string) {
+    // O Select do Radix também avisa com um valor vazio quando o valor controlado muda para uma
+    // opção que ainda não montou (a "Personalizada"): só vale o que a lista oferece.
+    const isSlot = /^\d+$/.test(value) && Number(value) < CHARM_SLOTS;
+    if (!charm || !bounds || !(isSlot || value === DEFAULT_PLACEMENT)) return;
+    if (value === DEFAULT_PLACEMENT) {
+      onChange({ id: charm.id, name: charm.name, image: charm.image, seed: charm.seed });
+      return;
+    }
+    onChange({ ...charm, ...charmSlotPosition(bounds, Number(value)) });
+  }
 
   return (
-    <section aria-labelledby="charm-title" className="grid gap-3">
-      <h3 id="charm-title" className="label-caps text-[10.5px]">
+    <section aria-labelledby="charm-title" className="grid gap-3" data-drag-block>
+      <h3 id="charm-title" className="label-caps text-[11px]">
         {t('charm')}
       </h3>
       {charm ? (
-        <div
-          className="grid gap-3 rounded-lg bg-surface-2/50 p-3 animate-fade-up"
+        <fieldset
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std animate-fade-up data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
           data-testid="charm"
+          data-selected={selected || undefined}
+          onFocus={() => drag.dispatch({ type: 'focus-charm' })}
         >
+          <legend className="sr-only">{t('charmLabel', { name: charm.name })}</legend>
           <div className="flex items-center gap-3">
             <span className="grid size-11 shrink-0 place-items-center rounded-md bg-surface-2">
               {charm.image ? (
@@ -388,25 +446,16 @@ export function CharmEditor({
                 />
               ) : null}
             </span>
-            <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium" title={charm.name}>
+            <span className="min-w-0 flex-1 truncate text-body-sm font-medium" title={charm.name}>
               {charm.name.replace(/^Chaveiro \| /, '')}
             </span>
-            {drag.available ? (
-              <DragButton
-                active={dragging}
-                label={t('drag3dLabel', { name: charm.name })}
-                onClick={() => drag.set(dragging ? null : 0)}
-                testId="drag-charm"
-              >
-                {t('drag3d')}
-              </DragButton>
-            ) : null}
+            {selected ? <OnViewerTag testId="on-viewer-charm" /> : null}
             <Button
               type="button"
               variant="quiet"
               size="icon"
               onClick={() => {
-                if (dragging) drag.set(null);
+                drag.dispatch({ type: 'charm-removed' });
                 onChange(null);
               }}
               aria-label={t('removeCharm', { name: charm.name })}
@@ -414,78 +463,90 @@ export function CharmEditor({
               <AnimatedIcon icon={DeleteIcon} size={16} />
             </Button>
           </div>
-          <div className="grid grid-cols-[minmax(0,10rem)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
-            <FieldShell
+          <div className="grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
+            <DecimalInput
               id={seedId}
               label={t('charmSeed')}
-              error={error}
               hint={t('seedRange', { min: spec.seed.min, max: formatDecimal(spec.seed.max, 0) })}
-            >
-              <DecimalInput
-                id={seedId}
-                value={charm.seed}
-                decimals={0}
-                invalid={!!error}
-                describedBy={describedBy(seedId, { error, hint: true })}
-                onChange={(seed) => onChange({ ...charm, seed: seed ?? Number.NaN })}
+              error={error}
+              value={charm.seed}
+              decimals={0}
+              invalid={!!error}
+              onChange={(seed) => onChange({ ...charm, seed: seed ?? Number.NaN })}
+            />
+            {bounds && placement ? (
+              <LabelSelect
+                label={t('charmPosition')}
+                id={placementId}
+                value={
+                  placement.kind === 'slot'
+                    ? String(placement.slot)
+                    : placement.kind === 'custom'
+                      ? CUSTOM_PLACEMENT
+                      : DEFAULT_PLACEMENT
+                }
+                onValueChange={place}
+                data-testid="charm-placement"
+                options={[
+                  { value: DEFAULT_PLACEMENT, label: t('positionDefault') },
+                  ...Array.from({ length: CHARM_SLOTS }, (_, slot) => ({
+                    value: String(slot),
+                    label: t(
+                      slot === 0
+                        ? 'charmSlotFirst'
+                        : slot === CHARM_SLOTS - 1
+                          ? 'charmSlotLast'
+                          : 'charmSlotN',
+                      { n: slot + 1 },
+                    ),
+                  })),
+                  ...(placement.kind === 'custom'
+                    ? [{ value: CUSTOM_PLACEMENT, label: t('positionCustom') }]
+                    : []),
+                ]}
               />
-            </FieldShell>
-            {canPlace ? (
-              <fieldset className="grid content-start gap-2">
-                <legend className="mb-2 label-caps text-[10.5px]">{t('charmPosition')}</legend>
-                <div className="flex gap-1">
-                  {[false, true].map((isCustom) => (
-                    <button
-                      key={String(isCustom)}
-                      type="button"
-                      aria-pressed={custom === isCustom}
-                      onClick={() =>
-                        onChange(
-                          isCustom
-                            ? { ...charm, x: mid(x), y: mid(y), z: mid(z) }
-                            : {
-                                id: charm.id,
-                                name: charm.name,
-                                image: charm.image,
-                                seed: charm.seed,
-                              },
-                        )
-                      }
-                      className="min-h-(--tap) rounded-md px-3 text-[13px] font-medium text-muted-foreground transition-colors duration-(--dur-fast) hover:bg-hover hover:text-foreground aria-pressed:bg-surface-2 aria-pressed:text-foreground"
-                    >
-                      {isCustom ? t('positionCustom') : t('positionDefault')}
-                    </button>
-                  ))}
-                </div>
-                {custom ? (
-                  <div className="grid grid-cols-3 gap-3 pt-1 animate-fade-up max-md:grid-cols-1">
-                    {(['x', 'y', 'z'] as const).map((axis) => {
-                      const bounds = spec.position[axis];
-                      const value = charm[axis] ?? mid(bounds);
-                      return hasBounds(bounds) ? (
-                        <SliderField
-                          key={axis}
-                          label={t(`axis${axis.toUpperCase() as 'X' | 'Y' | 'Z'}`)}
-                          value={value}
-                          display={formatDecimal(value, 2)}
-                          min={bounds.min}
-                          max={bounds.max}
-                          step={0.0001}
-                          onChange={(v) => onChange({ ...charm, [axis]: v })}
-                        />
-                      ) : null;
-                    })}
-                  </div>
-                ) : null}
-              </fieldset>
             ) : null}
           </div>
-        </div>
+          {bounds && placement ? (
+            <FineAdjust>
+              {placement.kind === 'default' ? (
+                <p className="pt-2 text-body-sm text-muted-foreground">{t('charmFineHint')}</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-3 pt-2 max-md:grid-cols-1">
+                  {(['x', 'y', 'z'] as const).map((axis) => {
+                    const range = bounds[axis];
+                    const value = charm[axis] ?? middle(range);
+                    return (
+                      <SliderField
+                        key={axis}
+                        label={t(`axis${axis.toUpperCase() as 'X' | 'Y' | 'Z'}`)}
+                        value={value}
+                        display={formatDecimal(value, 2)}
+                        min={range.min}
+                        max={range.max}
+                        step={0.0001}
+                        onChange={(next) =>
+                          onChange({
+                            ...charm,
+                            x: charm.x ?? middle(bounds.x),
+                            y: charm.y ?? middle(bounds.y),
+                            z: charm.z ?? middle(bounds.z),
+                            [axis]: next,
+                          })
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </FineAdjust>
+          ) : null}
+        </fieldset>
       ) : (
         <Button
           type="button"
           variant="ghost"
-          className={cn('justify-self-start bg-surface-2/60')}
+          className={cn('justify-self-start')}
           onClick={() => setPicking(true)}
           data-testid="add-charm"
         >
@@ -502,53 +563,5 @@ export function CharmEditor({
         />
       ) : null}
     </section>
-  );
-}
-
-const mid = (b: Bounds) => (b.min !== undefined && b.max !== undefined ? (b.min + b.max) / 2 : 0);
-
-/** O arrasto no 3D: qual índice está ativo, se o 3D está pronto e como trocar. */
-export type DragControl = {
-  active: number | null;
-  available: boolean;
-  set: (index: number | null) => void;
-};
-
-function DragButton({
-  active,
-  label,
-  onClick,
-  testId,
-  children,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  testId: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      aria-label={label}
-      onClick={onClick}
-      data-testid={testId}
-      className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[12.5px] font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-foreground aria-pressed:text-background max-md:min-h-(--tap)"
-    >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className="size-3.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20" />
-      </svg>
-      {children}
-    </button>
   );
 }

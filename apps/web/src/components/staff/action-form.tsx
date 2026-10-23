@@ -6,19 +6,15 @@ import { type FormEvent, type ReactNode, useId, useRef, useState } from 'react';
 import { CheckIcon } from '@/components/icons/animated/check';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
-import { Field, FieldError, Textarea } from './fields';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { LabelTextarea } from '@/components/ui/label-input';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
+import { FieldError } from './fields';
 import type { StaffResult } from './use-staff-request';
 
 /** Limites do motivo (`staffReasonSchema`): vai para o log de auditoria. */
 export const REASON_MIN = 3;
 export const REASON_MAX = 500;
-
-const reveal = {
-  initial: { height: 0, opacity: 0 },
-  animate: { height: 'auto', opacity: 1 },
-  exit: { height: 0, opacity: 0 },
-  transition: { duration: 0.24, ease: [0.16, 1, 0.3, 1] as const },
-};
 
 /** O motivo de toda ação da Staff, com contador e a dica de que é interno. */
 export function ReasonField({
@@ -34,34 +30,29 @@ export function ReasonField({
 }) {
   const t = useTranslations('staff.reason');
   return (
-    <Field
+    <LabelTextarea
       id={id}
       label={t('label')}
       hint={t('hint')}
       error={error}
       aside={t('count', { count: value.length, max: REASON_MAX })}
-    >
-      <Textarea
-        id={id}
-        name="reason"
-        value={value}
-        maxLength={REASON_MAX}
-        required
-        rows={2}
-        placeholder={t('placeholder')}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : `${id}-hint`}
-        onChange={(event) => onChange(event.target.value)}
-        data-testid="reason"
-      />
-    </Field>
+      name="reason"
+      value={value}
+      maxLength={REASON_MAX}
+      required
+      rows={2}
+      placeholder={t('placeholder')}
+      onChange={(event) => onChange(event.target.value)}
+      data-testid="reason"
+    />
   );
 }
 
 /**
  * Uma ação da Staff com motivo: campos próprios (opcionais), o motivo e o botão. Com `collapsed`,
  * começa como um botão que abre o formulário ali mesmo (sem modal). Mostra o erro pelo código
- * da API e confirma o sucesso em texto (região viva).
+ * da API e confirma o sucesso em texto (região viva). Com `confirmation`, a ação sem volta pede uma
+ * confirmação num Dialog depois de validar os campos e o motivo.
  */
 export function ActionForm({
   label,
@@ -73,6 +64,7 @@ export function ActionForm({
   collapsed = false,
   disabled = false,
   validate,
+  confirmation,
   onSubmit,
   testId,
 }: {
@@ -86,17 +78,21 @@ export function ActionForm({
   disabled?: boolean;
   /** Erro dos campos próprios, antes de enviar; nulo se está tudo certo. */
   validate?: () => string | null;
+  /** Ação sem volta: o que o Dialog de confirmação diz antes de executar. */
+  confirmation?: { title: string; description: ReactNode; confirmLabel: string };
   onSubmit: (reason: string) => Promise<StaffResult<unknown>>;
   testId?: string;
 }) {
   const t = useTranslations('staff');
   const id = useId();
+  const reveal = useRevealMotion();
   const [open, setOpen] = useState(!collapsed);
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [pending, setPending] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const submit = async (event: FormEvent) => {
@@ -114,9 +110,15 @@ export function ActionForm({
       return;
     }
     setReasonError(null);
+    if (confirmation) setConfirming(true);
+    else await run();
+  };
+
+  const run = async () => {
     setPending(true);
     const result = await onSubmit(reason.trim());
     setPending(false);
+    setConfirming(false);
     if (result.ok) {
       setReason('');
       setDone(true);
@@ -128,7 +130,7 @@ export function ActionForm({
 
   const form = (
     <form ref={formRef} onSubmit={submit} noValidate className="grid gap-4" data-testid={testId}>
-      {description ? <div className="text-[13px] text-muted-foreground">{description}</div> : null}
+      {description ? <div className="text-body-sm text-muted-foreground">{description}</div> : null}
       {children}
       <ReasonField
         id={`${id}-reason`}
@@ -146,7 +148,6 @@ export function ActionForm({
           size="sm"
           disabled={disabled || pending}
           aria-busy={pending || undefined}
-          className={variant === 'ghost' ? 'bg-surface-2 hover:bg-line' : undefined}
         >
           {submitLabel}
         </Button>
@@ -195,7 +196,19 @@ export function ActionForm({
       ) : (
         form
       )}
-      <p role="status" className="text-[12.5px] text-muted-foreground empty:hidden">
+      {confirmation ? (
+        <ConfirmDialog
+          open={confirming}
+          onOpenChange={setConfirming}
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmLabel={confirmation.confirmLabel}
+          onConfirm={run}
+          pending={pending}
+          testId={testId ? `${testId}-confirm` : undefined}
+        />
+      ) : null}
+      <p role="status" className="text-body-sm text-muted-foreground empty:hidden">
         {done ? (
           <span className="inline-flex items-center gap-1.5" data-icon-trigger>
             <span className="text-status-success">

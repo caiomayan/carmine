@@ -6,7 +6,7 @@ import type { CSSProperties } from 'react';
 import { Avatar } from '@/components/avatar';
 import { LiveCount } from '@/components/live-count';
 import { StatusDot } from '@/components/status-dot';
-import { serverFullLabel, serverLabel } from '@/lib/live-servers';
+import { serverAnchor, serverFullLabel, serverLabel } from '@/lib/live-servers';
 import { mapArt, mapDisplayName } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ConnectButtons, ConnectHelp, useConnect } from './connect';
@@ -30,9 +30,9 @@ function MapBackdrop({
   priority: boolean;
 }) {
   const art = mapArt(map);
-  if (!art) return <span aria-hidden="true" className="map-neutral absolute inset-0 -z-20" />;
+  if (!art) return <span aria-hidden="true" className="map-neutral absolute -inset-px" />;
   return (
-    <picture className="absolute inset-0 -z-20">
+    <picture className="absolute -inset-px">
       <source type="image/avif" srcSet={art.avif} sizes={sizes} />
       <source type="image/webp" srcSet={art.webp} sizes={sizes} />
       <img
@@ -77,26 +77,31 @@ export function ServerCard({
 
   return (
     <li
+      id={serverAnchor(server.id)}
       data-testid="server-card"
       data-server={server.name}
       data-state={server.state}
       data-map={server.map ?? ''}
       style={{ '--i': index } as CSSProperties}
       className={cn(
-        'group/card relative isolate flex min-h-[264px] enter-stagger flex-col overflow-hidden rounded-2xl bg-surface-2 ring-1 ring-line ring-inset',
-        'transition-shadow duration-(--dur-slow) ease-soft hover:ring-line-strong has-focus-visible:ring-line-strong',
+        'group/card target-veil relative isolate flex min-h-[264px] enter-stagger scroll-mt-24 flex-col rounded-2xl',
         solo && 'md:min-h-[320px]',
       )}
     >
-      <MapBackdrop map={server.map} sizes={sizes} priority={priority} />
-      <span
-        aria-hidden="true"
-        className={cn('map-scrim absolute inset-0 -z-10', solo && 'map-scrim-solo')}
-      />
+      {/*
+        A imagem e o escurecido moram na MESMA camada, e é ela que recorta no canto arredondado:
+        recortando em dois lugares (o cartão e a imagem escalada, que vira camada própria no zoom),
+        a borda antialiased deixava o fundo e o anel do cartão aparecerem como um filete. O fundo
+        da camada é só o que se vê enquanto a imagem carrega.
+      */}
+      <div aria-hidden="true" className="map-layer absolute inset-0 -z-10 bg-surface-2">
+        <MapBackdrop map={server.map} sizes={sizes} priority={priority} />
+        <span className={cn('map-scrim absolute -inset-px', solo && 'map-scrim-solo')} />
+      </div>
 
       <div className="flex items-start justify-between gap-3 p-4 pb-0 md:p-5 md:pb-0">
-        <span className="chip-solid label-caps text-[9.5px]">{t(`modes.${server.mode}`)}</span>
-        <span className="chip-solid inline-flex items-center gap-2 text-[12px] font-medium">
+        <span className="chip-solid label-caps">{t(`modes.${server.mode}`)}</span>
+        <span className="chip-solid inline-flex items-center gap-2 text-caption font-medium">
           <StatusDot tone={STATE_TONE[server.state]} pulse={server.state === 'online'} />
           {t(`states.${server.state}`)}
         </span>
@@ -112,16 +117,13 @@ export function ServerCard({
           <h3 className={cn('text-[19px] leading-tight font-semibold', solo && 'md:text-[24px]')}>
             {serverLabel(server)}
           </h3>
-          <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-(--on-map-muted)">
+          <p className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-(--on-map-muted)">
             {mapName ? (
-              <>
-                <span data-testid="server-map" className="font-medium text-foreground">
-                  {mapName}
-                </span>
-                <span aria-hidden="true">·</span>
-              </>
+              <span data-testid="server-map" className="font-medium text-foreground">
+                {mapName}
+              </span>
             ) : null}
-            <span>{t(`regions.${server.region}`)}</span>
+            {mapName && server.code ? <span aria-hidden="true">·</span> : null}
             {server.code ? (
               <span
                 data-testid="server-code"
@@ -145,12 +147,12 @@ export function ServerCard({
             >
               <LiveCount value={server.players} className="font-semibold" />
               <span className="text-(--on-map-muted)">/{server.maxPlayers}</span>
-              <span className="pl-1.5 text-[12.5px] text-(--on-map-muted)">
+              <span className="pl-1.5 text-body-sm text-(--on-map-muted)">
                 {t('card.playersUnit')}
               </span>
             </span>
             {full ? (
-              <span className="text-right text-[12px] whitespace-nowrap text-(--on-map-muted)">
+              <span className="text-right text-caption whitespace-nowrap text-(--on-map-muted)">
                 {t('card.fullNote')}
               </span>
             ) : null}
@@ -207,7 +209,7 @@ function FriendsHere({ friends, server }: { friends: PlayingFriend[]; server: Li
           </li>
         ) : null}
       </ul>
-      <span className="min-w-0 truncate text-[12.5px] text-foreground">
+      <span className="min-w-0 truncate text-body-sm text-foreground">
         {t('friendsHere', { name: first.displayName, others: friends.length - 1 })}
       </span>
     </div>

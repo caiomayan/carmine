@@ -8,6 +8,7 @@ O `apps/web` nasceu com CSS Modules e custom properties. Antes de existirem tela
 - Nem o Animate UI nem o lucide-animated tratam `prefers-reduced-motion`: o app inteiro fica sob `<MotionConfig reducedMotion="user">`, e cada componente animado é verificado com movimento reduzido.
 - Marcas do Simple Icons são CC0 como desenho, mas seguem as diretrizes de marca de cada empresa.
 - O fluxo do shadcn (CLI + `components.json`) passa a ser o padrão para novos componentes; CSS Modules não são mais usados.
+- Select, Popover e Command (base do Combobox) não existem no registro do Animate UI: vêm do shadcn base (Radix) e são reestilizados nos tokens Liberty, com a animação de entrada do `tw-animate-css` (sem movimento com `prefers-reduced-motion`). Dropdown Menu, Dialog, Sheet, Tabs, Switch e Tooltip seguem na versão do Animate UI.
 
 ## Considered Options
 

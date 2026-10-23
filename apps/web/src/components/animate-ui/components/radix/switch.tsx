@@ -26,7 +26,7 @@ function Switch({
   return (
     <SwitchPrimitive
       className={cn(
-        'relative peer flex h-5 w-9 px-0.5 shrink-0 items-center justify-start rounded-[7px] transition-colors duration-(--dur-fast) ease-std disabled:cursor-not-allowed disabled:opacity-50',
+        'relative peer flex h-5 w-9 px-0.5 shrink-0 after:absolute after:-inset-x-1 after:-inset-y-3 items-center justify-start rounded-[7px] transition-colors duration-(--dur-fast) ease-std disabled:cursor-not-allowed disabled:opacity-50',
         'data-[state=checked]:bg-primary data-[state=unchecked]:bg-line-strong data-[state=checked]:justify-end',
         className,
       )}

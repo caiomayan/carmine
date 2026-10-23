@@ -13,6 +13,10 @@ import {
 import { useControlledState } from '@/hooks/use-controlled-state';
 import { useDataState } from '@/hooks/use-data-state';
 import { getStrictContext } from '@/lib/get-strict-context';
+import { scaleMotion, withTransition } from '@/lib/motion';
+
+/** Menus abrem do gatilho: só opacidade e uma escala pequena, sem deslocamento. */
+const menuMotion = scaleMotion({ scale: 0.96 });
 
 type DropdownMenuContextType = {
   isOpen: boolean;
@@ -142,12 +146,13 @@ function DropdownMenuSubContent({
   arrowPadding,
   sticky,
   hideWhenDetached,
-  transition = { duration: 0.2 },
+  transition,
   style,
   container,
   ...props
 }: DropdownMenuSubContentProps) {
   const { isOpen } = useDropdownMenuSub();
+  const motion = withTransition(menuMotion, transition);
 
   return (
     <AnimatePresence>
@@ -173,10 +178,9 @@ function DropdownMenuSubContent({
             <m.div
               key="dropdown-menu-sub-content"
               data-slot="dropdown-menu-sub-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={transition}
+              initial={motion.initial}
+              animate={motion.animate}
+              exit={motion.exit}
               style={{ willChange: 'opacity, transform', ...style }}
               {...props}
             />
@@ -233,12 +237,13 @@ function DropdownMenuContent({
   arrowPadding,
   sticky,
   hideWhenDetached,
-  transition = { duration: 0.2 },
+  transition,
   style,
   container,
   ...props
 }: DropdownMenuContentProps) {
   const { isOpen } = useDropdownMenu();
+  const motion = withTransition(menuMotion, transition);
 
   return (
     <AnimatePresence>
@@ -266,10 +271,9 @@ function DropdownMenuContent({
             <m.div
               key="dropdown-menu-content"
               data-slot="dropdown-menu-content"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={transition}
+              initial={motion.initial}
+              animate={motion.animate}
+              exit={motion.exit}
               style={{ willChange: 'opacity, transform', ...style }}
               {...props}
             />

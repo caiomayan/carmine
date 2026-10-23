@@ -45,6 +45,16 @@
   --color-status-info: var(--status-info);
   --color-status-vip: var(--status-vip);
   --color-status-offline: var(--status-offline);
+  --color-side-ct: var(--side-ct);
+  --color-carmine: var(--carmine);
+  --color-rarity-consumer: var(--rarity-consumer);
+  --color-rarity-industrial: var(--rarity-industrial);
+  --color-rarity-milspec: var(--rarity-milspec);
+  --color-rarity-restricted: var(--rarity-restricted);
+  --color-rarity-classified: var(--rarity-classified);
+  --color-rarity-covert: var(--rarity-covert);
+  --color-rarity-contraband: var(--rarity-contraband);
+  --color-side-t: var(--side-t);
 
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -53,6 +63,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 
   --font-sans: var(--font-ui);
+  /* DM Serif Display: H1 de herói, numerais de destaque e o 1-3 do Ranking (o wordmark é SVG) */
+  --font-display: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
 }
 
 @theme {
@@ -62,15 +74,22 @@
   --breakpoint-xl: 1181px;
 
   /* escala tipográfica da Liberty (Inter) */
-  --text-label: 10.5px;
+  --text-label: 11px;
   --text-label--line-height: 1;
   --text-label--letter-spacing: 0.2em;
   --text-label--font-weight: 650;
-  --text-xs: 12px;
+  /* a escala com nomes (U3c): rótulo 11 · legenda 12 · corpo pequeno 13 (14 no celular) · corpo 14 */
+  --text-caption: 12px;
+  --text-caption--line-height: 1.45;
+  --text-body-sm: 13px;
+  --text-body-sm--line-height: 1.45;
+  --text-body: 14px;
+  --text-body--line-height: 1.5;
+  --text-xs: var(--text-caption);
   --text-xs--line-height: 1.45;
-  --text-sm: 13px;
+  --text-sm: var(--text-body-sm);
   --text-sm--line-height: 1.45;
-  --text-base: 14px;
+  --text-base: var(--text-body);
   --text-base--line-height: 1.45;
   --text-md: 15px;
   --text-md--line-height: 1.6;
@@ -168,6 +187,18 @@
  * claro, o encobre de creme) até o texto passar no AA mesmo no mapa mais claro (dust2): o texto
  * fica na parte de baixo, onde o degradê é mais forte. As chips do alto têm fundo próprio.
  */
+/*
+ * A camada de fundo do cartão de servidor: recorta imagem e escurecido de uma vez só, no mesmo raio
+ * do cartão (overflow, clip-path e camada própria para o zoom não criar uma segunda borda).
+ */
+@utility map-layer {
+  overflow: hidden;
+  border-radius: inherit;
+  isolation: isolate;
+  clip-path: inset(0 round var(--radius-2xl));
+  transform: translateZ(0);
+}
+
 @utility map-scrim {
   background: linear-gradient(
     to top,
@@ -311,8 +342,17 @@
     border-radius: 8px;
   }
 
+  /*
+   * Foco do teclado: um anel fino (--focus-ring, 3:1 sobre as superfícies nos dois temas, medido em
+   * lib/focus-contrast.test.ts) só quando o foco vem do teclado (`html[data-kbd]`, ligado por
+   * components/input-modality.tsx). Mouse e toque nunca mostram anel, nem num campo de texto, que o
+   * navegador trata como :focus-visible até depois de um clique.
+   */
   :focus-visible {
-    outline: 2px solid var(--ring);
+    outline: none;
+  }
+  [data-kbd] :focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
     outline-offset: 2px;
   }
 }
@@ -389,18 +429,18 @@
   touch-action: pan-y;
 
   &::-webkit-slider-runnable-track {
-    height: 4px;
+    height: var(--range-h, 4px);
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p));
+    background: var(--range-bg, linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p)));
   }
   &::-moz-range-track {
-    height: 4px;
+    height: var(--range-h, 4px);
     border-radius: 999px;
-    background: linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p));
+    background: var(--range-bg, linear-gradient(90deg, var(--text) var(--p), var(--line) var(--p)));
   }
   &::-webkit-slider-thumb {
     appearance: none;
-    margin-top: -7px;
+    margin-top: calc((var(--range-h, 4px) - 18px) / 2);
     width: 18px;
     height: 18px;
     border-radius: 6px;
@@ -443,10 +483,301 @@
   }
 }
 
-/* ---------- Loadout: o slot que acabou de mudar acende uma vez (S05) ---------- */
-@keyframes slot-flash {
+/* ---------- Loadout: a barra do slot acende uma vez quando ele muda (S05) ---------- */
+@keyframes dock-flash {
   from {
-    box-shadow: inset 0 0 0 1.5px var(--text);
-    background-color: var(--surface-2);
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/*
+ * Campos de texto: regra do dono, fundos em vez de anéis. No foco o campo clareia (o degrau
+ * --fill-focus por dentro do fundo que ele já tem), com uma transição curta; sem contorno do navegador
+ * e sem anel. O foco continua visível (WCAG 2.4.7): o degrau é o mais forte da escala, o texto segue
+ * acima de 4,5:1 e o placeholder sobe para 90% do texto (lib/focus-contrast.test.ts mede os dois
+ * temas). No modo de alto contraste (onde o fundo some) volta o contorno do sistema. Nos campos vale
+ * :focus (não :focus-visible): digitar exige ver onde se está, venha o foco do mouse, do teclado ou de
+ * um script (o "Alterar nome" foca o campo).
+ *
+ * Fora das camadas de propósito: vale para todo campo, mesmo os que trazem `transition-colors` ou
+ * `hover:bg-*` próprios (uma regra de camada perderia para os utilitários do Tailwind).
+ */
+:is(
+  input:not(
+    [type="checkbox"],
+    [type="radio"],
+    [type="range"],
+    [type="file"],
+    [type="button"],
+    [type="submit"],
+    [type="reset"],
+    [type="image"],
+    [type="color"],
+    [type="hidden"]
+  ),
+  textarea,
+  select
+) {
+  transition:
+    box-shadow var(--dur-fast) var(--ease-std),
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std),
+    outline-color var(--dur-fast) var(--ease-std);
+
+  &:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 100vmax var(--fill-focus);
+  }
+
+  &:focus::placeholder {
+    color: color-mix(in srgb, var(--text) 90%, transparent);
+  }
+
+  /* O fundo que clareia não chega a 3:1: com o teclado, o anel fino entra também no campo. */
+  [data-kbd] &:focus-visible {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  /*
+   * Exceção do dono para o Label Input (components/ui/label-input.tsx) e para o número ao lado dos sliders
+   * (`data-field-ring`): o campo de texto padrão ganha o anel
+   * fino da marca (--focus-ring, 3:1 nos dois temas) em qualquer foco, do mouse ou do teclado, colado ao
+   * campo e somado ao degrau de fundo. Com erro o anel é o --status-danger.
+   */
+  &:is([data-label-input], [data-field-ring]):focus {
+    outline: var(--focus-ring-width) solid var(--focus-ring);
+    outline-offset: 0;
+  }
+
+  &:is([data-label-input], [data-field-ring])[aria-invalid="true"]:focus {
+    outline-color: var(--status-danger);
+  }
+
+  @media (forced-colors: active) {
+    &:focus {
+      outline: 2px solid CanvasText;
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* Um grupo cujo controle de dentro (rádio escondido) recebeu o foco do teclado ganha o anel no grupo. */
+[data-kbd] .kbd-ring-within:has(:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/*
+ * Texto de apoio que pode cair sobre o fundo de uma linha selecionada ou de um botão com fundo: o
+ * --muted sozinho ali passa de 4,5:1 só sobre a superfície, não sobre o degrau --fill-active.
+ */
+@utility muted-on-fill {
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+}
+
+/* ---------- paleta de comandos (Ctrl+K): entra com um deslocamento curto e sai mais rápida ---------- */
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+    scale: 0.985;
+  }
+}
+
+@keyframes palette-out {
+  to {
+    opacity: 0;
+    translate: 0 -4px;
+    scale: 0.99;
+  }
+}
+
+@keyframes palette-sheet-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}
+
+@keyframes palette-sheet-out {
+  to {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@keyframes palette-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes palette-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.palette-overlay[data-state="open"] {
+  animation: palette-fade-in var(--dur-base) var(--ease-out);
+}
+
+.palette-overlay[data-state="closed"] {
+  animation: palette-fade-out var(--dur-fast) var(--ease-in) forwards;
+}
+
+.palette-panel[data-state="open"] {
+  animation: palette-in var(--dur-base) var(--ease-out);
+}
+
+.palette-panel[data-state="closed"] {
+  animation: palette-out var(--dur-fast) var(--ease-in) forwards;
+}
+
+/* o mesmo ponto do `md` do Tailwind (768 px): tela cheia no celular */
+@media (max-width: 767.98px) {
+  .palette-panel[data-state="open"] {
+    animation-name: palette-sheet-in;
+  }
+
+  .palette-panel[data-state="closed"] {
+    animation-name: palette-sheet-out;
+  }
+}
+
+/* movimento reduzido: só o fade, sem deslocamento nem escala */
+@media (prefers-reduced-motion: reduce) {
+  .palette-panel[data-state="open"] {
+    animation-name: palette-fade-in;
+    animation-duration: var(--dur-fast);
+  }
+
+  .palette-panel[data-state="closed"] {
+    animation-name: palette-fade-out;
+  }
+}
+
+/* destino de um link com âncora (a busca leva ao cartão do servidor): um véu de fundo que se desfaz */
+@keyframes target-veil {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.target-veil:target::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  border-radius: inherit;
+  background: var(--fill-selected);
+  pointer-events: none;
+  animation: target-veil 1400ms var(--ease-out) 200ms forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .target-veil:target::after {
+    animation-duration: 600ms;
+  }
+}
+
+/* ---------- painéis de prévia do header (U3e): o painel desliza na direção do movimento e ajusta a altura ---------- */
+.nav-viewport {
+  width: var(--radix-navigation-menu-viewport-width);
+  height: var(--radix-navigation-menu-viewport-height);
+  transition:
+    width var(--dur-base) var(--ease-out),
+    height var(--dur-base) var(--ease-out);
+}
+
+@keyframes nav-panel-in {
+  from {
+    opacity: 0;
+    translate: 0 -6px;
+    scale: 0.985;
+  }
+}
+
+@keyframes nav-panel-out {
+  to {
+    opacity: 0;
+    translate: 0 -4px;
+    scale: 0.99;
+  }
+}
+
+@keyframes nav-from-start {
+  from {
+    opacity: 0;
+    translate: -2.5rem 0;
+  }
+}
+
+@keyframes nav-from-end {
+  from {
+    opacity: 0;
+    translate: 2.5rem 0;
+  }
+}
+
+@keyframes nav-to-start {
+  to {
+    opacity: 0;
+    translate: -2.5rem 0;
+  }
+}
+
+@keyframes nav-to-end {
+  to {
+    opacity: 0;
+    translate: 2.5rem 0;
+  }
+}
+
+.nav-viewport[data-state="open"] {
+  animation: nav-panel-in var(--dur-base) var(--ease-out);
+}
+
+.nav-viewport[data-state="closed"] {
+  animation: nav-panel-out var(--dur-fast) var(--ease-in) forwards;
+}
+
+.nav-content[data-motion="from-start"] {
+  animation: nav-from-start var(--dur-base) var(--ease-out);
+}
+
+.nav-content[data-motion="from-end"] {
+  animation: nav-from-end var(--dur-base) var(--ease-out);
+}
+
+.nav-content[data-motion="to-start"] {
+  animation: nav-to-start var(--dur-fast) var(--ease-in) forwards;
+}
+
+.nav-content[data-motion="to-end"] {
+  animation: nav-to-end var(--dur-fast) var(--ease-in) forwards;
+}
+
+/* movimento reduzido: só o fade, e o painel muda de altura de uma vez */
+@media (prefers-reduced-motion: reduce) {
+  .nav-viewport {
+    transition: none;
+  }
+
+  .nav-viewport[data-state="open"],
+  .nav-content[data-motion^="from-"] {
+    animation: palette-fade-in var(--dur-fast) var(--ease-out);
+  }
+
+  .nav-viewport[data-state="closed"],
+  .nav-content[data-motion^="to-"] {
+    animation: palette-fade-out var(--dur-fast) var(--ease-in) forwards;
   }
 }

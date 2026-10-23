@@ -8,6 +8,7 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { useSession } from '@/components/session/session-provider';
 import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { settingsHref } from '@/lib/settings-nav';
 
 type Loaded =
   | { kind: 'loaded'; status: DiscordLinkStatus }
@@ -53,12 +54,12 @@ function readStatus(body: unknown): DiscordLinkStatus | null {
 }
 
 /**
- * Vínculo do Discord (S15), só para o dono do Perfil. É um vínculo, não um login: a Steam segue
- * sendo a única autenticação. O botão leva ao Discord por navegação (a API cuida do `state`); sem a
- * integração configurada, ele aparece desabilitado.
+ * Vínculo do Discord (S15), em Configurações > Conexões. É um vínculo, não um login: a Steam segue
+ * sendo a única autenticação. O botão leva ao Discord por navegação (a API cuida do `state`) e
+ * volta para Configurações > Conexões; sem a integração configurada, aparece o selo "Em breve".
  */
 export function DiscordSetting() {
-  const t = useTranslations('profile.settings.discord');
+  const t = useTranslations('settings.discord');
   const { account, mutate } = useSession();
   const [loaded, setLoaded] = useState<Loaded>({ kind: 'loading' });
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -107,17 +108,17 @@ export function DiscordSetting() {
   }
 
   const status = loaded.kind === 'loaded' ? loaded.status : null;
-  const returnTo = encodeURIComponent(`/${account.publicId}`);
+  const returnTo = encodeURIComponent(settingsHref('conexoes'));
 
   return (
     <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="discord-setting">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="grid min-w-0 gap-0.5">
-          <h3 className="flex items-center gap-2 text-[14px] font-semibold">
+          <h3 className="flex items-center gap-2 text-body font-semibold">
             <BrandIcon icon={siDiscord} size={15} />
             {t('title')}
           </h3>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-body-sm text-muted-foreground">
             {status?.link ? t('linked', { username: status.link.username }) : t('description')}
           </p>
         </div>
@@ -146,20 +147,22 @@ export function DiscordSetting() {
             </a>
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" disabled data-testid="discord-link-disabled">
-            {t('link')}
-          </Button>
+          // Sem a integração ligada não há o que clicar: em vez de um botão apagado (que parece
+          // quebrado), um selo "Em breve" que a leitura de tela anuncia como texto.
+          <span
+            className="rounded-sm bg-surface-2 px-2 py-1 label-caps text-[11px] text-muted-foreground"
+            data-testid="discord-soon"
+          >
+            {t('soon')}
+          </span>
         )}
       </div>
 
-      {status && !status.enabled && !status.link ? (
-        <p className="text-[12.5px] text-muted-foreground">{t('unavailable')}</p>
-      ) : null}
       {loaded.kind === 'failed' ? <FieldError>{t('loadFailed')}</FieldError> : null}
 
       <div aria-live="polite">
         {notice?.tone === 'ok' ? (
-          <p className="text-[13px]" data-testid="discord-notice">
+          <p className="text-body-sm" data-testid="discord-notice">
             {t(`results.${notice.text}`)}
           </p>
         ) : null}

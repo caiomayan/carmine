@@ -121,11 +121,15 @@ const E2E_LAST_FRIEND = 76561198000000999n;
 /**
  * Regra fixa de amizades da Steam falsa do E2E: os SteamID64 de ...0001 a ...0999 são todos
  * amigos entre si (e de qualquer outro SteamID); as duas exceções dão os outros estados do bloco.
+ * Quem tem a lista privada (…9001) está na lista de todos eles: a amizade é mútua, então o
+ * bloco o acha pelas listas de quem está jogando.
  */
 export function e2eFriendList(steamId: string): FakeFriendList {
   if (steamId === E2E_PRIVATE_FRIENDS_STEAM_ID) return 'private';
   if (steamId === E2E_FRIENDS_ERROR_STEAM_ID) return 'error';
   const friends: string[] = [];
+  const inRange = BigInt(steamId) >= E2E_FIRST_FRIEND && BigInt(steamId) <= E2E_LAST_FRIEND;
+  if (inRange) friends.push(E2E_PRIVATE_FRIENDS_STEAM_ID);
   for (let id = E2E_FIRST_FRIEND; id <= E2E_LAST_FRIEND; id++) {
     if (id.toString() !== steamId) friends.push(id.toString());
   }

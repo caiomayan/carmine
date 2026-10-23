@@ -12,7 +12,7 @@ import type { InventoryCardData } from '../inventory/cards';
  * catálogo já resolvidos (a cs2-lib não vai para o navegador). Tipos sem dependência da lib.
  */
 
-/** Grupos da tela: faca, luvas, agente e music kit ficam juntos no alto (`gear`). */
+/** Grupos dos slots: faca, luvas, agente e kit de música são `gear` (o quadro os põe na última coluna). */
 export const SLOT_VIEW_GROUPS = [
   'gear',
   'secondary',

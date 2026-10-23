@@ -140,4 +140,13 @@ describe('vitrine do Loadout no Perfil', () => {
     const showcase = buildShowcase([{ slot: 'musicKit', side: null, item: { id: 1781 } }]);
     expect(showcase[0]?.sides).toEqual([]);
   });
+
+  it('armas e facas põem o nome da skin primeiro; os demais Itens, não', () => {
+    const showcase = buildShowcase([
+      { slot: 'knife', side: 'ct', item: { id: KARAMBIT_FADE } },
+      { slot: 'weapon_ak47', side: 't', item: { id: AK_REDLINE } },
+      { slot: 'musicKit', side: null, item: { id: 1781 } },
+    ]);
+    expect(showcase.map((entry) => entry.skinFirst)).toEqual([true, true, false]);
+  });
 });

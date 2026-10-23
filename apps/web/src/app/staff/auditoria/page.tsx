@@ -7,8 +7,9 @@ import {
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLog } from '@/components/staff/audit-log';
-import { Field, Select, TextInput } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
+import { LabelSelect } from '@/components/ui/label-select';
 import { getServerSession, readStaff } from '@/lib/api-server';
 
 type SearchParams = Promise<Record<'acao' | 'autor' | 'alvo', string | string[] | undefined>>;
@@ -45,7 +46,7 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
         <h2 id="log" className="text-lg font-semibold">
           {t('title')}
         </h2>
-        <p className="text-[13px] text-muted-foreground">{t('subtitle')}</p>
+        <p className="text-body-sm text-muted-foreground">{t('subtitle')}</p>
       </div>
       <form
         action="/staff/auditoria"
@@ -53,47 +54,38 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
         aria-label={t('filters')}
         className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
       >
-        <Field id="acao" label={t('filter')}>
-          <Select id="acao" name="acao" defaultValue={filters.action ?? ''}>
-            <option value="">{t('allActions')}</option>
-            {staffAuditActionSchema.options.map((value) => (
-              <option key={value} value={value}>
-                {t(`actions.${value}`)}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field
+        <LabelSelect
+          label={t('filter')}
+          id="acao"
+          name="acao"
+          defaultValue={filters.action ?? ''}
+          emptyLabel={t('allActions')}
+          options={staffAuditActionSchema.options.map((value) => ({
+            value,
+            label: t(`actions.${value}`),
+          }))}
+        />
+        <LabelInput
           id="autor"
           label={t('actor')}
           error={actorRaw && !actorOk ? t('steamIdInvalid') : undefined}
-        >
-          <TextInput
-            id="autor"
-            name="autor"
-            inputMode="numeric"
-            defaultValue={actorRaw}
-            placeholder={t('steamIdPlaceholder')}
-            aria-invalid={(actorRaw && !actorOk) || undefined}
-            className="tabular-nums"
-          />
-        </Field>
-        <Field
+          name="autor"
+          inputMode="numeric"
+          defaultValue={actorRaw}
+          placeholder={t('steamIdPlaceholder')}
+          className="tabular-nums"
+        />
+        <LabelInput
           id="alvo"
           label={t('target')}
           error={targetRaw && !targetOk ? t('steamIdInvalid') : undefined}
-        >
-          <TextInput
-            id="alvo"
-            name="alvo"
-            inputMode="numeric"
-            defaultValue={targetRaw}
-            placeholder={t('steamIdPlaceholder')}
-            aria-invalid={(targetRaw && !targetOk) || undefined}
-            className="tabular-nums"
-          />
-        </Field>
-        <Button type="submit" variant="ghost" className="bg-surface-2 hover:bg-line">
+          name="alvo"
+          inputMode="numeric"
+          defaultValue={targetRaw}
+          placeholder={t('steamIdPlaceholder')}
+          className="tabular-nums"
+        />
+        <Button type="submit" variant="ghost">
           {t('apply')}
         </Button>
       </form>

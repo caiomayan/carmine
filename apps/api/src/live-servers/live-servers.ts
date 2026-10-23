@@ -1,4 +1,4 @@
-import type { LiveServerList, ServerHeartbeat } from '@carmine/contracts';
+import type { LiveServer, LiveServerList, ServerHeartbeat } from '@carmine/contracts';
 import { Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import type { GameServerRegistry } from '../game-servers/game-server-registry.js';
 import { buildLiveServerList } from './live-server-list.js';
@@ -68,20 +68,37 @@ export class LiveServers implements OnModuleInit, OnApplicationShutdown {
    */
   async whereArePlaying(steamIds: Iterable<string>): Promise<Map<string, string>> {
     const wanted = new Set(steamIds);
-    const playing = new Map<string, string>();
     if (wanted.size === 0) {
-      return playing;
+      return new Map();
     }
+    const playing = await this.playingNow();
+    for (const steamId of playing.keys()) {
+      if (!wanted.has(steamId)) playing.delete(steamId);
+    }
+    return playing;
+  }
+
+  /** Todo SteamID64 que está jogando agora (num servidor que não está offline) → id do servidor. */
+  async playingNow(): Promise<Map<string, string>> {
+    const playing = new Map<string, string>();
     const servers = await this.registry.list();
     const presences = await this.presence.readAll(servers.map((server) => server.id));
     const now = this.now().getTime();
     for (const [serverId, presence] of presences) {
       if (now - presence.at.getTime() >= this.options.offlineAfterMs) continue;
-      for (const steamId of presence.players) {
-        if (wanted.has(steamId)) playing.set(steamId, serverId);
-      }
+      for (const steamId of presence.players) playing.set(steamId, serverId);
     }
     return playing;
+  }
+
+  /** O servidor onde este SteamID64 está jogando agora (não offline), ou `null`. */
+  async serverOf(steamId: string): Promise<LiveServer | null> {
+    const serverId = (await this.whereArePlaying([steamId])).get(steamId);
+    if (serverId === undefined) {
+      return null;
+    }
+    const { servers } = await this.current();
+    return servers.find((server) => server.id === serverId) ?? null;
   }
 
   /**

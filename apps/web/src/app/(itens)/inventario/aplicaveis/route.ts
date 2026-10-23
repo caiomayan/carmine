@@ -3,7 +3,9 @@ import { CATALOG_PAGE_SIZE, searchAttachments } from '@/lib/catalog/catalog';
 import { RARITIES, type Rarity } from '@/lib/catalog/types';
 
 /**
- * Busca de stickers e charms para aplicar numa skin (`?tipo=sticker|charm&q=&categoria=&mostrar=`).
+ * Busca de stickers e charms para aplicar numa skin (`?tipo=sticker|charm&q=&categoria=&mostrar=&v=`;
+ * `v` é `ATTACHMENTS_PAYLOAD_VERSION`, só para separar o cache de formatos antigos; um teste
+ * trava o formato contra a versão).
  * Responde do catálogo da cs2-lib, no servidor do web: os dados da lib não vão para o navegador.
  * Não é rota da API (que vive em /api): o catálogo é público e não depende da Conta.
  */

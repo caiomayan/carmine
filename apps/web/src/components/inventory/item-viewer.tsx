@@ -45,7 +45,7 @@ export function ItemViewer({
   always2d: boolean;
   stickers: AttachmentLabel[];
   charm: AttachmentLabel | null;
-  /** Sticker ou charm que a pessoa está arrastando no 3D (o resto fica parado). */
+  /** Sticker ou chaveiro que o 3D deixa arrastar agora (fora dele, arrastar gira a arma). */
   selection?: ViewerSelection;
   /** O Item depois de um arrasto no 3D (o evento `change` do viewer). */
   onMove?: (item: Cs2Item) => void;
@@ -138,9 +138,10 @@ export function ItemViewer({
       data-testid="item-viewer"
       data-mode={state.mode}
       data-phase={phase ?? undefined}
-      className="relative isolate grid overflow-hidden rounded-xl bg-surface [background-image:repeating-linear-gradient(135deg,transparent_0_11px,color-mix(in_srgb,var(--text)_3.5%,transparent)_11px_12px)]"
+      className="relative isolate grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl bg-surface [background-image:repeating-linear-gradient(135deg,transparent_0_11px,color-mix(in_srgb,var(--text)_3.5%,transparent)_11px_12px)]"
     >
-      <div className="grid aspect-4/3 place-items-center [grid-area:1/1] max-lg:aspect-16/10">
+      {/* min-w-0: a caixa com proporção deriva a largura mínima da altura do conteúdo (imagem e stickers) e passava da coluna no celular. */}
+      <div className="grid aspect-4/3 min-w-0 place-items-center [grid-area:1/1] max-lg:aspect-16/10">
         <div
           className={cn(
             'grid w-[78%] justify-items-center gap-4 transition-opacity duration-(--dur-slow) ease-std',
@@ -212,7 +213,17 @@ export function ItemViewer({
             {t('loading')}
           </span>
         ) : ready ? (
-          <span>{selection ? t('dragHint') : t('hint')}</span>
+          <span className="grid gap-0.5">
+            <span>
+              <span className="pointer-coarse:hidden">{t('hint')}</span>
+              <span className="hidden pointer-coarse:inline">{t('hintTouch')}</span>
+            </span>
+            {selection ? (
+              <span className="pointer-coarse:hidden" data-testid="viewer-drag-hint">
+                {t('dragHint')}
+              </span>
+            ) : null}
+          </span>
         ) : (
           <span />
         )}
@@ -224,7 +235,7 @@ export function ItemViewer({
           data-testid="viewer-fallback"
           data-reason={reason}
           data-icon-trigger
-          className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-background/85 px-3 py-2 text-[12.5px] animate-fade-up"
+          className="absolute top-3 left-3 right-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-background/85 px-3 py-2 text-body-sm animate-fade-up"
         >
           <AnimatedIcon icon={HistoryIcon} size={14} className="text-status-info" />
           <span className="min-w-0 flex-1">{t(`reasons.${reason}`)}</span>

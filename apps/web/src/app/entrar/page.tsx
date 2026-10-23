@@ -64,7 +64,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
           </Button>
         </div>
 
-        <div className="grid animate-fade-up gap-2 text-[13px] leading-[1.6] text-muted-foreground [animation-delay:120ms]">
+        <div className="grid animate-fade-up gap-2 text-body-sm leading-[1.6] text-muted-foreground [animation-delay:120ms]">
           <p>{t('steamNote')}</p>
           <p>{t('claimNote')}</p>
         </div>
@@ -112,7 +112,7 @@ function Notice({ tone, children }: { tone: 'danger' | 'info'; children: React.R
     <div
       role={tone === 'danger' ? 'alert' : 'status'}
       data-icon-trigger
-      className="grid animate-fade-up grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-lg bg-surface px-4 py-3.5 text-[13.5px] leading-[1.55]"
+      className="grid animate-fade-up grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-lg bg-surface px-4 py-3.5 text-body-sm leading-[1.55]"
     >
       <AnimatedIcon
         icon={tone === 'danger' ? BadgeAlertIcon : HistoryIcon}

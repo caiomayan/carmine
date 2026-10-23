@@ -11,8 +11,13 @@ import {
 import { SearchIcon } from '@/components/icons/animated/search';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { Combobox } from '@/components/ui/combobox';
 import type { AttachmentEntry, AttachmentPage } from '@/lib/catalog/catalog';
-import { type AttachmentType, CATALOG_PAGE_SIZE } from '@/lib/catalog/types';
+import {
+  ATTACHMENTS_PAYLOAD_VERSION,
+  type AttachmentType,
+  CATALOG_PAGE_SIZE,
+} from '@/lib/catalog/types';
 import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { RarityDot } from './item-tile';
 
@@ -57,7 +62,11 @@ export function AttachmentPicker({
   useEffect(() => {
     if (!open) return;
     const controller = new AbortController();
-    const params = new URLSearchParams({ tipo: type, mostrar: String(limit) });
+    const params = new URLSearchParams({
+      tipo: type,
+      mostrar: String(limit),
+      v: ATTACHMENTS_PAYLOAD_VERSION,
+    });
     if (debounced) params.set('q', debounced);
     if (category) params.set('categoria', category);
     setStatus('loading');
@@ -118,39 +127,22 @@ export function AttachmentPicker({
               autoComplete="off"
               spellCheck={false}
               data-testid="picker-search"
-              className="min-h-(--tap) w-full rounded-md bg-surface-2 pr-3 pl-9 text-[14px] placeholder:text-muted-foreground"
+              className="min-h-(--tap) w-full rounded-md bg-surface-2 pr-3 pl-9 text-body placeholder:text-muted-foreground"
             />
           </div>
           {type === 'sticker' && page && page.facets.categories.length > 0 ? (
-            <div className="relative">
+            <div>
               <label htmlFor={categoryId} className="sr-only">
                 {t('category')}
               </label>
-              <select
+              <Combobox
                 id={categoryId}
                 value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                className="min-h-(--tap) w-full appearance-none truncate rounded-md bg-surface-2 pr-8 pl-3 text-[14px]"
-              >
-                <option value="">{t('allCategories')}</option>
-                {page.facets.categories.map((value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                ))}
-              </select>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+                onValueChange={setCategory}
+                emptyLabel={t('allCategories')}
+                triggerClassName="bg-surface-2 text-body hover:bg-line"
+                options={page.facets.categories}
+              />
             </div>
           ) : null}
         </div>
@@ -158,7 +150,7 @@ export function AttachmentPicker({
         <div className="-mx-1 min-h-48 overflow-y-auto overscroll-contain px-1 pb-1">
           {status === 'failed' ? (
             <div role="alert" className="grid justify-items-center gap-3 py-10 text-center">
-              <p className="text-[13.5px]">{t('failed')}</p>
+              <p className="text-body-sm">{t('failed')}</p>
               <Button variant="ghost" size="sm" onClick={() => setAttempt((n) => n + 1)}>
                 {t('retry')}
               </Button>
@@ -170,7 +162,7 @@ export function AttachmentPicker({
               ))}
             </ul>
           ) : items.length === 0 ? (
-            <p className="py-10 text-center text-[13.5px] text-muted-foreground">{t('empty')}</p>
+            <p className="py-10 text-center text-body-sm text-muted-foreground">{t('empty')}</p>
           ) : (
             <>
               <ul className="grid grid-cols-4 gap-2 max-md:grid-cols-3">

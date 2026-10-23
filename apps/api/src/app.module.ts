@@ -12,6 +12,7 @@ import { DiscordModule } from './discord/discord.module.js';
 import { EquippedModule } from './equipped/equipped.module.js';
 import { FriendsModule } from './friends/friends.module.js';
 import { GameServersModule } from './game-servers/game-servers.module.js';
+import { HeaderPreviewsModule } from './header-previews/header-previews.module.js';
 import { HealthModule } from './health/health.module.js';
 import { InventoryModule } from './inventory/inventory.module.js';
 import { LiveServersModule } from './live-servers/live-servers.module.js';
@@ -49,6 +50,7 @@ export class AppModule {
         AlertsModule,
         DiscordModule,
         StatsModule,
+        HeaderPreviewsModule,
         ReportsModule,
       ],
     };

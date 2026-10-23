@@ -5,7 +5,7 @@ import type { Route } from 'next';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { siSteam } from 'simple-icons';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
 import { HistoryIcon } from '@/components/icons/animated/history';
@@ -16,6 +16,7 @@ import { useEquip } from '@/components/loadout/use-equip';
 import { useSession } from '@/components/session/session-provider';
 import { useDraft } from '@/components/session/use-draft';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { signInHref } from '@/lib/auth-links';
 import type { ItemSpec } from '@/lib/catalog/catalog';
 import { loadContracts } from '@/lib/contracts-schemas';
@@ -34,8 +35,9 @@ import {
   validateForm,
 } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
+import { dragReducer, initialDragState, selectionFor } from '@/lib/viewer/drag-selection';
 import { CharmEditor, StickersEditor } from './attachments-editor';
-import { DecimalInput, describedBy, FieldShell, FloatField, TextInput } from './editor-fields';
+import { DecimalInput, FieldShell, FloatField, VipLock } from './editor-fields';
 import { useInventory } from './inventory-provider';
 import { ItemViewer } from './item-viewer';
 
@@ -94,11 +96,10 @@ export function ItemEditor(props: EditorProps) {
   const [saving, setSaving] = useState(false);
   const [attempted, setAttempted] = useState(false);
   const [removing, setRemoving] = useState(false);
-  // Arrasto no 3D (última tarefa da S04): um sticker ou o charm por vez, só com o 3D pronto.
+  // Arrasto no 3D: o viewer só arrasta o que está selecionado; a seleção segue o foco das
+  // linhas de sticker e de chaveiro, sem botão de modo (lib/viewer/drag-selection.ts).
   const [viewerReady, setViewerReady] = useState(false);
-  const [dragging, setDragging] = useState<
-    { kind: 'sticker'; index: number } | { kind: 'keychain'; index: 0 } | null
-  >(null);
+  const [dragState, dispatchDrag] = useReducer(dragReducer, initialDragState);
   const formRef = useRef<HTMLFormElement>(null);
   const hydrated = useHydrated();
   const barEnd = useRef<HTMLDivElement>(null);
@@ -122,6 +123,11 @@ export function ItemEditor(props: EditorProps) {
     () => formToItem(formSpec, form, props.saved),
     [formSpec, form, props.saved],
   );
+  const dragSelection = selectionFor(dragState, {
+    ready: viewerReady,
+    stickers: form.stickers.length,
+    hasCharm: form.charm !== null,
+  });
   const dirty = useMemo(
     () => JSON.stringify(item) !== JSON.stringify(formToItem(formSpec, initial, props.saved)),
     [item, formSpec, initial, props.saved],
@@ -214,7 +220,7 @@ export function ItemEditor(props: EditorProps) {
       data-testid="item-editor"
       data-hydrated={hydrated || undefined}
     >
-      <div className="sticky top-[calc(var(--hdr-h)+20px)] max-lg:static">
+      <div className="sticky top-[calc(var(--hdr-h)+20px)] min-w-0 max-lg:static">
         <ItemViewer
           item={item}
           name={entry.name}
@@ -222,7 +228,7 @@ export function ItemEditor(props: EditorProps) {
           always2d={spec.viewer === '2d'}
           stickers={form.stickers}
           charm={form.charm}
-          selection={viewerReady ? dragging : null}
+          selection={dragSelection}
           onReadyChange={setViewerReady}
           onMove={(moved) => {
             const next = positionsFromViewer(formSpec, form, moved);
@@ -236,7 +242,29 @@ export function ItemEditor(props: EditorProps) {
         onSubmit={submit}
         noValidate
         // Um campo que recebe foco rola acima da barra fixa de salvar, com o texto de ajuda dele.
-        className="grid gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
+        onFocus={(event) => {
+          // Foco num campo fora do bloco de stickers e chaveiro: o 3D deixa de arrastar (só
+          // gira). Janelas e listas (o seletor de sticker, o Select) abrem fora do formulário.
+          const target = event.target as HTMLElement;
+          if (!target.closest('[data-drag-block], [role="dialog"], [role="listbox"]')) {
+            dispatchDrag({ type: 'leave' });
+          }
+        }}
+        onBlur={(event) => {
+          // O foco foi para fora do formulário (o menu, um link): também é sair do bloco. Clicar
+          // no próprio 3D não conta (o foco vai para o iframe e a seleção tem de ficar), nem
+          // as janelas e listas que abrem fora do formulário.
+          const next = event.relatedTarget as HTMLElement | null;
+          if (
+            next &&
+            !event.currentTarget.contains(next) &&
+            next.dataset.testid !== 'viewer-iframe' &&
+            !next.closest('[role="dialog"], [role="listbox"]')
+          ) {
+            dispatchDrag({ type: 'leave' });
+          }
+        }}
+        className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
         {draft.restored ? (
@@ -267,7 +295,7 @@ export function ItemEditor(props: EditorProps) {
         ) : null}
 
         {!hasAttributes ? (
-          <p className="text-[13.5px] text-muted-foreground">{t('noAttributes')}</p>
+          <p className="text-body-sm text-muted-foreground">{t('noAttributes')}</p>
         ) : null}
 
         {spec.wear ? (
@@ -282,79 +310,74 @@ export function ItemEditor(props: EditorProps) {
         {spec.seed || spec.statTrak ? (
           <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
             {spec.seed ? (
-              <FieldShell
+              <DecimalInput
                 id={seedId}
                 label={t('seed')}
                 hint={t('seedRange', { min: spec.seed.min, max: spec.seed.max })}
                 error={issueOf('seed') && errorText(issueOf('seed') as FormIssue)}
-              >
-                <DecimalInput
-                  id={seedId}
-                  value={form.seed}
-                  decimals={0}
-                  invalid={!!issueOf('seed')}
-                  describedBy={describedBy(seedId, { error: issueOf('seed'), hint: true })}
-                  onChange={(seed) => change({ seed: seed ?? Number.NaN })}
-                  testId="field-seed"
-                />
-              </FieldShell>
+                value={form.seed}
+                decimals={0}
+                invalid={!!issueOf('seed')}
+                onChange={(seed) => change({ seed: seed ?? Number.NaN })}
+                testId="field-seed"
+              />
             ) : null}
             {spec.statTrak ? (
               <FieldShell
                 id={statTrakId}
                 label={t('statTrak')}
                 locked={!vip ? t('vipLocked') : undefined}
+                lockedBadge={t('vipBadge')}
                 error={
                   visibleIssues.some((i) => i.field === 'statTrak')
                     ? errorText(issueOf('statTrak') as FormIssue)
                     : undefined
                 }
               >
-                <div className="flex h-(--tap) items-center justify-between gap-3 rounded-md bg-surface-2 px-3">
-                  <span aria-hidden="true" className="text-[14px]">
+                {/* A faixa inteira liga e desliga: o alvo de toque é ela, não os 36 px do interruptor. */}
+                <label
+                  htmlFor={statTrakId}
+                  className="flex h-(--tap) cursor-pointer items-center justify-between gap-3 rounded-md bg-surface-2 px-3"
+                >
+                  <span aria-hidden="true" className="text-body">
                     {form.statTrak ? t('statTrakOn') : t('statTrakOff')}
                   </span>
                   <Switch
                     id={statTrakId}
                     checked={form.statTrak}
                     onCheckedChange={(statTrak) => change({ statTrak })}
-                    aria-describedby={describedBy(statTrakId, { locked: !vip })}
+                    // Alvo de toque de 44 px: a área clicável passa do desenho do interruptor (36×20).
+                    className="after:absolute after:-inset-x-1.5 after:-inset-y-3.5 after:content-['']"
                     data-testid="field-stattrak"
                   />
-                </div>
+                </label>
               </FieldShell>
             ) : null}
           </div>
         ) : null}
 
         {spec.nameTag ? (
-          <FieldShell
+          <LabelInput
             id={nameTagId}
-            label={t('nameTag')}
+            label={
+              <span className="inline-flex items-center gap-1.5">
+                {t('nameTag')}
+                {!vip ? <VipLock locked={t('vipLocked')} badge={t('vipBadge')} /> : null}
+              </span>
+            }
             hint={t('nameTagHint')}
-            locked={!vip ? t('vipLocked') : undefined}
             error={
               visibleIssues.some((i) => i.field === 'nameTag')
                 ? errorText(issueOf('nameTag') as FormIssue)
                 : undefined
             }
-          >
-            <TextInput
-              id={nameTagId}
-              value={form.nameTag}
-              maxLength={20}
-              placeholder={t('nameTagPlaceholder')}
-              autoComplete="off"
-              aria-invalid={visibleIssues.some((i) => i.field === 'nameTag') || undefined}
-              aria-describedby={describedBy(nameTagId, {
-                error: visibleIssues.some((i) => i.field === 'nameTag'),
-                hint: true,
-                locked: !vip,
-              })}
-              onChange={(event) => change({ nameTag: event.target.value })}
-              data-testid="field-nametag"
-            />
-          </FieldShell>
+            value={form.nameTag}
+            maxLength={20}
+            placeholder={t('nameTagPlaceholder')}
+            autoComplete="off"
+            onChange={(event) => change({ nameTag: event.target.value })}
+            data-testid="field-nametag"
+          />
         ) : null}
 
         {spec.stickerSlots > 0 ? (
@@ -365,11 +388,7 @@ export function ItemEditor(props: EditorProps) {
             issues={issues}
             errorText={errorText}
             onChange={(stickers) => change({ stickers })}
-            drag={{
-              available: viewerReady,
-              active: dragging?.kind === 'sticker' ? dragging.index : null,
-              set: (index) => setDragging(index === null ? null : { kind: 'sticker', index }),
-            }}
+            drag={{ selected: dragSelection, dispatch: dispatchDrag }}
           />
         ) : null}
 
@@ -380,11 +399,7 @@ export function ItemEditor(props: EditorProps) {
             issue={issueOf('charm.seed') ?? issues.find((i) => i.field.startsWith('charm'))}
             errorText={errorText}
             onChange={(charm) => change({ charm })}
-            drag={{
-              available: viewerReady,
-              active: dragging?.kind === 'keychain' ? 0 : null,
-              set: (index) => setDragging(index === null ? null : { kind: 'keychain', index: 0 }),
-            }}
+            drag={{ selected: dragSelection, dispatch: dispatchDrag }}
           />
         ) : null}
 
@@ -401,7 +416,7 @@ export function ItemEditor(props: EditorProps) {
           {failure || (attempted && visibleIssues.length > 0) || (itemIssue && !lockedItem) ? (
             <p
               role="alert"
-              className="flex items-start gap-2 text-[13px]"
+              className="flex items-start gap-2 text-body-sm"
               data-testid="editor-alert"
             >
               <span
@@ -527,7 +542,7 @@ function Banner({
       role="status"
       data-testid={testId}
       data-icon-trigger
-      className="flex animate-fade-up items-start gap-3 rounded-lg bg-surface px-4 py-3 text-[13px] leading-[1.55]"
+      className="flex animate-fade-up items-start gap-3 rounded-lg bg-surface px-4 py-3 text-body-sm leading-[1.55]"
     >
       <AnimatedIcon
         icon={icon}

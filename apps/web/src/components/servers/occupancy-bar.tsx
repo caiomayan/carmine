@@ -14,10 +14,14 @@ export const STATE_TONE: Record<LiveServer['state'], StatusTone> = {
  * A barra fina de lotação, decorativa: os jogadores vêm escritos ao lado. Cheia vira listrada,
  * quase cheia ganha a cor de contexto de aviso.
  */
-export function OccupancyBar({ server }: { server: LiveServer }) {
+export function OccupancyBar({
+  server,
+}: {
+  server: Pick<LiveServer, 'players' | 'maxPlayers' | 'state'>;
+}) {
   const { ratio, level } = occupancy(server);
   return (
-    <span aria-hidden="true" className="block h-[3px] overflow-hidden rounded-[2px] bg-line">
+    <span aria-hidden="true" className="block h-(--bar-h) overflow-hidden rounded-[2px] bg-line">
       <span
         className={cn(
           'block h-full origin-left rounded-[2px] transition-[transform,background-color] duration-(--dur-slow) ease-out motion-reduce:transition-none',

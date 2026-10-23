@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { signInHref } from '@/lib/auth-links';
 import { DraftNotice } from './draft-notice';
 import { useSession } from './session-provider';
@@ -55,20 +56,15 @@ export function DraftDemo({ labels }: { labels: DraftDemoLabels }) {
       }}
     >
       {draft.restored ? <DraftNotice labels={labels} onDiscard={draft.discard} /> : null}
-      <div className="grid gap-1.5">
-        <label htmlFor={id} className="text-sm font-semibold">
-          {labels.field}
-        </label>
-        <input
-          id={id}
-          value={draft.value.nametag}
-          onChange={(event) => {
-            setSaved(false);
-            draft.set({ nametag: event.target.value });
-          }}
-          className="min-h-(--tap) rounded-md bg-input px-3 text-base outline-none transition-[box-shadow] duration-(--dur-fast) focus-visible:shadow-[0_0_0_2px_var(--ring)]"
-        />
-      </div>
+      <LabelInput
+        id={id}
+        label={labels.field}
+        value={draft.value.nametag}
+        onChange={(event) => {
+          setSaved(false);
+          draft.set({ nametag: event.target.value });
+        }}
+      />
       <div className="flex items-center gap-3">
         <Button type="submit">{labels.save}</Button>
         <p role="status" className="text-sm text-muted-foreground">

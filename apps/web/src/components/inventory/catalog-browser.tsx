@@ -1,18 +1,32 @@
 'use client';
 
+import { SlidersHorizontalIcon } from 'lucide-react';
 import type { Route } from 'next';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { type ReactNode, useEffect, useId, useRef, useState, useTransition } from 'react';
 import { SearchIcon } from '@/components/icons/animated/search';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
-import { CATALOG_TYPES, type CatalogType, type Rarity } from '@/lib/catalog/types';
+import { Combobox } from '@/components/ui/combobox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { type SelectOption, SimpleSelect } from '@/components/ui/select';
+import {
+  CATALOG_TYPES,
+  type CatalogType,
+  type FacetOption,
+  type Rarity,
+} from '@/lib/catalog/types';
 import { cn } from '@/lib/utils';
 
 export type CatalogBrowserLabels = {
   search: string;
   searchPlaceholder: string;
+  /** O nome da região de busca e filtros. */
+  region: string;
+  /** O botão que abre os filtros de Arma, Raridade e Coleção. */
   filters: string;
+  /** O mesmo botão com filtros ligados: "Filtros ({count})", com o número trocado aqui. */
+  filtersActive: string;
   type: string;
   allTypes: string;
   weapon: string;
@@ -27,12 +41,14 @@ export type CatalogBrowserLabels = {
   rarities: Record<Rarity, string>;
 };
 
-type Facets = { weapons: string[]; collections: string[]; rarities: Rarity[] };
+type Facets = { weapons: FacetOption[]; collections: FacetOption[]; rarities: Rarity[] };
 
 const SEARCH_DELAY_MS = 250;
 
 /**
- * Busca e filtros do catálogo. O estado vive na URL (`?q=&tipo=&arma=&raridade=&colecao=`):
+ * Busca e filtros do catálogo: a busca e o tipo ficam à vista (o tipo é uma linha rolável, com as
+ * bordas esmaecidas no celular) e Arma, Raridade e Coleção moram num Popover "Filtros (n)", para os
+ * controles não passarem de 40% da primeira tela. O estado vive na URL (`?q=&tipo=&arma=&raridade=&colecao=`):
  * dá para voltar, compartilhar e recarregar. Os resultados vêm do servidor (`children`); aqui só
  * se troca a URL, e enquanto o servidor responde os resultados ficam esmaecidos.
  */
@@ -61,6 +77,8 @@ export function CatalogBrowser({
   const rarity = params.get('raridade') ?? '';
   const collection = params.get('colecao') ?? '';
   const filtered = !!(type || weapon || rarity || collection || params.get('q'));
+  // Só os três do Popover contam no botão: a busca e o tipo já estão à vista.
+  const hiddenFilters = [weapon, rarity, collection].filter(Boolean).length;
 
   // Voltar e avançar no navegador trazem outra busca.
   useEffect(() => {
@@ -100,31 +118,79 @@ export function CatalogBrowser({
 
   return (
     <div className="grid gap-5">
-      <search className="grid gap-3" aria-label={labels.filters}>
-        <div className="relative" data-icon-trigger>
-          <label htmlFor={searchId} className="sr-only">
-            {labels.search}
-          </label>
-          <AnimatedIcon
-            icon={SearchIcon}
-            size={16}
-            className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground"
-          />
-          <input
-            id={searchId}
-            type="search"
-            value={query}
-            onChange={(event) => onQuery(event.target.value)}
-            placeholder={labels.searchPlaceholder}
-            autoComplete="off"
-            spellCheck={false}
-            enterKeyHint="search"
-            data-testid="catalog-search"
-            className="min-h-11 w-full rounded-lg bg-surface pr-4 pl-10 text-[14.5px] transition-colors duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-surface-2 focus-visible:bg-surface-2"
-          />
+      <search className="grid gap-3" aria-label={labels.region}>
+        <div className="flex gap-2">
+          <div className="relative min-w-0 flex-1" data-icon-trigger>
+            <label htmlFor={searchId} className="sr-only">
+              {labels.search}
+            </label>
+            <AnimatedIcon
+              icon={SearchIcon}
+              size={16}
+              className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              id={searchId}
+              type="search"
+              value={query}
+              onChange={(event) => onQuery(event.target.value)}
+              placeholder={labels.searchPlaceholder}
+              autoComplete="off"
+              spellCheck={false}
+              enterKeyHint="search"
+              data-testid="catalog-search"
+              className="min-h-11 w-full rounded-lg bg-surface pr-4 pl-10 text-[14.5px] transition-colors duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-surface-2 focus-visible:bg-surface-2"
+            />
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                data-testid="catalog-filters"
+                className="min-h-11 shrink-0 gap-2 rounded-lg px-3.5"
+              >
+                <SlidersHorizontalIcon aria-hidden="true" className="size-4" />
+                <span className="tabular-nums">
+                  {hiddenFilters > 0
+                    ? labels.filtersActive.replace('{count}', String(hiddenFilters))
+                    : labels.filters}
+                </span>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              data-testid="catalog-filters-panel"
+              className="grid w-[min(22rem,calc(100vw-2*var(--mx)))] gap-3 p-3"
+            >
+              <FilterCombobox
+                label={labels.weapon}
+                value={weapon}
+                empty={labels.allWeapons}
+                options={facets.weapons}
+                onChange={(value) => navigate({ arma: value || null, colecao: null })}
+                disabled={facets.weapons.length === 0}
+              />
+              <FilterSelect
+                label={labels.rarity}
+                value={rarity}
+                empty={labels.allRarities}
+                options={facets.rarities.map((r) => ({ value: r, label: labels.rarities[r] }))}
+                onChange={(value) => navigate({ raridade: value || null })}
+              />
+              <FilterCombobox
+                label={labels.collection}
+                value={collection}
+                empty={labels.allCollections}
+                options={facets.collections}
+                onChange={(value) => navigate({ colecao: value || null })}
+                disabled={facets.collections.length === 0}
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
-        <fieldset className="flex flex-wrap items-center gap-1">
+        <fieldset className="flex min-w-0 flex-wrap items-center gap-1 max-md:-mx-(--mx) max-md:flex-nowrap max-md:overflow-x-auto max-md:px-(--mx) max-md:pb-1 max-md:[mask-image:linear-gradient(to_right,transparent,black_var(--mx),black_calc(100%-var(--mx)),transparent)] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden">
           <legend className="sr-only">{labels.type}</legend>
           <TypeButton active={!type} onClick={() => navigate({ tipo: null, arma: null })}>
             {labels.allTypes}
@@ -139,32 +205,6 @@ export function CatalogBrowser({
             </TypeButton>
           ))}
         </fieldset>
-
-        <div className="grid grid-cols-3 gap-2 max-md:grid-cols-1">
-          <FilterSelect
-            label={labels.weapon}
-            value={weapon}
-            empty={labels.allWeapons}
-            options={facets.weapons.map((w) => [w, w])}
-            onChange={(value) => navigate({ arma: value || null, colecao: null })}
-            disabled={facets.weapons.length === 0}
-          />
-          <FilterSelect
-            label={labels.rarity}
-            value={rarity}
-            empty={labels.allRarities}
-            options={facets.rarities.map((r) => [r, labels.rarities[r]])}
-            onChange={(value) => navigate({ raridade: value || null })}
-          />
-          <FilterSelect
-            label={labels.collection}
-            value={collection}
-            empty={labels.allCollections}
-            options={facets.collections.map((c) => [c, c])}
-            onChange={(value) => navigate({ colecao: value || null })}
-            disabled={facets.collections.length === 0}
-          />
-        </div>
 
         {filtered ? (
           <Button
@@ -212,7 +252,7 @@ function TypeButton({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'min-h-(--tap) rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground',
+        'min-h-(--tap) shrink-0 whitespace-nowrap rounded-md px-3.5 text-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground',
         'aria-pressed:bg-surface-2 aria-pressed:font-semibold aria-pressed:text-foreground',
       )}
     >
@@ -221,55 +261,71 @@ function TypeButton({
   );
 }
 
+const labelClass = 'label-caps text-[11px] text-muted-foreground';
+
+/** Filtro de lista curta (Raridade): Select. Valor vazio = sem filtro. */
 function FilterSelect({
   label,
   value,
   empty,
   options,
   onChange,
-  disabled,
 }: {
   label: string;
   value: string;
   empty: string;
-  options: [string, string][];
+  options: SelectOption[];
   onChange: (value: string) => void;
-  disabled?: boolean;
 }) {
   const id = useId();
   return (
     <div className="grid gap-1.5">
-      <label htmlFor={id} className="label-caps text-[10px] text-muted-foreground">
+      <label htmlFor={id} className={labelClass}>
         {label}
       </label>
-      <div className="relative">
-        <select
-          id={id}
-          value={value}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.value)}
-          className="min-h-(--tap) w-full appearance-none truncate rounded-md bg-surface pr-9 pl-3 text-sm transition-colors duration-(--dur-fast) ease-std hover:bg-surface-2 focus-visible:bg-surface-2 disabled:text-faint disabled:hover:bg-surface"
-        >
-          <option value="">{empty}</option>
-          {options.map(([optionValue, optionLabel]) => (
-            <option key={optionValue} value={optionValue}>
-              {optionLabel}
-            </option>
-          ))}
-        </select>
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
-      </div>
+      <SimpleSelect
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        emptyLabel={empty}
+        options={options}
+      />
+    </div>
+  );
+}
+
+/** Filtro de lista longa (Arma, Coleção): Combobox com busca. Valor vazio = sem filtro. */
+function FilterCombobox({
+  label,
+  value,
+  empty,
+  options,
+  onChange,
+  disabled,
+  className,
+}: {
+  label: string;
+  value: string;
+  empty: string;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const id = useId();
+  return (
+    <div className={cn('grid gap-1.5', className)}>
+      <label htmlFor={id} className={labelClass}>
+        {label}
+      </label>
+      <Combobox
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        emptyLabel={empty}
+        disabled={disabled}
+        options={options}
+      />
     </div>
   );
 }

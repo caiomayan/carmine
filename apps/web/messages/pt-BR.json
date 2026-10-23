@@ -5,14 +5,26 @@
     "description": "Servidores comunitários de Counter-Strike 2. Entre, equipe e veja o seu Loadout no jogo."
   },
   "common": {
-    "close": "Fechar"
+    "team": {
+      "equippedIn": {
+        "ct": "Equipada no CT",
+        "t": "Equipada no TR",
+        "both": "Equipada no TR e no CT"
+      }
+    },
+    "close": "Fechar",
+    "cancel": "Cancelar",
+    "combobox": {
+      "search": "Buscar na lista",
+      "empty": "Nada encontrado"
+    }
   },
   "shell": {
     "skipToContent": "Pular para o conteúdo",
     "homeLink": "Carmine, ir para Servidores",
     "mainNav": "Principal",
     "nav": {
-      "servers": "Servidores",
+      "servers": "Jogar",
       "loadout": "Loadout",
       "inventory": "Inventário",
       "ranking": "Ranking"
@@ -54,7 +66,6 @@
         "soon": "Em breve",
         "servers": "{count, plural, =0 {<n>#</n> servidores online} one {<n>#</n> servidor online} other {<n>#</n> servidores online}}",
         "players": "{count, plural, =0 {<n>#</n> jogadores} one {<n>#</n> jogador} other {<n>#</n> jogadores}}",
-        "region": "Servidores em São Paulo",
         "unavailable": "Estado indisponível agora"
       },
       "copyright": "© {year} Carmine. Todos os direitos reservados.",
@@ -65,24 +76,128 @@
       "loading": "Verificando a sua sessão",
       "menu": "Menu da Conta de {name}",
       "profile": "Meu perfil",
+      "inventory": "Inventário",
+      "loadout": "Loadout",
+      "settings": "Configurações",
+      "home": "Início",
+      "vipOne": "VIP · {days} dia",
+      "vipOther": "VIP · {days} dias",
+      "playing": "Jogando agora",
       "firstSteps": "Primeiros passos",
       "staffPanel": "Painel da Staff",
       "signOut": "Sair",
       "signOutFailed": "Não deu para sair agora. Tente de novo em instantes."
     }
   },
+  "search": {
+    "trigger": {
+      "label": "Buscar",
+      "aria": "Buscar páginas, skins, jogadores e servidores",
+      "shortcut": "Atalho: Ctrl K",
+      "shortcutMac": "Atalho: ⌘ K",
+      "keys": "Ctrl K",
+      "keysMac": "⌘K"
+    },
+    "palette": {
+      "title": "Buscar no Carmine",
+      "description": "Páginas, ações, skins, jogadores e servidores. Use as setas para escolher, Enter para abrir e Esc para fechar.",
+      "placeholder": "Buscar páginas, skins, jogadores…",
+      "close": "Fechar a busca",
+      "listLabel": "Resultados"
+    },
+    "groups": {
+      "pages": "Páginas",
+      "actions": "Ações",
+      "inventory": "No seu Inventário",
+      "catalog": "Catálogo",
+      "players": "Jogadores",
+      "servers": "Servidores",
+      "recent": "Buscas recentes"
+    },
+    "recent": {
+      "clear": "Limpar buscas recentes"
+    },
+    "entries": {
+      "servers": {
+        "label": "Jogar",
+        "keywords": "servidores servers partida mapas retake deathmatch início home play"
+      },
+      "inventory": {
+        "label": "Inventário",
+        "keywords": "inventory skins itens adicionar"
+      },
+      "loadout": {
+        "label": "Loadout",
+        "keywords": "equipar armas facas luvas presets"
+      },
+      "ranking": {
+        "label": "Ranking",
+        "keywords": "placar semana classificação leaderboard"
+      },
+      "profile": {
+        "label": "Meu perfil",
+        "keywords": "profile perfil estatísticas"
+      },
+      "settings": {
+        "label": "Configurações",
+        "keywords": "settings ajustes conta nome privacidade discord aparência"
+      },
+      "staff": {
+        "label": "Painel da Staff",
+        "keywords": "staff moderação denúncias painel admin"
+      },
+      "themeToLight": {
+        "label": "Usar tema claro",
+        "keywords": "tema claro escuro aparência theme light dark alternar"
+      },
+      "themeToDark": {
+        "label": "Usar tema escuro",
+        "keywords": "tema claro escuro aparência theme light dark alternar"
+      },
+      "firstSteps": {
+        "label": "Primeiros passos",
+        "keywords": "tutorial começar ajuda guia como funciona"
+      },
+      "signOut": {
+        "label": "Sair",
+        "keywords": "logout encerrar sessão sign out"
+      },
+      "signIn": {
+        "label": "Entrar",
+        "keywords": "login steam conta sign in"
+      }
+    },
+    "hints": {
+      "server": "{players}/{max}",
+      "serverFull": "Lotado",
+      "serverOffline": "Offline"
+    },
+    "status": {
+      "count": "{count, plural, =0 {Nenhum resultado} one {# resultado} other {# resultados}}",
+      "loading": "Buscando…",
+      "empty": "Nada encontrado para “{query}”.",
+      "emptyHint": "Confira a ortografia ou tente outro nome. Skins também se acham em inglês.",
+      "error": "Não deu para buscar agora.",
+      "partialError": "Parte dos resultados não carregou.",
+      "retry": "Tentar de novo",
+      "signOutFailed": "Não deu para sair agora. Tente de novo em instantes."
+    },
+    "keys": {
+      "navigate": "Navegar",
+      "open": "Abrir",
+      "close": "Fechar",
+      "esc": "Esc"
+    }
+  },
   "servers": {
     "title": "Servidores",
-    "subtitle": "Retake e Deathmatch com o seu Loadout, hospedados em São Paulo.",
+    "subtitle": "Retake e Deathmatch com o seu Loadout.",
     "loading": "Carregando servidores",
     "modeFilter": "Modo",
     "modes": {
       "all": "Todos",
       "retake": "Retake",
       "deathmatch": "Deathmatch"
-    },
-    "regions": {
-      "sao-paulo": "São Paulo"
     },
     "listLabel": "Servidores Carmine",
     "columns": {
@@ -156,11 +271,12 @@
       },
       "private": {
         "title": "Sua lista de amigos da Steam é privada",
-        "body": "Sem ver a lista, não dá para saber quais amigos estão jogando.",
+        "body": "Só achamos os amigos que têm você na lista deles, e nenhum está jogando agora. Com a sua lista visível, aparecem todos.",
+        "foundBody": "Sua lista de amigos da Steam é privada: estes são os amigos que achamos pelas listas deles. Com a lista visível, aparecem todos.",
         "howTo": "Como deixar a lista visível",
         "step1": "Na Steam, abra o seu perfil e vá em Editar perfil › Privacidade.",
         "step2": "Em Lista de amigos, escolha Pública.",
-        "consequence": "Com a lista pública, qualquer pessoa vê os seus amigos no seu perfil da Steam. Deixar privada também é uma escolha válida: só este bloco fica sem dados.",
+        "consequence": "Com a lista pública, qualquer pessoa vê os seus amigos no seu perfil da Steam. Deixar privada também é uma escolha válida: este bloco mostra só os amigos que têm você na lista deles.",
         "open": "Abrir a privacidade na Steam"
       },
       "unavailable": {
@@ -209,7 +325,6 @@
     "empty": {
       "title": "Seu Inventário está vazio",
       "body": "Escolha uma skin, ajuste do seu jeito e veja no jogo. Comece por uma das mais usadas:",
-      "browse": "Ver o catálogo inteiro",
       "suggestions": "Sugestões para começar",
       "pathTitle": "Da escolha ao jogo",
       "step1": "Adicione uma skin ao Inventário, com float, seed e stickers do seu jeito.",
@@ -224,10 +339,7 @@
       "edit": "Editar",
       "remove": "Remover",
       "statTrak": "StatTrak™",
-      "stickers": "{count, plural, one {# sticker} other {# stickers}}",
-      "charm": "1 charm",
       "vip": "VIP",
-      "equipped": "Equipado: {sides}",
       "equipIn": {
         "ct": "Equipar em CT",
         "t": "Equipar em TR",
@@ -280,7 +392,7 @@
       "title": "Recurso",
       "steps": {
         "ticket": "Abra um ticket no Discord da Carmine.",
-        "details": "Informe o seu ID público (o número do seu Perfil), a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.",
+        "details": "Informe o link do seu Perfil, a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.",
         "answer": "A Staff responde em até {hours} h."
       },
       "notes": "A punição continua valendo enquanto o recurso é analisado. Cada ban permanente tem direito a um recurso. Recurso aceito retira a punição do seu Perfil.",
@@ -329,6 +441,38 @@
       "heading": "Filtros",
       "body": "Painéis laterais servem para filtros e detalhes sem sair da página."
     },
+    "select": {
+      "title": "Select",
+      "label": "Modo",
+      "empty": "Todos os Modos",
+      "options": {
+        "retake": "Retake",
+        "deathmatch": "Deathmatch"
+      }
+    },
+    "combobox": {
+      "title": "Combobox",
+      "label": "Arma",
+      "empty": "Todas",
+      "options": {
+        "ak47": "AK-47",
+        "aug": "AUG",
+        "awp": "AWP",
+        "bayonet": "Baioneta",
+        "deagle": "Desert Eagle",
+        "glock": "Glock-18",
+        "m4a1s": "M4A1-S",
+        "m4a4": "M4A4",
+        "usps": "USP-S"
+      }
+    },
+    "confirm": {
+      "title": "Confirmação",
+      "open": "Excluir Preset",
+      "heading": "Excluir o Preset Treino?",
+      "body": "Os Itens continuam no Inventário; só o Preset some.",
+      "confirm": "Excluir"
+    },
     "counter": {
       "title": "Contador",
       "add": "Somar jogadores",
@@ -355,7 +499,7 @@
     "subtitle": "A sua Conta é a mesma dos Servidores Carmine. Entre com a Steam para montar o Inventário e equipar o Loadout que aparece no jogo.",
     "steamButton": "Entrar com a Steam",
     "steamNote": "A Steam é a única forma de entrar: não existe senha da Carmine. Recebemos o seu SteamID e os dados públicos do perfil, nunca a sua senha da Steam.",
-    "claimNote": "Se você já jogou num Servidor Carmine, o login abre a mesma Conta, com o mesmo ID público.",
+    "claimNote": "Se você já jogou num Servidor Carmine, o login abre a mesma Conta, com o mesmo Perfil.",
     "back": "Voltar sem entrar",
     "errors": {
       "cancelado": "Você cancelou o login na Steam. Quando quiser, é só tentar de novo.",
@@ -367,15 +511,13 @@
   },
   "profile": {
     "metaDescription": "Perfil de {name} na Carmine: o Loadout que aparece nos Servidores Carmine.",
-    "publicId": "ID público",
     "steamLink": "Perfil na Steam",
     "steamLinkLabel": "Perfil de {name} na Steam (abre em outra aba)",
     "avatarAlt": "Avatar de {name}",
-    "own": "Este é o seu Perfil.",
     "unclaimed": "Conta criada no jogo; ainda não entrou no site.",
     "claimInvite": {
       "title": "É você? Entre com a Steam para personalizar.",
-      "body": "A Conta já existe porque você jogou num Servidor Carmine. Entrar não cria outra: é esta mesma, com o mesmo ID.",
+      "body": "A Conta já existe porque você jogou num Servidor Carmine. Entrar não cria outra: é esta mesma, com tudo o que já existe nela.",
       "action": "Entrar com a Steam"
     },
     "loadout": {
@@ -384,12 +526,13 @@
       "emptyVisitor": "Quando {name} equipar Itens, o Loadout aparece aqui do jeito que fica no jogo.",
       "emptyOwner": "Monte o Inventário e equipe Itens: o Loadout aparece aqui do jeito que fica no jogo.",
       "toInventory": "Ir para o Inventário",
-      "sides": {
-        "ct": "CT",
-        "t": "TR",
-        "both": "CT e TR"
-      },
       "toLoadout": "Editar o Loadout"
+    },
+    "empty": {
+      "title": "Ainda não há nada para mostrar",
+      "owner": "Monte o Loadout com os Itens do seu Inventário e jogue num Servidor Carmine: o Loadout e as Estatísticas aparecem aqui.",
+      "visitor": "Quando {name} equipar Itens e jogar num Servidor Carmine, o Loadout e as Estatísticas aparecem aqui.",
+      "action": "Montar o Loadout"
     },
     "unavailable": {
       "title": "Não conseguimos carregar este Perfil agora",
@@ -401,73 +544,6 @@
       "title": "Nenhum Perfil com esse ID",
       "body": "Confira o número no link. Um Perfil só existe depois que a pessoa joga num Servidor Carmine ou entra no site.",
       "back": "Ver servidores"
-    },
-    "privateOwner": "Seu Perfil é privado: as Estatísticas e a sua identidade no Ranking ficam escondidas.",
-    "privateVisitor": "Perfil privado: as Estatísticas não são públicas.",
-    "settings": {
-      "title": "Ajustes do Perfil",
-      "name": {
-        "title": "Nome de exibição",
-        "steamHint": "Hoje vale o seu nome da Steam. Escolha um nome só da Carmine, para o site e para o jogo.",
-        "customHint": "É o nome que aparece no site e nos Servidores Carmine.",
-        "edit": "Alterar nome",
-        "label": "Novo nome",
-        "rules": "De {min} a {max} caracteres. Não precisa ser único. No jogo, aparece na próxima vez que você entrar num servidor.",
-        "cooldownRule": "Depois de salvar, você só poderá trocar de novo daqui a 7 dias.",
-        "cooldownActive": "Você só poderá trocar de novo em {when} (horário de Brasília).",
-        "save": "Salvar nome",
-        "cancel": "Cancelar",
-        "saved": "Nome alterado para {name}. No jogo, vale na próxima vez que você entrar num servidor.",
-        "revert": {
-          "open": "Voltar ao nome Steam",
-          "title": "Voltar ao nome da Steam?",
-          "body": "O seu nome próprio sai e você volta a aparecer com o nome da Steam, no site e (na próxima vez que entrar) nos servidores. Voltar ao nome Steam não reinicia nem zera o prazo de 7 dias: ele continua contando da sua última troca de nome.",
-          "cooldownActive": "Para escolher um nome novo, você terá de esperar até {when} (horário de Brasília).",
-          "cooldownFree": "O prazo já passou: você pode escolher um nome novo quando quiser.",
-          "confirm": "Voltar ao nome Steam",
-          "close": "Fechar",
-          "done": "Pronto: você voltou ao nome da Steam ({name}). No jogo, vale na próxima vez que você entrar num servidor."
-        },
-        "errors": {
-          "too_short": "O nome precisa ter pelo menos 2 caracteres.",
-          "too_long": "O nome pode ter no máximo 24 caracteres.",
-          "invalid_chars": "Esse nome tem caracteres que não funcionam no jogo. Use letras, números e pontuação comum.",
-          "offensive": "Esse nome não é permitido. Escolha outro.",
-          "too_soon": "Você trocou de nome há pouco. Dá para trocar de novo em {when} (horário de Brasília).",
-          "not_claimed": "Entre no site com a Steam para escolher um nome.",
-          "generic": "Não deu para salvar agora. Tente de novo em instantes."
-        }
-      },
-      "privacy": {
-        "title": "Perfil privado",
-        "description": "Esconde as suas Estatísticas e tira o seu nome do Ranking, onde você aparece como \"Jogador privado\". Nome, avatar, Loadout e presença em servidor continuam públicos.",
-        "onTitle": "Perfil privado ativado",
-        "onBody": "As suas Estatísticas e a sua identidade no Ranking ficam escondidas (\"Jogador privado\"). Seu nome, avatar, Loadout e a presença em servidor continuam públicos.",
-        "offNote": "Perfil privado desativado. As suas Estatísticas voltam a aparecer no Perfil e no Ranking.",
-        "failed": "Não deu para salvar agora. Tente de novo em instantes."
-      },
-      "discord": {
-        "title": "Discord",
-        "description": "Ligue o seu Discord para receber no nosso servidor os cargos de Jogador, VIP e Staff. É só um vínculo: você continua entrando pela Steam.",
-        "linked": "Ligado a {username}. Seus cargos do Carmine seguem o seu VIP e o seu papel na Staff.",
-        "link": "Vincular Discord",
-        "unlink": "Desvincular",
-        "loading": "Carregando",
-        "unavailable": "O vínculo com o Discord não está disponível agora.",
-        "loadFailed": "Não deu para ver o seu vínculo agora. Recarregue a página em instantes.",
-        "results": {
-          "vinculado": "Discord ligado. Seus cargos do Carmine já estão no servidor.",
-          "desvinculado": "Discord desvinculado. Os cargos do Carmine foram retirados.",
-          "em-uso": "Esse Discord já está ligado a outra Conta do Carmine. Entre nessa Conta e desvincule, ou use outro Discord.",
-          "conta-ja-vinculada": "A sua Conta já tem um Discord ligado. Desvincule antes de ligar outro.",
-          "cancelado": "Você cancelou no Discord. Nada foi ligado.",
-          "invalido": "O pedido expirou ou não era deste navegador. Tente vincular de novo.",
-          "indisponivel": "O Discord não respondeu. Tente de novo em instantes.",
-          "desligado": "O vínculo com o Discord não está disponível agora.",
-          "sem-sessao": "Entre com a Steam para ligar o Discord.",
-          "desvincular-falhou": "Não deu para desvincular agora. Tente de novo em instantes."
-        }
-      }
     },
     "stats": {
       "title": "Estatísticas",
@@ -495,31 +571,148 @@
         "minutes": "{minutes} min"
       },
       "none": "—"
+    },
+    "editProfile": "Editar perfil",
+    "viewAsVisitor": "Ver como visitante",
+    "asVisitorNote": "Você está vendo o seu Perfil como um visitante vê.",
+    "backToOwner": "Voltar à visão de dono",
+    "privateSeal": "Perfil privado"
+  },
+  "settings": {
+    "metaTitle": "Configurações",
+    "title": "Configurações",
+    "subtitle": "O que é seu na Carmine: o nome, a privacidade, os vínculos e o tema.",
+    "nav": {
+      "label": "Seções das configurações",
+      "back": "Configurações",
+      "perfil": "Perfil",
+      "conexoes": "Conexões",
+      "aparencia": "Aparência",
+      "dados": "Dados e conta"
+    },
+    "signedOut": {
+      "title": "Entre para ver as suas configurações",
+      "body": "O nome, a privacidade e os vínculos são da sua Conta, que você abre com a Steam.",
+      "action": "Entrar com a Steam"
+    },
+    "unavailable": {
+      "title": "Não conseguimos carregar as configurações agora",
+      "body": "A Carmine está com instabilidade. Tente de novo em instantes."
+    },
+    "sections": {
+      "perfil": {
+        "title": "Perfil",
+        "intro": "Como você aparece no site e nos Servidores Carmine."
+      },
+      "conexoes": {
+        "title": "Conexões",
+        "intro": "Contas de outros serviços ligadas à sua."
+      },
+      "aparencia": {
+        "title": "Aparência",
+        "intro": "Como o site se parece para você."
+      },
+      "dados": {
+        "title": "Dados e conta",
+        "intro": "O que a Carmine guarda e como pedir a cópia ou a exclusão."
+      }
+    },
+    "name": {
+      "title": "Nome de exibição",
+      "steamHint": "Hoje vale o seu nome da Steam. Escolha um nome só da Carmine, para o site e para o jogo.",
+      "customHint": "É o nome que aparece no site e nos Servidores Carmine.",
+      "edit": "Alterar nome",
+      "label": "Novo nome",
+      "rules": "De {min} a {max} caracteres. Não precisa ser único. No jogo, aparece na próxima vez que você entrar num servidor.",
+      "cooldownRule": "Depois de salvar, você só poderá trocar de novo daqui a 7 dias.",
+      "cooldownActive": "Você só poderá trocar de novo em {when} (horário de Brasília).",
+      "save": "Salvar nome",
+      "cancel": "Cancelar",
+      "saved": "Nome alterado para {name}. No jogo, vale na próxima vez que você entrar num servidor.",
+      "revert": {
+        "open": "Voltar ao nome Steam",
+        "title": "Voltar ao nome da Steam?",
+        "body": "O seu nome próprio sai e você volta a aparecer com o nome da Steam, no site e (na próxima vez que entrar) nos servidores. Voltar ao nome Steam não reinicia nem zera o prazo de 7 dias: ele continua contando da sua última troca de nome.",
+        "cooldownActive": "Para escolher um nome novo, você terá de esperar até {when} (horário de Brasília).",
+        "cooldownFree": "O prazo já passou: você pode escolher um nome novo quando quiser.",
+        "confirm": "Voltar ao nome Steam",
+        "close": "Fechar",
+        "done": "Pronto: você voltou ao nome da Steam ({name}). No jogo, vale na próxima vez que você entrar num servidor."
+      },
+      "errors": {
+        "too_short": "O nome precisa ter pelo menos 2 caracteres.",
+        "too_long": "O nome pode ter no máximo 24 caracteres.",
+        "invalid_chars": "Esse nome tem caracteres que não funcionam no jogo. Use letras, números e pontuação comum.",
+        "offensive": "Esse nome não é permitido. Escolha outro.",
+        "too_soon": "Você trocou de nome há pouco. Dá para trocar de novo em {when} (horário de Brasília).",
+        "not_claimed": "Entre no site com a Steam para escolher um nome.",
+        "generic": "Não deu para salvar agora. Tente de novo em instantes."
+      }
+    },
+    "privacy": {
+      "title": "Perfil privado",
+      "description": "Esconde as suas Estatísticas e tira o seu nome do Ranking (você aparece como \"Jogador privado\"). Nome, avatar, Loadout e presença em servidor continuam públicos.",
+      "announceOn": "Perfil privado ativado.",
+      "announceOff": "Perfil privado desativado.",
+      "failed": "Não deu para salvar agora. Tente de novo em instantes."
+    },
+    "discord": {
+      "title": "Discord",
+      "description": "Ligue o seu Discord para receber no nosso servidor os cargos de Jogador, VIP e Staff. É só um vínculo: você continua entrando pela Steam.",
+      "linked": "Ligado a {username}. Seus cargos do Carmine seguem o seu VIP e o seu papel na Staff.",
+      "link": "Vincular Discord",
+      "unlink": "Desvincular",
+      "loading": "Carregando",
+      "soon": "Em breve",
+      "loadFailed": "Não deu para ver o seu vínculo agora. Recarregue a página em instantes.",
+      "results": {
+        "vinculado": "Discord ligado. Seus cargos do Carmine já estão no servidor.",
+        "desvinculado": "Discord desvinculado. Os cargos do Carmine foram retirados.",
+        "em-uso": "Esse Discord já está ligado a outra Conta do Carmine. Entre nessa Conta e desvincule, ou use outro Discord.",
+        "conta-ja-vinculada": "A sua Conta já tem um Discord ligado. Desvincule antes de ligar outro.",
+        "cancelado": "Você cancelou no Discord. Nada foi ligado.",
+        "invalido": "O pedido expirou ou não era deste navegador. Tente vincular de novo.",
+        "indisponivel": "O Discord não respondeu. Tente de novo em instantes.",
+        "desligado": "O vínculo com o Discord não está disponível agora.",
+        "sem-sessao": "Entre com a Steam para ligar o Discord.",
+        "desvincular-falhou": "Não deu para desvincular agora. Tente de novo em instantes."
+      }
+    },
+    "appearance": {
+      "title": "Tema",
+      "description": "Escolha o tema do site. A escolha fica salva neste navegador.",
+      "light": "Claro",
+      "dark": "Escuro"
+    },
+    "data": {
+      "requestTitle": "Cópia e exclusão dos seus dados",
+      "requestBody": "Pelo canal de contato você pede uma cópia dos seus dados ou a exclusão da Conta, conforme a LGPD. O canal ainda está em preparação e abre antes do beta fechado.",
+      "contact": "Contato e exclusão de dados",
+      "privacyTitle": "O que guardamos",
+      "privacyBody": "A Política de privacidade lista os dados da Conta e para que cada um serve.",
+      "privacy": "Política de privacidade"
     }
   },
   "firstSteps": {
     "title": "Boas-vindas à Carmine, {name}",
-    "intro": "Sua Conta é a mesma dos Servidores Carmine: o que você montar aqui vai junto para o jogo.",
+    "intro": "Sua Conta é a mesma dos servidores: o que você monta aqui vai para o jogo.",
+    "strip": "Primeira vez por aqui? Veja em um minuto como a Carmine funciona.",
+    "open": "Ver como funciona",
     "close": "Fechar primeiros passos",
     "done": "Entendi",
     "toInventory": "Ir para o Inventário",
-    "reopenHint": "Para rever, abra o menu da sua Conta e escolha Primeiros passos.",
     "steps": {
-      "what": {
-        "title": "O que é a Carmine",
-        "body": "Servidores comunitários de CS2 com skins simuladas. Você entra pelo IP, joga Retake ou Deathmatch e usa o site para montar o Loadout."
-      },
-      "steam": {
-        "title": "Vínculo com a Steam",
-        "body": "Você entra pela Steam, e só por ela. A Carmine recebe o seu SteamID e os dados públicos do perfil, nunca a sua senha."
+      "add": {
+        "title": "Adicione",
+        "body": "Escolha skins no catálogo e guarde no seu Inventário."
       },
       "equip": {
-        "title": "Adicionar não é equipar",
-        "body": "Adicionar guarda o Item no Inventário, com float, seed e stickers. Equipar coloca o Item num slot, de CT, de TR ou dos dois: é isso que aparece no jogo."
+        "title": "Equipe",
+        "body": "Coloque o Item num slot, de CT, de TR ou dos dois."
       },
-      "ingame": {
-        "title": "Ver no jogo",
-        "body": "Já está num servidor? Digite <cmd>!ws</cmd> no chat para aplicar o Loadout, ou reconecte."
+      "play": {
+        "title": "Jogue",
+        "body": "No servidor, digite <cmd>!ws</cmd> no chat ou reconecte."
       }
     }
   },
@@ -556,7 +749,7 @@
       "knife": "Facas",
       "glove": "Luvas",
       "agent": "Agentes",
-      "musickit": "Music kits"
+      "musickit": "Kits de música"
     },
     "rarities": {
       "consumer": "Nível Consumidor",
@@ -576,7 +769,9 @@
       "body": "Nenhum Item combina com a busca e os filtros. Tente outra palavra ou limpe os filtros."
     },
     "vip": "VIP",
-    "vipHint": "Exige Período VIP"
+    "vipHint": "Exige Período VIP",
+    "region": "Busca e filtros do catálogo",
+    "filtersActive": "Filtros ({count})"
   },
   "itemEditor": {
     "metaNew": "Adicionar {name}",
@@ -619,13 +814,15 @@
     "nameTagPlaceholder": "Sem nametag",
     "nameTagHint": "Até 20 caracteres.",
     "vipLocked": "Exclusivo do VIP",
+    "vipBadge": "VIP",
     "vipAttributes": "StatTrak e nametag fazem parte do VIP. Você pode ver como ficam, mas só salva com um Período VIP ativo.",
-    "vipItem": "Agentes e music kits fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
+    "vipItem": "Agentes e kits de música fazem parte do VIP. Você pode ver este Item, mas só adiciona com um Período VIP ativo.",
     "noAttributes": "Este Item não tem float, seed nem stickers: é só adicionar.",
     "stickers": "Stickers",
     "stickersCount": "{count} de {max}",
     "addSticker": "Adicionar sticker",
     "stickerLabel": "Sticker {n}: {name}",
+    "charmLabel": "Chaveiro: {name}",
     "slot": "Posição na arma",
     "slotN": "Slot {n}",
     "rotation": "Rotação",
@@ -635,22 +832,27 @@
     "offsetY": "Ajuste vertical",
     "removeSticker": "Tirar {name}",
     "moreOptions": "Ajuste fino",
-    "charm": "Charm",
-    "addCharm": "Adicionar charm",
-    "charmSeed": "Padrão do charm",
-    "charmPosition": "Posição do charm",
+    "charm": "Chaveiro",
+    "addCharm": "Adicionar chaveiro",
+    "charmSeed": "Padrão do chaveiro",
+    "charmPosition": "Posição na arma",
     "positionDefault": "Padrão da arma",
     "positionCustom": "Personalizada",
+    "charmSlotN": "Posição {n}",
+    "charmSlotFirst": "Posição {n} · traseira da arma",
+    "charmSlotLast": "Posição {n} · ponta da arma",
+    "charmFineHint": "Escolha uma posição para ajustar o chaveiro com precisão.",
+    "onViewer": "Arraste no 3D",
     "axisX": "X",
     "axisY": "Y",
     "axisZ": "Z",
     "removeCharm": "Tirar {name}",
     "picker": {
       "sticker": "Escolher sticker",
-      "charm": "Escolher charm",
+      "charm": "Escolher chaveiro",
       "search": "Buscar",
       "searchPlaceholderSticker": "Nome, time ou campeonato",
-      "searchPlaceholderCharm": "Nome do charm",
+      "searchPlaceholderCharm": "Nome do chaveiro",
       "category": "Campeonato ou coleção",
       "allCategories": "Todos",
       "results": "{total, plural, =0 {Nada encontrado} one {# resultado} other {# resultados}}",
@@ -682,9 +884,9 @@
       "stickers_not_allowed": "Só skins de arma aceitam stickers.",
       "too_many_stickers": "Cabem até 5 stickers.",
       "invalid_sticker": "Confira este sticker: cada um precisa de uma posição diferente na arma.",
-      "keychains_not_allowed": "Só skins de arma aceitam charm.",
-      "too_many_keychains": "Cabe só 1 charm.",
-      "invalid_keychain": "Confira o charm: o padrão vai de 1 a 100.000.",
+      "keychains_not_allowed": "Só skins de arma aceitam chaveiro.",
+      "too_many_keychains": "Cabe só 1 chaveiro.",
+      "invalid_keychain": "Confira o chaveiro: o padrão vai de 1 a 100.000.",
       "item_id_immutable": "Não dá para trocar a skin de um Item. Remova este e adicione outro.",
       "vip_required": "Isto exige um Período VIP ativo.",
       "inventory_full": "Seu Inventário chegou a 300 Itens. Remova um para adicionar outro.",
@@ -696,7 +898,8 @@
     "viewer": {
       "label": "Prévia de {name}",
       "loading": "Carregando o 3D",
-      "hint": "Arraste para girar",
+      "hint": "Arraste para girar · Shift + arraste para mover · Roda para aproximar",
+      "hintTouch": "Arraste para girar",
       "frame": "Visualizador 3D de {name}",
       "reasons": {
         "no-webgl": "Este navegador não desenha 3D; mostrando a imagem.",
@@ -706,11 +909,8 @@
         "rate-limited": "O 3D atingiu o limite de uso por agora; mostrando a imagem."
       },
       "retry": "Tentar o 3D de novo",
-      "dragHint": "Arraste o item selecionado na prévia"
+      "dragHint": "Arraste o item selecionado para movê-lo; fora dele, arraste para girar."
     },
-    "drag3d": "Arrastar no 3D",
-    "drag3dLabel": "Arrastar {name} na prévia 3D",
-    "drag3dHint": "Arraste na prévia 3D; o ajuste fino acompanha e também funciona pelo teclado.",
     "addAndEquip": "Adicionar e equipar"
   },
   "loadout": {
@@ -727,7 +927,6 @@
       "both": "CT e TR"
     },
     "groups": {
-      "gear": "Faca, luvas e personagem",
       "secondary": "Pistolas",
       "smg": "Submetralhadoras",
       "rifle": "Rifles",
@@ -738,14 +937,13 @@
       "knife": "Faca",
       "gloves": "Luvas",
       "agent": "Agente",
-      "musicKit": "Music kit"
+      "musicKit": "Kit de música"
     },
     "defaultWeapon": "Arma padrão",
     "defaultGear": "Padrão do jogo",
-    "defaultAgent": "Agente do mapa",
     "notInGame": {
       "short": "Fora do jogo",
-      "vip_inactive": "Agentes e music kits são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
+      "vip_inactive": "Agentes e kits de música são do VIP. Este Item continua equipado, mas não vai para o jogo sem um Período VIP ativo; volta no próximo !ws ou connect depois da renovação.",
       "plugin_unsupported": "O servidor ainda não consegue aplicar este Item no jogo. Ele continua equipado e no seu Inventário."
     },
     "stripped": {
@@ -754,15 +952,26 @@
       "nameTag": "nametag",
       "body": "Sem Período VIP ativo, {attributes} não vão para o jogo. O Item vai, e eles voltam com o VIP."
     },
+    "board": {
+      "categories": "Categorias",
+      "columnCount": "{equipped} de {total} com Item",
+      "cardEquipped": "{slot}: {item}. Equipado em {sides}.",
+      "cardEmpty": "{slot}: {default}.",
+      "cardOutOfGame": "Fora do jogo."
+    },
     "panel": {
       "label": "Slot selecionado",
       "empty": "Nada equipado: no jogo você usa a Arma padrão.",
       "emptyGear": "Nada equipado: no jogo você usa o padrão do jogo.",
+      "pick": "Trocar Item",
+      "pickEmpty": "Equipar Item",
+      "pickerTitle": "Escolher: {slot}",
+      "pickerDescription": "Itens do seu Inventário que cabem neste slot.",
       "choose": "Do seu Inventário",
       "none": "Você não tem Itens para este slot.",
       "addFromCatalog": "Adicionar do catálogo",
       "bothSides": "Equipar também em {side}",
-      "current": "Equipado",
+      "rarityStatTrak": "{rarity} · StatTrak™",
       "equip": "Equipar {name}",
       "unequip": "Desequipar",
       "edit": "Editar Item",
@@ -780,8 +989,8 @@
       "inGame": "{item} equipado em {sides}. No servidor, digite !ws ou reconecte para ver no jogo."
     },
     "vip": {
-      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
-      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, music kits, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_soon": "Seu VIP acaba em {date}. Depois disso, agentes, kits de música, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
+      "ending_today": "Seu VIP acaba hoje, às {time}. Depois disso, agentes, kits de música, StatTrak e nametag ficam fora do jogo e os Presets extras ficam somente leitura.",
       "ended_today": "Seu VIP acabou hoje. Os Itens VIP continuam no seu Inventário, mas não vão para o jogo, e os Presets extras ficaram somente leitura."
     },
     "presets": {
@@ -1110,6 +1319,9 @@
       "title": "Exclusão de dados",
       "anonymized": "Conta anonimizada por um pedido de exclusão de dados. O SteamID64 fica só enquanto o ban valer.",
       "submit": "Anonimizar a Conta",
+      "confirmTitle": "Anonimizar esta Conta?",
+      "confirmBody": "Isto apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta.",
+      "confirmLabel": "Anonimizar",
       "hint": "Para um pedido de exclusão que chegou pelo contato, depois de confirmar que a pessoa é dona da Conta. Apaga nome, avatar, Perfil público, Inventário, Presets e VIP e desfaz o vínculo com a Steam. Não tem volta. Ficam as punições e o log de auditoria; com um ban valendo, o SteamID64 fica até ele acabar.",
       "staff": "Contas da Staff saem da Staff antes de serem anonimizadas.",
       "ownerOnly": "Só o Dono executa pedidos de exclusão de dados.",
@@ -1118,7 +1330,7 @@
     "displayName": {
       "title": "Nome de exibição",
       "current": "Atual: {name}",
-      "hint": "Com nome próprio, ele é apagado e vale o nome Steam; o prazo de 7 dias para trocar recomeça. Sem nome próprio, vira \"Jogador #{publicId}\" enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
+      "hint": "Com nome próprio, ele é apagado e vale o nome Steam; o prazo de 7 dias para trocar recomeça. Sem nome próprio, vira um nome fictício fixo (como \"Alfredo\") enquanto a Conta mantiver o mesmo nome Steam. Vale no jogo no próximo connect.",
       "submit": "Resetar nome",
       "done": "Nome de exibição resetado."
     },
@@ -1289,7 +1501,9 @@
       "kd": "K/D",
       "headshotPercent": "HS%",
       "roundsPlayed": "Rounds",
-      "timePlayed": "Tempo"
+      "timePlayed": "Tempo",
+      "extraRetake": "HS% {hs} · {value} rounds",
+      "extraDeathmatch": "HS% {hs} · {value}"
     },
     "rowPosition": "{position}º",
     "you": "Você",
@@ -1328,5 +1542,89 @@
       "action": "Ver a semana atual"
     },
     "loading": "Carregando o Ranking"
+  },
+  "headerPreviews": {
+    "loading": "Carregando",
+    "error": "Não deu para carregar agora.",
+    "retry": "Tentar de novo",
+    "modes": {
+      "retake": "Retake",
+      "deathmatch": "Deathmatch"
+    },
+    "play": {
+      "reasons": {
+        "friends": "Seus amigos estão aqui",
+        "favorite_mode": "O Modo que você mais joga",
+        "fullest": "O mais cheio agora"
+      },
+      "join": "Jogar",
+      "joinAria": "Jogar em {server}",
+      "copy": "Copiar IP",
+      "copied": "IP copiado",
+      "copyAria": "Copiar o IP de {server}",
+      "players": "{players}/{max}",
+      "full": "Lotado",
+      "others": "Também no ar",
+      "friendsPlaying": "{count, plural, =0 {Nenhum amigo jogando agora} one {# amigo jogando agora} other {# amigos jogando agora}}",
+      "none": "Nenhum servidor no ar agora.",
+      "noneHint": "Quando um servidor abrir, ele aparece aqui.",
+      "signIn": "Entrar com a Steam",
+      "signInHint": "Entre para ver onde os seus amigos estão jogando.",
+      "all": "Ver todos os servidores"
+    },
+    "loadout": {
+      "title": "Seu Loadout",
+      "side": {
+        "ct": "CT",
+        "t": "TR"
+      },
+      "preset": "Preset {name}",
+      "open": "Abrir o Loadout",
+      "slots": {
+        "knife": "Faca",
+        "gloves": "Luvas"
+      },
+      "empty": "Padrão",
+      "statTrak": "StatTrak",
+      "exampleTitle": "Um exemplo de Loadout",
+      "exampleBody": "Escolha as skins que aparecem em todos os servidores.",
+      "build": "Monte o seu"
+    },
+    "inventory": {
+      "title": "Inventário",
+      "total": "{total} de {limit} Itens",
+      "latest": "Últimos adicionados",
+      "empty": "Seu Inventário está vazio.",
+      "emptyHint": "Escolha uma skin no catálogo para começar.",
+      "add": "Adicionar skin",
+      "open": "Ver o Inventário",
+      "signInTitle": "Guarde as suas skins",
+      "signInBody": "Entre com a Steam para montar o Inventário e equipar nos servidores.",
+      "signIn": "Entrar com a Steam",
+      "browse": "Ver o catálogo",
+      "statTrak": "StatTrak"
+    },
+    "ranking": {
+      "title": "Ranking da semana",
+      "mine": "Minha posição",
+      "position": "#{position}",
+      "progressRounds": "{missing, plural, one {Falta # round} other {Faltam # rounds}} para entrar",
+      "progressMinutes": "{missing, plural, one {Falta # minuto} other {Faltam # minutos}} para entrar",
+      "top": "Top 3",
+      "none": "Ninguém no Ranking ainda.",
+      "you": "Você",
+      "closes": {
+        "days": "A semana fecha em {days} d {hours} h",
+        "hours": "A semana fecha em {hours} h {minutes} min",
+        "minutes": "A semana fecha em {minutes} min",
+        "closed": "Semana encerrada"
+      },
+      "open": "Ver o Ranking"
+    },
+    "states": {
+      "online": "Online",
+      "full": "Lotado",
+      "offline": "Offline"
+    }
   }
 }

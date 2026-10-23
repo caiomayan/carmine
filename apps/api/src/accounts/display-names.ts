@@ -139,7 +139,7 @@ export class DisplayNames {
    *   do reset**: o reset é a resposta da moderação a um nome ruim, e sem o prazo a pessoa poderia
    *   pôr outro nome limítrofe na hora, multiplicando o trabalho da Staff. Com isso, a Staff
    *   reage no máximo uma vez por semana por Conta.
-   * - Sem nome próprio (o nome ruim é o da Steam): a Conta passa a "Jogador #ID" enquanto mantiver
+   * - Sem nome próprio (o nome ruim é o da Steam): a Conta passa a um nome fictício fixo enquanto mantiver
    *   o nome Steam atual (trocar o nome na Steam libera o novo, pelo filtro). Aqui o prazo não
    *   é tocado: a pessoa não fez nenhuma troca e pode escolher um nome próprio de imediato.
    *

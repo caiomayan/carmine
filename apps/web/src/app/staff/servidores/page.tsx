@@ -22,7 +22,7 @@ export default async function StaffServersPage() {
         <h2 id="servidores" className="text-lg font-semibold">
           {t('servers.title')}
         </h2>
-        <p className="max-w-[72ch] text-[13px] text-muted-foreground">{t('servers.subtitle')}</p>
+        <p className="max-w-[72ch] text-body-sm text-muted-foreground">{t('servers.subtitle')}</p>
       </div>
       {result.status === 'ok' ? (
         result.data.servers.length > 0 ? (
@@ -32,7 +32,7 @@ export default async function StaffServersPage() {
             ))}
           </ul>
         ) : (
-          <p className="text-[13.5px] text-muted-foreground">{t('servers.empty')}</p>
+          <p className="text-body-sm text-muted-foreground">{t('servers.empty')}</p>
         )
       ) : (
         <p role="alert" className="text-sm">

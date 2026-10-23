@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   friendsPlayingSchema,
   liveServerListSchema,
+  nowPlayingSchema,
   serverHeartbeatSchema,
 } from './live-servers.js';
 
@@ -76,7 +77,7 @@ describe('liveServerListSchema', () => {
 });
 
 describe('friendsPlayingSchema', () => {
-  it('distingue os três estados', () => {
+  it('distingue os estados, e a privada traz os amigos achados (ou nenhum)', () => {
     const playing = {
       status: 'ok',
       friends: [
@@ -95,10 +96,57 @@ describe('friendsPlayingSchema', () => {
       status: 'ok',
       friends: [],
     });
-    expect(friendsPlayingSchema.parse({ status: 'private' })).toEqual({ status: 'private' });
+    expect(friendsPlayingSchema.parse({ ...playing, status: 'private' })).toEqual({
+      ...playing,
+      status: 'private',
+    });
+    expect(friendsPlayingSchema.parse({ status: 'private', friends: [] })).toEqual({
+      status: 'private',
+      friends: [],
+    });
+    expect(friendsPlayingSchema.safeParse({ status: 'private' }).success).toBe(false);
     expect(friendsPlayingSchema.parse({ status: 'unavailable' })).toEqual({
       status: 'unavailable',
     });
     expect(friendsPlayingSchema.safeParse({ status: 'erro' }).success).toBe(false);
+  });
+});
+
+describe('nowPlayingSchema', () => {
+  it('diz onde a Conta está jogando, ou nulo quando não está em nenhum servidor', () => {
+    const playing = {
+      server: {
+        id: SERVER_ID,
+        name: 'retake-1',
+        showcaseName: 'Retake · Rotação',
+        mode: 'retake',
+        map: 'de_mirage',
+      },
+    };
+
+    expect(nowPlayingSchema.parse(playing)).toEqual(playing);
+    expect(nowPlayingSchema.parse({ server: null })).toEqual({ server: null });
+  });
+
+  it('não carrega o endereço nem a lotação do servidor, só o que o menu mostra', () => {
+    const parsed = nowPlayingSchema.parse({
+      server: {
+        id: SERVER_ID,
+        name: 'retake-1',
+        showcaseName: null,
+        mode: 'retake',
+        map: null,
+        address: '203.0.113.10:27015',
+        players: 9,
+      },
+    });
+
+    expect(parsed.server).toEqual({
+      id: SERVER_ID,
+      name: 'retake-1',
+      showcaseName: null,
+      mode: 'retake',
+      map: null,
+    });
   });
 });

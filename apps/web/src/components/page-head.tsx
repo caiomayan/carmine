@@ -23,7 +23,7 @@ export function PageHead({
       <div className="grid min-w-0 gap-1.5">
         <h1 className="text-display max-md:text-[26px]">{title}</h1>
         {subtitle ? (
-          <p className="max-w-[60ch] text-[13.5px] text-muted-foreground">{subtitle}</p>
+          <p className="max-w-[60ch] text-body-sm text-muted-foreground">{subtitle}</p>
         ) : null}
       </div>
       {aside}

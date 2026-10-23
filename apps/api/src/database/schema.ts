@@ -69,7 +69,7 @@ export const accounts = pgTable(
     displayName: text().notNull(),
     /**
      * Nome Steam cujo Nome de exibição a Staff resetou (S07): enquanto a Conta tiver esse nome
-     * Steam, ela aparece como "Jogador #ID". Trocar o nome Steam libera o novo (pelo filtro).
+     * Steam, ela aparece com um nome fictício fixo (`placeholderNameFor`). Trocar o nome Steam libera o novo (pelo filtro).
      */
     displayNameBlockedSteamName: text(),
     /**

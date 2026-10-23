@@ -24,7 +24,7 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   if (!role) notFound();
 
   const t = await getTranslations('staff');
-  const { staff, moderation, ranking } = await getMessages();
+  const { common, staff, moderation, ranking } = await getMessages();
   const items: NavItem[] = [{ href: '/staff', label: t('nav.accounts') }];
   if (staffCan(role, 'reports.handle')) {
     items.push({ href: '/staff/denuncias', label: t('nav.reports') });
@@ -48,7 +48,7 @@ export default async function StaffLayout({ children }: { children: ReactNode })
           className="-mx-3 mb-6 animate-fade-up overflow-x-auto [animation-delay:40ms]"
         />
       ) : null}
-      <NextIntlClientProvider messages={{ staff, moderation, ranking }}>
+      <NextIntlClientProvider messages={{ common, staff, moderation, ranking }}>
         {children}
       </NextIntlClientProvider>
     </div>

@@ -45,7 +45,7 @@ export function AuditLog({
   };
 
   if (entries.length === 0)
-    return <p className="text-[13.5px] text-muted-foreground">{t('empty')}</p>;
+    return <p className="text-body-sm text-muted-foreground">{t('empty')}</p>;
 
   return (
     <div className="grid gap-4">
@@ -63,7 +63,7 @@ export function AuditLog({
             {t('loadMore')}
           </Button>
         ) : (
-          <p className="text-[12.5px] text-muted-foreground">{t('end')}</p>
+          <p className="text-body-sm text-muted-foreground">{t('end')}</p>
         )}
         {failed ? <FieldError>{t('loadFailed')}</FieldError> : null}
       </div>

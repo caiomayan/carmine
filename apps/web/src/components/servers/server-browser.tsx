@@ -25,6 +25,7 @@ import {
   serversLayout,
   serversOfMode,
   updatedSecondsAgo,
+  viewFriends,
 } from '@/lib/live-servers';
 import { MODE_FILTERS, type ModeFilter } from '@/lib/modes';
 import { cmd } from './connect';
@@ -55,25 +56,15 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
   const { state, retry } = useLiveServers(initial);
   const friends = useFriendsPlaying();
   const servers = state.list?.servers ?? [];
-  const friendsOnServer = useMemo(
-    () => friendsByServer(friends.view.status === 'ok' ? friends.view.friends : []),
-    [friends.view],
-  );
+  const friendsOnServer = useMemo(() => friendsByServer(viewFriends(friends.view)), [friends.view]);
 
   return (
     <Tabs value={mode} onValueChange={(v) => setMode(v as ModeFilter)} className="gap-0">
       <PageHead title={t('title')} subtitle={t('subtitle')} />
       <div className="grid gap-y-10 pt-2 pb-4">
-        <section aria-labelledby="regiao-sao-paulo" className="min-w-0">
+        <section aria-label={t('listLabel')} className="min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 pb-4">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <h2
-                id="regiao-sao-paulo"
-                className="inline-flex items-center gap-2.5 label-caps text-[11px] text-foreground"
-              >
-                <span aria-hidden="true" className="size-1.5 rotate-45 bg-foreground" />
-                {t('regions.sao-paulo')}
-              </h2>
               <LiveStatus state={state} />
             </div>
             <TabsList aria-label={t('modeFilter')} className="max-md:w-full">
@@ -84,7 +75,7 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
               ))}
             </TabsList>
           </div>
-          <p className="mb-3 hidden rounded-md bg-surface px-3 py-2.5 text-[13px] text-muted-foreground pointer-coarse:block">
+          <p className="mb-3 hidden rounded-md bg-surface px-3 py-2.5 text-body-sm text-muted-foreground pointer-coarse:block">
             {t.rich('connect.mobileHint', { cmd })}
           </p>
           {state.list === null ? (
@@ -92,11 +83,7 @@ export function ServerBrowser({ initial }: { initial: LiveServerList | null }) {
           ) : (
             <TabsContents>
               {MODE_FILTERS.map((m) => (
-                <TabsContent
-                  key={m}
-                  value={m}
-                  transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                >
+                <TabsContent key={m} value={m}>
                   <ServersOfMode
                     mode={m}
                     servers={serversOfMode(servers, m)}
@@ -159,7 +146,7 @@ function ServersOfMode({
       {layout.live.length === 0 ? (
         <p
           role="status"
-          className="rounded-xl bg-surface px-4 py-5 text-[14px] text-muted-foreground"
+          className="rounded-xl bg-surface px-4 py-5 text-body text-muted-foreground"
         >
           {t('empty.allOffline')}
         </p>
@@ -230,9 +217,9 @@ function LiveStatus({ state }: { state: LiveState }) {
     <div
       data-testid="live-status"
       data-connection={connection}
-      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted-foreground"
+      className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted-foreground"
     >
-      <span className="inline-flex items-center gap-2 label-caps text-[10.5px] text-foreground">
+      <span className="inline-flex items-center gap-2 label-caps text-[11px] text-foreground">
         <StatusDot
           tone={connection === 'live' ? 'online' : connection === 'lost' ? 'warn' : 'offline'}
           pulse={connection === 'live'}

@@ -22,10 +22,9 @@ import { CheckIcon } from '@/components/icons/animated/check';
 import { LockIcon } from '@/components/icons/animated/lock';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
-import { TextInput } from '@/components/inventory/editor-fields';
 import { useInventory } from '@/components/inventory/inventory-provider';
-import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
 import { cn } from '@/lib/utils';
 import { LoadoutApiError, useLoadoutApi } from './use-loadout-api';
 
@@ -38,6 +37,7 @@ type DialogState =
 /**
  * Os Presets (S05): o plano grátis tem só o Principal (o Loadout atual); com VIP, até 20,
  * ativáveis de uma vez. Sem VIP, os extras ficam somente leitura, com a explicação na tela.
+ * Compactos, numa linha ao lado da troca TR | CT: no celular os Presets rolam na horizontal.
  */
 export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
   const t = useTranslations('loadout.presets');
@@ -76,28 +76,22 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
   }
 
   return (
-    <section aria-labelledby="presets" className="grid gap-3 pb-6" data-testid="presets">
-      <SectionTitle
-        id="presets"
-        aside={
-          <span
-            className="text-[12.5px] text-muted-foreground tabular-nums"
-            data-testid="preset-count"
-          >
-            {t('count', { count: presets.length, limit })}
-          </span>
-        }
-      >
-        {t('title')}
-      </SectionTitle>
-
-      <div className="flex flex-wrap items-center gap-2">
-        <ul className="contents" aria-label={t('label')}>
+    <section
+      aria-label={t('title')}
+      className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 md:justify-end"
+      data-testid="presets"
+    >
+      <div className="flex min-w-0 max-w-full items-center gap-1.5 max-md:w-full max-md:flex-wrap">
+        <ul
+          // Os chips quebram de linha em vez de rolar: com a rolagem, o "20 Itens" da ponta saía pela metade.
+          className="flex min-w-0 flex-wrap items-center gap-1.5 md:justify-end"
+          aria-label={t('label')}
+        >
           {presets.map((preset) => (
             <li
               key={preset.id}
               className={cn(
-                'group/preset flex items-center rounded-md transition-colors duration-(--dur-fast) ease-std',
+                'group/preset flex max-w-full flex-none items-center rounded-md transition-colors duration-(--dur-fast) ease-std',
                 preset.active ? 'bg-surface-2' : 'bg-surface hover:bg-surface-2',
               )}
               data-testid="preset"
@@ -135,7 +129,7 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
                   <DropdownMenuTrigger
                     aria-label={t('actions', { name: preset.name })}
                     disabled={preset.readOnly}
-                    className="mr-1 grid size-7 place-items-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground disabled:opacity-40 aria-expanded:bg-hover max-md:size-9"
+                    className="mr-1 grid size-(--tap) place-items-center rounded-sm text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground disabled:opacity-40 aria-expanded:bg-hover"
                     data-testid="preset-menu"
                   >
                     <svg
@@ -183,6 +177,12 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
             {t('new')}
           </Button>
         ) : null}
+        <span
+          className="flex-none px-1 text-[12px] text-muted-foreground tabular-nums"
+          data-testid="preset-count"
+        >
+          {t('count', { count: presets.length, limit })}
+        </span>
       </div>
 
       {error ? (
@@ -212,11 +212,14 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
       ) : anyReadOnly ? (
         <Explanation testId="preset-read-only">{t('readOnlyBody')}</Explanation>
       ) : !vip ? (
-        <p className="max-w-[70ch] text-[12.5px] text-muted-foreground" data-testid="preset-free">
+        <p
+          className="max-w-[46ch] text-[12px] leading-snug text-muted-foreground"
+          data-testid="preset-free"
+        >
           {t('freeLimit', { limit: PRESETS_VIP_LIMIT })}
         </p>
       ) : full ? (
-        <p className="text-[12.5px] text-muted-foreground" role="status">
+        <p className="text-[12px] text-muted-foreground" role="status">
           {t('limitReached', { limit })}
         </p>
       ) : null}
@@ -240,10 +243,10 @@ function Explanation({ children, testId }: { children: React.ReactNode; testId: 
       role="note"
       data-testid={testId}
       data-icon-trigger
-      className="flex max-w-[80ch] animate-fade-up flex-wrap items-start gap-x-3 gap-y-2 rounded-lg bg-surface px-4 py-3 text-[13px] leading-[1.55]"
+      className="flex max-w-[56ch] animate-fade-up flex-wrap items-start gap-x-2.5 gap-y-1 rounded-lg bg-surface px-3 py-2 text-[12.5px] leading-[1.5]"
     >
-      <AnimatedIcon icon={LockIcon} size={15} className="mt-0.5 text-status-vip" />
-      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-2">{children}</div>
+      <AnimatedIcon icon={LockIcon} size={14} className="mt-0.5 text-status-vip" />
+      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">{children}</div>
     </div>
   );
 }
@@ -311,26 +314,19 @@ function NameDialog({
             </DialogTitle>
             {preset ? null : <DialogDescription>{t('create.body')}</DialogDescription>}
           </div>
-          <div className="grid gap-2">
-            <label htmlFor={nameId} className="label-caps text-[10.5px]">
-              {t('create.name')}
-            </label>
-            <TextInput
-              id={nameId}
-              value={name}
-              maxLength={PRESET_NAME_MAX_LENGTH}
-              placeholder={t('create.namePlaceholder')}
-              autoComplete="off"
-              autoFocus
-              aria-invalid={!!error || undefined}
-              aria-describedby={`${nameId}-hint`}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="preset-name"
-            />
-            <p id={`${nameId}-hint`} className="text-[12.5px] text-muted-foreground">
-              {t('create.nameHint', { max: PRESET_NAME_MAX_LENGTH })}
-            </p>
-          </div>
+          <LabelInput
+            id={nameId}
+            label={t('create.name')}
+            hint={t('create.nameHint', { max: PRESET_NAME_MAX_LENGTH })}
+            value={name}
+            maxLength={PRESET_NAME_MAX_LENGTH}
+            placeholder={t('create.namePlaceholder')}
+            autoComplete="off"
+            autoFocus
+            aria-invalid={!!error || undefined}
+            onChange={(event) => setName(event.target.value)}
+            data-testid="preset-name"
+          />
           {preset ? null : (
             <fieldset className="grid gap-2">
               <legend id={fromId} className="pb-2 label-caps text-[10.5px]">

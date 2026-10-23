@@ -1,23 +1,30 @@
 import type { Page } from '@playwright/test';
 import { csrfToken, grantVip, newSteamId, signInFromHeader } from './accounts';
-import { viewerItem } from './fake-viewer';
-import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { dragSelectedInViewer, viewerItem, viewerSelection, viewerSelections } from './fake-viewer';
+import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
 
 const AK_REDLINE = 222;
 const MUSIC_KIT = 1781;
 
-/** Entra com uma Conta nova (Steam falsa), fecha os Primeiros passos e, se pedido, dá VIP. */
+/** Entra com uma Conta nova (Steam falsa) e, se pedido, dá VIP. */
 async function signIn(page: Page, { vip = false } = {}) {
   const steamId = newSteamId();
   await page.goto('/inventario');
   await signInFromHeader(page, steamId);
   await expect(page).toHaveURL('/inventario');
-  await page.getByRole('button', { name: 'Entendi' }).click();
   if (vip) {
     grantVip(steamId);
     await page.reload();
   }
   return steamId;
+}
+
+/** O X do chaveiro que o viewer (falso) está mostrando (`undefined` no padrão da arma). */
+async function viewerCharmX(page: Page): Promise<number | undefined> {
+  const keychains = (await viewerItem(page))?.keychains as
+    | Record<string, { x?: number }>
+    | undefined;
+  return keychains?.['0']?.x;
 }
 
 /** Escolhe no seletor o primeiro sticker que a busca encontrar. */
@@ -38,7 +45,7 @@ async function addItemByApi(page: Page, item: Record<string, unknown>) {
     headers: { 'x-csrf-token': await csrfToken(page.context()) },
     data: { item },
   });
-  expect(response.status()).toBe(201);
+  expect(response.status(), await response.text()).toBe(201);
   return (await response.json()) as { uid: string };
 }
 
@@ -61,6 +68,13 @@ test('sem sessão, o Inventário convida a entrar e o catálogo continua aberto'
   );
 });
 
+/** Abre o Popover "Filtros" do catálogo (Arma, Raridade e Coleção), se já não estiver aberto. */
+async function openFilters(page: Page) {
+  const trigger = page.getByTestId('catalog-filters');
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
+  await expect(page.getByTestId('catalog-filters-panel')).toBeVisible();
+}
+
 test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado vazio', async ({
   page,
 }) => {
@@ -71,8 +85,11 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
 
   await page.getByTestId('catalog-search').fill('');
   await page.getByRole('button', { name: 'Armas', exact: true }).click();
-  await page.getByLabel('Arma').selectOption('AK-47');
-  await page.getByLabel('Raridade').selectOption({ label: 'Confidencial' });
+  await openFilters(page);
+  await chooseOption(page, page.getByLabel('Arma'), 'AK-47');
+  await chooseOption(page, page.getByLabel('Raridade'), 'classified');
+  // O botão conta os filtros que moram dentro do Popover (Arma e Raridade).
+  await expect(page.getByTestId('catalog-filters')).toHaveText('Filtros (2)');
   await expect(page).toHaveURL(/tipo=weapon/);
   await expect(page).toHaveURL(/arma=AK-47/);
   await expect(page).toHaveURL(/raridade=classified/);
@@ -85,6 +102,126 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
   await page.getByRole('button', { name: 'Limpar filtros' }).click();
   await expect(page).toHaveURL('/inventario/adicionar');
 });
+
+test('catálogo: busca tolerante (parcial, erro de digitação, inglês) e ordenada por relevância', async ({
+  page,
+}) => {
+  await page.goto('/inventario/adicionar');
+  const search = page.getByTestId('catalog-search');
+  const first = page.locator('[data-testid^="catalog-item-"]').first();
+
+  await search.fill('ak redlin');
+  await expect(page.getByTestId(`catalog-item-${AK_REDLINE}`)).toBeVisible();
+  // O nome original em inglês acha o PT-BR ("Linhas Vermelhas"), e o exato vem primeiro.
+  await search.fill('ak47 redline');
+  await expect(first).toHaveAttribute('data-testid', `catalog-item-${AK_REDLINE}`);
+  // Erro de digitação: a faca sem pintura é o resultado mais relevante.
+  await search.fill('karambti');
+  await expect(first).toHaveAttribute('data-testid', 'catalog-item-41');
+  // O tipo nos dois idiomas.
+  // (as "Faixas de Mão", ou Hand Wraps, também são luvas)
+  await search.fill('gloves');
+  await expect(first).toContainText(/Luvas|Faixas/);
+  await search.fill('luvas');
+  await expect(first).toContainText(/Luvas|Faixas/);
+});
+
+test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, em inglês e sem acento', async ({
+  page,
+}) => {
+  await page.goto('/inventario/adicionar');
+  const search = page.getByRole('combobox', { name: 'Buscar na lista' });
+  const options = page.getByRole('option');
+
+  // Arma: "a1 m4" (código misturado, fora de ordem) acha só a M4A1-S; Enter escolhe e filtra.
+  await openFilters(page);
+  await page.getByLabel('Arma').click();
+  await search.fill('a1 m4');
+  await expect(options).toHaveText(['M4A1-S']);
+  await search.press('Enter');
+  await expect(page).toHaveURL(/arma=M4A1-S/);
+  await expect(search).toBeHidden();
+
+  // Ao reabrir, a opção atual vem destacada e à vista, e a busca começa vazia.
+  await openFilters(page);
+  await page.getByLabel('Arma').click();
+  await expect(search).toHaveValue('');
+  const current = page.getByTestId('option-M4A1-S');
+  await expect(current).toHaveAttribute('data-selected', 'true');
+  await expect(current).toBeInViewport();
+  await page.keyboard.press('Escape');
+
+  // "knife" (inglês) acha as facas; o nome original acha o PT-BR.
+  await page.getByRole('button', { name: 'Facas', exact: true }).click();
+  await openFilters(page);
+  await page.getByLabel('Arma').click();
+  await search.fill('knife');
+  await expect(options.first()).toBeVisible();
+  expect(await options.count()).toBeGreaterThan(10);
+  await search.fill('butterfly');
+  await expect(options).toHaveText(['Canivete Borboleta']);
+  await page.keyboard.press('Escape');
+
+  // Coleção: sem acento, parcial, com erro de digitação e pelo nome em inglês ("Quilowatt").
+  await page.getByRole('button', { name: 'Armas', exact: true }).click();
+  await openFilters(page);
+  await page.getByLabel('Coleção').click();
+  for (const query of ['colecao quilowatt', 'quilowat', 'kilowatt', 'kilowtat']) {
+    await search.fill(query);
+    await expect(options, query).toHaveText(['A Coleção Quilowatt']);
+  }
+  await search.press('Enter');
+  await expect(page).toHaveURL(/colecao=A\+Cole%C3%A7%C3%A3o\+Quilowatt/);
+  await expect(page.getByLabel('Coleção')).toHaveText('A Coleção Quilowatt');
+});
+
+test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot é um Select', async ({
+  page,
+}) => {
+  await signIn(page, { vip: true });
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.getByTestId('add-sticker').click();
+  const picker = page.getByTestId('picker-sticker');
+  const category = picker.getByRole('combobox', { name: 'Campeonato ou coleção' });
+  await category.click();
+  // Sem chave de tradução crua na lista; a busca acha sem acento e sem ordem.
+  await expect(page.getByRole('option', { name: /^#CSGO/ })).toHaveCount(0);
+  // O nome em inglês e o PT-BR acham a mesma categoria.
+  await page.getByRole('combobox', { name: 'Buscar na lista' }).fill('antwerp 2022');
+  await expect(page.getByRole('option', { name: 'Antuérpia 2022 da PGL' })).toBeVisible();
+  await page.getByRole('combobox', { name: 'Buscar na lista' }).fill('2013 dreamhack winter');
+  await page.getByRole('option').first().click();
+  await expect(category).toContainText('DreamHack Winter 2013');
+  await expect(picker.getByText(/\d+ resultados?/)).toBeVisible();
+  // Esc fecha só o Popover; o Dialog continua.
+  await category.click();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('combobox', { name: 'Buscar na lista' })).toBeHidden();
+  await expect(picker).toBeVisible();
+  await picker
+    .getByRole('button', { name: /^Escolher / })
+    .first()
+    .click();
+  await expect(picker).toHaveCount(0);
+
+  // Erro de digitação também acha no seletor.
+  await addSticker(page, 'vitalty');
+  await chooseOption(page, page.getByTestId('sticker-1').getByRole('combobox'), '3');
+  await expect
+    .poll(() => viewerItem(page))
+    .toMatchObject({ stickers: { '0': { schema: 0 }, '1': { schema: 3 } } });
+});
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`axe com o Combobox do catálogo aberto (${theme})`, async ({ page }) => {
+    await saveTheme(page, theme);
+    await page.goto('/inventario/adicionar');
+    await openFilters(page);
+    await page.getByLabel('Arma').click();
+    await expect(page.getByRole('combobox', { name: 'Buscar na lista' })).toBeFocused();
+    expect(await axeViolations(page), `catálogo com o Combobox aberto (${theme})`).toEqual([]);
+  });
+}
 
 test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igual no 3D e depois de recarregar', async ({
   page,
@@ -121,7 +258,10 @@ test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igua
   const card = page.getByTestId('inventory-item');
   await expect(card).toHaveCount(1);
   await expect(card).toContainText('ST™');
-  await expect(card).toContainText('2 stickers');
+  // Os stickers e o chaveiro viram ícones dentro da área da imagem, não texto.
+  await expect(card.getByTestId('tile-stickers').locator('img')).toHaveCount(2);
+  await expect(card.getByTestId('tile-charm')).toHaveCount(0);
+  await expect(card).not.toContainText('stickers');
   await expect(page.getByTestId('inventory-count')).toHaveText('1 Item de 300');
 
   await page.reload();
@@ -142,6 +282,10 @@ test('sem VIP, StatTrak e nametag ficam com cadeado e não salvam; music kit nem
   await signIn(page);
   await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
   await expect(page.getByTestId('vip-attributes-lock')).toBeVisible();
+  // O cadeado de cada campo trava com a palavra VIP à vista, não só o ícone.
+  const locks = page.getByTestId('field-vip-lock');
+  await expect(locks).toHaveCount(2);
+  for (const lock of await locks.all()) await expect(lock).toContainText('VIP');
   await page.getByTestId('field-stattrak').click();
   await page.getByTestId('save-item').click();
   await expect(page.getByTestId('editor-alert')).toContainText('Corrija 1 campo para salvar.');
@@ -185,7 +329,9 @@ test('o erro de validação da API vira mensagem no campo', async ({
   await expect(page.getByTestId('field-wear')).toHaveAttribute('aria-invalid', 'true');
 });
 
-test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ page }) => {
+test('3D sem botão de modo: o sticker é selecionado sozinho, arrasta e o ajuste fino acompanha', async ({
+  page,
+}) => {
   await signIn(page);
   await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
   await addSticker(page, 'furia');
@@ -193,10 +339,15 @@ test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ pag
   // O 3D precisa ter recebido o sticker antes de arrastá-lo.
   await expect.poll(() => viewerItem(page)).toMatchObject({ stickers: { '0': {} } });
 
-  const drag = page.getByTestId('drag-sticker-0');
-  await drag.click();
-  await expect(drag).toHaveAttribute('aria-pressed', 'true');
-  // O ajuste fino abre e acompanha a posição que veio do 3D.
+  // Não há botão "Arrastar no 3D": o sticker novo já é o selecionado.
+  await expect(page.getByRole('button', { name: /Arrastar/ })).toHaveCount(0);
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 0 });
+  await expect(page.getByTestId('on-viewer-sticker-0')).toBeVisible();
+  await expect(page.getByTestId('viewer-drag-hint')).toBeVisible();
+
+  // Arrastar o selecionado devolve a posição; o ajuste fino mostra o valor que veio do 3D.
+  await page.getByTestId('sticker-0').getByText('Ajuste fino').click();
+  expect(await dragSelectedInViewer(page)).toBe(true);
   await expect(
     page.getByTestId('sticker-0').getByRole('slider', { name: 'Ajuste horizontal' }),
   ).toHaveAttribute('aria-valuetext', '0,25');
@@ -208,6 +359,231 @@ test('arrastar um sticker no 3D atualiza o ajuste fino e é salvo', async ({ pag
   await expect(page).toHaveURL('/inventario');
   const inventory = await (await page.request.get('/api/inventory')).json();
   expect(inventory.items[0].item.stickers['0']).toMatchObject({ x: 0.25, y: 0.1 });
+});
+
+test('a seleção do 3D segue o foco: outra linha, o chaveiro e fora do bloco', async ({ page }) => {
+  await signIn(page);
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await addSticker(page, 'furia');
+  await addSticker(page, 'vitality');
+  await page.getByTestId('add-charm').click();
+  await page
+    .getByTestId('picker-charm')
+    .getByRole('button', { name: /^Escolher / })
+    .first()
+    .click();
+  await expect(page.getByTestId('charm')).toBeVisible();
+  await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+
+  // Focar a linha do primeiro sticker seleciona esse; a do segundo, o segundo.
+  await page.getByTestId('sticker-0').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 0 });
+  await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
+  await expect(page.getByTestId('sticker-1')).toHaveAttribute('data-selected', 'true');
+  await expect(page.getByTestId('sticker-0')).not.toHaveAttribute('data-selected');
+
+  // O chaveiro só é selecionado enquanto a linha dele tem o foco.
+  await page.getByTestId('charm').getByLabel('Padrão do chaveiro').focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
+  await expect(page.getByTestId('on-viewer-charm')).toBeVisible();
+
+  // Sair do bloco manda a seleção nula: aí arrastar só gira a arma.
+  await page.getByTestId('field-seed').focus();
+  await expect.poll(() => viewerSelection(page)).toBeNull();
+  expect(await dragSelectedInViewer(page)).toBe(false);
+  await expect(page.getByTestId('viewer-drag-hint')).toHaveCount(0);
+
+  // Focar fora do formulário (um link da navegação) também sai do bloco; clicar no 3D, não.
+  await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
+  await page
+    .getByRole('navigation', { name: 'Principal' })
+    .getByRole('link', { name: 'Ranking' })
+    .focus();
+  await expect.poll(() => viewerSelection(page)).toBeNull();
+
+  // Voltar a uma linha seleciona de novo.
+  await page.getByTestId('sticker-1').getByRole('slider', { name: 'Rotação' }).focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'sticker', index: 1 });
+  const history = await viewerSelections(page);
+  expect(history).toContainEqual(null);
+});
+
+test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira "Personalizada"', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.getByTestId('add-charm').click();
+  await page
+    .getByTestId('picker-charm')
+    .getByRole('button', { name: /^Escolher / })
+    .first()
+    .click();
+  const charm = page.getByTestId('charm');
+  const placement = charm.getByTestId('charm-placement');
+  await expect(placement).toContainText('Padrão da arma');
+  await expect(page.getByRole('button', { name: /Arrastar no 3D/ })).toHaveCount(0);
+  await expect.poll(() => viewerItem(page)).toMatchObject({ keychains: { '0': {} } });
+  expect((await viewerItem(page))?.keychains).not.toHaveProperty('0.x');
+
+  // No padrão da arma o ajuste fino só pede para escolher uma posição.
+  await charm.getByText('Ajuste fino').click();
+  await expect(charm.getByRole('slider')).toHaveCount(0);
+
+  // Uma posição pronta guarda X, Y e Z e vai ao 3D; os extremos são os limites da arma.
+  await chooseOption(page, placement, '2');
+  await expect(placement).toContainText('Posição 3');
+  await expect
+    .poll(async () => (await viewerItem(page))?.keychains)
+    .toMatchObject({
+      '0': { x: expect.any(Number), y: expect.any(Number), z: expect.any(Number) },
+    });
+  const middle = (await viewerCharmX(page)) ?? 0;
+  await chooseOption(page, placement, '0');
+  await expect.poll(() => viewerCharmX(page)).toBeLessThan(middle);
+
+  // O ajuste fino mexe numa posição pronta e a deixa personalizada.
+  const sliderX = charm.getByRole('slider', { name: 'X' });
+  await expect(sliderX).toBeVisible();
+  await sliderX.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(placement).toContainText('Personalizada');
+
+  // Arrastar o chaveiro no 3D é só atalho: o resultado também é "Personalizada".
+  await chooseOption(page, placement, '1');
+  await charm.getByLabel('Padrão do chaveiro').focus();
+  await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
+  expect(await dragSelectedInViewer(page)).toBe(true);
+  await expect(placement).toContainText('Personalizada');
+  await expect(sliderX).toHaveAttribute('aria-valuetext', '1');
+
+  // Voltar ao padrão da arma tira a posição.
+  await chooseOption(page, placement, 'default');
+  await expect(placement).toContainText('Padrão da arma');
+  await expect.poll(async () => (await viewerItem(page))?.keychains).not.toHaveProperty('0.x');
+
+  await chooseOption(page, placement, '4');
+  await page.getByTestId('save-item').click();
+  await expect(page).toHaveURL('/inventario');
+  const inventory = await (await page.request.get('/api/inventory')).json();
+  expect(inventory.items[0].item.keychains['0']).toMatchObject({
+    x: expect.any(Number),
+    y: expect.any(Number),
+    z: expect.any(Number),
+  });
+  // O cartão mostra o chaveiro como ícone no canto inferior direito da imagem.
+  await expect(page.getByTestId('tile-charm').locator('img')).toHaveCount(1);
+});
+
+test('a barra do float tem uma faixa por fase da faixa real da skin', async ({ page }) => {
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  // A AK Linhas Vermelhas vai de 0,10 a 0,70: sem a Nova de Fábrica, com as outras quatro fases.
+  const track = (await page.getByTestId('field-wear-range').getAttribute('style')) ?? '';
+  for (const tier of ['mw', 'ft', 'ww', 'bs']) expect(track).toContain(`var(--wear-${tier})`);
+  expect(track).not.toContain('var(--wear-fn)');
+  await expect(page.getByTestId('wear-ruler').locator('[data-tier]')).toHaveCount(4);
+  // Cada fase tem o nome completo num Tooltip. Um hover antes da hidratação não abre nada (e o
+  // mouse já está em cima da faixa): espera o editor hidratar e, se o Tooltip não abrir, sai da
+  // faixa e entra de novo.
+  await expect(page.locator('[data-testid="item-editor"][data-hydrated]')).toBeVisible();
+  const ft = page.getByTestId('wear-ruler').locator('[data-tier="ft"]');
+  await expect(async () => {
+    await page.mouse.move(0, 0);
+    await ft.hover();
+    await expect(page.getByRole('tooltip')).toContainText('Testada em Campo', { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
+});
+
+test('em 390 px o editor com stickers e chaveiro não rola na horizontal', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page);
+  const { uid } = await addItemByApi(page, {
+    id: AK_REDLINE,
+    wear: 0.2,
+    seed: 7,
+    stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
+    keychains: { '0': { id: 13113, seed: 5 } },
+  });
+  await page.goto(`/inventario/${uid}`);
+  await expect(page.getByTestId('charm')).toBeVisible();
+  await page.getByTestId('charm').getByText('Ajuste fino').click();
+  const overflow = () =>
+    page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  await page.goto('/inventario');
+  expect(await overflow()).toBeLessThanOrEqual(0);
+  await page.goto('/inventario/adicionar');
+  expect(await overflow()).toBeLessThanOrEqual(0);
+});
+
+test.describe('editor em 390 px, no toque', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 900 } });
+
+  test('nada do editor de um Item existente passa da tela (viewer, slider, Seed, StatTrak)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await signIn(page, { vip: true });
+    // Três stickers de nome longo e o chaveiro, com o "Ajuste fino" fechado: os <fieldset> deles
+    // tinham min-width: min-content e seguravam a coluna dos campos em ~574 px.
+    const { uid } = await addItemByApi(page, {
+      id: AK_REDLINE,
+      wear: 0.15,
+      seed: 661,
+      statTrak: 0,
+      stickers: { '0': { id: 28158 }, '1': { id: 28156 }, '2': { id: 28154 } },
+      keychains: { '0': { id: 28159, seed: 4321 } },
+    });
+    await page.goto(`/inventario/${uid}`);
+    await expect(page.getByTestId('item-editor')).toBeVisible();
+    await expect(page.getByTestId('viewer-2d-attachments')).toBeVisible();
+    await expect(page.getByTestId('sticker-2')).toBeVisible();
+    await expect(page.getByTestId('charm')).toBeVisible();
+    const documentOverflow = () => page.evaluate(() => document.documentElement.scrollWidth - 390);
+    expect(await documentOverflow()).toBeLessThanOrEqual(0);
+    for (const fine of await page.getByText('Ajuste fino').all()) await fine.click();
+    expect(await documentOverflow()).toBeLessThanOrEqual(0);
+    // O overflow do documento pode estar escondido por um pai com overflow: o que importa é cada
+    // caixa do editor ficar dentro da tela (o texto só para leitor de tela fica de fora).
+    const beyond = await page.getByTestId('item-editor').evaluate((editor) =>
+      [editor, ...editor.querySelectorAll('*')]
+        .filter((el) => {
+          const box = el.getBoundingClientRect();
+          return box.width > 1 && box.height > 1 && box.right > 390 + 0.5;
+        })
+        .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute('data-testid') ?? ''}]`),
+    );
+    expect(beyond).toEqual([]);
+  });
+});
+
+test('a dica do 3D lista girar, mover (Shift) e aproximar; no toque, só girar', async ({
+  page,
+}) => {
+  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+  await expect(page.getByTestId('item-viewer')).toContainText(
+    'Arraste para girar · Shift + arraste para mover · Roda para aproximar',
+  );
+  // O endereço do viewer não leva o halfRotation (a build dele não lê).
+  const src = await page.getByTestId('viewer-iframe').getAttribute('src');
+  expect(new URL(src ?? '').searchParams.has('halfRotation')).toBe(false);
+});
+
+test.describe('no toque', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test('a dica do 3D diz só "Arraste para girar"', async ({ page }) => {
+    await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+    await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+    const hint = page.getByTestId('item-viewer').locator('figcaption');
+    await expect(hint).toContainText('Arraste para girar');
+    // O texto do mouse existe no HTML, mas fica escondido no toque.
+    await expect(hint.getByText(/Shift/)).toBeHidden();
+    await expect(hint.getByText(/Roda/)).toBeHidden();
+  });
 });
 
 test.describe('com o 3D bloqueado', () => {
@@ -243,6 +619,26 @@ test.describe('com o 3D bloqueado', () => {
     await expect(page.getByTestId('charm')).toBeVisible();
     await expect(page.getByTestId('viewer-2d-attachments').locator('li')).toHaveCount(2);
   });
+});
+
+test('a grade do Inventário tem cinco colunas no desktop, três no tablet e duas no celular', async ({
+  page,
+}) => {
+  await signIn(page, { vip: true });
+  for (const id of [AK_REDLINE, MUSIC_KIT, 1327]) await addItemByApi(page, { id });
+  await page.goto('/inventario');
+  const grid = page.getByTestId('inventory-grid');
+  const columns = () =>
+    grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
+
+  for (const [width, expected] of [
+    [1440, 5],
+    [820, 3],
+    [390, 2],
+  ] as const) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(columns).toBe(expected);
+  }
 });
 
 test('remover mostra onde o Item está em uso e "Desfazer" o devolve', async ({ page }) => {
@@ -304,7 +700,10 @@ test('sessão expirada no editor: a edição volta depois do novo login', async 
 
 test('/entrar?erro=limite explica o limite de tentativas', async ({ page }) => {
   await page.goto('/entrar?erro=limite');
-  await expect(page.getByRole('alert')).toContainText('Muitas tentativas de login seguidas');
+  // O anunciador de rotas do Next também é um role="alert" (no dev e na produção): filtra pelo texto.
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Muitas tentativas de login seguidas' }),
+  ).toBeVisible();
 });
 
 for (const theme of ['dark', 'light'] as const) {
@@ -317,11 +716,16 @@ for (const theme of ['dark', 'light'] as const) {
       seed: 661,
       statTrak: 0,
       stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
+      // Um chaveiro numa posição pronta: o ícone no cartão e o ajuste fino do editor entram no axe.
+      keychains: { '0': { id: 13113, seed: 5 } },
     });
     await page.reload();
     expect(await axeViolations(page), `inventário (${theme})`).toEqual([]);
     await page.goto(`/inventario/${uid}`);
     await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
+    await page.getByTestId('charm').getByText('Ajuste fino').click();
+    await chooseOption(page, page.getByTestId('charm-placement'), '2');
+    await expect(page.getByTestId('charm').getByRole('slider', { name: 'X' })).toBeVisible();
     expect(await axeViolations(page), `editor (${theme})`).toEqual([]);
   });
 }

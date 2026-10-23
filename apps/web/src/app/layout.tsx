@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { DM_Serif_Display, Inter } from 'next/font/google';
 import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ErrorReporting } from '@/components/error-reporting';
+import { InputModality } from '@/components/input-modality';
 import { SanctionNotice } from '@/components/moderation/sanction-notice';
 import { MotionProvider } from '@/components/motion-provider';
 import { FirstSteps } from '@/components/session/first-steps';
@@ -26,6 +27,16 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+});
+
+// A fonte de destaque (H1 de herói e numerais). Fora do pré-carregamento: só baixa quando uma página a usa,
+// então não pesa na primeira carga das demais.
+const dmSerif = DM_Serif_Display({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-dm-serif',
+  display: 'swap',
+  preload: false,
 });
 
 const MAIN_CONTENT_ID = 'conteudo';
@@ -58,7 +69,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
   const firstStepsOpen =
     session?.firstLogin === true && !hasDismissedFirstSteps(dismissed, session.account.publicId);
-  const step = (key: 'what' | 'steam' | 'equip' | 'ingame') => ({
+  const step = (key: 'add' | 'equip' | 'play') => ({
     title: tSteps(`steps.${key}.title`),
     body: tSteps.rich(`steps.${key}.body`, {
       cmd: (chunks) => (
@@ -74,13 +85,14 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang={locale}
       data-theme={DEFAULT_THEME}
-      className={inter.variable}
+      className={`${inter.variable} ${dmSerif.variable}`}
       suppressHydrationWarning
     >
       <head>
         <ThemeScript nonce={nonce} />
       </head>
       <body>
+        <InputModality />
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
         <NextIntlClientProvider messages={null}>
           <MotionProvider>
@@ -95,7 +107,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               >
                 {t('skipToContent')}
               </a>
-              {/* Cabeçalho e conteúdo ocupam ao menos a tela inteira: o rodapé só aparece no fim real da página. */}
+              {/* Fluxo natural: o rodapé vem logo depois do conteúdo e, nas páginas curtas, o main ocupa o que sobra e o encosta no pé da tela. */}
               <div className="flex min-h-dvh flex-col">
                 <SiteHeader />
                 {/* Aviso da própria Punição (S07): só as mensagens dele vão ao cliente. */}
@@ -112,22 +124,22 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                       // Modelo com {name}: o nome vem da sessão no cliente, então o espaço dele segue literal.
                       title: tSteps('title', { name: '{name}' }),
                       intro: tSteps('intro'),
+                      strip: tSteps('strip'),
+                      open: tSteps('open'),
                       close: tSteps('close'),
                       done: tSteps('done'),
                       toInventory: tSteps('toInventory'),
-                      reopenHint: tSteps('reopenHint'),
                       steps: {
-                        what: step('what'),
-                        steam: step('steam'),
+                        add: step('add'),
                         equip: step('equip'),
-                        ingame: step('ingame'),
+                        play: step('play'),
                       },
                     }}
                   />
                   {children}
                 </main>
+                <SiteFooter />
               </div>
-              <SiteFooter />
               {sentry ? <ErrorReporting {...sentry} /> : null}
             </SessionProvider>
           </MotionProvider>

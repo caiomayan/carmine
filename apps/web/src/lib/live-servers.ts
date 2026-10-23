@@ -5,6 +5,16 @@
 import type { FriendsPlaying, LiveServer, LiveServerList, PlayingFriend } from '@carmine/contracts';
 import type { ModeFilter } from './modes';
 
+/** O `id` do cartão (ou linha) do servidor na home: destino do resultado da busca (Ctrl+K). */
+export const serverAnchor = (id: string) => `servidor-${id}`;
+
+/**
+ * Para onde a busca leva a um servidor: ao cartão dele na home. O offline fica no grupo "Offline"
+ * (talvez recolhido), sem cartão para ir: só a home.
+ */
+export const serverHref = (server: Pick<LiveServer, 'id' | 'state'>) =>
+  server.state === 'offline' ? '/' : `/#${serverAnchor(server.id)}`;
+
 /** Abre o CS2 já conectando ao Servidor Carmine. */
 export const steamConnectUrl = (address: string) => `steam://connect/${address}`;
 
@@ -26,7 +36,10 @@ const HIGH_OCCUPANCY = 0.75;
 export type OccupancyLevel = 'none' | 'normal' | 'high' | 'full';
 
 /** A barra de jogadores: quanto está cheia (0 a 1) e o nível, que decide a cor de contexto. */
-export function occupancy(server: LiveServer): { ratio: number; level: OccupancyLevel } {
+export function occupancy(server: Pick<LiveServer, 'players' | 'maxPlayers' | 'state'>): {
+  ratio: number;
+  level: OccupancyLevel;
+} {
   if (server.state === 'offline') return { ratio: 0, level: 'none' };
   const ratio = Math.min(1, server.players / server.maxPlayers);
   if (server.state === 'full') return { ratio, level: 'full' };
@@ -96,24 +109,33 @@ export function updatedSecondsAgo(state: LiveState, now: number): number | null 
   return Math.max(0, Math.floor((now - state.confirmedAt) / 1000));
 }
 
-/** O bloco "Seus amigos jogando agora": a resposta da API, mais o carregando e a lista antiga. */
+/**
+ * O bloco "Seus amigos jogando agora": a resposta da API, mais o carregando e a lista antiga.
+ * `private` é a lista de amigos da Conta privada; `friends` são os achados pelas listas de quem
+ * está jogando (vazio: ninguém achado).
+ */
 export type FriendsView =
   | { status: 'loading' }
-  | { status: 'ok'; friends: PlayingFriend[]; stale: boolean }
-  | { status: 'private' }
+  | { status: 'ok' | 'private'; friends: PlayingFriend[]; stale: boolean }
   | { status: 'unavailable' };
 
 /**
  * O próximo estado do bloco a cada leitura (`failed`: nem a API respondeu). Uma falha depois
- * de uma lista boa não apaga a lista: ela fica, marcada como a última vista.
+ * de uma lista com amigos (ou "nenhum jogando", na lista própria) não apaga a lista: ela fica,
+ * marcada como a última vista.
  */
 export function nextFriends(previous: FriendsView, result: FriendsPlaying | 'failed'): FriendsView {
-  if (result !== 'failed' && result.status === 'ok') {
-    return { status: 'ok', friends: result.friends, stale: false };
+  if (result !== 'failed' && result.status !== 'unavailable') {
+    return { status: result.status, friends: result.friends, stale: false };
   }
-  const failed = result === 'failed' || result.status === 'unavailable';
-  if (failed && previous.status === 'ok') return { ...previous, stale: true };
-  return failed ? { status: 'unavailable' } : { status: 'private' };
+  const keep =
+    previous.status === 'ok' || (previous.status === 'private' && previous.friends.length > 0);
+  return keep ? { ...previous, stale: true } : { status: 'unavailable' };
+}
+
+/** Os amigos jogando que o estado traz (da lista própria ou achados pelas listas deles). */
+export function viewFriends(view: FriendsView | { status: 'anonymous' }): PlayingFriend[] {
+  return 'friends' in view ? view.friends : [];
 }
 
 /** Nome que a home mostra: o nome de vitrine (S07) ou, sem ele, o identificador da Staff. */

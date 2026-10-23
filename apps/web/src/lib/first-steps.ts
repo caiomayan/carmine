@@ -28,3 +28,12 @@ export function firstStepsCookie(value: string | undefined, publicId: number): s
   );
   return `${FIRST_STEPS_COOKIE}=${ids.join('.')}; Path=/; Max-Age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
 }
+
+/**
+ * Onde a faixa de uma linha aparece: só na home e no Perfil da própria Conta. Nas demais rotas
+ * (Termos, 404, Staff) ela não interrompe quem está lendo; o Dialog continua a um clique, no menu.
+ */
+export function showsFirstStepsStrip(pathname: string, publicId: number): boolean {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return path === '/' || path === `/${publicId}`;
+}

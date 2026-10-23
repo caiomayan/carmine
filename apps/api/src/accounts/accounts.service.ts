@@ -92,7 +92,7 @@ export class AccountsService {
 
   /**
    * Login Steam no site (S03): o primeiro reivindica a Conta. Se a pessoa nunca jogou, a Conta
-   * nasce já reivindicada, com nome e avatar da Steam Web API (sem resposta, "Jogador #ID" e o
+   * nasce já reivindicada, com nome e avatar da Steam Web API (sem resposta, um nome fictício fixo e o
    * avatar neutro até o próximo login ou connect). É sempre a mesma Conta do SteamID: nunca há
    * fusão. `firstLogin` diz se foi este login que reivindicou a Conta; sob logins simultâneos,
    * só um deles.

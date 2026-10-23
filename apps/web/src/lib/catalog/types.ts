@@ -25,3 +25,19 @@ export type Rarity = (typeof RARITIES)[number];
 
 /** Itens por página no catálogo e nas buscas de stickers e charms. */
 export const CATALOG_PAGE_SIZE = 48;
+
+/** Armas, facas e luvas têm skin: é o nome dela que distingue o cartão (a arma se repete). */
+export const hasSkinName = (type: CatalogType | null) =>
+  type === 'weapon' || type === 'knife' || type === 'glove';
+
+/** Uma opção de filtro de lista longa: o valor da URL, o rótulo e outros nomes que a busca acha. */
+export type FacetOption = { value: string; label: string; keywords: string[] };
+
+/**
+ * Versão do formato da resposta de `/inventario/aplicaveis`. Vai na URL do pedido porque a resposta
+ * fica em cache no navegador e na borda (1 hora, e até 1 dia servindo a antiga enquanto revalida):
+ * quem mudar o formato (`AttachmentPage`) sobe este número, e o cache antigo deixa de valer em vez de
+ * chegar ao código novo no formato velho. O teste "formato da resposta de /inventario/aplicaveis"
+ * (`catalog.test.ts`) falha se o formato mudar sem esta versão subir.
+ */
+export const ATTACHMENTS_PAYLOAD_VERSION = '2';

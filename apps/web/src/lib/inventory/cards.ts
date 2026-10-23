@@ -18,8 +18,9 @@ export type InventoryCardData = {
   rarity: Rarity;
   image: string;
   statTrak: boolean;
-  stickers: number;
-  charm: boolean;
+  /** Stickers aplicados, na ordem dos slots (chave "0".."4" do contrato). */
+  stickers: AttachmentLabel[];
+  charm: AttachmentLabel | null;
   vip: boolean;
 };
 
@@ -42,6 +43,7 @@ export function toCard({ uid, item }: InventoryItem): InventoryCardData {
   const entry = catalogEntry(item.id);
   // Um Item que saiu do catálogo numa atualização da lib continua no Inventário, sem nome.
   const name = entry?.name ?? `Item #${item.id}`;
+  const firstCharm = Object.values(item.keychains ?? {})[0];
   return {
     uid,
     catalogId: item.id,
@@ -52,8 +54,10 @@ export function toCard({ uid, item }: InventoryItem): InventoryCardData {
     rarity: entry?.rarity ?? 'consumer',
     image: entry ? imageForWear(entry.image, item.wear ?? null) : '',
     statTrak: item.statTrak !== undefined,
-    stickers: Object.keys(item.stickers ?? {}).length,
-    charm: Object.keys(item.keychains ?? {}).length > 0,
+    stickers: Object.entries(item.stickers ?? {})
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([, sticker]) => labelOf(attachmentEntry(sticker.id), sticker.id)),
+    charm: firstCharm ? labelOf(attachmentEntry(firstCharm.id), firstCharm.id) : null,
     vip: entry?.vip ?? false,
   };
 }

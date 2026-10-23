@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseWeekStart, splitByWeek, weekEndOf, weekStartOf } from './stats-week.js';
+import { parseWeekStart, splitByWeek, weekClosesAt, weekEndOf, weekStartOf } from './stats-week.js';
 
 describe('weekStartOf', () => {
   it('a semana começa na segunda-feira às 00:00 de Brasília', () => {
@@ -68,5 +68,22 @@ describe('weekEndOf', () => {
   it('o fim é o domingo da mesma semana', () => {
     expect(weekEndOf('2026-10-12')).toBe('2026-10-18');
     expect(weekEndOf('2026-12-28')).toBe('2027-01-03');
+  });
+});
+
+describe('weekClosesAt', () => {
+  it('a semana fecha na segunda-feira seguinte, 00:00 de Brasília (03:00 UTC)', () => {
+    expect(weekClosesAt('2026-10-19')).toBe('2026-10-26T03:00:00.000Z');
+  });
+
+  it('atravessa a virada de ano', () => {
+    expect(weekClosesAt('2026-12-28')).toBe('2027-01-04T03:00:00.000Z');
+  });
+
+  it('é o primeiro instante da semana seguinte', () => {
+    const closes = new Date(weekClosesAt('2026-10-19'));
+
+    expect(weekStartOf(new Date(closes.getTime() - 1))).toBe('2026-10-19');
+    expect(weekStartOf(closes)).toBe('2026-10-26');
   });
 });

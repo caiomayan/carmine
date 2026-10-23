@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test as base, expect, type Page } from '@playwright/test';
+import { test as base, expect, type Locator, type Page } from '@playwright/test';
 import { routeViewer, type ViewerMode } from './fake-viewer';
 
 export type Theme = 'dark' | 'light';
@@ -22,6 +22,7 @@ export const ROUTES = [
   '/entrar',
   '/entrar?erro=indisponivel&motivo=sessao-expirada',
   '/entrar?erro=limite',
+  '/configuracoes',
   '/dev/componentes',
 ] as const;
 export const WIDTHS = [390, 820, 1100, 1440] as const;
@@ -81,6 +82,15 @@ export const test = base.extend<Fixtures>({
 
 export { expect };
 
+/**
+ * Escolhe uma opção de um Select ou Combobox pelo valor (as opções levam `data-testid="option-<valor>"`;
+ * o item "vazio" ("Todas") é `empty`). O botão é o que leva o rótulo ou o `data-testid` do campo.
+ */
+export async function chooseOption(page: Page, trigger: Locator, value: string) {
+  await trigger.click();
+  await page.getByTestId(`option-${value}`).click();
+}
+
 /** Grava o tema como se a pessoa já o tivesse escolhido numa visita anterior. */
 export async function saveTheme(page: Page, theme: Theme) {
   await page.addInitScript((t) => {
@@ -130,25 +140,89 @@ export async function scrollToEnd(page: Page) {
   await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
 }
 
-export async function axeViolations(page: Page) {
+/**
+ * Leva as animações finitas que ainda correm (as do Motion, que a folha de medição não alcança)
+ * ao último quadro, na hora de medir. `finish()` põe cada uma no estado que a pessoa vê no fim;
+ * as infinitas (pulso, esqueleto) seguem como estão. Repete porque terminar uma entrada pode
+ * montar outra.
+ */
+async function finishAnimations(page: Page) {
+  for (let round = 0; round < 3; round++) {
+    const pending = await page.evaluate(async () => {
+      const finite = () =>
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY);
+      let touched = 0;
+      for (const animation of finite()) {
+        if (animation.playState === 'finished') continue;
+        touched++;
+        try {
+          animation.finish();
+        } catch {
+          // Sem último quadro possível: o estado sem a animação é o que fica.
+          animation.cancel();
+        }
+      }
+      // Dois quadros: o estilo final é aplicado e o que o React montou por causa dele já aparece.
+      await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+      return touched;
+    });
+    if (pending === 0) return;
+  }
+}
+
+/** O que o axe diz de um nó, com as cores e a razão quando a regra as mede (contraste). */
+function describe(node: { target: unknown[]; any: { data?: unknown }[] }): string {
+  const selector = node.target.join(' ');
+  for (const check of node.any) {
+    const data = check.data as
+      | {
+          fgColor?: string;
+          bgColor?: string;
+          contrastRatio?: number;
+          expectedContrastRatio?: string;
+        }
+      | undefined;
+    if (data?.fgColor && data.bgColor && data.contrastRatio !== undefined) {
+      return `${selector} [texto ${data.fgColor} sobre ${data.bgColor}: ${data.contrastRatio}:1, pede ${data.expectedContrastRatio}]`;
+    }
+  }
+  return selector;
+}
+
+/**
+ * As violações do axe (WCAG 2.2 AA) da página como está, uma linha por regra com os nós e, no
+ * contraste, as cores e a razão medidas. Antes de medir, a página assenta, o rodapé entra e toda
+ * animação finita vai ao último quadro: o axe mede o estado final, não o meio de uma entrada.
+ */
+export async function axeViolations(page: Page, { ignore = [] }: { ignore?: string[] } = {}) {
   // O rodapé só fica opaco quando entra na tela: rola até o fim para o axe medir o contraste dele.
   await scrollToEnd(page);
   await settle(page);
-  // A análise leva segundos, e uma transição que começa nesse meio tempo (o hover de uma linha
-  // quando o layout muda sob o mouse parado) seria medida pela metade. Com a página já assentada,
-  // congela as transições no valor final; as regras do axe seguem todas ligadas. A folha
-  // construída por script não passa pela CSP de estilos inline.
+  // A análise leva segundos, e o que começa a se mexer nesse meio tempo seria medido pela
+  // metade: uma transição (o hover de uma linha quando o layout muda sob o mouse parado), a
+  // entrada do rodapé (ligada à rolagem) ou a de uma linha de servidor que acabou de ficar
+  // offline (o texto vinha a 1,1:1 de contraste, quase transparente). Com a página já assentada,
+  // a folha de medição tira as transições e as animações CSS: o estilo sem elas é o final (as
+  // entradas do site só têm o quadro de saída, "from"), e vale também para o que nascer durante a
+  // análise. As regras do axe seguem todas ligadas. A folha construída por script não passa pela
+  // CSP de estilos inline.
   await page.evaluate(() => {
     const sheet = new CSSStyleSheet();
-    sheet.replaceSync('*, *::before, *::after { transition: none !important; }');
+    sheet.replaceSync(
+      '*, *::before, *::after { transition: none !important; animation: none !important; }',
+    );
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     (window as unknown as { __axeFreeze: CSSStyleSheet }).__axeFreeze = sheet;
   });
+  await finishAnimations(page);
   try {
     const { violations } = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .disableRules(ignore)
       .analyze();
-    return violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(' ')).join(', ')}`);
+    return violations.map((v) => `${v.id}: ${v.nodes.map(describe).join(', ')}`);
   } finally {
     await page.evaluate(() => {
       const frozen = (window as unknown as { __axeFreeze?: CSSStyleSheet }).__axeFreeze;

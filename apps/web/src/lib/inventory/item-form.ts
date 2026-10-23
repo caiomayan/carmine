@@ -25,7 +25,13 @@ export type FormSpec = {
   statTrak: boolean;
   nameTag: boolean;
   stickerSlots: number;
-  charm: { seed: Range } | null;
+  charm: {
+    seed: Range;
+    /** Limites da posição que a cs2-lib aceita (a API recusa fora deles). */
+    position?: { x: Range; y: Range; z: Range } | null;
+  } | null;
+  /** Limites do ajuste fino dos stickers (X e Y). */
+  stickerOffset?: { x: Range; y: Range } | null;
   /** Agente ou music kit: o Item inteiro exige VIP. */
   vipItem: boolean;
 };
@@ -62,6 +68,23 @@ export type FormIssue = { field: string; code: InventoryErrorCode; range?: Range
 const round = (value: number, decimals: number) => Number(value.toFixed(decimals));
 const roundToStep = (value: number, step: number) => round(Math.round(value / step) * step, 4);
 
+type Bounds = Record<string, { min: number | undefined; max: number | undefined }>;
+
+/** Os limites só valem completos (min e max de todos os eixos); incompletos, nenhum. */
+function completeBounds<T extends Bounds>(
+  bounds: T | null | undefined,
+): { [K in keyof T]: Range } | null {
+  if (!bounds) return null;
+  const entries = Object.entries(bounds);
+  if (!entries.every(([, range]) => range.min !== undefined && range.max !== undefined)) {
+    return null;
+  }
+  return Object.fromEntries(entries) as { [K in keyof T]: Range };
+}
+
+const clampTo = (value: number | undefined, range: Range | undefined) =>
+  value === undefined || !range ? value : Math.min(Math.max(value, range.min), range.max);
+
 /** O que o formulário precisa da especificação do catálogo. */
 export function formSpecOf(spec: ItemSpec): FormSpec {
   return {
@@ -71,7 +94,10 @@ export function formSpecOf(spec: ItemSpec): FormSpec {
     statTrak: spec.statTrak,
     nameTag: spec.nameTag,
     stickerSlots: spec.stickerSlots,
-    charm: spec.charm ? { seed: spec.charm.seed } : null,
+    charm: spec.charm
+      ? { seed: spec.charm.seed, position: completeBounds(spec.charm.position) }
+      : null,
+    stickerOffset: completeBounds(spec.stickerOffset),
     vipItem: spec.entry.vip,
   };
 }
@@ -268,18 +294,23 @@ export function positionsFromViewer(
     if (!from || (from.x === undefined && from.y === undefined)) return sticker;
     if (!moved(sticker.x, from.x) && !moved(sticker.y, from.y)) return sticker;
     changed = true;
-    return { ...sticker, x: roundPosition(from.x), y: roundPosition(from.y) };
+    return {
+      ...sticker,
+      x: roundPosition(clampTo(from.x, spec.stickerOffset?.x)),
+      y: roundPosition(clampTo(from.y, spec.stickerOffset?.y)),
+    };
   });
   let charm = form.charm;
   const keychain = viewer.keychains?.['0'];
   if (charm && keychain && keychain.id === charm.id && keychain.x !== undefined) {
     if (moved(charm.x, keychain.x) || moved(charm.y, keychain.y) || moved(charm.z, keychain.z)) {
       changed = true;
+      const area = spec.charm?.position;
       charm = {
         ...charm,
-        x: roundPosition(keychain.x),
-        y: roundPosition(keychain.y),
-        z: roundPosition(keychain.z),
+        x: roundPosition(clampTo(keychain.x, area?.x)),
+        y: roundPosition(clampTo(keychain.y, area?.y)),
+        z: roundPosition(clampTo(keychain.z, area?.z)),
       };
     }
   }

@@ -21,11 +21,15 @@ import { PlusIcon } from '@/components/icons/animated/plus';
 import { XIcon } from '@/components/icons/animated/x';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
+import { LabelInput } from '@/components/ui/label-input';
+import { LabelSelect } from '@/components/ui/label-select';
 import { type DurationUnit, durationParts, sameMeasures, toMinutes } from '@/lib/moderation';
+import { enterTransition } from '@/lib/motion';
 import { measureOptions, type StaffViewer } from '@/lib/staff';
+import { useRevealMotion } from '@/lib/use-reveal-motion';
 import { cn } from '@/lib/utils';
 import { REASON_MIN, ReasonField } from './action-form';
-import { Field, FieldError, Select, TextInput } from './fields';
+import { FieldError } from './fields';
 import { useMeasureLabel } from './use-measure-label';
 import { useStaffRequest } from './use-staff-request';
 
@@ -75,6 +79,7 @@ export function ApplySanctionForm({
   const tm = useTranslations('moderation');
   const label = useMeasureLabel();
   const id = useId();
+  const reveal = useRevealMotion();
   const { request, pending } = useStaffRequest();
   const options = measureOptions(viewer.role);
   const [category, setCategory] = useState<SanctionCategory | ''>('');
@@ -194,41 +199,31 @@ export function ApplySanctionForm({
     <form onSubmit={review} noValidate className="grid gap-5" data-testid="apply-sanction">
       {report ? (
         <p
-          className="rounded-sm bg-surface-2 px-3 py-2 text-[13px]"
+          className="rounded-sm bg-surface-2 px-3 py-2 text-body-sm"
           data-testid="apply-from-report"
         >
           {report.needsEvidence ? t('apply.fromReportEvidence') : t('apply.fromReport')}
         </p>
       ) : null}
-      <Field id={`${id}-category`} label={t('apply.category')}>
-        <Select
-          id={`${id}-category`}
-          value={category}
-          onChange={(event) => pickCategory(event.target.value)}
-          data-testid="sanction-category"
-        >
-          <option value="">{t('apply.chooseCategory')}</option>
-          {sanctionCategorySchema.options.map((c) => (
-            <option key={c} value={c}>
-              {tm(`staffCategories.${c}`)}
-              {offenses(c) > 0
-                ? ` · ${t('apply.offenses', { count: offenses(c), days: RECIDIVISM_WINDOW_DAYS })}`
-                : ''}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <LabelSelect
+        label={t('apply.category')}
+        id={`${id}-category`}
+        value={category}
+        onValueChange={pickCategory}
+        data-testid="sanction-category"
+        options={sanctionCategorySchema.options.map((c) => ({
+          value: c,
+          label:
+            tm(`staffCategories.${c}`) +
+            (offenses(c) > 0
+              ? ` · ${t('apply.offenses', { count: offenses(c), days: RECIDIVISM_WINDOW_DAYS })}`
+              : ''),
+        }))}
+      />
 
       <AnimatePresence initial={false}>
         {category ? (
-          <m.div
-            key="measures"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-            className="-mx-1 overflow-hidden px-1"
-          >
+          <m.div key="measures" {...reveal} className="-mx-1 overflow-hidden px-1">
             <div className="grid gap-5 pb-1">
               {suggestion ? (
                 <div
@@ -236,7 +231,7 @@ export function ApplySanctionForm({
                   data-offense={suggestion.offense}
                   className="grid gap-1 rounded-lg bg-surface px-4 py-3"
                 >
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-body-sm text-muted-foreground">
                     {t('apply.suggestion', {
                       offense: suggestion.offense,
                       days: RECIDIVISM_WINDOW_DAYS,
@@ -250,12 +245,12 @@ export function ApplySanctionForm({
 
               <fieldset className="grid gap-3">
                 <legend className="flex w-full items-center justify-between gap-3 pb-3">
-                  <span className="text-[12.5px] font-semibold">{t('apply.measures')}</span>
+                  <span className="text-body-sm font-semibold">{t('apply.measures')}</span>
                   {valid && suggestion ? (
                     <span
                       data-testid="suggestion-state"
                       data-follows={follows}
-                      className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground"
+                      className="inline-flex items-center gap-1.5 text-caption text-muted-foreground"
                     >
                       <span
                         aria-hidden="true"
@@ -323,44 +318,42 @@ export function ApplySanctionForm({
               {needsProof ? (
                 <fieldset className="grid gap-3" data-testid="cheat-proof">
                   <legend className="grid gap-1 pb-3">
-                    <span className="text-[12.5px] font-semibold">{t('apply.proof.title')}</span>
-                    <span className="text-[12.5px] text-muted-foreground">
+                    <span className="text-body-sm font-semibold">{t('apply.proof.title')}</span>
+                    <span className="text-body-sm text-muted-foreground">
                       {t('apply.proof.hint')}
                     </span>
                   </legend>
                   <div className="grid gap-3 md:grid-cols-2">
-                    <Field id={`${id}-witness`} label={t('apply.proof.witness')}>
-                      <TextInput
-                        id={`${id}-witness`}
-                        value={witness}
-                        maxLength={200}
-                        placeholder={t('apply.proof.witnessPlaceholder')}
-                        aria-invalid={proofError ? true : undefined}
-                        onChange={(event) => {
-                          setWitness(event.target.value);
-                          setReviewing(false);
-                          setProofError(null);
-                        }}
-                        data-testid="proof-witness"
-                      />
-                    </Field>
-                    <Field id={`${id}-evidence`} label={t('apply.proof.evidence')}>
-                      <TextInput
-                        id={`${id}-evidence`}
-                        type="url"
-                        inputMode="url"
-                        value={evidenceUrl}
-                        maxLength={500}
-                        placeholder="https://"
-                        aria-invalid={proofError ? true : undefined}
-                        onChange={(event) => {
-                          setEvidenceUrl(event.target.value);
-                          setReviewing(false);
-                          setProofError(null);
-                        }}
-                        data-testid="proof-evidence"
-                      />
-                    </Field>
+                    <LabelInput
+                      id={`${id}-witness`}
+                      label={t('apply.proof.witness')}
+                      value={witness}
+                      maxLength={200}
+                      placeholder={t('apply.proof.witnessPlaceholder')}
+                      aria-invalid={proofError ? true : undefined}
+                      onChange={(event) => {
+                        setWitness(event.target.value);
+                        setReviewing(false);
+                        setProofError(null);
+                      }}
+                      data-testid="proof-witness"
+                    />
+                    <LabelInput
+                      id={`${id}-evidence`}
+                      label={t('apply.proof.evidence')}
+                      type="url"
+                      inputMode="url"
+                      value={evidenceUrl}
+                      maxLength={500}
+                      placeholder="https://"
+                      aria-invalid={proofError ? true : undefined}
+                      onChange={(event) => {
+                        setEvidenceUrl(event.target.value);
+                        setReviewing(false);
+                        setProofError(null);
+                      }}
+                      data-testid="proof-evidence"
+                    />
                   </div>
                   {proofError ? <FieldError>{proofError}</FieldError> : null}
                 </fieldset>
@@ -384,7 +377,7 @@ export function ApplySanctionForm({
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 4 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                    transition={enterTransition()}
                     role="group"
                     aria-labelledby={`${id}-confirm`}
                     className="grid gap-3 rounded-lg bg-surface-2 px-4 py-3.5"
@@ -393,7 +386,7 @@ export function ApplySanctionForm({
                     <p id={`${id}-confirm`} className="text-sm font-semibold">
                       {t('apply.confirmTitle')}
                     </p>
-                    <p className="text-[13.5px]">
+                    <p className="text-body-sm">
                       {t('apply.confirmBody', {
                         name: detail.account.displayName,
                         measures: chosen.map(label).join(' + '),
@@ -401,14 +394,14 @@ export function ApplySanctionForm({
                       })}
                     </p>
                     {needsProof ? (
-                      <p className="text-[12.5px] text-muted-foreground" data-testid="proof-public">
+                      <p className="text-body-sm text-muted-foreground" data-testid="proof-public">
                         {t(
                           proof.evidenceUrl ? 'apply.proof.publicCheat' : 'apply.proof.publicRules',
                         )}
                       </p>
                     ) : null}
                     {chosen.some((m) => m.type === 'ban') ? (
-                      <p className="text-[12.5px] text-muted-foreground">{t('apply.banEffect')}</p>
+                      <p className="text-body-sm text-muted-foreground">{t('apply.banEffect')}</p>
                     ) : null}
                     <div className="flex flex-wrap gap-2">
                       <Button
@@ -453,7 +446,7 @@ export function ApplySanctionForm({
       <div role="status" className="empty:hidden">
         {done ? (
           <p
-            className="inline-flex items-center gap-1.5 text-[12.5px] text-muted-foreground"
+            className="inline-flex items-center gap-1.5 text-body-sm text-muted-foreground"
             data-icon-trigger
           >
             <span className="text-status-success">
@@ -497,30 +490,26 @@ function MeasureRow({
       data-testid="measure-row"
       className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-x-2 gap-y-3 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)_auto]"
     >
-      <Field id={`${id}-type`} label={t('type')}>
-        <Select
-          id={`${id}-type`}
-          value={draft.type}
-          onChange={(event) => onChange({ type: event.target.value as SanctionType })}
-          data-testid="measure-type"
-        >
-          {types.map((type) => (
-            <option key={type} value={type}>
-              {tm(`types.${type}`)} — {tm(`typeHints.${type}`)}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <LabelSelect
+        label={t('type')}
+        id={`${id}-type`}
+        value={draft.type}
+        onValueChange={(next) => onChange({ type: next as SanctionType })}
+        data-testid="measure-type"
+        options={types.map((type) => ({
+          value: type,
+          label: `${tm(`types.${type}`)} — ${tm(`typeHints.${type}`)}`,
+        }))}
+      />
       <div className="col-span-2 row-start-2 md:col-span-1 md:row-start-auto">
         {lasting ? (
           <fieldset className="grid gap-1.5">
-            <legend className="pb-1.5 text-[12.5px] font-semibold">{t('duration')}</legend>
+            <legend className="pb-1.5 text-body-sm font-semibold">{t('duration')}</legend>
             <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor={`${id}-value`} className="sr-only">
-                {t('durationValue')}
-              </label>
-              <TextInput
+              <LabelInput
                 id={`${id}-value`}
+                label={t('durationValue')}
+                containerClassName="w-36"
                 type="number"
                 inputMode="numeric"
                 min={1}
@@ -528,26 +517,19 @@ function MeasureRow({
                 disabled={draft.permanent}
                 aria-invalid={invalidValue || undefined}
                 onChange={(event) => onChange({ value: event.target.value })}
-                className="w-20 tabular-nums"
+                className="tabular-nums"
                 data-testid="measure-value"
               />
-              <label htmlFor={`${id}-unit`} className="sr-only">
-                {t('durationUnit')}
-              </label>
-              <Select
+              <LabelSelect
                 id={`${id}-unit`}
+                label={t('durationUnit')}
+                containerClassName="w-36"
                 value={draft.unit}
                 disabled={draft.permanent}
-                onChange={(event) => onChange({ unit: event.target.value as DurationUnit })}
-                className="w-32"
+                onValueChange={(next) => onChange({ unit: next as DurationUnit })}
                 data-testid="measure-unit"
-              >
-                {UNITS.map((unit) => (
-                  <option key={unit} value={unit}>
-                    {t(`units.${unit}`)}
-                  </option>
-                ))}
-              </Select>
+                options={UNITS.map((unit) => ({ value: unit, label: t(`units.${unit}`) }))}
+              />
               <label
                 className={cn(
                   'inline-flex min-h-(--tap) cursor-pointer items-center gap-2 rounded-md px-2 text-sm transition-colors duration-(--dur-fast) ease-std hover:bg-hover',

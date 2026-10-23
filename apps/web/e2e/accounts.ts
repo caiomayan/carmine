@@ -25,18 +25,24 @@ export async function chooseSteamAccount(
   ]);
 }
 
-/** Uma Conta que jogou num Servidor Carmine e nunca entrou no site (não reivindicada). */
-export async function createUnclaimedAccount(request: APIRequestContext, steamName: string) {
-  const steamId = newSteamId();
+/** O jogo conecta um jogador num Servidor Carmine: a Conta nasce (ou é a mesma de antes). */
+export async function reconnectPlayer(
+  request: APIRequestContext,
+  steamId: string,
+  steamName: string,
+) {
   const response = await request.post('/api/server/player-connects', {
     headers: { authorization: `Bearer ${process.env.E2E_SERVER_KEY}` },
     data: { steamId, steamName },
   });
   if (!response.ok()) throw new Error(`connect recusado: ${response.status()}`);
-  const { publicId, displayName } = (await response.json()) as {
-    publicId: number;
-    displayName: string;
-  };
+  return (await response.json()) as { publicId: number; displayName: string };
+}
+
+/** Uma Conta que jogou num Servidor Carmine e nunca entrou no site (não reivindicada). */
+export async function createUnclaimedAccount(request: APIRequestContext, steamName: string) {
+  const steamId = newSteamId();
+  const { publicId, displayName } = await reconnectPlayer(request, steamId, steamName);
   return { steamId, publicId, displayName };
 }
 

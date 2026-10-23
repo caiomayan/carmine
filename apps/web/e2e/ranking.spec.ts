@@ -6,6 +6,19 @@ import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
 
 const AT = () => new Date().toISOString();
 
+/**
+ * Liga o Perfil privado pelo interruptor da página aberta. Um clique logo depois do `goto` pode
+ * cair antes de a página hidratar e não fazer nada; então repete até ligar (sem desligar o que já
+ * ligou: só clica enquanto está desligado).
+ */
+async function turnPrivateProfileOn(page: import('@playwright/test').Page) {
+  const toggle = page.getByTestId('privacy-switch');
+  await expect(async () => {
+    if (!(await toggle.isChecked())) await toggle.click();
+    await expect(toggle).toBeChecked({ timeout: 2_000 });
+  }).toPass();
+}
+
 /** A segunda-feira (Brasília) da semana atual, como a API a conta. */
 function thisWeek(): string {
   const local = new Date(Date.now() - 3 * 60 * 60 * 1000);
@@ -110,9 +123,8 @@ test('o Perfil privado aparece como "Jogador privado", sem link, nome nem avatar
   await play(request, { rounds: { steamIds: [quiet.steamId, other.steamId], count: 50 } });
   // A Conta entra no site e liga o Perfil privado pela interface.
   await signInByRequest(page, quiet.steamId);
-  await page.goto(`/${quiet.publicId}`);
-  await page.getByTestId('privacy-switch').click();
-  await expect(page.getByTestId('privacy-switch')).toBeChecked();
+  await page.goto('/configuracoes/perfil');
+  await turnPrivateProfileOn(page);
 
   await page.goto('/ranking');
   const own = page
@@ -158,6 +170,47 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
   await expect(
     page.getByTestId('ranking-row').filter({ hasText: 'Progresso Rank' }),
   ).toHaveAttribute('data-self', 'true');
+
+  // A U3e leva de "minha posição" para /ranking#minha-linha: só a linha própria tem o id, e o
+  // scroll-margin a mantém fora de baixo do header.
+  const mine = page.locator('#minha-linha');
+  await expect(mine).toHaveCount(1);
+  await expect(mine).toHaveAttribute('data-self', 'true');
+  await expect(mine).toContainText('Progresso Rank');
+  await page.goto('/ranking?modo=retake#minha-linha');
+  await expect(mine).toBeInViewport();
+  const header = await page.getByRole('banner').boundingBox();
+  const row = await mine.boundingBox();
+  if (!header || !row) throw new Error('header ou linha própria sem caixa');
+  expect(row.y).toBeGreaterThanOrEqual(header.y + header.height);
+});
+
+test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em vez de sumir', async ({
+  page,
+  request,
+}) => {
+  const { high } = await tiedPair(request);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/ranking');
+
+  const row = page.getByTestId('ranking-row').filter({ hasText: high.name });
+  await expect(row.getByRole('link', { name: high.name })).toBeVisible();
+  await expect(row.getByTestId('ranking-row-extra')).toContainText(/HS% .+ · \d+ rounds/);
+
+  // Nada é cortado com reticências: o nome e a linha extra aparecem inteiros.
+  for (const part of [
+    row.getByRole('link', { name: high.name }),
+    row.getByTestId('ranking-row-extra'),
+  ]) {
+    expect(await part.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+    expect(await part.evaluate((el) => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
+  }
+  const box = await row.boundingBox();
+  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+
+  // No desktop as colunas voltam e a segunda linha some.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(row.getByTestId('ranking-row-extra')).toBeHidden();
 });
 
 test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil', async ({
@@ -215,9 +268,25 @@ test('as abas por Modo e o seletor de semana trocam a URL compartilhável', asyn
   await page.getByTestId('ranking-tab-deathmatch').click();
   await expect(page).toHaveURL(/\/ranking\?modo=deathmatch$/);
 
-  const options = await page.getByTestId('week-select').locator('option').all();
-  expect(options.length).toBeGreaterThanOrEqual(1);
-  expect(await options[0]?.innerText()).toContain('(atual)');
+  // Com uma semana só o seletor vira texto; com mais, o botão mostra a semana atual.
+  await expect(page.getByTestId('week-select').or(page.getByTestId('week-label'))).toContainText(
+    '(atual)',
+  );
+});
+
+test('com uma semana antiga na URL, o Select oferece a semana atual e volta para ela', async ({
+  page,
+}) => {
+  await page.goto('/ranking?semana=2020-01-06');
+  const select = page.getByTestId('week-select');
+  await expect(select).not.toContainText('(atual)');
+  await select.click();
+  expect(await page.getByRole('option').count()).toBeGreaterThanOrEqual(2);
+  await page.getByRole('option', { name: /\(atual\)/ }).click();
+  await expect(page).toHaveURL(/\/ranking\?modo=retake$/);
+  await expect(page.getByTestId('week-select').or(page.getByTestId('week-label'))).toContainText(
+    '(atual)',
+  );
 });
 
 test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de visitantes', async ({
@@ -242,12 +311,19 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   await expect(page.getByTestId('stats-retake').locator('[data-stat="adr"]')).toBeVisible();
   await expect(page.getByTestId('stats-only-you')).toHaveCount(0);
 
+  // Os três números de destaque (K/D, Kills, HS%) vêm antes da tabela e do Loadout.
+  const highlights = page.getByTestId('stats-highlights');
+  await expect(highlights.locator('[data-highlight]')).toHaveCount(3);
+  await expect(highlights.locator('[data-highlight="kills"]')).toContainText('1');
+  const statsBox = await page.getByTestId('profile-stats').boundingBox();
+  const loadoutBox = await page.getByRole('region', { name: 'Loadout' }).boundingBox();
+  expect(statsBox?.y).toBeLessThan(loadoutBox?.y ?? 0);
+
   // O dono liga o Perfil privado: vê as suas com "Só você vê"; o visitante vê o aviso.
   await signInByRequest(page, killer.steamId);
+  await page.goto('/configuracoes/perfil');
+  await turnPrivateProfileOn(page);
   await page.goto(`/${killer.publicId}`);
-  await page.getByTestId('privacy-switch').click();
-  await expect(page.getByTestId('privacy-switch')).toBeChecked();
-  await page.reload();
   await expect(page.getByTestId('stats-only-you')).toHaveText('Só você vê');
   await expect(page.getByTestId('stats-total').locator('[data-stat="kills"]')).toContainText('1');
 
@@ -281,6 +357,24 @@ for (const theme of ['dark', 'light'] as const) {
           expect(await axeViolations(page), `${path} em ${width}px`).toEqual([]);
         }
       }
+    }
+  });
+}
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`a linha "Você" do Ranking passa no axe, logado (${theme})`, async ({ page, request }) => {
+    const player = await createUnclaimedAccount(request, `Linha Propria ${theme}`);
+    await play(request, { rounds: { steamIds: [player.steamId], count: 60 } });
+    await signInByRequest(page, player.steamId);
+    await saveTheme(page, theme);
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      // O cache do Ranking dura 1 s no E2E: relê até a linha própria aparecer.
+      await expect(async () => {
+        await page.goto('/ranking');
+        await expect(page.locator('#minha-linha')).toHaveCount(1, { timeout: 1_000 });
+      }).toPass({ timeout: 15_000 });
+      expect(await axeViolations(page), `/ranking em ${width}px`).toEqual([]);
     }
   });
 }
