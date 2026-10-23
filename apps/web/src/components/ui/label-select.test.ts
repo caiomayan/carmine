@@ -3,7 +3,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { fieldTriggerClass } from './floating-label';
-import { LabelCombobox, LabelSelect } from './label-select';
+import { LabelCombobox } from './label-combobox';
+import { LabelSelect } from './label-select';
 
 const floating = readFileSync(new URL('./floating-label.tsx', import.meta.url), 'utf8');
 const html = (element: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(element);
