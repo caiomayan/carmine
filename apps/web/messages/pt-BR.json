@@ -1000,7 +1000,6 @@
       "active": "Ativo",
       "activate": "Ativar {name}",
       "activated": "{name} é o seu Loadout agora.",
-      "equippedCount": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
       "readOnly": "Somente leitura",
       "readOnlyBody": "Sem Período VIP ativo, os Presets extras ficam somente leitura: dá para ver, mas não editar, renomear, ativar nem apagar. Nada foi apagado; com o VIP de volta, tudo volta a funcionar.",
       "activeReadOnly": "O Preset ativo, {name}, ficou somente leitura sem VIP. Ele continua valendo no jogo, sem os Itens VIP. Para mudar o Loadout, ative o Preset principal.",

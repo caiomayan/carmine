@@ -257,6 +257,10 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await expect(page.locator('[data-testid="preset"][data-read-only]')).toContainText(
     'Retake de sexta',
   );
+  // O rótulo "Ativar …" esconderia o texto interno: o motivo vai na descrição acessível.
+  await expect(
+    page.locator('[data-testid="preset"][data-read-only] button[aria-pressed]'),
+  ).toHaveAccessibleDescription(/Somente leitura/);
   await slot(page, 'knife', 'ct').click();
   await expect(dock(page)).toContainText('somente leitura');
   await expect(dock(page).getByTestId('dock-pick')).toHaveCount(0);
@@ -610,6 +614,16 @@ test.describe('mão de Presets', () => {
       .toBeGreaterThan(rest - 4);
   });
 
+  test('depois de um clique, tirar o mouse devolve a mão ao repouso', async ({ page }) => {
+    await vipHand(page);
+    await motionReady(page);
+
+    await cards(page).nth(2).click();
+    await expect(toast(page, 'Treino é o seu Loadout')).toBeVisible();
+    await page.mouse.move(5, 5);
+    await expect(page.locator('[data-testid="preset"][data-focused]')).toHaveCount(0);
+  });
+
   test('o teclado folheia com as setas, e Enter ativa, com Desfazer', async ({ page }) => {
     await vipHand(page);
 
@@ -628,6 +642,8 @@ test.describe('mão de Presets', () => {
 
     await expect(toast(page, 'Retake é o seu Loadout')).toBeVisible();
     await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Retake');
+    // O foco fica na carta (não vai para o corpo da página): dá para seguir com as setas.
+    await expect(cards(page).nth(1).locator('button[aria-pressed]')).toBeFocused();
     await toast(page, 'Retake é o seu Loadout').getByRole('button', { name: 'Desfazer' }).click();
     await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Principal');
   });

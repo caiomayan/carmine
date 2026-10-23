@@ -19,6 +19,9 @@ import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
 import { useLoadoutApi } from './use-loadout-api';
 
+/** Os diálogos só precisam destes campos do Preset (a carta da mão os tem). */
+export type PresetRef = Pick<Preset, 'id' | 'name' | 'active'>;
+
 /** Os diálogos de Preset (criar, renomear, apagar) e o aviso de somente leitura da mão de Presets. */
 
 export function Explanation({ children, testId }: { children: React.ReactNode; testId: string }) {
@@ -41,7 +44,7 @@ export function NameDialog({
   onClose,
   errorOf,
 }: {
-  preset: Preset | null;
+  preset: PresetRef | null;
   onClose: () => void;
   errorOf: (caught: unknown) => string | null;
 }) {
@@ -162,7 +165,7 @@ export function DeleteDialog({
   onClose,
   errorOf,
 }: {
-  preset: Preset;
+  preset: PresetRef;
   onClose: () => void;
   errorOf: (caught: unknown) => string | null;
 }) {

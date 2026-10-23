@@ -97,7 +97,10 @@ export function PresetHand({
   const explained = anyReadOnly;
   const noteFree = !vip && !explained;
   const noteFull = vip && full && !explained;
-  const [roving, setRoving] = useState(Math.max(0, activeIndex));
+  const [rovingAt, setRoving] = useState(Math.max(0, activeIndex));
+  // Apagar a última carta não deixa a mão sem parada do Tab.
+  const roving = Math.min(rovingAt, slots - 1);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const element = section.current;
@@ -121,8 +124,8 @@ export function PresetHand({
     [slots, width, focused, activeIndex, reduced],
   );
 
-  // Na fileira, a carta ativa vem para o meio quando a mão aparece.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: só na primeira vez que a fileira aparece.
+  // Na fileira, a carta ativa vem para o meio quando ela aparece (a cada troca de modo).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de modo recentraliza.
   useEffect(() => {
     if (mode !== 'row' || activeIndex < 0) return;
     const card = hand.current?.children[activeIndex] as HTMLElement | undefined;
@@ -167,7 +170,7 @@ export function PresetHand({
 
   const folhear = useCallback(
     (event: PointerEvent<HTMLElement>) => {
-      if (mode !== 'fan' || event.pointerType !== 'mouse' || dragging.current) return;
+      if (mode !== 'fan' || slots < 2 || event.pointerType !== 'mouse' || dragging.current) return;
       const rect = hand.current?.getBoundingClientRect();
       if (!rect) return;
       setFocused(focusAt(event.clientX - (rect.left + rect.width / 2), slots, width));
@@ -219,7 +222,12 @@ export function PresetHand({
         ref={hand}
         aria-label={t('label')}
         onPointerMove={folhear}
-        onPointerLeave={() => !hand.current?.contains(document.activeElement) && setFocused(null)}
+        onPointerLeave={() => {
+          // O foco do teclado (ou o menu aberto) mantém a carta erguida; o de um clique não.
+          const at = document.activeElement;
+          const keyboard = !!at && hand.current?.contains(at) && at.matches(':focus-visible');
+          if (!keyboard && !menuOpen) setFocused(null);
+        }}
         onKeyDown={onKeyDown}
         onFocus={(event) => {
           const index = indexOfButton(event.target);
@@ -229,7 +237,8 @@ export function PresetHand({
           }
         }}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget)) setFocused(null);
+          // O menu "…" abre num portal fora da mão: com ele aberto, a carta continua erguida.
+          if (!menuOpen && !event.currentTarget.contains(event.relatedTarget)) setFocused(null);
         }}
         className={cn(
           'relative',
@@ -272,12 +281,12 @@ export function PresetHand({
               }}
             />
             {card.main && !vip ? null : (
-              <DropdownMenu>
+              <DropdownMenu onOpenChange={setMenuOpen}>
                 <DropdownMenuTrigger
                   aria-label={t('actions', { name: card.name })}
                   disabled={card.readOnly}
                   tabIndex={roving === index ? 0 : -1}
-                  className="absolute top-1 right-1 grid size-8 place-items-center rounded-md bg-surface-2 text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-(--dur-fast) ease-std group-focus-within/card:opacity-100 group-hover/card:opacity-100 hover:bg-(--fill-active) hover:text-foreground focus-visible:opacity-100 disabled:opacity-0 aria-expanded:bg-(--fill-active) aria-expanded:opacity-100 max-md:opacity-100 pointer-coarse:opacity-100"
+                  className="absolute top-1 right-1 grid size-(--tap) place-items-center rounded-md bg-surface-2 text-muted-foreground opacity-0 transition-[opacity,background-color,color] duration-(--dur-fast) ease-std group-focus-within/card:opacity-100 group-hover/card:opacity-100 hover:bg-(--fill-active) hover:text-foreground focus-visible:opacity-100 disabled:opacity-0 aria-expanded:bg-(--fill-active) aria-expanded:opacity-100 max-md:opacity-100 pointer-coarse:opacity-100"
                   data-testid="preset-menu"
                 >
                   <svg
@@ -327,10 +336,15 @@ export function PresetHand({
               ref={(element) => {
                 buttons.current[cards.length] = element;
               }}
-              onClick={() => setDialog({ kind: 'create' })}
-              disabled={full}
+              onClick={() => {
+                if (!full) setDialog({ kind: 'create' });
+              }}
+              aria-disabled={full || undefined}
               tabIndex={roving === cards.length ? 0 : -1}
-              className="grid h-full w-full content-start justify-items-center gap-2 rounded-xl bg-(--fill-rest) px-3 pt-9 text-center text-body-sm font-[600] transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) disabled:opacity-50 disabled:hover:bg-(--fill-rest)"
+              className={cn(
+                'grid h-full w-full content-start justify-items-center gap-2 rounded-xl bg-(--fill-rest) px-3 pt-9 text-center text-body-sm font-[600] transition-colors duration-(--dur-fast) ease-std',
+                full ? 'cursor-not-allowed opacity-50' : 'hover:bg-(--fill-hover)',
+              )}
               data-testid="preset-new"
               data-icon-trigger
             >
@@ -347,7 +361,7 @@ export function PresetHand({
         <span className="tabular-nums" data-testid="preset-count">
           {t('count', { count: cards.length, limit })}
         </span>
-        {cards.length > 1 ? <span className="max-md:hidden">{t('hand.hint')}</span> : null}
+        {cards.length > 1 && fan && !reduced ? <span>{t('hand.hint')}</span> : null}
         {noteFree ? (
           <span className="inline-flex max-w-[52ch] items-start gap-1.5" data-testid="preset-free">
             <AnimatedIcon icon={LockIcon} size={13} className="mt-0.5 shrink-0 text-status-vip" />
@@ -391,35 +405,15 @@ export function PresetHand({
 
       {dialog?.kind === 'create' || dialog?.kind === 'rename' ? (
         <NameDialog
-          preset={dialog.kind === 'rename' ? asPreset(dialog.preset) : null}
+          preset={dialog.kind === 'rename' ? dialog.preset : null}
           onClose={() => setDialog(null)}
           errorOf={message}
         />
       ) : dialog?.kind === 'delete' ? (
-        <DeleteDialog
-          preset={asPreset(dialog.preset)}
-          onClose={() => setDialog(null)}
-          errorOf={message}
-        />
+        <DeleteDialog preset={dialog.preset} onClose={() => setDialog(null)} errorOf={message} />
       ) : null}
     </section>
   );
-}
-
-/** Os diálogos só precisam destes campos do Preset. */
-function asPreset(card: HandCard) {
-  return {
-    id: card.id,
-    name: card.name,
-    main: card.main,
-    active: card.active,
-    readOnly: card.readOnly,
-    readOnlyReason: card.readOnly ? ('vip_inactive' as const) : null,
-    equippedCount: card.equippedCount,
-    highlights: [],
-    createdAt: '',
-    updatedAt: '',
-  };
 }
 
 /**
@@ -453,7 +447,8 @@ function HandSlot({
   if (!fan || !pose) {
     return (
       <li
-        className="group/card relative h-[184px] w-[132px] flex-none snap-center"
+        className="group/card relative flex-none snap-center"
+        style={{ width: CARD.width, height: CARD.height }}
         data-testid={testId}
         {...data}
       >
@@ -514,6 +509,7 @@ function PresetFace({
   const t = useTranslations('loadout.presets');
   const front = card.front[side];
   const summaryId = `preset-${card.id}-summary`;
+  const sideDot = side === 't' ? 'bg-side-t' : 'bg-side-ct';
   return (
     <>
       <button
@@ -525,11 +521,12 @@ function PresetFace({
         aria-label={card.active ? undefined : t('activate', { name: card.name })}
         aria-describedby={summaryId}
         tabIndex={tabStop ? 0 : -1}
-        disabled={pending}
         className={cn(
           'grid h-full w-full grid-rows-[auto_1fr_auto_auto] gap-1.5 rounded-xl p-2.5 text-left shadow-[0_10px_24px_-14px_var(--shadow)] transition-colors duration-(--dur-fast) ease-std',
-          card.active ? 'bg-surface-2' : 'bg-surface group-hover/card:bg-surface-2',
-          card.readOnly && 'text-muted-foreground',
+          card.active ? 'bg-surface-2' : 'bg-surface',
+          card.readOnly
+            ? 'cursor-not-allowed text-muted-foreground'
+            : 'group-hover/card:bg-surface-2',
           pending && 'animate-pulse motion-reduce:animate-none',
         )}
         data-icon-trigger
@@ -545,10 +542,7 @@ function PresetFace({
           <span className="truncate">{card.name}</span>
           <span
             aria-hidden="true"
-            className={cn(
-              'absolute top-1/2 right-0 size-2 -translate-y-1/2 rounded-full',
-              side === 't' ? 'bg-side-t' : 'bg-side-ct',
-            )}
+            className={cn('absolute top-1/2 right-0 size-2 -translate-y-1/2 rounded-full', sideDot)}
           />
         </span>
         <Piece piece={front.knife} className="h-14" />
@@ -558,10 +552,7 @@ function PresetFace({
         </span>
         <span className="flex items-center justify-between gap-1 text-caption text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className={cn('size-2 rounded-full', side === 't' ? 'bg-side-t' : 'bg-side-ct')}
-            />
+            <span aria-hidden="true" className={cn('size-2 rounded-full', sideDot)} />
             {sideLabel}
           </span>
           {card.active ? (
@@ -573,7 +564,6 @@ function PresetFace({
           )}
         </span>
         {card.active ? <span className="sr-only">{t('active')}</span> : null}
-        {card.readOnly ? <span className="sr-only">{t('readOnly')}</span> : null}
       </button>
       <span id={summaryId} className="sr-only">
         {t('hand.summary', {
@@ -582,6 +572,7 @@ function PresetFace({
           rifle: front.rifle.name,
           count: card.equippedCount,
         })}
+        {card.readOnly ? ` ${t('readOnly')}.` : null}
       </span>
     </>
   );
