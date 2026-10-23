@@ -228,6 +228,18 @@ export const MAIN_PRESET_NAME = 'Principal';
 
 export const presetNameSchema = z.string().trim().min(1).max(PRESET_NAME_MAX_LENGTH);
 
+/**
+ * Os slots que aparecem na frente da carta do Preset (a mão de cartas do /loadout): faca, luvas e
+ * o rifle de cada lado (AK-47 no TR; no CT, a M4A1-S se equipada, senão a M4A4).
+ */
+export const PRESET_HIGHLIGHT_SLOTS = [
+  'knife',
+  'gloves',
+  'weapon_ak47',
+  'weapon_m4a1_silencer',
+  'weapon_m4a1',
+] as const;
+
 export const presetSchema = z
   .object({
     id: z.uuid(),
@@ -240,6 +252,11 @@ export const presetSchema = z
     readOnlyReason: z.enum(PRESET_READ_ONLY_REASONS).nullable(),
     /** Slots com Item. */
     equippedCount: z.int().min(0),
+    /**
+     * O que a carta do Preset mostra na frente: os Itens equipados em {@link PRESET_HIGHLIGHT_SLOTS},
+     * por lado. Só slots com Item (vazio = arma padrão); o web resolve nome e imagem pelo Inventário.
+     */
+    highlights: z.array(loadoutAssignmentSchema),
     createdAt: z.iso.datetime({ offset: true }),
     updatedAt: z.iso.datetime({ offset: true }),
   })

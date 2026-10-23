@@ -9,6 +9,7 @@ import {
   type LoadoutErrorCode,
   type LoadoutSide,
   MAIN_PRESET_NAME,
+  PRESET_HIGHLIGHT_SLOTS,
   PRESETS_FREE_LIMIT,
   PRESETS_VIP_LIMIT,
   type Preset,
@@ -387,19 +388,58 @@ export class Loadouts {
       .from(presets)
       .where(eq(presets.accountId, accountId))
       .orderBy(desc(presets.main), asc(presets.createdAt), asc(presets.id));
-    const counts = await this.equippedCounts(
-      db,
-      rows.map(({ id }) => id),
-    );
+    const ids = rows.map(({ id }) => id);
+    const [counts, highlights] = await Promise.all([
+      this.equippedCounts(db, ids),
+      this.highlightsOf(db, ids),
+    ]);
     return {
-      presets: rows.map((row) => toPreset(row, vip, counts.get(row.id) ?? 0)),
+      presets: rows.map((row) =>
+        toPreset(row, vip, counts.get(row.id) ?? 0, highlights.get(row.id) ?? []),
+      ),
       limit: vip ? PRESETS_VIP_LIMIT : PRESETS_FREE_LIMIT,
     };
   }
 
   private async presetOf(db: Db, row: PresetRow, vip: boolean): Promise<Preset> {
-    const counts = await this.equippedCounts(db, [row.id]);
-    return toPreset(row, vip, counts.get(row.id) ?? 0);
+    const [counts, highlights] = await Promise.all([
+      this.equippedCounts(db, [row.id]),
+      this.highlightsOf(db, [row.id]),
+    ]);
+    return toPreset(row, vip, counts.get(row.id) ?? 0, highlights.get(row.id) ?? []);
+  }
+
+  /** Os Itens equipados nos slots de destaque de cada Preset (Itens removidos não contam). */
+  private async highlightsOf(
+    db: Db,
+    presetIds: string[],
+  ): Promise<Map<string, LoadoutAssignment[]>> {
+    if (presetIds.length === 0) return new Map();
+    const rows = await db
+      .select({
+        presetId: loadoutSlots.presetId,
+        slot: loadoutSlots.slot,
+        side: loadoutSlots.side,
+        uid: inventoryItems.id,
+      })
+      .from(loadoutSlots)
+      .innerJoin(
+        inventoryItems,
+        and(eq(inventoryItems.id, loadoutSlots.itemId), isNull(inventoryItems.deletedAt)),
+      )
+      .where(
+        and(
+          inArray(loadoutSlots.presetId, presetIds),
+          inArray(loadoutSlots.slot, [...PRESET_HIGHLIGHT_SLOTS]),
+        ),
+      );
+    const byPreset = new Map<string, LoadoutAssignment[]>();
+    for (const row of rows) {
+      const list = byPreset.get(row.presetId) ?? [];
+      list.push({ slot: row.slot, side: fromDbSide(row.side), uid: row.uid });
+      byPreset.set(row.presetId, list);
+    }
+    return byPreset;
   }
 
   private async equippedCounts(db: Db, presetIds: string[]): Promise<Map<string, number>> {
@@ -501,7 +541,12 @@ export class Loadouts {
 
 const isReadOnly = (preset: PresetRow, vip: boolean) => !preset.main && !vip;
 
-function toPreset(row: PresetRow, vip: boolean, equippedCount: number): Preset {
+function toPreset(
+  row: PresetRow,
+  vip: boolean,
+  equippedCount: number,
+  highlights: LoadoutAssignment[],
+): Preset {
   const readOnly = isReadOnly(row, vip);
   return {
     id: row.id,
@@ -511,6 +556,7 @@ function toPreset(row: PresetRow, vip: boolean, equippedCount: number): Preset {
     readOnly,
     readOnlyReason: readOnly ? 'vip_inactive' : null,
     equippedCount,
+    highlights,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };

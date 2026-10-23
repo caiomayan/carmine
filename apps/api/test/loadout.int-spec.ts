@@ -367,6 +367,58 @@ describe('Loadout e Presets', () => {
       expect(equippedIn(await loadoutOf(p, main))).toEqual({ 'weapon_ak47:t': ak });
     });
 
+    it('cada Preset traz os destaques da carta: faca, luvas e o rifle de cada lado, só com Itens', async () => {
+      const p = await player({ vip: true });
+      const knife = await p.add({ id: BAYONET });
+      const ak = await p.add({ id: AK_REDLINE });
+      const m4 = await p.add({ id: M4A1S });
+      const deagle = await p.add({ id: DEAGLE });
+      await p.equip({ uid: knife });
+      await p.equip({ uid: ak });
+      await p.equip({ uid: m4 });
+      await p.equip({ uid: deagle });
+      const copy = ok(await p.createPreset({ name: 'Retake' }), presetSchema.parse, 201);
+      const empty = ok(
+        await p.createPreset({ name: 'Vazio', from: 'empty' }),
+        presetSchema.parse,
+        201,
+      );
+
+      const list = ok(await p.presets(), presetListSchema.parse);
+      const byName = Object.fromEntries(list.presets.map((preset) => [preset.name, preset]));
+
+      const expected = [
+        { slot: 'knife', side: 'ct', uid: knife },
+        { slot: 'knife', side: 't', uid: knife },
+        { slot: 'weapon_ak47', side: 't', uid: ak },
+        { slot: 'weapon_m4a1_silencer', side: 'ct', uid: m4 },
+      ];
+      // A pistola não é destaque; o principal e a cópia têm os mesmos, e o vazio nenhum.
+      const sorted = (preset: { highlights: { slot: string; side: string | null }[] }) =>
+        [...preset.highlights].sort((a, b) =>
+          `${a.slot}${a.side}`.localeCompare(`${b.slot}${b.side}`),
+        );
+      expect(sorted(byName.Principal as never)).toEqual(
+        expect.arrayContaining(expected.map((assignment) => expect.objectContaining(assignment))),
+      );
+      expect(byName.Principal?.highlights).toHaveLength(expected.length);
+      expect(byName.Retake?.highlights).toHaveLength(expected.length);
+      expect(copy.highlights).toHaveLength(expected.length);
+      expect(empty.highlights).toEqual([]);
+      expect(byName.Vazio?.highlights).toEqual([]);
+    });
+
+    it('um Item removido do Inventário sai dos destaques', async () => {
+      const p = await player();
+      const knife = await p.add({ id: BAYONET });
+      await p.equip({ uid: knife });
+      expect((await presetsOf(p)).presets[0]?.highlights).toHaveLength(2);
+
+      expect((await p.remove(knife)).statusCode).toBe(200);
+
+      expect((await presetsOf(p)).presets[0]?.highlights).toEqual([]);
+    });
+
     it('nomes repetidos são aceitos; nome vazio ou longo demais não', async () => {
       const p = await player({ vip: true });
 

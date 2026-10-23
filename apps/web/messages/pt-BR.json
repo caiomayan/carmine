@@ -1000,7 +1000,6 @@
       "active": "Ativo",
       "activate": "Ativar {name}",
       "activated": "{name} é o seu Loadout agora.",
-      "equippedCount": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
       "readOnly": "Somente leitura",
       "readOnlyBody": "Sem Período VIP ativo, os Presets extras ficam somente leitura: dá para ver, mas não editar, renomear, ativar nem apagar. Nada foi apagado; com o VIP de volta, tudo volta a funcionar.",
       "activeReadOnly": "O Preset ativo, {name}, ficou somente leitura sem VIP. Ele continua valendo no jogo, sem os Itens VIP. Para mudar o Loadout, ative o Preset principal.",
@@ -1037,7 +1036,14 @@
         "deleted": "Preset {name} apagado."
       },
       "saving": "Salvando",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "hand": {
+        "side": { "ct": "CT", "t": "TR" },
+        "activeBadge": "Ativo",
+        "items": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
+        "summary": "Faca: {knife}. Luvas: {gloves}. Rifle: {rifle}. {count, plural, =0 {Nenhum Item equipado.} one {# Item equipado.} other {# Itens equipados.}}",
+        "hint": "Passe o mouse ou use as setas para folhear. Clique, Enter ou jogue a carta para cima para ativar."
+      }
     },
     "errors": {
       "name": "Dê um nome de 1 a {max} caracteres.",

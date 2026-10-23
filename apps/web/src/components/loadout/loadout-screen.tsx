@@ -55,8 +55,8 @@ const ARROWS: Record<string, Direction> = {
  * A tela do Loadout (S05) no desenho do menu de compra do CS2: a troca TR | CT no alto, uma
  * coluna por categoria com todas as armas (e, na última, faca, luvas, agente e kit de música), o
  * slot selecionado numa barra fixa embaixo e, para trocar o Item, uma folha com o Inventário.
- * `notices` (avisos da Conta) fica entre o título e o quadro; `presets` vai na mesma linha da troca
- * de lado. O lado em que abre é o último usado (CT se não houver nenhum).
+ * `notices` (avisos da Conta) fica entre o título e o quadro; `hand` (a mão de Presets) vem logo
+ * antes da troca de lado, e a carta mostra o lado em uso. O lado em que abre é o último usado (CT se não houver nenhum).
  *
  * Abaixo de 1001 px mostra uma coluna por vez, escolhida numa fileira de categorias. O teclado
  * anda pelo quadro com as setas e 1 a 5 pulam de coluna (só com o foco num cartão).
@@ -67,14 +67,15 @@ export function LoadoutScreen({
   rarityLabels,
   subtitle,
   notices,
-  presets,
+  hand,
 }: {
   view: LoadoutView;
   candidates: CandidateView[];
   rarityLabels: Record<string, string>;
   subtitle: ReactNode;
   notices?: ReactNode;
-  presets?: ReactNode;
+  /** A mão de Presets (cartas), antes da barra de cima. */
+  hand?: ReactNode;
 }) {
   const t = useTranslations('loadout');
   const tc = useTranslations('common');
@@ -217,13 +218,14 @@ export function LoadoutScreen({
       <PageHead title={t('title')} subtitle={subtitle} />
       {notices}
 
+      {hand ? <div className="mb-2 min-w-0">{hand}</div> : null}
+
       {/*
-        A barra de cima: a troca TR | CT e os Presets numa linha só, para o quadro aparecer sem
-        rolar. No celular os Presets rolam com a página e só a troca de lado e as categorias ficam
-        fixas (`contents` desfaz a barra e `sticky` fica no grupo de dentro).
+        A barra de cima: a troca TR | CT (e, abaixo de 1001 px, as categorias). Rola com a página
+        até o alto e fica fixa. No celular só a troca de lado e as categorias ficam fixas
+        (`contents` desfaz a barra e `sticky` fica no grupo de dentro).
       */}
       <div className="max-md:contents md:sticky md:top-0 md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5">
-        {presets ? <div className="min-w-0 max-md:pb-1 md:order-2 md:flex-1">{presets}</div> : null}
         <div className="max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents">
           <div className="md:order-1">
             <TabsList
