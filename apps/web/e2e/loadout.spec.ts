@@ -548,7 +548,83 @@ test('a mão de Presets fica acima da troca TR | CT, e as armas aparecem sem rol
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
+/**
+ * A barra do slot fica fixa embaixo e a de cima fixa no alto: um cartão que recebe o foco do
+ * teclado nunca pode ficar escondido atrás de uma delas, em telas baixas (1280 × 720) e no celular.
+ */
+for (const size of [
+  { width: 1280, height: 720 },
+  { width: 390, height: 844 },
+]) {
+  test(`o foco do teclado traz o cartão para fora das barras fixas (${size.width} × ${size.height})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await signIn(page);
+    // Com um slot selecionado a barra de baixo aparece.
+    await page.locator('[data-card]').first().click();
+    await expect(dock(page)).toBeVisible();
+
+    const tabs = page.locator('[data-testid^="category-"]');
+    const columns = size.width < 1001 ? await tabs.count() : 1;
+    for (let column = 0; column < columns; column++) {
+      if (size.width < 1001) await tabs.nth(column).click();
+      const cards = page.locator('[data-card]:visible');
+      const total = await cards.count();
+      expect(total).toBeGreaterThan(0);
+      for (let index = 0; index < total; index++) {
+        await cards.nth(index).focus();
+        await page.waitForTimeout(60);
+        const box = await cards.nth(index).boundingBox();
+        const dockBox = await dock(page).boundingBox();
+        const bar = await page.getByTestId('side-t').boundingBox();
+        expect(box).not.toBeNull();
+        expect(
+          (box?.y ?? 0) + (box?.height ?? 0),
+          `cartão ${index} da coluna ${column} sob a barra do slot`,
+        ).toBeLessThanOrEqual((dockBox?.y ?? 0) + 0.5);
+        expect(
+          box?.y ?? 0,
+          `cartão ${index} da coluna ${column} sob a barra de cima`,
+        ).toBeGreaterThanOrEqual((bar?.y ?? 0) + (bar?.height ?? 0) - 0.5);
+      }
+    }
+  });
+}
+
 test.describe('mão de Presets', () => {
+  test('em 390 px o nome da carta quebra em até 2 linhas, sem corte seco, e segue inteiro', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, { vip: true });
+    await createPreset(page, 'Retake de sexta-feira');
+    await page.reload();
+    await boardReady(page);
+    await handReady(page);
+
+    for (const card of await cards(page).all()) {
+      const title = card.getByTestId('preset-title');
+      const name = (await title.textContent()) ?? '';
+      // O nome inteiro continua no DOM, na dica e no nome acessível do botão.
+      await expect(title).toHaveAttribute('title', name);
+      const fits = await title.evaluate(
+        (el) => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1,
+      );
+      expect(fits, `nome "${name}" cortado`).toBe(true);
+      // O nome não passa por baixo do menu "…".
+      const menu = card.getByTestId('preset-menu');
+      if (await menu.isVisible()) {
+        const titleBox = await title.boundingBox();
+        const menuBox = await menu.boundingBox();
+        expect((titleBox?.x ?? 0) + (titleBox?.width ?? 0)).toBeLessThanOrEqual(
+          (menuBox?.x ?? 0) + 0.5,
+        );
+      }
+    }
+    await expect(page.getByRole('button', { name: 'Ativar Retake de sexta-feira' })).toBeVisible();
+  });
+
   /** Uma Conta VIP com o Principal e mais dois Presets. */
   async function vipHand(page: Page) {
     await signIn(page, { vip: true });
