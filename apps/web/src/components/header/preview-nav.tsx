@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { NavigationMenu } from 'radix-ui';
 import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { Highlight, HighlightItem } from '@/components/animate-ui/primitives/effects/highlight';
+import { shouldRestoreFocus } from '@/lib/header-previews/focus';
 import { type PanelId, panelOf } from '@/lib/header-previews/panels';
 import { isCurrentPath } from '@/lib/nav';
 import { cn } from '@/lib/utils';
@@ -62,13 +63,16 @@ export function PreviewNav({
       .sort((a, b) => b.href.length - a.href.length)[0]?.href ?? null;
   const openHref = items.find((item) => panelOf(item.href) === value)?.href ?? null;
 
-  // Se a pessoa estava com o foco num item quando a troca aconteceu, ele volta para o mesmo item.
+  // Se a pessoa estava com o foco num item quando a troca aconteceu, ele volta para o mesmo item. A
+  // troca desmonta o item da navegação leve e o foco cai no <body>; se nesse meio tempo (o módulo
+  // levou algum tempo para chegar) o foco já foi para outro lugar, ele fica onde a pessoa o pôs.
   // biome-ignore lint/correctness/useExhaustiveDependencies: só na entrada
   useEffect(() => {
     if (!initial.focus || !initial.href) return;
-    root.current
-      ?.querySelector<HTMLElement>(`a[href="${initial.href}"]`)
-      ?.focus({ preventScroll: true });
+    const item = root.current?.querySelector<HTMLElement>(`a[href="${initial.href}"]`) ?? null;
+    if (shouldRestoreFocus(document.activeElement, document.body, item)) {
+      item?.focus({ preventScroll: true });
+    }
   }, []);
 
   // Seta para baixo num item fechado: o painel abre e o foco vai ao 1º alvo dele (com o painel já
