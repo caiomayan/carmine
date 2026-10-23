@@ -3,7 +3,6 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { NavigationMenu } from 'radix-ui';
 import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { Highlight, HighlightItem } from '@/components/animate-ui/primitives/effects/highlight';
@@ -44,7 +43,6 @@ export function PreviewNav({
   /** O que a pessoa já estava fazendo quando esta navegação entrou no lugar da leve. */
   initial: { href: string | null; focus: boolean };
 }) {
-  const t = useTranslations('headerPreviews');
   const pathname = usePathname();
   const router = useRouter();
   const root = useRef<HTMLElement>(null);
