@@ -2,7 +2,8 @@ import type { Profile } from '@carmine/contracts';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { siSteam } from 'simple-icons';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
@@ -100,6 +101,8 @@ export default async function ProfilePage({
   const invite = !profile.claimed && server.status !== 'authenticated';
   const showcase = buildShowcase(profile.loadoutShowcase.items);
   const tc = await getTranslations('catalog');
+  // As bolinhas CT/TR da vitrine são de cliente: só as mensagens delas vão ao navegador.
+  const { common } = await getMessages();
   const stats = await getProfileStats(profile.publicId);
   // Sem Itens equipados nem jogos: um bloco só no lugar das duas caixas vazias.
   const bare = showcase.length === 0 && statsState(stats) === 'empty';
@@ -139,10 +142,12 @@ export default async function ProfilePage({
             </SectionTitle>
             {showcase.length > 0 ? (
               <div data-testid="loadout-showcase">
-                <ShowcaseGrid
-                  items={showcase}
-                  rarityLabels={Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]))}
-                />
+                <NextIntlClientProvider messages={{ common: { team: common.team } }}>
+                  <ShowcaseGrid
+                    items={showcase}
+                    rarityLabels={Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]))}
+                  />
+                </NextIntlClientProvider>
               </div>
             ) : (
               <div className="rounded-xl bg-surface" data-testid="loadout-showcase">

@@ -576,7 +576,7 @@ test.describe('com o 3D bloqueado', () => {
 test('a grade do Inventário tem cinco colunas no desktop, três no tablet e duas no celular', async ({
   page,
 }) => {
-  await signIn(page);
+  await signIn(page, { vip: true });
   for (const id of [AK_REDLINE, MUSIC_KIT, 1327]) await addItemByApi(page, { id });
   await page.goto('/inventario');
   const grid = page.getByTestId('inventory-grid');
