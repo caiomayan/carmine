@@ -322,7 +322,7 @@ test.describe('Configurações', () => {
 });
 
 test.describe('foco', () => {
-  test('campo de texto: o campo clareia ao focar, sem anel com o mouse e com o anel fino no teclado', async ({
+  test('campo de texto (Label Input): o campo clareia ao focar e ganha o anel fino da marca, com o mouse e com o teclado', async ({
     page,
     request,
   }) => {
@@ -337,13 +337,15 @@ test.describe('foco', () => {
     const style = (property: 'outlineStyle' | 'outlineWidth' | 'boxShadow') =>
       input.evaluate((el, name) => getComputedStyle(el)[name], property);
 
-    // Foco do mouse (o campo é focado depois de um clique): só o fundo que clareia, sem anel.
+    // Foco do mouse (o campo é focado depois de um clique): o fundo clareia e o anel fino já entra
+    // (exceção do dono para o campo de texto padrão).
     await expect(html).not.toHaveAttribute('data-kbd', '');
-    expect(await style('outlineStyle')).toBe('none');
+    expect(await style('outlineStyle')).toBe('solid');
+    expect(await style('outlineWidth')).toBe('2px');
     await expect.poll(() => style('boxShadow')).toMatch(/inset/);
     expect((await style('boxShadow')).split('inset')).toHaveLength(2);
 
-    // Foco do teclado (Tab para fora e Shift+Tab de volta): o anel fino entra, e o fundo continua.
+    // Foco do teclado (Tab para fora e Shift+Tab de volta): o mesmo anel, e o fundo continua.
     await page.keyboard.press('Tab');
     await page.keyboard.press('Shift+Tab');
     await expect(input).toBeFocused();

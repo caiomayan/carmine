@@ -34,10 +34,10 @@ type LabelFieldProps = {
 // As classes ficam escritas por extenso: o Tailwind só gera o que acha no código-fonte.
 // `peer-[:placeholder-shown:not(:focus)]` é o campo vazio e sem foco, onde o rótulo repousa dentro dele.
 const FIELD =
-  'peer block min-h-(--tap) w-full rounded-md bg-(--fill-rest) px-3 pt-5 pb-1.5 text-body text-foreground outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-transparent focus:placeholder:text-muted-foreground hover:bg-(--fill-hover) focus:outline-(--focus-ring) disabled:text-faint disabled:hover:bg-(--fill-rest) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger motion-reduce:transition-none';
+  'peer block min-h-(--tap) w-full rounded-md bg-(--fill-rest) px-3 pt-5 pb-1.5 text-body text-foreground outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-transparent hover:bg-(--fill-hover) focus:outline-(--focus-ring) disabled:text-faint disabled:hover:bg-(--fill-rest) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger motion-reduce:transition-none';
 
 const LABEL =
-  'pointer-events-none absolute left-3 max-w-[calc(100%-1.5rem)] origin-top-left truncate text-body text-muted-foreground peer-focus:text-foreground peer-disabled:text-faint motion-reduce:transition-none';
+  'pointer-events-none absolute left-3 max-w-[calc(100%-1.5rem)] origin-top-left truncate text-body text-(--label-color) peer-focus:text-foreground peer-disabled:text-faint motion-reduce:transition-none';
 
 /** Uma linha: flutua para o alto (com texto ou foco) e repousa no meio do campo vazio. */
 const LABEL_LINE = `${LABEL} top-1/2 -translate-y-[calc(50%+9px)] scale-[.78] transition-[translate,scale,color] duration-(--dur-fast) ease-std peer-[:placeholder-shown:not(:focus)]:-translate-y-1/2 peer-[:placeholder-shown:not(:focus)]:scale-100`;
@@ -94,7 +94,7 @@ export function LabelInput({
 
   return (
     <div className={cn('grid content-start gap-1.5', containerClassName)}>
-      <div className="relative">
+      <div className="relative [--label-color:color-mix(in_srgb,var(--text)_80%,transparent)]">
         <input
           ref={ref}
           id={id}
@@ -112,7 +112,7 @@ export function LabelInput({
           {label}
         </label>
         {aside ? (
-          <span className="pointer-events-none absolute top-1.5 right-3 text-caption text-muted-foreground tabular-nums">
+          <span className="pointer-events-none absolute top-1.5 right-3 text-caption text-(--label-color) tabular-nums">
             {aside}
           </span>
         ) : null}
@@ -157,7 +157,7 @@ export function LabelTextarea({
 
   return (
     <div className={cn('grid content-start gap-1.5', containerClassName)}>
-      <div className="relative">
+      <div className="relative [--label-color:color-mix(in_srgb,var(--text)_80%,transparent)]">
         <textarea
           ref={ref}
           id={id}
@@ -172,7 +172,7 @@ export function LabelTextarea({
           {label}
         </label>
         {aside ? (
-          <span className="pointer-events-none absolute top-1.5 right-3 text-caption text-muted-foreground tabular-nums">
+          <span className="pointer-events-none absolute top-1.5 right-3 text-caption text-(--label-color) tabular-nums">
             {aside}
           </span>
         ) : null}

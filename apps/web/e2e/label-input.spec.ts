@@ -21,7 +21,7 @@ const labelState = (input: Locator) =>
     const style = getComputedStyle(label);
     return {
       scale: Number.parseFloat(style.scale === 'none' ? '1' : style.scale),
-      translateY: Number.parseFloat((style.translate.split(' ')[1] ?? '0').replace('px', '')),
+      top: label.getBoundingClientRect().top - el.getBoundingClientRect().top,
     };
   });
 
@@ -52,7 +52,7 @@ for (const theme of ['dark', 'light'] as const) {
     await input.click();
     await expect.poll(async () => (await labelState(input)).scale).toBeLessThan(0.85);
     const floating = await labelState(input);
-    expect(floating.translateY).toBeLessThan(resting.translateY);
+    expect(floating.top).toBeLessThan(resting.top);
 
     await input.fill('Alguém');
     await page.mouse.click(5, 5);
@@ -79,7 +79,10 @@ for (const theme of ['dark', 'light'] as const) {
 
     // Contraste do anel contra o fundo do campo (WCAG 1.4.11).
     const ratio = await input.evaluate((el) => {
-      const channels = (css: string) => (css.match(/[d.]+/g) ?? []).map(Number);
+      const channels = (css: string) => {
+        const unit = css.startsWith('color(') ? 255 : 1;
+        return (css.match(/[0-9.]+/g) ?? []).map(Number).map((v, i) => (i < 3 ? v * unit : v));
+      };
       const luminance = (rgb: number[]) => {
         const [r = 0, g = 0, b = 0] = rgb.map((v) => {
           const c = v / 255;
@@ -129,11 +132,14 @@ test('o Tab leva ao campo e ao botão sem prender o foco, e o nome acessível é
 test('com movimento reduzido o rótulo troca de lugar sem transição', async ({ page, request }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const input = await openNameField(page, request);
-  const duration = await input.evaluate(
-    (el) =>
-      getComputedStyle(el.parentElement?.querySelector('label') as HTMLElement).transitionDuration,
-  );
-  expect(duration.split(',').every((d) => Number.parseFloat(d) === 0)).toBe(true);
+  const transition = await input.evaluate((el) => {
+    const style = getComputedStyle(el.parentElement?.querySelector('label') as HTMLElement);
+    return { property: style.transitionProperty, duration: style.transitionDuration };
+  });
+  const none =
+    transition.property === 'none' ||
+    transition.duration.split(',').every((d) => Number.parseFloat(d) === 0);
+  expect(none).toBe(true);
   await input.click();
   expect((await labelState(input)).scale).toBeLessThan(0.85);
 });
