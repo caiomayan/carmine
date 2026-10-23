@@ -264,7 +264,7 @@ export function ItemEditor(props: EditorProps) {
             dispatchDrag({ type: 'leave' });
           }
         }}
-        className="grid min-w-0 gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
+        className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
         {draft.restored ? (

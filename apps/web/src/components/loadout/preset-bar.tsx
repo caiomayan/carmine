@@ -81,7 +81,7 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
       className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 md:justify-end"
       data-testid="presets"
     >
-      <div className="flex min-w-0 max-w-full items-center gap-1.5 max-md:w-full">
+      <div className="flex min-w-0 max-w-full items-center gap-1.5 max-md:w-full max-md:flex-wrap">
         <ul
           // Os chips quebram de linha em vez de rolar: com a rolagem, o "20 Itens" da ponta saía pela metade.
           className="flex min-w-0 flex-wrap items-center gap-1.5 md:justify-end"
@@ -91,7 +91,7 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
             <li
               key={preset.id}
               className={cn(
-                'group/preset flex flex-none items-center rounded-md transition-colors duration-(--dur-fast) ease-std',
+                'group/preset flex max-w-full flex-none items-center rounded-md transition-colors duration-(--dur-fast) ease-std',
                 preset.active ? 'bg-surface-2' : 'bg-surface hover:bg-surface-2',
               )}
               data-testid="preset"
