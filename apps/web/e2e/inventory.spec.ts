@@ -484,9 +484,16 @@ test('a barra do float tem uma faixa por fase da faixa real da skin', async ({ p
   for (const tier of ['mw', 'ft', 'ww', 'bs']) expect(track).toContain(`var(--wear-${tier})`);
   expect(track).not.toContain('var(--wear-fn)');
   await expect(page.getByTestId('wear-ruler').locator('[data-tier]')).toHaveCount(4);
-  // Cada fase tem o nome completo num Tooltip.
-  await page.getByTestId('wear-ruler').locator('[data-tier="ft"]').hover();
-  await expect(page.getByRole('tooltip')).toContainText('Testada em Campo');
+  // Cada fase tem o nome completo num Tooltip. Um hover antes da hidratação não abre nada (e o
+  // mouse já está em cima da faixa): espera o editor hidratar e, se o Tooltip não abrir, sai da
+  // faixa e entra de novo.
+  await expect(page.locator('[data-testid="item-editor"][data-hydrated]')).toBeVisible();
+  const ft = page.getByTestId('wear-ruler').locator('[data-tier="ft"]');
+  await expect(async () => {
+    await page.mouse.move(0, 0);
+    await ft.hover();
+    await expect(page.getByRole('tooltip')).toContainText('Testada em Campo', { timeout: 2_000 });
+  }).toPass({ timeout: 15_000 });
 });
 
 test('em 390 px o editor com stickers e chaveiro não rola na horizontal', async ({ page }) => {
