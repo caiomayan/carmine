@@ -87,7 +87,8 @@ export function TileCaption({
 }) {
   return (
     <span className={cn('grid min-w-0 gap-0.5 pr-1', className)}>
-      <span className="truncate text-body font-semibold">
+      {/* Duas linhas: o nome da skin é a informação principal e, em 2 colunas, cortava com reticências. */}
+      <span className="line-clamp-2 text-body font-semibold [overflow-wrap:anywhere]">
         {skinFirst && subtitle ? subtitle : title}
       </span>
       <span className="flex min-w-0 items-center gap-1.5 text-caption text-muted-foreground">

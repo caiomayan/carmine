@@ -511,6 +511,34 @@ test('em 390 px o editor com stickers e chaveiro não rola na horizontal', async
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
 
+test('em 390 px nada do editor de um Item existente passa da tela (viewer, slider, Seed, StatTrak)', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, { vip: true });
+  const { uid } = await addItemByApi(page, {
+    id: AK_REDLINE,
+    wear: 0.2,
+    seed: 7,
+    stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
+    keychains: { '0': { id: 13113, seed: 5 } },
+  });
+  await page.goto(`/inventario/${uid}`);
+  await expect(page.getByTestId('item-editor')).toBeVisible();
+  await expect(page.getByTestId('viewer-2d-attachments')).toBeVisible();
+  // O overflow do documento pode estar escondido por um pai com overflow: o que importa é cada
+  // caixa do editor ficar dentro da tela (o texto só para leitor de tela fica de fora).
+  const beyond = await page.getByTestId('item-editor').evaluate((editor) =>
+    [editor, ...editor.querySelectorAll('*')]
+      .filter((el) => {
+        const box = el.getBoundingClientRect();
+        return box.width > 1 && box.height > 1 && box.right > window.innerWidth + 0.5;
+      })
+      .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute('data-testid') ?? ''}]`),
+  );
+  expect(beyond).toEqual([]);
+});
+
 test('a dica do 3D lista girar, mover (Shift) e aproximar; no toque, só girar', async ({
   page,
 }) => {

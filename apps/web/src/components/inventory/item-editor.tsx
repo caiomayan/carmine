@@ -220,7 +220,7 @@ export function ItemEditor(props: EditorProps) {
       data-testid="item-editor"
       data-hydrated={hydrated || undefined}
     >
-      <div className="sticky top-[calc(var(--hdr-h)+20px)] max-lg:static">
+      <div className="sticky top-[calc(var(--hdr-h)+20px)] min-w-0 max-lg:static">
         <ItemViewer
           item={item}
           name={entry.name}
@@ -264,7 +264,7 @@ export function ItemEditor(props: EditorProps) {
             dispatchDrag({ type: 'leave' });
           }
         }}
-        className="grid gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
+        className="grid min-w-0 gap-6 [&_:is(input,button,[role=switch])]:scroll-mb-36"
         aria-label={t('attributes')}
       >
         {draft.restored ? (

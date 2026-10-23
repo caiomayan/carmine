@@ -285,6 +285,16 @@ test('no celular, o seletor abre numa folha e equipa dali', async ({ page }) => 
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
+
+  // A barra de Presets quebra de linha em vez de rolar: nenhum chip sai da tela nem fica pela metade.
+  const presets = page.getByTestId('preset');
+  await expect(presets.first()).toBeVisible();
+  const rights = await presets.evaluateAll((items) =>
+    items.map((el) => el.getBoundingClientRect().right),
+  );
+  for (const right of rights) expect(right).toBeLessThanOrEqual(390);
+  const bar = page.getByTestId('presets').locator('ul');
+  expect(await bar.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
 });
 
 test('o quadro tem as cinco colunas do menu de compra, com todas as armas do lado', async ({
