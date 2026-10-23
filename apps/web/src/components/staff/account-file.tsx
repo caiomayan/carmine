@@ -27,7 +27,7 @@ import { SectionTitle } from '@/components/section-title';
 import { useCopy } from '@/components/servers/use-copy';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
-import { SimpleSelect } from '@/components/ui/select';
+import { LabelSelect } from '@/components/ui/label-select';
 import { sanctionLength } from '@/lib/moderation';
 import { recentWeekStarts } from '@/lib/ranking';
 import { canRevoke, type StaffViewer, sanctionGuard, sanctionState } from '@/lib/staff';
@@ -35,7 +35,6 @@ import { cn } from '@/lib/utils';
 import { ActionForm } from './action-form';
 import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 import { AuditEntries } from './audit-entries';
-import { Field } from './fields';
 import { RoleTag, SanctionTypeTags } from './tags';
 import { useStaffRequest } from './use-staff-request';
 
@@ -541,25 +540,23 @@ function RankingPanel({
         }}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id={`${id}-mode`} label={t('mode')}>
-            <SimpleSelect
-              id={`${id}-mode`}
-              value={mode}
-              onValueChange={(next) => setMode(gameModeSchema.parse(next))}
-              options={gameModeSchema.options.map((value) => ({
-                value,
-                label: tr(`modes.${value}`),
-              }))}
-            />
-          </Field>
-          <Field id={`${id}-week`} label={t('week')}>
-            <SimpleSelect
-              id={`${id}-week`}
-              value={week}
-              onValueChange={setWeek}
-              options={weeks.map((value) => ({ value, label: value }))}
-            />
-          </Field>
+          <LabelSelect
+            label={t('mode')}
+            id={`${id}-mode`}
+            value={mode}
+            onValueChange={(next) => setMode(gameModeSchema.parse(next))}
+            options={gameModeSchema.options.map((value) => ({
+              value,
+              label: tr(`modes.${value}`),
+            }))}
+          />
+          <LabelSelect
+            label={t('week')}
+            id={`${id}-week`}
+            value={week}
+            onValueChange={setWeek}
+            options={weeks.map((value) => ({ value, label: value }))}
+          />
         </div>
       </ActionForm>
     </Panel>
@@ -672,20 +669,19 @@ function RolePanel({
             return result;
           }}
         >
-          <Field id={`${id}-role`} label={t('role.label')}>
-            <SimpleSelect
-              id={`${id}-role`}
-              value={role}
-              onValueChange={setRole}
-              options={[
-                { value: 'none', label: t('roles.none') },
-                ...(['moderator', 'admin', 'owner'] as StaffRole[]).map((r) => ({
-                  value: r,
-                  label: t(`roles.${r}`),
-                })),
-              ]}
-            />
-          </Field>
+          <LabelSelect
+            label={t('role.label')}
+            id={`${id}-role`}
+            value={role}
+            onValueChange={setRole}
+            options={[
+              { value: 'none', label: t('roles.none') },
+              ...(['moderator', 'admin', 'owner'] as StaffRole[]).map((r) => ({
+                value: r,
+                label: t(`roles.${r}`),
+              })),
+            ]}
+          />
         </ActionForm>
       ) : (
         <p className="text-body-sm text-muted-foreground">{t('role.unclaimed')}</p>

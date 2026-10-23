@@ -7,10 +7,9 @@ import {
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLog } from '@/components/staff/audit-log';
-import { Field } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
-import { SimpleSelect } from '@/components/ui/select';
+import { LabelSelect } from '@/components/ui/label-select';
 import { getServerSession, readStaff } from '@/lib/api-server';
 
 type SearchParams = Promise<Record<'acao' | 'autor' | 'alvo', string | string[] | undefined>>;
@@ -55,18 +54,17 @@ export default async function StaffAuditPage({ searchParams }: { searchParams: S
         aria-label={t('filters')}
         className="grid items-end gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]"
       >
-        <Field id="acao" label={t('filter')}>
-          <SimpleSelect
-            id="acao"
-            name="acao"
-            defaultValue={filters.action ?? ''}
-            emptyLabel={t('allActions')}
-            options={staffAuditActionSchema.options.map((value) => ({
-              value,
-              label: t(`actions.${value}`),
-            }))}
-          />
-        </Field>
+        <LabelSelect
+          label={t('filter')}
+          id="acao"
+          name="acao"
+          defaultValue={filters.action ?? ''}
+          emptyLabel={t('allActions')}
+          options={staffAuditActionSchema.options.map((value) => ({
+            value,
+            label: t(`actions.${value}`),
+          }))}
+        />
         <LabelInput
           id="autor"
           label={t('actor')}

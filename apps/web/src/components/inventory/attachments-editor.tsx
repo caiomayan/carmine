@@ -8,7 +8,7 @@ import { DeleteIcon } from '@/components/icons/animated/delete';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { Button } from '@/components/ui/button';
-import { SimpleSelect } from '@/components/ui/select';
+import { LabelSelect } from '@/components/ui/label-select';
 import type { ItemSpec } from '@/lib/catalog/catalog';
 import { formatDecimal } from '@/lib/decimal';
 import {
@@ -37,7 +37,7 @@ const AttachmentPicker = dynamic(
   },
 );
 
-import { DecimalInput, describedBy, FieldShell, RangeInput } from './editor-fields';
+import { DecimalInput, RangeInput } from './editor-fields';
 
 type Bounds = { min: number | undefined; max: number | undefined };
 
@@ -191,20 +191,17 @@ function StickerRow({
       </div>
 
       <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_minmax(0,1fr)] gap-3 max-md:grid-cols-1">
-        <FieldShell id={slotId} label={t('slot')} error={error}>
-          <SimpleSelect
-            id={slotId}
-            value={String(sticker.schema)}
-            onValueChange={(next) => onChange({ schema: Number(next) })}
-            aria-invalid={!!error || undefined}
-            aria-describedby={describedBy(slotId, { error })}
-            className="bg-surface-2 text-body aria-invalid:shadow-[inset_0_0_0_1.5px_var(--status-danger)] hover:bg-line"
-            options={Array.from({ length: slots }, (_, slot) => ({
-              value: String(slot),
-              label: t('slotN', { n: slot + 1 }),
-            }))}
-          />
-        </FieldShell>
+        <LabelSelect
+          label={t('slot')}
+          id={slotId}
+          value={String(sticker.schema)}
+          onValueChange={(next) => onChange({ schema: Number(next) })}
+          error={error}
+          options={Array.from({ length: slots }, (_, slot) => ({
+            value: String(slot),
+            label: t('slotN', { n: slot + 1 }),
+          }))}
+        />
         <SliderField
           label={t('rotation')}
           value={sticker.rotation}
@@ -478,38 +475,36 @@ export function CharmEditor({
               onChange={(seed) => onChange({ ...charm, seed: seed ?? Number.NaN })}
             />
             {bounds && placement ? (
-              <FieldShell id={placementId} label={t('charmPosition')}>
-                <SimpleSelect
-                  id={placementId}
-                  value={
-                    placement.kind === 'slot'
-                      ? String(placement.slot)
-                      : placement.kind === 'custom'
-                        ? CUSTOM_PLACEMENT
-                        : DEFAULT_PLACEMENT
-                  }
-                  onValueChange={place}
-                  className="bg-surface-2 text-body hover:bg-line"
-                  data-testid="charm-placement"
-                  options={[
-                    { value: DEFAULT_PLACEMENT, label: t('positionDefault') },
-                    ...Array.from({ length: CHARM_SLOTS }, (_, slot) => ({
-                      value: String(slot),
-                      label: t(
-                        slot === 0
-                          ? 'charmSlotFirst'
-                          : slot === CHARM_SLOTS - 1
-                            ? 'charmSlotLast'
-                            : 'charmSlotN',
-                        { n: slot + 1 },
-                      ),
-                    })),
-                    ...(placement.kind === 'custom'
-                      ? [{ value: CUSTOM_PLACEMENT, label: t('positionCustom') }]
-                      : []),
-                  ]}
-                />
-              </FieldShell>
+              <LabelSelect
+                label={t('charmPosition')}
+                id={placementId}
+                value={
+                  placement.kind === 'slot'
+                    ? String(placement.slot)
+                    : placement.kind === 'custom'
+                      ? CUSTOM_PLACEMENT
+                      : DEFAULT_PLACEMENT
+                }
+                onValueChange={place}
+                data-testid="charm-placement"
+                options={[
+                  { value: DEFAULT_PLACEMENT, label: t('positionDefault') },
+                  ...Array.from({ length: CHARM_SLOTS }, (_, slot) => ({
+                    value: String(slot),
+                    label: t(
+                      slot === 0
+                        ? 'charmSlotFirst'
+                        : slot === CHARM_SLOTS - 1
+                          ? 'charmSlotLast'
+                          : 'charmSlotN',
+                      { n: slot + 1 },
+                    ),
+                  })),
+                  ...(placement.kind === 'custom'
+                    ? [{ value: CUSTOM_PLACEMENT, label: t('positionCustom') }]
+                    : []),
+                ]}
+              />
             ) : null}
           </div>
           {bounds && placement ? (

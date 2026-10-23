@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronsUpDownIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   Command,
   CommandEmpty,
@@ -11,6 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import { fieldTriggerClass } from '@/components/ui/floating-label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { type SelectOption, selectTriggerClass } from '@/components/ui/select';
 import { indexText, type SearchDoc, scoreDoc } from '@/lib/option-search';
@@ -44,6 +45,8 @@ export function Combobox({
   invalid,
   className,
   triggerClassName,
+  variant = 'default',
+  after,
   'aria-describedby': describedBy,
 }: {
   id?: string;
@@ -58,6 +61,10 @@ export function Combobox({
   invalid?: boolean;
   className?: string;
   triggerClassName?: string;
+  /** `field`: o botão na linguagem do Label Input (ver `floating-label.tsx`). */
+  variant?: 'default' | 'field';
+  /** Vem logo depois do botão, dentro do mesmo bloco: o rótulo flutuante do `variant="field"`. */
+  after?: ReactNode;
   'aria-describedby'?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -80,7 +87,10 @@ export function Combobox({
             aria-describedby={describedBy}
             disabled={disabled}
             data-placeholder={selected ? undefined : ''}
-            className={cn(selectTriggerClass, triggerClassName)}
+            className={cn(
+              variant === 'field' ? fieldTriggerClass : selectTriggerClass,
+              triggerClassName,
+            )}
           >
             <span className="truncate">{selected?.label ?? (value || placeholder)}</span>
             <ChevronsUpDownIcon
@@ -89,6 +99,7 @@ export function Combobox({
             />
           </button>
         </PopoverTrigger>
+        {after}
         <PopoverContent className="w-(--radix-popover-trigger-width) min-w-56 p-0">
           <ComboboxPanel
             items={items}
