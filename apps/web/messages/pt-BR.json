@@ -1618,6 +1618,11 @@
         "closed": "Semana encerrada"
       },
       "open": "Ver o Ranking"
+    },
+    "states": {
+      "online": "Online",
+      "full": "Lotado",
+      "offline": "Offline"
     }
   }
 }

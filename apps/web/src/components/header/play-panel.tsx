@@ -81,7 +81,6 @@ function Recommended({ server }: { server: PlayView['recommended'] & object }) {
   const t = useTranslations('headerPreviews');
   const { status, copy } = useCopy();
   const mapName = mapDisplayName(server.map);
-  const full = server.state === 'full';
 
   return (
     <div className="grid gap-3 sm:grid-cols-[13rem_1fr]">
@@ -94,7 +93,7 @@ function Recommended({ server }: { server: PlayView['recommended'] & object }) {
         <MapThumb map={server.map} />
         <span className="chip-solid absolute top-2 left-2 inline-flex items-center gap-2 text-caption font-medium">
           <StatusDot tone={STATE_TONE[server.state]} pulse={server.state === 'online'} />
-          {full ? t('play.full') : t(`modes.${server.mode}`)}
+          {t(`states.${server.state}`)}
         </span>
       </Link>
 
