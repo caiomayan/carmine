@@ -19,7 +19,8 @@ async function openStickerEditor(page: Page) {
     .first()
     .click();
   await expect(picker).toHaveCount(0);
-  const slot = page.getByTestId('sticker-0').getByRole('combobox');
+  // Com a lista aberta o Radix marca o resto como aria-hidden: o seletor de papel não acharia o botão.
+  const slot = page.getByTestId('sticker-0').locator('button[role="combobox"]');
   await expect(slot).toBeVisible();
   return slot;
 }
