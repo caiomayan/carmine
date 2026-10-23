@@ -307,36 +307,30 @@ test('no celular, o seletor abre numa folha e equipa dali', async ({ page }) => 
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
-
-  // A barra de Presets quebra de linha em vez de rolar: nenhum chip sai da tela nem fica pela metade.
-  const presets = page.getByTestId('preset');
-  await expect(presets.first()).toBeVisible();
-  const rights = await presets.evaluateAll((items) =>
-    items.map((el) => el.getBoundingClientRect().right),
-  );
-  for (const right of rights) expect(right).toBeLessThanOrEqual(390);
-  const bar = page.getByTestId('presets').locator('ul');
-  expect(await bar.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
 });
 
-test('em 390 px os chips de Preset e o botão "Novo Preset" não se sobrepõem', async ({ page }) => {
+test('em 390 px as cartas de Preset e o "Novo Preset" não se sobrepõem, e a mão passa no axe', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, { vip: true });
+  await createPreset(page, 'Retake');
+  await createPreset(page, 'Treino');
+  await page.reload();
   await boardReady(page);
+  await handReady(page);
+  // A fileira rola dentro da mão: o "Novo Preset" fica no fim, alcançável, e nenhuma carta o cobre.
   const button = page.getByTestId('preset-new');
+  await button.scrollIntoViewIfNeeded();
   await expect(button).toBeVisible();
   const buttonBox = await button.boundingBox();
   if (!buttonBox) throw new Error('botão Novo Preset sem caixa');
-  for (const chip of await page.getByTestId('preset').all()) {
-    const box = await chip.boundingBox();
-    if (!box) throw new Error('chip de Preset sem caixa');
-    const apart =
-      box.x + box.width <= buttonBox.x ||
-      buttonBox.x + buttonBox.width <= box.x ||
-      box.y + box.height <= buttonBox.y ||
-      buttonBox.y + buttonBox.height <= box.y;
-    expect(apart, 'chip de Preset sobre o botão Novo Preset').toBe(true);
-    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(390);
+  for (const card of await page.getByTestId('preset').all()) {
+    const box = await card.boundingBox();
+    if (!box) throw new Error('carta de Preset sem caixa');
+    const apart = box.x + box.width <= buttonBox.x || buttonBox.x + buttonBox.width <= box.x;
+    expect(apart, 'carta de Preset sobre o botão Novo Preset').toBe(true);
   }
   expect(await axeViolations(page)).toEqual([]);
 });
