@@ -341,7 +341,7 @@ test.describe('teclado', () => {
 });
 
 test.describe('celular', () => {
-  test.use({ viewport: { width: 390, height: 844 } });
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
   test('sem painel: o toque navega direto e nada é carregado', async ({ page }) => {
     const calls = await routePreviews(page);

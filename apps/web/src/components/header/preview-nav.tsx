@@ -67,9 +67,14 @@ export function PreviewNav({
       ?.focus({ preventScroll: true });
   }, []);
 
-  // Navegou: o painel fecha.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `pathname` é o gatilho
-  useEffect(() => setValue(''), [pathname]);
+  // Navegou: o painel fecha. Só quando a rota MUDA: na montagem o painel pode já ter sido aberto
+  // pelo hover que trouxe esta navegação para o lugar da leve.
+  const lastPath = useRef(pathname);
+  useEffect(() => {
+    if (lastPath.current === pathname) return;
+    lastPath.current = pathname;
+    setValue('');
+  }, [pathname]);
 
   return (
     <PreviewDataProvider open={value !== ''}>
