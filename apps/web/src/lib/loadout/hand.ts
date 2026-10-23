@@ -11,9 +11,10 @@ export const CARD = { width: 132, height: 184 } as const;
 /**
  * A mão no desktop "espia" por baixo da borda: só os `peek` px de cima de cada carta aparecem em
  * repouso (nome, faca e peças), o resto fica recortado; a carta em foco sobe e se mostra inteira.
- * `lift` é o respiro em cima, onde a carta ativa descansa.
+ * `lift` é o respiro em cima: cabem a carta ativa e a em foco (que sobe e cresce) sem encostar
+ * no que vem antes da mão.
  */
-export const HAND = { lift: 28, peek: 146 } as const;
+export const HAND = { lift: 52, peek: 146 } as const;
 
 /** Respiro entre cartas quando há largura de sobra e elas não precisam se sobrepor. */
 const GAP = 12;
