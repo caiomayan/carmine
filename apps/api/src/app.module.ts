@@ -1,6 +1,7 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { LoggerModule } from 'nestjs-pino';
 import { AccountsModule } from './accounts/accounts.module.js';
+import { ActivityModule } from './activity/activity.module.js';
 import { AlertsModule } from './alerts/alerts.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
@@ -51,6 +52,7 @@ export class AppModule {
         DiscordModule,
         StatsModule,
         HeaderPreviewsModule,
+        ActivityModule,
         ReportsModule,
       ],
     };

@@ -79,6 +79,14 @@ export class WeeklyRanking {
     };
   }
 
+  /** A Conta em primeiro lugar da semana atual neste Modo (nulo sem ninguém elegível). */
+  async leaderOf(mode: GameMode): Promise<{ accountId: string; weekStart: string } | null> {
+    const currentWeek = weekStartOf(this.now());
+    const { ranked } = await this.ordered(mode, currentWeek, currentWeek);
+    const leader = ranked[0];
+    return leader ? { accountId: leader.accountId, weekStart: currentWeek } : null;
+  }
+
   private async ordered(mode: GameMode, weekStart: string, currentWeek: string) {
     const cached = await this.cache?.get(mode, weekStart);
     if (cached) return cached;

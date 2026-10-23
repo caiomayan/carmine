@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
+import { ActivityModule } from '../activity/activity.module.js';
+import { ActivityFeed } from '../activity/activity-feed.js';
+import { RankingLeaderWatch } from '../activity/ranking-leader-watch.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
@@ -15,13 +18,13 @@ import { WeeklyRanking } from './weekly-ranking.js';
 
 /** Eventos do jogo e Estatísticas das Contas (S12). */
 @Module({
-  imports: [GameServersModule, AccountsModule],
+  imports: [GameServersModule, AccountsModule, ActivityModule],
   controllers: [GameEventsController, ProfileStatsController, RankingController],
   providers: [
     {
       provide: GameEventIngest,
-      inject: [DATABASE],
-      useFactory: (db: Database) => new GameEventIngest(db),
+      inject: [DATABASE, ActivityFeed],
+      useFactory: (db: Database, activity: ActivityFeed) => new GameEventIngest(db, activity),
     },
     {
       provide: ProfileStatsReader,
@@ -33,6 +36,13 @@ import { WeeklyRanking } from './weekly-ranking.js';
       inject: [DATABASE, VALKEY, APP_CONFIG],
       useFactory: (db: Database, valkey: Redis, config: AppConfig) =>
         new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
+    },
+    {
+      // Percebe a troca do primeiro lugar da semana para a faixa de atividade.
+      provide: RankingLeaderWatch,
+      inject: [WeeklyRanking, ActivityFeed, VALKEY],
+      useFactory: (ranking: WeeklyRanking, activity: ActivityFeed, valkey: Redis) =>
+        new RankingLeaderWatch(ranking, activity, valkey, 30_000),
     },
   ],
   exports: [WeeklyRanking],

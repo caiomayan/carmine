@@ -28,6 +28,7 @@ describe('loadConfig', () => {
       },
       rankingCacheTtlSeconds: 45,
       headerPreviewsCacheTtlSeconds: 15,
+      activityCacheTtlSeconds: 5,
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
       reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },

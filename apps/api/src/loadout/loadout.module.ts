@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { ActivityModule } from '../activity/activity.module.js';
+import { ActivityFeed } from '../activity/activity-feed.js';
 import { Catalog } from '../catalog/catalog.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { EquippedModule } from '../equipped/equipped.module.js';
@@ -10,14 +12,19 @@ import { Loadouts } from './loadouts.js';
 
 /** Loadout e Presets das Contas (S05). */
 @Module({
-  imports: [VipModule, EquippedModule],
+  imports: [VipModule, EquippedModule, ActivityModule],
   controllers: [LoadoutController, PresetsController],
   providers: [
     {
       provide: Loadouts,
-      inject: [DATABASE, Catalog, VipPeriods, EquippedCache],
-      useFactory: (db: Database, catalog: Catalog, vip: VipPeriods, cache: EquippedCache) =>
-        new Loadouts(db, catalog, vip, cache),
+      inject: [DATABASE, Catalog, VipPeriods, EquippedCache, ActivityFeed],
+      useFactory: (
+        db: Database,
+        catalog: Catalog,
+        vip: VipPeriods,
+        cache: EquippedCache,
+        activity: ActivityFeed,
+      ) => new Loadouts(db, catalog, vip, cache, undefined, activity),
     },
   ],
   exports: [Loadouts],
