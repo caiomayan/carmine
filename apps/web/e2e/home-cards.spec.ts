@@ -110,3 +110,35 @@ for (const theme of ['dark', 'light'] as const) {
     });
   });
 }
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`o painel dos servidores mostra o anel quando o foco vem do teclado, e não do mouse (${theme}, 390 px)`, async ({
+    page,
+  }) => {
+    await saveTheme(page, theme);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await routeLiveServers(page, [fakeServer({ name: 'fixo-no-ar' })]);
+    await page.goto('/');
+    const panel = page.getByRole('tabpanel').first();
+    await expect(panel).toBeVisible();
+
+    const outline = () =>
+      panel.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
+      });
+
+    // Mouse: o clique no painel o foca (tabindex), sem anel.
+    await panel.click({ position: { x: 4, y: 4 } });
+    await expect(panel).toBeFocused();
+    expect((await outline()).style).toBe('none');
+
+    // Teclado: sai e volta com Tab; o anel aparece.
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect(panel).toBeFocused();
+    const ring = await outline();
+    expect(ring.style).toBe('solid');
+    expect(ring.width).toBeGreaterThan(0);
+  });
+}
