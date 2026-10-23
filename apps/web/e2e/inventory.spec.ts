@@ -680,7 +680,10 @@ test('sessão expirada no editor: a edição volta depois do novo login', async 
 
 test('/entrar?erro=limite explica o limite de tentativas', async ({ page }) => {
   await page.goto('/entrar?erro=limite');
-  await expect(page.getByRole('alert')).toContainText('Muitas tentativas de login seguidas');
+  // O anunciador de rotas do Next também é um role="alert" (no dev e na produção): filtra pelo texto.
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Muitas tentativas de login seguidas' }),
+  ).toBeVisible();
 });
 
 for (const theme of ['dark', 'light'] as const) {
