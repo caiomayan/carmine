@@ -45,7 +45,7 @@ async function addItemByApi(page: Page, item: Record<string, unknown>) {
     headers: { 'x-csrf-token': await csrfToken(page.context()) },
     data: { item },
   });
-  expect(response.status()).toBe(201);
+  expect(response.status(), await response.text()).toBe(201);
   return (await response.json()) as { uid: string };
 }
 
@@ -511,32 +511,45 @@ test('em 390 px o editor com stickers e chaveiro não rola na horizontal', async
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
 
-test('em 390 px nada do editor de um Item existente passa da tela (viewer, slider, Seed, StatTrak)', async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await signIn(page, { vip: true });
-  const { uid } = await addItemByApi(page, {
-    id: AK_REDLINE,
-    wear: 0.2,
-    seed: 7,
-    stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
-    keychains: { '0': { id: 13113, seed: 5 } },
+test.describe('editor em 390 px, no toque', () => {
+  test.use({ hasTouch: true, viewport: { width: 390, height: 900 } });
+
+  test('nada do editor de um Item existente passa da tela (viewer, slider, Seed, StatTrak)', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await signIn(page, { vip: true });
+    // Três stickers de nome longo e o chaveiro, com o "Ajuste fino" fechado: os <fieldset> deles
+    // tinham min-width: min-content e seguravam a coluna dos campos em ~574 px.
+    const { uid } = await addItemByApi(page, {
+      id: AK_REDLINE,
+      wear: 0.15,
+      seed: 661,
+      statTrak: 0,
+      stickers: { '0': { id: 28158 }, '1': { id: 28156 }, '2': { id: 28154 } },
+      keychains: { '0': { id: 28159, seed: 4321 } },
+    });
+    await page.goto(`/inventario/${uid}`);
+    await expect(page.getByTestId('item-editor')).toBeVisible();
+    await expect(page.getByTestId('viewer-2d-attachments')).toBeVisible();
+    await expect(page.getByTestId('sticker-2')).toBeVisible();
+    await expect(page.getByTestId('charm')).toBeVisible();
+    const documentOverflow = () => page.evaluate(() => document.documentElement.scrollWidth - 390);
+    expect(await documentOverflow()).toBeLessThanOrEqual(0);
+    for (const fine of await page.getByText('Ajuste fino').all()) await fine.click();
+    expect(await documentOverflow()).toBeLessThanOrEqual(0);
+    // O overflow do documento pode estar escondido por um pai com overflow: o que importa é cada
+    // caixa do editor ficar dentro da tela (o texto só para leitor de tela fica de fora).
+    const beyond = await page.getByTestId('item-editor').evaluate((editor) =>
+      [editor, ...editor.querySelectorAll('*')]
+        .filter((el) => {
+          const box = el.getBoundingClientRect();
+          return box.width > 1 && box.height > 1 && box.right > 390 + 0.5;
+        })
+        .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute('data-testid') ?? ''}]`),
+    );
+    expect(beyond).toEqual([]);
   });
-  await page.goto(`/inventario/${uid}`);
-  await expect(page.getByTestId('item-editor')).toBeVisible();
-  await expect(page.getByTestId('viewer-2d-attachments')).toBeVisible();
-  // O overflow do documento pode estar escondido por um pai com overflow: o que importa é cada
-  // caixa do editor ficar dentro da tela (o texto só para leitor de tela fica de fora).
-  const beyond = await page.getByTestId('item-editor').evaluate((editor) =>
-    [editor, ...editor.querySelectorAll('*')]
-      .filter((el) => {
-        const box = el.getBoundingClientRect();
-        return box.width > 1 && box.height > 1 && box.right > window.innerWidth + 0.5;
-      })
-      .map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute('data-testid') ?? ''}]`),
-  );
-  expect(beyond).toEqual([]);
 });
 
 test('a dica do 3D lista girar, mover (Shift) e aproximar; no toque, só girar', async ({

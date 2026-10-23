@@ -162,7 +162,7 @@ function StickerRow({
   const error = issue ? errorText(issue) : undefined;
   return (
     <fieldset
-      className="mb-2 grid gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
+      className="mb-2 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
       data-testid={`sticker-${index}`}
       data-selected={selected || undefined}
       onFocus={onSelect}
@@ -427,7 +427,7 @@ export function CharmEditor({
       </h3>
       {charm ? (
         <fieldset
-          className="grid gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std animate-fade-up data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
+          className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 rounded-lg bg-surface-2/50 p-3 transition-[box-shadow,background-color] duration-(--dur-base) ease-std animate-fade-up data-selected:bg-surface-2 data-selected:shadow-[inset_0_0_0_1px_var(--line-strong)]"
           data-testid="charm"
           data-selected={selected || undefined}
           onFocus={() => drag.dispatch({ type: 'focus-charm' })}

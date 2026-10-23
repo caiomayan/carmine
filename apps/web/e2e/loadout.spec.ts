@@ -297,6 +297,28 @@ test('no celular, o seletor abre numa folha e equipa dali', async ({ page }) => 
   expect(await bar.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
 });
 
+test('em 390 px os chips de Preset e o botão "Novo Preset" não se sobrepõem', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await signIn(page, { vip: true });
+  await boardReady(page);
+  const button = page.getByTestId('preset-new');
+  await expect(button).toBeVisible();
+  const buttonBox = await button.boundingBox();
+  if (!buttonBox) throw new Error('botão Novo Preset sem caixa');
+  for (const chip of await page.getByTestId('preset').all()) {
+    const box = await chip.boundingBox();
+    if (!box) throw new Error('chip de Preset sem caixa');
+    const apart =
+      box.x + box.width <= buttonBox.x ||
+      buttonBox.x + buttonBox.width <= box.x ||
+      box.y + box.height <= buttonBox.y ||
+      buttonBox.y + buttonBox.height <= box.y;
+    expect(apart, 'chip de Preset sobre o botão Novo Preset').toBe(true);
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  }
+  expect(await axeViolations(page)).toEqual([]);
+});
+
 test('o quadro tem as cinco colunas do menu de compra, com todas as armas do lado', async ({
   page,
 }) => {
