@@ -83,7 +83,8 @@ export function PresetBar({ list, vip }: { list: PresetList; vip: boolean }) {
     >
       <div className="flex min-w-0 max-w-full items-center gap-1.5 max-md:w-full">
         <ul
-          className="flex min-w-0 items-center gap-1.5 max-md:overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-end"
+          // Os chips quebram de linha em vez de rolar: com a rolagem, o "20 Itens" da ponta saía pela metade.
+          className="flex min-w-0 flex-wrap items-center gap-1.5 md:justify-end"
           aria-label={t('label')}
         >
           {presets.map((preset) => (

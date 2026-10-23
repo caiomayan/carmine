@@ -197,6 +197,17 @@ test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em 
   await expect(row.getByRole('link', { name: high.name })).toBeVisible();
   await expect(row.getByTestId('ranking-row-extra')).toContainText(/HS% .+ · \d+ rounds/);
 
+  // Nada é cortado com reticências: o nome e a linha extra aparecem inteiros.
+  for (const part of [
+    row.getByRole('link', { name: high.name }),
+    row.getByTestId('ranking-row-extra'),
+  ]) {
+    expect(await part.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+    expect(await part.evaluate((el) => getComputedStyle(el).textOverflow)).not.toBe('ellipsis');
+  }
+  const box = await row.boundingBox();
+  expect((box?.x ?? 0) + (box?.width ?? 0)).toBeLessThanOrEqual(390);
+
   // No desktop as colunas voltam e a segunda linha some.
   await page.setViewportSize({ width: 1440, height: 900 });
   await expect(row.getByTestId('ranking-row-extra')).toBeHidden();
@@ -346,6 +357,24 @@ for (const theme of ['dark', 'light'] as const) {
           expect(await axeViolations(page), `${path} em ${width}px`).toEqual([]);
         }
       }
+    }
+  });
+}
+
+for (const theme of ['dark', 'light'] as const) {
+  test(`a linha "Você" do Ranking passa no axe, logado (${theme})`, async ({ page, request }) => {
+    const player = await createUnclaimedAccount(request, `Linha Propria ${theme}`);
+    await play(request, { rounds: { steamIds: [player.steamId], count: 60 } });
+    await signInByRequest(page, player.steamId);
+    await saveTheme(page, theme);
+    for (const width of [390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      // O cache do Ranking dura 1 s no E2E: relê até a linha própria aparecer.
+      await expect(async () => {
+        await page.goto('/ranking');
+        await expect(page.locator('#minha-linha')).toHaveCount(1, { timeout: 1_000 });
+      }).toPass({ timeout: 15_000 });
+      expect(await axeViolations(page), `/ranking em ${width}px`).toEqual([]);
     }
   });
 }

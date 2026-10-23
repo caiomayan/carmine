@@ -106,7 +106,7 @@ async function Row({
   const podium = entry.position <= 3;
   // O fundo vai nas células (a linha não arredonda): hover e "Você" cobrem a linha toda.
   const cell = cn(
-    'h-14 px-3 py-2 text-sm tabular-nums transition-colors duration-(--dur-fast) ease-std first:rounded-l-lg last:rounded-r-lg',
+    'h-14 px-3 py-2 text-sm max-md:px-2 tabular-nums transition-colors duration-(--dur-fast) ease-std first:rounded-l-lg last:rounded-r-lg',
     entry.self ? 'bg-(--fill-selected)' : 'group-hover/row:bg-surface',
   );
 
@@ -118,7 +118,8 @@ async function Row({
       data-self={entry.self || undefined}
       data-private={player.private || undefined}
       style={{ '--i': index } as CSSProperties}
-      className="group/row enter-stagger scroll-mt-24"
+      // Sobre o fundo de "Você" o texto secundário sobe de tom: o cinza comum fica abaixo de 4,5:1 ali.
+      className="group/row enter-stagger scroll-mt-24 data-[self]:[--muted-foreground:color-mix(in_srgb,var(--text)_78%,var(--muted))]"
     >
       <td
         className={cn(
@@ -131,7 +132,7 @@ async function Row({
         {entry.position}
       </td>
       <th scope="row" className={cn(cell, 'min-w-0 text-left font-normal')}>
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3 max-md:gap-2">
           {player.private ? (
             <span
               aria-hidden="true"
@@ -142,22 +143,24 @@ async function Row({
           )}
           <div className="flex min-w-0 flex-col md:flex-row md:items-center md:gap-3">
             {player.private ? (
-              <span className="truncate text-muted-foreground italic">{t('privatePlayer')}</span>
+              <span className="text-muted-foreground italic max-md:[overflow-wrap:anywhere] md:truncate">
+                {t('privatePlayer')}
+              </span>
             ) : (
               <Link
                 href={`/${player.publicId}` as Route}
-                className="min-w-0 truncate rounded-xs font-semibold underline decoration-foreground/30 underline-offset-(--underline-offset) transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground focus-visible:outline-offset-2"
+                className="min-w-0 rounded-xs font-semibold underline max-md:[overflow-wrap:anywhere] md:truncate decoration-foreground/30 underline-offset-(--underline-offset) transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-foreground focus-visible:outline-offset-2"
               >
                 {player.displayName}
               </Link>
             )}
-            <span className="flex items-center gap-2 text-xs text-muted-foreground md:contents">
+            <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground md:contents">
               {entry.self ? (
                 <span className="shrink-0 rounded-sm bg-surface px-1.5 py-[3px] label-caps text-foreground">
                   {t('you')}
                 </span>
               ) : null}
-              <span className="min-w-0 truncate md:hidden" data-testid="ranking-row-extra">
+              <span className="min-w-0 md:hidden" data-testid="ranking-row-extra">
                 {t(retake ? 'table.extraRetake' : 'table.extraDeathmatch', {
                   hs: headshot,
                   value: played,

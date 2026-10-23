@@ -109,7 +109,7 @@ export function BoardCard({
         )}
       </span>
       {item ? (
-        <span className="absolute inset-x-[7px] bottom-[7px] z-10 flex items-center justify-between gap-1.5">
+        <span className="absolute inset-x-[7px] bottom-[7px] z-10 flex items-end justify-between gap-1.5">
           <span className="inline-flex h-5 flex-none items-center gap-1.5 rounded-[6px] bg-surface/85 px-1.5 backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90">
             <TeamDots sides={sides} size="sm" />
             {item.statTrak ? (
@@ -123,9 +123,10 @@ export function BoardCard({
           </span>
           <span
             title={labels.skin ?? undefined}
-            className="ml-auto inline-flex h-5 min-w-0 items-center gap-1.5 rounded-[6px] bg-surface/85 px-1.5 text-[11.5px] leading-none font-[550] backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90"
+            className="ml-auto inline-flex min-h-5 min-w-0 items-center gap-1.5 rounded-[6px] bg-surface/85 px-1.5 py-[3px] text-[11.5px] leading-[1.15] font-[550] backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90"
           >
-            <span className="truncate">{labels.skin}</span>
+            {/* Até duas linhas: o nome da skin é o que o slot mostra e cortava com reticências no celular. */}
+            <span className="line-clamp-2 [overflow-wrap:anywhere]">{labels.skin}</span>
             <i aria-hidden="true" className="h-(--bar-h) w-2.5 flex-none rounded-full bg-(--rc)" />
           </span>
         </span>

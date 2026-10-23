@@ -138,9 +138,10 @@ export function ItemViewer({
       data-testid="item-viewer"
       data-mode={state.mode}
       data-phase={phase ?? undefined}
-      className="relative isolate grid overflow-hidden rounded-xl bg-surface [background-image:repeating-linear-gradient(135deg,transparent_0_11px,color-mix(in_srgb,var(--text)_3.5%,transparent)_11px_12px)]"
+      className="relative isolate grid grid-cols-[minmax(0,1fr)] overflow-hidden rounded-xl bg-surface [background-image:repeating-linear-gradient(135deg,transparent_0_11px,color-mix(in_srgb,var(--text)_3.5%,transparent)_11px_12px)]"
     >
-      <div className="grid aspect-4/3 place-items-center [grid-area:1/1] max-lg:aspect-16/10">
+      {/* min-w-0: a caixa com proporção deriva a largura mínima da altura do conteúdo (imagem e stickers) e passava da coluna no celular. */}
+      <div className="grid aspect-4/3 min-w-0 place-items-center [grid-area:1/1] max-lg:aspect-16/10">
         <div
           className={cn(
             'grid w-[78%] justify-items-center gap-4 transition-opacity duration-(--dur-slow) ease-std',
