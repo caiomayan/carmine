@@ -44,7 +44,7 @@ function InventoryContent({ inventory }: { inventory: InventoryView }) {
                   <span className="line-clamp-2 text-caption leading-snug font-medium">
                     {item.title}
                   </span>
-                  <span className="truncate text-caption text-muted-foreground">
+                  <span className="truncate text-caption muted-on-fill">
                     {[item.statTrak ? t('statTrak') : null, item.caption]
                       .filter(Boolean)
                       .join(' · ')}

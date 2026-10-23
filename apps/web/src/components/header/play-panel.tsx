@@ -139,7 +139,7 @@ function Recommended({ server }: { server: PlayView['recommended'] & object }) {
                 />
               ))}
             </span>
-            <span className="truncate text-body-sm text-muted-foreground">
+            <span className="truncate text-body-sm muted-on-fill">
               {server.friends[0]?.name}
               {server.friends.length > 1 ? ` +${server.friends.length - 1}` : ''}
             </span>
@@ -187,7 +187,7 @@ function OtherRow({ server }: { server: PreviewServer }) {
       <StatusDot tone={STATE_TONE[server.state]} />
       <span className="grid min-w-0 flex-1">
         <span className="truncate text-body-sm font-medium">{server.name}</span>
-        <span className="truncate text-caption text-muted-foreground">
+        <span className="truncate text-caption muted-on-fill">
           {t(`modes.${server.mode}`)}
           {mapName ? ` · ${mapName}` : ''}
         </span>

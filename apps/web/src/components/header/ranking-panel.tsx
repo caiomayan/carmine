@@ -82,7 +82,7 @@ function Mine({ mine }: { mine: NonNullable<RankingModeView['mine']> }) {
       data-testid="preview-mine"
       className="grid gap-0.5 rounded-lg bg-(--fill-rest) px-2.5 py-2 transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover)"
     >
-      <span className="label-caps text-muted-foreground">{t('mine')}</span>
+      <span className="label-caps muted-on-fill">{t('mine')}</span>
       {mine.position !== null ? (
         <span className="text-lg font-semibold tabular-nums">
           {t('position', { position: mine.position })}
@@ -102,14 +102,12 @@ function TopRow({ row }: { row: RankingRowView }) {
   const t = useTranslations('headerPreviews.ranking');
   const content = (
     <>
-      <span className="w-5 shrink-0 text-body-sm font-semibold text-muted-foreground tabular-nums">
+      <span className="w-5 shrink-0 text-body-sm font-semibold muted-on-fill tabular-nums">
         {row.position}
       </span>
       <Avatar src={row.avatarUrl} name={row.name} size={24} className="bg-(--fill-hover)" />
       <span className="min-w-0 flex-1 truncate text-body-sm font-medium">{row.name}</span>
-      {row.self ? (
-        <span className="shrink-0 text-caption text-muted-foreground">{t('you')}</span>
-      ) : null}
+      {row.self ? <span className="shrink-0 text-caption muted-on-fill">{t('you')}</span> : null}
     </>
   );
   // Perfil privado: sem destino, como no Ranking (nada leva à Conta).

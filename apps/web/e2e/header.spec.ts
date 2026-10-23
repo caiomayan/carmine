@@ -389,7 +389,7 @@ test.describe('acessibilidade', () => {
     }
   }
 
-  test('a navegação tem nome, o item atual é anunciado e o painel é um grupo nomeado', async ({
+  test('a navegação tem nome, o item atual é anunciado e o painel é um grupo nomeado pelo item', async ({
     page,
   }) => {
     await routePreviews(page);
@@ -398,7 +398,8 @@ test.describe('acessibilidade', () => {
     await open(page, 'Loadout');
 
     await expect(link(page, 'Ranking')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByRole('group', { name: 'Prévia do Loadout' })).toBeVisible();
+    // O Radix nomeia o painel pelo próprio item do menu (aria-labelledby).
+    await expect(page.getByRole('group', { name: 'Loadout' })).toBeVisible();
     await expect(link(page, 'Loadout')).toHaveAttribute('aria-expanded', 'true');
   });
 });

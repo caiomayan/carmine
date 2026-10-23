@@ -154,7 +154,6 @@ export function PreviewNav({
                       className="nav-content absolute top-0 left-0 w-[34rem] max-w-[calc(100vw-2rem)] p-3"
                       data-testid={`panel-${panel}`}
                       role="group"
-                      aria-label={t(`panels.${panel}`)}
                     >
                       <View />
                     </NavigationMenu.Content>

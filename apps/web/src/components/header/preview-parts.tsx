@@ -64,7 +64,7 @@ export function PanelFooterLink({ href, children }: { href: Route; children: Rea
   return (
     <Link
       href={href}
-      className="inline-flex min-h-(--tap) items-center rounded-lg px-2.5 text-body-sm font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) hover:text-foreground"
+      className="inline-flex min-h-(--tap) items-center rounded-lg px-2.5 text-body-sm font-medium muted-on-fill transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) hover:text-foreground"
     >
       {children}
     </Link>

@@ -84,7 +84,7 @@ function SlotTile({ slot }: { slot: LoadoutSlotView }) {
       <ItemImage src={slot.image} className={slot.equipped ? undefined : 'opacity-60 grayscale'} />
       <span className="grid gap-0.5">
         <span className="line-clamp-2 text-caption leading-snug font-medium">{title}</span>
-        <span className="truncate text-caption text-muted-foreground">{caption}</span>
+        <span className="truncate text-caption muted-on-fill">{caption}</span>
       </span>
     </Link>
   );

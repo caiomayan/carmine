@@ -1545,12 +1545,6 @@
     "loading": "Carregando",
     "error": "Não deu para carregar agora.",
     "retry": "Tentar de novo",
-    "panels": {
-      "play": "Prévia de Jogar",
-      "loadout": "Prévia do Loadout",
-      "inventory": "Prévia do Inventário",
-      "ranking": "Prévia do Ranking"
-    },
     "modes": {
       "retake": "Retake",
       "deathmatch": "Deathmatch"
