@@ -278,6 +278,9 @@ test.describe('Configurações', () => {
     await expect(page.getByTestId('profile-settings')).toBeHidden();
     await expect(page.getByTestId('settings-back')).toHaveCount(0);
 
+    // A coluna da página: o fundo do "voltar" começa na mesma borda da lista de seções.
+    const columnX = (await page.getByTestId('settings-nav-aparencia').boundingBox())?.x ?? -1;
+
     await page.getByTestId('settings-nav-aparencia').click();
     await expect(page).toHaveURL('/configuracoes/aparencia');
     await expect(page.getByTestId('settings-nav-perfil')).toBeHidden();
@@ -285,6 +288,8 @@ test.describe('Configurações', () => {
     // O H1 segue no DOM (para leitor de tela), só some da vista.
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
 
+    const backX = (await page.getByTestId('settings-back').boundingBox())?.x ?? -99;
+    expect(Math.abs(backX - columnX)).toBeLessThanOrEqual(1);
     await page.getByTestId('settings-back').click();
     await expect(page).toHaveURL('/configuracoes');
     await expect(page.getByTestId('settings-nav-perfil')).toBeVisible();
