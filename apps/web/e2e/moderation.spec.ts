@@ -8,6 +8,7 @@ import {
   signInFromHeader,
 } from './accounts';
 import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
+import { openAccountMenu } from './hydration';
 import { connectPlayer, createServer, heartbeat, keepBeating } from './live-servers';
 
 /**
@@ -88,7 +89,7 @@ test.describe('Painel da Staff', () => {
     expect((await page.goto('/staff/auditoria'))?.status()).toBe(404);
     // Sem papel, o menu da Conta não leva ao painel.
     await page.goto('/');
-    await page.getByTestId('account-menu').click();
+    await openAccountMenu(page);
     await expect(page.getByTestId('staff-panel-link')).toHaveCount(0);
   });
 
@@ -101,7 +102,7 @@ test.describe('Painel da Staff', () => {
     await heartbeat(request, player.server, [player.steamId]);
     const owner = await staffMember(browser, 'owner');
 
-    await owner.page.getByTestId('account-menu').click();
+    await openAccountMenu(owner.page);
     await owner.page.getByTestId('staff-panel-link').click();
     await expect(owner.page.getByRole('heading', { name: 'Painel da Staff' })).toBeVisible();
     await openFile(owner.page, player.publicId);
