@@ -58,7 +58,6 @@ export function AuditLog({
             onClick={loadMore}
             disabled={loading}
             aria-busy={loading || undefined}
-            className="-ml-3"
           >
             {t('loadMore')}
           </Button>

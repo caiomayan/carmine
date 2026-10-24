@@ -111,6 +111,10 @@ test.describe('Painel da Staff', () => {
     const item = owner.page.getByTestId('staff-sanction').first();
     await expect(item).toHaveAttribute('data-state', 'active');
     await expect(item.getByTestId('sanction-reason')).toHaveText(reason);
+    // "Revogar" (botão com fundo) alinha com o texto do motivo, sem margem negativa.
+    const reasonBox = await item.getByTestId('sanction-reason').boundingBox();
+    const revoke = await item.locator('button[aria-expanded]').first().boundingBox();
+    expect(Math.abs((revoke?.x ?? -99) - (reasonBox?.x ?? 99))).toBeLessThanOrEqual(1);
     await expect(owner.page.getByTestId('file-status')).toContainText('Ban');
 
     // O próximo batimento manda o ban para o Carmine.Core derrubar o jogador.
@@ -131,6 +135,10 @@ test.describe('Painel da Staff', () => {
     await signInFromHeader(page, player.steamId);
     const notice = page.getByTestId('sanction-notice');
     await expect(notice).toContainText('Sua Conta está banida dos Servidores Carmine');
+    // Os botões do aviso alinham com a coluna do texto, sem margem negativa.
+    const noticeText = await notice.getByText('Sua Conta está banida').boundingBox();
+    const noticeButton = await notice.getByRole('link').first().boundingBox();
+    expect(Math.abs((noticeButton?.x ?? -99) - (noticeText?.x ?? 99))).toBeLessThanOrEqual(1);
     await expect(notice).toContainText('Motivo: Griefing');
     await expect(notice).toContainText(reason);
     await expect(notice).toContainText('72 h');
