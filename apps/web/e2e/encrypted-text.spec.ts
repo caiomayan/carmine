@@ -101,18 +101,24 @@ test.describe('404', () => {
     expect(html).toMatch(/<span[^>]*encrypted-pending[^>]*>Esta semana, de /);
 
     // Sem hidratar, ninguém troca a fase: o fallback em CSS mostra o texto em ~1,5 s. Um
-    // `.encrypted-pending` solto (que o React não toca) prova isso, com os scripts já carregados.
+    // `.encrypted-pending` solto (que o React não toca) prova isso. O 404 chega em streaming e a
+    // hidratação pode refazer o <body> e a folha de estilos logo depois do `goto`, levando o elemento
+    // solto junto: a prova inteira (nasce escondido, aparece sozinho) se repete até uma rodada fechar.
     await page.goto('/nao-existe');
-    const stray = await page.evaluate(() => {
-      const el = document.createElement('span');
-      el.className = 'encrypted-pending';
-      el.textContent = 'solto';
-      el.id = 'solto';
-      document.body.append(el);
-      return getComputedStyle(el).opacity;
-    });
-    expect(stray).toBe('0');
-    await expect(page.locator('#solto')).toHaveCSS('opacity', '1', { timeout: 5_000 });
+    await expect(async () => {
+      const hidden = await page.evaluate(() => {
+        document.getElementById('solto')?.remove();
+        const el = document.createElement('span');
+        el.className = 'encrypted-pending';
+        el.textContent = 'solto';
+        el.id = 'solto';
+        document.body.append(el);
+        return getComputedStyle(el).opacity;
+      });
+      expect(hidden).toBe('0');
+      await page.waitForTimeout(1_800);
+      expect(await page.locator('#solto').evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+    }).toPass({ timeout: 20_000 });
   });
 });
 
