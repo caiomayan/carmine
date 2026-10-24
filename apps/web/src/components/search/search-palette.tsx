@@ -105,7 +105,7 @@ const RARITY_DOT: Record<Rarity, string> = {
 const PANEL = cn(
   'palette-panel fixed z-50 flex flex-col bg-popover text-popover-foreground outline-none',
   'max-md:inset-0',
-  'md:inset-x-0 md:top-[10vh] md:mx-auto md:max-h-[min(36rem,78dvh)] md:w-[min(40rem,calc(100vw-2rem))] md:rounded-xl',
+  'md:inset-x-0 md:top-[10vh] md:mx-auto md:max-h-[min(36rem,78dvh)] md:w-[min(40rem,calc(100vw-2rem))] md:rounded-3xl',
   'md:shadow-(--shadow-overlay)',
 );
 
@@ -351,7 +351,7 @@ function PaletteBody({
         setSelected(next);
       }}
       label={t('palette.title')}
-      className="min-h-0 flex-1 rounded-none bg-transparent md:rounded-xl"
+      className="min-h-0 flex-1 rounded-none bg-transparent md:rounded-3xl"
     >
       <div className="flex items-center gap-1 p-2 pb-1">
         <CommandInput

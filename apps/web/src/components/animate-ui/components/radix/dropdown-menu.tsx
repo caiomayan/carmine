@@ -58,7 +58,7 @@ function DropdownMenuContent({
     <DropdownMenuContentPrimitive
       sideOffset={sideOffset}
       className={cn(
-        'bg-popover text-popover-foreground z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-(--shadow-overlay) outline-none',
+        'bg-popover text-popover-foreground z-50 max-h-(--radix-dropdown-menu-content-available-height) min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl p-1 shadow-(--shadow-overlay) outline-none',
         className,
       )}
       {...props}
@@ -254,7 +254,7 @@ function DropdownMenuSubContent({ className, ...props }: DropdownMenuSubContentP
   return (
     <DropdownMenuSubContentPrimitive
       className={cn(
-        'bg-popover text-popover-foreground z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-lg p-1 shadow-(--shadow-overlay) outline-none',
+        'bg-popover text-popover-foreground z-50 min-w-[8rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-xl p-1 shadow-(--shadow-overlay) outline-none',
         className,
       )}
       {...props}

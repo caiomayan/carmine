@@ -17,7 +17,7 @@ type SwitchProps = SwitchPrimitiveProps & {
 
 function Switch({
   className,
-  pressedWidth = 19,
+  pressedWidth = 32,
   startIcon,
   endIcon,
   thumbIcon,
@@ -26,7 +26,7 @@ function Switch({
   return (
     <SwitchPrimitive
       className={cn(
-        'relative peer flex h-5 w-9 px-0.5 shrink-0 after:absolute after:-inset-x-1 after:-inset-y-3 items-center justify-start rounded-[7px] transition-colors duration-(--dur-fast) ease-std disabled:cursor-not-allowed disabled:opacity-50',
+        'relative peer flex h-7 w-12 px-[3px] shrink-0 after:absolute after:-inset-x-1 after:-inset-y-2 items-center justify-start rounded-full transition-colors duration-(--dur-fast) ease-std disabled:cursor-not-allowed disabled:opacity-50',
         'data-[state=checked]:bg-primary data-[state=unchecked]:bg-line-strong data-[state=checked]:justify-end',
         className,
       )}
@@ -34,9 +34,10 @@ function Switch({
     >
       <SwitchThumbPrimitive
         className={cn(
-          'relative z-10 bg-background pointer-events-none block size-4 rounded-[4px] ring-0',
+          'relative z-10 bg-background pointer-events-none block size-[22px] rounded-full ring-0',
         )}
         pressedAnimation={{ width: pressedWidth }}
+        transition={{ type: 'spring', stiffness: 520, damping: 17, mass: 0.8 }}
       >
         {thumbIcon && (
           <SwitchIconPrimitive

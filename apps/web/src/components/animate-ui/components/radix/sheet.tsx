@@ -71,10 +71,10 @@ function SheetContent({
       <SheetContentPrimitive
         className={cn(
           'bg-popover text-popover-foreground fixed z-50 flex flex-col gap-4 shadow-(--shadow-overlay)',
-          side === 'right' && 'h-full w-[min(360px,100%-48px)]',
-          side === 'left' && 'h-full w-[min(360px,100%-48px)]',
-          side === 'top' && 'w-full h-[min(360px,100%-48px)]',
-          side === 'bottom' && 'w-full h-[min(360px,100%-48px)]',
+          side === 'right' && 'h-full w-[min(360px,100%-48px)] rounded-l-3xl',
+          side === 'left' && 'h-full w-[min(360px,100%-48px)] rounded-r-3xl',
+          side === 'top' && 'w-full h-[min(360px,100%-48px)] rounded-b-3xl',
+          side === 'bottom' && 'w-full h-[min(360px,100%-48px)] rounded-t-3xl',
           className,
         )}
         side={side}
