@@ -49,7 +49,7 @@ export function cardsGridClass(columns: ServersLayout['columns']): string {
 
 /** `sizes` da imagem do mapa conforme a grade: o navegador escolhe 800 ou 1600 px. */
 export function cardsImageSizes(columns: ServersLayout['columns']): string {
-  if (columns === 1) return '(max-width: 760px) 100vw, 1080px';
+  if (columns === 1) return '(max-width: 760px) 100vw, 1280px';
   if (columns === 2) return '(max-width: 760px) 100vw, 540px';
   return '(max-width: 760px) 100vw, (max-width: 1180px) 50vw, 360px';
 }

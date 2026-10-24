@@ -29,8 +29,8 @@ export const WIDTHS = [390, 820, 1100, 1440] as const;
 
 /** Cor de fundo (--bg) de cada tema da Liberty, como o navegador a calcula. */
 export const BG: Record<Theme, string> = {
-  dark: 'rgb(17, 16, 13)',
-  light: 'rgb(248, 237, 209)',
+  dark: 'rgb(10, 10, 10)',
+  light: 'rgb(246, 246, 246)',
 };
 
 /** O Chrome registra a resposta 404 do próprio documento como erro de console. */

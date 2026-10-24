@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 
 /**
- * Título de seção da Liberty: Inter em versalete com tracking largo e um losango carmim no texto
- * (o único uso do carmim: decoração de 6 px, nunca informação).
+ * Título de seção da Liberty: Inter em versalete com tracking largo e um losango (◆, monocromático) no texto
+ * (decoração de 6 px, nunca informação; o token --carmine é branco no escuro e preto no claro).
  */
 export function SectionTitle({
   id,

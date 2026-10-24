@@ -39,7 +39,7 @@ const anotherDialogOpen = () =>
 
 /**
  * O campo de busca do cabeçalho (U3d): abre a paleta de comandos. No desktop é um campo com o
- * atalho à vista, a partir de 1152 px (onde o container já tem os 1080 px e a coluna das ações
+ * atalho à vista, a partir de 1152 px (janela de 1152 px: o container tem 1080 px de largura útil e a coluna das ações
  * comporta o campo ao lado do tema e da Conta sem empurrar a navegação do centro); abaixo disso, e
  * no celular, vira só o ícone (alvo de 44 px no celular). O
  * atalho vale em qualquer página: Ctrl+K (⌘K no Mac) e "/" quando nenhum campo está em foco.

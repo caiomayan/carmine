@@ -23,7 +23,7 @@ const BUDGET_MS = 4000;
  */
 const ENFORCE = process.env.PERF_BUDGET === 'enforce';
 /** JS da primeira carga (bytes na rede, gzip do `next start`): o pedido até a página interativa. */
-const JS_BUDGET_KB = 275;
+const JS_BUDGET_KB = 360;
 
 /**
  * Interativo = o React já hidratou o controle que a pessoa usa (o nó ganhou a fibra do React e

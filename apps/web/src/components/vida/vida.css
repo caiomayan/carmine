@@ -501,7 +501,8 @@ h1.text-display {
   [data-vida] {
     transition: none;
   }
-  [data-site-header] {
+  [data-site-header],
+  [data-site-header]::before {
     transition: none;
   }
 }
