@@ -218,6 +218,16 @@ test.describe('virada da semana, no painel de Ranking do header', () => {
 
 test.describe('título da semana, no /ranking', () => {
   const WEEK_SEEN = 'carmine:ranking-semana-vista';
+
+  /**
+   * Grava uma semana antiga como a última vista, para a próxima visita ser a "depois da virada". Só depois
+   * de o título hidratar (fase "parado"): a hidratação lê e regrava essa chave, e uma gravação que chega
+   * antes dela seria vista por esta página, não pela recarga.
+   */
+  async function seedLastSeenWeek(page: Page) {
+    await expect(title(page).locator('[data-encrypted="rest"]')).toBeVisible();
+    await page.evaluate((key) => localStorage.setItem(key, '2020-01-06'), WEEK_SEEN);
+  }
   const title = (page: Page) => page.getByTestId('week-title');
   const CURRENT = /^Esta semana, de .+ a .+$/;
 
@@ -269,7 +279,7 @@ test.describe('título da semana, no /ranking', () => {
     await recordEffects(page);
     await page.goto('/ranking');
     await expect(title(page)).toHaveText(CURRENT);
-    await page.evaluate((key) => localStorage.setItem(key, '2020-01-06'), WEEK_SEEN);
+    await seedLastSeenWeek(page);
 
     await page.reload();
     await expect(title(page).locator('[data-encrypted="rest"]')).toBeVisible();
@@ -286,7 +296,7 @@ test.describe('título da semana, no /ranking', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await recordEffects(page);
     await page.goto('/ranking');
-    await page.evaluate((key) => localStorage.setItem(key, '2020-01-06'), WEEK_SEEN);
+    await seedLastSeenWeek(page);
     await page.reload();
     await expect(title(page)).toHaveText(CURRENT);
     expect(await settled(page)).toEqual([]);
