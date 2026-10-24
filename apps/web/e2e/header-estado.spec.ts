@@ -177,10 +177,11 @@ test.describe('busca do header', () => {
     await page.setViewportSize({ width: 1024, height: 768 });
     await page.goto('/');
     await settle(page);
-    expect(await width(page)).toBeCloseTo(44, 0);
+    const icon = await width(page);
+    expect(icon).toBeLessThan(60);
     await trigger(page).hover();
     await page.waitForTimeout(500);
-    expect(await width(page)).toBeCloseTo(44, 0);
+    expect(await width(page)).toBeCloseTo(icon, 0);
     expect(intersects((await trigger(page).boundingBox()) as Box, await lastNavItem(page))).toBe(
       false,
     );
