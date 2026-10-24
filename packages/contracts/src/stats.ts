@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
+import { weekStartSchema } from './ranking.js';
 import { chatMessageEventSchema } from './reports.js';
 import { steamId64Schema } from './steam.js';
 
@@ -224,3 +225,75 @@ export const profileStatsSchema = z
   .meta({ id: 'ProfileStats' });
 
 export type ProfileStats = z.infer<typeof profileStatsSchema>;
+
+/** Quantas semanas a série do Perfil cobre: a atual e as 7 anteriores. */
+export const PROFILE_SERIES_WEEKS = 8;
+
+/** Contagens de uma semana (por Modo ou somadas). `rounds` são os rounds jogados. */
+const weekCountsShape = {
+  rounds: z.int().nonnegative(),
+  kills: z.int().nonnegative(),
+  deaths: z.int().nonnegative(),
+  /** kills ÷ max(mortes, 1), 2 casas. */
+  kd: z.number().nonnegative(),
+  /** kills com headshot ÷ kills, em %, 1 casa; nulo sem kills na semana. */
+  headshotPercent: z.number().min(0).max(100).nullable(),
+  secondsPlayed: z.int().nonnegative(),
+};
+
+/** Uma semana de um Modo. */
+export const modeWeekStatsSchema = z
+  .object({ mode: gameModeSchema, ...weekCountsShape })
+  .meta({ id: 'ModeWeekStats' });
+
+export type ModeWeekStats = z.infer<typeof modeWeekStatsSchema>;
+
+/**
+ * Uma semana da série: os números somados e os de cada Modo (sempre os dois, na ordem Retake e
+ * Deathmatch; um Modo sem atividade na semana vem com zeros).
+ */
+export const weekStatsSchema = z
+  .object({
+    weekStart: weekStartSchema,
+    ...weekCountsShape,
+    modes: z.array(modeWeekStatsSchema),
+  })
+  .meta({ id: 'WeekStats' });
+
+export type WeekStats = z.infer<typeof weekStatsSchema>;
+
+/** Tempo jogado num Modo, em segundos (o cliente mostra em horas). */
+export const modeSecondsSchema = z
+  .object({ mode: gameModeSchema, secondsPlayed: z.int().nonnegative() })
+  .meta({ id: 'ModeSeconds' });
+
+export type ModeSeconds = z.infer<typeof modeSecondsSchema>;
+
+/** O tempo jogado por Modo (os dois, na ordem Retake e Deathmatch) na semana atual e no total. */
+export const profileHoursSchema = z
+  .object({
+    week: z.array(modeSecondsSchema),
+    total: z.array(modeSecondsSchema),
+  })
+  .meta({ id: 'ProfileHours' });
+
+export type ProfileHours = z.infer<typeof profileHoursSchema>;
+
+/**
+ * `GET /api/profiles/{publicId}/stats/weekly`: a série semanal do Perfil (V3). `weeks` traz as
+ * últimas `PROFILE_SERIES_WEEKS` semanas, da mais antiga à atual, com zeros nas sem
+ * atividade; `hours` o tempo por Modo na semana atual e desde sempre. `firstWeek` é a primeira
+ * semana com atividade (para "coletando desde"), ou nulo sem nenhuma. Só existe o que o agregado
+ * semanal guarda: nada por dia nem por arma. Num Perfil privado (S11), só a própria Conta vê:
+ * para os outros `visible` é falso, `weeks` vem vazia e o resto, nulo.
+ */
+export const profileSeriesSchema = z
+  .object({
+    visible: z.boolean(),
+    weeks: z.array(weekStatsSchema),
+    hours: profileHoursSchema.nullable(),
+    firstWeek: weekStartSchema.nullable(),
+  })
+  .meta({ id: 'ProfileSeries' });
+
+export type ProfileSeries = z.infer<typeof profileSeriesSchema>;

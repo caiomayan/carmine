@@ -3,6 +3,7 @@ import {
   EVENT_BATCH_MAX_EVENTS,
   eventBatchSchema,
   killEventSchema,
+  profileSeriesSchema,
   profileStatsSchema,
 } from './stats.js';
 
@@ -62,5 +63,61 @@ describe('profileStatsSchema', () => {
     expect(profileStatsSchema.parse({ visible: false, total: null, modes: [] }).visible).toBe(
       false,
     );
+  });
+});
+
+describe('profileSeriesSchema', () => {
+  const counts = {
+    rounds: 0,
+    kills: 0,
+    deaths: 0,
+    kd: 0,
+    headshotPercent: null,
+    secondsPlayed: 0,
+  };
+  const hours = [
+    { mode: 'retake', secondsPlayed: 0 },
+    { mode: 'deathmatch', secondsPlayed: 0 },
+  ];
+
+  it('aceita o Perfil privado visto por outra pessoa: sem semanas, horas nem primeira semana', () => {
+    const series = { visible: false, weeks: [], hours: null, firstWeek: null };
+
+    expect(profileSeriesSchema.parse(series)).toEqual(series);
+  });
+
+  it('aceita uma semana com os dois Modos e HS% nulo', () => {
+    const week = {
+      weekStart: '2026-10-19',
+      ...counts,
+      modes: [
+        { mode: 'retake', ...counts },
+        { mode: 'deathmatch', ...counts },
+      ],
+    };
+
+    expect(
+      profileSeriesSchema.safeParse({
+        visible: true,
+        weeks: [week],
+        hours: { week: hours, total: hours },
+        firstWeek: null,
+      }).success,
+    ).toBe(true);
+  });
+
+  it('recusa primeira semana que não é uma data e segundos negativos', () => {
+    expect(
+      profileSeriesSchema.safeParse({ visible: true, weeks: [], hours: null, firstWeek: 'ontem' })
+        .success,
+    ).toBe(false);
+    expect(
+      profileSeriesSchema.safeParse({
+        visible: true,
+        weeks: [],
+        hours: { week: [{ mode: 'retake', secondsPlayed: -1 }], total: [] },
+        firstWeek: null,
+      }).success,
+    ).toBe(false);
   });
 });

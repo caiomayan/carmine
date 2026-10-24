@@ -1,10 +1,12 @@
-import type { GameMode, ProfileStats } from '@carmine/contracts';
+import type { GameMode, ProfileSeries, ProfileStats } from '@carmine/contracts';
 import { eq, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { canSeeStats } from '../accounts/profile-privacy.js';
 import type { Database } from '../database/database.js';
 import { accountStatsWeekly } from '../database/schema.js';
 import { type StatsTotals, toModeStats, toTotalStats } from './stats-formulas.js';
+import { buildSeries } from './stats-series.js';
+import { weekStartOf } from './stats-week.js';
 
 const MODE_ORDER: GameMode[] = ['retake', 'deathmatch'];
 
@@ -68,5 +70,35 @@ export class ProfileStatsReader {
       total: toTotalStats(total),
       modes: modes.map((row) => toModeStats(row.mode, row)),
     };
+  }
+
+  /**
+   * A série semanal do Perfil (V3): as últimas semanas e as horas por Modo, do mesmo agregado
+   * semanal e com a mesma regra do Perfil privado. `now` existe para os testes fixarem a semana.
+   */
+  async readWeekly(
+    account: { id: string; profilePrivate: boolean },
+    viewerAccountId: string | null,
+    now: Date = new Date(),
+  ): Promise<ProfileSeries> {
+    if (!canSeeStats(account, viewerAccountId)) {
+      return { visible: false, weeks: [], hours: null, firstWeek: null };
+    }
+    const rows = await this.db
+      .select({
+        mode: accountStatsWeekly.mode,
+        weekStart: accountStatsWeekly.weekStart,
+        kills: accountStatsWeekly.kills,
+        deaths: accountStatsWeekly.deaths,
+        assists: accountStatsWeekly.assists,
+        headshots: accountStatsWeekly.headshots,
+        damage: accountStatsWeekly.damage,
+        roundsPlayed: accountStatsWeekly.roundsPlayed,
+        roundsWon: accountStatsWeekly.roundsWon,
+        secondsPlayed: accountStatsWeekly.secondsPlayed,
+      })
+      .from(accountStatsWeekly)
+      .where(eq(accountStatsWeekly.accountId, account.id));
+    return { visible: true, ...buildSeries(rows, weekStartOf(now)) };
   }
 }

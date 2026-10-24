@@ -2,11 +2,15 @@ import {
   type EventBatch,
   eventBatchResultSchema,
   type KillEvent,
+  PROFILE_SERIES_WEEKS,
+  profileSeriesSchema,
   profileStatsSchema,
 } from '@carmine/contracts';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { accountStatsWeekly, gameEvents, teamKills } from '../src/database/schema.js';
+import { seriesWeeks } from '../src/stats/stats-series.js';
+import { weekStartOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
 
@@ -328,5 +332,141 @@ describe('Eventos do jogo e Estatísticas (S12)', () => {
   it('responde 404 para ID que não existe', async () => {
     expect((await t.app.inject({ url: '/api/profiles/9999999/stats' })).statusCode).toBe(404);
     expect((await t.app.inject({ url: '/api/profiles/abc/stats' })).statusCode).toBe(404);
+    expect((await t.app.inject({ url: '/api/profiles/9999999/stats/weekly' })).statusCode).toBe(
+      404,
+    );
+    expect((await t.app.inject({ url: '/api/profiles/abc/stats/weekly' })).statusCode).toBe(404);
+  });
+
+  describe('Série semanal do Perfil (V3)', () => {
+    const currentWeek = () => weekStartOf(new Date());
+    /** A segunda-feira de `count` semanas antes da atual (dentro das 8 da série). */
+    const weeksAgo = (count: number) => {
+      const week = seriesWeeks(currentWeek())[PROFILE_SERIES_WEEKS - 1 - count];
+      if (!week) throw new Error('semana fora da série');
+      return week;
+    };
+
+    const weeklyOf = async (publicId: number, cookie?: string) => {
+      const response = await t.app.inject({
+        url: `/api/profiles/${publicId}/stats/weekly`,
+        ...(cookie && { headers: { cookie } }),
+      });
+      expect(response.statusCode, response.body).toBe(200);
+      return profileSeriesSchema.parse(response.json());
+    };
+
+    /** Grava uma linha do agregado semanal, como a ingestão de eventos a escreve. */
+    const seed = async (
+      accountId: string,
+      mode: 'retake' | 'deathmatch',
+      weekStart: string,
+      counts: Partial<typeof accountStatsWeekly.$inferInsert>,
+    ) => {
+      await t.postgres.db
+        .insert(accountStatsWeekly)
+        .values({ accountId, mode, weekStart, ...counts });
+    };
+
+    it('uma Conta sem atividade tem as 8 semanas zeradas, sem inventar nada', async () => {
+      const p = await player();
+
+      const series = await weeklyOf(p.account.publicId);
+
+      expect(series.visible).toBe(true);
+      expect(series.weeks).toHaveLength(PROFILE_SERIES_WEEKS);
+      expect(series.weeks.at(-1)?.weekStart).toBe(currentWeek());
+      expect(series.weeks.every((w) => w.kills === 0 && w.headshotPercent === null)).toBe(true);
+      expect(series.firstWeek).toBeNull();
+      expect(series.hours?.total.every((m) => m.secondsPlayed === 0)).toBe(true);
+    });
+
+    it('traz as semanas do agregado, as horas por Modo e a primeira semana', async () => {
+      const p = await player();
+      await seed(p.account.id, 'retake', currentWeek(), {
+        kills: 8,
+        deaths: 4,
+        headshots: 2,
+        roundsPlayed: 55,
+        secondsPlayed: 3600,
+      });
+      await seed(p.account.id, 'deathmatch', currentWeek(), { kills: 2, secondsPlayed: 600 });
+      await seed(p.account.id, 'retake', weeksAgo(3), {
+        kills: 5,
+        deaths: 5,
+        roundsPlayed: 20,
+        secondsPlayed: 1800,
+      });
+      // Fora das 8 semanas: não entra na série, mas conta no total e na primeira semana.
+      await seed(p.account.id, 'deathmatch', '2020-01-06', { secondsPlayed: 7200 });
+
+      const series = await weeklyOf(p.account.publicId);
+
+      expect(series.weeks.at(-1)).toMatchObject({
+        weekStart: currentWeek(),
+        rounds: 55,
+        kills: 10,
+        deaths: 4,
+        kd: 2.5,
+        headshotPercent: 20,
+        secondsPlayed: 4200,
+      });
+      expect(series.weeks.at(-1)?.modes.map((m) => [m.mode, m.kills])).toEqual([
+        ['retake', 8],
+        ['deathmatch', 2],
+      ]);
+      expect(series.weeks.find((w) => w.weekStart === weeksAgo(3))).toMatchObject({
+        rounds: 20,
+        kd: 1,
+      });
+      expect(series.hours).toEqual({
+        week: [
+          { mode: 'retake', secondsPlayed: 3600 },
+          { mode: 'deathmatch', secondsPlayed: 600 },
+        ],
+        total: [
+          { mode: 'retake', secondsPlayed: 5400 },
+          { mode: 'deathmatch', secondsPlayed: 7800 },
+        ],
+      });
+      expect(series.firstWeek).toBe('2020-01-06');
+    });
+
+    it('bate com as somas do endpoint de Estatísticas', async () => {
+      const killer = await player();
+      const victim = await player();
+      await send(batch({ kills: [kill(killer.steamId, victim.steamId, { headshot: true })] }));
+
+      const series = await weeklyOf(killer.account.publicId);
+      const stats = await statsOf(killer.account.publicId);
+
+      expect(series.weeks.at(-1)).toMatchObject({
+        kills: stats.total?.kills,
+        deaths: stats.total?.deaths,
+        kd: stats.total?.kd,
+        headshotPercent: stats.total?.headshotPercent,
+      });
+    });
+
+    it('Perfil privado: só a própria Conta vê a série', async () => {
+      const owner = await player();
+      const visitor = await player();
+      await seed(owner.account.id, 'retake', currentWeek(), { kills: 3, secondsPlayed: 900 });
+      expect((await owner.call('PUT', '/api/me/privacy', { isPrivate: true })).statusCode).toBe(
+        204,
+      );
+      const url = `/api/profiles/${owner.account.publicId}/stats/weekly`;
+
+      const anonymous = await weeklyOf(owner.account.publicId);
+      const otherPlayer = await visitor.call('GET', url);
+      const own = await owner.call('GET', url);
+
+      expect(anonymous).toEqual({ visible: false, weeks: [], hours: null, firstWeek: null });
+      expect(profileSeriesSchema.parse(otherPlayer.json())).toEqual(anonymous);
+      expect(profileSeriesSchema.parse(own.json())).toMatchObject({
+        visible: true,
+        firstWeek: currentWeek(),
+      });
+    });
   });
 });
