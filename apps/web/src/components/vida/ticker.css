@@ -1,0 +1,15 @@
+/* Number Ticker: o número que acabou de mudar pisca na cor "online" e sobe 2 px. */
+.v-tick-up {
+  animation: v-tick-up 900ms var(--ease-out);
+}
+@keyframes v-tick-up {
+  from {
+    color: var(--status-online);
+    transform: translateY(2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-tick-up {
+    animation: none;
+  }
+}
