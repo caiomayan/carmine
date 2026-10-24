@@ -196,7 +196,10 @@ function describe(node: { target: unknown[]; any: { data?: unknown }[] }): strin
  * contraste, as cores e a razão medidas. Antes de medir, a página assenta, o rodapé entra e toda
  * animação finita vai ao último quadro: o axe mede o estado final, não o meio de uma entrada.
  */
-export async function axeViolations(page: Page, { ignore = [] }: { ignore?: string[] } = {}) {
+export async function axeViolations(
+  page: Page,
+  { ignore = [], fixedHeader = false }: { ignore?: string[]; fixedHeader?: boolean } = {},
+) {
   // O rodapé só fica opaco quando entra na tela: rola até o fim para o axe medir o contraste dele.
   await scrollToEnd(page);
   await settle(page);
@@ -207,15 +210,20 @@ export async function axeViolations(page: Page, { ignore = [] }: { ignore?: stri
   // a folha de medição tira as transições e as animações CSS: o estilo sem elas é o final (as
   // entradas do site só têm o quadro de saída, "from"), e vale também para o que nascer durante a
   // análise. As regras do axe seguem todas ligadas. A folha construída por script não passa pela
-  // CSP de estilos inline.
-  await page.evaluate(() => {
+  // CSP de estilos inline. O header fixo (a partir de 768 px) cobriria o que a rolagem até o fim
+  // deixa embaixo dele e o `target-size` contaria o encontro como alvos sobrepostos: salvo pedido
+  // (`fixedHeader`, para medir o próprio header rolado), a medição o solta do topo (o mesmo lugar
+  // no fluxo).
+  await page.evaluate((fixed) => {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(
-      '*, *::before, *::after { transition: none !important; animation: none !important; }',
+      `*, *::before, *::after { transition: none !important; animation: none !important; }${
+        fixed ? '' : ' header[data-site-header] { position: static !important; }'
+      }`,
     );
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     (window as unknown as { __axeFreeze: CSSStyleSheet }).__axeFreeze = sheet;
-  });
+  }, fixedHeader);
   await finishAnimations(page);
   try {
     const { violations } = await new AxeBuilder({ page })
