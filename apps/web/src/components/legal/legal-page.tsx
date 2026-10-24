@@ -35,7 +35,7 @@ export async function LegalPage({ doc }: { doc: LegalDocument }) {
         {headings.length > 2 ? (
           <nav
             aria-labelledby="sumario"
-            className="lg:sticky lg:top-[calc(var(--site-hdr-h,var(--hdr-h))+24px)] lg:self-start"
+            className="lg:sticky lg:top-[calc(var(--site-hdr-h)+24px)] lg:self-start"
           >
             <h2 id="sumario" className="label-caps pb-2.5 text-[11px] text-muted-foreground">
               {t('toc')}

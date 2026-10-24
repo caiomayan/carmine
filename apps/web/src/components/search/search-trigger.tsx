@@ -16,6 +16,11 @@ const loadPalette = () => {
   return paletteModule;
 };
 
+/** Largura do campo compacto e do aberto (px), e o respiro que sobra entre ele e a navegação. */
+const COMPACT_WIDTH = 160;
+const OPEN_WIDTH = 280;
+const NAV_CLEARANCE = 12;
+
 /** Campo de texto, editor ou seletor: ali o "/" é uma letra, não um atalho. */
 function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -48,6 +53,27 @@ export function SearchTrigger() {
   const button = useRef<HTMLButtonElement>(null);
   // Quem tinha o foco ao abrir: é para onde ele volta ao fechar.
   const opener = useRef<HTMLElement | null>(null);
+
+  // O campo aberto cresce para a esquerda, mas só até o espaço livre entre o último item da
+  // navegação e a borda do campo compacto: nunca cobre a navegação, em nenhuma largura. Mede de
+  // novo ao aproximar o ponteiro, ao focar e ao redimensionar (a Conta logada, por exemplo, muda
+  // onde o campo começa).
+  const measureOpenWidth = useCallback(() => {
+    const element = button.current;
+    const slot = element?.parentElement;
+    const nav = element?.closest('header')?.querySelector('nav');
+    const last = nav ? [...nav.querySelectorAll('a')].at(-1) : undefined;
+    if (!element || !slot || !last) return;
+    const free = slot.getBoundingClientRect().right - last.getBoundingClientRect().right;
+    const width = Math.min(OPEN_WIDTH, Math.max(COMPACT_WIDTH, free - NAV_CLEARANCE));
+    element.style.setProperty('--search-open-w', `${Math.floor(width)}px`);
+  }, []);
+
+  useEffect(() => {
+    measureOpenWidth();
+    window.addEventListener('resize', measureOpenWidth);
+    return () => window.removeEventListener('resize', measureOpenWidth);
+  }, [measureOpenWidth]);
 
   useEffect(() => {
     setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
@@ -115,9 +141,15 @@ export function SearchTrigger() {
           title={mac ? t('shortcutMac') : t('shortcut')}
           data-testid="search-trigger"
           onClick={show}
-          onPointerEnter={loadPalette}
-          onFocus={loadPalette}
-          className="animate-fade-up min-[1152px]:absolute min-[1152px]:top-0 min-[1152px]:right-0 min-[1152px]:z-10 min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal min-[1152px]:transition-[width,background-color,color,translate,scale] min-[1152px]:duration-(--dur-base) min-[1152px]:ease-soft min-[1152px]:hover:w-70 min-[1152px]:hover:bg-surface-2 min-[1152px]:focus-visible:w-70 min-[1152px]:focus-visible:bg-surface-2 min-[1152px]:motion-reduce:transition-none"
+          onPointerEnter={() => {
+            measureOpenWidth();
+            void loadPalette();
+          }}
+          onFocus={() => {
+            measureOpenWidth();
+            void loadPalette();
+          }}
+          className="animate-fade-up min-[1152px]:absolute min-[1152px]:top-0 min-[1152px]:right-0 min-[1152px]:z-10 min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal min-[1152px]:transition-[width,background-color,color,translate,scale] min-[1152px]:duration-(--dur-base) min-[1152px]:ease-soft min-[1152px]:hover:w-(--search-open-w,10rem) min-[1152px]:hover:bg-surface-2 min-[1152px]:focus-visible:w-(--search-open-w,10rem) min-[1152px]:focus-visible:bg-surface-2 min-[1152px]:motion-reduce:transition-none"
         >
           <SearchIcon
             aria-hidden="true"

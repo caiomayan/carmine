@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { newSteamId, signInFromHeader } from './accounts';
 import { axeViolations, expect, saveTheme, settle, test } from './fixtures';
 
 /**
@@ -99,37 +100,90 @@ test.describe('busca do header', () => {
         }),
       );
 
-  test('compacta em repouso; no hover e no foco cresce para a esquerda, sem empurrar nada', async ({
-    page,
-  }) => {
-    await page.goto('/');
-    await settle(page);
+  type Box = { x: number; y: number; width: number; height: number };
+  const intersects = (a: Box, b: Box) =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  const lastNavItem = async (page: Page) => {
+    const box = await page.locator('header nav a').last().boundingBox();
+    if (!box) throw new Error('item da navegação sem caixa');
+    return box;
+  };
+
+  /**
+   * Hover e foco do teclado: o campo cresce para a esquerda, só até o espaço livre, sem cobrir o
+   * último item da navegação e sem mexer em nada em volta.
+   */
+  async function checkGrowth(page: Page) {
     const rest = await trigger(page).boundingBox();
     const around = await neighbours(page);
     expect(rest?.width).toBeCloseTo(160, 0);
 
     await trigger(page).hover();
-    await expect.poll(() => width(page)).toBeCloseTo(280, 0);
+    await expect.poll(() => width(page)).toBeGreaterThan(165);
+    await page.waitForTimeout(500);
     const hovered = await trigger(page).boundingBox();
+    expect(hovered?.width ?? 0).toBeLessThanOrEqual(280);
     // Cresce para a esquerda: a borda direita e a altura ficam.
     expect((hovered?.x ?? 0) + (hovered?.width ?? 0)).toBeCloseTo(
       (rest?.x ?? 0) + (rest?.width ?? 0),
       0,
     );
     expect(hovered?.height).toBeCloseTo(rest?.height ?? 0, 0);
+    expect(intersects(hovered as Box, await lastNavItem(page))).toBe(false);
     expect(await neighbours(page)).toEqual(around);
 
     await page.mouse.move(5, 500);
     await expect.poll(() => width(page)).toBeCloseTo(160, 0);
 
-    // Teclado: Tab até a busca (modo teclado) cresce igual.
+    // Teclado: Tab até a busca cresce igual, também sem cobrir a navegação.
     await page.keyboard.press('Tab');
     await trigger(page).focus();
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Tab');
     await expect(trigger(page)).toBeFocused();
-    await expect.poll(() => width(page)).toBeCloseTo(280, 0);
+    await expect.poll(() => width(page)).toBeGreaterThan(165);
+    await page.waitForTimeout(500);
+    expect(intersects((await trigger(page).boundingBox()) as Box, await lastNavItem(page))).toBe(
+      false,
+    );
     expect(await neighbours(page)).toEqual(around);
+  }
+
+  for (const size of [
+    { width: 1280, height: 720 },
+    { width: 1440, height: 900 },
+  ]) {
+    test(`compacta em repouso; no hover e no foco cresce sem cobrir a navegação (${size.width} px)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(size);
+      await page.goto('/');
+      await settle(page);
+      await checkGrowth(page);
+    });
+  }
+
+  test('com a Conta logada (o campo começa mais à esquerda) ele ainda não cobre a navegação', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.goto('/');
+    await signInFromHeader(page, newSteamId());
+    await settle(page);
+    await checkGrowth(page);
+  });
+
+  test('em 1024 px o campo é só o ícone e não cobre a navegação nem aberto', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto('/');
+    await settle(page);
+    expect(await width(page)).toBeCloseTo(44, 0);
+    await trigger(page).hover();
+    await page.waitForTimeout(500);
+    expect(await width(page)).toBeCloseTo(44, 0);
+    expect(intersects((await trigger(page).boundingBox()) as Box, await lastNavItem(page))).toBe(
+      false,
+    );
   });
 
   test('com movimento reduzido não anima', async ({ page }) => {
@@ -158,4 +212,30 @@ test('no celular a busca continua só o ícone, e a página passa no axe nos doi
     ).toBeLessThanOrEqual(0);
     expect(await axeViolations(page)).toEqual([]);
   }
+});
+
+test('no celular o header rola junto com a página e não reserva altura fixa', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(LONG_PAGE);
+  await settle(page);
+  const bar = header(page);
+  expect(await bar.evaluate((el) => getComputedStyle(el).position)).not.toBe('sticky');
+  expect(
+    await page.evaluate(() => document.documentElement.style.getPropertyValue('--site-hdr-h')),
+  ).toBe('0px');
+  await page.mouse.wheel(0, 600);
+  await expect.poll(async () => (await bar.boundingBox())?.y ?? 0).toBeLessThan(-20);
+});
+
+test('a partir de 768 px o header é fixo e avisa a altura dele', async ({ page }) => {
+  await page.setViewportSize({ width: 820, height: 900 });
+  await page.goto(LONG_PAGE);
+  await settle(page);
+  const bar = header(page);
+  expect(await bar.evaluate((el) => getComputedStyle(el).position)).toBe('sticky');
+  const height = await bar.evaluate((el) => el.getBoundingClientRect().height);
+  const reported = await page.evaluate(() =>
+    Number.parseFloat(document.documentElement.style.getPropertyValue('--site-hdr-h')),
+  );
+  expect(reported).toBeCloseTo(height, 0);
 });

@@ -285,12 +285,20 @@
   html {
     -webkit-text-size-adjust: 100%;
     background: var(--bg);
+    /* Altura do header fixo (0 no celular, onde ele rola); o header a mede e corrige depois de hidratar. */
+    --site-hdr-h: 0px;
     /* O header é fixo: o alvo de uma âncora ou do foco fica abaixo dele. */
-    scroll-padding-top: calc(var(--site-hdr-h, var(--hdr-h)) + var(--space-scroll, 24px));
+    scroll-padding-top: calc(var(--site-hdr-h) + var(--space-scroll, 24px));
     /* O /loadout avisa a altura da barra fixa de baixo: o foco não deixa um alvo atrás dela. */
     scroll-padding-bottom: var(--dock-h, 0px);
     scrollbar-color: var(--line-strong) var(--bg);
     accent-color: var(--text);
+  }
+
+  @media (min-width: 768px) {
+    html {
+      --site-hdr-h: var(--hdr-h);
+    }
   }
 
   /*
@@ -311,8 +319,11 @@
     transition: opacity var(--dur-slow) var(--ease-std);
   }
 
-  [data-site-header][data-scrolled]::before {
-    opacity: 1;
+  /* No celular o header rola com a página: o fundo ao rolar só vale onde ele é fixo. */
+  @media (min-width: 768px) {
+    [data-site-header][data-scrolled]::before {
+      opacity: 1;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
