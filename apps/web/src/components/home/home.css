@@ -406,3 +406,13 @@
     transform: none;
   }
 }
+
+/* o painel do V1 pinta o fundo sem camada: com arte, o cartão não tem fundo próprio por baixo da imagem */
+.vh-card-art.v-panel {
+  background: transparent;
+}
+@media (max-width: 767px) {
+  .vh-pillrow {
+    min-height: var(--tap);
+  }
+}

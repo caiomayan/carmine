@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import './home.css';
 
 const bone = 'vh-skel rounded-md';
 

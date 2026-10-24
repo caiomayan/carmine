@@ -63,3 +63,10 @@ export function mapDisplayName(map: string | null): string | null {
   const name = baseName(map).replace(/^[a-z]{2}_/, '');
   return name ? name.charAt(0).toLocaleUpperCase('pt-BR') + name.slice(1) : null;
 }
+
+/** O nome do mapa sem o prefixo do modo ("de_mirage" vira "mirage"): a chave da arte em `public/maps`. */
+export function mapSlug(map: string | null): string | null {
+  if (!map) return null;
+  const name = baseName(map).replace(/^[a-z]{2}_/, '');
+  return name || null;
+}

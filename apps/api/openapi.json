@@ -4466,6 +4466,51 @@
         ]
       }
     },
+    "/api/stats/week": {
+      "get": {
+        "operationId": "getWeekSummary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Os números da semana",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeekSummary"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Os números da semana atual (jogadores, abates, headshots e tempo jogado, de todas as Contas) e os da anterior",
+        "tags": [
+          "stats"
+        ]
+      }
+    },
     "/api/header-previews": {
       "get": {
         "operationId": "getHeaderPreviews",
@@ -8757,6 +8802,67 @@
         "required": [
           "unit",
           "missing"
+        ],
+        "additionalProperties": false
+      },
+      "WeekSummary": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "weekEnd": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "current": {
+            "$ref": "#/components/schemas/WeekTotals"
+          },
+          "previous": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeekTotals"
+              }
+            ]
+          }
+        },
+        "required": [
+          "weekStart",
+          "weekEnd",
+          "current",
+          "previous"
+        ],
+        "additionalProperties": false
+      },
+      "WeekTotals": {
+        "type": "object",
+        "properties": {
+          "players": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "headshots": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "secondsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "players",
+          "kills",
+          "headshots",
+          "secondsPlayed"
         ],
         "additionalProperties": false
       },

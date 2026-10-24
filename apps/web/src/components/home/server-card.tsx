@@ -11,7 +11,7 @@ import { Ticker } from '@/components/vida/ticker';
 import { mapVars } from '@/lib/home/map-colors';
 import { isLiveServer } from '@/lib/home/state';
 import { serverAnchor, serverFullLabel, serverLabel, steamConnectUrl } from '@/lib/live-servers';
-import { mapDisplayName } from '@/lib/map-art';
+import { mapDisplayName, mapSlug } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { DynamicButton } from './dynamic-button';
 import { PlayerAvatar } from './player-avatar';
@@ -50,6 +50,7 @@ export function ServerCard({
   const choice = useArtChoice(live ? art : undefined);
   const vars = useMemo(() => mapVars(choice?.colors), [choice]);
   const mapName = mapDisplayName(server.map);
+  const slug = mapSlug(server.map);
   const fill = Math.min(1, server.players / server.maxPlayers);
   const fullLabel = serverFullLabel(server);
   const style = { ...vars, '--i': index } as CSSProperties;
@@ -62,15 +63,15 @@ export function ServerCard({
       data-state={server.state}
       data-map={live ? (server.map ?? undefined) : undefined}
       style={style}
-      onPointerEnter={() => live && onFocusMap?.(server.map)}
+      onPointerEnter={() => live && onFocusMap?.(slug)}
       onPointerLeave={() => live && onFocusMap?.(null)}
-      onFocus={() => live && onFocusMap?.(server.map)}
+      onFocus={() => live && onFocusMap?.(slug)}
       onBlur={() => live && onFocusMap?.(null)}
       className={cn(
         'vh-card v-card v-spot v-panel v-panel-lg enter-stagger relative flex list-none scroll-mt-24 flex-col overflow-hidden',
         live ? 'min-h-[320px]' : 'vh-offline min-h-[184px]',
         // Com arte, o cartão não tem fundo próprio por baixo da imagem (a borda da imagem escalada deixaria um filete).
-        live && art && 'bg-transparent',
+        live && art && 'vh-card-art',
         solo && 'min-[1280px]:min-h-[360px]',
         className,
       )}
@@ -78,7 +79,7 @@ export function ServerCard({
       {live && art ? (
         <>
           <MapPicture
-            map={server.map ?? ''}
+            map={slug ?? ''}
             art={art}
             priority={index < 2}
             sizes="(min-width: 1280px) 440px, (min-width: 760px) 50vw, 100vw"
@@ -123,7 +124,11 @@ export function ServerCard({
               {serverLabel(server)}
             </h3>
             <p className="flex flex-wrap items-center gap-x-2 text-body-sm text-(--on-map-muted)">
-              {server.code ? <span className="tabular-nums">{server.code}</span> : null}
+              {server.code ? (
+                <span data-testid="server-code" className="tabular-nums">
+                  {server.code}
+                </span>
+              ) : null}
               {!live ? <OfflineSince server={server} /> : null}
             </p>
           </div>
@@ -224,7 +229,10 @@ function OfflineSince({ server }: { server: LiveServer }) {
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   if (!server.lastHeartbeatAt) return <span>{t('never')}</span>;
+  // O "há N s" muda entre o servidor e a hidratação: o texto é corrigido no próximo minuto.
   return (
-    <span>{t('since', { ago: format.relativeTime(new Date(server.lastHeartbeatAt), now) })}</span>
+    <span suppressHydrationWarning>
+      {t('since', { ago: format.relativeTime(new Date(server.lastHeartbeatAt), now) })}
+    </span>
   );
 }

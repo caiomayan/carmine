@@ -114,7 +114,7 @@ test.describe('a atividade da home', () => {
     const [head, band, servers] = await Promise.all([
       page.getByRole('heading', { level: 1 }).boundingBox(),
       strip(page).boundingBox(),
-      page.getByRole('heading', { name: 'Servidores' }).boundingBox(),
+      page.locator('#home-servers').boundingBox(),
     ]);
     expect(band && head && servers).toBeTruthy();
     expect(band?.y).toBeGreaterThan((head?.y ?? 0) + (head?.height ?? 0));
@@ -261,12 +261,15 @@ test.describe('a atividade da home', () => {
       });
       await poll(page);
       await expect(links(page).first()).toHaveText('Ana entrou em Retake SP·1');
-      expect(await links(page).allInnerTexts()).toEqual([
+      const names = [
         'Ana entrou em Retake SP·1',
         'Ana fez 5 kills seguidas em DM SP·1',
         'Jogador privado assumiu o 1º lugar no Deathmatch',
         'Ana equipou AK-47 | Linhas Vermelhas',
-      ]);
+      ];
+      for (const [i, name] of names.entries()) {
+        await expect(links(page).nth(i)).toHaveAccessibleName(name);
+      }
       expect(
         await links(page).evaluateAll((all) => all.map((a) => a.getAttribute('href'))),
       ).toEqual(['/#servidor-abc', '/#servidor-def', '/ranking?modo=deathmatch', '/10042']);

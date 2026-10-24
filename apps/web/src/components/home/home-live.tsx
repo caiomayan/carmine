@@ -28,8 +28,10 @@ import {
   offlineGroupOpen,
   viewFriends,
 } from '@/lib/live-servers';
+import { mapSlug } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import { ActivityStrip } from './activity-strip';
+import './home.css';
 import { Hero } from './hero';
 import { InView } from './in-view';
 import { LiveStatus } from './live-status';
@@ -136,7 +138,7 @@ export function HomeLive({ data }: { data: HomeData }) {
   const asleep = state === 'offline';
 
   const [hoverMap, setHoverMap] = useState<string | null>(null);
-  const activeMap = hoverMap ?? featured?.map ?? null;
+  const activeMap = hoverMap ?? mapSlug(featured?.map ?? null);
   const night = useNight();
   const choiceOf = (map: string | null | undefined) => {
     const pair = map ? data.art[map] : undefined;
@@ -150,7 +152,7 @@ export function HomeLive({ data }: { data: HomeData }) {
   const ambient: Colors | null =
     (hoverMap ? mapColors(hoverMap) : null) ??
     (signedIn && data.ambient ? colorsOf(data.ambient) : null) ??
-    mapColors(featured?.map);
+    mapColors(mapSlug(featured?.map ?? null));
 
   const { items: activity, fresh } = useActivity(data.activity);
   const lastSeen =
@@ -267,7 +269,7 @@ export function HomeLive({ data }: { data: HomeData }) {
                       <ServerCard
                         key={server.id}
                         server={server}
-                        art={server.map ? data.art[server.map] : undefined}
+                        art={data.art[mapSlug(server.map) ?? '']}
                         index={i}
                         solo={soloLive && i === 0}
                         friends={byServer.get(server.id) ?? []}

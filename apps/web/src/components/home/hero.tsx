@@ -92,7 +92,11 @@ export function Hero({
         </h1>
       )}
 
-      <p className="mt-6 max-w-[52ch] text-md text-foreground/85" data-testid="home-lead">
+      <p
+        className="mt-6 max-w-[52ch] text-md text-foreground/85"
+        data-testid="home-lead"
+        suppressHydrationWarning
+      >
         {asleep
           ? lastSeen
             ? t('asleepBody', { ago: format.relativeTime(new Date(lastSeen), now) })

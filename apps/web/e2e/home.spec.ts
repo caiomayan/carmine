@@ -72,7 +72,7 @@ const LOADOUTS = {
       itemId: 1,
       title: 'AK-47',
       subtitle: 'Linhas Vermelhas',
-      image: 'https://cdn.example/a.png',
+      image: '/icon.svg',
       rarity: 'classified',
       statTrak: true,
       foil: false,
@@ -86,7 +86,7 @@ const LOADOUTS = {
       itemId: 2,
       title: 'Karambit',
       subtitle: 'Degradê',
-      image: 'https://cdn.example/b.png',
+      image: '/icon.svg',
       rarity: 'covert',
       statTrak: false,
       foil: true,
@@ -117,7 +117,7 @@ test.describe('os estados do hero', () => {
     await routeLiveServers(page, live());
     await page.goto('/');
     await expect(page.getByTestId('home')).toHaveAttribute('data-state', 'deslogado');
-    await expect(page.getByTestId('home-total')).toHaveText('11');
+    await expect(page.getByTestId('home-total').locator('.sr-only')).toHaveText('11');
     await expect(hero(page).getByText('no ar agora')).toBeVisible();
     await expect(page.getByTestId('home-lead')).toContainText('Entre com a Steam');
     const cta = page.getByTestId('home-cta');
@@ -135,7 +135,7 @@ test.describe('os estados do hero', () => {
     const servers = live();
     await routeLiveServers(page, servers);
     await page.goto('/');
-    await expect(page.getByTestId('home-total')).toHaveText('11');
+    await expect(page.getByTestId('home-total').locator('.sr-only')).toHaveText('11');
     await page.unrouteAll({ behavior: 'ignoreErrors' });
     const [first, second, off] = servers;
     await routeLiveServers(
@@ -143,7 +143,9 @@ test.describe('os estados do hero', () => {
       [{ ...first, players: 9, state: 'full' }, second, off].filter(Boolean) as typeof servers,
     );
     // O EventSource reconecta sozinho (retry 500 ms) e traz a lista nova.
-    await expect(page.getByTestId('home-total')).toHaveText('14', { timeout: 20_000 });
+    await expect(page.getByTestId('home-total').locator('.sr-only')).toHaveText('14', {
+      timeout: 20_000,
+    });
   });
 
   test('logado sem amigos jogando e sem Loadout: convida a montar o Loadout', async ({ page }) => {
