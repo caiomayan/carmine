@@ -12,9 +12,11 @@ import {
   loadoutSchema,
   type PresetList,
   type Profile,
+  type ProfileSeries,
   type ProfileStats,
   presetListSchema,
   profileSchema,
+  profileSeriesSchema,
   profileStatsSchema,
   type Ranking,
   type RecentActivity,
@@ -233,6 +235,21 @@ export const getProfileStats = cache(async (publicId: number): Promise<ProfileSt
     });
     if (!response.ok) return null;
     return profileStatsSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/** A série semanal do Perfil (V3); nula com a API fora (o Perfil segue só com as somas). */
+export const getProfileSeries = cache(async (publicId: number): Promise<ProfileSeries | null> => {
+  try {
+    const cookie = await sessionCookie();
+    const response = await apiGet(`/profiles/${publicId}/stats/weekly`, {
+      ...(cookie && { cookie }),
+      visitorIp: await visitorIp(),
+    });
+    if (!response.ok) return null;
+    return profileSeriesSchema.parse(await response.json());
   } catch {
     return null;
   }

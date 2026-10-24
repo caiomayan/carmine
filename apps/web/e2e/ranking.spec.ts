@@ -3,6 +3,7 @@ import type { APIRequestContext } from '@playwright/test';
 import { createUnclaimedAccount, newSteamId, signInByRequest } from './accounts';
 import { runApiCli } from './api-cli';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
+import { clickHydrated } from './hydration';
 
 const AT = () => new Date().toISOString();
 
@@ -241,7 +242,7 @@ test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil
   await page.reload();
   await expect(page.getByRole('link', { name: high.name })).toHaveCount(0);
   await page.goto(`/${high.publicId}`);
-  await expect(page.getByTestId('stats-retake')).toContainText('Kills');
+  await expect(page.getByTestId('stats-retake')).toContainText('Abates');
 });
 
 test('semana sem ninguém elegível mostra o estado vazio que explica as regras', async ({
@@ -304,17 +305,17 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   });
 
   await page.goto(`/${killer.publicId}`);
-  const total = page.getByTestId('stats-total');
-  await expect(total.locator('[data-stat="kills"]')).toContainText('1');
-  await expect(total.locator('[data-stat="adr"]')).toHaveCount(0);
-  await expect(total.locator('[data-stat="kpm"]')).toHaveCount(0);
-  await expect(page.getByTestId('stats-retake').locator('[data-stat="adr"]')).toBeVisible();
-  await expect(page.getByTestId('stats-only-you')).toHaveCount(0);
-
-  // Os três números de destaque (K/D, Kills, HS%) vêm antes da tabela e do Loadout.
+  // Os quatro números de destaque (K/D, Abates, HS% e horas) vêm antes dos cartões e do Loadout; a
+  // semana abre primeiro (teve jogo) e o seletor leva ao total.
   const highlights = page.getByTestId('stats-highlights');
-  await expect(highlights.locator('[data-highlight]')).toHaveCount(3);
+  await expect(highlights.locator('[data-highlight]')).toHaveCount(4);
   await expect(highlights.locator('[data-highlight="kills"]')).toContainText('1');
+  await clickHydrated(page.locator('[data-period-option="total"]'));
+  await expect(highlights).toHaveAttribute('data-period', 'total');
+  await expect(highlights.locator('[data-stat="kills"]')).toContainText('1');
+  await expect(page.getByTestId('stats-retake').locator('[data-stat="adr"]')).toBeVisible();
+  await expect(page.getByTestId('stats-retake').locator('[data-stat="kpm"]')).toHaveCount(0);
+  await expect(page.getByTestId('stats-only-you')).toHaveCount(0);
   const statsBox = await page.getByTestId('profile-stats').boundingBox();
   const loadoutBox = await page.getByRole('region', { name: 'Loadout' }).boundingBox();
   expect(statsBox?.y).toBeLessThan(loadoutBox?.y ?? 0);
@@ -325,7 +326,9 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   await turnPrivateProfileOn(page);
   await page.goto(`/${killer.publicId}`);
   await expect(page.getByTestId('stats-only-you')).toHaveText('Só você vê');
-  await expect(page.getByTestId('stats-total').locator('[data-stat="kills"]')).toContainText('1');
+  await expect(page.getByTestId('stats-highlights').locator('[data-stat="kills"]')).toContainText(
+    '1',
+  );
 
   const visitorContext = await browser.newContext({
     baseURL: page.url().split('/').slice(0, 3).join('/'),

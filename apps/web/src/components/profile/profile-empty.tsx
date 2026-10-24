@@ -13,7 +13,7 @@ export async function ProfileEmpty({ name, isOwner }: { name: string; isOwner: b
 
   return (
     <div
-      className="mt-8 animate-fade-up rounded-xl bg-surface [animation-delay:80ms]"
+      className="v-panel v-panel-lg mt-8 animate-fade-up [animation-delay:80ms]"
       data-testid="profile-empty"
     >
       <EmptyState
