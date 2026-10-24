@@ -133,6 +133,16 @@ test.describe('abrir, trocar e fechar', () => {
 test.describe('quem entrou: tudo dentro do painel é clicável', () => {
   test.beforeEach(async ({ page }) => {
     await routePreviews(page, SIGNED_IN);
+    // Só as prévias são de mentira; a sessão não. O editor de Item manda quem não entrou para
+    // /entrar, e o `toHaveURL` só via /inventario/<uid> se pegasse a URL antes desse redirect (uma
+    // corrida contra a navegação). O destino aqui só precisa existir.
+    await page.route(/\/inventario\/[0-9a-f-]{36}(\?.*)?$/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/html',
+        body: '<!doctype html><title>Item</title>',
+      }),
+    );
   });
 
   test('Jogar: o servidor, o amigo e os outros levam ao cartão ou ao Perfil', async ({ page }) => {
