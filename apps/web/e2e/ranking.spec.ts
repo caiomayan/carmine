@@ -102,14 +102,12 @@ test('um empate em rounds vencidos é resolvido pelo K/D', async ({ page, reques
   await page.goto('/ranking');
 
   // O pódio vem na ordem 2-1-3 na tela: a posição é o atributo, não a ordem no documento.
-  const rows = await page
-    .getByTestId('ranking-row')
-    .evaluateAll((els) =>
-      els.map((el) => ({
-        position: Number((el as HTMLElement).dataset.position),
-        text: el.textContent ?? '',
-      })),
-    );
+  const rows = await page.getByTestId('ranking-row').evaluateAll((els) =>
+    els.map((el) => ({
+      position: Number((el as HTMLElement).dataset.position),
+      text: el.textContent ?? '',
+    })),
+  );
   const highAt = rows.find((row) => row.text.includes(high.name))?.position ?? 0;
   const lowAt = rows.find((row) => row.text.includes(low.name))?.position ?? 0;
   expect(highAt).toBeGreaterThanOrEqual(1);

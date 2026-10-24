@@ -221,10 +221,11 @@ function useStats(entry: RankingEntry, retake: boolean) {
   };
 }
 
+// Os degraus têm alturas mínimas acima do que o conteúdo ocupa, para a diferença aparecer sempre.
 const SLOT_HEIGHT = [
-  'min-h-[330px] max-md:min-h-[270px]',
-  'min-h-[290px] max-md:min-h-[236px]',
-  'min-h-[262px] max-md:min-h-[212px]',
+  'min-h-[430px] max-md:min-h-[340px]',
+  'min-h-[394px] max-md:min-h-[306px]',
+  'min-h-[370px] max-md:min-h-[282px]',
 ];
 const AVATAR_SIZE = [88, 72, 72];
 
