@@ -136,8 +136,9 @@ test.describe('busca do header', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     await settle(page);
-    expect(await trigger(page).evaluate((el) => getComputedStyle(el).transitionDuration)).toBe(
-      '0s',
+    // Sem propriedade em transição: o campo cresce de uma vez, sem animar.
+    expect(await trigger(page).evaluate((el) => getComputedStyle(el).transitionProperty)).toBe(
+      'none',
     );
   });
 });
