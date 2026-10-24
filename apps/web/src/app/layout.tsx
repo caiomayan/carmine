@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { DM_Serif_Display, Inter } from 'next/font/google';
+import { Big_Shoulders, DM_Serif_Display, Inter } from 'next/font/google';
 import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
@@ -9,6 +9,8 @@ import { InputModality } from '@/components/input-modality';
 import { SanctionNotice } from '@/components/moderation/sanction-notice';
 import { MotionProvider } from '@/components/motion-provider';
 import { FirstSteps } from '@/components/session/first-steps';
+import { CurtainController } from '@/components/vida/footer-fx';
+import { PillHeaderController } from '@/components/vida/pill-header';
 import { SessionProvider } from '@/components/session/session-provider';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
@@ -20,6 +22,7 @@ import { NONCE_HEADER } from '@/lib/security-headers';
 import { sentryWebConfig } from '@/lib/sentry-config';
 import { DEFAULT_THEME } from '@/lib/theme';
 import './globals.css';
+import '@/components/vida/vida.css';
 
 const inter = Inter({
   // Só o latin é pré-carregado: cobre todos os acentos do PT-BR. O latin-ext continua no CSS e
@@ -27,14 +30,27 @@ const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
   display: 'swap',
+  // PROTÓTIPO proto/vida: o eixo de tamanho óptico do Inter (14–32) deixa os títulos grandes mais
+  // fechados e os textos pequenos mais abertos, sozinho (`font-optical-sizing: auto`).
+  axes: ['opsz'],
 });
 
-// A fonte de destaque (H1 de herói e numerais). Fora do pré-carregamento: só baixa quando uma página a usa,
-// então não pesa na primeira carga das demais.
+// PROTÓTIPO proto/vida, três vozes: Inter (interface e texto), DM Serif Display (títulos de destaque e o
+// logotipo) e a condensada de sinalização. Fora do pré-carregamento: só baixam quando uma página as usa.
 const dmSerif = DM_Serif_Display({
   subsets: ['latin'],
   weight: '400',
   variable: '--font-dm-serif',
+  display: 'swap',
+  preload: false,
+});
+
+// Sinalização: nome do mapa, selo de Modo, posição no ranking e no pódio, dígitos da contagem regressiva e
+// números de placar (K/D, HS%). Sempre em maiúsculo e curta, nunca em frase. Só o peso usado (800).
+const signage = Big_Shoulders({
+  subsets: ['latin'],
+  weight: '800',
+  variable: '--font-signage',
   display: 'swap',
   preload: false,
 });
@@ -85,7 +101,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
     <html
       lang={locale}
       data-theme={DEFAULT_THEME}
-      className={`${inter.variable} ${dmSerif.variable}`}
+      className={`${inter.variable} ${dmSerif.variable} ${signage.variable}`}
       suppressHydrationWarning
     >
       <head>
@@ -93,6 +109,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       </head>
       <body>
         <InputModality />
+        <PillHeaderController />
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
         <NextIntlClientProvider messages={null}>
           <MotionProvider>
@@ -108,7 +125,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 {t('skipToContent')}
               </a>
               {/* Fluxo natural: o rodapé vem logo depois do conteúdo e, nas páginas curtas, o main ocupa o que sobra e o encosta no pé da tela. */}
+              {/* Cortina (desktop): o conteúdo sobe sobre o rodapé fixo; fora dela, fluxo normal. */}
               <div className="flex min-h-dvh flex-col">
+                <div data-curtain-content className="flex flex-1 flex-col">
                 <SiteHeader />
                 {/* Aviso da própria Punição (S07): só as mensagens dele vão ao cliente. */}
                 <NextIntlClientProvider
@@ -138,7 +157,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   />
                   {children}
                 </main>
+                </div>
                 <SiteFooter />
+                <CurtainController />
               </div>
               {sentry ? <ErrorReporting {...sentry} /> : null}
             </SessionProvider>

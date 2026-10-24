@@ -21,6 +21,7 @@ export function NotFoundView({
   return (
     <div className="container-page animate-fade-up pt-16 pb-24 max-md:pt-10 max-md:pb-16">
       <div className="grid max-w-[640px] justify-items-start gap-4">
+        <p className="v-sign text-[20px] tracking-[0.14em] text-muted-foreground">St. Carmine</p>
         <p className="inline-flex items-center gap-2.5 label-caps text-foreground">
           <span aria-hidden="true" className="size-1.5 rotate-45 bg-foreground" />
           {code}

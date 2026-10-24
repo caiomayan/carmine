@@ -13,7 +13,7 @@ export async function SiteHeader() {
   const { search, headerPreviews } = await getMessages();
 
   return (
-    <header className="relative border-b border-line">
+    <header data-site-header className="relative border-b border-line">
       {/* Desktop: logotipo, páginas ao centro e ações à direita (3 colunas, o centro de verdade). Celular: logotipo e ações em cima, as páginas embaixo. */}
       <div className="container-page flex min-h-(--hdr-h) flex-wrap items-center gap-x-7 max-md:gap-x-3 max-md:pt-2 md:grid md:grid-cols-[1fr_auto_1fr]">
         <Link

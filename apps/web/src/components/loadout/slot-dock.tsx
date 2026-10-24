@@ -102,7 +102,7 @@ export function SlotDock({
       data-testid="slot-dock"
       data-slot-key={slot.key}
       className={cn(
-        'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-xl bg-surface-2 p-2.5 pr-3',
+        'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-full v-glass p-2.5 pr-5',
         'shadow-[0_10px_32px_-6px_var(--shadow)]',
         'max-md:grid-cols-[auto_minmax(0,1fr)]',
       )}
@@ -111,7 +111,7 @@ export function SlotDock({
         <span
           key={flash}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-xl bg-foreground/15 animate-[dock-flash_520ms_var(--ease-out)_forwards] motion-reduce:hidden"
+          className="pointer-events-none absolute inset-0 rounded-full bg-foreground/15 animate-[dock-flash_520ms_var(--ease-out)_forwards] motion-reduce:hidden"
         />
       ) : null}
       <span

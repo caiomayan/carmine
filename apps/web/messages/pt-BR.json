@@ -64,11 +64,12 @@
         "label": "Estado dos servidores",
         "live": "Ao vivo",
         "soon": "Em breve",
+        "paused": "Em pausa",
         "servers": "{count, plural, =0 {<n>#</n> servidores online} one {<n>#</n> servidor online} other {<n>#</n> servidores online}}",
         "players": "{count, plural, =0 {<n>#</n> jogadores} one {<n>#</n> jogador} other {<n>#</n> jogadores}}",
         "unavailable": "Estado indisponível agora"
       },
-      "copyright": "© {year} Carmine. Todos os direitos reservados.",
+      "copyright": "© {year} Saint Carmine. Todos os direitos reservados.",
       "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela."
     },
     "account": {
@@ -664,6 +665,7 @@
       "unlink": "Desvincular",
       "loading": "Carregando",
       "soon": "Em breve",
+        "paused": "Em pausa",
       "loadFailed": "Não deu para ver o seu vínculo agora. Recarregue a página em instantes.",
       "results": {
         "vinculado": "Discord ligado. Seus cargos do Carmine já estão no servidor.",

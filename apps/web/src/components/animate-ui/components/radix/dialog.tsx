@@ -70,7 +70,7 @@ function DialogContent({
       <DialogOverlay />
       <DialogContentPrimitive
         className={cn(
-          'bg-popover text-popover-foreground fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-xl p-6 shadow-[0_24px_64px_-24px_var(--shadow),0_0_0_1px_var(--line)] sm:max-w-lg',
+          'bg-popover text-popover-foreground fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-3xl p-7 shadow-[0_24px_64px_-24px_var(--shadow),0_0_0_1px_var(--line)] sm:max-w-lg',
           className,
         )}
         {...props}

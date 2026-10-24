@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { FooterStatus } from '@/components/footer-status';
+import { FooterWordmark } from '@/components/vida/footer-fx';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { Seal } from '@/components/seal';
 import { Wordmark } from '@/components/wordmark';
@@ -56,8 +57,12 @@ export async function SiteFooter() {
   if (discord) community.push({ label: t('links.discord'), href: discord.href, external: true });
 
   return (
-    <footer className="border-t border-line">
-      <div className="container-page footer-reveal">
+    <footer data-site-footer className="relative overflow-hidden bg-background">
+      <div className="container-page pt-12 max-md:pt-8">
+        {/* Só as mensagens do estado vão ao cliente: ele acompanha o resumo ao vivo da home. */}
+        <NextIntlClientProvider messages={{ shell: { footer: { status } } }}>
+          <FooterStatus initial={servers?.summary ?? null} />
+        </NextIntlClientProvider>
         <div className="grid grid-cols-2 gap-x-7 gap-y-9 pt-14 pb-10 max-md:gap-x-5 max-md:gap-y-7 max-md:pt-10 max-md:pb-7 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))] lg:gap-10">
           <div className="col-span-2 grid content-start gap-4.5 lg:col-span-1">
             <Link
@@ -66,7 +71,10 @@ export async function SiteFooter() {
               className="flex w-fit items-center gap-3.5 rounded-xs text-foreground focus-visible:outline-offset-4"
             >
               <Seal size={44} />
-              <Wordmark className="h-6 w-auto overflow-visible" />
+              <span className="grid gap-1">
+                <span className="v-sign text-[15px] tracking-[0.14em] text-muted-foreground">Saint</span>
+                <Wordmark className="h-6 w-auto overflow-visible" />
+              </span>
             </Link>
             <p className="max-w-[34ch] text-[13.5px] leading-[1.55] text-muted-foreground">
               {t('tagline')}
@@ -113,14 +121,13 @@ export async function SiteFooter() {
             />
           </nav>
         </div>
-        {/* Só as mensagens do estado vão ao cliente: ele acompanha o resumo ao vivo da home. */}
-        <NextIntlClientProvider messages={{ shell: { footer: { status } } }}>
-          <FooterStatus initial={servers?.summary ?? null} />
-        </NextIntlClientProvider>
-        <div className="flex flex-wrap justify-between gap-x-6 gap-y-2 pt-5 pb-9 text-xs text-muted-foreground">
+        <div className="flex flex-wrap justify-between gap-x-6 gap-y-2 pt-1 pb-6 text-xs text-muted-foreground">
           <p>{t('copyright', { year: new Date().getFullYear() })}</p>
           <p className="max-w-[70ch]">{t('disclaimer')}</p>
         </div>
+      </div>
+      <div className="px-4 pb-3 max-md:px-3">
+        <FooterWordmark />
       </div>
     </footer>
   );

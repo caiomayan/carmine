@@ -1,0 +1,168 @@
+{
+  "maps": {
+    "ancient": {
+      "colors": [
+        "#7ec1c7",
+        "#9ac770"
+      ],
+      "average": "#454e48",
+      "light": 0.31
+    },
+    "anubis": {
+      "colors": [
+        "#c78a52",
+        "#4192c7"
+      ],
+      "average": "#836f5e",
+      "light": 0.56
+    },
+    "cache": {
+      "colors": [
+        "#77a4c7",
+        "#c7955e",
+        "#93c77e"
+      ],
+      "average": "#a9afb0",
+      "light": 0.71
+    },
+    "dust2": {
+      "colors": [
+        "#6f9dc7",
+        "#dcb386"
+      ],
+      "average": "#a19e97",
+      "light": 0.67
+    },
+    "inferno": {
+      "colors": [
+        "#c78c56"
+      ],
+      "average": "#7d6551",
+      "light": 0.49
+    },
+    "mirage": {
+      "colors": [
+        "#d2a160",
+        "#76baff",
+        "#a9c776"
+      ],
+      "average": "#a8987f",
+      "light": 0.71
+    },
+    "nuke": {
+      "colors": [
+        "#59b6ff",
+        "#c77c7b"
+      ],
+      "average": "#9bbcd3",
+      "light": 0.83
+    },
+    "overpass": {
+      "colors": [
+        "#c7945c",
+        "#5a95c7"
+      ],
+      "average": "#554d43",
+      "light": 0.35
+    }
+  },
+  "skins": {
+    "86": {
+      "name": "Desert Eagle | Dragão Kumicho",
+      "image": "https://cdn.cstrike.app/images/weapon_deagle_aq_deserteagle_kumichodragon_d0666cff.webp",
+      "colors": [
+        "#c750b4"
+      ],
+      "average": "#0e100f",
+      "light": 0.06
+    },
+    "171": {
+      "name": "Glock-18 | Degradê",
+      "image": "https://cdn.cstrike.app/images/weapon_glock_aa_fade_c84215d6.webp",
+      "colors": [
+        "#c76c22",
+        "#c72c71",
+        "#6857c7"
+      ],
+      "average": "#120f0e",
+      "light": 0.07
+    },
+    "220": {
+      "name": "AK-47 | Serpente de Fogo",
+      "image": "https://cdn.cstrike.app/images/weapon_ak47_cu_fireserpent_ak47_bravo_9f823638.webp",
+      "colors": [
+        "#c76443",
+        "#70c777",
+        "#bcc767"
+      ],
+      "average": "#0d0c0a",
+      "light": 0.06
+    },
+    "222": {
+      "name": "AK-47 | Linhas Vermelhas",
+      "image": "https://cdn.cstrike.app/images/weapon_ak47_cu_ak47_cobra_8a8119d8.webp",
+      "colors": [
+        "#c74a3c"
+      ],
+      "average": "#070606",
+      "light": 0.03
+    },
+    "306": {
+      "name": "AWP | Asiimov",
+      "image": "https://cdn.cstrike.app/images/weapon_awp_cu_awp_asimov_586a77f7.webp",
+      "colors": [
+        "#c73c06"
+      ],
+      "average": "#100e0c",
+      "light": 0.06
+    },
+    "320": {
+      "name": "AWP | Gungnir",
+      "image": "https://cdn.cstrike.app/images/weapon_awp_gs_awp_gungnir_dcc5759f.webp",
+      "colors": [
+        "#568bc7",
+        "#c7bd83"
+      ],
+      "average": "#0c0c0c",
+      "light": 0.05
+    },
+    "461": {
+      "name": "M4A4 | Uivo",
+      "image": "https://cdn.cstrike.app/images/weapon_m4a1_cu_m4a1_howling_5070a6a8.webp",
+      "colors": [
+        "#c7391b"
+      ],
+      "average": "#160e0c",
+      "light": 0.09
+    },
+    "1099": {
+      "name": "M4A1-S | Cyrex",
+      "image": "https://cdn.cstrike.app/images/weapon_m4a1_silencer_cu_m4a1s_cyrex_bee7eb04.webp",
+      "colors": [
+        "#c73028"
+      ],
+      "average": "#0a0808",
+      "light": 0.04
+    },
+    "1327": {
+      "name": "Karambit | Degradê",
+      "image": "https://cdn.cstrike.app/images/weapon_knife_karambit_aa_fade_0c50f938.webp",
+      "colors": [
+        "#c7508d",
+        "#bb85ed"
+      ],
+      "average": "#171517",
+      "light": 0.09
+    },
+    "1717": {
+      "name": "Luvas Esportivas | Caixa de Pandora",
+      "image": "https://cdn.cstrike.app/images/sporty_gloves_sporty_purple_df29dc04.webp",
+      "colors": [
+        "#8f53d5",
+        "#6c95c7"
+      ],
+      "average": "#2e2a3a",
+      "light": 0.23
+    }
+  }
+}

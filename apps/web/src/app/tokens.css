@@ -12,25 +12,24 @@
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #11100d;
-  --surface: #191714;
-  --surface-2: #23211c;
-  --line: #34312a;
-  --line-strong: #655f53;
-  --text: #ede2c7;
-  --muted: #9d9582;
+  /* PROTÓTIPO proto/vida (decisão do dono): marca em preto e branco duro, sem tom quente; o carmim
+     foi descontinuado e o ◆ dos títulos vira branco. A cor só entra pelo contexto (abaixo). */
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1e1e1e;
+  --line: #2e2e2e;
+  --line-strong: #707070;
+  --text: #f5f5f5;
+  --muted: #a8a8a8;
   /* decoração e ponto offline (3:1 sobre bg e surface); texto de verdade usa --muted */
-  --faint: #6f6959;
-  --accent-hover: #cac0a9;
+  --faint: #7a7a7a;
+  --accent-hover: #d6d6d6;
   /* menus e popovers sobem um degrau acima das superfícies */
   --raised: var(--surface-2);
-  --shadow: rgb(0 0 0 / 0.5);
+  --shadow: rgb(0 0 0 / 0.6);
 
-  /*
-   * Carmim (U3c, opção A do dono): só o losango dos títulos de seção, nunca informação. Mais fundo que
-   * o danger (salmão) e que o vermelho da raridade; 3:1 sobre as superfícies (lib/tokens.test.ts).
-   */
-  --carmine: #c23a41;
+  /* o ◆ dos títulos de seção: monocromático (era carmim, descontinuado) */
+  --carmine: #f5f5f5;
 
   /* raridade: o ponto de cada Item (mesmas cores da cs2-lib no escuro; no claro, tons com 3:1 sobre as superfícies) */
   --rarity-consumer: #b0c3d9;
@@ -58,11 +57,11 @@
    * Contraste >= 4,5:1 sobre --bg, --surface e --surface-2 (offline é o próprio --faint e
    * sempre vem com rótulo).
    */
-  --status-online: #8fb174;
-  --status-warn: #d8a64e;
-  --status-danger: #db8274;
-  --status-info: #82a6c2;
-  --status-vip: #cdaa62;
+  --status-online: #3ddc84;
+  --status-warn: #ffb52e;
+  --status-danger: #ff6f61;
+  --status-info: #5eaaff;
+  --status-vip: #ffc447;
 
   /* degradê que escurece o mapa no cartão de servidor (U2): % da cor de fundo, de baixo p/ cima */
   --scrim-0: 97%;
@@ -72,8 +71,8 @@
   /* texto de apoio sobre o mapa: um passo mais claro que o cinza de sempre no escuro, e quase o texto no claro (o mapa por baixo varia) */
   --on-map-muted: color-mix(in srgb, var(--text) 60%, var(--muted));
   /* lados do jogo (bolinhas CT e TR): cor de contexto, ver shared/liberty-status.css */
-  --side-ct: #6aaaf5;
-  --side-t: #f29a45;
+  --side-ct: #4d9bff;
+  --side-t: #ff9231;
   /* fases do desgaste na barra do float, da Nova de Fábrica (verde) à Veterana de Guerra (vermelho) */
   --wear-fn: var(--status-online);
   --wear-mw: #b4b660;
@@ -84,23 +83,23 @@
 
 [data-theme="light"] {
   color-scheme: light;
-  --bg: #f8edd1;
-  --surface: #f0e5ca;
-  --surface-2: #e6dcc1;
-  --line: #d6ccb3;
-  --line-strong: #8f8776;
-  --text: #1c1b17;
-  --muted: #655f53;
-  --faint: #857d6b;
-  --accent-hover: #3f3d35;
+  --bg: #f6f6f6;
+  --surface: #ececec;
+  --surface-2: #dfdfdf;
+  --line: #cfcfcf;
+  --line-strong: #7a7a7a;
+  --text: #0a0a0a;
+  --muted: #565656;
+  --faint: #7c7c7c;
+  --accent-hover: #333333;
   --raised: var(--bg);
   /* no papel claro a mesma camada rende menos: o degrau de foco sobe para manter a distância do hover */
   --fill-rest: color-mix(in srgb, var(--text) 8%, transparent);
   --fill-hover: color-mix(in srgb, var(--text) 13%, transparent);
   --fill-active: color-mix(in srgb, var(--text) 18%, transparent);
   --fill-focus: color-mix(in srgb, var(--text) 34%, transparent);
-  --shadow: rgb(60 45 20 / 0.2);
-  --carmine: #a3262d;
+  --shadow: rgb(0 0 0 / 0.18);
+  --carmine: #0a0a0a;
   --rarity-consumer: #537cac;
   --rarity-industrial: #317bce;
   --rarity-milspec: #4b69ff;
@@ -109,19 +108,19 @@
   --rarity-covert: #e82f2f;
   --rarity-contraband: #9d7215;
 
-  --status-online: #3f6930;
-  --status-warn: #7c560c;
-  --status-danger: #a3382c;
-  --status-info: #386287;
-  --status-vip: #765c1a;
+  --status-online: #0f7a3d;
+  --status-warn: #8a5a00;
+  --status-danger: #b3321f;
+  --status-info: #1f5fb8;
+  --status-vip: #7d5a00;
 
   --scrim-0: 95%;
   --scrim-40: 90%;
   --scrim-70: 62%;
   --scrim-100: 14%;
   --on-map-muted: color-mix(in srgb, var(--text) 88%, var(--bg));
-  --side-ct: #2d6fd6;
-  --side-t: #c75a00;
+  --side-ct: #1f6fe0;
+  --side-t: #d45f00;
   --wear-fn: var(--status-online);
   --wear-mw: #6b6a1c;
   --wear-ft: var(--status-warn);
@@ -167,7 +166,15 @@
   --font-ui: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* forma: arredondamento nível shadcn (sm 6 · md 8 · lg 10 · xl 14 px) */
-  --radius: 0.625rem;
+  /* proto/vida: raios no estilo Liquid Glass (macOS Tahoe, iOS 26). Cápsula nos controles, campo 16, cartão 28,
+     painel 36, diálogo 40; aninhados usam raio interno = raio externo − respiro (ver .v-inner em vida.css). */
+  --r-chip: 999px; /* cápsula: chip, selo, aba, botão, busca, header e dock */
+  --r-ctl: 999px;
+  --r-field: 16px; /* campo com rótulo */
+  --r-card: 28px;
+  --r-panel: 36px; /* painel e seção grande */
+  --r-dialog: 40px; /* diálogo, Ctrl+K e sheet */
+  --radius: 16px;
 
   /* estrutura (U3c): a barra fina de lotação/float, o afastamento do sublinhado e a sombra dos painéis sobre a página */
   --bar-h: 3px;
@@ -176,8 +183,8 @@
   /* o fundo de "selecionado" é o degrau ativo da escala de fundos (--fill-*) */
   --fill-selected: var(--fill-active);
 
-  /* layout: container global de 1080 px com margem lateral mínima de 36 px */
-  --page-max: 1080px;
+  /* layout: container global de 1280 px (proto/vida; era 1080) com margem lateral mínima de 36 px */
+  --page-max: 1280px;
   --mx: 36px;
   --hdr-h: 60px;
   --wm-h: 22px;

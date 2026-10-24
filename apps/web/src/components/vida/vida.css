@@ -1,0 +1,1063 @@
+/*
+ * Protótipo "vida" (branch proto/vida, sem merge). Direção final do dono: a MARCA é preto e branco duro,
+ * no espírito de tela de loading do GTA IV (painéis grandes de arte, títulos condensados e fortes); o
+ * carmim foi descontinuado. A COR entra só pelo contexto: arte de mapa colorida e uma cor por mapa, cor
+ * ambiente da skin equipada, raridades, CT azul e TR laranja, estados.
+ *
+ * Os tokens da marca estão em app/tokens.css. Este arquivo tem o que é do protótipo: o display, os painéis,
+ * o brilho ambiente animado, o holográfico, o spotlight, o texto com brilho e o header em pílula.
+ */
+
+@property --amb-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #888;
+}
+@property --amb-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #888;
+}
+@property --amb-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #888;
+}
+@property --v-map {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e8b04f;
+}
+@property --v-map-deep {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8a5a14;
+}
+
+:root {
+  --v-serif: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  --v-sign: var(--font-signage), "Big Shoulders", "Arial Narrow", sans-serif;
+  --v-ambient-alpha: 58%;
+  /* marca: o primário é branco sobre preto (e o inverso no tema claro) */
+  --v-brand: var(--text);
+  --v-brand-hi: var(--accent-hover);
+  --v-brand-ink: var(--bg);
+  --v-scrim: var(--bg);
+}
+[data-theme="light"] {
+  --v-ambient-alpha: 42%;
+}
+
+/* ---------- tipografia: três vozes ----------
+ * Inter: interface, texto e números (tabular-nums), títulos grandes de interface com tracking apertado.
+ * DM Serif Display: títulos de destaque (hero, numeral grande, nome em destaque) e o logotipo.
+ * Big Shoulders (sinalização): SÓ em maiúsculo e curta: nome do mapa, selo de Modo, posição no ranking e no
+ * pódio, dígitos da contagem regressiva, números de placar (K/D, HS%).
+ * Cada cartão tem uma voz de destaque só; a sinalização fica um pouco maior que o Inter ao lado (é estreita).
+ */
+h1.text-display {
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  font-size: 40px;
+}
+@media (max-width: 760px) {
+  h1.text-display {
+    font-size: 32px;
+  }
+}
+.v-serif {
+  font-family: var(--v-serif);
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.v-sign {
+  font-family: var(--v-sign);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+/* rótulo curto em Inter maiúsculo com espaçamento (o ar de GTA IV) */
+.v-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+/* título de seção: Inter grande, tracking apertado, com a barra branca da marca */
+.v-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--text);
+}
+.v-title::before {
+  content: "";
+  width: 5px;
+  height: 0.85em;
+  background: var(--text);
+}
+
+/* ---------- a página cresce e o fundo vai até as bordas ---------- */
+:root:has([data-vida]) {
+  overflow-x: clip;
+}
+/* o brilho ambiente fica atrás do header: o corpo deixa de pintar o fundo e o html pinta */
+:root:has([data-vida]) body {
+  background: transparent;
+}
+
+/* ---------- dados do mapa atual: uma cor por mapa ---------- */
+[data-map="dust2"] { --v-map: #e8b04f; --v-map-deep: #8a5a14; --v-map-ink: #1d1304; }
+[data-map="inferno"] { --v-map: #ff6a2b; --v-map-deep: #9c2d08; --v-map-ink: #240a02; }
+[data-map="nuke"] { --v-map: #22a6b8; --v-map-deep: #0b5668; --v-map-ink: #021a20; }
+[data-map="ancient"] { --v-map: #3fbf6a; --v-map-deep: #14693a; --v-map-ink: #03200f; }
+[data-map="mirage"] { --v-map: #f0845c; --v-map-deep: #a1421f; --v-map-ink: #2a0d03; }
+[data-map="anubis"] { --v-map: #d6b23a; --v-map-deep: #7b6410; --v-map-ink: #231b02; }
+[data-map="overpass"] { --v-map: #7aa8e8; --v-map-deep: #2f5aa0; --v-map-ink: #04122a; }
+[data-map="cache"] { --v-map: #9bb83b; --v-map-deep: #566d12; --v-map-ink: #131b02; }
+
+[data-vida] {
+  transition:
+    --amb-1 900ms var(--ease-soft),
+    --amb-2 900ms var(--ease-soft),
+    --amb-3 900ms var(--ease-soft),
+    --v-map 600ms var(--ease-soft),
+    --v-map-deep 600ms var(--ease-soft);
+}
+
+.v-amb-trans {
+  transition:
+    --amb-1 800ms var(--ease-soft),
+    --amb-2 800ms var(--ease-soft),
+    --amb-3 800ms var(--ease-soft);
+}
+
+/* ---------- gradiente animado alimentado pela cor ambiente (skin ou mapa) ---------- */
+.v-ambient {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1100px;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+}
+.v-ambient i {
+  position: absolute;
+  width: min(78vw, 1100px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--c) var(--v-ambient-alpha), transparent),
+    transparent 72%
+  );
+}
+.v-ambient i:nth-child(1) {
+  --c: var(--amb-1);
+  left: -14%;
+  top: -42%;
+}
+.v-ambient i:nth-child(2) {
+  --c: var(--amb-2);
+  right: -16%;
+  top: -34%;
+}
+.v-ambient i:nth-child(3) {
+  --c: var(--amb-3);
+  left: 28%;
+  top: -52%;
+  width: min(60vw, 820px);
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .v-ambient i:nth-child(1) {
+    animation: v-blob-1 17s ease-in-out infinite alternate;
+  }
+  .v-ambient i:nth-child(2) {
+    animation: v-blob-2 22s ease-in-out infinite alternate;
+  }
+  .v-ambient i:nth-child(3) {
+    animation: v-blob-3 14s ease-in-out infinite alternate;
+  }
+}
+@keyframes v-blob-1 {
+  to {
+    transform: translate3d(22%, 18%, 0) scale(1.18);
+  }
+}
+@keyframes v-blob-2 {
+  to {
+    transform: translate3d(-26%, 22%, 0) scale(0.9);
+  }
+}
+@keyframes v-blob-3 {
+  to {
+    transform: translate3d(-30%, 30%, 0) scale(1.25);
+  }
+}
+
+/* ---------- arte do hero: painel de loading de borda a borda ---------- */
+.v-hero-art {
+  position: absolute;
+  inset-block: 0 auto;
+  left: 50%;
+  width: 100vw;
+  height: 660px;
+  transform: translateX(-50%);
+  z-index: -1;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+.v-hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.v-hero-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, var(--bg) 0%, color-mix(in srgb, var(--bg) 82%, transparent) 36%, color-mix(in srgb, var(--bg) 20%, transparent) 70%, transparent 100%),
+    linear-gradient(to top, var(--bg) 0%, transparent 46%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .v-hero-art img {
+    animation: v-kenburns 36s ease-in-out infinite alternate;
+  }
+}
+@keyframes v-kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.1) translate3d(-1.2%, -1%, 0);
+  }
+}
+@media (max-width: 760px) {
+  .v-hero-art {
+    height: 520px;
+  }
+  .v-hero-art::after {
+    background:
+      linear-gradient(to top, var(--bg) 0%, color-mix(in srgb, var(--bg) 78%, transparent) 40%, color-mix(in srgb, var(--bg) 25%, transparent) 100%);
+  }
+}
+
+@keyframes v-art-in {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+}
+
+/* faixa que vai até as bordas da janela, atrás do conteúdo do container */
+.v-band {
+  position: relative;
+  isolation: isolate;
+}
+.v-band::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--v-band, transparent);
+  z-index: -1;
+}
+
+/* ---------- painéis, spotlight e inclinação ---------- */
+.v-panel {
+  --v-r: var(--r-card);
+  --v-pad: 20px;
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--v-r);
+  background: var(--surface);
+}
+/* painel/seção grande */
+.v-panel-lg {
+  --v-r: var(--r-panel);
+}
+@media (max-width: 760px) {
+  .v-panel {
+    --v-pad: 16px;
+  }
+}
+/* cantos concêntricos: raio interno = raio externo − respiro (nunca menos que 8) */
+.v-inner {
+  border-radius: max(8px, calc(var(--v-r, var(--r-card)) - var(--v-pad, 20px)));
+}
+.v-spot {
+  --px: 50%;
+  --py: 50%;
+  position: relative;
+  isolation: isolate;
+}
+.v-spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  background: radial-gradient(
+    380px circle at var(--px) var(--py),
+    color-mix(in srgb, var(--spot, var(--text)) 15%, transparent),
+    transparent 62%
+  );
+}
+.v-spot:hover::before,
+.v-spot:focus-within::before {
+  opacity: 1;
+}
+.v-card.v-spot {
+  --spot: var(--v-map, #fff);
+}
+
+.v-tilt {
+  --rx: 0deg;
+  --ry: 0deg;
+  --hx: 50%;
+  --hy: 50%;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform 420ms var(--ease-out);
+  will-change: transform;
+}
+.v-tilt[data-hot] {
+  transition: transform 90ms linear;
+}
+
+/* brilho holográfico: raras e StatTrak (estilo Holo Card, feito em CSS) */
+.v-holo {
+  position: relative;
+}
+.v-holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  mix-blend-mode: color-dodge;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  background:
+    linear-gradient(
+      112deg,
+      transparent 18%,
+      rgb(255 96 96 / 0.55) 30%,
+      rgb(255 214 102 / 0.55) 38%,
+      rgb(96 255 168 / 0.5) 46%,
+      rgb(96 168 255 / 0.55) 54%,
+      rgb(198 102 255 / 0.55) 62%,
+      transparent 76%
+    )
+    var(--hx) var(--hy) / 280% 280%;
+}
+.v-holo[data-holo="2"]::after {
+  filter: saturate(1.3);
+}
+.v-holo:hover::after,
+.v-holo[data-hot]::after {
+  opacity: 0.55;
+}
+@media (hover: none) {
+  .v-holo::after {
+    opacity: 0.32;
+    animation: v-holo-sweep 5.5s ease-in-out infinite alternate;
+  }
+}
+@keyframes v-holo-sweep {
+  from {
+    background-position: 20% 20%;
+  }
+  to {
+    background-position: 80% 80%;
+  }
+}
+
+/* ---------- mapa colorido nos cartões ---------- */
+.v-map-img {
+  transition:
+    scale var(--dur-zoom) var(--ease-soft),
+    filter var(--dur-slow) var(--ease-std);
+}
+.v-card:hover .v-map-img,
+.v-card:focus-within .v-map-img {
+  scale: 1.05;
+}
+.v-offline .v-map-img {
+  filter: grayscale(0.55) brightness(0.58) contrast(1.05);
+}
+/* o cartão escurece de baixo para cima até o texto passar no AA; a cor do mapa só tinge o meio */
+.v-card-wash {
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--bg) 97%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 88%, transparent) 36%,
+      color-mix(in srgb, var(--v-map-deep) 30%, transparent) 70%,
+      transparent 100%
+    ),
+    linear-gradient(100deg, color-mix(in srgb, var(--bg) 62%, transparent), transparent 60%);
+}
+.v-offline .v-card-wash {
+  background: linear-gradient(to top, color-mix(in srgb, var(--bg) 97%, transparent), color-mix(in srgb, var(--bg) 62%, transparent));
+}
+.v-chip-map {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-family: var(--v-sign);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  background: var(--v-map);
+  color: var(--v-map-ink, #111);
+}
+.v-offline .v-chip-map {
+  background: color-mix(in srgb, var(--text) 18%, var(--bg));
+  color: var(--text);
+}
+
+/* ---------- barras ---------- */
+.v-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 16%, transparent);
+  overflow: hidden;
+}
+.v-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: left;
+  background: var(--v-bar, var(--text));
+  transition: transform 900ms var(--ease-out);
+}
+.v-card .v-bar > span {
+  background: var(--v-map);
+}
+
+/* ---------- botões da marca: branco sobre preto, display condensado ---------- */
+.v-cta,
+.v-cta-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: var(--tap);
+  padding-inline: 1.35rem;
+  border-radius: var(--r-ctl);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease-std),
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+/* botões pequenos viram pílula */
+.v-pill {
+  border-radius: 999px;
+}
+.v-cta {
+  color: var(--bg);
+  background: var(--text);
+}
+.v-cta:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.v-cta:active {
+  transform: translateY(0) scale(0.985);
+}
+.v-cta-quiet {
+  color: var(--text);
+  background: var(--fill-active);
+}
+.v-cta-quiet:hover {
+  background: var(--fill-focus);
+}
+
+/* ---------- Dynamic Button: ocioso, carregando, feito ---------- */
+.v-dyn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.v-dyn[data-phase="loading"] {
+  cursor: progress;
+}
+.v-dyn .v-dyn-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: var(--v-map, var(--status-online));
+  opacity: 0.9;
+}
+.v-dyn[data-phase="loading"] .v-dyn-fill {
+  animation: v-dyn-load 1500ms var(--ease-std) forwards;
+}
+.v-dyn[data-phase="done"] .v-dyn-fill {
+  transform: scaleX(1);
+  background: var(--status-online);
+  opacity: 1;
+}
+@keyframes v-dyn-load {
+  to {
+    transform: scaleX(0.94);
+  }
+}
+.v-dyn[data-phase="done"] {
+  color: #06140b;
+  background: var(--status-online);
+}
+.v-spin {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: v-spin 700ms linear infinite;
+}
+@keyframes v-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- texto com brilho (AO VIVO e carregamento) ---------- */
+.v-shine {
+  color: transparent;
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--text) 48%, transparent) 36%,
+    var(--text) 50%,
+    color-mix(in srgb, var(--text) 48%, transparent) 64%
+  );
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: v-shine 2.6s linear infinite;
+}
+@keyframes v-shine {
+  to {
+    background-position: -130% 0;
+  }
+}
+
+/* ---------- esqueleto com brilho ---------- */
+.v-skel {
+  background:
+    linear-gradient(100deg, transparent 20%, color-mix(in srgb, var(--text) 16%, transparent) 50%, transparent 80%)
+      -120% 0 / 60% 100% no-repeat,
+    var(--surface-2);
+  animation: v-skel 1.5s linear infinite;
+}
+@keyframes v-skel {
+  to {
+    background-position: 220% 0;
+  }
+}
+
+/* ---------- feed ao vivo e ticker ---------- */
+.v-feed-row {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 560ms var(--ease-out),
+    opacity 480ms var(--ease-out);
+}
+.v-feed-row[data-new] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.v-feed-row > div {
+  min-height: 0;
+  overflow: hidden;
+}
+.v-feed-flash {
+  animation: v-flash 2400ms var(--ease-out) 300ms backwards;
+}
+@keyframes v-flash {
+  from {
+    background: var(--fill-focus);
+  }
+}
+.v-tick-up {
+  animation: v-tick-up 900ms var(--ease-out);
+}
+@keyframes v-tick-up {
+  from {
+    color: var(--status-online);
+    transform: translateY(2px);
+  }
+}
+
+/* vitrine de skins: a barra de progresso é a rotação (termina e passa para a próxima) */
+.v-prog {
+  transform-origin: left;
+  animation: v-prog linear forwards;
+}
+@keyframes v-prog {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.v-swap {
+  animation: v-swap 560ms var(--ease-out) backwards;
+}
+@keyframes v-swap {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+@keyframes v-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+/* barras do ritmo semanal do Perfil: sobem uma a uma */
+.v-week-bar {
+  transform-origin: bottom;
+  animation: v-bar-up 800ms var(--ease-out) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms + 200ms);
+}
+@keyframes v-bar-up {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* ---------- barra do protótipo ---------- */
+.v-dock {
+  view-transition-name: vida-dock;
+  background-color: color-mix(in srgb, var(--raised) 58%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(1.7);
+  backdrop-filter: blur(26px) saturate(1.7);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 26%, transparent), 0 22px 52px -18px rgb(0 0 0 / 0.55);
+}
+
+/* ---------- View Transitions entre as páginas ---------- */
+::view-transition-old(.v-out) {
+  animation: v-page-out 260ms var(--ease-in) both;
+}
+::view-transition-new(.v-in) {
+  animation: v-page-in 520ms var(--ease-out) 60ms both;
+}
+@keyframes v-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+    filter: blur(3px);
+  }
+}
+@keyframes v-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(4px);
+  }
+}
+::view-transition-group(.v-face) {
+  animation-duration: 560ms;
+  animation-timing-function: var(--ease-out);
+}
+
+/* ---------- header que vira pílula flutuante ao rolar (alternativa ao fundo com desfoque) ---------- */
+html[data-vheader="pill"] [data-site-header] {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  margin-inline: auto;
+  width: 100%;
+  border-radius: 0;
+  border-color: transparent;
+  transition:
+    top 420ms var(--ease-out),
+    width 520ms var(--ease-out),
+    margin-top 420ms var(--ease-out),
+    border-radius 420ms var(--ease-out),
+    background-color 320ms var(--ease-std),
+    box-shadow 320ms var(--ease-std);
+}
+html[data-vheader="pill"][data-vpill="on"] [data-site-header] {
+  top: 12px;
+  margin-top: 12px;
+  width: min(940px, calc(100% - 24px));
+  border-radius: 999px;
+}
+html[data-vheader="pill"][data-vpill="on"] [data-site-header] > div {
+  width: 100%;
+  padding-inline: 20px;
+  min-height: 54px;
+}
+@media (max-width: 760px) {
+  html[data-vheader="pill"][data-vpill="on"] [data-site-header] {
+    border-radius: 26px;
+    padding-bottom: 2px;
+  }
+  html[data-vheader="pill"][data-vpill="on"] [data-site-header] > div {
+    padding-inline: 14px;
+  }
+}
+
+/* ---------- material de vidro nos elementos flutuantes (Liquid Glass) ----------
+ * Fundo translúcido com desfoque e saturação, um fio de luz no topo feito com inset box-shadow (não é borda) e
+ * sombra suave. Vale para o header em pílula, o dock do protótipo e do Loadout, popovers, menus, diálogos,
+ * Ctrl+K e as prévias do header (todos usam .bg-popover). Sem transparência (prefers-reduced-transparency),
+ * o fundo é opaco. */
+.v-glass,
+.bg-popover,
+html[data-vheader="pill"][data-vpill="on"] [data-site-header] {
+  background-color: color-mix(in srgb, var(--raised) 58%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(1.7);
+  backdrop-filter: blur(26px) saturate(1.7);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 26%, transparent),
+    0 22px 52px -18px rgb(0 0 0 / 0.55),
+    0 2px 10px rgb(0 0 0 / 0.22);
+}
+[data-theme="light"] .v-glass,
+[data-theme="light"] .bg-popover,
+[data-theme="light"] html[data-vheader="pill"][data-vpill="on"] [data-site-header],
+html[data-theme="light"][data-vheader="pill"][data-vpill="on"] [data-site-header] {
+  background-color: color-mix(in srgb, var(--raised) 66%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 22px 52px -20px rgb(0 0 0 / 0.28),
+    0 2px 10px rgb(0 0 0 / 0.1);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .v-glass,
+  .bg-popover,
+  html[data-vheader="pill"][data-vpill="on"] [data-site-header] {
+    background-color: var(--raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---------- rodapé: cortina, wordmark gigante e contagem ---------- */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  html[data-curtain="on"] [data-curtain-content] {
+    position: relative;
+    z-index: 2;
+    min-height: 100dvh;
+    margin-bottom: var(--footer-h, 0px);
+    background: var(--bg);
+    border-bottom-left-radius: var(--r-panel);
+    border-bottom-right-radius: var(--r-panel);
+    box-shadow: 0 32px 70px -24px rgb(0 0 0 / 0.55);
+  }
+  html[data-curtain="on"] [data-site-footer] {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 0;
+  }
+}
+[data-site-footer] {
+  background: var(--bg);
+}
+
+/* o wordmark: arte do mapa dentro das letras, com um spotlight que segue o mouse */
+.v-wordmark {
+  --mx: 50%;
+  --my: 50%;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  user-select: none;
+  line-height: 0.86;
+}
+.v-wordmark-text {
+  display: inline-block;
+  margin: 0;
+  white-space: nowrap;
+  font-size: var(--fs, 17vw);
+  letter-spacing: 0.02em;
+  line-height: 0.86;
+  background-image: var(--art);
+  background-size: cover;
+  background-position: center 40%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: brightness(0.5) saturate(0.85);
+  transition: filter var(--dur-slow) var(--ease-std);
+}
+[data-theme="light"] .v-wordmark-text {
+  filter: brightness(0.82) contrast(1.05);
+}
+.v-wordmark-lit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  filter: brightness(1.25) saturate(1.35);
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(320px circle at var(--mx) var(--my), #000 0%, transparent 100%);
+  mask-image: radial-gradient(320px circle at var(--mx) var(--my), #000 0%, transparent 100%);
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+.v-wordmark:hover .v-wordmark-lit {
+  opacity: 1;
+}
+
+/* contagem regressiva: a técnica do countdown do daisyUI (--d e uma coluna de 0 a 9 que desliza) */
+.v-digit {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  text-align: center;
+}
+.v-digit::before {
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+  white-space: pre;
+  display: block;
+  transform: translateY(calc(var(--d, 0) * -1em));
+  transition: transform 0.7s cubic-bezier(1, 0, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-digit::before {
+    transition: none;
+  }
+  .v-wordmark-text,
+  .v-wordmark-lit {
+    transition: none;
+  }
+}
+
+/* ---------- Squish Switch (chaves de /configuracoes e do editor) ---------- */
+[data-slot="switch"] {
+  transition: background-color var(--dur-base) var(--ease-std);
+}
+[data-slot="switch-thumb"] {
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+}
+[data-slot="switch"][data-state="checked"] [data-slot="switch-thumb"] {
+  animation: v-squish-on 560ms var(--ease-out);
+}
+[data-slot="switch"][data-state="unchecked"] [data-slot="switch-thumb"] {
+  animation: v-squish-off 560ms var(--ease-out);
+}
+@keyframes v-squish-on {
+  0% {
+    scale: 1.5 0.72;
+  }
+  35% {
+    scale: 0.82 1.18;
+  }
+  65% {
+    scale: 1.12 0.94;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+@keyframes v-squish-off {
+  0% {
+    scale: 1.5 0.72;
+  }
+  35% {
+    scale: 0.82 1.18;
+  }
+  65% {
+    scale: 1.1 0.95;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+/* ---------- curva contínua (squircle) onde o navegador suportar; border-radius normal é o fallback ---------- */
+@supports (corner-shape: squircle) {
+  [class*="rounded"],
+  .v-panel,
+  .v-cta,
+  .v-cta-quiet,
+  .v-chip-map,
+  .v-inner,
+  .v-skel,
+  .v-bar {
+    corner-shape: squircle;
+  }
+  /* o holo, o spotlight e a camada do mapa seguem o recorte do pai */
+  .v-spot::before,
+  .v-holo::after,
+  .v-card-wash {
+    corner-shape: inherit;
+  }
+  /* pílulas e círculos continuam redondos */
+  [class*="rounded-full"],
+  .v-pill,
+  [data-site-header],
+  .v-bar,
+  .v-bar > span {
+    corner-shape: round;
+  }
+}
+
+/* ---------- Marquee da atividade (abaixo de 1280, onde não há trilho) ---------- */
+.v-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+.v-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 10px;
+  padding-block: 2px;
+  margin: 0;
+  list-style: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .v-marquee-track {
+    animation: v-marquee 46s linear infinite;
+  }
+  .v-marquee:hover .v-marquee-track,
+  .v-marquee:focus-within .v-marquee-track {
+    animation-play-state: paused;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-marquee {
+    overflow-x: auto;
+  }
+}
+@keyframes v-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- gráficos (bklit-ui): as variáveis --chart-* vêm dos tokens do site ---------- */
+.v-charts {
+  --chart-1: var(--text);
+  --chart-2: var(--side-ct);
+  --chart-3: var(--side-t);
+  --chart-4: var(--status-online);
+  --chart-5: var(--status-vip);
+  --chart-positive: var(--status-online);
+  --chart-negative: var(--status-danger);
+  --chart-background: transparent;
+  --chart-foreground: var(--text);
+  --chart-foreground-muted: var(--muted);
+  --chart-label: var(--muted);
+  --chart-line-primary: var(--text);
+  --chart-line-secondary: var(--side-ct);
+  --chart-crosshair: var(--text);
+  --chart-grid: color-mix(in srgb, var(--text) 12%, transparent);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: var(--raised);
+  --chart-tooltip-foreground: var(--text);
+  --chart-tooltip-muted: var(--muted);
+  --chart-indicator-color: var(--text);
+  --chart-marker-background: var(--surface-2);
+  --chart-marker-border: var(--line);
+  --chart-marker-foreground: var(--text);
+  --chart-scale-01: var(--fill-rest);
+  --chart-scale-02: color-mix(in srgb, var(--status-online) 28%, var(--surface));
+  --chart-scale-03: color-mix(in srgb, var(--status-online) 52%, var(--surface));
+  --chart-scale-04: color-mix(in srgb, var(--status-online) 76%, var(--surface));
+  --chart-scale-05: var(--status-online);
+  --chart-scale-mix: var(--surface);
+  --chart-scale-pattern-color: var(--bg);
+}
+
+/* ---------- movimento reduzido: sem inclinação, sem varredura, sem contagem ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .v-tilt,
+  .v-tilt[data-hot] {
+    transform: none;
+    transition: none;
+  }
+  .v-holo::after {
+    animation: none;
+    opacity: 0.18;
+    transition: none;
+  }
+  .v-map-img,
+  .v-card:hover .v-map-img {
+    scale: 1;
+    transition: none;
+  }
+  .v-skel,
+  .v-shine,
+  .v-spin {
+    animation: none;
+  }
+  .v-shine {
+    color: var(--text);
+    background: none;
+  }
+  .v-prog,
+  .v-swap,
+  .v-week-bar {
+    animation: none;
+  }
+  .v-prog {
+    transform: scaleX(0);
+  }
+  .v-feed-row,
+  .v-feed-row[data-new] {
+    transition: none;
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .v-feed-flash,
+  .v-tick-up,
+  .v-cta:hover {
+    animation: none;
+    transform: none;
+  }
+  [data-vida] {
+    transition: none;
+  }
+  html[data-vheader="pill"] [data-site-header] {
+    transition: none;
+  }
+  [data-slot="switch"] [data-slot="switch-thumb"] {
+    animation: none !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   typedRoutes: true,
   poweredByHeader: false,
+  // proto/vida: os gráficos do bklit-ui (MIT) importam `motion/react`; o site já usa o `framer-motion`, que
+  // expõe a mesma API, então o alias evita levar uma segunda cópia da biblioteca.
+  turbopack: { resolveAlias: { 'motion/react': 'framer-motion' } },
   reactStrictMode: true,
   // Cabeçalhos fixos de segurança; a CSP, que muda por requisição (nonce), vem do proxy.ts.
   headers: async () => [
