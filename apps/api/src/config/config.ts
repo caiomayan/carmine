@@ -70,6 +70,8 @@ const envSchema = z
     LIVE_SERVERS_SWEEP_SECONDS: z.coerce.number().int().positive().default(5),
     // Ranking semanal (S12): quanto o resultado de um Modo e semana fica no cache do Valkey (0 desliga).
     RANKING_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(45),
+    // Faixa "Esta semana" da home: quanto os números da semana ficam na memória da API (0 desliga).
+    WEEK_SUMMARY_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(30),
     // Prévias do header (U3e): quanto a resposta de cada Conta (e a do visitante) fica no cache do Valkey (0 desliga).
     HEADER_PREVIEWS_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(15),
     // Faixa de atividade ao vivo da home: quanto a resposta pública fica no cache do Valkey (0 desliga).
@@ -173,6 +175,8 @@ export interface AppConfig {
   liveServers: { offlineAfterMs: number; sweepMs: number };
   /** Cache do Ranking semanal (S12), em segundos. */
   rankingCacheTtlSeconds: number;
+  /** Cache dos números da semana da home, em segundos. */
+  weekSummaryCacheTtlSeconds: number;
   /** Cache das prévias do header (U3e), em segundos. */
   headerPreviewsCacheTtlSeconds: number;
   /** Cache da faixa de atividade ao vivo, em segundos. */
@@ -247,6 +251,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       server: e.RATE_LIMIT_SERVER_PER_MINUTE,
     },
     rankingCacheTtlSeconds: e.RANKING_CACHE_TTL_SECONDS,
+    weekSummaryCacheTtlSeconds: e.WEEK_SUMMARY_CACHE_TTL_SECONDS,
     headerPreviewsCacheTtlSeconds: e.HEADER_PREVIEWS_CACHE_TTL_SECONDS,
     activityCacheTtlSeconds: e.ACTIVITY_CACHE_TTL_SECONDS,
     liveServers: {

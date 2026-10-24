@@ -1,0 +1,418 @@
+/*
+ * CSS da Home (V2 do redesenho "Vida"). A base compartilhada (tipografia, cor ambiente, painéis, spotlight,
+ * holo, vidro, squircle) está em components/vida/vida.css; aqui fica só o que a Home usa. Os nomes levam o
+ * prefixo `vh-` para não colidir com o CSS das outras telas (cada uma traz o seu).
+ *
+ * A cor do mapa de cada cartão chega por variável inline (--v-map, --v-map-deep, --v-map-ink), calculada no
+ * servidor a partir das cores da arte do dia (lib/home/map-colors.ts).
+ */
+
+/* ---------- arte do hero: painel de loading de borda a borda ---------- */
+.vh-hero-art {
+  position: absolute;
+  inset-block: 0 auto;
+  left: 50%;
+  width: 100vw;
+  height: 660px;
+  transform: translateX(-50%);
+  z-index: -1;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+}
+.vh-hero-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.vh-hero-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      90deg,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 82%, transparent) 36%,
+      color-mix(in srgb, var(--bg) 20%, transparent) 70%,
+      transparent 100%
+    ),
+    linear-gradient(to top, var(--bg) 0%, transparent 46%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .vh-hero-art img {
+    animation: vh-kenburns 36s ease-in-out infinite alternate;
+  }
+}
+@keyframes vh-kenburns {
+  from {
+    transform: scale(1.02);
+  }
+  to {
+    transform: scale(1.1) translate3d(-1.2%, -1%, 0);
+  }
+}
+@media (max-width: 760px) {
+  .vh-hero-art {
+    height: 520px;
+  }
+  .vh-hero-art::after {
+    background: linear-gradient(
+      to top,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 78%, transparent) 40%,
+      color-mix(in srgb, var(--bg) 25%, transparent) 100%
+    );
+  }
+}
+@keyframes vh-art-in {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+}
+
+/* ---------- faixa que vai até as bordas da janela, atrás do conteúdo do container ---------- */
+.vh-band {
+  position: relative;
+  isolation: isolate;
+}
+.vh-band::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--vh-band, transparent);
+  z-index: -1;
+}
+
+/* ---------- cartão de servidor: o mapa colorido ---------- */
+.vh-card.v-spot {
+  --spot: var(--v-map, #fff);
+}
+.vh-map-img {
+  transition:
+    scale var(--dur-zoom) var(--ease-soft),
+    filter var(--dur-slow) var(--ease-std);
+}
+.vh-offline .vh-map-img {
+  filter: grayscale(0.55) brightness(0.58) contrast(1.05);
+}
+.vh-card:hover .vh-map-img,
+.vh-card:focus-within .vh-map-img {
+  scale: 1.05;
+}
+/* o cartão escurece de baixo para cima até o texto passar no AA; a cor do mapa só tinge o meio */
+.vh-wash {
+  position: absolute;
+  inset: -1px;
+  z-index: 0;
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--bg) 97%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 88%, transparent) 36%,
+      color-mix(in srgb, var(--v-map-deep) 30%, transparent) 70%,
+      transparent 100%
+    ),
+    linear-gradient(100deg, color-mix(in srgb, var(--bg) 62%, transparent), transparent 60%);
+}
+.vh-offline .vh-wash {
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--bg) 97%, transparent),
+    color-mix(in srgb, var(--bg) 62%, transparent)
+  );
+}
+.vh-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-family: var(--v-sign);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  background: var(--v-map);
+  color: var(--v-map-ink, #111);
+}
+.vh-offline .vh-chip {
+  background: color-mix(in srgb, var(--text) 18%, var(--bg));
+  color: var(--text);
+}
+
+/* ---------- barras ---------- */
+.vh-bar {
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 16%, transparent);
+  overflow: hidden;
+}
+.vh-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: left;
+  background: var(--text);
+  transition: transform 900ms var(--ease-out);
+}
+.vh-card .vh-bar > span {
+  background: var(--v-map);
+}
+
+/* ---------- botões da marca: branco sobre preto ---------- */
+.vh-cta,
+.vh-cta-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: var(--tap);
+  padding-inline: 1.35rem;
+  border-radius: var(--r-ctl);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease-std),
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+.vh-pill {
+  border-radius: 999px;
+}
+.vh-cta {
+  color: var(--bg);
+  background: var(--text);
+}
+.vh-cta:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.vh-cta:active {
+  transform: translateY(0) scale(0.985);
+}
+.vh-cta-quiet {
+  color: var(--text);
+  background: var(--fill-active);
+}
+.vh-cta-quiet:hover {
+  background: var(--fill-focus);
+}
+
+/* ---------- Botão dinâmico: ocioso, carregando, feito ---------- */
+.vh-dyn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.vh-dyn[data-phase="loading"] {
+  cursor: progress;
+}
+.vh-dyn .vh-dyn-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: var(--v-map, var(--status-online));
+  opacity: 0.9;
+}
+.vh-dyn[data-phase="loading"] .vh-dyn-fill {
+  animation: vh-dyn-load 1500ms var(--ease-std) forwards;
+}
+.vh-dyn[data-phase="done"] .vh-dyn-fill {
+  transform: scaleX(1);
+  background: var(--status-online);
+  opacity: 1;
+}
+@keyframes vh-dyn-load {
+  to {
+    transform: scaleX(0.94);
+  }
+}
+.vh-dyn[data-phase="done"] {
+  color: #06140b;
+  background: var(--status-online);
+}
+.vh-spin {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: vh-spin 700ms linear infinite;
+}
+@keyframes vh-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- texto com brilho (AO VIVO) ---------- */
+.vh-shine {
+  color: transparent;
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--text) 48%, transparent) 36%,
+    var(--text) 50%,
+    color-mix(in srgb, var(--text) 48%, transparent) 64%
+  );
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: vh-shine 2.6s linear infinite;
+}
+@keyframes vh-shine {
+  to {
+    background-position: -130% 0;
+  }
+}
+
+/* ---------- esqueleto com brilho ---------- */
+.vh-skel {
+  background:
+    linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--text) 16%, transparent) 50%,
+      transparent 80%
+    )
+    -120% 0 / 60% 100% no-repeat,
+    var(--surface-2);
+  animation: vh-skel 1.5s linear infinite;
+}
+@keyframes vh-skel {
+  to {
+    background-position: 220% 0;
+  }
+}
+
+/* ---------- atividade ao vivo: o item novo abre empurrando os outros ---------- */
+.vh-feed-row {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 560ms var(--ease-out),
+    opacity 480ms var(--ease-out);
+}
+.vh-feed-row[data-new] {
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.vh-feed-row > div {
+  min-height: 0;
+  overflow: hidden;
+}
+.vh-feed-flash {
+  animation: vh-flash 2400ms var(--ease-out) 300ms backwards;
+}
+@keyframes vh-flash {
+  from {
+    background: var(--fill-focus);
+  }
+}
+
+/* ---------- vitrine dos Loadouts: a barra de progresso é a rotação ---------- */
+.vh-prog {
+  transform-origin: left;
+  animation: vh-prog linear forwards;
+}
+@keyframes vh-prog {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.vh-swap {
+  animation: vh-swap 560ms var(--ease-out) backwards;
+}
+@keyframes vh-swap {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+}
+
+/* ---------- contagem regressiva: a técnica do countdown do daisyUI (--d e uma coluna de 0 a 9 que desliza) ---------- */
+.vh-digit {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  text-align: center;
+}
+.vh-digit::before {
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+  white-space: pre;
+  display: block;
+  transform: translateY(calc(var(--d, 0) * -1em));
+  transition: transform 0.7s cubic-bezier(1, 0, 0, 1);
+}
+
+/* ---------- Marquee da atividade (abaixo de 1280, onde não há trilho): pílulas ---------- */
+.vh-pillrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0.375rem 1rem 0.375rem 0.375rem;
+  border-radius: 999px;
+  background: var(--fill-rest);
+  transition: background-color var(--dur-fast) var(--ease-std);
+}
+.vh-pillrow:hover {
+  background: var(--fill-hover);
+}
+
+/* ---------- movimento reduzido: sem varredura, sem rotação, sem contagem ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .vh-digit::before {
+    transition: none;
+  }
+  .vh-shine,
+  .vh-skel,
+  .vh-spin {
+    animation: none;
+  }
+  .vh-shine {
+    color: var(--text);
+    background: none;
+  }
+  .vh-prog,
+  .vh-swap {
+    animation: none;
+  }
+  .vh-prog {
+    transform: scaleX(0);
+  }
+  .vh-feed-row,
+  .vh-feed-row[data-new] {
+    transition: none;
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+  .vh-feed-flash,
+  .vh-cta:hover {
+    animation: none;
+    transform: none;
+  }
+}
+
+/* o painel do V1 pinta o fundo sem camada: com arte, o cartão não tem fundo próprio por baixo da imagem */
+.vh-card-art.v-panel {
+  background: transparent;
+}
+@media (max-width: 767px) {
+  .vh-pillrow {
+    min-height: var(--tap);
+  }
+}

@@ -27,6 +27,7 @@ describe('loadConfig', () => {
         server: 600,
       },
       rankingCacheTtlSeconds: 45,
+      weekSummaryCacheTtlSeconds: 30,
       headerPreviewsCacheTtlSeconds: 15,
       activityCacheTtlSeconds: 5,
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },

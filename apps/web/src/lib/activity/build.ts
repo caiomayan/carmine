@@ -19,12 +19,16 @@ export type ActivityCatalog = {
 const serverHref = (id: string) => `/#${serverAnchor(id)}` as Route;
 
 function toItem(event: ActivityEvent, catalog: ActivityCatalog): ActivityItemView | null {
-  const player = { name: event.player.displayName };
+  const player = {
+    name: event.player.displayName,
+    avatarUrl: event.player.private ? null : event.player.avatarUrl,
+  };
   switch (event.type) {
     case 'joined':
       return {
         kind: 'joined',
         id: event.id,
+        at: event.at,
         player,
         server: serverLabel(event.server),
         href: serverHref(event.server.id),
@@ -33,6 +37,7 @@ function toItem(event: ActivityEvent, catalog: ActivityCatalog): ActivityItemVie
       return {
         kind: 'multi_kill',
         id: event.id,
+        at: event.at,
         player,
         server: serverLabel(event.server),
         kills: event.kills,
@@ -42,6 +47,7 @@ function toItem(event: ActivityEvent, catalog: ActivityCatalog): ActivityItemVie
       return {
         kind: 'new_leader',
         id: event.id,
+        at: event.at,
         player,
         mode: event.mode,
         href: rankingHref(event.mode) as Route,
@@ -54,6 +60,7 @@ function toItem(event: ActivityEvent, catalog: ActivityCatalog): ActivityItemVie
       return {
         kind: 'skin_equipped',
         id: event.id,
+        at: event.at,
         player,
         skin,
         href: `/${event.player.publicId}` as Route,

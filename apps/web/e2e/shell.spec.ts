@@ -8,10 +8,11 @@ for (const theme of ['dark', 'light'] as const) {
     await saveTheme(page, theme);
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Servidores' })).toBeVisible();
+    await expect(page.getByTestId('home-hero').getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.locator('body')).toHaveCSS('background-color', BG[theme]);
-    await expect(page.getByRole('region', { name: 'Servidores Carmine' })).toBeVisible();
+    // Na Home o brilho ambiente fica atrás do header: o corpo não pinta, o html pinta.
+    await expect(page.locator('html')).toHaveCSS('background-color', BG[theme]);
+    await expect(page.getByRole('heading', { level: 2, name: 'Servidores' })).toBeVisible();
 
     await expect(mainNav(page).getByRole('link')).toHaveCount(4);
     await expect(mainNav(page).getByRole('link', { name: 'Jogar' })).toHaveAttribute(

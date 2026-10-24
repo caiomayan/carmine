@@ -297,3 +297,35 @@ export const profileSeriesSchema = z
   .meta({ id: 'ProfileSeries' });
 
 export type ProfileSeries = z.infer<typeof profileSeriesSchema>;
+
+/**
+ * Os números de uma semana, de todas as Contas somadas (a faixa "Esta semana" da home). `players`
+ * são as Contas que jogaram na semana; as outras são somas de `account_stats_weekly`. Não há
+ * "rounds": a soma por jogador contaria o mesmo round uma vez para cada um que estava nele.
+ */
+export const weekTotalsSchema = z
+  .object({
+    players: z.int().nonnegative(),
+    kills: z.int().nonnegative(),
+    headshots: z.int().nonnegative(),
+    secondsPlayed: z.int().nonnegative(),
+  })
+  .meta({ id: 'WeekTotals' });
+
+export type WeekTotals = z.infer<typeof weekTotalsSchema>;
+
+/**
+ * `GET /api/stats/week`: os números da semana atual do Ranking e, para comparar, os da anterior
+ * (nulos quando a semana anterior não teve nenhum jogo). Público e sem identificar ninguém.
+ */
+export const weekSummarySchema = z
+  .object({
+    weekStart: weekStartSchema,
+    /** Domingo da semana, `YYYY-MM-DD`. */
+    weekEnd: weekStartSchema,
+    current: weekTotalsSchema,
+    previous: weekTotalsSchema.nullable(),
+  })
+  .meta({ id: 'WeekSummary' });
+
+export type WeekSummary = z.infer<typeof weekSummarySchema>;

@@ -8,12 +8,14 @@ import type { Route } from 'next';
  * cs2-lib só roda no servidor do web).
  */
 
-/** Quem aparece: o nome (para o Perfil privado, o "Jogador privado" da API) e nada mais. */
-export type ActivityPlayerView = { name: string };
+/** Quem aparece: o nome e o avatar (no Perfil privado, o "Jogador privado" da API e nenhum avatar). */
+export type ActivityPlayerView = { name: string; avatarUrl: string | null };
 
 type Base = {
   /** Único por acontecimento: serve de chave. */
   id: string;
+  /** Quando aconteceu (ISO), para o "há 3 min". */
+  at: string;
   player: ActivityPlayerView;
   /** O contexto do acontecimento: o servidor, o Ranking do Modo ou o Perfil de quem equipou. */
   href: Route;

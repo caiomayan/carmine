@@ -10,7 +10,8 @@ const SERVER = {
   mode: 'retake' as const,
 };
 
-const PLAYER = { private: false, publicId: 10_042, displayName: 'Ana', avatarUrl: null };
+const AVATAR = 'https://avatars.example/ana.jpg';
+const PLAYER = { private: false, publicId: 10_042, displayName: 'Ana', avatarUrl: AVATAR };
 const PRIVATE = { private: true, publicId: null, displayName: 'Jogador privado', avatarUrl: null };
 
 let seq = 0;
@@ -65,7 +66,7 @@ describe('buildActivityView', () => {
     expect(view.items).toEqual([
       expect.objectContaining({
         kind: 'new_leader',
-        player: { name: 'Jogador privado' },
+        player: { name: 'Jogador privado', avatarUrl: null },
         mode: 'deathmatch',
         href: '/ranking?modo=deathmatch',
       }),
@@ -96,7 +97,7 @@ describe('buildActivityView', () => {
 
   it('não traz o SteamID nem o id de Conta, só o que se desenha', () => {
     const view = buildActivityView(activity([joined()]), catalog);
-    expect(JSON.stringify(view)).not.toMatch(/steam|avatar|publicId|"private"/i);
+    expect(JSON.stringify(view)).not.toMatch(/steam|publicId|"private"/i);
   });
 
   it(`mantém a ordem e leva no máximo ${ACTIVITY_SHOWN}`, () => {
@@ -106,6 +107,18 @@ describe('buildActivityView', () => {
     expect(view.items.map((item) => item.id)).toEqual(
       events.slice(0, ACTIVITY_SHOWN).map((e) => e.id),
     );
+  });
+
+  it('leva o avatar e a hora do acontecimento; o Perfil privado não leva avatar', () => {
+    const view = buildActivityView(
+      activity([joined(), { ...base(), type: 'new_leader', player: PRIVATE, mode: 'retake' }]),
+      catalog,
+    );
+    expect(view.items[0]).toMatchObject({
+      at: '2026-10-23T12:00:00.000Z',
+      player: { avatarUrl: AVATAR },
+    });
+    expect(view.items[1]?.player).toEqual({ name: 'Jogador privado', avatarUrl: null });
   });
 
   it('sem acontecimentos, a faixa vem vazia', () => {

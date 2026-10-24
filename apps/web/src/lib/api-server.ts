@@ -22,6 +22,8 @@ import {
   type RecentActivity,
   rankingSchema,
   recentActivitySchema,
+  type WeekSummary,
+  weekSummarySchema,
 } from '@carmine/contracts';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
@@ -164,6 +166,20 @@ export const getRecentActivity = cache(async (): Promise<RecentActivity | null> 
     const response = await apiGet('/activity/recent', { visitorIp: await visitorIp() });
     if (!response.ok) return null;
     return recentActivitySchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/**
+ * Os números da semana de todas as Contas (a faixa "Esta semana" da home; público, sem sessão). Nulo com a
+ * API fora: a faixa some em vez de mostrar zeros.
+ */
+export const getWeekSummary = cache(async (): Promise<WeekSummary | null> => {
+  try {
+    const response = await apiGet('/stats/week', { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return weekSummarySchema.parse(await response.json());
   } catch {
     return null;
   }

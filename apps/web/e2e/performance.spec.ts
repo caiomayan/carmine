@@ -30,7 +30,7 @@ const JS_BUDGET_KB = 360;
  * responde a eventos), e não só o HTML do servidor na tela.
  */
 const PAGES = [
-  { name: 'a home', path: '/', control: '[role="tablist"] [role="tab"]', signedIn: false },
+  { name: 'a home', path: '/', control: '[data-testid="top3"] button', signedIn: false },
   {
     name: 'o editor',
     path: '/inventario/adicionar/222',
