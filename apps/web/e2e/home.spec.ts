@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { chooseSteamAccount, newSteamId, reconnectPlayer } from './accounts';
-import { axeViolations, expect, saveTheme, scrollToEnd, test } from './fixtures';
+import { axeViolations, expect, saveTheme, test } from './fixtures';
 import { fakeServer, routeLiveServers } from './live-servers';
 
 /**
@@ -322,7 +322,7 @@ test.describe('Loadouts da semana', () => {
     await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUTS }));
     await page.goto('/');
     const section = page.getByTestId('loadouts-week');
-    await scrollToEnd(page);
+    await page.getByTestId('loadouts-slot').scrollIntoViewIfNeeded();
     await expect(section).toBeVisible();
     await expect(section.getByRole('heading', { name: 'Loadouts da semana' })).toBeVisible();
     const card = section.getByTestId('loadout-card');
@@ -407,7 +407,7 @@ test.describe('tamanhos e temas', () => {
         await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUT_ONE }));
         await page.goto('/');
         await expect(page.getByTestId('home')).toBeVisible();
-        await scrollToEnd(page);
+        await page.getByTestId('loadouts-slot').scrollIntoViewIfNeeded();
         await expect(page.getByTestId('loadouts-week')).toBeVisible();
         expect(await axeViolations(page)).toEqual([]);
       });

@@ -12,11 +12,13 @@ export function InView({
   fallback,
   rootMargin = '320px',
   className,
+  testId,
 }: {
   children: ReactNode;
   fallback?: ReactNode;
   rootMargin?: string;
   className?: string;
+  testId?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [seen, setSeen] = useState(false);
@@ -41,7 +43,7 @@ export function InView({
   }, [rootMargin]);
 
   return (
-    <div ref={ref} className={className}>
+    <div ref={ref} className={className} data-testid={testId}>
       {seen ? children : fallback}
     </div>
   );
