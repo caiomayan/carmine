@@ -137,7 +137,10 @@ export async function settle(page: Page) {
 
 /** Rola até o fim real da página, onde o rodapé termina de entrar. */
 export async function scrollToEnd(page: Page) {
-  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
+  // Instantâneo: com `scroll-behavior: smooth` a rolagem ainda estaria no meio quando o teste mede.
+  await page.evaluate(() =>
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' }),
+  );
 }
 
 /**

@@ -112,7 +112,7 @@ test('um empate em rounds vencidos é resolvido pelo K/D', async ({ page, reques
   const lowAt = rows.find((row) => row.text.includes(low.name))?.position ?? 0;
   expect(highAt).toBeGreaterThanOrEqual(1);
   expect(highAt).toBeLessThan(lowAt);
-  await expect(page.getByRole('link', { name: high.name })).toHaveAttribute(
+  await expect(page.getByRole('main').getByRole('link', { name: high.name })).toHaveAttribute(
     'href',
     `/${high.publicId}`,
   );
@@ -140,7 +140,7 @@ test('o Perfil privado aparece como "Jogador privado", sem link, nome nem avatar
   await expect(own).toContainText('Jogador privado');
   await expect(own.getByRole('link')).toHaveCount(0);
   await expect(own).not.toContainText('Silenciosa Rank');
-  await expect(page.getByRole('link', { name: 'Aberta Rank' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Aberta Rank' })).toBeVisible();
 
   // Um visitante sem sessão também a vê privada, e o nome não aparece em lugar nenhum da página.
   const visitor = await page
@@ -227,7 +227,7 @@ test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil
   const { high } = await tiedPair(request);
   const by = newSteamId();
   await page.goto('/ranking');
-  await expect(page.getByRole('link', { name: high.name })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: high.name })).toBeVisible();
 
   const out = runApiCli('dist/staff/staff.cli.js', [
     'ranking-remove',
@@ -246,7 +246,7 @@ test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil
 
   // O CLI também tira o Ranking do cache curto, então a próxima leitura já não a traz.
   await page.reload();
-  await expect(page.getByRole('link', { name: high.name })).toHaveCount(0);
+  await expect(page.getByRole('main').getByRole('link', { name: high.name })).toHaveCount(0);
   await page.goto(`/${high.publicId}`);
   await expect(page.getByTestId('stats-retake')).toContainText('Abates');
 });
