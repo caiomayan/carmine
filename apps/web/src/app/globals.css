@@ -285,11 +285,40 @@
   html {
     -webkit-text-size-adjust: 100%;
     background: var(--bg);
-    scroll-padding-top: var(--space-scroll, 24px);
+    /* O header é fixo: o alvo de uma âncora ou do foco fica abaixo dele. */
+    scroll-padding-top: calc(var(--site-hdr-h, var(--hdr-h)) + var(--space-scroll, 24px));
     /* O /loadout avisa a altura da barra fixa de baixo: o foco não deixa um alvo atrás dela. */
     scroll-padding-bottom: var(--dock-h, 0px);
     scrollbar-color: var(--line-strong) var(--bg);
     accent-color: var(--text);
+  }
+
+  /*
+   * O header fixo: sem linha em repouso; ao rolar (`data-scrolled`, ver header-shell.tsx) um fundo
+   * levemente mais claro e desfoque entram por opacidade (o fundo vive num pseudo-elemento: o
+   * desfoque no próprio header o tornaria bloco de contenção dos painéis).
+   */
+  [data-site-header]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: color-mix(in srgb, color-mix(in oklab, var(--bg) 90%, white) 82%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--ease-std);
+  }
+
+  [data-site-header][data-scrolled]::before {
+    opacity: 1;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-site-header]::before {
+      transition: none;
+    }
   }
 
   body {

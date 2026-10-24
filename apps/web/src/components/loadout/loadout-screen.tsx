@@ -242,11 +242,11 @@ export function LoadoutScreen({
       */}
       <div
         ref={barRef}
-        className="max-md:contents md:sticky md:top-0 md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5"
+        className="max-md:contents md:sticky md:top-(--site-hdr-h,var(--hdr-h)) md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5"
       >
         <div
           ref={barInnerRef}
-          className="max-md:sticky max-md:top-0 max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
+          className="max-md:sticky max-md:top-(--site-hdr-h,var(--hdr-h)) max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
         >
           <div className="md:order-1">
             <TabsList

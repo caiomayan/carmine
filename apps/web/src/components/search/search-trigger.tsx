@@ -101,36 +101,39 @@ export function SearchTrigger() {
 
   return (
     <>
-      <Button
-        ref={button}
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={t('aria')}
-        aria-haspopup="dialog"
-        aria-keyshortcuts="Control+K Meta+K"
-        aria-busy={pending || undefined}
-        title={mac ? t('shortcutMac') : t('shortcut')}
-        data-testid="search-trigger"
-        onClick={show}
-        onPointerEnter={loadPalette}
-        onFocus={loadPalette}
-        className="animate-fade-up min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal"
-      >
-        <SearchIcon
-          aria-hidden="true"
-          className="size-[18px] min-[1152px]:size-4 min-[1152px]:text-muted-foreground"
-        />
-        <span className="flex-1 text-left text-body-sm text-muted-foreground max-[1151px]:hidden">
-          {t('label')}
-        </span>
-        <kbd
-          suppressHydrationWarning
-          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-caption leading-none font-medium muted-on-fill max-[1151px]:hidden"
+      {/* Em tela larga o campo reserva a largura compacta aqui e cresce para a esquerda, por cima do espaço vazio (absoluto): nada se mexe em volta. */}
+      <div className="relative min-[1152px]:h-8 min-[1152px]:w-40">
+        <Button
+          ref={button}
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={t('aria')}
+          aria-haspopup="dialog"
+          aria-keyshortcuts="Control+K Meta+K"
+          aria-busy={pending || undefined}
+          title={mac ? t('shortcutMac') : t('shortcut')}
+          data-testid="search-trigger"
+          onClick={show}
+          onPointerEnter={loadPalette}
+          onFocus={loadPalette}
+          className="animate-fade-up min-[1152px]:absolute min-[1152px]:top-0 min-[1152px]:right-0 min-[1152px]:z-10 min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal min-[1152px]:transition-[width,background-color,color,translate,scale] min-[1152px]:duration-(--dur-base) min-[1152px]:ease-soft min-[1152px]:hover:w-70 min-[1152px]:hover:bg-surface-2 min-[1152px]:focus-visible:w-70 min-[1152px]:focus-visible:bg-surface-2 min-[1152px]:motion-reduce:transition-none"
         >
-          {mac ? t('keysMac') : t('keys')}
-        </kbd>
-      </Button>
+          <SearchIcon
+            aria-hidden="true"
+            className="size-[18px] min-[1152px]:size-4 min-[1152px]:text-muted-foreground"
+          />
+          <span className="flex-1 text-left text-body-sm text-muted-foreground max-[1151px]:hidden">
+            {t('label')}
+          </span>
+          <kbd
+            suppressHydrationWarning
+            className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-caption leading-none font-medium muted-on-fill max-[1151px]:hidden"
+          >
+            {mac ? t('keysMac') : t('keys')}
+          </kbd>
+        </Button>
+      </div>
       {Palette ? <Palette open={open} onOpenChange={setOpen} openerRef={opener} /> : null}
     </>
   );
