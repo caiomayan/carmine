@@ -629,6 +629,26 @@ test.describe('mão de Presets', () => {
     await expect(page.getByRole('button', { name: 'Ativar Retake de sexta-feira' })).toBeVisible();
   });
 
+  /**
+   * A página ainda anda um pouco depois de hidratar (a faixa dos Primeiros passos fecha, o aviso do VIP
+   * entra): quem mede a posição de uma carta ou aponta o mouse para ela antes disso acerta o lugar
+   * errado. Espera a posição do bloco ficar a mesma em duas leituras seguidas.
+   */
+  async function layoutStable(block: Locator) {
+    let last = Number.NaN;
+    await expect
+      .poll(
+        async () => {
+          const y = (await block.boundingBox())?.y ?? Number.NaN;
+          const same = y === last;
+          last = y;
+          return same;
+        },
+        { intervals: [250] },
+      )
+      .toBe(true);
+  }
+
   /** Uma Conta VIP com o Principal e mais dois Presets. */
   async function vipHand(page: Page) {
     await signIn(page, { vip: true });
@@ -637,6 +657,7 @@ test.describe('mão de Presets', () => {
     await page.reload();
     await boardReady(page);
     await handReady(page);
+    await layoutStable(page.getByTestId('presets'));
   }
   const cards = (page: Page) => page.getByTestId('preset');
 
