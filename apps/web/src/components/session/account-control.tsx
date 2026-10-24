@@ -112,10 +112,11 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             data-testid="account-menu"
             onPointerEnter={playing.load}
             onFocus={playing.load}
-            className="animate-fade-up gap-2.5 rounded-full py-1 pr-3.5 pl-1 max-md:min-h-(--tap) max-md:min-w-(--tap) max-md:pr-1"
+            className="animate-fade-up gap-2.5 rounded-full py-1 pr-3.5 pl-1 max-[1151px]:min-h-(--tap) max-[1151px]:min-w-(--tap) max-[1151px]:pr-1"
           >
             <Avatar src={account.avatarUrl} name={account.displayName} size={28} />
-            <span className="max-w-[16ch] truncate font-[550] max-md:hidden">
+            {/* O nome só cabe ao lado do avatar a partir de 1152 px, como o campo de busca aberto: antes disso o grupo da direita invadia a navegação (o nome acessível está no aria-label). */}
+            <span className="max-w-[16ch] truncate font-[550] max-[1151px]:hidden">
               {account.displayName}
             </span>
           </Button>
