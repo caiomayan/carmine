@@ -7,7 +7,8 @@ test('a troca de tema alterna, salva e sobrevive ao recarregar', async ({ page }
   await page.getByRole('button', { name: 'Usar tema claro' }).click();
 
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('body')).toHaveCSS('background-color', BG.light);
+  // Quem pinta o fundo é o <html>: nas telas com o brilho ambiente (`data-vida`) o <body> fica transparente.
+  await expect(page.locator('html')).toHaveCSS('background-color', BG.light);
   await expect(page.getByRole('button', { name: 'Usar tema escuro' })).toBeVisible();
 
   await page.reload();
@@ -63,5 +64,6 @@ test('a página 404 respeita o tema salvo', async ({ page, expectedConsoleErrors
     page.getByRole('heading', { level: 1, name: 'Página não encontrada' }),
   ).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('body')).toHaveCSS('background-color', BG.light);
+  // Quem pinta o fundo é o <html>: nas telas com o brilho ambiente (`data-vida`) o <body> fica transparente.
+  await expect(page.locator('html')).toHaveCSS('background-color', BG.light);
 });
