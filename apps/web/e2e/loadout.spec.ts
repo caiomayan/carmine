@@ -657,9 +657,22 @@ test.describe('mão de Presets', () => {
     await page.reload();
     await boardReady(page);
     await handReady(page);
+    // Hidratada, a mão ainda nasce em fileira (largura 0) e só vira leque depois de medir.
+    await expect(page.getByTestId('presets')).toHaveAttribute('data-mode', 'fan');
     await layoutStable(page.getByTestId('presets'));
   }
   const cards = (page: Page) => page.getByTestId('preset');
+
+  /**
+   * A altura da carta dentro da mão (relativa ao bloco dos Presets): as posições absolutas andam com a
+   * rolagem restaurada pelo reload e com o que a página ainda ajusta depois de hidratar, e foi isso que
+   * fez estes testes medirem o repouso num lugar e a carta em outro (no Linux da CI, sempre).
+   */
+  async function rise(page: Page, index: number) {
+    const card = (await cards(page).nth(index).boundingBox())?.y;
+    const block = (await page.getByTestId('presets').boundingBox())?.y;
+    return card === undefined || block === undefined ? Number.NaN : card - block;
+  }
 
   /**
    * O Motion carrega depois da hidratação (chunk à parte) e só então a mão anima e aceita arrasto:
@@ -667,13 +680,13 @@ test.describe('mão de Presets', () => {
    */
   async function motionReady(page: Page) {
     const second = cards(page).nth(1);
-    const rest = (await second.boundingBox())?.y ?? 0;
+    const rest = await rise(page, 1);
     await expect(async () => {
       await second.hover();
-      expect((await second.boundingBox())?.y ?? rest).toBeLessThan(rest - 10);
+      expect(await rise(page, 1)).toBeLessThan(rest - 10);
     }).toPass();
     await page.mouse.move(5, 5);
-    await expect.poll(async () => (await second.boundingBox())?.y ?? 0).toBeGreaterThan(rest - 4);
+    await expect.poll(() => rise(page, 1)).toBeGreaterThan(rest - 4);
   }
 
   test('cada Preset é uma carta, e o ativo vem marcado e mais alto', async ({ page }) => {
@@ -695,18 +708,14 @@ test.describe('mão de Presets', () => {
   }) => {
     await vipHand(page);
 
-    const rest = (await cards(page).nth(1).boundingBox())?.y ?? 0;
+    const rest = await rise(page, 1);
     await cards(page).nth(1).hover();
     await expect(cards(page).nth(1)).toHaveAttribute('data-focused', 'true');
-    await expect
-      .poll(async () => (await cards(page).nth(1).boundingBox())?.y ?? rest)
-      .toBeLessThan(rest - 10);
+    await expect.poll(() => rise(page, 1)).toBeLessThan(rest - 10);
 
     await page.mouse.move(5, 5);
     await expect(cards(page).nth(1)).not.toHaveAttribute('data-focused', 'true');
-    await expect
-      .poll(async () => (await cards(page).nth(1).boundingBox())?.y ?? 0)
-      .toBeGreaterThan(rest - 4);
+    await expect.poll(() => rise(page, 1)).toBeGreaterThan(rest - 4);
   });
 
   test('depois de um clique, tirar o mouse devolve a mão ao repouso', async ({ page }) => {
