@@ -260,7 +260,7 @@ test.describe('a atividade da home', () => {
         ],
       });
       await poll(page);
-      await expect(links(page).first()).toHaveText('Ana entrou em Retake SP·1');
+      await expect(links(page).first()).toHaveAccessibleName('Ana entrou em Retake SP·1');
       const names = [
         'Ana entrou em Retake SP·1',
         'Ana fez 5 kills seguidas em DM SP·1',

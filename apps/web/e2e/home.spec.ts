@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { chooseSteamAccount, newSteamId, reconnectPlayer } from './accounts';
-import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { axeViolations, expect, saveTheme, scrollToEnd, test } from './fixtures';
 import { fakeServer, routeLiveServers } from './live-servers';
 
 /**
@@ -97,6 +97,9 @@ const LOADOUTS = {
     },
   ],
 };
+
+/** Uma skin só: sem rotação (cada fim da barra de progresso liga a próxima, e o `settle` do axe nunca assenta). */
+const LOADOUT_ONE = { entries: LOADOUTS.entries.slice(0, 1) };
 
 const live = () => [
   fakeServer({ name: 'fixo-a', map: 'de_mirage', players: 6 }),
@@ -233,7 +236,7 @@ test.describe('os estados do hero', () => {
     // Com a lista inicial do servidor ela aparece; sem ela (API fora na hora), o aviso. Os dois são "sem inventar".
     await expect(page.getByTestId('home')).toBeVisible();
     await expect(
-      page.getByTestId('home-total').or(page.getByTestId('servers-unavailable')),
+      page.getByTestId('home-hero').or(page.getByTestId('servers-unavailable')),
     ).toBeVisible();
   });
 });
@@ -319,7 +322,7 @@ test.describe('Loadouts da semana', () => {
     await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUTS }));
     await page.goto('/');
     const section = page.getByTestId('loadouts-week');
-    await section.scrollIntoViewIfNeeded();
+    await scrollToEnd(page);
     await expect(section).toBeVisible();
     await expect(section.getByRole('heading', { name: 'Loadouts da semana' })).toBeVisible();
     const card = section.getByTestId('loadout-card');
@@ -401,10 +404,10 @@ test.describe('tamanhos e temas', () => {
         await saveTheme(page, theme);
         await page.setViewportSize({ width, height: 900 });
         await routeLiveServers(page, live());
-        await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUTS }));
+        await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUT_ONE }));
         await page.goto('/');
         await expect(page.getByTestId('home')).toBeVisible();
-        await page.getByTestId('week-strip').scrollIntoViewIfNeeded();
+        await scrollToEnd(page);
         await expect(page.getByTestId('loadouts-week')).toBeVisible();
         expect(await axeViolations(page)).toEqual([]);
       });

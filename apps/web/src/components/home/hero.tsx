@@ -55,7 +55,6 @@ export function Hero({
   fromPath: string;
 }) {
   const t = useTranslations('home.hero');
-  const tm = useTranslations('servers.modes');
   const format = useFormatter();
   const now = useNow({ updateInterval: 60_000 });
   const asleep = state === 'offline';
@@ -119,7 +118,7 @@ export function Hero({
         {featured && !asleep ? (
           <span className="pl-1 text-caption text-muted-foreground max-md:pl-0">
             {t('fullest', { name: serverLabel(featured) })}
-            {featured.map ? ` · ${tm(featured.mode)} · ${mapDisplayName(featured.map) ?? ''}` : ''}
+            {featured.map ? ` · ${mapDisplayName(featured.map) ?? ''}` : ''}
           </span>
         ) : null}
       </div>
