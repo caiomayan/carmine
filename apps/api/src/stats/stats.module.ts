@@ -14,12 +14,19 @@ import { ProfileStatsController } from './profile-stats.controller.js';
 import { ProfileStatsReader } from './profile-stats.js';
 import { RankingController } from './ranking.controller.js';
 import { RankingCache } from './ranking-cache.js';
+import { WeekSummaryController } from './week-summary.controller.js';
+import { WeekSummaryReader } from './week-summary.js';
 import { WeeklyRanking } from './weekly-ranking.js';
 
 /** Eventos do jogo e Estatísticas das Contas (S12). */
 @Module({
   imports: [GameServersModule, AccountsModule, ActivityModule],
-  controllers: [GameEventsController, ProfileStatsController, RankingController],
+  controllers: [
+    GameEventsController,
+    ProfileStatsController,
+    RankingController,
+    WeekSummaryController,
+  ],
   providers: [
     {
       provide: GameEventIngest,
@@ -30,6 +37,13 @@ import { WeeklyRanking } from './weekly-ranking.js';
       provide: ProfileStatsReader,
       inject: [DATABASE],
       useFactory: (db: Database) => new ProfileStatsReader(db),
+    },
+    {
+      // A home pede a cada visita: poucos segundos na memória bastam (o número só se mexe com os lotes de eventos).
+      provide: WeekSummaryReader,
+      inject: [DATABASE, APP_CONFIG],
+      useFactory: (db: Database, config: AppConfig) =>
+        new WeekSummaryReader(db, { cacheMs: config.weekSummaryCacheTtlSeconds * 1000 }),
     },
     {
       provide: WeeklyRanking,
