@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { chooseSteamAccount, newSteamId } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { clickHydrated } from './hydration';
 import {
   connectPlayer,
   createServer,
@@ -111,7 +112,7 @@ test.describe('Servidores ao vivo', () => {
         const connect = line.getByRole('link', { name: `Jogar em ${server.name}` });
         await expect(connect).toHaveAttribute('href', `steam://connect/${server.address}`);
 
-        await connect.click();
+        await clickHydrated(connect);
         const help = line.getByRole('status');
         await expect(help).toContainText('Abrindo o CS2.');
         await expect(help).toContainText(`no console do CS2: connect ${server.address}`);
@@ -124,7 +125,7 @@ test.describe('Servidores ao vivo', () => {
         await expect(line.getByTestId('copy-command')).toHaveCount(0);
 
         // O botão de copiar ao lado de Jogar também abre a instrução, sem o "Abrindo".
-        await line.getByRole('button', { name: `Copiar o IP do ${server.name}` }).click();
+        await clickHydrated(line.getByRole('button', { name: `Copiar o IP do ${server.name}` }));
         await expect(line.getByRole('status')).toContainText(`connect ${server.address}`);
         await expect(line.getByRole('status')).not.toContainText('Abrindo');
       } finally {
@@ -151,7 +152,7 @@ test.describe('Servidores ao vivo', () => {
 
       const copy = line.getByRole('button', { name: 'Copiar o IP do fixo-celular' }).last();
       await expect(copy).toBeVisible();
-      await copy.click();
+      await clickHydrated(copy);
       await expect(copy).toContainText('IP copiado');
       expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('203.0.113.9:27015');
       await expect(line.getByRole('status')).toContainText('connect 203.0.113.9:27015');
