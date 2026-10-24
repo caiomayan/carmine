@@ -568,14 +568,14 @@
       "emptyVisitor": "Quando {name} jogar num Servidor Carmine, os números aparecem aqui.",
       "emptyOwner": "Entre num Servidor Carmine e jogue: os seus números aparecem aqui em até um minuto.",
       "unavailable": "Não conseguimos carregar as Estatísticas agora. Tente de novo em instantes.",
-      "total": "Total",
       "groupLabel": "Estatísticas de {mode}",
       "labels": {
-        "kills": "Kills",
+        "rounds": "Rounds jogados",
+        "kills": "Abates",
         "deaths": "Mortes",
         "assists": "Assistências",
         "kd": "K/D",
-        "headshotPercent": "HS%",
+        "headshotPercent": "Na cabeça",
         "timePlayed": "Tempo jogado",
         "adr": "ADR",
         "kpm": "KPM"
@@ -584,13 +584,62 @@
         "hoursMinutes": "{hours} h {minutes, number, ::integer-width/2} min",
         "minutes": "{minutes} min"
       },
-      "none": "—"
+      "none": "—",
+      "numbers": {
+        "kd": "K/D",
+        "kills": "Abates",
+        "headshotPercent": "Na cabeça",
+        "hours": "Horas jogadas"
+      },
+      "period": {
+        "label": "Período",
+        "week": "Esta semana",
+        "total": "Total"
+      },
+      "trend": "Tendência de {name} nas últimas semanas",
+      "charts": {
+        "rounds": {
+          "title": "Rounds por semana",
+          "note": "As últimas oito semanas; a última é a atual"
+        },
+        "head": {
+          "title": "Na cabeça",
+          "weekNote": "Abates com headshot nesta semana",
+          "totalNote": "Abates com headshot, no total",
+          "label": "HS%",
+          "none": "Sem abates neste período"
+        },
+        "hours": {
+          "title": "Horas por Modo",
+          "weekNote": "{hours} nesta semana",
+          "totalNote": "{hours} no total",
+          "total": "Total",
+          "none": "Sem tempo jogado neste período"
+        }
+      },
+      "collecting": {
+        "status": "Coletando",
+        "heatmap": {
+          "title": "Atividade por dia",
+          "body": "Ainda não registramos a atividade por dia. O mapa de calor aparece aqui quando começarmos a guardar esses dados."
+        },
+        "radar": {
+          "title": "Armas por lado",
+          "body": "Os abates por arma e por lado ainda não são registrados. O radar aparece aqui quando houver dados."
+        },
+        "sessions": {
+          "title": "Sessões de jogo",
+          "body": "As sessões ainda não são registradas. Quando forem, as últimas aparecem aqui."
+        },
+        "asideLabel": "Atividade"
+      }
     },
     "editProfile": "Editar perfil",
     "viewAsVisitor": "Ver como visitante",
     "asVisitorNote": "Você está vendo o seu Perfil como um visitante vê.",
     "backToOwner": "Voltar à visão de dono",
-    "privateSeal": "Perfil privado"
+    "privateSeal": "Perfil privado",
+    "presence": "Jogando agora"
   },
   "settings": {
     "metaTitle": "Configurações",
@@ -1052,7 +1101,10 @@
       "saving": "Salvando",
       "cancel": "Cancelar",
       "hand": {
-        "side": { "ct": "CT", "t": "TR" },
+        "side": {
+          "ct": "CT",
+          "t": "TR"
+        },
         "activeBadge": "Ativo",
         "items": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
         "summary": "Faca: {knife}. Luvas: {gloves}. Rifle: {rifle}. {count, plural, =0 {Nenhum Item equipado.} one {# Item equipado.} other {# Itens equipados.}}",
