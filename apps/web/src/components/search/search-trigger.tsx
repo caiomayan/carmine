@@ -102,7 +102,7 @@ export function SearchTrigger() {
   return (
     <>
       {/* Em tela larga o campo reserva a largura compacta aqui e cresce para a esquerda, por cima do espaço vazio (absoluto): nada se mexe em volta. */}
-      <div className="relative min-[1152px]:h-8 min-[1152px]:w-40">
+      <div className="relative shrink-0 min-[1152px]:h-8 min-[1152px]:w-40">
         <Button
           ref={button}
           type="button"
