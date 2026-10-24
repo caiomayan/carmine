@@ -4,8 +4,11 @@ import type { LoadoutSide } from '@carmine/contracts';
 import type { CSSProperties } from 'react';
 import { ItemArt, RARITY_COLOR } from '@/components/inventory/item-tile';
 import { TeamDots } from '@/components/team-dots';
+import { holoStyle } from '@/components/vida/skin-ambient';
 import type { SlotView } from '@/lib/loadout/view';
 import { cn } from '@/lib/utils';
+
+const HOLO = new Set(['classified', 'covert', 'contraband']);
 
 export type BoardCardLabels = {
   /** O nome que o cartão leva no canto superior direito (a arma, a faca, "Agente"...). */
@@ -58,14 +61,29 @@ export function BoardCard({
       data-key={slot.key}
       data-testid={`slot-${slot.slot}-${slot.side ?? 'all'}`}
       data-equipped={item ? item.uid : undefined}
+      data-foil={item && (slot.slot === 'knife' || slot.slot === 'gloves') ? '' : undefined}
+      data-holo={
+        item && (item.rarity === 'covert' || item.rarity === 'contraband')
+          ? '2'
+          : item
+            ? '1'
+            : undefined
+      }
       style={
         {
           '--i': index,
-          ...(item ? { '--rc': RARITY_COLOR[item.rarity] } : {}),
+          ...(item
+            ? {
+                '--rc': RARITY_COLOR[item.rarity],
+                ...holoStyle(item.palette, RARITY_COLOR[item.rarity], { statTrak: item.statTrak }),
+              }
+            : {}),
         } as CSSProperties
       }
       className={cn(
-        'group/card relative block aspect-3/2 w-full enter-stagger overflow-hidden rounded-xl bg-surface-2/70 text-left',
+        'group/card v-spot relative block aspect-3/2 w-full enter-stagger overflow-hidden rounded-xl bg-surface-2/70 text-left',
+        item && HOLO.has(item.rarity) && 'v-holo',
+        item && !HOLO.has(item.rarity) && item.statTrak && 'v-holo',
         'transition-[background-color,box-shadow] duration-(--dur-fast) ease-std hover:bg-surface-2',
         'aria-pressed:bg-surface-2 aria-pressed:shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
         'focus-visible:outline-offset-[-3px]',
@@ -73,7 +91,7 @@ export function BoardCard({
     >
       <span
         aria-hidden="true"
-        className="absolute top-2 left-2.5 z-10 text-[11px] leading-none font-medium text-muted-foreground"
+        className="v-sign absolute top-2 left-3 z-10 text-[16px] leading-none text-muted-foreground"
       >
         {number}
       </span>
@@ -86,11 +104,17 @@ export function BoardCard({
       >
         {labels.name}
       </span>
-      {/* A arte nova (skin equipada ou desequipada) entra com um fade curto, sem troca seca. */}
+      {item ? (
+        <span aria-hidden="true" className="v-slot-glow pointer-events-none absolute inset-0" />
+      ) : null}
+      {/* A arte nova (skin equipada ou desequipada) entra com um pulo curto (escala e foco), sem troca seca. */}
       <span
         key={item?.uid ?? 'padrao'}
         aria-hidden="true"
-        className="absolute inset-x-2 top-5 bottom-3.5 animate-fade-up"
+        className={cn(
+          'absolute inset-x-2 top-5 bottom-3.5',
+          item ? 'v-slot-in' : 'animate-fade-up',
+        )}
       >
         {item ? (
           <ItemArt src={item.image} className={ART} />
@@ -110,7 +134,7 @@ export function BoardCard({
       </span>
       {item ? (
         <span className="absolute inset-x-[7px] bottom-[7px] z-10 flex items-end justify-between gap-1.5">
-          <span className="inline-flex h-5 flex-none items-center gap-1.5 rounded-[6px] bg-surface/85 px-1.5 backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90">
+          <span className="inline-flex h-5 flex-none items-center gap-1.5 rounded-full bg-surface/85 px-2 backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90">
             <TeamDots sides={sides} size="sm" />
             {item.statTrak ? (
               <span className="text-[11px] leading-none font-[650] tracking-[0.06em] text-muted-foreground">
@@ -123,7 +147,7 @@ export function BoardCard({
           </span>
           <span
             title={labels.skin ?? undefined}
-            className="ml-auto inline-flex min-h-5 min-w-0 items-center gap-1.5 rounded-[6px] bg-surface/85 px-1.5 py-[3px] text-[11.5px] leading-[1.15] font-[550] backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90"
+            className="ml-auto inline-flex min-h-5 min-w-0 items-center gap-1.5 rounded-full bg-surface/85 px-2.5 py-[3px] text-[11.5px] leading-[1.15] font-[550] backdrop-blur-[6px] transition-colors duration-(--dur-fast) ease-std group-hover/card:bg-surface-2/90 group-aria-pressed/card:bg-surface-2/90"
           >
             {/* Até duas linhas: o nome da skin é o que o slot mostra e cortava com reticências no celular. */}
             <span className="line-clamp-2 [overflow-wrap:anywhere]">{labels.skin}</span>

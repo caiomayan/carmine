@@ -3,6 +3,7 @@ import { CS2_ITEMS, CS2Economy, type CS2EconomyItem } from '@ianlucas/cs2-lib';
 import { brazilian } from '@ianlucas/cs2-lib/translations/brazilian';
 import { english } from '@ianlucas/cs2-lib/translations/english';
 import { indexText, type SearchDoc, scoreDoc } from '../option-search';
+import { skinPalette } from '../skin-palette';
 import {
   type AttachmentType,
   CATALOG_PAGE_SIZE,
@@ -464,6 +465,8 @@ type OptionalRange = { min: number | undefined; max: number | undefined };
 /** O que o editor precisa saber de um Item do catálogo: faixas e atributos aceitos. */
 export type ItemSpec = {
   entry: CatalogEntry;
+  /** Cores vivas da imagem da skin (cor ambiente do editor); nulo sem paleta. */
+  palette: readonly string[] | null;
   /** Faixa do float da skin; nulo se o Item não tem float (faca sem pintura, agente...). */
   wear: Range | null;
   seed: Range | null;
@@ -486,6 +489,7 @@ export function itemSpec(id: number): ItemSpec | undefined {
   const keychains = item.hasKeychains();
   return {
     entry,
+    palette: skinPalette(id),
     wear:
       painted && item.hasWear() ? { min: item.getMinimumWear(), max: item.getMaximumWear() } : null,
     seed:

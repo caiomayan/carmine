@@ -16,6 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/animate-ui/components/radix/tabs';
+import { RARITY_COLOR } from '@/components/inventory/item-tile';
 import { PageHead } from '@/components/page-head';
 import {
   type BoardColumn,
@@ -33,6 +34,8 @@ import type { CandidateView, LoadoutView, SlotView } from '@/lib/loadout/view';
 import { sidesLabelKey } from '@/lib/team-sides';
 import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
+import '@/components/vida/loadout-inventario.css';
+import { ambientFor } from '@/components/vida/skin-ambient';
 import { BoardCard } from './board-card';
 import { SlotDock } from './slot-dock';
 import { SlotPicker } from './slot-picker';
@@ -228,197 +231,220 @@ export function LoadoutScreen({
         : null
       : null;
 
+  const [amb1, amb2, amb3] = ambientFor(
+    selected?.item?.palette,
+    selected?.item ? RARITY_COLOR[selected.item.rarity] : null,
+    side === 't' ? 'var(--side-t)' : 'var(--side-ct)',
+  );
+
   return (
-    <Tabs value={side} onValueChange={(value) => setSide(value as LoadoutSide)} className="gap-0">
-      <PageHead title={t('title')} subtitle={subtitle} />
-      {notices}
+    <div
+      data-vida="on"
+      data-side={side}
+      data-testid="loadout-ambient"
+      style={{ '--amb-1': amb1, '--amb-2': amb2, '--amb-3': amb3 } as React.CSSProperties}
+    >
+      <div aria-hidden="true" className="v-ambient">
+        <i />
+        <i />
+        <i />
+      </div>
+      {/* Ao trocar TR | CT a cor do lado varre o fundo, de leve, uma vez. */}
+      <span key={side} aria-hidden="true" data-side={side} className="v-side-sweep" />
+      <Tabs value={side} onValueChange={(value) => setSide(value as LoadoutSide)} className="gap-0">
+        <PageHead title={t('title')} subtitle={subtitle} />
+        {notices}
 
-      {hand ? <div className="mb-2 min-w-0">{hand}</div> : null}
+        {hand ? <div className="mb-2 min-w-0">{hand}</div> : null}
 
-      {/*
+        {/*
         A barra de cima: a troca TR | CT (e, abaixo de 1001 px, as categorias). Rola com a página
         até o alto e fica fixa. No celular só a troca de lado e as categorias ficam fixas
         (`contents` desfaz a barra e `sticky` fica no grupo de dentro).
       */}
-      <div
-        ref={barRef}
-        className="max-md:contents md:sticky md:top-(--site-hdr-h) md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5"
-      >
         <div
-          ref={barInnerRef}
-          className="max-md:sticky max-md:top-(--site-hdr-h) max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
+          ref={barRef}
+          className="max-md:contents md:sticky md:top-(--site-hdr-h) md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5"
         >
-          <div className="md:order-1">
-            <TabsList
-              aria-label={t('sidesLabel')}
-              className="max-md:w-full max-md:[&>*]:flex-1 rounded-lg bg-surface p-[3px]"
-            >
-              {SIDES.map((s) => (
-                <TabsTrigger
-                  key={s}
-                  value={s}
-                  data-testid={`side-${s}`}
-                  className="min-w-24 gap-2.5"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn('size-2.5 rounded-full', s === 't' ? 'bg-side-t' : 'bg-side-ct')}
-                  />
-                  {t(`sidesShort.${s}`)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-          <nav
-            aria-label={t('board.categories')}
-            className="mt-2 flex gap-0.5 overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
+          <div
+            ref={barInnerRef}
+            className="max-md:sticky max-md:top-(--site-hdr-h) max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
           >
-            {columns.map((column) => (
-              <button
-                key={column.id}
-                type="button"
-                aria-pressed={column.id === activeColumn}
-                onClick={() => setChosenColumn(column.id)}
-                data-testid={`category-${column.id}`}
-                className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
+            <div className="md:order-1">
+              <TabsList
+                aria-label={t('sidesLabel')}
+                className="max-md:w-full max-md:[&>*]:flex-1 rounded-full bg-surface p-[3px]"
               >
-                {t(`groups.${column.id}`)}
-                <span className="text-caption font-medium text-muted-foreground">
-                  {column.slots.length}
-                </span>
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
-
-      <TabsContent
-        value={side}
-        data-testid={`loadout-${side}`}
-        onKeyDown={onBoardKeyDown}
-        className="grid grid-cols-5 items-start gap-3 rounded-2xl bg-surface p-3.5 max-lg:block max-lg:p-3"
-      >
-        {columns.map((column, columnIndex) => {
-          const id = `coluna-${side}-${column.id}`;
-          return (
-            <section
-              key={column.id}
-              aria-labelledby={id}
-              data-testid={`column-${column.id}`}
-              className={cn(
-                'grid min-w-0 content-start gap-2',
-                'max-md:grid-cols-2 md:max-lg:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]',
-                column.id !== activeColumn && 'max-lg:hidden',
-              )}
+                {SIDES.map((s) => (
+                  <TabsTrigger
+                    key={s}
+                    value={s}
+                    data-testid={`side-${s}`}
+                    className="min-w-24 gap-2.5"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'size-2.5 rounded-full',
+                        s === 't' ? 'bg-side-t' : 'bg-side-ct',
+                      )}
+                    />
+                    {t(`sidesShort.${s}`)}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            <nav
+              aria-label={t('board.categories')}
+              className="mt-2 flex gap-0.5 overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
             >
-              <div className="grid grid-cols-[1fr_auto_1fr] items-baseline px-1 pb-1.5 max-lg:sr-only">
-                <span aria-hidden="true" className="text-[11px] text-muted-foreground">
-                  {columnIndex + 1}
-                </span>
-                <h2 id={id} className="text-center text-base font-[650]">
-                  {t(`groups.${column.id}`)}
-                </h2>
-                <span
-                  role="img"
-                  aria-label={t('board.columnCount', {
-                    equipped: column.equipped,
-                    total: column.slots.length,
-                  })}
-                  className="justify-self-end text-[11px] text-muted-foreground"
+              {columns.map((column) => (
+                <button
+                  key={column.id}
+                  type="button"
+                  aria-pressed={column.id === activeColumn}
+                  onClick={() => setChosenColumn(column.id)}
+                  data-testid={`category-${column.id}`}
+                  className="flex min-h-(--tap) flex-none items-center gap-2 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
                 >
-                  {column.equipped}/{column.slots.length}
-                </span>
-              </div>
-              {column.slots.map((slot, index) => (
-                <BoardCard
-                  key={slot.key}
-                  slot={slot}
-                  number={index + 1}
-                  index={index}
-                  sides={equippedSidesOf(view.slots, slot)}
-                  labels={labelsOf(slot)}
-                  selected={slot.key === selected?.key}
-                  tabStop={slot.key === tabStopKey}
-                  onSelect={() => select(slot.key)}
-                />
+                  {t(`groups.${column.id}`)}
+                  <span className="v-sign text-[17px] text-muted-foreground">
+                    {column.slots.length}
+                  </span>
+                </button>
               ))}
-            </section>
-          );
-        })}
-      </TabsContent>
-
-      <div
-        ref={dockRef}
-        className="pointer-events-none sticky bottom-0 z-30 pt-3.5 pb-[max(14px,env(safe-area-inset-bottom))]"
-      >
-        {selected ? (
-          <div className="pointer-events-auto">
-            <SlotDock
-              slot={selected}
-              title={titleOf(selected)}
-              sides={equippedSides}
-              otherSide={alsoSide}
-              equippedCandidate={equippedCandidate || null}
-              rarityLabel={selected.item ? (rarityLabels[selected.item.rarity] ?? '') : ''}
-              readOnly={view.readOnly}
-              flash={flash}
-              names={names}
-              onPick={openPicker}
-              onChanged={() => setFlash((n) => n + 1)}
-            />
+            </nav>
           </div>
-        ) : null}
-      </div>
+        </div>
 
-      <Sheet open={picker !== 'closed'} onOpenChange={(open) => !open && setPicker('closed')}>
-        <SheetContent
-          side={picker === 'bottom' ? 'bottom' : 'right'}
-          closeLabel={tc('close')}
-          className={cn(
-            'overflow-y-auto',
-            picker === 'bottom'
-              ? 'h-auto max-h-[88dvh] rounded-t-xl pb-[max(20px,env(safe-area-inset-bottom))]'
-              : 'w-[min(420px,100%-48px)]',
-          )}
+        <TabsContent
+          value={side}
+          data-testid={`loadout-${side}`}
+          onKeyDown={onBoardKeyDown}
+          className="grid grid-cols-5 items-start gap-3 rounded-2xl bg-surface p-3.5 max-lg:block max-lg:p-3"
+        >
+          {columns.map((column, columnIndex) => {
+            const id = `coluna-${side}-${column.id}`;
+            return (
+              <section
+                key={column.id}
+                aria-labelledby={id}
+                data-testid={`column-${column.id}`}
+                className={cn(
+                  'grid min-w-0 content-start gap-2',
+                  'max-md:grid-cols-2 md:max-lg:grid-cols-[repeat(auto-fill,minmax(168px,1fr))]',
+                  column.id !== activeColumn && 'max-lg:hidden',
+                )}
+              >
+                <div className="grid grid-cols-[1fr_auto_1fr] items-baseline px-1 pb-1.5 max-lg:sr-only">
+                  <span aria-hidden="true" className="v-sign text-[20px] text-muted-foreground">
+                    {columnIndex + 1}
+                  </span>
+                  <h2 id={id} className="text-center text-base font-[650]">
+                    {t(`groups.${column.id}`)}
+                  </h2>
+                  <span
+                    role="img"
+                    aria-label={t('board.columnCount', {
+                      equipped: column.equipped,
+                      total: column.slots.length,
+                    })}
+                    className="v-sign justify-self-end text-[20px] text-muted-foreground"
+                  >
+                    {column.equipped}/{column.slots.length}
+                  </span>
+                </div>
+                {column.slots.map((slot, index) => (
+                  <BoardCard
+                    key={slot.key}
+                    slot={slot}
+                    number={index + 1}
+                    index={index}
+                    sides={equippedSidesOf(view.slots, slot)}
+                    labels={labelsOf(slot)}
+                    selected={slot.key === selected?.key}
+                    tabStop={slot.key === tabStopKey}
+                    onSelect={() => select(slot.key)}
+                  />
+                ))}
+              </section>
+            );
+          })}
+        </TabsContent>
+
+        <div
+          ref={dockRef}
+          className="v-dock-glow pointer-events-none sticky bottom-0 z-30 pt-3.5 pb-[max(14px,env(safe-area-inset-bottom))]"
         >
           {selected ? (
-            <>
-              <SheetHeader className="pr-14">
-                <SheetTitle>
-                  {t('panel.pickerTitle', {
-                    slot: selected.side
-                      ? `${titleOf(selected)} · ${t(`sidesShort.${selected.side}`)}`
-                      : titleOf(selected),
-                  })}
-                </SheetTitle>
-                <SheetDescription>{t('panel.pickerDescription')}</SheetDescription>
-              </SheetHeader>
-              <div className="px-4 pb-4">
-                <SlotPicker
-                  key={selected.key}
-                  slot={selected}
-                  otherSide={pickerOther}
-                  equippedSides={equippedSides}
-                  candidates={candidates.filter(
-                    (candidate) =>
-                      candidate.slot === selected.slot &&
-                      (candidate.sides === null ||
-                        (selected.side !== null && candidate.sides.includes(selected.side))),
-                  )}
-                  catalogHref={catalogHref(selected)}
-                  rarityLabels={rarityLabels}
-                  names={names}
-                  onDone={() => {
-                    setPicker('closed');
-                    setFlash((n) => n + 1);
-                  }}
-                />
-              </div>
-            </>
+            <div className="pointer-events-auto">
+              <SlotDock
+                slot={selected}
+                title={titleOf(selected)}
+                sides={equippedSides}
+                otherSide={alsoSide}
+                equippedCandidate={equippedCandidate || null}
+                rarityLabel={selected.item ? (rarityLabels[selected.item.rarity] ?? '') : ''}
+                readOnly={view.readOnly}
+                flash={flash}
+                names={names}
+                onPick={openPicker}
+                onChanged={() => setFlash((n) => n + 1)}
+              />
+            </div>
           ) : null}
-        </SheetContent>
-      </Sheet>
-    </Tabs>
+        </div>
+
+        <Sheet open={picker !== 'closed'} onOpenChange={(open) => !open && setPicker('closed')}>
+          <SheetContent
+            side={picker === 'bottom' ? 'bottom' : 'right'}
+            closeLabel={tc('close')}
+            className={cn(
+              'overflow-y-auto',
+              picker === 'bottom'
+                ? 'h-auto max-h-[88dvh] rounded-t-xl pb-[max(20px,env(safe-area-inset-bottom))]'
+                : 'w-[min(420px,100%-48px)]',
+            )}
+          >
+            {selected ? (
+              <>
+                <SheetHeader className="pr-14">
+                  <SheetTitle>
+                    {t('panel.pickerTitle', {
+                      slot: selected.side
+                        ? `${titleOf(selected)} · ${t(`sidesShort.${selected.side}`)}`
+                        : titleOf(selected),
+                    })}
+                  </SheetTitle>
+                  <SheetDescription>{t('panel.pickerDescription')}</SheetDescription>
+                </SheetHeader>
+                <div className="px-4 pb-4">
+                  <SlotPicker
+                    key={selected.key}
+                    slot={selected}
+                    otherSide={pickerOther}
+                    equippedSides={equippedSides}
+                    candidates={candidates.filter(
+                      (candidate) =>
+                        candidate.slot === selected.slot &&
+                        (candidate.sides === null ||
+                          (selected.side !== null && candidate.sides.includes(selected.side))),
+                    )}
+                    catalogHref={catalogHref(selected)}
+                    rarityLabels={rarityLabels}
+                    names={names}
+                    onDone={() => {
+                      setPicker('closed');
+                      setFlash((n) => n + 1);
+                    }}
+                  />
+                </div>
+              </>
+            ) : null}
+          </SheetContent>
+        </Sheet>
+      </Tabs>
+    </div>
   );
 }
 

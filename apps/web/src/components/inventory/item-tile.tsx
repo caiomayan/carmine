@@ -3,6 +3,8 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { TeamDots } from '@/components/team-dots';
+import '@/components/vida/loadout-inventario.css';
+import { holoStyle } from '@/components/vida/skin-ambient';
 import type { Rarity } from '@/lib/catalog/types';
 import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
@@ -12,6 +14,8 @@ import { cn } from '@/lib/utils';
  * Liberty: aparecem só no ponto ao lado do nome (sinal pequeno), sempre acompanhado do nome da
  * raridade para leitores de tela.
  */
+const HOLO_RARITIES = new Set<Rarity>(['classified', 'covert', 'contraband']);
+
 export const RARITY_COLOR: Record<Rarity, string> = {
   consumer: 'var(--rarity-consumer)',
   industrial: 'var(--rarity-industrial)',
@@ -114,12 +118,15 @@ export function ItemTile({
   subtitle,
   skinFirst = false,
   image,
+  palette = null,
   rarity,
   rarityLabel,
   badges,
   sides,
   stickers,
   charm,
+  statTrak = false,
+  foil = false,
   index = 0,
   selected = false,
   actionSpace = false,
@@ -133,11 +140,17 @@ export function ItemTile({
   /** Skins de arma, faca e luvas: o nome da skin domina e a arma vira a linha de apoio. */
   skinFirst?: boolean;
   image: string;
+  /** Cores vivas da skin (holo); nulo cai na cor da raridade. */
+  palette?: readonly string[] | null;
   rarity: Rarity;
   rarityLabel: string;
   badges?: ReactNode;
   /** Lados em que o Item está equipado: viram as bolinhas CT/TR no canto superior direito. */
   sides?: readonly LoadoutSide[];
+  /** StatTrak ligado: junto das raridades altas, ganha o brilho holográfico. */
+  statTrak?: boolean;
+  /** Faca ou luvas (★): folha dourada sutil no holo. */
+  foil?: boolean;
   /** Stickers aplicados, em ícones no canto inferior esquerdo da imagem. */
   stickers?: readonly AttachmentLabel[];
   /** Chaveiro aplicado, em ícone no canto inferior direito da imagem. */
@@ -156,15 +169,30 @@ export function ItemTile({
       href={href as Route}
       data-testid={testId}
       prefetch={false}
-      style={{ '--i': index } as CSSProperties}
+      data-foil={foil ? '' : undefined}
+      style={
+        {
+          '--i': index,
+          '--rc': RARITY_COLOR[rarity],
+          ...holoStyle(palette, RARITY_COLOR[rarity], { statTrak }),
+        } as CSSProperties
+      }
+      data-holo={
+        HOLO_RARITIES.has(rarity) || statTrak
+          ? rarity === 'covert' || rarity === 'contraband'
+            ? '2'
+            : '1'
+          : undefined
+      }
       className={cn(
-        'group/tile relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5',
+        'group/tile v-spot relative grid enter-stagger content-start gap-2 rounded-xl bg-surface p-3 pb-3.5',
+        (HOLO_RARITIES.has(rarity) || statTrak) && 'v-holo',
         'transition-[background-color,box-shadow] duration-(--dur-base) ease-std hover:bg-surface-2',
         selected && 'bg-surface-2 shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
         className,
       )}
     >
-      <span className="relative block overflow-hidden rounded-lg">
+      <span className="v-tile-glow relative block overflow-hidden rounded-lg">
         <ItemArt
           src={image}
           className={cn(

@@ -29,6 +29,7 @@ export type EquippedView = {
   title: string;
   subtitle: string | null;
   image: string;
+  palette: readonly string[] | null;
   rarity: Rarity;
   statTrak: boolean;
 };

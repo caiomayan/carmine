@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { newSteamId, signInFromHeader } from './accounts';
 import { axeViolations, expect, saveTheme, settle, test } from './fixtures';
+import { hydrated } from './hydration';
 
 /**
  * O header fixo: sem linha em repouso; ao rolar vira uma pílula de vidro (fundo, desfoque e raio)
@@ -149,10 +150,18 @@ test.describe('busca do header', () => {
     await expect.poll(() => width(page)).toBeCloseTo(160, 0);
 
     // Teclado: Tab até a busca cresce igual, também sem cobrir a navegação.
-    await page.keyboard.press('Tab');
-    await trigger(page).focus();
-    await page.keyboard.press('Shift+Tab');
-    await page.keyboard.press('Tab');
+    // Tab de verdade, desde o começo da página, até pousar na busca: o que a pessoa faz (a ordem exata dos itens
+    // da navegação rica não é o que este teste mede). Espera o React assumir o header antes de começar.
+    await hydrated(trigger(page));
+    await hydrated(page.locator('header nav a').first());
+    await page.evaluate(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
+      window.scrollTo(0, 0);
+    });
+    for (let presses = 0; presses < 20; presses++) {
+      await page.keyboard.press('Tab');
+      if (await trigger(page).evaluate((el) => el === document.activeElement)) break;
+    }
     await expect(trigger(page)).toBeFocused();
     await expect.poll(() => width(page)).toBeGreaterThan(165);
     await page.waitForTimeout(500);

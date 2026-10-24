@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { LoadoutApiError, useEquip } from '@/components/loadout/use-equip';
 import { useLoadoutApi } from '@/components/loadout/use-loadout-api';
-import { Button } from '@/components/ui/button';
+import { DynamicButton } from '@/components/vida/dynamic-button';
 import { useInventory } from './inventory-provider';
 
 /**
@@ -21,7 +21,7 @@ export function QuickEquipButton({ item, name }: { item: Cs2Item; name: string }
   const { equip } = useEquip();
   const { notify } = useInventory();
   const router = useRouter();
-  const [pending, setPending] = useState(false);
+  const [, setPending] = useState(false);
 
   async function run() {
     setPending(true);
@@ -39,16 +39,16 @@ export function QuickEquipButton({ item, name }: { item: Cs2Item; name: string }
   }
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      onClick={run}
-      disabled={pending}
-      aria-label={t('quickEquipLabel', { name })}
+    <DynamicButton
+      variant="quiet"
+      idle={t('quickEquip')}
+      loading={t('quickEquipPending')}
+      done={tl('panel.equipped')}
+      ariaLabel={t('quickEquipLabel', { name })}
+      onAction={run}
+      loadingMs={1800}
       className="w-full"
-      data-testid="quick-equip"
-    >
-      {pending ? t('quickEquipPending') : t('quickEquip')}
-    </Button>
+      testId="quick-equip"
+    />
   );
 }

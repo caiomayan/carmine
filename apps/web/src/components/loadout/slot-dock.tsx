@@ -9,6 +9,7 @@ import { LockIcon } from '@/components/icons/animated/lock';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { ItemArt, RARITY_COLOR } from '@/components/inventory/item-tile';
 import { Button } from '@/components/ui/button';
+import { DynamicButton } from '@/components/vida/dynamic-button';
 import type { CandidateView, SlotView } from '@/lib/loadout/view';
 import { cn } from '@/lib/utils';
 import { TeamDots } from '../team-dots';
@@ -102,7 +103,7 @@ export function SlotDock({
       data-testid="slot-dock"
       data-slot-key={slot.key}
       className={cn(
-        'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-xl bg-surface-2 p-2.5 pr-3',
+        'relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-3 rounded-full v-glass p-2.5 pr-5 max-md:rounded-[32px] max-md:pr-3',
         'shadow-[0_10px_32px_-6px_var(--shadow)]',
         'max-md:grid-cols-[auto_minmax(0,1fr)]',
       )}
@@ -111,13 +112,13 @@ export function SlotDock({
         <span
           key={flash}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-xl bg-foreground/15 animate-[dock-flash_520ms_var(--ease-out)_forwards] motion-reduce:hidden"
+          className="pointer-events-none absolute inset-0 rounded-full bg-foreground/15 animate-[dock-flash_520ms_var(--ease-out)_forwards] motion-reduce:hidden"
         />
       ) : null}
       <span
         key={`thumb-${slot.key}`}
         className={cn(
-          'block h-14 w-[76px] overflow-hidden rounded-md bg-surface max-md:h-12 max-md:w-16',
+          'block h-14 w-[76px] overflow-hidden rounded-full bg-surface max-md:h-12 max-md:w-16',
           !item && 'opacity-40 grayscale',
         )}
       >
@@ -157,17 +158,17 @@ export function SlotDock({
       ) : (
         <div className="flex flex-wrap items-center gap-1 max-md:col-span-full">
           {otherSide && item ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={alsoOnOtherSide}
-              disabled={pending !== null}
-              data-testid="dock-also"
-              className="max-md:flex-1"
-            >
-              <TeamDots sides={[otherSide]} size="sm" />
-              {t('panel.bothSides', { side: t(`sidesShort.${otherSide}`) })}
-            </Button>
+            <DynamicButton
+              variant="quiet"
+              idle={t('panel.bothSides', { side: t(`sidesShort.${otherSide}`) })}
+              loading={t('panel.equipping')}
+              done={t('panel.equipped')}
+              icon={<TeamDots sides={[otherSide]} size="sm" />}
+              onAction={alsoOnOtherSide}
+              loadingMs={700}
+              testId="dock-also"
+              className="min-h-9! max-md:flex-1"
+            />
           ) : null}
           {item ? (
             <Button
@@ -205,7 +206,7 @@ export function SlotDock({
           role="note"
           data-testid="not-in-game-note"
           data-icon-trigger
-          className="col-span-full flex items-start gap-3 rounded-2xl bg-surface px-3 py-2.5 text-sm leading-[1.55]"
+          className="col-span-full flex items-start gap-3 rounded-3xl bg-surface px-4 py-3 text-sm leading-[1.55]"
         >
           <AnimatedIcon icon={LockIcon} size={15} className="mt-0.5 text-status-vip" />
           <p>
