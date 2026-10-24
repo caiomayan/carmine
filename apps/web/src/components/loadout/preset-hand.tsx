@@ -536,7 +536,7 @@ function PresetFace({
       >
         <span
           className={cn(
-            'flex min-w-0 items-start gap-1.5 text-body-sm leading-tight font-[650]',
+            'flex min-w-0 items-start gap-1.5 text-caption leading-tight font-[650]',
             menu && 'pr-8',
           )}
         >

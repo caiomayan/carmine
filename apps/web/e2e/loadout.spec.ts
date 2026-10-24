@@ -608,10 +608,14 @@ test.describe('mão de Presets', () => {
       const name = (await title.textContent()) ?? '';
       // O nome inteiro continua no DOM, na dica e no nome acessível do botão.
       await expect(title).toHaveAttribute('title', name);
-      const fits = await title.evaluate(
-        (el) => el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1,
-      );
-      expect(fits, `nome "${name}" cortado`).toBe(true);
+      const size = await title.evaluate((el) => ({
+        sw: el.scrollWidth,
+        cw: el.clientWidth,
+        sh: el.scrollHeight,
+        ch: el.clientHeight,
+      }));
+      const fits = size.sw <= size.cw + 1 && size.sh <= size.ch + 1;
+      expect(fits, `nome "${name}" cortado: ${JSON.stringify(size)}`).toBe(true);
       // O nome não passa por baixo do menu "…".
       const menu = card.getByTestId('preset-menu');
       if (await menu.isVisible()) {
