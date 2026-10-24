@@ -4337,6 +4337,64 @@
         ]
       }
     },
+    "/api/profiles/{publicId}/stats/weekly": {
+      "get": {
+        "operationId": "getProfileStatsWeekly",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A série semanal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSeries"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse ID público (ou ela foi excluída)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Série semanal de uma Conta (últimas 8 semanas) e horas por Modo na semana e no total; num Perfil privado, só a própria Conta a vê",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
     "/api/ranking/{mode}": {
       "get": {
         "operationId": "getRanking",
@@ -8311,6 +8369,186 @@
           "secondsPlayed",
           "adr",
           "kpm"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileSeries": {
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "weeks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WeekStats"
+            }
+          },
+          "hours": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileHours"
+              }
+            ]
+          },
+          "firstWeek": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeekStart"
+              }
+            ]
+          }
+        },
+        "required": [
+          "visible",
+          "weeks",
+          "hours",
+          "firstWeek"
+        ],
+        "additionalProperties": false
+      },
+      "WeekStats": {
+        "type": "object",
+        "properties": {
+          "weekStart": {
+            "$ref": "#/components/schemas/WeekStart"
+          },
+          "rounds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "deaths": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "headshotPercent": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "secondsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "modes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModeWeekStats"
+            }
+          }
+        },
+        "required": [
+          "weekStart",
+          "rounds",
+          "kills",
+          "deaths",
+          "kd",
+          "headshotPercent",
+          "secondsPlayed",
+          "modes"
+        ],
+        "additionalProperties": false
+      },
+      "ModeWeekStats": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "rounds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "deaths": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kd": {
+            "type": "number",
+            "minimum": 0
+          },
+          "headshotPercent": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "secondsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "mode",
+          "rounds",
+          "kills",
+          "deaths",
+          "kd",
+          "headshotPercent",
+          "secondsPlayed"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileHours": {
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModeSeconds"
+            }
+          },
+          "total": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ModeSeconds"
+            }
+          }
+        },
+        "required": [
+          "week",
+          "total"
+        ],
+        "additionalProperties": false
+      },
+      "ModeSeconds": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "secondsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "mode",
+          "secondsPlayed"
         ],
         "additionalProperties": false
       },
