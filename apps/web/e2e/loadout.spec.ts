@@ -658,7 +658,8 @@ test.describe('mão de Presets', () => {
     await boardReady(page);
     await handReady(page);
     // Hidratada, a mão ainda nasce em fileira (largura 0) e só vira leque depois de medir.
-    await expect(page.getByTestId('presets')).toHaveAttribute('data-mode', 'fan');
+    const narrow = (page.viewportSize()?.width ?? 1280) < 640;
+    await expect(page.getByTestId('presets')).toHaveAttribute('data-mode', narrow ? 'row' : 'fan');
     await layoutStable(page.getByTestId('presets'));
   }
   const cards = (page: Page) => page.getByTestId('preset');
