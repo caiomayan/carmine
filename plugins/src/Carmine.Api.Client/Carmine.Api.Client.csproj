@@ -44,6 +44,11 @@
       [JsonStringEnumMemberName] é o equivalente que o JsonStringEnumConverter lê.
     -->
     <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="System.Runtime.Serialization.EnumMember(Value =" Replacement="System.Text.Json.Serialization.JsonStringEnumMemberName(" />
+    <!--
+      Um oneOf sem discriminador (ActivityEvent, da faixa de atividade da home) vira uma lista de
+      um tipo "Events" que o NJsonSchema nunca gera. O plugin não lê a atividade: ela fica como JSON cru.
+    -->
+    <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="&lt;Events&gt;" Replacement="&lt;System.Text.Json.JsonElement&gt;" />
   </Target>
 
   <Target Name="IncludeCarmineApiClient" BeforeTargets="CoreCompile" DependsOnTargets="GenerateCarmineApiClient">
