@@ -290,7 +290,7 @@ export function HomeLive({ data }: { data: HomeData }) {
         </div>
 
         <WeekStrip summary={data.week} />
-        <InView fallback={<LoadoutsSkeleton />}>
+        <InView testId="loadouts-slot" fallback={<LoadoutsSkeleton />}>
           <LoadoutsWeek />
         </InView>
       </div>
