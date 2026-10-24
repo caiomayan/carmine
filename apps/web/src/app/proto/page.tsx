@@ -15,7 +15,11 @@ export default async function VidaHome({
   const state = parseState((await searchParams).estado);
   return (
     <ViewTransition enter="v-in" exit="v-out" default="none">
-      {state === 'carregando' ? <HomeSkeleton /> : <HomeLive state={state} skins={skinTable(SKINS)} />}
+      {state === 'carregando' ? (
+        <HomeSkeleton />
+      ) : (
+        <HomeLive state={state} skins={skinTable(SKINS)} />
+      )}
     </ViewTransition>
   );
 }

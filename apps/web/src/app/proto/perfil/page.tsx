@@ -10,7 +10,8 @@ export default async function VidaProfile({
 }) {
   const raw = (await searchParams).estado;
   const value = Array.isArray(raw) ? raw[0] : raw;
-  const estado = value === 'novo' || value === 'privado' || value === 'nao-reivindicado' ? value : 'completo';
+  const estado =
+    value === 'novo' || value === 'privado' || value === 'nao-reivindicado' ? value : 'completo';
   return (
     <ViewTransition enter="v-in" exit="v-out" default="none">
       <ProfileView estado={estado} skins={skinTable([1327, 222, 1099, 306, 171, 1717])} />

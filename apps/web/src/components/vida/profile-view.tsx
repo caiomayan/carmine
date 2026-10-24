@@ -19,7 +19,7 @@ import dynamic from 'next/dynamic';
 import { setFooterMap } from './footer-fx';
 import { InView } from './in-view';
 import { MapPicture, mapPalette, useNight } from './map-art';
-import { Face } from './face';
+import { CosmeticAvatar } from '@/components/cosmetics/cosmetic-avatar';
 import { SkinCard } from './skin-card';
 import { Ticker } from './ticker';
 
@@ -208,15 +208,18 @@ export function ProfileView({
       <div className="container-page pb-24">
         <div className="relative -mt-[74px] flex flex-wrap items-end gap-x-6 gap-y-4 max-md:-mt-[52px]">
           <ViewTransition name={estado === 'completo' ? 'face-lia' : undefined} share="v-face">
-            <Face
+            <CosmeticAvatar
+              person={personId}
               name={name}
               hue={person?.hue ?? 330}
               size={148}
               live={playing}
+              anim="always"
               className={cn(
-                'shrink-0 text-[56px]! ring-offset-[6px]! max-md:size-[104px]! max-md:text-[40px]!',
+                'm-9 shrink-0 max-md:m-6 max-md:size-[104px]!',
                 unclaimed && 'opacity-60 grayscale-[0.6]',
               )}
+              faceClassName="size-full! text-[56px]! max-md:text-[40px]!"
             />
           </ViewTransition>
           <div className="grid min-w-0 flex-1 gap-2.5 pb-1">
@@ -256,7 +259,7 @@ export function ProfileView({
               {playing ? (
                 <>
                   <span className="rounded-full bg-(--fill-rest) px-3 py-1.5">Membro desde jun/2026</span>
-                  <span className="inline-flex items-center gap-2 rounded-full bg-(--fill-rest) px-3 py-1.5">
+                  <span className="inline-flex items-center gap-2 rounded-full bg-(--fill-rest) px-3 py-1.5" data-testid="vida-playing-chip">
                     <StatusDot tone="online" pulse />
                     Jogando agora · Retake em Mirage
                   </span>

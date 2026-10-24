@@ -8,7 +8,7 @@ import { publishLiveSummary } from '@/lib/servers';
 import { cn } from '@/lib/utils';
 import { WeekCountdown } from './countdown';
 import { type Mode, PEOPLE } from './data';
-import { Face } from './face';
+import { CosmeticAvatar } from '@/components/cosmetics/cosmetic-avatar';
 import { setFooterMap } from './footer-fx';
 import { MapPicture, mapPalette, useNight } from './map-art';
 import { Ticker } from './ticker';
@@ -101,6 +101,7 @@ function Podium({ rows, mode }: { rows: Row[]; mode: Mode }) {
           <li
             key={slot}
             data-slot={slot + 1}
+            data-cos-host
             className={cn(
               'v-panel v-panel-lg v-spot relative flex flex-col items-center gap-2 overflow-hidden px-3 pt-6 text-center',
               first ? 'min-h-[330px] max-md:min-h-[260px]' : slot === 1 ? 'min-h-[270px] max-md:min-h-[210px]' : 'min-h-[240px] max-md:min-h-[190px]',
@@ -123,7 +124,14 @@ function Podium({ rows, mode }: { rows: Row[]; mode: Mode }) {
                 transition={{ type: 'spring', stiffness: 360, damping: 32 }}
                 className="grid justify-items-center gap-2 pb-6"
               >
-                <Face name={person.name} hue={person.hue} size={first ? 84 : 64} live={first} />
+                <CosmeticAvatar
+                  person={person.id}
+                  name={person.name}
+                  hue={person.hue}
+                  size={first ? 84 : 64}
+                  live={first}
+                  className="m-4 mb-12"
+                />
                 <Link href={'/proto/perfil' as Route} className="max-w-full truncate text-[17px] font-bold tracking-[-0.02em] hover:underline">
                   {person.name}
                 </Link>
@@ -210,11 +218,12 @@ export function RankingLive() {
                     key={`${mode}-${row.id}`}
                     layout="position"
                     transition={{ type: 'spring', stiffness: 520, damping: 42 }}
+                    data-cos-host
                     className="v-panel v-spot flex items-center gap-4 bg-surface px-5 py-3 max-md:gap-3 max-md:px-3.5"
                     style={{ borderRadius: 'var(--r-card)' }}
                   >
                     <span className="v-sign w-9 text-center text-[34px]">{i + 4}</span>
-                    <Face name={person.name} hue={person.hue} size={40} />
+                    <CosmeticAvatar person={person.id} name={person.name} hue={person.hue} size={40} className="mx-3" />
                     <Link href={'/proto/perfil' as Route} className="inline-flex min-h-6 min-w-0 flex-1 items-center truncate text-body font-semibold hover:underline">
                       {person.name}
                     </Link>

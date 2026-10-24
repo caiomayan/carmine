@@ -1,0 +1,516 @@
+/*
+ * Cosméticos do Perfil (protótipo "vida"): molduras de avatar e chaveiro. A moldura é uma camada
+ * (.cos-art) que cobre o avatar e passa da borda dele em 28% do diâmetro; as coordenadas internas
+ * seguem a caixa de 100 × 100 de frames.tsx (avatar = disco de raio 32). Aneis de metal são
+ * conic-gradient mascarado (--in e --out são os raios do anel, em % do raio da caixa).
+ *
+ * Movimento: o que se mexe leva data-a. Em `data-anim="hover"` (listas) fica pausado até o hover do
+ * avatar ou da linha (`[data-cos-host]`); em `always` (Perfil) roda sempre; com prefers-reduced-motion
+ * nada anima: vale o quadro de repouso.
+ */
+
+.cos {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.cos-art {
+  position: absolute;
+  inset: -28.125%;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.cos-art > * {
+  position: absolute;
+}
+
+.cos-art > svg {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cos-ring {
+  inset: 0;
+  border-radius: 50%;
+  --in: 62;
+  --out: 74;
+  -webkit-mask: radial-gradient(
+    closest-side,
+    transparent calc(var(--in) * 1%),
+    #000 calc(var(--in) * 1% + 0.7%),
+    #000 calc(var(--out) * 1% - 0.7%),
+    transparent calc(var(--out) * 1%)
+  );
+  mask: radial-gradient(
+    closest-side,
+    transparent calc(var(--in) * 1%),
+    #000 calc(var(--in) * 1% + 0.7%),
+    #000 calc(var(--out) * 1% - 0.7%),
+    transparent calc(var(--out) * 1%)
+  );
+}
+
+/* ---- Movimento: pausa nas listas, roda no Perfil, desliga com movimento reduzido ---- */
+
+.cos [data-a],
+.cos [data-a] * {
+  animation-play-state: running;
+}
+
+.cos[data-anim="hover"] [data-a] {
+  animation-play-state: paused;
+}
+
+:is(.cos[data-anim="hover"]:hover, [data-cos-host]:hover .cos[data-anim="hover"]) [data-a] {
+  animation-play-state: running;
+}
+
+.cos svg [data-a] {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cos [data-a],
+  .cos-charm,
+  .cos-charm * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+@keyframes cos-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes cos-spin-back {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes cos-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.86);
+    opacity: 0.62;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.14);
+    opacity: 0.92;
+  }
+}
+
+@keyframes cos-flicker {
+  0%,
+  100% {
+    transform: scaleY(0.82) skewX(-4deg);
+  }
+  25% {
+    transform: scaleY(1.12) skewX(3deg);
+  }
+  50% {
+    transform: scaleY(0.94) skewX(-2deg);
+  }
+  75% {
+    transform: scaleY(1.2) skewX(5deg);
+  }
+}
+
+@keyframes cos-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.12;
+  }
+}
+
+@keyframes cos-sway {
+  0%,
+  100% {
+    transform: rotate(-2.4deg);
+  }
+  50% {
+    transform: rotate(2.4deg);
+  }
+}
+
+/* ---- Aço escovado (grátis) ---- */
+
+.cos-steel-base {
+  --in: 61.5;
+  --out: 74;
+  background: conic-gradient(
+    from 25deg,
+    #dfe3e7,
+    #8d939a,
+    #f1f3f5,
+    #7b8187,
+    #d3d7db,
+    #9aa0a7,
+    #f4f5f7,
+    #858b92,
+    #dfe3e7
+  );
+}
+
+.cos-steel-grain {
+  --in: 61.5;
+  --out: 74;
+  background: repeating-conic-gradient(
+    rgba(255, 255, 255, 0.22) 0 0.5deg,
+    rgba(0, 0, 0, 0.16) 0.5deg 1.3deg
+  );
+  mix-blend-mode: overlay;
+}
+
+.cos-steel-edge {
+  --in: 60.5;
+  --out: 62.5;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Grafite (grátis) ---- */
+
+.cos-graphite-base {
+  --in: 61.5;
+  --out: 72.5;
+  background: conic-gradient(from 200deg, #2f3236, #131416, #3a3d42, #101113, #2f3236);
+}
+
+.cos-graphite-grooves {
+  --in: 64.5;
+  --out: 70;
+  background: repeating-conic-gradient(rgba(0, 0, 0, 0.7) 0 2.2deg, transparent 2.2deg 15deg);
+}
+
+.cos-graphite-edge {
+  --in: 71;
+  --out: 73;
+  background: conic-gradient(from 200deg, #6c7077, #3c3f44, #7e838a, #3c3f44, #6c7077);
+}
+
+/* ---- Fundador do beta (conquistada) ---- */
+
+.cos-bronze-base {
+  --in: 61.5;
+  --out: 74;
+  background: conic-gradient(
+    from 40deg,
+    #f0b97b,
+    #a35f22,
+    #e3a25e,
+    #7d4614,
+    #efb374,
+    #a65f20,
+    #f0b97b
+  );
+}
+
+.cos-bronze-edge {
+  --in: 60.5;
+  --out: 62.5;
+  background: rgba(60, 28, 6, 0.55);
+}
+
+/* ---- Ouro do top 1 (conquistada) ---- */
+
+.cos-gold-base {
+  --in: 61.5;
+  --out: 74;
+  background: conic-gradient(
+    from 10deg,
+    #fff2b8,
+    #e9a900,
+    #ffe27a,
+    #b87800,
+    #fff0a6,
+    #e0a000,
+    #fff2b8
+  );
+}
+
+.cos-gold-edge {
+  --in: 60.5;
+  --out: 62.5;
+  background: rgba(96, 58, 0, 0.55);
+}
+
+/* ---- Fumaça de granada (VIP) ---- */
+
+.cos-smoke-haze {
+  --in: 58;
+  --out: 76;
+  background: conic-gradient(
+    from 0deg,
+    rgba(210, 220, 224, 0.5),
+    rgba(120, 140, 150, 0.35),
+    rgba(225, 232, 235, 0.55),
+    rgba(100, 120, 132, 0.3),
+    rgba(210, 220, 224, 0.5)
+  );
+  filter: blur(1px);
+  animation: cos-spin-back 24s linear infinite;
+}
+
+.cos-puffs {
+  inset: 0;
+  animation: cos-spin 18s linear infinite;
+}
+
+.cos-puffs > i {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 36%,
+    rgba(247, 250, 251, 0.95),
+    rgba(176, 192, 200, 0.7) 52%,
+    transparent 74%
+  );
+  filter: blur(0.7px);
+  transform: translate(-50%, -50%);
+  animation: cos-breathe 3.6s ease-in-out infinite;
+}
+
+/* ---- Molotov (VIP) ---- */
+
+.cos-molotov-base {
+  --in: 61.5;
+  --out: 70;
+  background: conic-gradient(
+    from 0deg,
+    #ffb347,
+    #c92a00,
+    #ff7a1a,
+    #7a1300,
+    #ff9a2e,
+    #d23100,
+    #ffb347
+  );
+}
+
+.cos-flames {
+  filter: drop-shadow(0 0 1.2px rgba(255, 110, 20, 0.85));
+}
+
+.cos-flame {
+  animation: cos-flicker 0.9s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+.cos-flame-core {
+  animation-duration: 0.7s;
+}
+
+/* ---- Doppler Rubi e Safira (VIP) ---- */
+
+.cos-doppler-base {
+  --in: 60;
+  --out: 75;
+  background: conic-gradient(
+    from 0deg,
+    #ff2f63,
+    #7a0b26,
+    #ff8aa2,
+    #2d6dff,
+    #0a2e94,
+    #86b8ff,
+    #ff2f63,
+    #8a0f2d,
+    #ff5c80,
+    #3b78ff,
+    #0b2f98,
+    #7cb2ff,
+    #ff2f63
+  );
+  animation: cos-spin 16s linear infinite;
+}
+
+.cos-doppler-sheen {
+  --in: 60;
+  --out: 75;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 62%,
+    rgba(255, 255, 255, 0.85) 68%,
+    transparent 74% 100%
+  );
+  mix-blend-mode: soft-light;
+  animation: cos-spin-back 7s linear infinite;
+}
+
+.cos-doppler-edge {
+  --in: 59.4;
+  --out: 61;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+/* ---- C4 (VIP) ---- */
+
+.cos-c4-base {
+  --in: 61.5;
+  --out: 73;
+  background: conic-gradient(from 90deg, #2e312c, #151713, #3a3d36, #11130f, #2e312c);
+}
+
+.cos-c4-ticks {
+  --in: 66;
+  --out: 71;
+  background: repeating-conic-gradient(
+    rgba(255, 255, 255, 0.28) 0 0.9deg,
+    transparent 0.9deg 15deg
+  );
+}
+
+.cos-wires {
+  transform-box: view-box;
+  transform-origin: 50px 50px;
+  animation: cos-sway 3.2s ease-in-out infinite;
+}
+
+.cos-led,
+.cos-led-glow {
+  animation: cos-blink 1s steps(1, end) infinite;
+}
+
+.cos-led {
+  filter: drop-shadow(0 0 1.4px #ff3b52);
+}
+
+[data-a="blink-slow"] {
+  animation: cos-blink 1s steps(1, end) infinite;
+}
+
+/* Animações genéricas ligadas pelo data-a */
+[data-a="spin-slow"],
+[data-a="spin-back"] {
+  will-change: transform;
+}
+
+/* ---- Pontinho de "jogando agora" no canto do avatar ---- */
+
+.cos-live {
+  position: absolute;
+  z-index: 4;
+  border-radius: 50%;
+  background: var(--status-online);
+  box-shadow: 0 0 0 max(2px, 0.07em) var(--surface, #111);
+  transform: translate(-50%, -50%);
+}
+
+/* ---- Chaveiro pendurado na borda ---- */
+
+.cos-charm {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+  transform-origin: 50% 0;
+  will-change: transform;
+}
+
+.cos-charm img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.cos-charm[data-rich="true"] img {
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--status-vip) 80%, transparent))
+    drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+}
+
+.cos-charm:not([data-rich="true"]) img {
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+}
+
+.cos-spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: #fff;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+  animation: cos-twinkle 2.4s ease-in-out infinite;
+}
+
+@keyframes cos-twinkle {
+  0%,
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  82% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+}
+
+/* ---- Tela de escolha ---- */
+
+.cos-stage {
+  background:
+    radial-gradient(
+      60% 80% at 50% 0%,
+      color-mix(in srgb, var(--status-vip) 14%, transparent),
+      transparent 70%
+    ),
+    var(--surface);
+}
+
+@keyframes cos-idle {
+  0%,
+  100% {
+    transform: rotate(-2.5deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+/* Chip "Jogando" ao lado do nome (o pontinho no canto do avatar vem junto). */
+.v-chip-live {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-online) 20%, transparent);
+  padding: 0.1rem 0.5rem 0.1rem 0.4rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--foreground);
+}
+
+.v-chip-live::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--status-online);
+}
+
+.cos-idle {
+  transform-origin: 50% 0;
+  animation: cos-idle 4.6s ease-in-out infinite;
+}
+
+.cos-charm[data-rich="true"] .cos-idle {
+  animation-duration: 3.4s;
+}

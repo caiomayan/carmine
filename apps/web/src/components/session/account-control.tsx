@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/animate-ui/components/radix/dropdown-menu';
 import { Avatar } from '@/components/avatar';
+import { CosmeticAvatar } from '@/components/cosmetics/cosmetic-avatar';
 import { BoxIcon } from '@/components/icons/animated/box';
 import { CompassIcon } from '@/components/icons/animated/compass';
 import { LogoutIcon } from '@/components/icons/animated/logout';
@@ -74,6 +75,22 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
         aria-label={labels.loading}
         className="shimmer block size-8 rounded-full max-md:size-(--tap)"
       />
+    );
+  }
+
+  if ((status === 'anonymous' || !account) && pathname.startsWith('/proto')) {
+    // Protótipo "vida": a Conta de exemplo (lia.exe) aparece logada no header, com a moldura e o chaveiro escolhidos.
+    return (
+      <Link
+        href={'/proto/perfil' as Route}
+        data-testid="proto-account"
+        data-cos-host
+        aria-label="Perfil de lia.exe"
+        className="inline-flex min-h-(--tap) items-center gap-2.5 rounded-full py-1 pr-3.5 pl-2 transition-colors duration-(--dur-fast) hover:bg-(--fill-hover) max-md:pr-2"
+      >
+        <CosmeticAvatar person="lia" name="lia.exe" hue={330} size={28} className="mx-1.5 mb-1" />
+        <span className="font-[550] max-md:hidden">lia.exe</span>
+      </Link>
     );
   }
 

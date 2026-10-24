@@ -1,5 +1,8 @@
 import type { Metadata } from 'next';
 import { type ReactNode, Suspense } from 'react';
+import '@/components/cosmetics/cosmetics.css';
+import { demoCharms } from '@/components/cosmetics/charms.server';
+import { CosmeticsProvider } from '@/components/cosmetics/cosmetic-avatar';
 import { ProtoBar } from '@/components/vida/proto-bar';
 
 /*
@@ -13,11 +16,11 @@ export const metadata: Metadata = {
 
 export default function ProtoLayout({ children }: { children: ReactNode }) {
   return (
-    <>
+    <CosmeticsProvider charms={demoCharms()}>
       {children}
       <Suspense fallback={null}>
         <ProtoBar />
       </Suspense>
-    </>
+    </CosmeticsProvider>
   );
 }

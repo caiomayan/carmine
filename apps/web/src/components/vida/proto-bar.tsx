@@ -55,6 +55,9 @@ export function ProtoBar() {
       <Link href={'/proto/ranking' as Route} className={seg(path.startsWith('/proto/ranking'))}>
         Ranking
       </Link>
+      <Link href={'/proto/cosmeticos' as Route} className={seg(path.startsWith('/proto/cosmeticos'))}>
+        Cosméticos
+      </Link>
       <Link href={'/configuracoes/aparencia' as Route} className={seg(false)}>
         Configurações
       </Link>

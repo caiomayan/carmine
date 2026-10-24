@@ -20,7 +20,7 @@ import {
 } from './data';
 import { DynamicButton } from './dynamic-button';
 import { EmptyScene } from './empty-scene';
-import { Face } from './face';
+import { CosmeticAvatar } from '@/components/cosmetics/cosmetic-avatar';
 import { Ticker } from './ticker';
 
 /** Painel do trilho: título, apoio opcional e o conteúdo. */
@@ -79,12 +79,13 @@ export function FriendsPanel({ state, className }: { state: HomeState; className
             const person = PEOPLE[f.person];
             const server = byId.get(f.serverId);
             if (!person || !server) return null;
-            const face = <Face name={person.name} hue={person.hue} size={40} live />;
+            const face = <CosmeticAvatar person={person.id} name={person.name} hue={person.hue} size={40} live className="mx-1.5 mb-2" />;
             return (
               <li
                 key={f.person}
                 style={{ '--i': i } as React.CSSProperties}
-                className="enter-stagger v-inner flex items-center gap-3 p-1.5 transition-colors duration-(--dur-fast) hover:bg-(--fill-hover)"
+                data-cos-host
+                className="enter-stagger v-inner flex items-center gap-3 p-1.5 pb-3 transition-colors duration-(--dur-fast) hover:bg-(--fill-hover)"
               >
                 <Link
                   href={PROFILE}
@@ -99,7 +100,10 @@ export function FriendsPanel({ state, className }: { state: HomeState; className
                     face
                   )}
                   <span className="grid min-w-0">
-                    <span className="truncate text-body font-semibold">{person.name}</span>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-body font-semibold">{person.name}</span>
+                      <span className="v-chip-live">Jogando</span>
+                    </span>
                     <span className="truncate text-caption text-muted-foreground">
                       {server.name} · {server.map[0]?.toUpperCase()}
                       {server.map.slice(1)}
@@ -267,7 +271,7 @@ export function FeedPanel({
               <div
                 className={cn('v-inner flex items-center gap-3 px-1.5 py-2', row.flash && 'v-feed-flash')}
               >
-                  <Face name={person.name} hue={person.hue} size={34} />
+                  <CosmeticAvatar person={person.id} name={person.name} hue={person.hue} size={34} className="mx-1" />
                   <span className="grid min-w-0 flex-1">
                     <span className="truncate text-body-sm">
                       <b className="font-semibold">{person.name}</b>{' '}
@@ -346,7 +350,7 @@ export function TopPanel({ className }: { className?: string }) {
                 >
                   {i + 1}
                 </span>
-                <Face name={person.name} hue={person.hue} size={34} />
+                <CosmeticAvatar person={person.id} name={person.name} hue={person.hue} size={34} className="mx-1" />
                 <span className="min-w-0 flex-1 truncate text-body font-semibold">{person.name}</span>
                 <span className="text-right">
                   <Ticker
