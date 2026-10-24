@@ -1142,6 +1142,8 @@
       "none": "Você não tem Itens para este slot.",
       "addFromCatalog": "Adicionar do catálogo",
       "bothSides": "Equipar também em {side}",
+      "equipping": "Equipando",
+      "equipped": "Equipado",
       "rarityStatTrak": "{rarity} · StatTrak™",
       "equip": "Equipar {name}",
       "unequip": "Desequipar",

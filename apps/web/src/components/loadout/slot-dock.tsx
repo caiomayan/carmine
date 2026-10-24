@@ -161,8 +161,8 @@ export function SlotDock({
             <DynamicButton
               variant="quiet"
               idle={t('panel.bothSides', { side: t(`sidesShort.${otherSide}`) })}
-              loading="Equipando"
-              done="Equipado"
+              loading={t('panel.equipping')}
+              done={t('panel.equipped')}
               icon={<TeamDots sides={[otherSide]} size="sm" />}
               onAction={alsoOnOtherSide}
               loadingMs={700}

@@ -43,7 +43,7 @@ export function QuickEquipButton({ item, name }: { item: Cs2Item; name: string }
       variant="quiet"
       idle={t('quickEquip')}
       loading={t('quickEquipPending')}
-      done="Equipado"
+      done={tl('panel.equipped')}
       ariaLabel={t('quickEquipLabel', { name })}
       onAction={run}
       loadingMs={1800}
