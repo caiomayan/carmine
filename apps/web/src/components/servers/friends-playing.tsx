@@ -108,7 +108,7 @@ export function FriendsPlaying({
         <PrivateList found={false} />
       ) : view.status === 'unavailable' ? (
         <Notice icon={RefreshCWIcon} title={t('unavailable.title')} body={t('unavailable.body')}>
-          <Button variant="ghost" size="sm" className="-ml-3" onClick={refresh}>
+          <Button variant="ghost" size="sm" onClick={refresh}>
             <AnimatedIcon icon={RefreshCWIcon} size={15} />
             {t('unavailable.retry')}
           </Button>
@@ -251,11 +251,11 @@ function PrivateList({ found }: { found: boolean }) {
       className="grid gap-1 px-3 pt-1.5 pb-2.5 text-caption leading-[1.5] text-muted-foreground"
     >
       <p>{t('foundBody')}</p>
-      <PrivacyHowTo className="-ml-3" />
+      <PrivacyHowTo />
     </div>
   ) : (
     <Notice icon={LockIcon} title={t('title')} body={t('body')}>
-      <PrivacyHowTo className="-ml-3" />
+      <PrivacyHowTo />
     </Notice>
   );
 }

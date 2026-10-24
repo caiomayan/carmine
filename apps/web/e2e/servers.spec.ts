@@ -315,6 +315,10 @@ test.describe('Seus amigos jogando agora', () => {
     await expect(block.getByText(/Com a sua lista visível, aparecem todos/)).toBeVisible();
 
     const howTo = block.getByRole('button', { name: 'Como deixar a lista visível' });
+    // A borda do fundo do botão alinha com a coluna do texto (como o "Entrar com a Steam").
+    const titleBox = await block.getByText('Sua lista de amigos da Steam é privada').boundingBox();
+    const howToBox = await howTo.boundingBox();
+    expect(Math.abs((howToBox?.x ?? -99) - (titleBox?.x ?? 99))).toBeLessThanOrEqual(1);
     await expect(howTo).toHaveAttribute('aria-expanded', 'false');
     await howTo.click();
     await expect(howTo).toHaveAttribute('aria-expanded', 'true');

@@ -862,6 +862,7 @@ test('no celular, os Presets rolam com a página e a troca de lado fica fixa no 
   await expect
     .poll(async () => (await page.getByTestId('presets').boundingBox())?.y ?? 0)
     .toBeLessThan(0);
+  // No celular o header rola junto: a troca de lado fica fixa no próprio alto da tela.
   const side = await page.getByTestId('side-t').boundingBox();
   expect(side?.y ?? -1).toBeGreaterThanOrEqual(0);
   expect(side?.y ?? 999).toBeLessThan(80);

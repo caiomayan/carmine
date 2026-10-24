@@ -111,7 +111,7 @@ export function SlotPicker({
         {candidates.length === 0 ? (
           <div className="grid justify-items-start gap-3 rounded-lg bg-surface px-4 py-4 text-sm">
             <p className="text-muted-foreground">{t('panel.none')}</p>
-            <Button asChild variant="ghost" size="sm" className="-ml-2">
+            <Button asChild variant="ghost" size="sm">
               <Link href={catalogHref as Route}>
                 <AnimatedIcon icon={PlusIcon} size={15} />
                 {t('panel.addFromCatalog')}
