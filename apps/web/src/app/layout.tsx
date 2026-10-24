@@ -9,6 +9,7 @@ import { InputModality } from '@/components/input-modality';
 import { SanctionNotice } from '@/components/moderation/sanction-notice';
 import { MotionProvider } from '@/components/motion-provider';
 import { FirstSteps } from '@/components/session/first-steps';
+import { Effects } from '@/components/vida/effects';
 import { CurtainController } from '@/components/vida/footer-fx';
 import { PillHeaderController } from '@/components/vida/pill-header';
 import { SessionProvider } from '@/components/session/session-provider';
@@ -110,6 +111,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <InputModality />
         <PillHeaderController />
+        <Effects />
         {/* Só o idioma vai ao cliente; as mensagens ficam no servidor e chegam como props. */}
         <NextIntlClientProvider messages={null}>
           <MotionProvider>

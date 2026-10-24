@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { siSteam } from 'simple-icons';
 import { EmptyState } from '@/components/empty-state';
+import { EmptyScene } from '@/components/vida/empty-scene';
+import { Ticker } from '@/components/vida/ticker';
 import { BoxIcon } from '@/components/icons/animated/box';
 import { PlusIcon } from '@/components/icons/animated/plus';
 import { AnimatedIcon } from '@/components/icons/animated-icon';
@@ -109,6 +111,7 @@ export default async function InventoryPage() {
           data-testid="inventory-empty"
         >
           <div className="grid gap-6">
+            <EmptyScene kind="weapon" weaponImage={suggestions[0]?.image} className="mx-0 my-2 h-[150px]! w-[340px]!" />
             <div className="grid max-w-[56ch] gap-2">
               <h2 id="inventario-vazio" className="text-lg font-semibold">
                 {t('empty.title')}
@@ -174,7 +177,7 @@ export default async function InventoryPage() {
               className="text-caption text-muted-foreground tabular-nums"
               data-testid="inventory-count"
             >
-              {t('count', { count: items.length, limit })}
+              <Ticker value={items.length} className="font-semibold text-foreground" /> {items.length === 1 ? 'Item' : 'Itens'} de {limit}
             </span>
           }
         >

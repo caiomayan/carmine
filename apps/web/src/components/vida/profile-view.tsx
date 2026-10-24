@@ -16,7 +16,6 @@ import {
 } from './data';
 import { EmptyScene } from './empty-scene';
 import dynamic from 'next/dynamic';
-import { Effects } from './effects';
 import { setFooterMap } from './footer-fx';
 import { MapPicture, mapPalette, useNight } from './map-art';
 import { Face } from './face';
@@ -167,7 +166,6 @@ export function ProfileView({
       data-state={estado}
       style={{ '--amb-1': c1, '--amb-2': c2, '--amb-3': c3 } as CSSProperties}
     >
-      <Effects />
       <div aria-hidden="true" className="v-ambient">
         <i />
         <i />

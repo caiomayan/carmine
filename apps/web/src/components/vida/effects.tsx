@@ -24,6 +24,13 @@ export function Effects() {
         spot.style.setProperty('--px', `${event.clientX - box.left}px`);
         spot.style.setProperty('--py', `${event.clientY - box.top}px`);
       }
+      const holo = target.closest<HTMLElement>('.v-holo');
+      if (holo && !holo.classList.contains('v-tilt') && event.pointerType !== 'touch') {
+        const hb = holo.getBoundingClientRect();
+        holo.dataset.hot = '';
+        holo.style.setProperty('--hx', `${(((event.clientX - hb.left) / hb.width) * 100).toFixed(1)}%`);
+        holo.style.setProperty('--hy', `${(((event.clientY - hb.top) / hb.height) * 100).toFixed(1)}%`);
+      }
       if (reduce.matches || event.pointerType === 'touch') return;
       const tilt = target.closest<HTMLElement>('.v-tilt');
       if (!tilt) return;
@@ -42,6 +49,8 @@ export function Effects() {
       if (!frame) frame = requestAnimationFrame(apply);
     };
     const onOut = (event: PointerEvent) => {
+      const holoOnly = (event.target as Element | null)?.closest?.<HTMLElement>('.v-holo');
+      if (holoOnly && !holoOnly.contains(event.relatedTarget as Node | null)) delete holoOnly.dataset.hot;
       const tilt = (event.target as Element | null)?.closest?.<HTMLElement>('.v-tilt');
       if (!tilt || tilt.contains(event.relatedTarget as Node | null)) return;
       delete tilt.dataset.hot;

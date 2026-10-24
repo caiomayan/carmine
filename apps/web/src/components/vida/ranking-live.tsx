@@ -8,7 +8,6 @@ import { publishLiveSummary } from '@/lib/servers';
 import { cn } from '@/lib/utils';
 import { WeekCountdown } from './countdown';
 import { type Mode, PEOPLE } from './data';
-import { Effects } from './effects';
 import { Face } from './face';
 import { setFooterMap } from './footer-fx';
 import { MapPicture, mapPalette, useNight } from './map-art';
@@ -158,7 +157,6 @@ export function RankingLive() {
 
   return (
     <div data-vida="on" data-map={map} style={{ '--amb-1': c1, '--amb-2': c2, '--amb-3': c3 } as CSSProperties}>
-      <Effects />
       <div aria-hidden="true" className="v-ambient">
         <i />
         <i />

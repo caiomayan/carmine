@@ -84,6 +84,7 @@ export function InventoryGrid({
               image={card.image}
               rarity={card.rarity}
               rarityLabel={rarityLabels[card.rarity] ?? ''}
+              statTrak={card.statTrak}
               index={index}
               selected={highlight === card.uid}
               actionSpace

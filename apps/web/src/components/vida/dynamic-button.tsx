@@ -18,6 +18,8 @@ export function DynamicButton({
   done,
   icon,
   copyText,
+  onAction,
+  ariaLabel,
   variant = 'cta',
   loadingMs = 1400,
   doneMs = 2200,
@@ -30,6 +32,9 @@ export function DynamicButton({
   icon?: ReactNode;
   /** Se informado, é copiado para a área de transferência ao começar. */
   copyText?: string;
+  /** Chamado ao começar (a ação de verdade: equipar, conectar). */
+  onAction?: () => void;
+  ariaLabel?: string;
   variant?: 'cta' | 'quiet';
   loadingMs?: number;
   doneMs?: number;
@@ -43,6 +48,7 @@ export function DynamicButton({
   const start = () => {
     if (phase !== 'idle') return;
     if (copyText) void navigator.clipboard?.writeText(copyText).catch(() => {});
+    onAction?.();
     setPhase('loading');
     timers.current.push(
       setTimeout(() => {
@@ -61,6 +67,7 @@ export function DynamicButton({
       onClick={start}
       data-phase={phase}
       data-testid={testId}
+      aria-label={ariaLabel}
       aria-busy={phase === 'loading'}
       aria-live="polite"
       transition={{ type: 'spring', stiffness: 420, damping: 34 }}

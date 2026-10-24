@@ -33,6 +33,8 @@ import type { CandidateView, LoadoutView, SlotView } from '@/lib/loadout/view';
 import { sidesLabelKey } from '@/lib/team-sides';
 import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
+import { RARITY_COLOR } from '@/components/inventory/item-tile';
+import { ambientFor } from '@/components/vida/skin-ambient';
 import { BoardCard } from './board-card';
 import { SlotDock } from './slot-dock';
 import { SlotPicker } from './slot-picker';
@@ -228,7 +230,26 @@ export function LoadoutScreen({
         : null
       : null;
 
+  const [amb1, amb2, amb3] = ambientFor(
+    selected?.item?.image,
+    selected?.item ? RARITY_COLOR[selected.item.rarity] : null,
+    side === 't' ? 'var(--side-t)' : 'var(--side-ct)',
+  );
+
   return (
+    <div
+      data-vida="on"
+      data-side={side}
+      data-testid="loadout-ambient"
+      style={{ '--amb-1': amb1, '--amb-2': amb2, '--amb-3': amb3 } as React.CSSProperties}
+    >
+      <div aria-hidden="true" className="v-ambient">
+        <i />
+        <i />
+        <i />
+      </div>
+      {/* Ao trocar TR | CT a cor do lado varre o fundo, de leve, uma vez. */}
+      <span key={side} aria-hidden="true" data-side={side} className="v-side-sweep" />
     <Tabs value={side} onValueChange={(value) => setSide(value as LoadoutSide)} className="gap-0">
       <PageHead title={t('title')} subtitle={subtitle} />
       {notices}
@@ -251,7 +272,7 @@ export function LoadoutScreen({
           <div className="md:order-1">
             <TabsList
               aria-label={t('sidesLabel')}
-              className="max-md:w-full max-md:[&>*]:flex-1 rounded-lg bg-surface p-[3px]"
+              className="max-md:w-full max-md:[&>*]:flex-1 rounded-full bg-surface p-[3px]"
             >
               {SIDES.map((s) => (
                 <TabsTrigger
@@ -280,10 +301,10 @@ export function LoadoutScreen({
                 aria-pressed={column.id === activeColumn}
                 onClick={() => setChosenColumn(column.id)}
                 data-testid={`category-${column.id}`}
-                className="flex min-h-(--tap) flex-none items-center gap-2 rounded-md px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
+                className="flex min-h-(--tap) flex-none items-center gap-2 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground aria-pressed:bg-hover aria-pressed:text-foreground"
               >
                 {t(`groups.${column.id}`)}
-                <span className="text-caption font-medium text-muted-foreground">
+                <span className="v-sign text-[17px] text-muted-foreground">
                   {column.slots.length}
                 </span>
               </button>
@@ -312,7 +333,7 @@ export function LoadoutScreen({
               )}
             >
               <div className="grid grid-cols-[1fr_auto_1fr] items-baseline px-1 pb-1.5 max-lg:sr-only">
-                <span aria-hidden="true" className="text-[11px] text-muted-foreground">
+                <span aria-hidden="true" className="v-sign text-[20px] text-muted-foreground">
                   {columnIndex + 1}
                 </span>
                 <h2 id={id} className="text-center text-base font-[650]">
@@ -324,7 +345,7 @@ export function LoadoutScreen({
                     equipped: column.equipped,
                     total: column.slots.length,
                   })}
-                  className="justify-self-end text-[11px] text-muted-foreground"
+                  className="v-sign justify-self-end text-[20px] text-muted-foreground"
                 >
                   {column.equipped}/{column.slots.length}
                 </span>
@@ -349,7 +370,7 @@ export function LoadoutScreen({
 
       <div
         ref={dockRef}
-        className="pointer-events-none sticky bottom-0 z-30 pt-3.5 pb-[max(14px,env(safe-area-inset-bottom))]"
+        className="v-dock-glow pointer-events-none sticky bottom-0 z-30 pt-3.5 pb-[max(14px,env(safe-area-inset-bottom))]"
       >
         {selected ? (
           <div className="pointer-events-auto">
@@ -419,6 +440,7 @@ export function LoadoutScreen({
         </SheetContent>
       </Sheet>
     </Tabs>
+    </div>
   );
 }
 

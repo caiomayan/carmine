@@ -18,7 +18,6 @@ import {
   skinColors,
 } from './data';
 import { DynamicButton } from './dynamic-button';
-import { Effects } from './effects';
 import { setFooterMap } from './footer-fx';
 import { MapPicture, mapPalette, useNight } from './map-art';
 import { ActivityMarquee } from './marquee';
@@ -134,7 +133,6 @@ export function HomeLive({ state, skins }: { state: HomeState; skins: Record<num
       data-map={activeMap}
       style={{ '--amb-1': c1, '--amb-2': c2, '--amb-3': c3 } as CSSProperties}
     >
-      <Effects />
       <div aria-hidden="true" className="v-ambient">
         <i />
         <i />
