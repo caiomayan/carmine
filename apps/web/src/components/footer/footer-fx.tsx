@@ -1,6 +1,6 @@
 'use client';
 
-import { AnimatePresence, m } from 'framer-motion';
+import { AnimatePresence, m, useIsPresent } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, useEffect, useLayoutEffect, useRef, useState } from 'react';
@@ -163,23 +163,36 @@ export function FooterLastEvent({ initial }: { initial: ActivityView | null }) {
     >
       <span className="sr-only">{t('label')}: </span>
       <AnimatePresence mode="popLayout" initial={false}>
-        <m.div
-          key={latest.id}
-          initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
-          animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-          exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
-          transition={{ type: 'spring', stiffness: 380, damping: 34 }}
-          className="min-w-0 flex-1"
-        >
-          <Link
-            href={latest.href}
-            prefetch={false}
-            className="block min-w-0 truncate rounded-xs text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:text-foreground max-md:whitespace-normal"
-          >
-            <ActivityText item={latest} />
-          </Link>
-        </m.div>
+        <EventRoll key={latest.id} item={latest} />
       </AnimatePresence>
     </div>
+  );
+}
+
+/**
+ * Um acontecimento no rolo. Enquanto o antigo sai (a animação de saída dura uns quadros) ele e o novo
+ * existem juntos: o que sai fica `aria-hidden` e `inert`, para o leitor de tela, o Tab e quem procura
+ * por link verem um só acontecimento de cada vez.
+ */
+function EventRoll({ item }: { item: ActivityItemView }) {
+  const present = useIsPresent();
+  return (
+    <m.div
+      initial={{ y: 20, opacity: 0, filter: 'blur(4px)' }}
+      animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
+      exit={{ y: -20, opacity: 0, filter: 'blur(4px)' }}
+      transition={{ type: 'spring', stiffness: 380, damping: 34 }}
+      aria-hidden={present ? undefined : true}
+      inert={!present}
+      className="min-w-0 flex-1"
+    >
+      <Link
+        href={item.href}
+        prefetch={false}
+        className="block min-w-0 truncate rounded-xs text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:text-foreground max-md:whitespace-normal"
+      >
+        <ActivityText item={item} />
+      </Link>
+    </m.div>
   );
 }
