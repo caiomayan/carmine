@@ -150,17 +150,19 @@ test.describe('busca do header', () => {
     await expect.poll(() => width(page)).toBeCloseTo(160, 0);
 
     // Teclado: Tab até a busca cresce igual, também sem cobrir a navegação.
-    // O Tab só entra na busca depois de o header hidratar (a navegação rica troca a ordem do Tab ao hidratar):
-    // espere o React assumir os dois e repita o par Shift+Tab / Tab até pousar, em vez de apostar numa
-    // única sequência durante a transição.
+    // Tab de verdade, desde o começo da página, até pousar na busca: o que a pessoa faz (a ordem exata dos itens
+    // da navegação rica não é o que este teste mede). Espera o React assumir o header antes de começar.
     await hydrated(trigger(page));
     await hydrated(page.locator('header nav a').first());
-    await trigger(page).focus();
-    await expect(async () => {
-      await page.keyboard.press('Shift+Tab');
+    await page.evaluate(() => {
+      (document.activeElement as HTMLElement | null)?.blur();
+      window.scrollTo(0, 0);
+    });
+    for (let presses = 0; presses < 20; presses++) {
       await page.keyboard.press('Tab');
-      await expect(trigger(page)).toBeFocused({ timeout: 1_000 });
-    }).toPass({ timeout: 10_000 });
+      if (await trigger(page).evaluate((el) => el === document.activeElement)) break;
+    }
+    await expect(trigger(page)).toBeFocused();
     await expect.poll(() => width(page)).toBeGreaterThan(165);
     await page.waitForTimeout(500);
     expect(intersects((await trigger(page).boundingBox()) as Box, await lastNavItem(page))).toBe(
