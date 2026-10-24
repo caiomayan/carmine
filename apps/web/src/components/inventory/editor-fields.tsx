@@ -259,7 +259,16 @@ export function FloatField({
     <FieldShell
       id={id}
       label={t('float')}
-      aside={<span data-testid="wear-tier">{t(`wear.${tier}`)}</span>}
+      aside={
+        <span data-testid="wear-tier" className="inline-flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="size-2 rounded-full"
+            style={{ background: `var(--wear-${tier})` }}
+          />
+          {t(`wear.${tier}`)}
+        </span>
+      }
       hint={hint}
       error={error}
     >
@@ -285,11 +294,14 @@ export function FloatField({
               <Tooltip key={segment.tier}>
                 <TooltipTrigger asChild>
                   <span
-                    style={{ width: `${segment.width}%` }}
+                    style={{
+                      width: `${segment.width}%`,
+                      color: segment.tier === tier ? `var(--wear-${segment.tier})` : undefined,
+                    }}
                     data-tier={segment.tier}
                     className={cn(
                       'truncate border-l border-line pl-1 transition-colors duration-(--dur-base) ease-std first:border-l-0 first:pl-0',
-                      segment.tier === tier && 'text-foreground',
+                      segment.tier === tier && 'font-bold',
                     )}
                   >
                     {segment.width > 8 ? t(`wearShort.${segment.tier}`) : ' '}

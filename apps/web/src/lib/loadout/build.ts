@@ -52,6 +52,7 @@ export function buildLoadoutView(loadout: Loadout, items: InventoryItem[]): Load
               title: card?.title ?? 'Item',
               subtitle: card?.subtitle ?? null,
               image: card?.image ?? '',
+              palette: card?.palette ?? null,
               rarity: card?.rarity ?? 'consumer',
               statTrak: card?.statTrak ?? false,
             }

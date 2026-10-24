@@ -17,6 +17,7 @@ import { useSession } from '@/components/session/session-provider';
 import { useDraft } from '@/components/session/use-draft';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
+import { ambientFor } from '@/components/vida/skin-ambient';
 import { signInHref } from '@/lib/auth-links';
 import type { ItemSpec } from '@/lib/catalog/catalog';
 import { loadContracts } from '@/lib/contracts-schemas';
@@ -39,6 +40,7 @@ import { dragReducer, initialDragState, selectionFor } from '@/lib/viewer/drag-s
 import { CharmEditor, StickersEditor } from './attachments-editor';
 import { DecimalInput, FieldShell, FloatField, VipLock } from './editor-fields';
 import { useInventory } from './inventory-provider';
+import { RARITY_COLOR } from './item-tile';
 import { ItemViewer } from './item-viewer';
 
 // Remover só baixa o diálogo quando a pessoa pede.
@@ -210,6 +212,7 @@ export function ItemEditor(props: EditorProps) {
     !!spec.wear || !!spec.seed || spec.statTrak || spec.nameTag || spec.stickerSlots > 0;
   const lockedAttributes = !vip && (spec.statTrak || spec.nameTag);
   const visibleIssues = attempted ? issues : issues.filter((i) => i.code !== 'vip_required');
+  const ambient = ambientFor(spec.palette, RARITY_COLOR[entry.rarity], 'var(--muted)');
   const seedId = useId();
   const statTrakId = useId();
   const nameTagId = useId();
@@ -219,7 +222,21 @@ export function ItemEditor(props: EditorProps) {
       className="grid grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] items-start gap-8 max-lg:grid-cols-1 max-lg:gap-5"
       data-testid="item-editor"
       data-hydrated={hydrated || undefined}
+      data-vida="on"
+      style={
+        {
+          '--rc': RARITY_COLOR[entry.rarity],
+          '--amb-1': ambient[0],
+          '--amb-2': ambient[1],
+          '--amb-3': ambient[2],
+        } as React.CSSProperties
+      }
     >
+      <div aria-hidden="true" className="v-ambient">
+        <i />
+        <i />
+        <i />
+      </div>
       <div className="sticky top-[calc(var(--hdr-h)+20px)] min-w-0 max-lg:static">
         <ItemViewer
           item={item}

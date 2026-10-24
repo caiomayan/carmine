@@ -1,0 +1,5 @@
+@keyframes v-float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
