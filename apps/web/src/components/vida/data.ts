@@ -245,6 +245,11 @@ export function mapColors(map: MapSlug): [string, string, string] {
   return [c[0] ?? '#c23a41', c[1] ?? c[0] ?? '#c23a41', c[2] ?? c[1] ?? c[0] ?? '#c23a41'];
 }
 
+/** As cores extraídas da imagem da skin, ou nulo quando a skin não está em palettes.json. */
+export function skinPalette(skin: number): string[] | null {
+  return PALETTES.skins[String(skin)]?.colors ?? null;
+}
+
 /** Até 3 cores vivas extraídas da imagem da skin. */
 export function skinColors(skin: number): [string, string, string] {
   const c = PALETTES.skins[String(skin)]?.colors ?? ['#c23a41'];
@@ -261,6 +266,8 @@ export type SkinInfo = {
   rarity: 'consumer' | 'industrial' | 'milspec' | 'restricted' | 'classified' | 'covert' | 'contraband';
   image: string;
   colors: [string, string, string];
+  /** Faca ou luvas (★): ganham a folha dourada sutil no holo. */
+  foil: boolean;
 };
 
 export const RARITY_LABEL: Record<SkinInfo['rarity'], string> = {

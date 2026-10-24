@@ -4,6 +4,7 @@ import type { LoadoutSide } from '@carmine/contracts';
 import type { CSSProperties } from 'react';
 import { ItemArt, RARITY_COLOR } from '@/components/inventory/item-tile';
 import { TeamDots } from '@/components/team-dots';
+import { holoStyle } from '@/components/vida/skin-ambient';
 import type { SlotView } from '@/lib/loadout/view';
 import { cn } from '@/lib/utils';
 
@@ -60,11 +61,12 @@ export function BoardCard({
       data-key={slot.key}
       data-testid={`slot-${slot.slot}-${slot.side ?? 'all'}`}
       data-equipped={item ? item.uid : undefined}
+      data-foil={item && (slot.slot === 'knife' || slot.slot === 'gloves') ? '' : undefined}
       data-holo={item && (item.rarity === 'covert' || item.rarity === 'contraband') ? '2' : item ? '1' : undefined}
       style={
         {
           '--i': index,
-          ...(item ? { '--rc': RARITY_COLOR[item.rarity] } : {}),
+          ...(item ? { '--rc': RARITY_COLOR[item.rarity], ...holoStyle(item.image, RARITY_COLOR[item.rarity], { statTrak: item.statTrak }) } : {}),
         } as CSSProperties
       }
       className={cn(

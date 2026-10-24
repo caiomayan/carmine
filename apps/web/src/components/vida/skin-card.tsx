@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { isHolo, RARITY_LABEL, type SkinInfo } from './data';
 import { DynamicButton } from './dynamic-button';
+import { holoStyle } from './skin-ambient';
 
 const RARITY_INK: Record<SkinInfo['rarity'], string> = {
   consumer: '#0e1116',
@@ -77,7 +78,8 @@ export function SkinCard({
       data-holo={
         holo ? (skin.rarity === 'contraband' || skin.rarity === 'covert' ? '2' : '1') : undefined
       }
-      style={{ '--rar': rar } as CSSProperties}
+      data-foil={skin.foil ? '' : undefined}
+      style={{ '--rar': rar, ...holoStyle(skin.image, rar, { statTrak, palette: skin.colors }) } as CSSProperties}
       className={cn(
         'v-tilt v-spot relative isolate m-0 flex flex-col overflow-hidden rounded-xl bg-surface',
         holo && 'v-holo',

@@ -24,3 +24,24 @@ export function ambientFor(
   const b = palette?.[1] ?? palette?.[0] ?? base;
   return [a, b, sideVar];
 }
+
+/** Âmbar metálico do StatTrak. */
+const AMBER: [string, string, string] = ['#ff9a2e', '#ffc873', '#e0701a'];
+
+/**
+ * As variáveis do holo (--h1..--h3, lidas por .v-holo no vida.css): o brilho é metálico e tingido pela própria
+ * skin: as 2 a 3 cores extraídas da imagem (as mesmas da cor ambiente) ou, sem paleta, a cor da raridade. StatTrak
+ * troca para um âmbar metálico que ainda carrega um toque da skin. Nunca o arco-íris.
+ */
+export function holoStyle(
+  image: string | null | undefined,
+  rarityVar: string,
+  opts: { statTrak?: boolean; palette?: string[] | null } = {},
+): Record<string, string> {
+  const palette = opts.palette ?? skinPaletteByImage(image);
+  const a = palette?.[0] ?? rarityVar;
+  const b = palette?.[1] ?? palette?.[0] ?? rarityVar;
+  const c = palette?.[2] ?? palette?.[1] ?? palette?.[0] ?? rarityVar;
+  if (opts.statTrak) return { '--h1': AMBER[0], '--h2': AMBER[1], '--h3': AMBER[2], '--h0': a };
+  return { '--h1': a, '--h2': b, '--h3': c, '--h0': a };
+}

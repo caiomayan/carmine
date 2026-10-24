@@ -17,12 +17,13 @@ import {
 import { EmptyScene } from './empty-scene';
 import dynamic from 'next/dynamic';
 import { setFooterMap } from './footer-fx';
+import { InView } from './in-view';
 import { MapPicture, mapPalette, useNight } from './map-art';
 import { Face } from './face';
 import { SkinCard } from './skin-card';
 import { Ticker } from './ticker';
 
-const ProfileCharts = dynamic(() => import('./profile-charts'), { ssr: false, loading: () => <div aria-hidden="true" className="v-skel h-[320px] rounded-xl" /> });
+const ProfileCharts = dynamic(() => import('./profile-charts'), { ssr: false });
 const ProfileSpark = dynamic(() => import('./profile-spark'), { ssr: false });
 
 type Period = 'week' | 'total';
@@ -355,7 +356,9 @@ export function ProfileView({
                         </dd>
                         <dt className="order-2 text-body font-semibold text-muted-foreground">{n.label}</dt>
                         <dd className="order-3 min-h-8" aria-hidden="true">
-                          <ProfileSpark values={TREND[n.key] ?? []} label={`Tendência de ${n.label}`} />
+                          <InView delayMs={2500} fallback={<div className="h-8" />}>
+                            <ProfileSpark values={TREND[n.key] ?? []} label={`Tendência de ${n.label}`} />
+                          </InView>
                         </dd>
                       </div>
                     ))}
@@ -387,7 +390,11 @@ export function ProfileView({
               )}
             </Block>
 
-            {showStats ? <ProfileCharts /> : null}
+            {showStats ? (
+              <InView fallback={<div aria-hidden="true" className="v-skel h-[320px] rounded-xl" />}>
+                <ProfileCharts />
+              </InView>
+            ) : null}
 
             <Block title="Vitrine do Loadout">
               {hasLoadout ? (

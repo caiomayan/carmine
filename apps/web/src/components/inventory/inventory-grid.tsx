@@ -85,6 +85,7 @@ export function InventoryGrid({
               rarity={card.rarity}
               rarityLabel={rarityLabels[card.rarity] ?? ''}
               statTrak={card.statTrak}
+              foil={card.type === 'knife' || card.type === 'glove'}
               index={index}
               selected={highlight === card.uid}
               actionSpace

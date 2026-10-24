@@ -3,6 +3,7 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
 import { TeamDots } from '@/components/team-dots';
+import { holoStyle } from '@/components/vida/skin-ambient';
 import type { Rarity } from '@/lib/catalog/types';
 import type { AttachmentLabel } from '@/lib/inventory/item-form';
 import { cn } from '@/lib/utils';
@@ -123,6 +124,7 @@ export function ItemTile({
   stickers,
   charm,
   statTrak = false,
+  foil = false,
   index = 0,
   selected = false,
   actionSpace = false,
@@ -143,6 +145,8 @@ export function ItemTile({
   sides?: readonly LoadoutSide[];
   /** StatTrak ligado: junto das raridades altas, ganha o brilho holográfico. */
   statTrak?: boolean;
+  /** Faca ou luvas (★): folha dourada sutil no holo. */
+  foil?: boolean;
   /** Stickers aplicados, em ícones no canto inferior esquerdo da imagem. */
   stickers?: readonly AttachmentLabel[];
   /** Chaveiro aplicado, em ícone no canto inferior direito da imagem. */
@@ -161,7 +165,8 @@ export function ItemTile({
       href={href as Route}
       data-testid={testId}
       prefetch={false}
-      style={{ '--i': index, '--rc': RARITY_COLOR[rarity] } as CSSProperties}
+      data-foil={foil ? '' : undefined}
+      style={{ '--i': index, '--rc': RARITY_COLOR[rarity], ...holoStyle(image, RARITY_COLOR[rarity], { statTrak }) } as CSSProperties}
       data-holo={HOLO_RARITIES.has(rarity) || statTrak ? (rarity === 'covert' || rarity === 'contraband' ? '2' : '1') : undefined}
       className={cn(
         'group/tile v-spot relative grid enter-stagger content-start gap-2 rounded-xl bg-surface p-3 pb-3.5',
