@@ -299,7 +299,7 @@
    * desfoque no próprio header o tornaria bloco de contenção dos painéis).
    */
   [data-site-header]::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     z-index: -1;
