@@ -135,9 +135,22 @@ export async function settle(page: Page) {
   }
 }
 
-/** Rola até o fim real da página, onde o rodapé termina de entrar. */
+/**
+ * Rola até o fim real da página, onde o rodapé termina de entrar. O fim pode andar enquanto a página
+ * assenta (a fonte do wordmark do rodapé muda a altura dele, e a cortina reserva essa altura): rola de
+ * novo até a altura parar e o fim estar à vista. Instantâneo: com `scroll-behavior: smooth` a rolagem
+ * ainda estaria no meio quando o teste mede.
+ */
 export async function scrollToEnd(page: Page) {
-  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
+  await page.evaluate(async () => {
+    for (let round = 0; round < 6; round++) {
+      const height = document.documentElement.scrollHeight;
+      window.scrollTo({ top: height, behavior: 'instant' });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const settled = document.documentElement.scrollHeight === height;
+      if (settled && Math.abs(window.scrollY + window.innerHeight - height) <= 1) return;
+    }
+  });
 }
 
 /**

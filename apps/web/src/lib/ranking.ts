@@ -54,3 +54,41 @@ export function recentWeekStarts(now: Date, count: number): string[] {
     new Date(monday - i * 7 * DAY_MS).toISOString().slice(0, 10),
   );
 }
+
+/**
+ * O instante em que a semana do Ranking vira: a próxima segunda-feira, 00:00 no horário de Brasília
+ * (UTC−3, sem horário de verão), em milissegundos desde a época. Quem chama passa o relógio.
+ */
+export function nextWeekTurn(now: number): number {
+  const [current] = recentWeekStarts(new Date(now), 1);
+  return Date.parse(`${current}T00:00:00Z`) + 7 * DAY_MS + 3 * 60 * 60 * 1000;
+}
+
+/** O que importa de uma linha para saber se ela andou: quem é e onde está. */
+interface RankedRow {
+  position: number;
+  player: { publicId: number | null };
+}
+
+/**
+ * Quantas posições cada jogador subiu (positivo) ou caiu (negativo) de uma leitura do Ranking para
+ * a seguinte, por `publicId`. Só entra quem apareceu nas duas e mudou de lugar: quem acabou de
+ * entrar na lista, quem saiu e o Perfil privado (sem `publicId`, não dá para seguir) ficam de fora.
+ * É o único dado das setas ▲▼: elas nunca nascem de simulação, só de uma leitura que de fato mudou.
+ */
+export function rankingMoves(
+  previous: readonly RankedRow[],
+  next: readonly RankedRow[],
+): Map<number, number> {
+  const before = new Map<number, number>();
+  for (const row of previous) {
+    if (row.player.publicId !== null) before.set(row.player.publicId, row.position);
+  }
+  const moves = new Map<number, number>();
+  for (const row of next) {
+    const id = row.player.publicId;
+    const was = id === null ? undefined : before.get(id);
+    if (id !== null && was !== undefined && was !== row.position) moves.set(id, was - row.position);
+  }
+  return moves;
+}

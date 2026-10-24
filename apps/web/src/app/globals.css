@@ -408,24 +408,6 @@
   }
 }
 
-/* ---------- rodapé: sobe suave conforme entra na tela (só CSS, ligado à rolagem) ---------- */
-@keyframes footer-rise {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-}
-
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .footer-reveal {
-      animation: footer-rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 70%;
-    }
-  }
-}
-
 /* ---------- /entrar: o traço do vínculo com a Steam se desenha na chegada ---------- */
 @keyframes link-draw {
   from {

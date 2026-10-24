@@ -126,35 +126,37 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               </a>
               {/* Fluxo natural: o rodapé vem logo depois do conteúdo e, nas páginas curtas, o main ocupa o que sobra e o encosta no pé da tela. */}
               <div className="flex min-h-dvh flex-col">
-                <SiteHeader />
-                {/* Aviso da própria Punição (S07): só as mensagens dele vão ao cliente. */}
-                <NextIntlClientProvider
-                  messages={{
-                    moderation: { notice: moderation.notice, categories: moderation.categories },
-                  }}
-                >
-                  <SanctionNotice />
-                </NextIntlClientProvider>
-                <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
-                  <FirstSteps
-                    labels={{
-                      // Modelo com {name}: o nome vem da sessão no cliente, então o espaço dele segue literal.
-                      title: tSteps('title', { name: '{name}' }),
-                      intro: tSteps('intro'),
-                      strip: tSteps('strip'),
-                      open: tSteps('open'),
-                      close: tSteps('close'),
-                      done: tSteps('done'),
-                      toInventory: tSteps('toInventory'),
-                      steps: {
-                        add: step('add'),
-                        equip: step('equip'),
-                        play: step('play'),
-                      },
+                <div data-curtain-content className="flex flex-1 flex-col">
+                  <SiteHeader />
+                  {/* Aviso da própria Punição (S07): só as mensagens dele vão ao cliente. */}
+                  <NextIntlClientProvider
+                    messages={{
+                      moderation: { notice: moderation.notice, categories: moderation.categories },
                     }}
-                  />
-                  {children}
-                </main>
+                  >
+                    <SanctionNotice />
+                  </NextIntlClientProvider>
+                  <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
+                    <FirstSteps
+                      labels={{
+                        // Modelo com {name}: o nome vem da sessão no cliente, então o espaço dele segue literal.
+                        title: tSteps('title', { name: '{name}' }),
+                        intro: tSteps('intro'),
+                        strip: tSteps('strip'),
+                        open: tSteps('open'),
+                        close: tSteps('close'),
+                        done: tSteps('done'),
+                        toInventory: tSteps('toInventory'),
+                        steps: {
+                          add: step('add'),
+                          equip: step('equip'),
+                          play: step('play'),
+                        },
+                      }}
+                    />
+                    {children}
+                  </main>
+                </div>
                 <SiteFooter />
               </div>
               {sentry ? <ErrorReporting {...sentry} /> : null}
