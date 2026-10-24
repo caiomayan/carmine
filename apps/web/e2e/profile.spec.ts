@@ -8,6 +8,7 @@ import {
 } from './accounts';
 import { runApiCli } from './api-cli';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
+import { openAccountMenu } from './hydration';
 
 const NOT_FOUND = /404 \(Not Found\)/;
 
@@ -69,7 +70,7 @@ test('Conta não reivindicada: sinal discreto e convite "É você?" que entra na
   await expect(page.getByTestId('edit-profile')).toBeVisible();
   await expect(page.getByTestId('claim-invite')).toHaveCount(0);
   await expect(page.locator('header[data-claimed="true"]')).toBeVisible();
-  await page.getByTestId('account-menu').click();
+  await openAccountMenu(page);
   await expect(page.getByRole('menu')).toContainText('Jogou Antes');
   await expect(page.getByRole('menu')).not.toContainText('#');
 });
