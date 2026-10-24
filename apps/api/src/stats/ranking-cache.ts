@@ -29,6 +29,9 @@ export class RankingCache {
   ) {}
 
   async get(mode: GameMode, weekStart: string): Promise<CachedRanking | null> {
+    // TTL 0 desliga o cache também na leitura: o Valkey é compartilhado, e uma API com TTL maior
+    // (a de desenvolvimento) deixa ali um Ranking que esta, sem cache, não deve ler.
+    if (this.ttlSeconds <= 0) return null;
     try {
       const raw = await this.valkey.get(key(mode, weekStart));
       return raw === null ? null : (JSON.parse(raw) as CachedRanking);
