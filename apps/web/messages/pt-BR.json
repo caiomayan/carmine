@@ -189,6 +189,20 @@
       "esc": "Esc"
     }
   },
+  "activity": {
+    "label": "Atividade ao vivo",
+    "listLabel": "Acontecimentos recentes",
+    "pause": "Pausar a faixa de atividade",
+    "resume": "Retomar a faixa de atividade",
+    "modes": {
+      "retake": "Retake",
+      "deathmatch": "Deathmatch"
+    },
+    "joined": "<b>{player}</b> entrou em {server}",
+    "multiKill": "<b>{player}</b> fez {kills} kills seguidas em {server}",
+    "newLeader": "<b>{player}</b> assumiu o 1º lugar no {mode}",
+    "skinEquipped": "<b>{player}</b> equipou {skin}"
+  },
   "servers": {
     "title": "Servidores",
     "subtitle": "Retake e Deathmatch com o seu Loadout.",

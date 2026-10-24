@@ -111,6 +111,8 @@
   --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
   --animate-shimmer: shimmer var(--dur-skel) linear infinite;
   --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) infinite;
+  /* a faixa de atividade da home: o trilho anda a metade (uma cópia) por volta; a duração vem da largura */
+  --animate-marquee: marquee var(--marquee-duration, 30s) linear infinite;
 
   @keyframes rise {
     from {
@@ -132,6 +134,12 @@
     }
     to {
       background-position: -120% 0;
+    }
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
     }
   }
 

@@ -17,7 +17,9 @@ import {
   profileSchema,
   profileStatsSchema,
   type Ranking,
+  type RecentActivity,
   rankingSchema,
+  recentActivitySchema,
 } from '@carmine/contracts';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
@@ -146,6 +148,20 @@ export const getLiveServers = cache(async (): Promise<LiveServerList | null> => 
     const response = await apiGet('/servers', { visitorIp: await visitorIp() });
     if (!response.ok) return null;
     return liveServerListSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/**
+ * A faixa de atividade da home (público, sem sessão). Nulo com a API fora: a home segue sem a
+ * faixa, que não é essencial e nunca vira um aviso de erro.
+ */
+export const getRecentActivity = cache(async (): Promise<RecentActivity | null> => {
+  try {
+    const response = await apiGet('/activity/recent', { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return recentActivitySchema.parse(await response.json());
   } catch {
     return null;
   }
