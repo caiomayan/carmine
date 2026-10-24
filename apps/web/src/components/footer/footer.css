@@ -1,0 +1,86 @@
+/*
+ * Rodapé da Vida: a cortina (o conteúdo sobe revelando o rodapé fixo atrás) e o wordmark gigante com a
+ * arte do mapa dentro das letras. A cortina só vale com `html[data-curtain="on"]`, que o
+ * CurtainController liga no desktop sem movimento reduzido.
+ */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  html[data-curtain="on"] [data-curtain-content] {
+    position: relative;
+    z-index: 2;
+    min-height: 100dvh;
+    margin-bottom: var(--footer-h, 0px);
+    background: var(--bg);
+    border-bottom-left-radius: var(--r-panel);
+    border-bottom-right-radius: var(--r-panel);
+    box-shadow: 0 32px 70px -24px rgb(0 0 0 / 0.55);
+  }
+
+  html[data-curtain="on"] [data-site-footer] {
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 0;
+  }
+}
+
+[data-site-footer] {
+  background: var(--bg);
+}
+
+/* O wordmark: arte do mapa dentro das letras, com um spotlight que segue o mouse. */
+.ft-wordmark {
+  --mx: 50%;
+  --my: 50%;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  line-height: 0.86;
+  user-select: none;
+}
+
+.ft-wordmark-text {
+  display: inline-block;
+  margin: 0;
+  white-space: nowrap;
+  font-size: var(--fs, 17vw);
+  letter-spacing: 0.02em;
+  line-height: 0.86;
+  background-image: var(--art);
+  background-size: cover;
+  background-position: center 40%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: brightness(0.5) saturate(0.85);
+  transition: filter var(--dur-slow) var(--ease-std);
+}
+
+[data-theme="light"] .ft-wordmark-text {
+  filter: brightness(0.82) contrast(1.05);
+}
+
+.ft-wordmark-lit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  filter: brightness(1.25) saturate(1.35);
+  opacity: 0;
+  -webkit-mask-image: radial-gradient(
+    320px circle at var(--mx) var(--my),
+    #000 0%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(320px circle at var(--mx) var(--my), #000 0%, transparent 100%);
+  transition: opacity var(--dur-slow) var(--ease-out);
+}
+
+.ft-wordmark:hover .ft-wordmark-lit {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-wordmark-text,
+  .ft-wordmark-lit {
+    transition: none;
+  }
+}

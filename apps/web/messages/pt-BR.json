@@ -69,7 +69,10 @@
         "unavailable": "Estado indisponível agora"
       },
       "copyright": "© {year} Carmine. Todos os direitos reservados.",
-      "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela."
+      "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela.",
+      "last": {
+        "label": "Último acontecimento nos servidores"
+      }
     },
     "account": {
       "signIn": "Entrar",
@@ -1672,7 +1675,6 @@
       "deathmatch": "Quem faz mais kills por minuto fica na frente. Para entrar, jogue ao menos {min} minutos na semana; em caso de empate, vale o HS%."
     },
     "table": {
-      "caption": "{mode}: top {size} da semana de {range}",
       "position": "Posição",
       "player": "Jogador",
       "roundsWon": "Rounds vencidos",
@@ -1682,7 +1684,8 @@
       "roundsPlayed": "Rounds",
       "timePlayed": "Tempo",
       "extraRetake": "HS% {hs} · {value} rounds",
-      "extraDeathmatch": "HS% {hs} · {value}"
+      "extraDeathmatch": "HS% {hs} · {value}",
+      "captionRest": "{mode}: do {first}º ao {last}º da semana"
     },
     "rowPosition": "{position}º",
     "you": "Você",
@@ -1720,7 +1723,30 @@
       "body": "O Ranking guarda semanas que começam na segunda-feira e já começaram.",
       "action": "Ver a semana atual"
     },
-    "loading": "Carregando o Ranking"
+    "loading": "Carregando o Ranking",
+    "podium": {
+      "label": "Pódio",
+      "unitRetake": "rounds vencidos",
+      "unitDeathmatch": "kills por minuto",
+      "stats": "K/D {kd} · HS% {hs}"
+    },
+    "live": {
+      "updated": "O Ranking foi atualizado."
+    },
+    "move": {
+      "up": "Subiu {count, plural, one {# posição} other {# posições}}",
+      "down": "Caiu {count, plural, one {# posição} other {# posições}}"
+    },
+    "countdown": {
+      "prefix": "Recomeça em",
+      "days": "d",
+      "hours": "h",
+      "minutes": "min",
+      "seconds": "s",
+      "aria": "Faltam {days, plural, one {# dia} other {# dias}}, {hours, plural, one {# hora} other {# horas}}, {minutes, plural, one {# minuto} other {# minutos}} e {seconds, plural, one {# segundo} other {# segundos}} para a virada da semana.",
+      "pending": "Contando até a virada da semana"
+    },
+    "playingNow": "Jogando agora"
   },
   "headerPreviews": {
     "loading": "Carregando",

@@ -2,11 +2,15 @@ import type { Route } from 'next';
 import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
+import { CurtainController, FooterLastEvent, FooterWordmark } from '@/components/footer/footer-fx';
 import { FooterStatus } from '@/components/footer-status';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { Seal } from '@/components/seal';
+import { artPair } from '@/components/vida/map-art';
 import { Wordmark } from '@/components/wordmark';
+import { getActivityView } from '@/lib/activity/server';
 import { getLiveServers } from '@/lib/api-server';
+import { featuredMap } from '@/lib/featured-map';
 import { SOCIAL_LINKS } from '@/lib/social';
 
 type FooterLink = { label: string; href: Route } | { label: string; href: string; external: true };
@@ -49,15 +53,28 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
 export async function SiteFooter() {
   const t = await getTranslations('shell.footer');
   const discord = SOCIAL_LINKS.find((s) => s.id === 'discord');
-  const servers = await getLiveServers();
-  const { status } = (await getMessages()).shell.footer;
+  const [servers, activity] = await Promise.all([getLiveServers(), getActivityView()]);
+  const messages = await getMessages();
+  const { status, last } = messages.shell.footer;
+  // O mapa em destaque (o do servidor mais cheio agora) aparece dentro das letras do wordmark.
+  const map = featuredMap(servers?.servers);
 
   const community: FooterLink[] = [{ label: t('links.rules'), href: '/regras' }];
   if (discord) community.push({ label: t('links.discord'), href: discord.href, external: true });
 
   return (
-    <footer className="border-t border-line">
-      <div className="container-page footer-reveal">
+    <footer data-site-footer className="relative overflow-hidden">
+      <CurtainController />
+      <div className="container-page pt-12 max-md:pt-8">
+        {/* A faixa viva: o estado dos servidores (resumo ao vivo) e o último acontecimento. */}
+        <NextIntlClientProvider
+          messages={{ shell: { footer: { status, last } }, activity: messages.activity }}
+        >
+          <div className="flex flex-wrap items-stretch gap-3 max-md:flex-col">
+            <FooterStatus initial={servers?.summary ?? null} />
+            <FooterLastEvent initial={activity} />
+          </div>
+        </NextIntlClientProvider>
         <div className="grid grid-cols-2 gap-x-7 gap-y-9 pt-14 pb-10 max-md:gap-x-5 max-md:gap-y-7 max-md:pt-10 max-md:pb-7 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))] lg:gap-10">
           <div className="col-span-2 grid content-start gap-4.5 lg:col-span-1">
             <Link
@@ -113,14 +130,13 @@ export async function SiteFooter() {
             />
           </nav>
         </div>
-        {/* Só as mensagens do estado vão ao cliente: ele acompanha o resumo ao vivo da home. */}
-        <NextIntlClientProvider messages={{ shell: { footer: { status } } }}>
-          <FooterStatus initial={servers?.summary ?? null} />
-        </NextIntlClientProvider>
         <div className="flex flex-wrap justify-between gap-x-6 gap-y-2 pt-5 pb-9 text-xs text-muted-foreground">
           <p>{t('copyright', { year: new Date().getFullYear() })}</p>
           <p className="max-w-[70ch]">{t('disclaimer')}</p>
         </div>
+      </div>
+      <div className="px-4 pb-3 max-md:px-3">
+        <FooterWordmark map={map} art={artPair(map)} />
       </div>
     </footer>
   );

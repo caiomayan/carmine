@@ -101,10 +101,18 @@ test('um empate em rounds vencidos é resolvido pelo K/D', async ({ page, reques
 
   await page.goto('/ranking');
 
-  const names = await page.getByTestId('ranking-row').allInnerTexts();
-  const highAt = names.findIndex((row) => row.includes(high.name));
-  const lowAt = names.findIndex((row) => row.includes(low.name));
-  expect(highAt).toBeGreaterThanOrEqual(0);
+  // O pódio vem na ordem 2-1-3 na tela: a posição é o atributo, não a ordem no documento.
+  const rows = await page
+    .getByTestId('ranking-row')
+    .evaluateAll((els) =>
+      els.map((el) => ({
+        position: Number((el as HTMLElement).dataset.position),
+        text: el.textContent ?? '',
+      })),
+    );
+  const highAt = rows.find((row) => row.text.includes(high.name))?.position ?? 0;
+  const lowAt = rows.find((row) => row.text.includes(low.name))?.position ?? 0;
+  expect(highAt).toBeGreaterThanOrEqual(1);
   expect(highAt).toBeLessThan(lowAt);
   await expect(page.getByRole('link', { name: high.name })).toHaveAttribute(
     'href',
@@ -381,3 +389,110 @@ for (const theme of ['dark', 'light'] as const) {
     }
   });
 }
+
+test('o pódio é 2-1-3: o primeiro no meio e mais alto, os três com a posição escrita', async ({
+  page,
+  request,
+}) => {
+  await tiedPair(request);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/ranking');
+  const slots = page.getByTestId('ranking-podium').getByTestId('ranking-row');
+  await expect(slots).toHaveCount(3);
+  const boxes = await Promise.all(
+    [1, 2, 3].map(async (position) => {
+      const slot = page.getByTestId('ranking-podium').locator(`[data-position="${position}"]`);
+      await expect(slot).toContainText(String(position));
+      return slot.boundingBox();
+    }),
+  );
+  const [first, second, third] = boxes;
+  // 2º à esquerda, 1º no meio, 3º à direita; o do meio é o mais alto.
+  expect(second?.x ?? 0).toBeLessThan(first?.x ?? 0);
+  expect(first?.x ?? 0).toBeLessThan(third?.x ?? 0);
+  expect(first?.height ?? 0).toBeGreaterThan(second?.height ?? 0);
+  expect(second?.height ?? 0).toBeGreaterThan(third?.height ?? 0);
+});
+
+test('a contagem até a virada da semana só existe na semana atual, com a frase para o leitor de tela', async ({
+  page,
+}) => {
+  await page.goto('/ranking');
+  const timer = page.getByTestId('week-countdown');
+  await expect(timer).toHaveAttribute('role', 'timer');
+  await expect(timer).toHaveAttribute('aria-label', /para a virada da semana/);
+  // Os dígitos são rolos decorativos; o valor muda a cada segundo.
+  const before = await timer.getAttribute('aria-label');
+  await expect.poll(() => timer.getAttribute('aria-label')).not.toBe(before);
+
+  const past = new Date(Date.parse(thisWeek()) - 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  await page.goto(`/ranking?semana=${past}`);
+  await expect(page.getByTestId('week-countdown')).toHaveCount(0);
+});
+
+test('a troca de posição é animada e ganha a seta só quando a leitura nova muda a ordem', async ({
+  page,
+  request,
+}) => {
+  const { high, low } = await tiedPair(request);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/ranking');
+  // Sem troca nenhuma ainda, nenhuma seta: elas nunca nascem de simulação.
+  await expect(page.getByTestId('ranking-move')).toHaveCount(0);
+
+  // A de baixo joga mais e passa a de cima: dados novos de verdade, lidos de novo pela API.
+  await play(request, { rounds: { steamIds: [low.steamId], count: 40 } });
+  await expect(async () => {
+    // A aba voltando à vista dispara a leitura na hora (de resto ela vem a cada 20 s).
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page.getByTestId('ranking-move').first()).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 20_000 });
+
+  const rowOf = (name: string) =>
+    page.getByTestId('ranking-row').filter({ has: page.getByRole('link', { name }) });
+  await expect(rowOf(low.name).getByTestId('ranking-move')).toHaveAttribute('data-direction', 'up');
+  await expect(rowOf(high.name).getByTestId('ranking-move')).toHaveAttribute(
+    'data-direction',
+    'down',
+  );
+  await expect(page.getByTestId('ranking-live-status')).toHaveText('O Ranking foi atualizado.');
+});
+
+test('o jogador logado que está jogando agora ganha o pontinho no avatar e o chip ao lado do nome', async ({
+  page,
+  request,
+}) => {
+  const player = await createUnclaimedAccount(request, 'Presença Rank');
+  await play(request, { rounds: { steamIds: [player.steamId], count: 60 } });
+  await signInByRequest(page, player.steamId);
+  await page.route('**/api/me/playing', (route) =>
+    route.fulfill({
+      json: {
+        server: {
+          id: randomUUID(),
+          name: 'retake-1',
+          showcaseName: null,
+          mode: 'retake',
+          map: 'de_mirage',
+        },
+      },
+    }),
+  );
+  await expect(async () => {
+    await page.goto('/ranking');
+    await expect(page.locator('#minha-linha')).toHaveCount(1, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+
+  const own = page.locator('#minha-linha');
+  await expect(own.getByTestId('presence-chip')).toHaveText('Jogando agora');
+  // O estado vem escrito também para o leitor de tela (o pontinho sozinho não diz nada).
+  await expect(own.locator('.sr-only', { hasText: 'Jogando agora' })).toHaveCount(1);
+
+  // Quem não está jogando não leva chip.
+  await page.unroute('**/api/me/playing');
+  await page.route('**/api/me/playing', (route) => route.fulfill({ json: { server: null } }));
+  await page.reload();
+  await expect(page.locator('#minha-linha').getByTestId('presence-chip')).toHaveCount(0);
+});
