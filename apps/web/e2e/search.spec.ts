@@ -417,6 +417,8 @@ test.describe('celular', () => {
   }) => {
     await page.goto('/');
     await hydrated(page);
+    // A entrada do campo (fade-up) escala por uns quadros: mede depois que ela termina.
+    await settle(page);
     const box = await trigger(page).boundingBox();
     expect(box?.width).toBeGreaterThanOrEqual(44);
     expect(box?.height).toBeGreaterThanOrEqual(44);

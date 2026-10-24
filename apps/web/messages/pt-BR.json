@@ -69,7 +69,10 @@
         "unavailable": "Estado indisponível agora"
       },
       "copyright": "© {year} Carmine. Todos os direitos reservados.",
-      "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela."
+      "disclaimer": "Projeto independente da comunidade. Counter-Strike 2 e Valve são marcas da Valve Corporation; a Carmine não é afiliada nem endossada por ela.",
+      "last": {
+        "label": "Último acontecimento nos servidores"
+      }
     },
     "account": {
       "signIn": "Entrar",
@@ -189,6 +192,124 @@
       "esc": "Esc"
     }
   },
+  "activity": {
+    "label": "Atividade ao vivo",
+    "listLabel": "Acontecimentos recentes",
+    "pause": "Pausar a faixa de atividade",
+    "resume": "Retomar a faixa de atividade",
+    "modes": {
+      "retake": "Retake",
+      "deathmatch": "Deathmatch"
+    },
+    "joined": "<b>{player}</b> entrou em {server}",
+    "multiKill": "<b>{player}</b> fez {kills} kills seguidas em {server}",
+    "newLeader": "<b>{player}</b> assumiu o 1º lugar no {mode}",
+    "skinEquipped": "<b>{player}</b> equipou {skin}"
+  },
+  "home": {
+    "rail": "Ao vivo",
+    "hero": {
+      "live": "Ao vivo",
+      "paused": "Em pausa",
+      "brand": "St. Carmine",
+      "tagline": "Servidores comunitários",
+      "asleep": "Os servidores estão dormindo",
+      "players": "{count, plural, one {jogador} other {jogadores}}",
+      "onAir": "no ar agora",
+      "asleepBody": "O último sinal de um servidor foi {ago}. Chame um amigo no Discord: quando o primeiro entra, o servidor acorda sozinho.",
+      "asleepNever": "Nenhum servidor está no ar agora. Chame um amigo no Discord: quando o primeiro entra, o servidor acorda sozinho.",
+      "friendsBody": "{count, plural, one {# servidor no ar.} other {# servidores no ar.}} <b>{name}</b>{others, plural, =0 {} one { e mais #} other { e mais #}} {others, plural, =0 {está jogando agora} other {estão jogando agora}}; dá para entrar junto.",
+      "quietBody": "{count, plural, one {# servidor no ar, tranquilo para entrar.} other {# servidores no ar, tranquilos para entrar.}} As suas skins já aparecem no jogo.",
+      "quietNoLoadout": "{count, plural, one {# servidor no ar, tranquilo para entrar.} other {# servidores no ar, tranquilos para entrar.}} Monte o seu Loadout e as suas skins aparecem no jogo.",
+      "signedOutBody": "Retake e Deathmatch com skins de verdade no servidor. Entre com a Steam e o seu Loadout vai junto.",
+      "signIn": "Entrar com a Steam",
+      "discord": "Chamar a galera no Discord",
+      "playNow": "Jogar agora",
+      "seeLoadout": "Ver o meu Loadout",
+      "buildLoadout": "Montar o meu Loadout",
+      "seeServers": "Ver os servidores",
+      "fullest": "Mais cheio agora: {name}"
+    },
+    "feed": {
+      "titleLive": "Ao vivo agora",
+      "titleRecent": "Atividade recente",
+      "realtime": "em tempo real",
+      "empty": "A atividade dos servidores aparece aqui: quem entra, quem faz uma sequência de abates e as skins que valem destaque.",
+      "listLabel": "Atividade dos jogadores"
+    },
+    "top": {
+      "title": "Top 3 da semana",
+      "modeLabel": "Modo",
+      "unavailable": "Não deu para carregar o Ranking agora.",
+      "empty": "Ninguém cumpriu o mínimo do {mode} esta semana ainda.",
+      "unit": {
+        "retake": "rounds vencidos",
+        "deathmatch": "abates por minuto"
+      },
+      "seeRanking": "Ver o Ranking"
+    },
+    "week": {
+      "title": "Esta semana",
+      "turns": "O Ranking vira em",
+      "progress": "{day}: {percent}% da semana já passou",
+      "progressWaiting": "Quanto da semana já passou",
+      "empty": "Ainda sem jogos nesta semana. Os números aparecem assim que o primeiro jogador entrar.",
+      "countdown": {
+        "waiting": "Contando até a virada da semana",
+        "left": "Faltam {days, plural, one {# dia} other {# dias}}, {hours} horas, {minutes} minutos e {seconds} segundos para a virada da semana",
+        "d": "d",
+        "h": "h",
+        "min": "min",
+        "s": "s"
+      },
+      "delta": {
+        "same": "Igual à semana passada",
+        "percent": {
+          "up": "+{amount, number}% sobre a semana passada",
+          "down": "−{amount, number}% sobre a semana passada"
+        },
+        "points": {
+          "up": "+{amount, number} p.p. sobre a semana passada",
+          "down": "−{amount, number} p.p. sobre a semana passada"
+        }
+      },
+      "rows": {
+        "players": "Jogadores ativos",
+        "kills": "Abates",
+        "headshotPercent": "HS%",
+        "hours": "Horas jogadas"
+      }
+    },
+    "loadouts": {
+      "title": "Loadouts da semana",
+      "subtitle": "O que os melhores da semana estão usando. A skin muda a cor da vitrine.",
+      "pause": "Pausar rotação",
+      "resume": "Retomar rotação",
+      "choose": "Escolher o Loadout",
+      "pick": "{skin} ({weapon}), de {name}"
+    },
+    "rarity": {
+      "consumer": "Consumidor",
+      "industrial": "Industrial",
+      "milspec": "Militar",
+      "restricted": "Restrito",
+      "classified": "Confidencial",
+      "covert": "Secreto",
+      "contraband": "Contrabando"
+    },
+    "wear": {
+      "fn": "Nova de Fábrica",
+      "mw": "Pouco Usada",
+      "ft": "Testada em Campo",
+      "ww": "Bem Desgastada",
+      "bs": "Veterana de Guerra"
+    },
+    "sides": {
+      "ct": "CT",
+      "t": "TR"
+    },
+    "statTrak": "StatTrak™"
+  },
   "servers": {
     "title": "Servidores",
     "subtitle": "Retake e Deathmatch com o seu Loadout.",
@@ -237,7 +358,8 @@
       "opening": "Abrindo o CS2.",
       "hint": "Se não abrir, no console do CS2: <cmd>connect {address}</cmd>",
       "close": "Fechar instrução",
-      "mobileHint": "No celular não dá para jogar: abra o CS2 no PC e, no console, digite <cmd>connect</cmd> com o IP do servidor."
+      "mobileHint": "No celular não dá para jogar: abra o CS2 no PC e, no console, digite <cmd>connect</cmd> com o IP do servidor.",
+      "copying": "Copiando"
     },
     "empty": {
       "title": "Nenhum servidor no ar ainda",
@@ -554,14 +676,14 @@
       "emptyVisitor": "Quando {name} jogar num Servidor Carmine, os números aparecem aqui.",
       "emptyOwner": "Entre num Servidor Carmine e jogue: os seus números aparecem aqui em até um minuto.",
       "unavailable": "Não conseguimos carregar as Estatísticas agora. Tente de novo em instantes.",
-      "total": "Total",
       "groupLabel": "Estatísticas de {mode}",
       "labels": {
-        "kills": "Kills",
+        "rounds": "Rounds jogados",
+        "kills": "Abates",
         "deaths": "Mortes",
         "assists": "Assistências",
         "kd": "K/D",
-        "headshotPercent": "HS%",
+        "headshotPercent": "Na cabeça",
         "timePlayed": "Tempo jogado",
         "adr": "ADR",
         "kpm": "KPM"
@@ -570,13 +692,62 @@
         "hoursMinutes": "{hours} h {minutes, number, ::integer-width/2} min",
         "minutes": "{minutes} min"
       },
-      "none": "—"
+      "none": "—",
+      "numbers": {
+        "kd": "K/D",
+        "kills": "Abates",
+        "headshotPercent": "Na cabeça",
+        "hours": "Horas jogadas"
+      },
+      "period": {
+        "label": "Período",
+        "week": "Esta semana",
+        "total": "Total"
+      },
+      "trend": "Tendência de {name} nas últimas semanas",
+      "charts": {
+        "rounds": {
+          "title": "Rounds por semana",
+          "note": "As últimas oito semanas; a última é a atual"
+        },
+        "head": {
+          "title": "Na cabeça",
+          "weekNote": "Abates com headshot nesta semana",
+          "totalNote": "Abates com headshot, no total",
+          "label": "HS%",
+          "none": "Sem abates neste período"
+        },
+        "hours": {
+          "title": "Horas por Modo",
+          "weekNote": "{hours} nesta semana",
+          "totalNote": "{hours} no total",
+          "total": "Total",
+          "none": "Sem tempo jogado neste período"
+        }
+      },
+      "collecting": {
+        "status": "Coletando",
+        "heatmap": {
+          "title": "Atividade por dia",
+          "body": "Ainda não registramos a atividade por dia. O mapa de calor aparece aqui quando começarmos a guardar esses dados."
+        },
+        "radar": {
+          "title": "Armas por lado",
+          "body": "Os abates por arma e por lado ainda não são registrados. O radar aparece aqui quando houver dados."
+        },
+        "sessions": {
+          "title": "Sessões de jogo",
+          "body": "As sessões ainda não são registradas. Quando forem, as últimas aparecem aqui."
+        },
+        "asideLabel": "Atividade"
+      }
     },
     "editProfile": "Editar perfil",
     "viewAsVisitor": "Ver como visitante",
     "asVisitorNote": "Você está vendo o seu Perfil como um visitante vê.",
     "backToOwner": "Voltar à visão de dono",
-    "privateSeal": "Perfil privado"
+    "privateSeal": "Perfil privado",
+    "presence": "Jogando agora"
   },
   "settings": {
     "metaTitle": "Configurações",
@@ -971,6 +1142,8 @@
       "none": "Você não tem Itens para este slot.",
       "addFromCatalog": "Adicionar do catálogo",
       "bothSides": "Equipar também em {side}",
+      "equipping": "Equipando",
+      "equipped": "Equipado",
       "rarityStatTrak": "{rarity} · StatTrak™",
       "equip": "Equipar {name}",
       "unequip": "Desequipar",
@@ -1000,7 +1173,6 @@
       "active": "Ativo",
       "activate": "Ativar {name}",
       "activated": "{name} é o seu Loadout agora.",
-      "equippedCount": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
       "readOnly": "Somente leitura",
       "readOnlyBody": "Sem Período VIP ativo, os Presets extras ficam somente leitura: dá para ver, mas não editar, renomear, ativar nem apagar. Nada foi apagado; com o VIP de volta, tudo volta a funcionar.",
       "activeReadOnly": "O Preset ativo, {name}, ficou somente leitura sem VIP. Ele continua valendo no jogo, sem os Itens VIP. Para mudar o Loadout, ative o Preset principal.",
@@ -1037,7 +1209,17 @@
         "deleted": "Preset {name} apagado."
       },
       "saving": "Salvando",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "hand": {
+        "side": {
+          "ct": "CT",
+          "t": "TR"
+        },
+        "activeBadge": "Ativo",
+        "items": "{count, plural, =0 {Nenhum Item} one {# Item} other {# Itens}}",
+        "summary": "Faca: {knife}. Luvas: {gloves}. Rifle: {rifle}. {count, plural, =0 {Nenhum Item equipado.} one {# Item equipado.} other {# Itens equipados.}}",
+        "hint": "Passe o mouse ou use as setas para folhear. Clique, Enter ou jogue a carta para cima para ativar."
+      }
     },
     "errors": {
       "name": "Dê um nome de 1 a {max} caracteres.",
@@ -1486,14 +1668,15 @@
       "label": "Semana",
       "current": "{start} a {end} (atual)",
       "past": "{start} a {end}",
-      "range": "{start} a {end}"
+      "range": "{start} a {end}",
+      "titleCurrent": "Esta semana, de {start} a {end}",
+      "titlePast": "Semana de {start} a {end}"
     },
     "rules": {
       "retake": "Quem vence mais rounds na semana fica na frente. Para entrar, jogue ao menos {min} rounds; em caso de empate, vale o K/D.",
       "deathmatch": "Quem faz mais kills por minuto fica na frente. Para entrar, jogue ao menos {min} minutos na semana; em caso de empate, vale o HS%."
     },
     "table": {
-      "caption": "{mode}: top {size} da semana de {range}",
       "position": "Posição",
       "player": "Jogador",
       "roundsWon": "Rounds vencidos",
@@ -1503,7 +1686,8 @@
       "roundsPlayed": "Rounds",
       "timePlayed": "Tempo",
       "extraRetake": "HS% {hs} · {value} rounds",
-      "extraDeathmatch": "HS% {hs} · {value}"
+      "extraDeathmatch": "HS% {hs} · {value}",
+      "captionRest": "{mode}: do {first}º ao {last}º da semana"
     },
     "rowPosition": "{position}º",
     "you": "Você",
@@ -1541,7 +1725,30 @@
       "body": "O Ranking guarda semanas que começam na segunda-feira e já começaram.",
       "action": "Ver a semana atual"
     },
-    "loading": "Carregando o Ranking"
+    "loading": "Carregando o Ranking",
+    "podium": {
+      "label": "Pódio",
+      "unitRetake": "rounds vencidos",
+      "unitDeathmatch": "kills por minuto",
+      "stats": "K/D {kd} · HS% {hs}"
+    },
+    "live": {
+      "updated": "O Ranking foi atualizado."
+    },
+    "move": {
+      "up": "Subiu {count, plural, one {# posição} other {# posições}}",
+      "down": "Caiu {count, plural, one {# posição} other {# posições}}"
+    },
+    "countdown": {
+      "prefix": "Recomeça em",
+      "days": "d",
+      "hours": "h",
+      "minutes": "min",
+      "seconds": "s",
+      "aria": "Faltam {days, plural, one {# dia} other {# dias}}, {hours, plural, one {# hora} other {# horas}}, {minutes, plural, one {# minuto} other {# minutos}} e {seconds, plural, one {# segundo} other {# segundos}} para a virada da semana.",
+      "pending": "Contando até a virada da semana"
+    },
+    "playingNow": "Jogando agora"
   },
   "headerPreviews": {
     "loading": "Carregando",

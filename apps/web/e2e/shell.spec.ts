@@ -8,10 +8,11 @@ for (const theme of ['dark', 'light'] as const) {
     await saveTheme(page, theme);
     await page.goto('/');
 
-    await expect(page.getByRole('heading', { level: 1, name: 'Servidores' })).toBeVisible();
+    await expect(page.getByTestId('home-hero').getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.locator('body')).toHaveCSS('background-color', BG[theme]);
-    await expect(page.getByRole('region', { name: 'Servidores Carmine' })).toBeVisible();
+    // Na Home o brilho ambiente fica atrás do header: o corpo não pinta, o html pinta.
+    await expect(page.locator('html')).toHaveCSS('background-color', BG[theme]);
+    await expect(page.getByRole('heading', { level: 2, name: 'Servidores' })).toBeVisible();
 
     await expect(mainNav(page).getByRole('link')).toHaveCount(4);
     await expect(mainNav(page).getByRole('link', { name: 'Jogar' })).toHaveAttribute(
@@ -130,7 +131,7 @@ for (const width of WIDTHS) {
   });
 }
 
-test('container global de 1080 px com margem mínima de 36 px (21 px no mobile)', async ({
+test('container global de 1280 px com margem mínima de 36 px (21 px no mobile)', async ({
   page,
 }) => {
   // A largura útil desconta a barra de rolagem; o container centraliza dentro dela.
@@ -141,7 +142,7 @@ test('container global de 1080 px com margem mínima de 36 px (21 px no mobile)'
     });
   const expectContainer = async (margin: number) => {
     const { left, width, viewport } = await measure();
-    expect(width).toBeCloseTo(Math.min(1080, viewport - 2 * margin), 0);
+    expect(width).toBeCloseTo(Math.min(1280, viewport - 2 * margin), 0);
     expect(left).toBeCloseTo((viewport - width) / 2, 0);
     expect(left).toBeGreaterThanOrEqual(margin - 0.5);
   };

@@ -5,6 +5,7 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { PageHead } from '@/components/page-head';
 import { type LegalDocument, legalHeadings } from '@/lib/legal/document';
 import { LegalMarkdown } from './legal-markdown';
+import { LegalToc } from './legal-toc';
 
 /**
  * Página de um documento legal de `docs/legal/`: título, data e versão, aviso de rascunho
@@ -33,22 +34,14 @@ export async function LegalPage({ doc }: { doc: LegalDocument }) {
       {doc.draft ? <Callout testId="legal-draft">{t('draftNotice')}</Callout> : null}
       <div className="grid animate-fade-up grid-cols-[minmax(0,1fr)] gap-x-14 gap-y-8 pt-2 [animation-delay:60ms] lg:grid-cols-[200px_minmax(0,1fr)]">
         {headings.length > 2 ? (
-          <nav aria-labelledby="sumario" className="lg:sticky lg:top-6 lg:self-start">
+          <nav
+            aria-labelledby="sumario"
+            className="lg:sticky lg:top-[calc(var(--site-hdr-h)+24px)] lg:self-start"
+          >
             <h2 id="sumario" className="label-caps pb-2.5 text-[11px] text-muted-foreground">
               {t('toc')}
             </h2>
-            <ol className="grid gap-px text-body-sm max-lg:grid-cols-2 max-md:grid-cols-1">
-              {headings.map((heading) => (
-                <li key={heading.id}>
-                  <a
-                    href={`#${heading.id}`}
-                    className="-mx-2 flex min-h-8 items-center rounded-sm px-2 py-1 text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground max-md:min-h-(--tap)"
-                  >
-                    {heading.text}
-                  </a>
-                </li>
-              ))}
-            </ol>
+            <LegalToc headings={headings} />
           </nav>
         ) : null}
         <LegalMarkdown body={doc.body} gapLabel={t('gap')} />

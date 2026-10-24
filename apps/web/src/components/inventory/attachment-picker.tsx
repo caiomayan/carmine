@@ -127,7 +127,7 @@ export function AttachmentPicker({
               autoComplete="off"
               spellCheck={false}
               data-testid="picker-search"
-              className="min-h-(--tap) w-full rounded-md bg-surface-2 pr-3 pl-9 text-body placeholder:text-muted-foreground"
+              className="min-h-(--tap) w-full rounded-lg bg-surface-2 pr-3 pl-9 text-body placeholder:text-muted-foreground"
             />
           </div>
           {type === 'sticker' && page && page.facets.categories.length > 0 ? (

@@ -112,10 +112,11 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             data-testid="account-menu"
             onPointerEnter={playing.load}
             onFocus={playing.load}
-            className="animate-fade-up gap-2.5 rounded-full py-1 pr-3.5 pl-1 max-md:min-h-(--tap) max-md:min-w-(--tap) max-md:pr-1"
+            className="animate-fade-up gap-2.5 rounded-full py-1 pr-3.5 pl-1 max-[1151px]:min-h-(--tap) max-[1151px]:min-w-(--tap) max-[1151px]:pr-1"
           >
             <Avatar src={account.avatarUrl} name={account.displayName} size={28} />
-            <span className="max-w-[16ch] truncate font-[550] max-md:hidden">
+            {/* O nome só cabe ao lado do avatar a partir de 1152 px, como o campo de busca aberto: antes disso o grupo da direita invadia a navegação (o nome acessível está no aria-label). */}
+            <span className="max-w-[16ch] truncate font-[550] max-[1151px]:hidden">
               {account.displayName}
             </span>
           </Button>
@@ -151,7 +152,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             </span>
             {playing.server ? (
               <span
-                className="grid gap-0.5 rounded-md bg-surface-2 px-2.5 py-2"
+                className="grid gap-0.5 rounded-xl bg-surface-2 px-2.5 py-2"
                 data-testid="menu-playing"
               >
                 <span className="inline-flex items-center gap-1.5 label-caps text-[11px] text-muted-foreground">
@@ -237,7 +238,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
       {/* Erro na Liberty: o sinal de contexto fica no ponto; o texto segue neutro. */}
       <div role="alert" className="absolute top-full right-0 z-40 mt-2 w-64">
         {failed ? (
-          <p className="flex animate-fade-up items-start gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_var(--shadow)]">
+          <p className="flex animate-fade-up items-start gap-2 rounded-xl bg-surface-2 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_var(--shadow)]">
             <span
               aria-hidden="true"
               className="mt-1 size-1.5 shrink-0 rounded-full bg-status-danger"

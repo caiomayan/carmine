@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
+import type { CSSProperties } from 'react';
 import { siSteam } from 'simple-icons';
 import { Avatar } from '@/components/avatar';
 import { EmptyState } from '@/components/empty-state';
@@ -15,13 +16,17 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
+import { CollectingCard } from '@/components/profile/collecting-card';
+import { PresenceChip } from '@/components/profile/presence-chip';
 import { ProfileEmpty } from '@/components/profile/profile-empty';
 import { ProfileStats } from '@/components/profile/profile-stats';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
+import { ambientFor, type SkinPalette } from '@/components/vida/skin-ambient';
 import { findPublicIdBySteamId } from '@/lib/api-base';
 import {
   getProfile,
+  getProfileSeries,
   getProfileStats,
   getServerSession,
   type ProfileResult,
@@ -29,11 +34,13 @@ import {
 } from '@/lib/api-server';
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
 import { RARITIES } from '@/lib/catalog/types';
-import { buildShowcase } from '@/lib/loadout/build';
+import { buildShowcase, type ShowcaseView } from '@/lib/loadout/build';
 import { NOINDEX, profileMetadata } from '@/lib/profile-metadata';
 import { statsState } from '@/lib/profile-stats';
 import { settingsHref } from '@/lib/settings-nav';
+import { skinPalette } from '@/lib/skin-palette';
 import { cn } from '@/lib/utils';
+import './profile.css';
 
 type Params = Promise<{ publicId: string }>;
 type SearchParams = Promise<{ visitante?: string | string[] }>;
@@ -66,6 +73,23 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   return profileMetadata(profile, t('metaDescription', { name: profile.displayName }));
 }
 
+/**
+ * A cor ambiente do Perfil vem do Item mais raro da vitrine (a paleta da skin, só no servidor); sem Item
+ * equipado fica neutra, nunca num vermelho de reserva.
+ */
+function ambientOf(showcase: ShowcaseView[]): CSSProperties {
+  const featured = [...showcase].sort(
+    (a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity),
+  )[0];
+  const palette: SkinPalette = featured ? skinPalette(featured.itemId) : null;
+  const [first, second, third] = ambientFor(
+    palette,
+    featured ? `var(--rarity-${featured.rarity})` : null,
+    'var(--muted)',
+  );
+  return { '--amb-1': first, '--amb-2': second, '--amb-3': third } as CSSProperties;
+}
+
 export default async function ProfilePage({
   params,
   searchParams,
@@ -79,7 +103,7 @@ export default async function ProfilePage({
   if (result.status === 'unavailable') {
     return (
       <div className="container-page animate-fade-up py-12">
-        <div className="rounded-xl bg-surface">
+        <div className="v-panel v-panel-lg">
           <EmptyState
             icon={BadgeAlertIcon}
             title={t('unavailable.title')}
@@ -103,78 +127,126 @@ export default async function ProfilePage({
   const tc = await getTranslations('catalog');
   // As bolinhas CT/TR da vitrine são de cliente: só as mensagens delas vão ao navegador.
   const { common } = await getMessages();
-  const stats = await getProfileStats(profile.publicId);
+  const [stats, series] = await Promise.all([
+    getProfileStats(profile.publicId),
+    getProfileSeries(profile.publicId),
+  ]);
   // Sem Itens equipados nem jogos: um bloco só no lugar das duas caixas vazias.
   const bare = showcase.length === 0 && statsState(stats) === 'empty';
+  const palettes = Object.fromEntries(showcase.map((item) => [item.key, skinPalette(item.itemId)]));
 
   return (
-    <div className="container-page pb-16">
-      <ProfileHeader profile={profile} isOwner={isOwner} asVisitor={asVisitor} />
+    <div
+      data-vida="on"
+      data-pf-quiet={bare || !profile.claimed ? '' : undefined}
+      style={ambientOf(showcase)}
+      className="relative"
+    >
+      <div aria-hidden="true" className="v-ambient">
+        <i />
+        <i />
+        <i />
+      </div>
+      <div aria-hidden="true" className="pf-banner" data-testid="profile-banner" />
 
-      {invite ? <ClaimInvite profile={profile} /> : null}
+      <div className="container-page pb-24">
+        <ProfileHeader
+          profile={profile}
+          isOwner={isOwner}
+          asVisitor={asVisitor}
+          presence={isOwner}
+        />
 
-      {bare ? (
-        <ProfileEmpty name={profile.displayName} isOwner={isOwner} />
-      ) : (
-        <>
-          <ProfileStats
-            stats={stats}
-            name={profile.displayName}
-            isOwner={isOwner}
-            isPrivate={profile.isPrivate}
-          />
+        {invite ? <ClaimInvite profile={profile} /> : null}
 
-          <section
-            aria-labelledby="loadout"
-            className="animate-fade-up pt-10 [animation-delay:120ms]"
-          >
-            <SectionTitle
-              id="loadout"
-              aside={
-                isOwner ? (
-                  <Button asChild variant="quiet" size="sm" className="-my-1">
-                    <Link href="/loadout">{t('loadout.toLoadout')}</Link>
-                  </Button>
-                ) : null
-              }
-            >
-              {t('loadout.title')}
-            </SectionTitle>
-            {showcase.length > 0 ? (
-              <div data-testid="loadout-showcase">
-                <NextIntlClientProvider messages={{ common: { team: common.team } }}>
-                  <ShowcaseGrid
-                    items={showcase}
-                    rarityLabels={Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]))}
-                  />
-                </NextIntlClientProvider>
+        {bare ? (
+          <ProfileEmpty name={profile.displayName} isOwner={isOwner} />
+        ) : (
+          <div className="mt-10 grid gap-x-10 gap-y-8 min-[1280px]:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="grid min-w-0 content-start gap-8">
+              <div className="animate-fade-up [animation-delay:80ms]">
+                <ProfileStats
+                  stats={stats}
+                  series={series?.visible ? series : null}
+                  name={profile.displayName}
+                  isOwner={isOwner}
+                  isPrivate={profile.isPrivate}
+                />
               </div>
-            ) : (
-              <div className="rounded-xl bg-surface" data-testid="loadout-showcase">
-                <EmptyState
-                  icon={BoxIcon}
-                  title={t('loadout.emptyTitle')}
-                  body={
-                    isOwner
-                      ? t('loadout.emptyOwner')
-                      : t('loadout.emptyVisitor', { name: profile.displayName })
-                  }
-                  action={
+
+              <section
+                aria-labelledby="loadout"
+                className="v-panel v-panel-lg animate-fade-up p-5 max-md:p-4 [animation-delay:120ms]"
+              >
+                <SectionTitle
+                  id="loadout"
+                  aside={
                     isOwner ? (
-                      <Button asChild variant="ghost" size="sm">
-                        <Link href="/inventario">{t('loadout.toInventory')}</Link>
+                      <Button asChild variant="quiet" size="sm" className="-my-1">
+                        <Link href="/loadout">{t('loadout.toLoadout')}</Link>
                       </Button>
                     ) : null
                   }
-                />
-              </div>
-            )}
-          </section>
-        </>
-      )}
+                >
+                  {t('loadout.title')}
+                </SectionTitle>
+                {showcase.length > 0 ? (
+                  <div data-testid="loadout-showcase">
+                    <NextIntlClientProvider messages={{ common: { team: common.team } }}>
+                      <ShowcaseGrid
+                        items={showcase}
+                        palettes={palettes}
+                        rarityLabels={Object.fromEntries(
+                          RARITIES.map((r) => [r, tc(`rarities.${r}`)]),
+                        )}
+                      />
+                    </NextIntlClientProvider>
+                  </div>
+                ) : (
+                  <div data-testid="loadout-showcase">
+                    <EmptyState
+                      icon={BoxIcon}
+                      title={t('loadout.emptyTitle')}
+                      body={
+                        isOwner
+                          ? t('loadout.emptyOwner')
+                          : t('loadout.emptyVisitor', { name: profile.displayName })
+                      }
+                      action={
+                        isOwner ? (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link href="/inventario">{t('loadout.toInventory')}</Link>
+                          </Button>
+                        ) : null
+                      }
+                    />
+                  </div>
+                )}
+              </section>
+            </div>
 
-      <SanctionHistory sanctions={profile.sanctions} />
+            {profile.isPrivate && !isOwner ? null : <Activity />}
+          </div>
+        )}
+
+        <SanctionHistory sanctions={profile.sanctions} />
+      </div>
     </div>
+  );
+}
+
+/** A coluna da direita: as Sessões de jogo, que ainda não são registradas (S12b). */
+async function Activity() {
+  const t = await getTranslations('profile.stats.collecting');
+  return (
+    <aside className="grid content-start gap-4" aria-label={t('asideLabel')}>
+      <CollectingCard
+        kind="sessions"
+        title={t('sessions.title')}
+        status={t('status')}
+        body={t('sessions.body')}
+      />
+    </aside>
   );
 }
 
@@ -182,10 +254,13 @@ async function ProfileHeader({
   profile,
   isOwner,
   asVisitor,
+  presence,
 }: {
   profile: Profile;
   isOwner: boolean;
   asVisitor: boolean;
+  /** Só o dono tem a presença: a API ainda não diz onde os outros jogam. */
+  presence: boolean;
 }) {
   const t = await getTranslations('profile');
   const unclaimed = !profile.claimed;
@@ -193,53 +268,67 @@ async function ProfileHeader({
   return (
     <header
       data-claimed={profile.claimed}
-      className="flex animate-fade-up items-center gap-6 pt-10 pb-2 max-md:items-start max-md:gap-4 max-md:pt-7"
+      className="pf-head flex animate-fade-up flex-wrap items-end gap-x-6 gap-y-4"
     >
       <Avatar
         src={profile.avatarUrl}
         name={profile.displayName}
-        size={96}
+        size={148}
         alt={t('avatarAlt', { name: profile.displayName })}
         className={cn(
-          'max-md:[--avatar-size:72px]!',
+          'pf-avatar max-md:[--avatar-size:104px]!',
           // Sinal de Conta não reivindicada: o avatar fica mais quieto, num fundo mais leve e com as
           // iniciais em secundário (sem contorno nem opacidade, que desbotavam as letras). Discreto
           // de propósito; nunca um selo (nada aqui parece "verificado"). A nota ao lado explica.
           unclaimed && 'bg-(--fill-rest) text-muted-foreground grayscale-[0.4]',
         )}
       />
-      <div className="grid min-w-0 gap-2">
-        <h1 className="text-display break-words max-md:text-[26px]">{profile.displayName}</h1>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-          <a
-            href={profile.steamProfileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={t('steamLinkLabel', { name: profile.displayName })}
-            className="-mx-1.5 inline-flex min-h-8 items-center gap-1.5 rounded-sm px-1.5 font-medium text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-hover hover:text-foreground max-md:min-h-(--tap)"
-          >
-            <BrandIcon icon={siSteam} size={14} />
-            {t('steamLink')}
-            <AnimatedIcon icon={ExternalLinkIcon} size={13} />
-          </a>
+      <div className="grid min-w-0 flex-1 gap-2.5 pb-1">
+        <h1 className="v-serif text-[clamp(40px,6vw,84px)] break-words">{profile.displayName}</h1>
+        <div className="flex flex-wrap items-center gap-2 text-caption font-semibold">
+          {profile.isPrivate ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-(--fill-rest) px-3 py-1.5"
+              data-testid="private-note"
+            >
+              <AnimatedIcon icon={LockIcon} size={13} />
+              {t('privateSeal')}
+            </span>
+          ) : null}
+          {presence ? <PresenceChip label={t('presence')} /> : null}
+          <SanctionBadges active={profile.sanctions.active} />
         </div>
-        <SanctionBadges active={profile.sanctions.active} />
-        {profile.isPrivate ? (
-          <p
-            className="inline-flex items-center gap-2 text-body-sm text-muted-foreground"
-            data-testid="private-note"
-          >
-            <AnimatedIcon icon={LockIcon} size={13} />
-            {t('privateSeal')}
-          </p>
-        ) : null}
         {unclaimed && !isOwner ? (
           <p className="text-body-sm text-muted-foreground" data-testid="unclaimed-note">
             {t('unclaimed')}
           </p>
         ) : null}
+        {asVisitor ? (
+          <p
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted-foreground"
+            data-testid="as-visitor-note"
+          >
+            {t('asVisitorNote')}
+            <Button asChild variant="quiet" size="sm">
+              <Link href={`/${profile.publicId}` as Route}>{t('backToOwner')}</Link>
+            </Button>
+          </p>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap items-center gap-3 pb-1 max-md:w-full">
+        <a
+          href={profile.steamProfileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t('steamLinkLabel', { name: profile.displayName })}
+          className="inline-flex min-h-(--tap) items-center gap-2 rounded-full bg-(--fill-active) px-4 text-body-sm font-semibold transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-focus) max-md:flex-1 max-md:justify-center"
+        >
+          <BrandIcon icon={siSteam} size={14} />
+          {t('steamLink')}
+          <AnimatedIcon icon={ExternalLinkIcon} size={13} />
+        </a>
         {isOwner ? (
-          <div className="flex flex-wrap gap-2 pt-1">
+          <>
             <Button asChild variant="ghost" size="sm">
               <Link href={settingsHref('perfil') as Route} data-testid="edit-profile">
                 {t('editProfile')}
@@ -253,17 +342,7 @@ async function ProfileHeader({
                 {t('viewAsVisitor')}
               </Link>
             </Button>
-          </div>
-        ) : asVisitor ? (
-          <p
-            className="flex flex-wrap items-center gap-x-3 gap-y-1 text-body-sm text-muted-foreground"
-            data-testid="as-visitor-note"
-          >
-            {t('asVisitorNote')}
-            <Button asChild variant="quiet" size="sm">
-              <Link href={`/${profile.publicId}` as Route}>{t('backToOwner')}</Link>
-            </Button>
-          </p>
+          </>
         ) : null}
       </div>
     </header>
@@ -276,7 +355,7 @@ async function ClaimInvite({ profile }: { profile: Profile }) {
     <aside
       aria-labelledby="convite"
       data-testid="claim-invite"
-      className="mt-6 flex animate-fade-up flex-wrap items-center justify-between gap-x-6 gap-y-4 rounded-xl bg-surface px-5 py-4 [animation-delay:40ms]"
+      className="v-panel v-panel-lg mt-8 flex animate-fade-up flex-wrap items-center justify-between gap-x-6 gap-y-4 px-6 py-5 [animation-delay:40ms] max-md:px-5"
     >
       <div className="grid max-w-[60ch] gap-1">
         <h2 id="convite" className="text-md font-semibold">

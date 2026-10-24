@@ -262,7 +262,10 @@ test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igua
   await expect(card.getByTestId('tile-stickers').locator('img')).toHaveCount(2);
   await expect(card.getByTestId('tile-charm')).toHaveCount(0);
   await expect(card).not.toContainText('stickers');
-  await expect(page.getByTestId('inventory-count')).toHaveText('1 Item de 300');
+  // O número é o Number Ticker: o valor de verdade fica no texto só para leitor de tela (o visível é aria-hidden e rola).
+  const count = page.getByTestId('inventory-count');
+  await expect(count.locator('.sr-only')).toHaveText('1');
+  await expect(count).toContainText('Item de 300');
 
   await page.reload();
   await card.getByRole('link').click();
@@ -550,6 +553,8 @@ test.describe('editor em 390 px, no toque', () => {
     const beyond = await page.getByTestId('item-editor').evaluate((editor) =>
       [editor, ...editor.querySelectorAll('*')]
         .filter((el) => {
+          // O brilho ambiente é decorativo e o próprio `.v-ambient` o recorta (overflow hidden).
+          if (el.closest('.v-ambient')) return false;
           const box = el.getBoundingClientRect();
           return box.width > 1 && box.height > 1 && box.right > 390 + 0.5;
         })

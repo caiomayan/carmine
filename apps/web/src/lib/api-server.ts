@@ -12,12 +12,18 @@ import {
   loadoutSchema,
   type PresetList,
   type Profile,
+  type ProfileSeries,
   type ProfileStats,
   presetListSchema,
   profileSchema,
+  profileSeriesSchema,
   profileStatsSchema,
   type Ranking,
+  type RecentActivity,
   rankingSchema,
+  recentActivitySchema,
+  type WeekSummary,
+  weekSummarySchema,
 } from '@carmine/contracts';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
@@ -152,6 +158,34 @@ export const getLiveServers = cache(async (): Promise<LiveServerList | null> => 
 });
 
 /**
+ * A faixa de atividade da home (público, sem sessão). Nulo com a API fora: a home segue sem a
+ * faixa, que não é essencial e nunca vira um aviso de erro.
+ */
+export const getRecentActivity = cache(async (): Promise<RecentActivity | null> => {
+  try {
+    const response = await apiGet('/activity/recent', { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return recentActivitySchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/**
+ * Os números da semana de todas as Contas (a faixa "Esta semana" da home; público, sem sessão). Nulo com a
+ * API fora: a faixa some em vez de mostrar zeros.
+ */
+export const getWeekSummary = cache(async (): Promise<WeekSummary | null> => {
+  try {
+    const response = await apiGet('/stats/week', { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return weekSummarySchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/**
  * Leitura do painel da Staff (S07). `forbidden` (sem papel ou sem a permissão) vira 404 na
  * página: quem não é da Staff nem fica sabendo que o painel existe.
  */
@@ -217,6 +251,21 @@ export const getProfileStats = cache(async (publicId: number): Promise<ProfileSt
     });
     if (!response.ok) return null;
     return profileStatsSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/** A série semanal do Perfil (V3); nula com a API fora (o Perfil segue só com as somas). */
+export const getProfileSeries = cache(async (publicId: number): Promise<ProfileSeries | null> => {
+  try {
+    const cookie = await sessionCookie();
+    const response = await apiGet(`/profiles/${publicId}/stats/weekly`, {
+      ...(cookie && { cookie }),
+      visitorIp: await visitorIp(),
+    });
+    if (!response.ok) return null;
+    return profileSeriesSchema.parse(await response.json());
   } catch {
     return null;
   }

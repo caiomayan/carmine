@@ -1,5 +1,6 @@
 import { chooseSteamAccount, newSteamId, signInFromHeader } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { clickHydrated, fillHydrated, openAccountMenu } from './hydration';
 
 const accountMenu = (page: import('@playwright/test').Page) => page.getByTestId('account-menu');
 
@@ -26,7 +27,7 @@ test('login completo: entra, volta à página de origem, avatar na barra e sai',
   expect(html).toContain('data-testid="account-menu"');
   expect(html).not.toContain('data-testid="sign-in"');
 
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   const logout = page.waitForRequest(
     (r) => r.url().endsWith('/api/auth/logout') && r.method() === 'POST',
   );
@@ -119,7 +120,7 @@ test('primeiros passos: a faixa aparece depois do login, abre o Dialog, dispensa
   await expect(strip).toContainText('Primeira vez por aqui?');
   await expect(strip).not.toContainText('Equipe');
 
-  await strip.getByRole('button', { name: 'Ver como funciona' }).click();
+  await clickHydrated(strip.getByRole('button', { name: 'Ver como funciona' }));
   const dialog = page.getByRole('dialog', { name: /Boas-vindas à Carmine/ });
   await expect(dialog).toBeVisible();
   // Três passos numerados, de uma linha cada.
@@ -133,7 +134,7 @@ test('primeiros passos: a faixa aparece depois do login, abre o Dialog, dispensa
   await expect(strip.getByRole('button', { name: 'Ver como funciona' })).toBeFocused();
   await expect(strip).toBeVisible();
 
-  await strip.getByRole('button', { name: 'Fechar primeiros passos' }).click();
+  await clickHydrated(strip.getByRole('button', { name: 'Fechar primeiros passos' }));
   await expect(strip).toHaveCount(0);
 
   await page.reload();
@@ -153,7 +154,7 @@ test('primeiros passos: o menu abre o Dialog em qualquer rota e "Entendi" encerr
   await expect(accountMenu(page)).toBeVisible();
   await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
   const dialog = page.getByTestId('first-steps');
   await expect(dialog).toBeVisible();
@@ -165,7 +166,7 @@ test('primeiros passos: o menu abre o Dialog em qualquer rota e "Entendi" encerr
   await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
   // Dispensado, reabre pelo menu e o foco volta ao botão do menu.
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
   await expect(page.getByTestId('first-steps')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -182,13 +183,13 @@ test('primeiros passos só abrem sozinhos no primeiro login; depois, só pelo me
   // Sem dispensar: o que decide é o primeiro login, não o cookie de quem dispensou.
   await expect(page.getByTestId('first-steps-strip')).toBeVisible();
 
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Sair' }).click();
   await signInFromHeader(page, steamId);
   await expect(accountMenu(page)).toBeVisible();
   await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Primeiros passos' }).click();
   await expect(page.getByTestId('first-steps')).toBeVisible();
 });
@@ -198,10 +199,10 @@ test('primeiros passos são por Conta: outra Conta no mesmo navegador ainda os v
 }) => {
   await page.goto('/');
   await signInFromHeader(page, newSteamId());
-  await page.getByTestId('first-steps-dismiss').click();
+  await clickHydrated(page.getByTestId('first-steps-dismiss'));
   await expect(page.getByTestId('first-steps-strip')).toHaveCount(0);
 
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Sair' }).click();
   await signInFromHeader(page, newSteamId());
   await expect(page.getByTestId('first-steps-strip')).toBeVisible();
@@ -218,7 +219,7 @@ test('sessão expirada durante a edição: o rascunho volta depois do novo login
   await signInFromHeader(page, steamId);
   await expect(page).toHaveURL('/dev/rascunho');
 
-  await page.getByLabel('Nametag').fill('Fuzil do Caio');
+  await fillHydrated(page.getByLabel('Nametag'), 'Fuzil do Caio');
   // A sessão morre no servidor enquanto a pessoa edita.
   await page.context().clearCookies({ name: '__Host-carmine_session' });
   await page.getByRole('button', { name: 'Salvar' }).click();
@@ -241,10 +242,10 @@ test('sessão expirada durante a edição: o rascunho volta depois do novo login
 test('o rascunho de uma Conta não aparece para outra', async ({ page }) => {
   await page.goto('/dev/rascunho');
   await signInFromHeader(page, newSteamId());
-  await page.getByLabel('Nametag').fill('Só meu');
+  await fillHydrated(page.getByLabel('Nametag'), 'Só meu');
   await page.waitForTimeout(400);
 
-  await accountMenu(page).click();
+  await openAccountMenu(page);
   await page.getByRole('menuitem', { name: 'Sair' }).click();
   await signInFromHeader(page, newSteamId());
   await expect(page).toHaveURL('/dev/rascunho');
@@ -263,15 +264,14 @@ for (const theme of ['dark', 'light'] as const) {
       await expect(page.getByTestId('first-steps-strip')).toBeVisible();
       expect(await axeViolations(page)).toEqual([]);
 
-      await page.getByRole('button', { name: 'Ver como funciona' }).click();
+      await clickHydrated(page.getByRole('button', { name: 'Ver como funciona' }));
       await expect(page.getByTestId('first-steps')).toBeVisible();
       expect(await axeViolations(page)).toEqual([]);
       await page.keyboard.press('Escape');
       await expect(page.getByTestId('first-steps')).toHaveCount(0);
 
       await page.evaluate(() => window.scrollTo({ top: 0 }));
-      await accountMenu(page).click();
-      await expect(page.getByRole('menu')).toBeVisible();
+      await openAccountMenu(page);
       expect(await axeViolations(page)).toEqual([]);
       // Sem scroll horizontal com a Conta na barra.
       const overflow = await page.evaluate(

@@ -70,8 +70,12 @@ const envSchema = z
     LIVE_SERVERS_SWEEP_SECONDS: z.coerce.number().int().positive().default(5),
     // Ranking semanal (S12): quanto o resultado de um Modo e semana fica no cache do Valkey (0 desliga).
     RANKING_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(45),
+    // Faixa "Esta semana" da home: quanto os números da semana ficam na memória da API (0 desliga).
+    WEEK_SUMMARY_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(30),
     // Prévias do header (U3e): quanto a resposta de cada Conta (e a do visitante) fica no cache do Valkey (0 desliga).
     HEADER_PREVIEWS_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(15),
+    // Faixa de atividade ao vivo da home: quanto a resposta pública fica no cache do Valkey (0 desliga).
+    ACTIVITY_CACHE_TTL_SECONDS: z.coerce.number().int().nonnegative().default(5),
     // Alertas no Discord (S09): URL do webhook; vazia desliga. O servidor precisa ficar offline por
     // esse tempo (além dos 45 s da presença) para avisar, o que evita alarme por troca de mapa.
     DISCORD_ALERT_WEBHOOK_URL: z
@@ -171,8 +175,12 @@ export interface AppConfig {
   liveServers: { offlineAfterMs: number; sweepMs: number };
   /** Cache do Ranking semanal (S12), em segundos. */
   rankingCacheTtlSeconds: number;
+  /** Cache dos números da semana da home, em segundos. */
+  weekSummaryCacheTtlSeconds: number;
   /** Cache das prévias do header (U3e), em segundos. */
   headerPreviewsCacheTtlSeconds: number;
+  /** Cache da faixa de atividade ao vivo, em segundos. */
+  activityCacheTtlSeconds: number;
   /** Alertas no Discord (S09). Sem webhook, desligados. */
   alerts: { discordWebhookUrl: string | null; serverOfflineConfirmMs: number; sweepMs: number };
   /** Denúncias (S13): webhook da Staff (sem URL, desligado) e a limpeza de retenção (0: desligada). */
@@ -243,7 +251,9 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       server: e.RATE_LIMIT_SERVER_PER_MINUTE,
     },
     rankingCacheTtlSeconds: e.RANKING_CACHE_TTL_SECONDS,
+    weekSummaryCacheTtlSeconds: e.WEEK_SUMMARY_CACHE_TTL_SECONDS,
     headerPreviewsCacheTtlSeconds: e.HEADER_PREVIEWS_CACHE_TTL_SECONDS,
+    activityCacheTtlSeconds: e.ACTIVITY_CACHE_TTL_SECONDS,
     liveServers: {
       offlineAfterMs: e.SERVER_OFFLINE_AFTER_SECONDS * 1000,
       sweepMs: e.LIVE_SERVERS_SWEEP_SECONDS * 1000,

@@ -16,6 +16,11 @@ const loadPalette = () => {
   return paletteModule;
 };
 
+/** Largura do campo compacto e do aberto (px), e o respiro que sobra entre ele e a navegação. */
+const COMPACT_WIDTH = 160;
+const OPEN_WIDTH = 280;
+const NAV_CLEARANCE = 12;
+
 /** Campo de texto, editor ou seletor: ali o "/" é uma letra, não um atalho. */
 function isEditable(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
@@ -34,7 +39,7 @@ const anotherDialogOpen = () =>
 
 /**
  * O campo de busca do cabeçalho (U3d): abre a paleta de comandos. No desktop é um campo com o
- * atalho à vista, a partir de 1152 px (onde o container já tem os 1080 px e a coluna das ações
+ * atalho à vista, a partir de 1152 px (janela de 1152 px: o container tem 1080 px de largura útil e a coluna das ações
  * comporta o campo ao lado do tema e da Conta sem empurrar a navegação do centro); abaixo disso, e
  * no celular, vira só o ícone (alvo de 44 px no celular). O
  * atalho vale em qualquer página: Ctrl+K (⌘K no Mac) e "/" quando nenhum campo está em foco.
@@ -48,6 +53,27 @@ export function SearchTrigger() {
   const button = useRef<HTMLButtonElement>(null);
   // Quem tinha o foco ao abrir: é para onde ele volta ao fechar.
   const opener = useRef<HTMLElement | null>(null);
+
+  // O campo aberto cresce para a esquerda, mas só até o espaço livre entre o último item da
+  // navegação e a borda do campo compacto: nunca cobre a navegação, em nenhuma largura. Mede de
+  // novo ao aproximar o ponteiro, ao focar e ao redimensionar (a Conta logada, por exemplo, muda
+  // onde o campo começa).
+  const measureOpenWidth = useCallback(() => {
+    const element = button.current;
+    const slot = element?.parentElement;
+    const nav = element?.closest('header')?.querySelector('nav');
+    const last = nav ? [...nav.querySelectorAll('a')].at(-1) : undefined;
+    if (!element || !slot || !last) return;
+    const free = slot.getBoundingClientRect().right - last.getBoundingClientRect().right;
+    const width = Math.min(OPEN_WIDTH, Math.max(COMPACT_WIDTH, free - NAV_CLEARANCE));
+    element.style.setProperty('--search-open-w', `${Math.floor(width)}px`);
+  }, []);
+
+  useEffect(() => {
+    measureOpenWidth();
+    window.addEventListener('resize', measureOpenWidth);
+    return () => window.removeEventListener('resize', measureOpenWidth);
+  }, [measureOpenWidth]);
 
   useEffect(() => {
     setMac(/Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent));
@@ -101,36 +127,45 @@ export function SearchTrigger() {
 
   return (
     <>
-      <Button
-        ref={button}
-        type="button"
-        variant="ghost"
-        size="icon"
-        aria-label={t('aria')}
-        aria-haspopup="dialog"
-        aria-keyshortcuts="Control+K Meta+K"
-        aria-busy={pending || undefined}
-        title={mac ? t('shortcutMac') : t('shortcut')}
-        data-testid="search-trigger"
-        onClick={show}
-        onPointerEnter={loadPalette}
-        onFocus={loadPalette}
-        className="animate-fade-up min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal"
-      >
-        <SearchIcon
-          aria-hidden="true"
-          className="size-[18px] min-[1152px]:size-4 min-[1152px]:text-muted-foreground"
-        />
-        <span className="flex-1 text-left text-body-sm text-muted-foreground max-[1151px]:hidden">
-          {t('label')}
-        </span>
-        <kbd
-          suppressHydrationWarning
-          className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-caption leading-none font-medium muted-on-fill max-[1151px]:hidden"
+      {/* Em tela larga o campo reserva a largura compacta aqui e cresce para a esquerda, por cima do espaço vazio (absoluto): nada se mexe em volta. */}
+      <div className="relative shrink-0 min-[1152px]:h-8 min-[1152px]:w-40">
+        <Button
+          ref={button}
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label={t('aria')}
+          aria-haspopup="dialog"
+          aria-keyshortcuts="Control+K Meta+K"
+          aria-busy={pending || undefined}
+          title={mac ? t('shortcutMac') : t('shortcut')}
+          data-testid="search-trigger"
+          onClick={show}
+          onPointerEnter={() => {
+            measureOpenWidth();
+            void loadPalette();
+          }}
+          onFocus={() => {
+            measureOpenWidth();
+            void loadPalette();
+          }}
+          className="animate-fade-up min-[1152px]:absolute min-[1152px]:top-0 min-[1152px]:right-0 min-[1152px]:z-10 min-[1152px]:min-h-8 min-[1152px]:w-40 min-[1152px]:justify-start min-[1152px]:gap-2 min-[1152px]:px-3 min-[1152px]:font-normal min-[1152px]:transition-[width,background-color,color,translate,scale] min-[1152px]:duration-(--dur-base) min-[1152px]:ease-soft min-[1152px]:hover:w-(--search-open-w,10rem) min-[1152px]:hover:bg-surface-2 min-[1152px]:focus-visible:w-(--search-open-w,10rem) min-[1152px]:focus-visible:bg-surface-2 min-[1152px]:motion-reduce:transition-none"
         >
-          {mac ? t('keysMac') : t('keys')}
-        </kbd>
-      </Button>
+          <SearchIcon
+            aria-hidden="true"
+            className="size-[18px] min-[1152px]:size-4 min-[1152px]:text-muted-foreground"
+          />
+          <span className="flex-1 text-left text-body-sm text-muted-foreground max-[1151px]:hidden">
+            {t('label')}
+          </span>
+          <kbd
+            suppressHydrationWarning
+            className="rounded-sm bg-(--fill-rest) px-1.5 py-0.5 font-sans text-caption leading-none font-medium muted-on-fill max-[1151px]:hidden"
+          >
+            {mac ? t('keysMac') : t('keys')}
+          </kbd>
+        </Button>
+      </div>
       {Palette ? <Palette open={open} onOpenChange={setOpen} openerRef={opener} /> : null}
     </>
   );

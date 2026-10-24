@@ -2,6 +2,7 @@ import type { Cs2Item, InventoryItem } from '@carmine/contracts';
 import { type AttachmentEntry, attachmentEntry, catalogEntry } from '../catalog/catalog';
 import type { CatalogType, Rarity } from '../catalog/types';
 import { imageForWear } from '../catalog/wear';
+import { skinPalette } from '../skin-palette';
 import type { AttachmentLabel } from './item-form';
 
 /**
@@ -17,6 +18,8 @@ export type InventoryCardData = {
   subtitle: string | null;
   rarity: Rarity;
   image: string;
+  /** Cores vivas da imagem da skin (cor ambiente e holo); nulo sem paleta. */
+  palette: readonly string[] | null;
   statTrak: boolean;
   /** Stickers aplicados, na ordem dos slots (chave "0".."4" do contrato). */
   stickers: AttachmentLabel[];
@@ -53,6 +56,7 @@ export function toCard({ uid, item }: InventoryItem): InventoryCardData {
     subtitle: entry?.subtitle ?? null,
     rarity: entry?.rarity ?? 'consumer',
     image: entry ? imageForWear(entry.image, item.wear ?? null) : '',
+    palette: skinPalette(item.id),
     statTrak: item.statTrak !== undefined,
     stickers: Object.entries(item.stickers ?? {})
       .sort(([a], [b]) => Number(a) - Number(b))

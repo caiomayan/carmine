@@ -6,7 +6,6 @@ import {
   friendsWithServers,
   initialLive,
   liveReducer,
-  MAX_CARD_SERVERS,
   nextFriends,
   occupancy,
   offlineGroupOpen,
@@ -14,8 +13,6 @@ import {
   serverFullLabel,
   serverHref,
   serverLabel,
-  serversLayout,
-  serversOfMode,
   steamConnectUrl,
   updatedSecondsAgo,
   viewFriends,
@@ -41,27 +38,6 @@ const server = (over: Partial<LiveServer> = {}): LiveServer => ({
   state: 'online',
   lastHeartbeatAt: '2026-10-12T12:00:00Z',
   ...over,
-});
-
-describe('filtro por Modo', () => {
-  const retake = server({ id: '00000000-0000-4000-8000-00000000000a', mode: 'retake' });
-  const dm = server({ id: '00000000-0000-4000-8000-00000000000b', mode: 'deathmatch' });
-
-  it('"Todos" mostra a lista inteira, na ordem da API', () => {
-    expect(serversOfMode([dm, retake], 'all')).toEqual([dm, retake]);
-  });
-
-  it('os servidores offline vão para o fim, sem mudar a ordem dos outros', () => {
-    const off = server({ id: '00000000-0000-4000-8000-00000000000c', state: 'offline' });
-    const full = server({ id: '00000000-0000-4000-8000-00000000000d', state: 'full' });
-    expect(serversOfMode([off, dm, full, retake], 'all')).toEqual([dm, full, retake, off]);
-    expect(serversOfMode([off, retake], 'retake')).toEqual([retake, off]);
-  });
-
-  it('um Modo mostra só os servidores dele (vazio quando não há nenhum)', () => {
-    expect(serversOfMode([dm, retake], 'retake')).toEqual([retake]);
-    expect(serversOfMode([retake], 'deathmatch')).toEqual([]);
-  });
 });
 
 describe('lotação de um servidor', () => {
@@ -282,49 +258,6 @@ describe('nome do Servidor Carmine na home', () => {
   it('sem nome de vitrine, cai no identificador da Staff', () => {
     expect(serverLabel(server())).toBe('retake-1');
     expect(serverFullLabel(server())).toBe('retake-1');
-  });
-});
-
-describe('cartões ou lista', () => {
-  const many = (n: number, over: Partial<LiveServer> = {}) =>
-    Array.from({ length: n }, (_, i) =>
-      server({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, '0')}`, ...over }),
-    );
-
-  it('até 6 servidores no ar viram cartões; com 7 ou mais, lista', () => {
-    expect(serversLayout(many(1)).kind).toBe('cards');
-    expect(serversLayout(many(MAX_CARD_SERVERS)).kind).toBe('cards');
-    expect(serversLayout(many(MAX_CARD_SERVERS + 1)).kind).toBe('list');
-  });
-
-  it('só os servidores no ar contam: os offline nunca empurram a home para a lista', () => {
-    const layout = serversLayout([...many(3), ...many(8, { state: 'offline', map: null })]);
-    expect(layout.kind).toBe('cards');
-    expect(layout.live).toHaveLength(3);
-    expect(layout.offline).toHaveLength(8);
-  });
-
-  it('lotado conta como no ar (é um cartão com a vaga reservada)', () => {
-    const layout = serversLayout([...many(2), ...many(1, { state: 'full' })]);
-    expect(layout.live).toHaveLength(3);
-  });
-
-  it('separa no ar e offline sem mudar a ordem de cada grupo', () => {
-    const [a, b, c] = many(3) as [LiveServer, LiveServer, LiveServer];
-    const off = { ...b, state: 'offline' as const };
-    const layout = serversLayout([off, a, c]);
-    expect(layout.live).toEqual([a, c]);
-    expect(layout.offline).toEqual([off]);
-  });
-
-  it('as colunas acompanham a quantidade, sem deixar buraco no fim', () => {
-    const columns = (n: number) => serversLayout(many(n)).columns;
-    expect([1, 2, 3, 4, 5, 6].map(columns)).toEqual([1, 2, 3, 2, 2, 3]);
-  });
-
-  it('sem nenhum servidor, sem colunas a inventar', () => {
-    const layout = serversLayout([]);
-    expect(layout).toMatchObject({ live: [], offline: [], columns: 1 });
   });
 });
 

@@ -25,7 +25,16 @@ const slot = (
   defaultName: name,
   defaultImage: null,
   item: uid
-    ? { uid, name: uid, title: uid, subtitle: null, image: '', rarity: 'milspec', statTrak: false }
+    ? {
+        uid,
+        name: uid,
+        title: uid,
+        subtitle: null,
+        image: '',
+        palette: null,
+        rarity: 'milspec',
+        statTrak: false,
+      }
     : null,
   notInGame: null,
   strippedInGame: [],

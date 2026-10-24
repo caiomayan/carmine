@@ -52,6 +52,7 @@ export function buildLoadoutView(loadout: Loadout, items: InventoryItem[]): Load
               title: card?.title ?? 'Item',
               subtitle: card?.subtitle ?? null,
               image: card?.image ?? '',
+              palette: card?.palette ?? null,
               rarity: card?.rarity ?? 'consumer',
               statTrak: card?.statTrak ?? false,
             }
@@ -74,6 +75,8 @@ export function buildCandidates(items: InventoryItem[]): CandidateView[] {
 /** Um Item da vitrine do Perfil, com os lados em que está equipado (vazio no music kit). */
 export type ShowcaseView = {
   key: string;
+  /** O ID do Item no catálogo (a chave da paleta da skin em `skinPalette`). */
+  itemId: number;
   name: string;
   title: string;
   subtitle: string | null;
@@ -101,6 +104,7 @@ export function buildShowcase(items: ShowcaseItem[]): ShowcaseView[] {
     const card = toCard({ uid: key, item, createdAt: '', updatedAt: '' });
     byKey.set(key, {
       key,
+      itemId: item.id,
       name: card.name,
       title: card.title,
       subtitle: card.subtitle,

@@ -3,7 +3,6 @@
  * da conexão ao vivo. Os tipos vêm do contrato (`@carmine/contracts`, live-servers).
  */
 import type { FriendsPlaying, LiveServer, LiveServerList, PlayingFriend } from '@carmine/contracts';
-import type { ModeFilter } from './modes';
 
 /** O `id` do cartão (ou linha) do servidor na home: destino do resultado da busca (Ctrl+K). */
 export const serverAnchor = (id: string) => `servidor-${id}`;
@@ -17,18 +16,6 @@ export const serverHref = (server: Pick<LiveServer, 'id' | 'state'>) =>
 
 /** Abre o CS2 já conectando ao Servidor Carmine. */
 export const steamConnectUrl = (address: string) => `steam://connect/${address}`;
-
-/**
- * Os servidores de um filtro de Modo, na ordem da API (por Modo e nome), com os offline no
- * fim: quem abre a home vê primeiro onde dá para jogar.
- */
-export function serversOfMode(servers: LiveServer[], mode: ModeFilter): LiveServer[] {
-  const ofMode = mode === 'all' ? servers : servers.filter((s) => s.mode === mode);
-  return [
-    ...ofMode.filter((s) => s.state !== 'offline'),
-    ...ofMode.filter((s) => s.state === 'offline'),
-  ];
-}
 
 /** A partir daqui a barra de lotação avisa que está quase cheio. */
 const HIGH_OCCUPANCY = 0.75;
@@ -148,33 +135,6 @@ export function serverFullLabel(
   server: Pick<LiveServer, 'name' | 'showcaseName' | 'code'>,
 ): string {
   return server.code ? `${serverLabel(server)} (${server.code})` : serverLabel(server);
-}
-
-/** Até este número de servidores no ar a home mostra cartões grandes; acima, lista (U2). */
-export const MAX_CARD_SERVERS = 6;
-
-export type ServersLayout = {
-  kind: 'cards' | 'list';
-  /** Os servidores no ar (online ou lotados), na ordem recebida. */
-  live: LiveServer[];
-  /** Os offline, que nunca ganham cartão: viram linhas leves no fim. */
-  offline: LiveServer[];
-  /** Colunas da grade de cartões em telas largas: nenhuma linha termina com buraco. */
-  columns: 1 | 2 | 3;
-};
-
-const COLUMNS: Record<number, 1 | 2 | 3> = { 1: 1, 2: 2, 3: 3, 4: 2, 5: 2, 6: 3 };
-
-/**
- * Cartões ou lista. Só contam os servidores no ar: os offline (de teste, em manutenção) não
- * empurram a home para a lista e não pesam na tela.
- */
-export function serversLayout(servers: LiveServer[]): ServersLayout {
-  const live = servers.filter((s) => s.state !== 'offline');
-  const offline = servers.filter((s) => s.state === 'offline');
-  const kind = live.length > MAX_CARD_SERVERS ? 'list' : 'cards';
-  const columns = COLUMNS[live.length] ?? 1;
-  return { kind, live, offline, columns };
 }
 
 /** O grupo "Offline (n)" já nasce aberto com poucos servidores ou quando nada está no ar. */

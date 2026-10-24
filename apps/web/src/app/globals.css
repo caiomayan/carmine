@@ -56,11 +56,12 @@
   --color-rarity-contraband: var(--rarity-contraband);
   --color-side-t: var(--side-t);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-sm: var(--r-chip);
+  --radius-md: var(--r-ctl);
+  --radius-lg: var(--r-field);
+  --radius-xl: var(--r-card);
+  --radius-2xl: var(--r-panel);
+  --radius-3xl: var(--r-dialog);
 
   --font-sans: var(--font-ui);
   /* DM Serif Display: H1 de herói, numerais de destaque e o 1-3 do Ranking (o wordmark é SVG) */
@@ -111,6 +112,8 @@
   --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
   --animate-shimmer: shimmer var(--dur-skel) linear infinite;
   --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) infinite;
+  /* a faixa de atividade da home: o trilho anda a metade (uma cópia) por volta; a duração vem da largura */
+  --animate-marquee: marquee var(--marquee-duration, 30s) linear infinite;
 
   @keyframes rise {
     from {
@@ -132,6 +135,12 @@
     }
     to {
       background-position: -120% 0;
+    }
+  }
+
+  @keyframes marquee {
+    to {
+      transform: translateX(-50%);
     }
   }
 
@@ -277,9 +286,51 @@
   html {
     -webkit-text-size-adjust: 100%;
     background: var(--bg);
-    scroll-padding-top: var(--space-scroll, 24px);
+    /* Altura do header fixo (0 no celular, onde ele rola); o header a mede e corrige depois de hidratar. */
+    --site-hdr-h: 0px;
+    /* O header é fixo: o alvo de uma âncora ou do foco fica abaixo dele. */
+    scroll-padding-top: calc(var(--site-hdr-h) + var(--space-scroll, 24px));
+    /* O /loadout avisa a altura da barra fixa de baixo: o foco não deixa um alvo atrás dela. */
+    scroll-padding-bottom: var(--dock-h, 0px);
     scrollbar-color: var(--line-strong) var(--bg);
     accent-color: var(--text);
+  }
+
+  @media (min-width: 768px) {
+    html {
+      --site-hdr-h: var(--hdr-h);
+    }
+  }
+
+  /*
+   * O header fixo: sem linha em repouso; ao rolar (`data-scrolled`, ver header-shell.tsx) um fundo
+   * levemente mais claro e desfoque entram por opacidade (o fundo vive num pseudo-elemento: o
+   * desfoque no próprio header o tornaria bloco de contenção dos painéis).
+   */
+  [data-site-header]::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background: color-mix(in srgb, color-mix(in oklab, var(--bg) 90%, white) 82%, transparent);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    opacity: 0;
+    transition: opacity var(--dur-slow) var(--ease-std);
+  }
+
+  /* No celular o header rola com a página: o fundo ao rolar só vale onde ele é fixo. */
+  @media (min-width: 768px) {
+    [data-site-header][data-scrolled]::before {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    [data-site-header]::before {
+      transition: none;
+    }
   }
 
   body {
@@ -357,24 +408,6 @@
   }
 }
 
-/* ---------- rodapé: sobe suave conforme entra na tela (só CSS, ligado à rolagem) ---------- */
-@keyframes footer-rise {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-}
-
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .footer-reveal {
-      animation: footer-rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 70%;
-    }
-  }
-}
-
 /* ---------- /entrar: o traço do vínculo com a Steam se desenha na chegada ---------- */
 @keyframes link-draw {
   from {
@@ -385,6 +418,30 @@
 @media (prefers-reduced-motion: no-preference) {
   .link-draw {
     animation: link-draw 700ms var(--ease-out) 120ms backwards;
+  }
+}
+
+/*
+ * ---------- texto que decifra (EncryptedText) ----------
+ * O servidor já traz o texto final; até o React hidratar e decidir se anima, ele fica invisível
+ * (senão o texto apareceria inteiro e, um instante depois, embaralharia). Sem JS, o fallback o
+ * mostra em 1,5 s; com movimento reduzido ele aparece direto, sem espera.
+ */
+@keyframes encrypted-fallback {
+  to {
+    opacity: 1;
+  }
+}
+
+.encrypted-pending {
+  opacity: 0;
+  animation: encrypted-fallback 0s 1.5s forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .encrypted-pending {
+    opacity: 1;
+    animation: none;
   }
 }
 

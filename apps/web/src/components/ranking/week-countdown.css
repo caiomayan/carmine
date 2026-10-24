@@ -1,0 +1,25 @@
+/*
+ * Dígito que rola da contagem até a virada da semana: a técnica do countdown do daisyUI (uma coluna
+ * de 0 a 9 que desliza pela variável --d), sem o plugin. O texto lido está no aria-label do timer.
+ */
+.rk-digit {
+  display: inline-block;
+  height: 1em;
+  overflow: hidden;
+  line-height: 1;
+  text-align: center;
+}
+
+.rk-digit::before {
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+  display: block;
+  white-space: pre;
+  transform: translateY(calc(var(--d, 0) * -1em));
+  transition: transform 0.7s cubic-bezier(1, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rk-digit::before {
+    transition: none;
+  }
+}

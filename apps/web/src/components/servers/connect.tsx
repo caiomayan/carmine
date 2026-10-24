@@ -36,9 +36,11 @@ export function useConnect(server: LiveServer) {
   const [help, setHelp] = useState<Help>('closed');
   const { status: copyStatus, copy } = useCopy();
   const helpId = useId();
+  /** Copia o IP e abre a instrução do console; devolve se a cópia deu certo. */
   const copyAddress = async () => {
-    await copy(server.address);
+    const ok = await copy(server.address);
     setHelp((current) => (current === 'closed' ? 'copy' : current));
+    return ok;
   };
   return {
     help,

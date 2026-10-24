@@ -29,8 +29,8 @@ export const WIDTHS = [390, 820, 1100, 1440] as const;
 
 /** Cor de fundo (--bg) de cada tema da Liberty, como o navegador a calcula. */
 export const BG: Record<Theme, string> = {
-  dark: 'rgb(17, 16, 13)',
-  light: 'rgb(248, 237, 209)',
+  dark: 'rgb(10, 10, 10)',
+  light: 'rgb(246, 246, 246)',
 };
 
 /** O Chrome registra a resposta 404 do próprio documento como erro de console. */
@@ -135,9 +135,22 @@ export async function settle(page: Page) {
   }
 }
 
-/** Rola até o fim real da página, onde o rodapé termina de entrar. */
+/**
+ * Rola até o fim real da página, onde o rodapé termina de entrar. O fim pode andar enquanto a página
+ * assenta (a fonte do wordmark do rodapé muda a altura dele, e a cortina reserva essa altura): rola de
+ * novo até a altura parar e o fim estar à vista. Instantâneo: com `scroll-behavior: smooth` a rolagem
+ * ainda estaria no meio quando o teste mede.
+ */
 export async function scrollToEnd(page: Page) {
-  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
+  await page.evaluate(async () => {
+    for (let round = 0; round < 6; round++) {
+      const height = document.documentElement.scrollHeight;
+      window.scrollTo({ top: height, behavior: 'instant' });
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const settled = document.documentElement.scrollHeight === height;
+      if (settled && Math.abs(window.scrollY + window.innerHeight - height) <= 1) return;
+    }
+  });
 }
 
 /**
@@ -196,7 +209,10 @@ function describe(node: { target: unknown[]; any: { data?: unknown }[] }): strin
  * contraste, as cores e a razão medidas. Antes de medir, a página assenta, o rodapé entra e toda
  * animação finita vai ao último quadro: o axe mede o estado final, não o meio de uma entrada.
  */
-export async function axeViolations(page: Page, { ignore = [] }: { ignore?: string[] } = {}) {
+export async function axeViolations(
+  page: Page,
+  { ignore = [], fixedHeader = false }: { ignore?: string[]; fixedHeader?: boolean } = {},
+) {
   // O rodapé só fica opaco quando entra na tela: rola até o fim para o axe medir o contraste dele.
   await scrollToEnd(page);
   await settle(page);
@@ -207,15 +223,20 @@ export async function axeViolations(page: Page, { ignore = [] }: { ignore?: stri
   // a folha de medição tira as transições e as animações CSS: o estilo sem elas é o final (as
   // entradas do site só têm o quadro de saída, "from"), e vale também para o que nascer durante a
   // análise. As regras do axe seguem todas ligadas. A folha construída por script não passa pela
-  // CSP de estilos inline.
-  await page.evaluate(() => {
+  // CSP de estilos inline. O header fixo (a partir de 768 px) cobriria o que a rolagem até o fim
+  // deixa embaixo dele e o `target-size` contaria o encontro como alvos sobrepostos: salvo pedido
+  // (`fixedHeader`, para medir o próprio header rolado), a medição o solta do topo (o mesmo lugar
+  // no fluxo).
+  await page.evaluate((fixed) => {
     const sheet = new CSSStyleSheet();
     sheet.replaceSync(
-      '*, *::before, *::after { transition: none !important; animation: none !important; }',
+      `*, *::before, *::after { transition: none !important; animation: none !important; }${
+        fixed ? '' : ' header[data-site-header] { position: static !important; }'
+      }`,
     );
     document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
     (window as unknown as { __axeFreeze: CSSStyleSheet }).__axeFreeze = sheet;
-  });
+  }, fixedHeader);
   await finishAnimations(page);
   try {
     const { violations } = await new AxeBuilder({ page })

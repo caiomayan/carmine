@@ -36,37 +36,56 @@ export default async function SignInPage({ searchParams }: { searchParams: Searc
   const t = await getTranslations('signIn');
 
   return (
-    <div className="container-page grid min-h-[min(72vh,640px)] place-items-center py-12 max-md:place-items-start max-md:py-8">
-      <div className="grid w-full max-w-[440px] gap-7">
-        <LinkMark />
+    // O brilho de fundo é o azul da Steam (cor de contexto) e o branco da marca: a página de entrada é a única que
+    // não tem uma skin ou um mapa para dar a cor ambiente.
+    <div
+      data-vida="on"
+      className="relative"
+      style={
+        {
+          '--amb-1': '#66c0f4',
+          '--amb-2': 'var(--text)',
+          '--amb-3': '#2a475e',
+        } as React.CSSProperties
+      }
+    >
+      <div aria-hidden="true" className="v-ambient">
+        <i />
+        <i />
+        <i />
+      </div>
+      <div className="container-page grid min-h-[min(72vh,640px)] place-items-center py-12 max-md:place-items-start max-md:py-8">
+        <div className="v-panel v-panel-lg v-glass grid w-full max-w-[480px] gap-7 p-9 max-md:p-6">
+          <LinkMark />
 
-        <div className="grid animate-fade-up gap-2.5">
-          <h1 className="text-display max-md:text-[26px]">{t('title')}</h1>
-          <p className="text-md text-muted-foreground">{t('subtitle')}</p>
-        </div>
+          <div className="grid animate-fade-up gap-2.5">
+            <h1 className="text-display max-md:text-[26px]">{t('title')}</h1>
+            <p className="text-md text-muted-foreground">{t('subtitle')}</p>
+          </div>
 
-        {error || expired ? (
-          <Notice tone={error ? 'danger' : 'info'}>
-            {error ? t(`errors.${error}`) : t('sessionExpired')}
-          </Notice>
-        ) : null}
+          {error || expired ? (
+            <Notice tone={error ? 'danger' : 'info'}>
+              {error ? t(`errors.${error}`) : t('sessionExpired')}
+            </Notice>
+          ) : null}
 
-        <div className="grid animate-fade-up gap-3 [animation-delay:60ms]">
-          <Button asChild className="min-h-12 w-full text-[15px] max-md:min-h-12">
-            {/* Navegação para a API (não é rota do web): âncora simples, sem prefetch. */}
-            <a href={steamLoginHref(back)} data-testid="steam-login">
-              <BrandIcon icon={siSteam} size={18} />
-              {t('steamButton')}
-            </a>
-          </Button>
-          <Button asChild variant="quiet" className="justify-self-center">
-            <Link href={back as Route}>{t('back')}</Link>
-          </Button>
-        </div>
+          <div className="grid animate-fade-up gap-3 [animation-delay:60ms]">
+            <Button asChild className="min-h-12 w-full text-[15px] max-md:min-h-12">
+              {/* Navegação para a API (não é rota do web): âncora simples, sem prefetch. */}
+              <a href={steamLoginHref(back)} data-testid="steam-login">
+                <BrandIcon icon={siSteam} size={18} />
+                {t('steamButton')}
+              </a>
+            </Button>
+            <Button asChild variant="quiet" className="justify-self-center">
+              <Link href={back as Route}>{t('back')}</Link>
+            </Button>
+          </div>
 
-        <div className="grid animate-fade-up gap-2 text-body-sm leading-[1.6] text-muted-foreground [animation-delay:120ms]">
-          <p>{t('steamNote')}</p>
-          <p>{t('claimNote')}</p>
+          <div className="grid animate-fade-up gap-2 text-body-sm leading-[1.6] text-muted-foreground [animation-delay:120ms]">
+            <p>{t('steamNote')}</p>
+            <p>{t('claimNote')}</p>
+          </div>
         </div>
       </div>
     </div>

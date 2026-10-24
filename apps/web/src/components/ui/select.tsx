@@ -18,7 +18,7 @@ const SelectValue = SelectPrimitive.Value;
 
 /** Visual do botão de Select e de Combobox: um só vocabulário para os dois. */
 export const selectTriggerClass = [
-  'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
+  'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-lg bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
   'hover:bg-surface-2 data-[state=open]:bg-surface-2 data-[placeholder]:text-muted-foreground',
   // Parece um campo, então foca como um (anel fino e suave, só no teclado), não com o anel de 2 px.
   'focus-visible:bg-surface-2 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-field)]',
@@ -66,7 +66,7 @@ function SelectContent({
         position={position}
         sideOffset={sideOffset}
         className={cn(
-          'relative z-50 max-h-[min(20rem,var(--radix-select-content-available-height))] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground [scrollbar-color:var(--line-strong)_transparent] [scrollbar-width:thin] shadow-(--shadow-overlay)',
+          'relative z-50 max-h-[min(20rem,var(--radix-select-content-available-height))] min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl bg-popover p-1 text-popover-foreground [scrollbar-color:var(--line-strong)_transparent] [scrollbar-width:thin] shadow-(--shadow-overlay)',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 motion-reduce:animate-none',
           position === 'popper' && 'w-(--radix-select-trigger-width)',
           className,

@@ -12,14 +12,19 @@ for (const { width, height } of [
     for (const route of ['/', '/termos', '/nao-existe']) {
       await page.goto(route);
       await settle(page);
+      // Com a cortina (desktop) o rodapé fica fixo atrás e só se mostra no fim da rolagem: mede lá.
+      await scrollToEnd(page);
+      await settle(page);
       const gap = await page.evaluate(() => {
-        const main = document.querySelector('main')?.getBoundingClientRect();
+        const main = document.querySelector('[data-curtain-content]')?.getBoundingClientRect();
         const footer = document.querySelector('footer')?.getBoundingClientRect();
         return main && footer ? Math.round(footer.top - main.bottom) : null;
       });
-      expect(gap, `${route}: sem vão entre o conteúdo e o rodapé`).toBe(0);
+      expect(
+        Math.abs(gap ?? 99),
+        `${route}: sem vão entre o conteúdo e o rodapé`,
+      ).toBeLessThanOrEqual(1);
 
-      await scrollToEnd(page);
       const footer = page.getByRole('contentinfo');
       await expect(footer, `${route}: visível no fim`).toBeInViewport();
       await expect(footer.getByText('© ', { exact: false })).toBeInViewport();
@@ -83,19 +88,86 @@ test('o rodapé leva marca, links, estado dos servidores e o aviso sobre a Valve
   await expect(footer).toContainText('a Carmine não é afiliada nem endossada por ela');
 });
 
-test('o rodapé entra suave com a rolagem e fica parado com movimento reduzido', async ({
+test('no desktop o conteúdo sobe como uma cortina e revela o rodapé fixo atrás', async ({
   page,
 }) => {
-  // Uma página longa: o rodapé só entra na tela com a rolagem.
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/termos');
-  const reveal = page.locator('footer .footer-reveal');
-  // Ainda fora da tela: a revelação ligada à rolagem não começou.
-  expect(Number(await reveal.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(1);
-  await scrollToEnd(page);
-  await expect(reveal).toHaveCSS('opacity', '1');
+  await settle(page);
+  const root = page.locator('html');
+  await expect(root).toHaveAttribute('data-curtain', 'on');
 
+  const footer = page.locator('footer[data-site-footer]');
+  await expect(footer).toHaveCSS('position', 'fixed');
+  // O conteúdo deixa embaixo exatamente a altura do rodapé: é o espaço que ele revela.
+  const height = await footer.evaluate((el) => el.getBoundingClientRect().height);
+  const margin = await page
+    .locator('[data-curtain-content]')
+    .evaluate((el) => Number.parseFloat(getComputedStyle(el).marginBottom));
+  expect(Math.abs(margin - height)).toBeLessThanOrEqual(1);
+
+  // No fim da rolagem o rodapé aparece inteiro, logo abaixo do conteúdo.
+  await scrollToEnd(page);
+  await expect(footer.getByText('© ', { exact: false })).toBeInViewport();
+  const box = await footer.boundingBox();
+  expect((box?.y ?? 0) + (box?.height ?? 0)).toBeCloseTo(900, 0);
+});
+
+test('no celular e com movimento reduzido o rodapé fica no fluxo, sem cortina', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/termos');
+  await settle(page);
+  await expect(page.locator('html')).not.toHaveAttribute('data-curtain', 'on');
+  await expect(page.locator('footer[data-site-footer]')).not.toHaveCSS('position', 'fixed');
+
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.reload();
-  await expect(reveal).toHaveCSS('opacity', '1');
-  await expect(reveal).toHaveCSS('animation-name', 'none');
+  await settle(page);
+  await expect(page.locator('html')).not.toHaveAttribute('data-curtain', 'on');
+  await expect(page.locator('footer[data-site-footer]')).not.toHaveCSS('position', 'fixed');
+});
+
+test('SAINT CARMINE ocupa a largura toda, com a arte do mapa em destaque dentro das letras', async ({
+  page,
+}) => {
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto('/termos');
+    await settle(page);
+    await scrollToEnd(page);
+    const wordmark = page.getByTestId('footer-wordmark');
+    await expect(wordmark).toBeVisible();
+    // A arte vem de /maps/<mapa>/<variante>-1600.webp e o texto cabe sem estourar.
+    const art = await wordmark.evaluate((el) => getComputedStyle(el).getPropertyValue('--art'));
+    expect(art).toMatch(/\/maps\/[a-z0-9]+\/d\d+-1600\.webp/);
+    const fit = await wordmark.evaluate((el) => {
+      const text = el.querySelector('p');
+      return text ? [text.scrollWidth, el.clientWidth] : [0, 0];
+    });
+    expect(fit[0]).toBeLessThanOrEqual((fit[1] ?? 0) + 1);
+    expect(fit[0]).toBeGreaterThan((fit[1] ?? 0) * 0.9);
+  }
+});
+
+test('a faixa viva mostra o último acontecimento e troca quando chega outro', async ({ page }) => {
+  const event = (id: string, player: string) => ({
+    items: [
+      { id, kind: 'joined', player: { name: player }, href: '/', server: 'Retake · Rotação' },
+    ],
+  });
+  let current = event('ev-1', 'Primeira Pessoa');
+  await page.route('**/atividade/recentes', (route) => route.fulfill({ json: current }));
+  await page.goto('/termos');
+  const last = page.getByTestId('footer-last-event');
+  // Um acontecimento novo chega na próxima leitura (a aba voltando à vista também a dispara).
+  current = event('ev-2', 'Segunda Pessoa');
+  await expect(async () => {
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(last).toContainText('Segunda Pessoa', { timeout: 1_000 });
+  }).toPass({ timeout: 10_000 });
+  await expect(last).toContainText('entrou em Retake · Rotação');
+  await expect(last.getByRole('link')).toHaveAttribute('href', '/');
 });

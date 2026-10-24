@@ -1,17 +1,23 @@
 import { DEATHMATCH_MIN_MINUTES, RETAKE_MIN_ROUNDS } from '@carmine/contracts';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
-import { getFormatter, getTranslations } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
+import { getFormatter, getMessages, getTranslations } from 'next-intl/server';
+import type { CSSProperties } from 'react';
 import { EmptyState } from '@/components/empty-state';
 import { BadgeAlertIcon } from '@/components/icons/animated/badge-alert';
 import { UsersIcon } from '@/components/icons/animated/users';
 import { PageHead } from '@/components/page-head';
 import { ModeTabs } from '@/components/ranking/mode-tabs';
-import { RankingTable } from '@/components/ranking/ranking-table';
+import { RankingBoard } from '@/components/ranking/ranking-board';
 import { discordLink, ViewerNote } from '@/components/ranking/viewer-note';
+import { WeekCountdown } from '@/components/ranking/week-countdown';
 import { WeekSelect } from '@/components/ranking/week-select';
+import { WeekTitle } from '@/components/ranking/week-title';
 import { Button } from '@/components/ui/button';
-import { getRanking } from '@/lib/api-server';
+import { mapPalette } from '@/components/vida/map-art';
+import { getLiveServers, getRanking } from '@/lib/api-server';
+import { featuredMap } from '@/lib/featured-map';
 import { parseRankingQuery, rankingHref } from '@/lib/ranking';
 
 type SearchParams = Promise<Record<'modo' | 'semana', string | string[] | undefined>>;
@@ -29,8 +35,18 @@ export default async function RankingPage({ searchParams }: { searchParams: Sear
   const { mode, week } = parseRankingQuery(await searchParams);
   const t = await getTranslations('ranking');
   const format = await getFormatter();
-  const result = await getRanking(mode, week);
+  const [result, live] = await Promise.all([getRanking(mode, week), getLiveServers()]);
+  // O fundo ganha as cores do mapa em destaque (o do servidor mais cheio agora).
+  const map = featuredMap(live?.servers);
+  const [amb1, amb2, amb3] = mapPalette(map, true);
+  const messages = await getMessages();
+  const ambient = { '--amb-1': amb1, '--amb-2': amb2, '--amb-3': amb3 } as CSSProperties;
 
+  // O que o cliente precisa: o Ranking e só as frases de Estatísticas que as linhas usam.
+  const clientMessages = {
+    ranking: messages.ranking,
+    profile: { stats: { none: messages.profile.stats.none, time: messages.profile.stats.time } },
+  };
   const head = <PageHead title={t('title')} subtitle={t('subtitle')} />;
 
   if (result.status !== 'ok') {
@@ -85,46 +101,73 @@ export default async function RankingPage({ searchParams }: { searchParams: Sear
   const minimum = mode === 'retake' ? RETAKE_MIN_ROUNDS : DEATHMATCH_MIN_MINUTES;
 
   return (
-    <div className="container-page pb-16">
-      {head}
-
-      <div className="grid animate-fade-up gap-5 [animation-delay:40ms]">
-        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
-          <ModeTabs active={mode} week={ranking.current ? undefined : ranking.weekStart} />
-          <WeekSelect label={t('week.label')} value={ranking.weekStart} options={options} />
-        </div>
-
-        <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
-          {t(`rules.${mode}`, { min: minimum })}
-        </p>
-
-        <ViewerNote ranking={ranking} />
-
-        {ranking.entries.length > 0 ? (
-          <RankingTable ranking={ranking} />
-        ) : (
-          <div className="rounded-xl bg-surface" data-testid="ranking-empty">
-            <EmptyState
-              icon={UsersIcon}
-              title={t(ranking.current ? 'empty.title' : 'empty.titlePast')}
-              body={
-                ranking.current
-                  ? t(mode === 'retake' ? 'empty.bodyRetake' : 'empty.bodyDeathmatch', {
-                      min: minimum,
-                    })
-                  : t('empty.bodyPast', {
-                      min: minimum,
-                      unit: t(`units.${ranking.minimum.unit}`),
-                    })
-              }
-            />
-          </div>
-        )}
-
-        <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
-          {t.rich('integrity', { discord: discordLink })}
-        </p>
+    <div data-vida data-map={map} style={ambient} className="relative">
+      <div aria-hidden="true" className="v-ambient">
+        <i />
+        <i />
+        <i />
       </div>
+      <NextIntlClientProvider messages={clientMessages}>
+        <div className="container-page pb-16">
+          <PageHead
+            title={t('title')}
+            subtitle={t('subtitle')}
+            aside={
+              ranking.current ? (
+                <p className="flex flex-wrap items-baseline gap-x-3 text-caption text-muted-foreground">
+                  {t('countdown.prefix')} <WeekCountdown className="text-foreground" />
+                </p>
+              ) : null
+            }
+          />
+
+          <div className="grid animate-fade-up gap-5 [animation-delay:40ms]">
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+              <ModeTabs active={mode} week={ranking.current ? undefined : ranking.weekStart} />
+              <WeekSelect label={t('week.label')} value={ranking.weekStart} options={options} />
+            </div>
+
+            <WeekTitle
+              currentWeek={currentWeek}
+              text={t(
+                ranking.current ? 'week.titleCurrent' : 'week.titlePast',
+                rangeOf(ranking.weekStart),
+              )}
+            />
+
+            <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
+              {t(`rules.${mode}`, { min: minimum })}
+            </p>
+
+            <ViewerNote ranking={ranking} />
+
+            {ranking.entries.length > 0 ? (
+              <RankingBoard ranking={ranking} />
+            ) : (
+              <div className="rounded-xl bg-surface" data-testid="ranking-empty">
+                <EmptyState
+                  icon={UsersIcon}
+                  title={t(ranking.current ? 'empty.title' : 'empty.titlePast')}
+                  body={
+                    ranking.current
+                      ? t(mode === 'retake' ? 'empty.bodyRetake' : 'empty.bodyDeathmatch', {
+                          min: minimum,
+                        })
+                      : t('empty.bodyPast', {
+                          min: minimum,
+                          unit: t(`units.${ranking.minimum.unit}`),
+                        })
+                  }
+                />
+              </div>
+            )}
+
+            <p className="max-w-[68ch] text-body-sm text-muted-foreground [text-wrap:pretty]">
+              {t.rich('integrity', { discord: discordLink })}
+            </p>
+          </div>
+        </div>
+      </NextIntlClientProvider>
     </div>
   );
 }

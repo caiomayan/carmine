@@ -82,7 +82,6 @@ export function ReportQueue({
             onClick={loadMore}
             disabled={loading}
             aria-busy={loading || undefined}
-            className="-ml-3"
           >
             {t('loadMore')}
           </Button>
@@ -114,7 +113,7 @@ function ReportCard({
       aria-label={t('cardLabel', { name: report.target.displayName })}
       data-report-id={report.id}
       data-reason={report.reason}
-      className="grid gap-4 rounded-md bg-surface p-4"
+      className="grid gap-4 rounded-xl bg-surface p-4"
     >
       <header className="grid gap-1">
         <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
@@ -167,7 +166,7 @@ function ReportCard({
       </header>
 
       {report.needsEvidence ? (
-        <p className="rounded-sm bg-surface-2 px-3 py-2 text-body-sm" data-testid="report-evidence">
+        <p className="rounded-xl bg-surface-2 px-3 py-2 text-body-sm" data-testid="report-evidence">
           {t('needsEvidence')}
         </p>
       ) : null}
@@ -237,7 +236,7 @@ function ReportChat({ report }: { report: StaffReport }) {
         {t('chat.title', { count: report.chat.length })}
       </h3>
       <ol
-        className="grid max-h-64 gap-0.5 overflow-y-auto rounded-sm bg-surface-2 p-2 text-body-sm"
+        className="grid max-h-64 gap-0.5 overflow-y-auto rounded-xl bg-surface-2 p-2 text-body-sm"
         data-testid="report-chat"
       >
         {report.chat.map((line, index) => (

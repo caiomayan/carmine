@@ -1,0 +1,145 @@
+/*
+ * Perfil (V3 do redesenho Vida). Só o que é desta tela; a base (painéis, tipografia, holo, ambiente) está em
+ * components/vida/vida.css. As classes `pf-*` são do Perfil.
+ */
+
+/* ---------- banner: a cor ambiente da skin em destaque (ou o neutro), de borda a borda ---------- */
+.pf-banner {
+  position: relative;
+  height: 280px;
+  width: 100vw;
+  margin-inline: calc(50% - 50vw);
+  overflow: hidden;
+  isolation: isolate;
+  /* a cor some para baixo, em vez de parar numa borda: o brilho ambiente da página segue por trás */
+  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+}
+.pf-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(
+      60% 120% at 14% 0%,
+      color-mix(in srgb, var(--amb-1) 70%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 110% at 86% 0%,
+      color-mix(in srgb, var(--amb-2) 62%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      70% 90% at 50% 0%,
+      color-mix(in srgb, var(--amb-3) 38%, transparent),
+      transparent 75%
+    );
+}
+@media (max-width: 760px) {
+  .pf-banner {
+    height: 190px;
+  }
+}
+/* Conta sem jogos ou não reivindicada: o banner fica quieto */
+[data-pf-quiet] .pf-banner::before {
+  opacity: 0.45;
+  filter: grayscale(0.7);
+}
+
+/* o avatar sobe sobre o banner */
+.pf-head {
+  position: relative;
+  margin-top: -70px;
+}
+@media (max-width: 760px) {
+  .pf-head {
+    margin-top: -48px;
+  }
+}
+.pf-avatar {
+  box-shadow: 0 0 0 6px var(--bg);
+}
+
+/* ---------- números grandes com tendência ---------- */
+.pf-tick-up {
+  animation: pf-tick-up 900ms var(--ease-out);
+}
+@keyframes pf-tick-up {
+  from {
+    color: var(--status-online);
+    transform: translateY(2px);
+  }
+}
+.pf-skel {
+  background:
+    linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--text) 16%, transparent) 50%,
+      transparent 80%
+    )
+    -120% 0 / 60% 100% no-repeat,
+    var(--surface-2);
+  animation: pf-skel 1.5s linear infinite;
+}
+@keyframes pf-skel {
+  to {
+    background-position: 220% 0;
+  }
+}
+
+/* ---------- estado "coletando": cena quieta no lugar de um gráfico sem dados ---------- */
+.pf-heat {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 4px;
+}
+.pf-heat i {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--text) calc(var(--l, 1) * 7%), transparent);
+}
+
+/* ---------- gráficos (bklit-ui): as variáveis --chart-* vêm dos tokens do site ---------- */
+.pf-charts {
+  --chart-1: var(--text);
+  --chart-2: var(--side-ct);
+  --chart-3: var(--side-t);
+  --chart-4: var(--status-online);
+  --chart-5: var(--status-vip);
+  --chart-positive: var(--status-online);
+  --chart-negative: var(--status-danger);
+  --chart-background: transparent;
+  --chart-foreground: var(--text);
+  --chart-foreground-muted: var(--muted);
+  --chart-label: var(--muted);
+  --chart-line-primary: var(--text);
+  --chart-line-secondary: var(--side-ct);
+  --chart-crosshair: var(--text);
+  --chart-grid: color-mix(in srgb, var(--text) 12%, transparent);
+  --chart-brush-border: var(--chart-grid);
+  --chart-tooltip-background: var(--raised);
+  --chart-tooltip-foreground: var(--text);
+  --chart-tooltip-muted: var(--muted);
+  --chart-indicator-color: var(--text);
+  --chart-marker-background: var(--surface-2);
+  --chart-marker-border: var(--line);
+  --chart-marker-foreground: var(--text);
+  --chart-scale-01: var(--fill-rest);
+  --chart-scale-02: color-mix(in srgb, var(--status-online) 28%, var(--surface));
+  --chart-scale-03: color-mix(in srgb, var(--status-online) 52%, var(--surface));
+  --chart-scale-04: color-mix(in srgb, var(--status-online) 76%, var(--surface));
+  --chart-scale-05: var(--status-online);
+  --chart-scale-mix: var(--surface);
+  --chart-scale-pattern-color: var(--bg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-tick-up,
+  .pf-skel {
+    animation: none;
+  }
+}

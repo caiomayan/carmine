@@ -49,7 +49,7 @@ export function SettingsShell({
       {active ? (
         <Link
           href={SETTINGS_BASE as Route}
-          className="-ml-2 inline-flex min-h-(--tap) items-center gap-1.5 rounded-md bg-(--fill-rest) px-3 text-sm text-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) md:hidden"
+          className="inline-flex min-h-(--tap) items-center gap-1.5 rounded-md bg-(--fill-rest) px-3 text-sm text-foreground transition-colors duration-(--dur-fast) ease-std hover:bg-(--fill-hover) md:hidden"
           data-testid="settings-back"
         >
           <AnimatedIcon icon={ArrowLeftIcon} size={16} />

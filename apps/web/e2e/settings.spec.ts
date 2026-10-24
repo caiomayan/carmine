@@ -1,5 +1,6 @@
 import { createUnclaimedAccount, grantVip, newSteamId, signInByRequest } from './accounts';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
+import { hydrated, openAccountMenu } from './hydration';
 import { connectPlayer, createServer, keepBeating } from './live-servers';
 
 const accountMenu = (page: import('@playwright/test').Page) => page.getByTestId('account-menu');
@@ -14,7 +15,10 @@ async function menuGo(
   item: import('@playwright/test').Locator,
 ) {
   await expect(async () => {
-    if (!(await item.isVisible())) await accountMenu(page).click();
+    if (!(await item.isVisible())) {
+      await hydrated(accountMenu(page));
+      await openAccountMenu(page);
+    }
     await item.click({ timeout: 3_000 });
   }).toPass();
 }
@@ -40,7 +44,7 @@ test.describe('menu da Conta', () => {
   }) => {
     const account = await signedIn(page, request, 'Menu Teste');
     await page.goto('/ranking');
-    await accountMenu(page).click();
+    await openAccountMenu(page);
 
     const menu = page.getByRole('menu');
     await expect(menu).toBeVisible();
@@ -103,7 +107,7 @@ test.describe('menu da Conta', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
     // O menu da Conta já não traz o tema.
-    await accountMenu(page).click();
+    await openAccountMenu(page);
     await expect(page.getByRole('menu')).not.toContainText('Tema');
     await expect(page.getByRole('menuitemradio')).toHaveCount(0);
   });
@@ -112,14 +116,14 @@ test.describe('menu da Conta', () => {
     const account = await signedIn(page, request, 'Menu Vip');
     grantVip(account.steamId, 12);
     await page.goto('/ranking');
-    await accountMenu(page).click();
+    await openAccountMenu(page);
     await expect(page.getByTestId('menu-vip')).toHaveText('VIP · 12 dias');
 
     // No último dia, o singular.
     const other = await signedIn(page, request, 'Menu Vip Um');
     grantVip(other.steamId, 1);
     await page.goto('/ranking');
-    await accountMenu(page).click();
+    await openAccountMenu(page);
     await expect(page.getByTestId('menu-vip')).toHaveText('VIP · 1 dia');
   });
 
@@ -135,7 +139,7 @@ test.describe('menu da Conta', () => {
     const stop = keepBeating(request, server, () => players);
     try {
       await page.goto('/ranking');
-      await accountMenu(page).click();
+      await openAccountMenu(page);
       const playing = page.getByTestId('menu-playing');
       await expect(playing).toContainText('Jogando agora');
       await expect(playing).toContainText(server.name);
@@ -148,7 +152,7 @@ test.describe('menu da Conta', () => {
       players = [];
       await page.reload();
       await page.waitForTimeout(5_500);
-      await accountMenu(page).click();
+      await openAccountMenu(page);
       await expect(page.getByTestId('menu-playing')).toHaveCount(0);
     } finally {
       stop();
@@ -163,7 +167,7 @@ test.describe('menu da Conta', () => {
     expect(Math.round(box?.width ?? 0)).toBeGreaterThanOrEqual(44);
     expect(Math.round(box?.height ?? 0)).toBeGreaterThanOrEqual(44);
 
-    await accountMenu(page).click();
+    await openAccountMenu(page);
     const panel = await page.getByRole('menu').boundingBox();
     expect(panel?.x).toBeGreaterThanOrEqual(0);
     expect((panel?.x ?? 0) + (panel?.width ?? 0)).toBeLessThanOrEqual(390);
@@ -278,6 +282,9 @@ test.describe('Configurações', () => {
     await expect(page.getByTestId('profile-settings')).toBeHidden();
     await expect(page.getByTestId('settings-back')).toHaveCount(0);
 
+    // A coluna da página: o fundo do "voltar" começa na mesma borda da lista de seções.
+    const columnX = (await page.getByTestId('settings-nav-aparencia').boundingBox())?.x ?? -1;
+
     await page.getByTestId('settings-nav-aparencia').click();
     await expect(page).toHaveURL('/configuracoes/aparencia');
     await expect(page.getByTestId('settings-nav-perfil')).toBeHidden();
@@ -285,6 +292,8 @@ test.describe('Configurações', () => {
     // O H1 segue no DOM (para leitor de tela), só some da vista.
     await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
 
+    const backX = (await page.getByTestId('settings-back').boundingBox())?.x ?? -99;
+    expect(Math.abs(backX - columnX)).toBeLessThanOrEqual(1);
     await page.getByTestId('settings-back').click();
     await expect(page).toHaveURL('/configuracoes');
     await expect(page.getByTestId('settings-nav-perfil')).toBeVisible();

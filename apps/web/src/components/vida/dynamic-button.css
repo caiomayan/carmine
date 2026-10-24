@@ -1,0 +1,99 @@
+/* Botões da marca (.v-cta, .v-cta-quiet) e o Dynamic Button (ocioso, carregando, feito); usados por dynamic-button.tsx. */
+.v-cta,
+.v-cta-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: var(--tap);
+  padding-inline: 1.35rem;
+  border-radius: var(--r-ctl);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  transition:
+    transform var(--dur-fast) var(--ease-std),
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+/* botões pequenos viram pílula */
+.v-pill {
+  border-radius: 999px;
+}
+.v-cta {
+  color: var(--bg);
+  background: var(--text);
+}
+.v-cta:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+.v-cta:active {
+  transform: translateY(0) scale(0.985);
+}
+.v-cta-quiet {
+  color: var(--text);
+  background: var(--fill-active);
+}
+.v-cta-quiet:hover {
+  background: var(--fill-focus);
+}
+
+/* ---------- Dynamic Button: ocioso, carregando, feito ---------- */
+.v-dyn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.v-dyn[data-phase="loading"] {
+  cursor: progress;
+}
+.v-dyn .v-dyn-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: var(--v-map, var(--status-online));
+  opacity: 0.9;
+}
+.v-dyn[data-phase="loading"] .v-dyn-fill {
+  animation: v-dyn-load 1500ms var(--ease-std) forwards;
+}
+.v-dyn[data-phase="done"] .v-dyn-fill {
+  transform: scaleX(1);
+  background: var(--status-online);
+  opacity: 1;
+}
+@keyframes v-dyn-load {
+  to {
+    transform: scaleX(0.94);
+  }
+}
+.v-dyn[data-phase="done"] {
+  color: #06140b;
+  background: var(--status-online);
+}
+.v-spin {
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  animation: v-spin 700ms linear infinite;
+}
+@keyframes v-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .v-spin,
+  .v-dyn[data-phase="loading"] .v-dyn-fill {
+    animation: none;
+  }
+  .v-cta:hover {
+    transform: none;
+  }
+}

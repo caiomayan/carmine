@@ -14,7 +14,7 @@ import type { ReactNode } from 'react';
 export const LABEL_COLOR = '[--label-color:color-mix(in_srgb,var(--text)_80%,transparent)]';
 
 export const fieldTriggerClass = [
-  'group peer relative flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-(--fill-rest) px-3 pt-5 pb-1.5 text-left text-body text-foreground outline-2 outline-offset-0 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std motion-reduce:transition-none',
+  'group peer relative flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-lg bg-(--fill-rest) px-3 pt-5 pb-1.5 text-left text-body text-foreground outline-2 outline-offset-0 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std motion-reduce:transition-none',
   'hover:bg-(--fill-hover) focus:bg-(--fill-focus) focus:outline-(--focus-ring) data-[state=open]:bg-(--fill-focus) data-[state=open]:outline-(--focus-ring)',
   'disabled:pointer-events-none disabled:text-faint aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger',
   '*:data-[slot=select-value]:truncate [&_svg]:pointer-events-none [&_svg]:shrink-0',

@@ -89,7 +89,7 @@ export const describedBy = (id: string, { error, hint }: { error?: unknown; hint
   error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
 const inputClass =
-  'min-h-(--tap) w-full rounded-md bg-(--fill-rest) px-3 text-body tabular-nums outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-(--fill-hover) focus:outline-(--focus-ring) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger disabled:text-faint motion-reduce:transition-none';
+  'min-h-(--tap) w-full rounded-lg bg-(--fill-rest) px-3 text-body tabular-nums outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-(--fill-hover) focus:outline-(--focus-ring) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger disabled:text-faint motion-reduce:transition-none';
 
 /**
  * Número digitado (aceita "0,15" e "0.15"). Guarda o texto enquanto a pessoa digita; o valor
@@ -259,7 +259,16 @@ export function FloatField({
     <FieldShell
       id={id}
       label={t('float')}
-      aside={<span data-testid="wear-tier">{t(`wear.${tier}`)}</span>}
+      aside={
+        <span data-testid="wear-tier" className="inline-flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="size-2 rounded-full"
+            style={{ background: `var(--wear-${tier})` }}
+          />
+          {t(`wear.${tier}`)}
+        </span>
+      }
       hint={hint}
       error={error}
     >
@@ -285,11 +294,14 @@ export function FloatField({
               <Tooltip key={segment.tier}>
                 <TooltipTrigger asChild>
                   <span
-                    style={{ width: `${segment.width}%` }}
+                    style={{
+                      width: `${segment.width}%`,
+                      color: segment.tier === tier ? `var(--wear-${segment.tier})` : undefined,
+                    }}
                     data-tier={segment.tier}
                     className={cn(
                       'truncate border-l border-line pl-1 transition-colors duration-(--dur-base) ease-std first:border-l-0 first:pl-0',
-                      segment.tier === tier && 'text-foreground',
+                      segment.tier === tier && 'font-bold',
                     )}
                   >
                     {segment.width > 8 ? t(`wearShort.${segment.tier}`) : ' '}

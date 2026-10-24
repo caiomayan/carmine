@@ -14,6 +14,8 @@ import { QuickEquipButton } from '@/components/inventory/quick-equip';
 import { PageHead } from '@/components/page-head';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
+import { EmptyScene } from '@/components/vida/empty-scene';
+import { Ticker } from '@/components/vida/ticker';
 import { getInventory, getLoadout, getServerSession } from '@/lib/api-server';
 import { signInHref } from '@/lib/auth-links';
 import { type CatalogEntry, catalogEntry, itemSpec } from '@/lib/catalog/catalog';
@@ -109,6 +111,11 @@ export default async function InventoryPage() {
           data-testid="inventory-empty"
         >
           <div className="grid gap-6">
+            <EmptyScene
+              kind="weapon"
+              weaponImage={suggestions[0]?.image}
+              className="mx-0 my-2 h-[150px]! w-[340px]!"
+            />
             <div className="grid max-w-[56ch] gap-2">
               <h2 id="inventario-vazio" className="text-lg font-semibold">
                 {t('empty.title')}
@@ -174,7 +181,8 @@ export default async function InventoryPage() {
               className="text-caption text-muted-foreground tabular-nums"
               data-testid="inventory-count"
             >
-              {t('count', { count: items.length, limit })}
+              <Ticker value={items.length} className="font-semibold text-foreground" />{' '}
+              {items.length === 1 ? 'Item' : 'Itens'} de {limit}
             </span>
           }
         >

@@ -3,6 +3,7 @@ import type { APIRequestContext } from '@playwright/test';
 import { createUnclaimedAccount, newSteamId, signInByRequest } from './accounts';
 import { runApiCli } from './api-cli';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
+import { clickHydrated } from './hydration';
 
 const AT = () => new Date().toISOString();
 
@@ -100,12 +101,18 @@ test('um empate em rounds vencidos é resolvido pelo K/D', async ({ page, reques
 
   await page.goto('/ranking');
 
-  const names = await page.getByTestId('ranking-row').allInnerTexts();
-  const highAt = names.findIndex((row) => row.includes(high.name));
-  const lowAt = names.findIndex((row) => row.includes(low.name));
-  expect(highAt).toBeGreaterThanOrEqual(0);
+  // O pódio vem na ordem 2-1-3 na tela: a posição é o atributo, não a ordem no documento.
+  const rows = await page.getByTestId('ranking-row').evaluateAll((els) =>
+    els.map((el) => ({
+      position: Number((el as HTMLElement).dataset.position),
+      text: el.textContent ?? '',
+    })),
+  );
+  const highAt = rows.find((row) => row.text.includes(high.name))?.position ?? 0;
+  const lowAt = rows.find((row) => row.text.includes(low.name))?.position ?? 0;
+  expect(highAt).toBeGreaterThanOrEqual(1);
   expect(highAt).toBeLessThan(lowAt);
-  await expect(page.getByRole('link', { name: high.name })).toHaveAttribute(
+  await expect(page.getByRole('main').getByRole('link', { name: high.name })).toHaveAttribute(
     'href',
     `/${high.publicId}`,
   );
@@ -133,7 +140,7 @@ test('o Perfil privado aparece como "Jogador privado", sem link, nome nem avatar
   await expect(own).toContainText('Jogador privado');
   await expect(own.getByRole('link')).toHaveCount(0);
   await expect(own).not.toContainText('Silenciosa Rank');
-  await expect(page.getByRole('link', { name: 'Aberta Rank' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: 'Aberta Rank' })).toBeVisible();
 
   // Um visitante sem sessão também a vê privada, e o nome não aparece em lugar nenhum da página.
   const visitor = await page
@@ -220,7 +227,7 @@ test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil
   const { high } = await tiedPair(request);
   const by = newSteamId();
   await page.goto('/ranking');
-  await expect(page.getByRole('link', { name: high.name })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: high.name })).toBeVisible();
 
   const out = runApiCli('dist/staff/staff.cli.js', [
     'ranking-remove',
@@ -239,9 +246,9 @@ test('a Staff remove a entrada do Ranking e as Estatísticas continuam no Perfil
 
   // O CLI também tira o Ranking do cache curto, então a próxima leitura já não a traz.
   await page.reload();
-  await expect(page.getByRole('link', { name: high.name })).toHaveCount(0);
+  await expect(page.getByRole('main').getByRole('link', { name: high.name })).toHaveCount(0);
   await page.goto(`/${high.publicId}`);
-  await expect(page.getByTestId('stats-retake')).toContainText('Kills');
+  await expect(page.getByTestId('stats-retake')).toContainText('Abates');
 });
 
 test('semana sem ninguém elegível mostra o estado vazio que explica as regras', async ({
@@ -304,17 +311,17 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   });
 
   await page.goto(`/${killer.publicId}`);
-  const total = page.getByTestId('stats-total');
-  await expect(total.locator('[data-stat="kills"]')).toContainText('1');
-  await expect(total.locator('[data-stat="adr"]')).toHaveCount(0);
-  await expect(total.locator('[data-stat="kpm"]')).toHaveCount(0);
-  await expect(page.getByTestId('stats-retake').locator('[data-stat="adr"]')).toBeVisible();
-  await expect(page.getByTestId('stats-only-you')).toHaveCount(0);
-
-  // Os três números de destaque (K/D, Kills, HS%) vêm antes da tabela e do Loadout.
+  // Os quatro números de destaque (K/D, Abates, HS% e horas) vêm antes dos cartões e do Loadout; a
+  // semana abre primeiro (teve jogo) e o seletor leva ao total.
   const highlights = page.getByTestId('stats-highlights');
-  await expect(highlights.locator('[data-highlight]')).toHaveCount(3);
+  await expect(highlights.locator('[data-highlight]')).toHaveCount(4);
   await expect(highlights.locator('[data-highlight="kills"]')).toContainText('1');
+  await clickHydrated(page.locator('[data-period-option="total"]'));
+  await expect(highlights).toHaveAttribute('data-period', 'total');
+  await expect(highlights.locator('[data-stat="kills"]')).toContainText('1');
+  await expect(page.getByTestId('stats-retake').locator('[data-stat="adr"]')).toBeVisible();
+  await expect(page.getByTestId('stats-retake').locator('[data-stat="kpm"]')).toHaveCount(0);
+  await expect(page.getByTestId('stats-only-you')).toHaveCount(0);
   const statsBox = await page.getByTestId('profile-stats').boundingBox();
   const loadoutBox = await page.getByRole('region', { name: 'Loadout' }).boundingBox();
   expect(statsBox?.y).toBeLessThan(loadoutBox?.y ?? 0);
@@ -325,7 +332,9 @@ test('Estatísticas no Perfil: por Modo e no total; Perfil privado esconde de vi
   await turnPrivateProfileOn(page);
   await page.goto(`/${killer.publicId}`);
   await expect(page.getByTestId('stats-only-you')).toHaveText('Só você vê');
-  await expect(page.getByTestId('stats-total').locator('[data-stat="kills"]')).toContainText('1');
+  await expect(page.getByTestId('stats-highlights').locator('[data-stat="kills"]')).toContainText(
+    '1',
+  );
 
   const visitorContext = await browser.newContext({
     baseURL: page.url().split('/').slice(0, 3).join('/'),
@@ -378,3 +387,110 @@ for (const theme of ['dark', 'light'] as const) {
     }
   });
 }
+
+test('o pódio é 2-1-3: o primeiro no meio e mais alto, os três com a posição escrita', async ({
+  page,
+  request,
+}) => {
+  await tiedPair(request);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/ranking');
+  const slots = page.getByTestId('ranking-podium').getByTestId('ranking-row');
+  await expect(slots).toHaveCount(3);
+  const boxes = await Promise.all(
+    [1, 2, 3].map(async (position) => {
+      const slot = page.getByTestId('ranking-podium').locator(`[data-position="${position}"]`);
+      await expect(slot).toContainText(String(position));
+      return slot.boundingBox();
+    }),
+  );
+  const [first, second, third] = boxes;
+  // 2º à esquerda, 1º no meio, 3º à direita; o do meio é o mais alto.
+  expect(second?.x ?? 0).toBeLessThan(first?.x ?? 0);
+  expect(first?.x ?? 0).toBeLessThan(third?.x ?? 0);
+  expect(first?.height ?? 0).toBeGreaterThan(second?.height ?? 0);
+  expect(second?.height ?? 0).toBeGreaterThan(third?.height ?? 0);
+});
+
+test('a contagem até a virada da semana só existe na semana atual, com a frase para o leitor de tela', async ({
+  page,
+}) => {
+  await page.goto('/ranking');
+  const timer = page.getByTestId('week-countdown');
+  await expect(timer).toHaveAttribute('role', 'timer');
+  await expect(timer).toHaveAttribute('aria-label', /para a virada da semana/);
+  // Os dígitos são rolos decorativos; o valor muda a cada segundo.
+  const before = await timer.getAttribute('aria-label');
+  await expect.poll(() => timer.getAttribute('aria-label')).not.toBe(before);
+
+  const past = new Date(Date.parse(thisWeek()) - 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+  await page.goto(`/ranking?semana=${past}`);
+  await expect(page.getByTestId('week-countdown')).toHaveCount(0);
+});
+
+test('a troca de posição é animada e ganha a seta só quando a leitura nova muda a ordem', async ({
+  page,
+  request,
+}) => {
+  const { high, low } = await tiedPair(request);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/ranking');
+  // Sem troca nenhuma ainda, nenhuma seta: elas nunca nascem de simulação.
+  await expect(page.getByTestId('ranking-move')).toHaveCount(0);
+
+  // A de baixo joga mais e passa a de cima: dados novos de verdade, lidos de novo pela API.
+  await play(request, { rounds: { steamIds: [low.steamId], count: 40 } });
+  await expect(async () => {
+    // A aba voltando à vista dispara a leitura na hora (de resto ela vem a cada 20 s).
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await expect(page.getByTestId('ranking-move').first()).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: 20_000 });
+
+  const rowOf = (name: string) =>
+    page.getByTestId('ranking-row').filter({ has: page.getByRole('link', { name }) });
+  await expect(rowOf(low.name).getByTestId('ranking-move')).toHaveAttribute('data-direction', 'up');
+  await expect(rowOf(high.name).getByTestId('ranking-move')).toHaveAttribute(
+    'data-direction',
+    'down',
+  );
+  await expect(page.getByTestId('ranking-live-status')).toHaveText('O Ranking foi atualizado.');
+});
+
+test('o jogador logado que está jogando agora ganha o pontinho no avatar e o chip ao lado do nome', async ({
+  page,
+  request,
+}) => {
+  const player = await createUnclaimedAccount(request, 'Presença Rank');
+  await play(request, { rounds: { steamIds: [player.steamId], count: 60 } });
+  await signInByRequest(page, player.steamId);
+  await page.route('**/api/me/playing', (route) =>
+    route.fulfill({
+      json: {
+        server: {
+          id: randomUUID(),
+          name: 'retake-1',
+          showcaseName: null,
+          mode: 'retake',
+          map: 'de_mirage',
+        },
+      },
+    }),
+  );
+  await expect(async () => {
+    await page.goto('/ranking');
+    await expect(page.locator('#minha-linha')).toHaveCount(1, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+
+  const own = page.locator('#minha-linha');
+  await expect(own.getByTestId('presence-chip')).toHaveText('Jogando agora');
+  // O estado vem escrito também para o leitor de tela (o pontinho sozinho não diz nada).
+  await expect(own.locator('.sr-only', { hasText: 'Jogando agora' })).toHaveCount(1);
+
+  // Quem não está jogando não leva chip.
+  await page.unroute('**/api/me/playing');
+  await page.route('**/api/me/playing', (route) => route.fulfill({ json: { server: null } }));
+  await page.reload();
+  await expect(page.locator('#minha-linha').getByTestId('presence-chip')).toHaveCount(0);
+});

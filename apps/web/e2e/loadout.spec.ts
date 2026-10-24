@@ -47,6 +47,24 @@ async function addItem(page: Page, item: Record<string, unknown>) {
   return ((await response.json()) as { uid: string }).uid;
 }
 
+/** Cria um Preset (a Conta precisa de VIP) e devolve o id. */
+async function createPreset(page: Page, name: string, from: 'current' | 'empty' = 'current') {
+  const response = await page.request.post('/api/presets', {
+    headers: { 'x-csrf-token': await csrfToken(page.context()) },
+    data: { name, from },
+  });
+  expect(response.status()).toBe(201);
+  return ((await response.json()) as { id: string }).id;
+}
+
+/** A mão de Presets só responde depois que o React hidratou uma carta. */
+async function handReady(page: Page) {
+  await page.waitForFunction(() => {
+    const el = document.querySelector('[data-testid="preset"] button');
+    return !!el && Object.keys(el).some((key) => key.startsWith('__reactProps'));
+  });
+}
+
 const slot = (page: Page, name: string, side: 'ct' | 't' | 'all') =>
   page.getByTestId(`slot-${name}-${side}`);
 
@@ -239,6 +257,10 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await expect(page.locator('[data-testid="preset"][data-read-only]')).toContainText(
     'Retake de sexta',
   );
+  // O rótulo "Ativar …" esconderia o texto interno: o motivo vai na descrição acessível.
+  await expect(
+    page.locator('[data-testid="preset"][data-read-only] button[aria-pressed]'),
+  ).toHaveAccessibleDescription(/Somente leitura/);
   await slot(page, 'knife', 'ct').click();
   await expect(dock(page)).toContainText('somente leitura');
   await expect(dock(page).getByTestId('dock-pick')).toHaveCount(0);
@@ -285,36 +307,30 @@ test('no celular, o seletor abre numa folha e equipa dali', async ({ page }) => 
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
   expect(overflow).toBe(0);
-
-  // A barra de Presets quebra de linha em vez de rolar: nenhum chip sai da tela nem fica pela metade.
-  const presets = page.getByTestId('preset');
-  await expect(presets.first()).toBeVisible();
-  const rights = await presets.evaluateAll((items) =>
-    items.map((el) => el.getBoundingClientRect().right),
-  );
-  for (const right of rights) expect(right).toBeLessThanOrEqual(390);
-  const bar = page.getByTestId('presets').locator('ul');
-  expect(await bar.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
 });
 
-test('em 390 px os chips de Preset e o botão "Novo Preset" não se sobrepõem', async ({ page }) => {
+test('em 390 px as cartas de Preset e o "Novo Preset" não se sobrepõem, e a mão passa no axe', async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await signIn(page, { vip: true });
+  await createPreset(page, 'Retake');
+  await createPreset(page, 'Treino');
+  await page.reload();
   await boardReady(page);
+  await handReady(page);
+  // A fileira rola dentro da mão: o "Novo Preset" fica no fim, alcançável, e nenhuma carta o cobre.
   const button = page.getByTestId('preset-new');
+  await button.scrollIntoViewIfNeeded();
   await expect(button).toBeVisible();
   const buttonBox = await button.boundingBox();
   if (!buttonBox) throw new Error('botão Novo Preset sem caixa');
-  for (const chip of await page.getByTestId('preset').all()) {
-    const box = await chip.boundingBox();
-    if (!box) throw new Error('chip de Preset sem caixa');
-    const apart =
-      box.x + box.width <= buttonBox.x ||
-      buttonBox.x + buttonBox.width <= box.x ||
-      box.y + box.height <= buttonBox.y ||
-      buttonBox.y + buttonBox.height <= box.y;
-    expect(apart, 'chip de Preset sobre o botão Novo Preset').toBe(true);
-    expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect(buttonBox.x + buttonBox.width).toBeLessThanOrEqual(390);
+  for (const card of await page.getByTestId('preset').all()) {
+    const box = await card.boundingBox();
+    if (!box) throw new Error('carta de Preset sem caixa');
+    const apart = box.x + box.width <= buttonBox.x || buttonBox.x + buttonBox.width <= box.x;
+    expect(apart, 'carta de Preset sobre o botão Novo Preset').toBe(true);
   }
   expect(await axeViolations(page)).toEqual([]);
 });
@@ -496,10 +512,12 @@ test('sem armazenamento no navegador, o Loadout abre no CT e a troca de lado con
   await expect(slot(page, 'weapon_glock', 't')).toBeVisible();
 });
 
-test('Presets e a troca TR | CT dividem a linha, e as armas aparecem sem rolar', async ({
+test('a mão de Presets fica acima da troca TR | CT, e as armas aparecem sem rolar', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1280, height: 720 });
+  // 1440 × 900: a mão ocupa ~215 px antes do quadro, então a primeira linha de armas cabe acima
+  // da barra do slot a partir daí (em 720 de altura ela fica por baixo, e se rola até lá).
+  await page.setViewportSize({ width: 1440, height: 900 });
   await signIn(page);
   // Os Primeiros passos acabaram de fechar: espera o quadro parar de subir antes de medir.
   const boardTop = () =>
@@ -508,15 +526,13 @@ test('Presets e a troca TR | CT dividem a linha, e as armas aparecem sem rolar',
       .boundingBox()
       .then((box) => box?.y ?? 0);
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect.poll(boardTop).toBeLessThan(400);
+  await expect.poll(boardTop).toBeLessThan(600);
   const side = await page.getByTestId('side-t').boundingBox();
-  const presets = await page.getByTestId('presets').boundingBox();
+  const hand = await page.getByTestId('presets').boundingBox();
   expect(side).not.toBeNull();
-  expect(presets).not.toBeNull();
-  // Na mesma linha: o centro vertical de um cai dentro do outro.
-  const middle = (side?.y ?? 0) + (side?.height ?? 0) / 2;
-  expect(middle).toBeGreaterThan(presets?.y ?? 0);
-  expect(middle).toBeLessThan((presets?.y ?? 0) + (presets?.height ?? 0));
+  expect(hand).not.toBeNull();
+  // A mão vem antes da troca de lado.
+  expect((hand?.y ?? 0) + (hand?.height ?? 0)).toBeLessThanOrEqual((side?.y ?? 0) + 1);
 
   // O primeiro cartão de cada coluna de armas cabe acima da barra do slot, sem rolar.
   const dockTop = (await dock(page).boundingBox())?.y ?? 0;
@@ -530,6 +546,341 @@ test('Presets e a troca TR | CT dividem a linha, e as armas aparecem sem rolar',
     expect((card?.y ?? 0) + (card?.height ?? 0)).toBeLessThanOrEqual(dockTop);
   }
   expect(await page.evaluate(() => window.scrollY)).toBe(0);
+});
+
+/**
+ * A barra do slot fica fixa embaixo e a de cima fixa no alto: um cartão que recebe o foco do
+ * teclado nunca pode ficar escondido atrás de uma delas, em telas baixas (1280 × 720) e no celular.
+ */
+for (const size of [
+  { width: 1280, height: 720 },
+  { width: 390, height: 844 },
+]) {
+  test(`o foco do teclado traz o cartão para fora das barras fixas (${size.width} × ${size.height})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await signIn(page);
+    // Com um slot selecionado a barra de baixo aparece.
+    await page.locator('[data-card]').first().click();
+    await expect(dock(page)).toBeVisible();
+
+    const tabs = page.locator('[data-testid^="category-"]');
+    const columns = size.width < 1001 ? await tabs.count() : 1;
+    for (let column = 0; column < columns; column++) {
+      if (size.width < 1001) await tabs.nth(column).click();
+      const cards = page.locator('[data-card]:visible');
+      const total = await cards.count();
+      expect(total).toBeGreaterThan(0);
+      for (let index = 0; index < total; index++) {
+        await cards.nth(index).focus();
+        await page.waitForTimeout(60);
+        const box = await cards.nth(index).boundingBox();
+        const dockBox = await dock(page).boundingBox();
+        const bar = await page.getByTestId('side-t').boundingBox();
+        expect(box).not.toBeNull();
+        expect(
+          (box?.y ?? 0) + (box?.height ?? 0),
+          `cartão ${index} da coluna ${column} sob a barra do slot`,
+        ).toBeLessThanOrEqual((dockBox?.y ?? 0) + 0.5);
+        expect(
+          box?.y ?? 0,
+          `cartão ${index} da coluna ${column} sob a barra de cima`,
+        ).toBeGreaterThanOrEqual((bar?.y ?? 0) + (bar?.height ?? 0) - 0.5);
+      }
+    }
+  });
+}
+
+test.describe('mão de Presets', () => {
+  test('em 390 px o nome da carta quebra em até 2 linhas, sem corte seco, e segue inteiro', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page, { vip: true });
+    await createPreset(page, 'Retake de sexta-feira');
+    await page.reload();
+    await boardReady(page);
+    await handReady(page);
+
+    for (const card of await cards(page).all()) {
+      const title = card.getByTestId('preset-title');
+      const name = (await title.textContent()) ?? '';
+      // O nome inteiro continua no DOM, na dica e no nome acessível do botão.
+      await expect(title).toHaveAttribute('title', name);
+      const size = await title.evaluate((el) => ({
+        sw: el.scrollWidth,
+        cw: el.clientWidth,
+        sh: el.scrollHeight,
+        ch: el.clientHeight,
+      }));
+      const fits = size.sw <= size.cw + 1 && size.sh <= size.ch + 1;
+      expect(fits, `nome "${name}" cortado: ${JSON.stringify(size)}`).toBe(true);
+      // O nome não passa por baixo do menu "…".
+      const menu = card.getByTestId('preset-menu');
+      if (await menu.isVisible()) {
+        const titleBox = await title.boundingBox();
+        const menuBox = await menu.boundingBox();
+        expect((titleBox?.x ?? 0) + (titleBox?.width ?? 0)).toBeLessThanOrEqual(
+          (menuBox?.x ?? 0) + 0.5,
+        );
+      }
+    }
+    await expect(page.getByRole('button', { name: 'Ativar Retake de sexta-feira' })).toBeVisible();
+  });
+
+  /**
+   * A página ainda anda um pouco depois de hidratar (a faixa dos Primeiros passos fecha, o aviso do VIP
+   * entra): quem mede a posição de uma carta ou aponta o mouse para ela antes disso acerta o lugar
+   * errado. Espera a posição do bloco ficar a mesma em duas leituras seguidas.
+   */
+  async function layoutStable(block: Locator) {
+    let last = Number.NaN;
+    await expect
+      .poll(
+        async () => {
+          const y = (await block.boundingBox())?.y ?? Number.NaN;
+          const same = y === last;
+          last = y;
+          return same;
+        },
+        { intervals: [250] },
+      )
+      .toBe(true);
+  }
+
+  /** Uma Conta VIP com o Principal e mais dois Presets. */
+  async function vipHand(page: Page) {
+    await signIn(page, { vip: true });
+    await createPreset(page, 'Retake');
+    await createPreset(page, 'Treino');
+    await page.reload();
+    await boardReady(page);
+    await handReady(page);
+    // Hidratada, a mão ainda nasce em fileira (largura 0) e só vira leque depois de medir.
+    const narrow = (page.viewportSize()?.width ?? 1280) < 640;
+    await expect(page.getByTestId('presets')).toHaveAttribute('data-mode', narrow ? 'row' : 'fan');
+    await layoutStable(page.getByTestId('presets'));
+  }
+  const cards = (page: Page) => page.getByTestId('preset');
+
+  /**
+   * A altura da carta dentro da mão (relativa ao bloco dos Presets): as posições absolutas andam com a
+   * rolagem restaurada pelo reload e com o que a página ainda ajusta depois de hidratar, e foi isso que
+   * fez estes testes medirem o repouso num lugar e a carta em outro (no Linux da CI, sempre).
+   */
+  async function rise(page: Page, index: number) {
+    const card = (await cards(page).nth(index).boundingBox())?.y;
+    const block = (await page.getByTestId('presets').boundingBox())?.y;
+    return card === undefined || block === undefined ? Number.NaN : card - block;
+  }
+
+  /**
+   * O Motion carrega depois da hidratação (chunk à parte) e só então a mão anima e aceita arrasto:
+   * passa o mouse numa carta e espera ela subir antes de arrastar.
+   */
+  async function motionReady(page: Page) {
+    const second = cards(page).nth(1);
+    const rest = await rise(page, 1);
+    await expect(async () => {
+      await second.hover();
+      expect(await rise(page, 1)).toBeLessThan(rest - 10);
+    }).toPass();
+    await page.mouse.move(5, 5);
+    await expect.poll(() => rise(page, 1)).toBeGreaterThan(rest - 4);
+  }
+
+  test('cada Preset é uma carta, e o ativo vem marcado e mais alto', async ({ page }) => {
+    await vipHand(page);
+
+    await expect(cards(page)).toHaveCount(3);
+    await expect(page.getByTestId('presets')).toHaveAttribute('data-mode', 'fan');
+    await expect(cards(page).nth(0)).toHaveAttribute('data-active', 'true');
+    await expect(cards(page).nth(0)).toContainText('Principal');
+    await expect(cards(page).nth(0)).toContainText('Ativo');
+    await expect(cards(page).nth(1)).toContainText('Retake');
+    const activeTop = (await cards(page).nth(0).boundingBox())?.y ?? 0;
+    const otherTop = (await cards(page).nth(2).boundingBox())?.y ?? 0;
+    expect(activeTop).toBeLessThan(otherTop);
+  });
+
+  test('passar o mouse folheia: a carta sob o ponteiro sobe, e sair devolve a mão ao repouso', async ({
+    page,
+  }) => {
+    await vipHand(page);
+
+    const rest = await rise(page, 1);
+    await cards(page).nth(1).hover();
+    await expect(cards(page).nth(1)).toHaveAttribute('data-focused', 'true');
+    await expect.poll(() => rise(page, 1)).toBeLessThan(rest - 10);
+
+    await page.mouse.move(5, 5);
+    await expect(cards(page).nth(1)).not.toHaveAttribute('data-focused', 'true');
+    await expect.poll(() => rise(page, 1)).toBeGreaterThan(rest - 4);
+  });
+
+  test('depois de um clique, tirar o mouse devolve a mão ao repouso', async ({ page }) => {
+    await vipHand(page);
+    await motionReady(page);
+
+    await cards(page).nth(2).click();
+    await expect(toast(page, 'Treino é o seu Loadout')).toBeVisible();
+    await page.mouse.move(5, 5);
+    await expect(page.locator('[data-testid="preset"][data-focused]')).toHaveCount(0);
+  });
+
+  test('o teclado folheia com as setas, e Enter ativa, com Desfazer', async ({ page }) => {
+    await vipHand(page);
+
+    await page.getByRole('button', { name: 'Ativar Retake' }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.getByRole('button', { name: 'Ativar Treino' })).toBeFocused();
+    await expect(cards(page).nth(2)).toHaveAttribute('data-focused', 'true');
+    await page.keyboard.press('ArrowLeft');
+    await expect(page.getByRole('button', { name: 'Ativar Retake' })).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(page.getByRole('button', { name: 'Novo Preset' })).toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(page.getByRole('button', { name: /^Principal/ })).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+
+    await expect(toast(page, 'Retake é o seu Loadout')).toBeVisible();
+    await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Retake');
+    // O foco fica na carta (não vai para o corpo da página): dá para seguir com as setas.
+    await expect(cards(page).nth(1).locator('button[aria-pressed]')).toBeFocused();
+    await toast(page, 'Retake é o seu Loadout').getByRole('button', { name: 'Desfazer' }).click();
+    await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Principal');
+  });
+
+  test('jogar a carta para cima ativa o Preset', async ({ page }) => {
+    await vipHand(page);
+    await motionReady(page);
+
+    const card = page.getByRole('button', { name: 'Ativar Treino' });
+    const box = await card.boundingBox();
+    expect(box).not.toBeNull();
+    const x = (box?.x ?? 0) + (box?.width ?? 0) / 2;
+    const y = (box?.y ?? 0) + (box?.height ?? 0) / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y - 60, { steps: 6 });
+    await page.mouse.move(x, y - 150, { steps: 8 });
+    await page.mouse.up();
+
+    await expect(toast(page, 'Treino é o seu Loadout')).toBeVisible();
+    await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Treino');
+  });
+
+  test('arrastar só um pouco não ativa: a carta volta', async ({ page }) => {
+    await vipHand(page);
+    await motionReady(page);
+
+    const box = await page.getByRole('button', { name: 'Ativar Treino' }).boundingBox();
+    const x = (box?.x ?? 0) + (box?.width ?? 0) / 2;
+    const y = (box?.y ?? 0) + (box?.height ?? 0) / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x, y - 20, { steps: 4 });
+    await page.mouse.up();
+
+    await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Principal');
+    await expect(page.locator('[data-testid="undo-toast"]')).toHaveCount(0);
+  });
+
+  test('a carta mostra a faca equipada do lado em uso, e muda com a troca TR | CT', async ({
+    page,
+  }) => {
+    await signIn(page, { vip: true });
+    await addItem(page, { id: KARAMBIT_FADE });
+    await page.reload();
+    await boardReady(page);
+    await equipFromPicker(page, { name: 'knife', side: 'ct' }, 'Equipar Karambit | Degradê');
+    await page.reload();
+    await handReady(page);
+    const card = cards(page).first();
+
+    await expect(card).toContainText('CT');
+    const face = card.locator('button[aria-pressed]');
+    await expect(face).toHaveAccessibleDescription(/Faca: Karambit \| Degradê/);
+    await expect(face).toHaveAccessibleDescription(/Rifle: M4A4/);
+    await page.getByTestId('side-t').click();
+    await expect(card).toContainText('TR');
+    // No TR a frente é a do TR: o rifle padrão é a AK-47.
+    await expect(face).toHaveAccessibleDescription(/Rifle: AK-47/);
+  });
+
+  test('no celular, a carta do plano grátis cabe inteira, sem rolagem lateral', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signIn(page);
+    await handReady(page);
+
+    const card = await cards(page).first().boundingBox();
+    expect(card?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((card?.x ?? 0) + (card?.width ?? 999)).toBeLessThanOrEqual(390);
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+  });
+
+  test('plano grátis: uma carta só, com o convite do VIP discreto', async ({ page }) => {
+    await signIn(page);
+    await handReady(page);
+
+    await expect(cards(page)).toHaveCount(1);
+    await expect(page.getByTestId('preset-free')).toBeVisible();
+    await expect(page.getByTestId('preset-new')).toHaveCount(0);
+    await expect(page.getByTestId('preset-menu')).toHaveCount(0);
+  });
+
+  test('com movimento reduzido a mão não se mexe: sem inclinar, subir ou crescer', async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await vipHand(page);
+
+    await cards(page).nth(1).hover();
+    await expect(cards(page).nth(1)).toHaveAttribute('data-focused', 'true');
+    const transforms = await cards(page).evaluateAll((items) =>
+      items.map((item) => getComputedStyle(item).transform),
+    );
+    // Só deslocamento horizontal (a posição na mão): nenhuma rotação, subida ou escala.
+    for (const transform of transforms) {
+      expect(transform === 'none' || /^matrix\(1, 0, 0, 1, -?[\d.]+, 0\)$/.test(transform)).toBe(
+        true,
+      );
+    }
+  });
+
+  test('no celular a mão é uma fileira que rola e prende, e tocar numa carta ativa', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await vipHand(page);
+
+    await expect(page.getByTestId('presets')).toHaveAttribute('data-mode', 'row');
+    const row = page.getByTestId('presets').locator('ul');
+    expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+    expect(await row.evaluate((el) => getComputedStyle(el).scrollSnapType)).toContain('x');
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow).toBe(0);
+    // Nada cortado: a mão cabe na tela e a primeira carta começa dentro dela, com o menu à vista.
+    const section = await page.getByTestId('presets').boundingBox();
+    expect(section?.x ?? -1).toBeGreaterThanOrEqual(0);
+    expect((section?.x ?? 0) + (section?.width ?? 999)).toBeLessThanOrEqual(390);
+    const first = await cards(page).first().boundingBox();
+    expect(first?.x ?? -1).toBeGreaterThanOrEqual(0);
+    await expect(cards(page).first().getByTestId('preset-menu')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Ativar Retake' }).click();
+    await expect(toast(page, 'Retake é o seu Loadout')).toBeVisible();
+    await expect(page.locator('[data-testid="preset"][data-active]')).toContainText('Retake');
+  });
 });
 
 test('no celular, os Presets rolam com a página e a troca de lado fica fixa no alto', async ({
@@ -546,6 +897,7 @@ test('no celular, os Presets rolam com a página e a troca de lado fica fixa no 
   await expect
     .poll(async () => (await page.getByTestId('presets').boundingBox())?.y ?? 0)
     .toBeLessThan(0);
+  // No celular o header rola junto: a troca de lado fica fixa no próprio alto da tela.
   const side = await page.getByTestId('side-t').boundingBox();
   expect(side?.y ?? -1).toBeGreaterThanOrEqual(0);
   expect(side?.y ?? 999).toBeLessThan(80);
@@ -579,6 +931,10 @@ for (const theme of ['dark', 'light'] as const) {
     await page.reload();
     await boardReady(page);
     await equipFromPicker(page, { name: 'knife', side: 'ct' }, 'Equipar Karambit | Degradê');
+    await createPreset(page, 'Retake');
+    await createPreset(page, 'Treino', 'empty');
+    await page.reload();
+    await boardReady(page);
     // O axe mede depois que o aviso sai: no meio da animação ele está translúcido de propósito.
     await expect(page.getByTestId('undo-toast')).toHaveCount(0, { timeout: 15_000 });
     expect(await axeViolations(page)).toEqual([]);

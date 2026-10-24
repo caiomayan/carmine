@@ -8,6 +8,7 @@ import {
   signInFromHeader,
 } from './accounts';
 import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
+import { openAccountMenu } from './hydration';
 import { connectPlayer, createServer, heartbeat, keepBeating } from './live-servers';
 
 /**
@@ -88,7 +89,7 @@ test.describe('Painel da Staff', () => {
     expect((await page.goto('/staff/auditoria'))?.status()).toBe(404);
     // Sem papel, o menu da Conta não leva ao painel.
     await page.goto('/');
-    await page.getByTestId('account-menu').click();
+    await openAccountMenu(page);
     await expect(page.getByTestId('staff-panel-link')).toHaveCount(0);
   });
 
@@ -101,7 +102,7 @@ test.describe('Painel da Staff', () => {
     await heartbeat(request, player.server, [player.steamId]);
     const owner = await staffMember(browser, 'owner');
 
-    await owner.page.getByTestId('account-menu').click();
+    await openAccountMenu(owner.page);
     await owner.page.getByTestId('staff-panel-link').click();
     await expect(owner.page.getByRole('heading', { name: 'Painel da Staff' })).toBeVisible();
     await openFile(owner.page, player.publicId);
@@ -111,6 +112,10 @@ test.describe('Painel da Staff', () => {
     const item = owner.page.getByTestId('staff-sanction').first();
     await expect(item).toHaveAttribute('data-state', 'active');
     await expect(item.getByTestId('sanction-reason')).toHaveText(reason);
+    // "Revogar" (botão com fundo) alinha com o texto do motivo, sem margem negativa.
+    const reasonBox = await item.getByTestId('sanction-reason').boundingBox();
+    const revoke = await item.locator('button[aria-expanded]').first().boundingBox();
+    expect(Math.abs((revoke?.x ?? -99) - (reasonBox?.x ?? 99))).toBeLessThanOrEqual(1);
     await expect(owner.page.getByTestId('file-status')).toContainText('Ban');
 
     // O próximo batimento manda o ban para o Carmine.Core derrubar o jogador.
@@ -131,6 +136,10 @@ test.describe('Painel da Staff', () => {
     await signInFromHeader(page, player.steamId);
     const notice = page.getByTestId('sanction-notice');
     await expect(notice).toContainText('Sua Conta está banida dos Servidores Carmine');
+    // Os botões do aviso alinham com a coluna do texto, sem margem negativa.
+    const noticeText = await notice.getByText('Sua Conta está banida').boundingBox();
+    const noticeButton = await notice.getByRole('link').first().boundingBox();
+    expect(Math.abs((noticeButton?.x ?? -99) - (noticeText?.x ?? 99))).toBeLessThanOrEqual(1);
     await expect(notice).toContainText('Motivo: Griefing');
     await expect(notice).toContainText(reason);
     await expect(notice).toContainText('72 h');

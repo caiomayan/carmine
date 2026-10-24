@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/animate-ui/components/radix/dialog';
 import { Button } from '@/components/ui/button';
+import { EncryptedText } from '@/components/ui/encrypted-text';
 import type { FirstStepsLabels } from './first-steps';
 import { useSession } from './session-provider';
 
@@ -22,6 +23,9 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
   const pathname = usePathname();
 
   const steps = [labels.steps.add, labels.steps.equip, labels.steps.play];
+  // O nome (o fictício, para quem ainda não escolheu um) é a única parte do título que decifra.
+  const [before = '', after = ''] = labels.title.split('{name}');
+  const name = account?.displayName ?? '';
 
   return (
     <Dialog
@@ -43,7 +47,11 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
         }}
       >
         <div className="grid max-w-[60ch] gap-1.5 pr-8">
-          <DialogTitle>{labels.title.replace('{name}', account?.displayName ?? '')}</DialogTitle>
+          <DialogTitle>
+            {before}
+            {name ? <EncryptedText text={name} onceKey="welcome-name" /> : null}
+            {after}
+          </DialogTitle>
           <DialogDescription className="text-body-sm">{labels.intro}</DialogDescription>
         </div>
 

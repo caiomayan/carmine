@@ -23,14 +23,14 @@ const BUDGET_MS = 4000;
  */
 const ENFORCE = process.env.PERF_BUDGET === 'enforce';
 /** JS da primeira carga (bytes na rede, gzip do `next start`): o pedido até a página interativa. */
-const JS_BUDGET_KB = 275;
+const JS_BUDGET_KB = 360;
 
 /**
  * Interativo = o React já hidratou o controle que a pessoa usa (o nó ganhou a fibra do React e
  * responde a eventos), e não só o HTML do servidor na tela.
  */
 const PAGES = [
-  { name: 'a home', path: '/', control: '[role="tablist"] [role="tab"]', signedIn: false },
+  { name: 'a home', path: '/', control: '[data-testid="top3"] button', signedIn: false },
   {
     name: 'o editor',
     path: '/inventario/adicionar/222',

@@ -78,7 +78,7 @@ export function SanctionNotice() {
             {banned ? `${t('notice.bannedSite')} ` : null}
             {t('notice.appeal', { hours: APPEAL_RESPONSE_HOURS })}
           </p>
-          <div className="-ml-3 flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-1">
             <Button asChild variant="ghost" size="sm">
               <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer">
                 <BrandIcon icon={siDiscord} size={15} />

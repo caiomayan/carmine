@@ -19,7 +19,7 @@ export async function AppealSteps() {
       </ol>
       <p className="text-body-sm text-muted-foreground">{t('notes')}</p>
       <div>
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="sm">
           <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer" data-icon-trigger>
             <BrandIcon icon={siDiscord} size={15} />
             {t('discord')}
