@@ -205,7 +205,7 @@ export function SlotDock({
           role="note"
           data-testid="not-in-game-note"
           data-icon-trigger
-          className="col-span-full flex items-start gap-3 rounded-md bg-surface px-3 py-2.5 text-sm leading-[1.55]"
+          className="col-span-full flex items-start gap-3 rounded-2xl bg-surface px-3 py-2.5 text-sm leading-[1.55]"
         >
           <AnimatedIcon icon={LockIcon} size={15} className="mt-0.5 text-status-vip" />
           <p>

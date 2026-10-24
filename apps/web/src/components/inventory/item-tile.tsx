@@ -164,7 +164,7 @@ export function ItemTile({
         className,
       )}
     >
-      <span className="relative block overflow-hidden rounded-md">
+      <span className="relative block overflow-hidden rounded-lg">
         <ItemArt
           src={image}
           className={cn(

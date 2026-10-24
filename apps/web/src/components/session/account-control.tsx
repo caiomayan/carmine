@@ -151,7 +151,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             </span>
             {playing.server ? (
               <span
-                className="grid gap-0.5 rounded-md bg-surface-2 px-2.5 py-2"
+                className="grid gap-0.5 rounded-xl bg-surface-2 px-2.5 py-2"
                 data-testid="menu-playing"
               >
                 <span className="inline-flex items-center gap-1.5 label-caps text-[11px] text-muted-foreground">
@@ -237,7 +237,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
       {/* Erro na Liberty: o sinal de contexto fica no ponto; o texto segue neutro. */}
       <div role="alert" className="absolute top-full right-0 z-40 mt-2 w-64">
         {failed ? (
-          <p className="flex animate-fade-up items-start gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_var(--shadow)]">
+          <p className="flex animate-fade-up items-start gap-2 rounded-xl bg-surface-2 px-3 py-2 text-xs shadow-[0_12px_32px_-16px_var(--shadow)]">
             <span
               aria-hidden="true"
               className="mt-1 size-1.5 shrink-0 rounded-full bg-status-danger"

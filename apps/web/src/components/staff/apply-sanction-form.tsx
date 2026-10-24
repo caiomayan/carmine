@@ -199,7 +199,7 @@ export function ApplySanctionForm({
     <form onSubmit={review} noValidate className="grid gap-5" data-testid="apply-sanction">
       {report ? (
         <p
-          className="rounded-sm bg-surface-2 px-3 py-2 text-body-sm"
+          className="rounded-xl bg-surface-2 px-3 py-2 text-body-sm"
           data-testid="apply-from-report"
         >
           {report.needsEvidence ? t('apply.fromReportEvidence') : t('apply.fromReport')}

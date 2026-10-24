@@ -114,7 +114,7 @@ describe('--rarity-*: o ponto de raridade passa de 3:1 sobre as superfícies nos
   }
 });
 
-describe('--carmine: o acento só no detalhe (◆ dos títulos), 3:1 sobre as superfícies', () => {
+describe('--carmine: o ◆ dos títulos, monocromático (o carmim foi descontinuado), 3:1 sobre as superfícies', () => {
   for (const [theme, tokens] of Object.entries(THEMES)) {
     it(`passa de 3:1 sobre bg, surface e surface-2 (${theme})`, () => {
       const carmine = hex(tokens, '--carmine');
@@ -124,9 +124,9 @@ describe('--carmine: o acento só no detalhe (◆ dos títulos), 3:1 sobre as su
     });
   }
 
-  it('o escuro e o claro usam os tons aprovados pelo dono', () => {
-    expect(THEMES.escuro).toMatch(/--carmine:\s*#c23a41/i);
-    expect(THEMES.claro).toMatch(/--carmine:\s*#a3262d/i);
+  it('o ◆ é branco no escuro e preto no claro (identidade v3, preto e branco duro)', () => {
+    expect(THEMES.escuro).toMatch(/--carmine:\s*#f5f5f5/i);
+    expect(THEMES.claro).toMatch(/--carmine:\s*#0a0a0a/i);
   });
 });
 

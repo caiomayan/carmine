@@ -18,7 +18,7 @@ const SelectValue = SelectPrimitive.Value;
 
 /** Visual do botão de Select e de Combobox: um só vocabulário para os dois. */
 export const selectTriggerClass = [
-  'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-md bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
+  'group flex min-h-(--tap) w-full items-center justify-between gap-2 rounded-lg bg-surface px-3 text-left text-sm transition-colors duration-(--dur-fast) ease-std',
   'hover:bg-surface-2 data-[state=open]:bg-surface-2 data-[placeholder]:text-muted-foreground',
   // Parece um campo, então foca como um (anel fino e suave, só no teclado), não com o anel de 2 px.
   'focus-visible:bg-surface-2 focus-visible:outline-none focus-visible:[box-shadow:var(--focus-field)]',

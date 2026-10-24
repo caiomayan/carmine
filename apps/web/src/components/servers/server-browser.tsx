@@ -85,7 +85,7 @@ export function ServerBrowser({
                 ))}
               </TabsList>
             </div>
-            <p className="mb-3 hidden rounded-md bg-surface px-3 py-2.5 text-body-sm text-muted-foreground pointer-coarse:block">
+            <p className="mb-3 hidden rounded-xl bg-surface px-3 py-2.5 text-body-sm text-muted-foreground pointer-coarse:block">
               {t.rich('connect.mobileHint', { cmd })}
             </p>
             {state.list === null ? (

@@ -3,8 +3,9 @@ import { newSteamId, signInFromHeader } from './accounts';
 import { axeViolations, expect, saveTheme, settle, test } from './fixtures';
 
 /**
- * O header fixo: sem linha em repouso; ao rolar, fundo levemente mais claro e desfoque. E a busca
- * do header, que cresce para a esquerda no hover e no foco sem empurrar nada.
+ * O header fixo: sem linha em repouso; ao rolar vira uma pílula de vidro (fundo, desfoque e raio)
+ * solta 8 px do topo, a partir de 768 px. E a busca do header, que cresce para a esquerda no hover e
+ * no foco sem empurrar nada.
  */
 
 const header = (page: Page) => page.locator('header[data-site-header]');
@@ -39,7 +40,7 @@ for (const theme of ['dark', 'light'] as const) {
       expect((await glass(page)).opacity).toBe(0);
     });
 
-    test('ao rolar ganha fundo e desfoque, sem borda; ao voltar ao topo, some', async ({
+    test('ao rolar vira pílula de vidro, sem borda; ao voltar ao topo, volta ao normal', async ({
       page,
     }) => {
       await page.goto(LONG_PAGE);
@@ -48,10 +49,21 @@ for (const theme of ['dark', 'light'] as const) {
       const bar = header(page);
       await expect(bar).toHaveAttribute('data-scrolled', '');
       await expect.poll(async () => (await glass(page)).opacity).toBe(1);
-      expect((await glass(page)).blur).toContain('blur');
+      // Com "reduzir transparência" no sistema (o Windows com efeitos desligados) o vidro vira opaco, sem desfoque.
+      const opaque = await page.evaluate(
+        () => matchMedia('(prefers-reduced-transparency: reduce)').matches,
+      );
+      expect((await glass(page)).blur).toContain(opaque ? 'none' : 'blur');
       expect(await bar.evaluate((el) => getComputedStyle(el).borderBottomWidth)).toBe('0px');
-      // Fica no alto da tela enquanto a página rola.
-      expect((await bar.boundingBox())?.y).toBe(0);
+      // Fica no alto da tela enquanto a página rola, solta 8 px do topo e arredondada; a pegada de cima
+      // (o que o resto da página usa para grudar logo abaixo) continua a de antes de rolar.
+      expect((await bar.boundingBox())?.y).toBe(8);
+      expect(await bar.evaluate((el) => getComputedStyle(el, '::before').borderTopLeftRadius)).toBe(
+        '999px',
+      );
+      expect(
+        await page.evaluate(() => document.documentElement.style.getPropertyValue('--site-hdr-h')),
+      ).toBe('60px');
       // Mede o header rolado, com o fundo e o desfoque, ainda fixo.
       expect(await axeViolations(page, { fixedHeader: true })).toEqual([]);
 

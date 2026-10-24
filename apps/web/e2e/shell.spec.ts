@@ -130,7 +130,7 @@ for (const width of WIDTHS) {
   });
 }
 
-test('container global de 1080 px com margem mínima de 36 px (21 px no mobile)', async ({
+test('container global de 1280 px com margem mínima de 36 px (21 px no mobile)', async ({
   page,
 }) => {
   // A largura útil desconta a barra de rolagem; o container centraliza dentro dela.
@@ -141,7 +141,7 @@ test('container global de 1080 px com margem mínima de 36 px (21 px no mobile)'
     });
   const expectContainer = async (margin: number) => {
     const { left, width, viewport } = await measure();
-    expect(width).toBeCloseTo(Math.min(1080, viewport - 2 * margin), 0);
+    expect(width).toBeCloseTo(Math.min(1280, viewport - 2 * margin), 0);
     expect(left).toBeCloseTo((viewport - width) / 2, 0);
     expect(left).toBeGreaterThanOrEqual(margin - 0.5);
   };

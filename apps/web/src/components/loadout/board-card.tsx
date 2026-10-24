@@ -65,7 +65,7 @@ export function BoardCard({
         } as CSSProperties
       }
       className={cn(
-        'group/card relative block aspect-3/2 w-full enter-stagger overflow-hidden rounded-md bg-surface-2/70 text-left',
+        'group/card relative block aspect-3/2 w-full enter-stagger overflow-hidden rounded-xl bg-surface-2/70 text-left',
         'transition-[background-color,box-shadow] duration-(--dur-fast) ease-std hover:bg-surface-2',
         'aria-pressed:bg-surface-2 aria-pressed:shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
         'focus-visible:outline-offset-[-3px]',

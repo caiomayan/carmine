@@ -301,7 +301,7 @@ function PrivacyHowTo({ className }: { className?: string }) {
                 <li>{t('step1')}</li>
                 <li>{t('step2')}</li>
               </ol>
-              <p className="rounded-md bg-surface-2 px-3 py-2.5 text-muted-foreground">
+              <p className="rounded-xl bg-surface-2 px-3 py-2.5 text-muted-foreground">
                 {t('consequence')}
               </p>
               <a

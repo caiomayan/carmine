@@ -86,7 +86,7 @@ function OfflineRow({ server, index }: { server: LiveServer; index: number }) {
       data-server={server.name}
       data-state="offline"
       style={{ '--i': index } as CSSProperties}
-      className="flex enter-stagger flex-wrap items-center gap-x-3 gap-y-1 rounded-md px-3 py-2.5 text-[13px] text-muted-foreground"
+      className="flex enter-stagger flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-3 py-2.5 text-[13px] text-muted-foreground"
     >
       <span className="inline-flex items-center gap-2.5">
         <StatusDot tone="offline" />

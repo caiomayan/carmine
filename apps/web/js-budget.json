@@ -1,0 +1,11 @@
+{
+  "defaultKb": 360,
+  "pages": [
+    { "name": "Home", "path": "/" },
+    { "name": "Ranking", "path": "/ranking" },
+    { "name": "Entrar", "path": "/entrar" },
+    { "name": "Loadout", "path": "/loadout", "auth": true },
+    { "name": "Inventário", "path": "/inventario", "auth": true },
+    { "name": "Perfil", "path": "{profile}", "auth": true, "kb": 425 }
+  ]
+}
