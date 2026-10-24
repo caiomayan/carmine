@@ -32,7 +32,7 @@ export function ShowcaseGrid({
           className="relative grid enter-stagger content-start gap-2 rounded-lg bg-surface p-3 pb-3.5"
           data-testid="showcase-item"
         >
-          <ItemArt src={item.image} className={cn('rounded-md', ART_COMPACT)} />
+          <ItemArt src={item.image} className={cn('rounded-lg', ART_COMPACT)} />
           <TileCaption
             title={item.title}
             subtitle={item.subtitle}

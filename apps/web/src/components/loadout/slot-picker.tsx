@@ -132,13 +132,13 @@ export function SlotPicker({
                     data-testid="candidate"
                     data-uid={candidate.uid}
                     className={cn(
-                      'grid min-h-(--tap) w-full grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3 rounded-md p-1.5 pr-3 text-left',
+                      'grid min-h-(--tap) w-full grid-cols-[64px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl p-1.5 pr-3 text-left',
                       'transition-colors duration-(--dur-fast) ease-std hover:bg-hover disabled:hover:bg-transparent',
                       current && 'bg-surface',
                       pending === candidate.uid && 'animate-pulse motion-reduce:animate-none',
                     )}
                   >
-                    <span className="block overflow-hidden rounded-sm bg-surface-2/60">
+                    <span className="block overflow-hidden rounded-lg bg-surface-2/60">
                       <ItemArt src={candidate.image} />
                     </span>
                     <span className="grid min-w-0 gap-0.5">

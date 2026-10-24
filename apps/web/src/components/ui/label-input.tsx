@@ -35,7 +35,7 @@ type LabelFieldProps = {
 // As classes ficam escritas por extenso: o Tailwind só gera o que acha no código-fonte.
 // `peer-[:placeholder-shown:not(:focus)]` é o campo vazio e sem foco, onde o rótulo repousa dentro dele.
 const FIELD =
-  'peer block min-h-(--tap) w-full rounded-md bg-(--fill-rest) px-3 pt-5 pb-1.5 text-body text-foreground outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-transparent hover:bg-(--fill-hover) focus:outline-(--focus-ring) disabled:text-faint disabled:hover:bg-(--fill-rest) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger motion-reduce:transition-none';
+  'peer block min-h-(--tap) w-full rounded-lg bg-(--fill-rest) px-3 pt-5 pb-1.5 text-body text-foreground outline-2 outline-transparent transition-[background-color,outline-color] duration-(--dur-fast) ease-std placeholder:text-transparent hover:bg-(--fill-hover) focus:outline-(--focus-ring) disabled:text-faint disabled:hover:bg-(--fill-rest) aria-invalid:outline-status-danger aria-invalid:focus:outline-status-danger motion-reduce:transition-none';
 
 const LABEL =
   'pointer-events-none absolute left-3 max-w-[calc((100%-1.5rem)/.78)] origin-top-left truncate text-body text-(--label-color) peer-focus:text-foreground peer-disabled:text-faint motion-reduce:transition-none';
@@ -136,7 +136,7 @@ export function LabelInput({
             onClick={() => setVisible((value) => !value)}
             aria-label={visible ? hideLabel : showLabel}
             aria-pressed={visible}
-            className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-md text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:text-foreground motion-reduce:transition-none"
+            className="absolute inset-y-0 right-0 grid w-11 place-items-center rounded-r-lg text-muted-foreground transition-colors duration-(--dur-fast) ease-std hover:text-foreground motion-reduce:transition-none"
           >
             {visible ? (
               <EyeOffIcon size={16} aria-hidden="true" />

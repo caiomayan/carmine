@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  * listas usam o `SimpleSelect` (`@/components/ui/select`).
  */
 export const controlClass =
-  'min-h-(--tap) w-full rounded-md bg-surface px-3 text-sm transition-colors duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-surface-2 focus-visible:bg-surface-2 disabled:text-faint disabled:hover:bg-surface aria-invalid:outline-1 aria-invalid:outline-status-danger';
+  'min-h-(--tap) w-full rounded-lg bg-surface px-3 text-sm transition-colors duration-(--dur-fast) ease-std placeholder:text-muted-foreground hover:bg-surface-2 focus-visible:bg-surface-2 disabled:text-faint disabled:hover:bg-surface aria-invalid:outline-1 aria-invalid:outline-status-danger';
 
 export function Field({
   id,

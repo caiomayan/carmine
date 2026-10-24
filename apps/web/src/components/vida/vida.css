@@ -1,0 +1,507 @@
+/*
+ * Base do redesenho "Vida" (V1). Identidade v3: a MARCA é preto e branco duro (tokens em app/tokens.css), no
+ * espírito de tela de loading do GTA IV; a COR entra só pelo contexto (arte de mapa, cor ambiente da skin,
+ * raridade, CT azul e TR laranja, estados).
+ *
+ * Este arquivo é só a base compartilhada: tipografia em três vozes, cor ambiente, painéis com cantos
+ * concêntricos, spotlight, inclinação, holo tingido pela skin, material de vidro, header em pílula e squircle.
+ * Cada tela nova (Home, Perfil, Ranking...) traz o próprio CSS em um arquivo ao lado, sem mexer neste.
+ */
+
+@property --amb-1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #888;
+}
+@property --amb-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #888;
+}
+@property --amb-3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #888;
+}
+@property --v-map {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #e8b04f;
+}
+@property --v-map-deep {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #8a5a14;
+}
+
+:root {
+  --v-serif: var(--font-dm-serif), "DM Serif Display", Georgia, serif;
+  --v-sign: var(--font-signage), "Big Shoulders", "Arial Narrow", sans-serif;
+  --v-ambient-alpha: 58%;
+}
+[data-theme="light"] {
+  --v-ambient-alpha: 42%;
+}
+
+/* ---------- tipografia: três vozes ----------
+ * Inter: interface, texto e números (tabular-nums), títulos grandes de interface com tracking apertado.
+ * DM Serif Display: títulos de destaque (hero, numeral grande, nome em destaque) e o logotipo.
+ * Big Shoulders (sinalização): SÓ em maiúsculo e curta: nome do mapa, selo de Modo, posição no ranking e no
+ * pódio, dígitos da contagem regressiva, números de placar (K/D, HS%).
+ * Cada cartão tem uma voz de destaque só; a sinalização fica um pouco maior que o Inter ao lado (é estreita).
+ */
+h1.text-display {
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  font-size: 40px;
+}
+@media (max-width: 760px) {
+  h1.text-display {
+    font-size: 32px;
+  }
+}
+.v-serif {
+  font-family: var(--v-serif);
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.v-sign {
+  font-family: var(--v-sign);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 0.95;
+  font-variant-numeric: tabular-nums;
+}
+/* rótulo curto em Inter maiúsculo com espaçamento (o ar de GTA IV) */
+.v-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+/* título de seção: Inter grande, tracking apertado, com a barra branca da marca */
+.v-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-size: 30px;
+  line-height: 1;
+  color: var(--text);
+}
+.v-title::before {
+  content: "";
+  width: 5px;
+  height: 0.85em;
+  background: var(--text);
+}
+
+/* ---------- a página cresce e o fundo vai até as bordas ---------- */
+:root:has([data-vida]) {
+  overflow-x: clip;
+}
+/* o brilho ambiente fica atrás do header: o corpo deixa de pintar o fundo e o html pinta */
+:root:has([data-vida]) body {
+  background: transparent;
+}
+
+[data-vida] {
+  transition:
+    --amb-1 900ms var(--ease-soft),
+    --amb-2 900ms var(--ease-soft),
+    --amb-3 900ms var(--ease-soft),
+    --v-map 600ms var(--ease-soft),
+    --v-map-deep 600ms var(--ease-soft);
+}
+
+.v-amb-trans {
+  transition:
+    --amb-1 800ms var(--ease-soft),
+    --amb-2 800ms var(--ease-soft),
+    --amb-3 800ms var(--ease-soft);
+}
+
+/* ---------- gradiente animado alimentado pela cor ambiente (skin ou mapa) ---------- */
+.v-ambient {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1100px;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+}
+.v-ambient i {
+  position: absolute;
+  width: min(78vw, 1100px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--c) var(--v-ambient-alpha), transparent),
+    transparent 72%
+  );
+}
+.v-ambient i:nth-child(1) {
+  --c: var(--amb-1);
+  left: -14%;
+  top: -42%;
+}
+.v-ambient i:nth-child(2) {
+  --c: var(--amb-2);
+  right: -16%;
+  top: -34%;
+}
+.v-ambient i:nth-child(3) {
+  --c: var(--amb-3);
+  left: 28%;
+  top: -52%;
+  width: min(60vw, 820px);
+  opacity: 0.8;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .v-ambient i:nth-child(1) {
+    animation: v-blob-1 17s ease-in-out infinite alternate;
+  }
+  .v-ambient i:nth-child(2) {
+    animation: v-blob-2 22s ease-in-out infinite alternate;
+  }
+  .v-ambient i:nth-child(3) {
+    animation: v-blob-3 14s ease-in-out infinite alternate;
+  }
+}
+@keyframes v-blob-1 {
+  to {
+    transform: translate3d(22%, 18%, 0) scale(1.18);
+  }
+}
+@keyframes v-blob-2 {
+  to {
+    transform: translate3d(-26%, 22%, 0) scale(0.9);
+  }
+}
+@keyframes v-blob-3 {
+  to {
+    transform: translate3d(-30%, 30%, 0) scale(1.25);
+  }
+}
+
+/* ---------- painéis, spotlight e inclinação ---------- */
+.v-panel {
+  --v-r: var(--r-card);
+  --v-pad: 20px;
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--v-r);
+  background: var(--surface);
+}
+/* painel/seção grande */
+.v-panel-lg {
+  --v-r: var(--r-panel);
+}
+@media (max-width: 760px) {
+  .v-panel {
+    --v-pad: 16px;
+  }
+}
+/* cantos concêntricos: raio interno = raio externo − respiro (nunca menos que 8) */
+.v-inner {
+  border-radius: max(8px, calc(var(--v-r, var(--r-card)) - var(--v-pad, 20px)));
+}
+.v-spot {
+  --px: 50%;
+  --py: 50%;
+  position: relative;
+  isolation: isolate;
+}
+.v-spot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  background: radial-gradient(
+    380px circle at var(--px) var(--py),
+    color-mix(in srgb, var(--spot, var(--text)) 15%, transparent),
+    transparent 62%
+  );
+}
+.v-spot:hover::before,
+.v-spot:focus-within::before {
+  opacity: 1;
+}
+
+.v-tilt {
+  --rx: 0deg;
+  --ry: 0deg;
+  --hx: 50%;
+  --hy: 50%;
+  transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform 420ms var(--ease-out);
+  will-change: transform;
+}
+.v-tilt[data-hot] {
+  transition: transform 90ms linear;
+}
+
+/*
+ * Brilho holográfico das raras e StatTrak: metálico e tingido pela própria skin, nunca o espectro todo. Um gradiente
+ * com as 2 a 3 cores extraídas da imagem (--h1..--h3, as mesmas da cor ambiente; sem paleta, a cor da raridade) e um
+ * reflexo especular branco que segue o mouse, em mistura suave (overlay). StatTrak puxa para um âmbar metálico; facas
+ * e luvas (★, [data-foil]) ganham uma folha dourada sutil por cima.
+ */
+.v-holo {
+  position: relative;
+}
+.v-holo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0;
+  mix-blend-mode: overlay;
+  transition: opacity var(--dur-slow) var(--ease-out);
+  background:
+    radial-gradient(
+      46% 52% at var(--hx) var(--hy),
+      rgb(255 255 255 / 0.72),
+      rgb(255 255 255 / 0.18) 46%,
+      transparent 72%
+    ),
+    linear-gradient(
+      116deg,
+      transparent 10%,
+      color-mix(in srgb, var(--h1, var(--rc, var(--rar, #fff))) 78%, transparent) 30%,
+      color-mix(in srgb, var(--h2, var(--h1, var(--rc, var(--rar, #fff)))) 70%, transparent) 46%,
+      color-mix(in srgb, var(--h3, var(--h1, var(--rc, var(--rar, #fff)))) 64%, transparent) 62%,
+      transparent 82%
+    )
+    var(--hx) var(--hy) / 280% 280%;
+}
+.v-holo[data-foil]::after {
+  background:
+    radial-gradient(
+      46% 52% at var(--hx) var(--hy),
+      rgb(255 255 255 / 0.72),
+      rgb(255 255 255 / 0.18) 46%,
+      transparent 72%
+    ),
+    linear-gradient(
+      118deg,
+      transparent 28%,
+      rgb(255 212 112 / 0.5) 46%,
+      rgb(255 236 170 / 0.38) 54%,
+      transparent 72%
+    )
+    var(--hx) var(--hy) / 240% 240%,
+    linear-gradient(
+      116deg,
+      transparent 10%,
+      color-mix(in srgb, var(--h1, var(--rc, var(--rar, #fff))) 78%, transparent) 30%,
+      color-mix(in srgb, var(--h2, var(--h1, var(--rc, var(--rar, #fff)))) 70%, transparent) 46%,
+      color-mix(in srgb, var(--h3, var(--h1, var(--rc, var(--rar, #fff)))) 64%, transparent) 62%,
+      transparent 82%
+    )
+    var(--hx) var(--hy) / 280% 280%;
+}
+.v-holo[data-holo="2"]::after {
+  filter: saturate(1.25);
+}
+.v-holo:hover::after,
+.v-holo[data-hot]::after {
+  opacity: 0.85;
+}
+@media (hover: none) {
+  .v-holo::after {
+    opacity: 0.5;
+    animation: v-holo-sweep 5.5s ease-in-out infinite alternate;
+  }
+}
+@keyframes v-holo-sweep {
+  from {
+    --hx: 18%;
+    --hy: 24%;
+    background-position: 20% 20%;
+  }
+  to {
+    --hx: 82%;
+    --hy: 78%;
+    background-position: 80% 80%;
+  }
+}
+
+/* ---------- dados do mapa atual: uma cor por mapa (cor ambiente da Home e dos cartões) ---------- */
+[data-map="dust2"] {
+  --v-map: #e8b04f;
+  --v-map-deep: #8a5a14;
+  --v-map-ink: #1d1304;
+}
+[data-map="inferno"] {
+  --v-map: #ff6a2b;
+  --v-map-deep: #9c2d08;
+  --v-map-ink: #240a02;
+}
+[data-map="nuke"] {
+  --v-map: #22a6b8;
+  --v-map-deep: #0b5668;
+  --v-map-ink: #021a20;
+}
+[data-map="ancient"] {
+  --v-map: #3fbf6a;
+  --v-map-deep: #14693a;
+  --v-map-ink: #03200f;
+}
+[data-map="mirage"] {
+  --v-map: #f0845c;
+  --v-map-deep: #a1421f;
+  --v-map-ink: #2a0d03;
+}
+[data-map="anubis"] {
+  --v-map: #d6b23a;
+  --v-map-deep: #7b6410;
+  --v-map-ink: #231b02;
+}
+[data-map="overpass"] {
+  --v-map: #7aa8e8;
+  --v-map-deep: #2f5aa0;
+  --v-map-ink: #04122a;
+}
+[data-map="cache"] {
+  --v-map: #9bb83b;
+  --v-map-deep: #566d12;
+  --v-map-ink: #131b02;
+}
+
+/* ---------- header em pílula de vidro (a partir de 768 px, onde o header é fixo) ----------
+ * Em repouso é só o fundo da página. Ao rolar (`data-scrolled`, posto pelo HeaderShell) ele encolhe numa pílula
+ * centrada e solta do topo, com o vidro no pseudo-elemento (o desfoque no próprio header o tornaria bloco de
+ * contenção dos painéis de prévia). A pegada de cima não muda: 8 px de respiro + 52 px de pílula = 60 px
+ * (--hdr-h), então o que gruda logo abaixo (barra do Loadout, sumário legal) continua no lugar.
+ */
+@media (min-width: 768px) {
+  [data-site-header] {
+    margin-inline: auto;
+    width: 100%;
+    transition:
+      top 420ms var(--ease-out),
+      width 520ms var(--ease-out);
+  }
+  [data-site-header][data-scrolled] {
+    top: 8px;
+    width: min(940px, calc(100% - 24px));
+    border-radius: 999px;
+  }
+  [data-site-header][data-scrolled] > div {
+    min-height: 52px;
+    padding-inline: 20px;
+  }
+  [data-site-header]::before {
+    border-radius: inherit;
+    transition:
+      opacity var(--dur-slow) var(--ease-std),
+      box-shadow var(--dur-slow) var(--ease-std);
+  }
+  [data-site-header][data-scrolled]::before {
+    background-color: color-mix(in srgb, var(--raised) 58%, transparent);
+    -webkit-backdrop-filter: blur(26px) saturate(1.7);
+    backdrop-filter: blur(26px) saturate(1.7);
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, #fff 26%, transparent),
+      0 22px 52px -18px rgb(0 0 0 / 0.55),
+      0 2px 10px rgb(0 0 0 / 0.22);
+  }
+  [data-theme="light"] [data-site-header][data-scrolled]::before {
+    background-color: color-mix(in srgb, var(--raised) 66%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      0 22px 52px -20px rgb(0 0 0 / 0.28),
+      0 2px 10px rgb(0 0 0 / 0.1);
+  }
+}
+
+/* ---------- material de vidro nos elementos flutuantes (Liquid Glass) ----------
+ * Fundo translúcido com desfoque e saturação, um fio de luz no topo feito com inset box-shadow (não é borda) e
+ * sombra suave. Vale para o dock, popovers, menus, diálogos, Ctrl+K e as prévias do header (todos usam
+ * .bg-popover). Sem transparência (prefers-reduced-transparency), o fundo é opaco. */
+.v-glass,
+.bg-popover {
+  background-color: color-mix(in srgb, var(--raised) 58%, transparent);
+  -webkit-backdrop-filter: blur(26px) saturate(1.7);
+  backdrop-filter: blur(26px) saturate(1.7);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 26%, transparent),
+    0 22px 52px -18px rgb(0 0 0 / 0.55),
+    0 2px 10px rgb(0 0 0 / 0.22);
+}
+[data-theme="light"] .v-glass,
+[data-theme="light"] .bg-popover {
+  background-color: color-mix(in srgb, var(--raised) 66%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 22px 52px -20px rgb(0 0 0 / 0.28),
+    0 2px 10px rgb(0 0 0 / 0.1);
+}
+@media (prefers-reduced-transparency: reduce) {
+  .v-glass,
+  .bg-popover,
+  [data-site-header][data-scrolled]::before {
+    background-color: var(--raised);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* ---------- curva contínua (squircle) onde o navegador suportar; border-radius normal é o fallback ---------- */
+@supports (corner-shape: squircle) {
+  [class*="rounded"],
+  .v-panel,
+  .v-inner {
+    corner-shape: squircle;
+  }
+  /* o holo e o spotlight seguem o recorte do pai */
+  .v-spot::before,
+  .v-holo::after {
+    corner-shape: inherit;
+  }
+  /* cápsulas e círculos continuam redondos: o squircle deixaria as pontas quadradas */
+  [class*="rounded-full"],
+  [class*="rounded-sm"],
+  [class*="rounded-md"],
+  [data-site-header],
+  [data-site-header]::before {
+    corner-shape: round;
+  }
+}
+
+/* ---------- movimento reduzido: sem inclinação, sem varredura, sem transição de cor ambiente ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .v-tilt,
+  .v-tilt[data-hot] {
+    transform: none;
+    transition: none;
+  }
+  .v-holo::after {
+    animation: none;
+    opacity: 0.18;
+    transition: none;
+  }
+  [data-vida] {
+    transition: none;
+  }
+  [data-site-header] {
+    transition: none;
+  }
+}

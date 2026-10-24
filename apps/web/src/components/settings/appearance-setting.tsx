@@ -43,7 +43,7 @@ export function AppearanceSetting() {
               <span
                 aria-hidden="true"
                 data-theme={option}
-                className="grid h-16 content-center gap-1.5 rounded-md bg-background px-3"
+                className="grid h-16 content-center gap-1.5 rounded-xl bg-background px-3"
               >
                 <span className="h-1.5 w-2/5 rounded-full bg-foreground" />
                 <span className="h-4 rounded-sm bg-surface-2" />
