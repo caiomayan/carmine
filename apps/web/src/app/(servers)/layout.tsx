@@ -2,8 +2,10 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import type { ReactNode } from 'react';
 
-/** A home ao vivo é de cliente: recebe só as mensagens dos Servidores. */
+/** A home ao vivo é de cliente: recebe só as mensagens dos Servidores e da faixa de atividade. */
 export default async function ServersLayout({ children }: { children: ReactNode }) {
-  const { servers } = await getMessages();
-  return <NextIntlClientProvider messages={{ servers }}>{children}</NextIntlClientProvider>;
+  const { servers, activity } = await getMessages();
+  return (
+    <NextIntlClientProvider messages={{ servers, activity }}>{children}</NextIntlClientProvider>
+  );
 }
