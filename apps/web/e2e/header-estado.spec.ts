@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { newSteamId, signInFromHeader } from './accounts';
 import { axeViolations, expect, saveTheme, settle, test } from './fixtures';
+import { hydrated } from './hydration';
 
 /**
  * O header fixo: sem linha em repouso; ao rolar vira uma pílula de vidro (fundo, desfoque e raio)
@@ -149,11 +150,17 @@ test.describe('busca do header', () => {
     await expect.poll(() => width(page)).toBeCloseTo(160, 0);
 
     // Teclado: Tab até a busca cresce igual, também sem cobrir a navegação.
-    await page.keyboard.press('Tab');
+    // O Tab só entra na busca depois de o header hidratar (a navegação rica troca a ordem do Tab ao hidratar):
+    // espere o React assumir os dois e repita o par Shift+Tab / Tab até pousar, em vez de apostar numa
+    // única sequência durante a transição.
+    await hydrated(trigger(page));
+    await hydrated(page.locator('header nav a').first());
     await trigger(page).focus();
-    await page.keyboard.press('Shift+Tab');
-    await page.keyboard.press('Tab');
-    await expect(trigger(page)).toBeFocused();
+    await expect(async () => {
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      await expect(trigger(page)).toBeFocused({ timeout: 1_000 });
+    }).toPass({ timeout: 10_000 });
     await expect.poll(() => width(page)).toBeGreaterThan(165);
     await page.waitForTimeout(500);
     expect(intersects((await trigger(page).boundingBox()) as Box, await lastNavItem(page))).toBe(
