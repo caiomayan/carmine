@@ -52,7 +52,8 @@ for (const theme of ['dark', 'light'] as const) {
       expect(await bar.evaluate((el) => getComputedStyle(el).borderBottomWidth)).toBe('0px');
       // Fica no alto da tela enquanto a página rola.
       expect((await bar.boundingBox())?.y).toBe(0);
-      expect(await axeViolations(page)).toEqual([]);
+      // Mede o header rolado, com o fundo e o desfoque, ainda fixo.
+      expect(await axeViolations(page, { fixedHeader: true })).toEqual([]);
 
       await page.evaluate(() => window.scrollTo(0, 0));
       await expect(bar).not.toHaveAttribute('data-scrolled', /.*/);
