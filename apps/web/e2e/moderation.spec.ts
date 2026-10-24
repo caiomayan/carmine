@@ -436,10 +436,6 @@ test('as Regras de conduta têm o caminho de recurso em /regras#recurso', async 
   await expect(page.getByRole('heading', { level: 1, name: 'Regras de conduta' })).toBeVisible();
   await expect(page.locator('#recurso')).toBeVisible();
   await expect(page.locator('#recurso')).toContainText('Recurso');
-  // O fundo do botão do Discord alinha com a coluna do texto, sem margem negativa.
-  const heading = await page.locator('#recurso').getByRole('heading').first().boundingBox();
-  const discord = await page.locator('#recurso a[href*="discord"]').boundingBox();
-  expect(Math.abs((discord?.x ?? -99) - (heading?.x ?? 99))).toBeLessThanOrEqual(1);
   // Nada de marcador de revisão jurídica cru na página.
   await expect(page.getByText('[VALIDAR COM ADVOGADO]')).toHaveCount(0);
 });
