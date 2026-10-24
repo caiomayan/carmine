@@ -84,6 +84,7 @@ export function PresetHand({
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const dragging = useRef(false);
+  const keyboardNav = useRef(false);
 
   const { limit } = list;
   const active = cards.find((card) => card.active);
@@ -221,13 +222,21 @@ export function PresetHand({
         ref={hand}
         aria-label={t('label')}
         onPointerMove={folhear}
-        onPointerLeave={() => {
-          // O foco do teclado (ou o menu aberto) mantém a carta erguida; o de um clique não.
-          const at = document.activeElement;
-          const keyboard = !!at && hand.current?.contains(at) && at.matches(':focus-visible');
-          if (!keyboard && !menuOpen) setFocused(null);
+        // Quem está folheando é o teclado até o próximo clique ou toque: o foco do teclado (ou o menu
+        // aberto) mantém a carta erguida quando o mouse sai; o de um clique não. É o último gesto que
+        // decide (não o `:focus-visible`, que o navegador resolve por heurística e varia).
+        onPointerDown={() => {
+          keyboardNav.current = false;
         }}
-        onKeyDown={onKeyDown}
+        onPointerLeave={() => {
+          if (!keyboardNav.current && !menuOpen) setFocused(null);
+        }}
+        onKeyDown={(event) => {
+          if (event.key.startsWith('Arrow') || event.key === 'Home' || event.key === 'End') {
+            keyboardNav.current = true;
+          }
+          onKeyDown(event);
+        }}
         onFocus={(event) => {
           const index = indexOfButton(event.target);
           if (index >= 0) {
