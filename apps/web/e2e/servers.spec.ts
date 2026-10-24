@@ -158,23 +158,6 @@ test.describe('Servidores ao vivo', () => {
     });
   });
 
-  test('o filtro por Modo tem estado vazio e volta para todos', async ({ page }) => {
-    await routeLiveServers(page, [
-      fakeServer({ name: 'fixo-retake' }),
-      fakeServer({ name: 'fixo-lotado', state: 'full', players: 9 }),
-    ]);
-    await page.goto('/');
-    await expect(row(page, 'fixo-retake')).toBeVisible();
-    await expect(row(page, 'fixo-lotado').getByText('Lotado', { exact: true })).toBeVisible();
-
-    const tabs = page.getByRole('tablist', { name: 'Modo' });
-    await tabs.getByRole('tab', { name: 'Deathmatch' }).click();
-    await expect(page.getByText('Nenhum servidor de Deathmatch por enquanto')).toBeVisible();
-    await page.getByRole('button', { name: 'Ver todos os servidores' }).click();
-    await expect(tabs.getByRole('tab', { name: 'Todos' })).toHaveAttribute('aria-selected', 'true');
-    await expect(row(page, 'fixo-retake')).toBeVisible();
-  });
-
   test('o rodapé usa o resumo real e acompanha o ao vivo', async ({ page }) => {
     await routeLiveServers(page, [
       fakeServer({ players: 5 }),
@@ -363,17 +346,16 @@ for (const theme of ['dark', 'light'] as const) {
   });
 }
 
-test.describe('Home em cartões (U2)', () => {
+test.describe('Home: os cartões de servidor', () => {
   const list = (page: Page) => page.getByTestId('server-list');
 
-  test('até 6 servidores no ar viram cartões com o mapa atual ao fundo', async ({ page }) => {
+  test('cada servidor no ar é um cartão com o mapa atual ao fundo', async ({ page }) => {
     await routeLiveServers(page, [
       fakeServer({ name: 'fixo-a', map: 'de_mirage', players: 3 }),
       fakeServer({ name: 'fixo-b', map: 'de_dust2', players: 8, address: '203.0.113.201:27015' }),
       fakeServer({ name: 'fixo-c', map: 'de_inferno', mode: 'deathmatch', players: 0 }),
     ]);
     await page.goto('/');
-    await expect(list(page)).toHaveAttribute('data-layout', 'cards');
     await expect(page.getByTestId('server-card')).toHaveCount(3);
 
     const mirage = row(page, 'fixo-a');
@@ -385,16 +367,23 @@ test.describe('Home em cartões (U2)', () => {
       'href',
       'steam://connect/203.0.113.200:27015',
     );
-    // Uma imagem por mapa, em AVIF e WebP, e é a do mapa do servidor.
+    // A arte do dia do mapa, em AVIF e WebP, nos três tamanhos: é a do mapa do servidor.
+    const srcset = (ext: string) =>
+      new RegExp(
+        `^/maps/mirage/\\w+-480\\.${ext} 480w, /maps/mirage/\\w+-960\\.${ext} 960w, /maps/mirage/\\w+-1600\\.${ext} 1600w$`,
+      );
     await expect(mirage.locator('source[type="image/avif"]')).toHaveAttribute(
       'srcset',
-      '/maps/mirage-800.avif 800w, /maps/mirage-1600.avif 1600w',
+      srcset('avif'),
     );
     await expect(mirage.locator('source[type="image/webp"]')).toHaveAttribute(
       'srcset',
-      '/maps/mirage-800.webp 800w, /maps/mirage-1600.webp 1600w',
+      srcset('webp'),
     );
-    await expect(row(page, 'fixo-b').locator('img')).toHaveAttribute('src', /dust2-1600\.webp/);
+    await expect(row(page, 'fixo-b').locator('img')).toHaveAttribute(
+      'src',
+      /\/maps\/dust2\/\w+-1600\.webp/,
+    );
     // O arquivo existe e carrega (a imagem não está quebrada).
     await expect
       .poll(() =>
@@ -404,10 +393,10 @@ test.describe('Home em cartões (U2)', () => {
   });
 
   test('o mapa fora da rotação cai num fundo neutro, sem imagem quebrada', async ({ page }) => {
-    await routeLiveServers(page, [fakeServer({ name: 'fixo-sem-arte', map: 'de_vertigo' })]);
+    await routeLiveServers(page, [fakeServer({ name: 'fixo-sem-arte', map: 'de_zzz' })]);
     await page.goto('/');
     const card = row(page, 'fixo-sem-arte');
-    await expect(card.getByText('Vertigo', { exact: true })).toBeVisible();
+    await expect(card.getByText('Zzz', { exact: true })).toBeVisible();
     await expect(card.locator('img')).toHaveCount(0);
     await expect(card.getByRole('link', { name: 'Jogar em fixo-sem-arte' })).toBeVisible();
   });
@@ -433,18 +422,6 @@ test.describe('Home em cartões (U2)', () => {
     await expect(card.getByText('Lotado', { exact: true })).toBeVisible();
     await expect(card.getByText('Vaga reservada: só VIP')).toBeVisible();
     await expect(card.getByRole('link', { name: 'Jogar em fixo-cheio' })).toBeVisible();
-  });
-
-  test('acima de 6 servidores no ar a mesma tela vira lista', async ({ page }) => {
-    await routeLiveServers(
-      page,
-      Array.from({ length: 7 }, (_, i) => fakeServer({ name: `fixo-lista-${i}`, players: i })),
-    );
-    await page.goto('/');
-    await expect(list(page)).toHaveAttribute('data-layout', 'list');
-    await expect(page.getByTestId('server-card')).toHaveCount(0);
-    await expect(page.getByTestId('server-row')).toHaveCount(7);
-    await expect(row(page, 'fixo-lista-6').getByRole('link', { name: /^Jogar em / })).toBeVisible();
   });
 
   test('os offline encolhem: grupo recolhido, sem botão e sem texto cortado', async ({ page }) => {

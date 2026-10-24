@@ -1,16 +1,11 @@
-import { ServerBrowser } from '@/components/servers/server-browser';
-import { getActivityView } from '@/lib/activity/server';
-import { getLiveServers } from '@/lib/api-server';
+import { HomeLive } from '@/components/home/home-live';
+import { getHomeData } from '@/lib/home/server';
 
 /**
- * Home = Servidores ao vivo (S06). A página já sai do servidor com a lista daquele instante;
- * no navegador ela segue o ao vivo da API. A faixa de atividade é lida em paralelo; sem ela a home é a mesma.
+ * Home = o painel ao vivo (V2). A página já sai do servidor com tudo o que mostra na primeira pintura (servidores,
+ * atividade, top 3, os números da semana, a sessão); no navegador, a lista segue o ao vivo da API e a atividade se
+ * atualiza sozinha. A vitrine dos Loadouts chega depois, quando a faixa se aproxima da tela.
  */
 export default async function ServersPage() {
-  const [initial, activity] = await Promise.all([getLiveServers(), getActivityView()]);
-  return (
-    <div className="container-page animate-fade-up">
-      <ServerBrowser initial={initial} activity={activity} />
-    </div>
-  );
+  return <HomeLive data={await getHomeData()} />;
 }

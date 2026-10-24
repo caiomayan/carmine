@@ -69,14 +69,12 @@ for (const theme of ['dark', 'light'] as const) {
     await expect(card).toBeVisible();
 
     // A causa do filete: o cartão tinha fundo e anel próprios por baixo de uma imagem que, escalada,
-    // vira camada própria e deixa a borda antialiased à mostra. Agora o cartão não tem nenhum dos dois.
+    // vira camada própria e deixa a borda antialiased à mostra. Com arte, o cartão não tem nenhum dos dois.
     await expect(card).toHaveCSS('box-shadow', 'none');
     await expect(card).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-    const layer = card.locator('.map-layer');
-    await expect(layer).toHaveCount(1);
-    await expect(layer.locator('picture')).toHaveCount(1);
-    await expect(layer.locator('.map-scrim')).toHaveCount(1);
-    await expect(layer).toHaveCSS('overflow', 'hidden');
+    await expect(card).toHaveCSS('overflow', 'hidden');
+    await expect(card.locator('picture')).toHaveCount(1);
+    await expect(card.locator('.vh-wash')).toHaveCount(1);
 
     // Imagem e escurecido passam 1 px da borda do cartão: nenhum subpixel deixa vão.
     const bleed = await card.evaluate((el) => {
@@ -92,7 +90,7 @@ for (const theme of ['dark', 'light'] as const) {
             }
           : null;
       };
-      return { picture: inner('.map-layer picture'), scrim: inner('.map-layer .map-scrim') };
+      return { picture: inner('picture'), wash: inner('.vh-wash') };
     });
     for (const [name, sides] of Object.entries(bleed)) {
       expect(sides, name).not.toBeNull();
@@ -108,37 +106,5 @@ for (const theme of ['dark', 'light'] as const) {
       body: await card.screenshot(),
       contentType: 'image/png',
     });
-  });
-}
-
-for (const theme of ['dark', 'light'] as const) {
-  test(`o painel dos servidores mostra o anel quando o foco vem do teclado, e não do mouse (${theme}, 390 px)`, async ({
-    page,
-  }) => {
-    await saveTheme(page, theme);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await routeLiveServers(page, [fakeServer({ name: 'fixo-no-ar' })]);
-    await page.goto('/');
-    const panel = page.getByRole('tabpanel').first();
-    await expect(panel).toBeVisible();
-
-    const outline = () =>
-      panel.evaluate((el) => {
-        const style = getComputedStyle(el);
-        return { style: style.outlineStyle, width: Number.parseFloat(style.outlineWidth) };
-      });
-
-    // Mouse: o clique no painel o foca (tabindex), sem anel.
-    await panel.click({ position: { x: 4, y: 4 } });
-    await expect(panel).toBeFocused();
-    expect((await outline()).style).toBe('none');
-
-    // Teclado: sai e volta com Tab; o anel aparece.
-    await page.keyboard.press('Shift+Tab');
-    await page.keyboard.press('Tab');
-    await expect(panel).toBeFocused();
-    const ring = await outline();
-    expect(ring.style).toBe('solid');
-    expect(ring.width).toBeGreaterThan(0);
   });
 }

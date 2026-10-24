@@ -4,17 +4,18 @@ import { newSteamId, reconnectPlayer } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
 
 /**
- * A faixa de atividade ao vivo da home (Marquee): logo acima da lista de servidores, corre quando
- * não cabe, pausa no mouse, no foco e no botão, vira lista parada com movimento reduzido, o
- * leitor de tela lê cada item uma vez e, sem acontecimentos, ela não existe. Os acontecimentos
- * vêm da API de verdade (jogadores que entram no Servidor Carmine do E2E).
+ * A atividade ao vivo da Home (#71): a partir de 1280 px mora no trilho (o painel "Ao vivo agora"); abaixo disso não
+ * há trilho e ela vira o Marquee, uma faixa de uma linha logo abaixo do hero, que corre quando não cabe, pausa no
+ * mouse, no foco e no botão, vira lista parada com movimento reduzido, é lida uma vez pelo leitor de tela e, sem
+ * acontecimentos, não existe. Os acontecimentos vêm da API de verdade (jogadores que entram no Servidor Carmine do E2E).
  */
 
-const strip = (page: Page) => page.getByTestId('activity-marquee');
+const strip = (page: Page) => page.getByTestId('activity-strip');
+const feed = (page: Page) => page.getByTestId('activity-feed');
 const track = (page: Page) => strip(page).locator('[data-slot="marquee-track"]');
 const links = (page: Page) => strip(page).getByRole('link');
 
-/** O jogo conecta o jogador e avisa que ele entrou no servidor: nasce um "entrou em" na faixa. */
+/** O jogo conecta o jogador e avisa que ele entrou no servidor: nasce um "entrou em" na atividade. */
 async function playerJoins(request: APIRequestContext, name: string) {
   const steamId = newSteamId();
   const { publicId } = await reconnectPlayer(request, steamId, name);
@@ -49,9 +50,8 @@ async function routeActivity(page: Page, body: unknown, status = 200) {
 }
 
 /**
- * Uma volta da leitura agora (o navegador faz sozinho a cada 15 s; voltar à aba também pede) e a
- * espera da resposta. Repete o pedido até a página responder: um aviso antes da hidratação ainda
- * não tem quem o escute.
+ * Uma volta da leitura agora (o navegador faz sozinho a cada 15 s; voltar à aba também pede) e a espera da resposta.
+ * Repete o pedido até a página responder: um aviso antes da hidratação ainda não tem quem o escute.
  */
 async function poll(page: Page) {
   const answered = page.waitForResponse((r) => r.url().includes('/atividade/recentes'));
@@ -70,27 +70,55 @@ const animationName = (page: Page) =>
 const playState = (page: Page) =>
   track(page).evaluate((el) => getComputedStyle(el).animationPlayState);
 
-test.describe('a faixa de atividade da home', () => {
+/** Sem trilho (abaixo de 1280 px): é onde a faixa existe. */
+const NARROW = { width: 1100, height: 900 };
+
+const item = (id: string, rest: object) => ({
+  id,
+  at: new Date().toISOString(),
+  player: { name: 'Ana', avatarUrl: null },
+  ...rest,
+});
+
+test.describe('a atividade da home', () => {
   test.beforeAll(async ({ playwright, baseURL }) => {
     const request = await playwright.request.newContext({ baseURL });
     await seedActivity(request);
     await request.dispose();
   });
 
-  test('fica logo acima da lista de servidores, abaixo do título, e leva ao servidor', async ({
+  test('a partir de 1280 px mora no trilho, com avatar, frase e o "há X", e leva ao servidor', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
+    await expect(feed(page)).toBeVisible();
+    await expect(
+      feed(page).getByRole('heading', { name: /Ao vivo agora|Atividade recente/ }),
+    ).toBeVisible();
+    const first = feed(page).getByRole('link').first();
+    await expect(first).toContainText(/entrou em e2e-/);
+    await expect(first).toHaveAttribute('href', /^\/#servidor-/);
+    await expect(first.locator('time')).toHaveText(/há|agora|segundo/);
+    // Onde há trilho, a faixa não aparece.
+    await expect(strip(page)).toBeHidden();
+  });
+
+  test('abaixo de 1280 px não há trilho: a faixa fica logo abaixo do hero e acima dos servidores', async ({
+    page,
+  }) => {
+    await page.setViewportSize(NARROW);
+    await page.goto('/');
     await expect(strip(page)).toBeVisible();
-    const [head, band, tabs] = await Promise.all([
+    await expect(feed(page)).toBeHidden();
+    const [head, band, servers] = await Promise.all([
       page.getByRole('heading', { level: 1 }).boundingBox(),
       strip(page).boundingBox(),
-      page.getByRole('tablist').boundingBox(),
+      page.getByRole('heading', { name: 'Servidores' }).boundingBox(),
     ]);
-    expect(band && head && tabs).toBeTruthy();
+    expect(band && head && servers).toBeTruthy();
     expect(band?.y).toBeGreaterThan((head?.y ?? 0) + (head?.height ?? 0));
-    expect((band?.y ?? 0) + (band?.height ?? 0)).toBeLessThanOrEqual(tabs?.y ?? 0);
+    expect((band?.y ?? 0) + (band?.height ?? 0)).toBeLessThanOrEqual(servers?.y ?? 0);
 
     const first = links(page).first();
     await expect(first).toContainText(/entrou em e2e-/);
@@ -100,7 +128,7 @@ test.describe('a faixa de atividade da home', () => {
   test('o leitor de tela lê cada acontecimento uma vez: a cópia do trilho fica de fora', async ({
     page,
   }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.setViewportSize(NARROW);
     await page.goto('/');
     await expect(strip(page)).toHaveAttribute('data-moving', 'true');
     const real = strip(page).getByRole('list', { name: 'Acontecimentos recentes' });
@@ -115,7 +143,7 @@ test.describe('a faixa de atividade da home', () => {
   });
 
   test('corre quando não cabe e pausa no mouse, no foco e no botão', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.setViewportSize(NARROW);
     await page.goto('/');
     await expect(strip(page)).toHaveAttribute('data-moving', 'true');
     expect(await animationName(page)).toBe('marquee');
@@ -142,15 +170,15 @@ test.describe('a faixa de atividade da home', () => {
     // Foco: o trilho para e volta ao começo; o item focado fica inteiro à vista, mesmo o último.
     await links(page).last().focus();
     expect(await animationName(page)).toBe('none');
-    const [band, item] = await Promise.all([
-      strip(page).locator('[data-slot="marquee-track"]').locator('xpath=..').boundingBox(),
+    const [band, last] = await Promise.all([
+      track(page).locator('xpath=..').boundingBox(),
       links(page).last().boundingBox(),
     ]);
-    expect(item?.x).toBeGreaterThanOrEqual((band?.x ?? 0) - 1);
-    expect((item?.x ?? 0) + (item?.width ?? 0)).toBeLessThanOrEqual(
+    expect(last?.x).toBeGreaterThanOrEqual((band?.x ?? 0) - 1);
+    expect((last?.x ?? 0) + (last?.width ?? 0)).toBeLessThanOrEqual(
       (band?.x ?? 0) + (band?.width ?? 0) + 1,
     );
-    await page.getByRole('tablist').getByRole('tab').first().focus();
+    await page.getByTestId('activity-pause').focus();
     await expect.poll(() => animationName(page)).toBe('marquee');
   });
 
@@ -213,22 +241,18 @@ test.describe('a faixa de atividade da home', () => {
     test.use({ expectedConsoleErrors: [/503/] });
 
     test('mostra os quatro tipos, cada um levando ao seu contexto', async ({ page }) => {
-      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.setViewportSize(NARROW);
       await page.goto('/');
       await expect(strip(page)).toBeVisible();
-      const item = (id: string, rest: object) => ({
-        id,
-        player: { name: 'Ana' },
-        ...rest,
-      });
       await routeActivity(page, {
         items: [
           item('1', { kind: 'joined', server: 'Retake SP·1', href: '/#servidor-abc' }),
           item('2', { kind: 'multi_kill', server: 'DM SP·1', kills: 5, href: '/#servidor-def' }),
           {
             id: '3',
+            at: new Date().toISOString(),
             kind: 'new_leader',
-            player: { name: 'Jogador privado' },
+            player: { name: 'Jogador privado', avatarUrl: null },
             mode: 'deathmatch',
             href: '/ranking?modo=deathmatch',
           },
@@ -237,8 +261,7 @@ test.describe('a faixa de atividade da home', () => {
       });
       await poll(page);
       await expect(links(page).first()).toHaveText('Ana entrou em Retake SP·1');
-      const text = await links(page).allInnerTexts();
-      expect(text).toEqual([
+      expect(await links(page).allInnerTexts()).toEqual([
         'Ana entrou em Retake SP·1',
         'Ana fez 5 kills seguidas em DM SP·1',
         'Jogador privado assumiu o 1º lugar no Deathmatch',
@@ -252,19 +275,11 @@ test.describe('a faixa de atividade da home', () => {
     test('o que cabe na largura fica parado: sem trilho, sem cópia e sem botão de pausa', async ({
       page,
     }) => {
-      await page.setViewportSize({ width: 1440, height: 900 });
+      await page.setViewportSize(NARROW);
       await page.goto('/');
       await expect(strip(page)).toHaveAttribute('data-moving', 'true');
       await routeActivity(page, {
-        items: [
-          {
-            id: 'unico',
-            kind: 'joined',
-            player: { name: 'Ana' },
-            server: 'Retake SP·1',
-            href: '/#servidor-abc',
-          },
-        ],
+        items: [item('unico', { kind: 'joined', server: 'Retake SP·1', href: '/#servidor-abc' })],
       });
       await poll(page);
       await expect(strip(page)).toHaveAttribute('data-moving', 'false');
@@ -274,37 +289,59 @@ test.describe('a faixa de atividade da home', () => {
       expect(await animationName(page)).toBe('none');
     });
 
-    test('a API fora não derruba a faixa: fica como estava; sem acontecimentos, ela some', async ({
+    test('o trilho recebe o acontecimento novo no topo; a API fora não derruba nada; sem acontecimentos, a faixa some', async ({
       page,
     }) => {
+      await page.setViewportSize({ width: 1440, height: 900 });
       await page.goto('/');
-      await expect(strip(page)).toBeVisible();
-      const before = await links(page).count();
+      await expect(feed(page)).toBeVisible();
+      await routeActivity(page, {
+        items: [item('novo', { kind: 'joined', server: 'Retake Novo', href: '/#servidor-novo' })],
+      });
+      await poll(page);
+      await expect(feed(page).getByRole('link').first()).toContainText('Ana entrou em Retake Novo');
+
+      await page.unroute('**/atividade/recentes');
       await routeActivity(page, { error: 'unavailable' }, 503);
       await poll(page);
       await page.waitForTimeout(400);
-      await expect(strip(page)).toBeVisible();
-      expect(await links(page).count()).toBe(before);
+      await expect(feed(page).getByRole('link').first()).toContainText('Retake Novo');
 
       await page.unroute('**/atividade/recentes');
       await routeActivity(page, { items: [] });
       await poll(page);
-      await expect(strip(page)).toHaveCount(0);
+      await expect(feed(page).getByTestId('activity-empty')).toBeVisible();
       // O resto da home segue de pé.
-      await expect(page.getByRole('tablist')).toBeVisible();
+      await expect(page.getByTestId('home-hero')).toBeVisible();
+    });
+
+    test('abaixo de 1280 px, sem acontecimentos a faixa some', async ({ page }) => {
+      await page.setViewportSize(NARROW);
+      await page.goto('/');
+      await expect(strip(page)).toBeVisible();
+      await routeActivity(page, { items: [] });
+      await poll(page);
+      await expect(strip(page)).toHaveCount(0);
+      await expect(page.getByTestId('home-hero')).toBeVisible();
     });
   });
 
   for (const theme of ['dark', 'light'] as const) {
-    for (const width of [390, 1440]) {
-      test(`axe: a faixa correndo e parada (${theme}, ${width} px)`, async ({ page }) => {
+    for (const width of [390, 1100, 1440]) {
+      test(`axe: a atividade correndo e parada (${theme}, ${width} px)`, async ({ page }) => {
         await saveTheme(page, theme);
         await page.setViewportSize({ width, height: 900 });
         await page.goto('/');
-        await expect(strip(page)).toHaveAttribute('data-moving', 'true');
+        if (width < 1280) {
+          await expect(strip(page)).toHaveAttribute('data-moving', 'true');
+        } else {
+          await expect(feed(page)).toBeVisible();
+        }
         expect(await axeViolations(page)).toEqual([]);
-        await page.getByTestId('activity-pause').click();
-        expect(await axeViolations(page)).toEqual([]);
+        if (width < 1280) {
+          await page.getByTestId('activity-pause').click();
+          expect(await axeViolations(page)).toEqual([]);
+        }
       });
     }
 

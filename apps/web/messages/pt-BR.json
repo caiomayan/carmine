@@ -203,6 +203,110 @@
     "newLeader": "<b>{player}</b> assumiu o 1º lugar no {mode}",
     "skinEquipped": "<b>{player}</b> equipou {skin}"
   },
+  "home": {
+    "rail": "Ao vivo",
+    "hero": {
+      "live": "Ao vivo",
+      "paused": "Em pausa",
+      "brand": "St. Carmine",
+      "tagline": "Servidores comunitários",
+      "asleep": "Os servidores estão dormindo",
+      "players": "{count, plural, one {jogador} other {jogadores}}",
+      "onAir": "no ar agora",
+      "asleepBody": "O último sinal de um servidor foi {ago}. Chame um amigo no Discord: quando o primeiro entra, o servidor acorda sozinho.",
+      "asleepNever": "Nenhum servidor está no ar agora. Chame um amigo no Discord: quando o primeiro entra, o servidor acorda sozinho.",
+      "friendsBody": "{count, plural, one {# servidor no ar.} other {# servidores no ar.}} <b>{name}</b>{others, plural, =0 {} one { e mais #} other { e mais #}} {others, plural, =0 {está jogando agora} other {estão jogando agora}}; dá para entrar junto.",
+      "quietBody": "{count, plural, one {# servidor no ar, tranquilo para entrar.} other {# servidores no ar, tranquilos para entrar.}} As suas skins já aparecem no jogo.",
+      "quietNoLoadout": "{count, plural, one {# servidor no ar, tranquilo para entrar.} other {# servidores no ar, tranquilos para entrar.}} Monte o seu Loadout e as suas skins aparecem no jogo.",
+      "signedOutBody": "Retake e Deathmatch com skins de verdade no servidor. Entre com a Steam e o seu Loadout vai junto.",
+      "signIn": "Entrar com a Steam",
+      "discord": "Chamar a galera no Discord",
+      "playNow": "Jogar agora",
+      "seeLoadout": "Ver o meu Loadout",
+      "buildLoadout": "Montar o meu Loadout",
+      "seeServers": "Ver os servidores",
+      "fullest": "Mais cheio agora: {name}"
+    },
+    "feed": {
+      "titleLive": "Ao vivo agora",
+      "titleRecent": "Atividade recente",
+      "realtime": "em tempo real",
+      "empty": "A atividade dos servidores aparece aqui: quem entra, quem faz uma sequência de abates e as skins que valem destaque.",
+      "listLabel": "Atividade dos jogadores"
+    },
+    "top": {
+      "title": "Top 3 da semana",
+      "modeLabel": "Modo",
+      "unavailable": "Não deu para carregar o Ranking agora.",
+      "empty": "Ninguém cumpriu o mínimo do {mode} esta semana ainda.",
+      "unit": {
+        "retake": "rounds vencidos",
+        "deathmatch": "abates por minuto"
+      },
+      "seeRanking": "Ver o Ranking"
+    },
+    "week": {
+      "title": "Esta semana",
+      "turns": "O Ranking vira em",
+      "progress": "{day}: {percent}% da semana já passou",
+      "progressWaiting": "Quanto da semana já passou",
+      "empty": "Ainda sem jogos nesta semana. Os números aparecem assim que o primeiro jogador entrar.",
+      "countdown": {
+        "waiting": "Contando até a virada da semana",
+        "left": "Faltam {days, plural, one {# dia} other {# dias}}, {hours} horas, {minutes} minutos e {seconds} segundos para a virada da semana",
+        "d": "d",
+        "h": "h",
+        "min": "min",
+        "s": "s"
+      },
+      "delta": {
+        "same": "Igual à semana passada",
+        "percent": {
+          "up": "+{amount, number}% sobre a semana passada",
+          "down": "−{amount, number}% sobre a semana passada"
+        },
+        "points": {
+          "up": "+{amount, number} p.p. sobre a semana passada",
+          "down": "−{amount, number} p.p. sobre a semana passada"
+        }
+      },
+      "rows": {
+        "players": "Jogadores ativos",
+        "kills": "Abates",
+        "headshotPercent": "HS%",
+        "hours": "Horas jogadas"
+      }
+    },
+    "loadouts": {
+      "title": "Loadouts da semana",
+      "subtitle": "O que os melhores da semana estão usando. A skin muda a cor da vitrine.",
+      "pause": "Pausar rotação",
+      "resume": "Retomar rotação",
+      "choose": "Escolher o Loadout",
+      "pick": "{skin} ({weapon}), de {name}"
+    },
+    "rarity": {
+      "consumer": "Consumidor",
+      "industrial": "Industrial",
+      "milspec": "Militar",
+      "restricted": "Restrito",
+      "classified": "Confidencial",
+      "covert": "Secreto",
+      "contraband": "Contrabando"
+    },
+    "wear": {
+      "fn": "Nova de Fábrica",
+      "mw": "Pouco Usada",
+      "ft": "Testada em Campo",
+      "ww": "Bem Desgastada",
+      "bs": "Veterana de Guerra"
+    },
+    "sides": {
+      "ct": "CT",
+      "t": "TR"
+    },
+    "statTrak": "StatTrak™"
+  },
   "servers": {
     "title": "Servidores",
     "subtitle": "Retake e Deathmatch com o seu Loadout.",
@@ -251,7 +355,8 @@
       "opening": "Abrindo o CS2.",
       "hint": "Se não abrir, no console do CS2: <cmd>connect {address}</cmd>",
       "close": "Fechar instrução",
-      "mobileHint": "No celular não dá para jogar: abra o CS2 no PC e, no console, digite <cmd>connect</cmd> com o IP do servidor."
+      "mobileHint": "No celular não dá para jogar: abra o CS2 no PC e, no console, digite <cmd>connect</cmd> com o IP do servidor.",
+      "copying": "Copiando"
     },
     "empty": {
       "title": "Nenhum servidor no ar ainda",
