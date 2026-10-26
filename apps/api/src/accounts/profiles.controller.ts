@@ -20,6 +20,7 @@ import type { FastifyRequest } from 'fastify';
 import { Loadouts } from '../loadout/loadouts.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { VipPeriods } from '../vip/vip-periods.js';
 import { type Account, AccountsService } from './accounts.service.js';
 import { toProfile } from './profile.js';
 import { ReservedPublicIds } from './reserved-public-ids.js';
@@ -36,6 +37,7 @@ export class ProfilesController {
     @Inject(Loadouts) private readonly loadouts: Loadouts,
     @Inject(Sanctions) private readonly sanctions: Sanctions,
     @Inject(ReservedPublicIds) private readonly reservedIds: ReservedPublicIds,
+    @Inject(VipPeriods) private readonly vipPeriods: VipPeriods,
   ) {}
 
   @Get('former-ids')
@@ -81,12 +83,13 @@ export class ProfilesController {
       ? await this.accounts.findByPublicId(Number(publicId))
       : null;
     const owner = found(account);
-    const [showcase, sanctions] = await Promise.all([
+    const [showcase, sanctions, vip] = await Promise.all([
       this.loadouts.showcase(owner.id),
       // A sessão vem do SessionGuard global; o web a repassa na leitura do servidor.
       this.sanctions.profileOf(owner.id, { withHistory: request.carmineSession !== undefined }),
+      this.vipPeriods.statusOf(owner.id),
     ]);
-    return toProfile(owner, showcase, sanctions);
+    return toProfile(owner, showcase, sanctions, vip.active);
   }
 }
 

@@ -209,7 +209,7 @@ export class AuthController {
       this.sanctions.activeOf(account.id),
     ]);
     return {
-      account: toProfile(account, showcase, sanctions),
+      account: toProfile(account, showcase, sanctions, vip.active),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
       vip: toVipStatus(vip),
