@@ -1,6 +1,6 @@
 # S12b · Estatísticas detalhadas: contratos
 
-Os contratos (Zod em `packages/contracts`, OpenAPI em `apps/api/openapi.json`) da S12b, publicados **antes** da implementação para o web (página do servidor, blocos do Perfil) e o plugin construírem em paralelo. Desenho, custo e decisões D1 a D6: `carmine-s12b-proposta.md`. Estado: os três endpoints do **Perfil** já respondem de verdade (PR A, tabelas da migração 0014); `players` e `today` do servidor respondem **501** (`apps/api/src/stats/s12b-pending.ts`) até o PR C. A API já grava o detalhe a partir dos campos novos dos eventos; `match` e `scoreboard` do batimento são aceitos e ainda não guardados (PR C).
+Os contratos (Zod em `packages/contracts`, OpenAPI em `apps/api/openapi.json`) da S12b, publicados **antes** da implementação para o web (página do servidor, blocos do Perfil) e o plugin construírem em paralelo. Desenho, custo e decisões D1 a D6: `carmine-s12b-proposta.md`. Estado: **tudo implementado.** O Perfil (PR A) lê as tabelas da migração 0014; a página do servidor (PR C) guarda `match` e `scoreboard` do batimento na presença (Valkey) e serve `LiveServer.match`, `/servers/{id}/players` e `/servers/{id}/today`. O plugin novo (PR B) é quem passa a mandar os campos; sem ele os endpoints respondem vazios/nulos.
 
 ## O que é opcional, e por quê
 
@@ -41,7 +41,8 @@ Pontos que o cliente precisa saber:
 - **`ServerToday.hours`** tem sempre 24 entradas (0 a 23, Brasília). `rounds` é zero no Deathmatch; `players` (jogadores distintos na hora) é o que o Deathmatch mostra. `rounds` do dia é nulo no Deathmatch; `finalScore` de um mapa é nulo sem placar do plugin.
 - **`ProfileSession`**: `startedAt`/`endedAt` só para a própria Conta; `live` só para a própria Conta e amigos.
 - **Armas** (`StatWeapon`): lista fechada, a API normaliza o nome cru do jogo (`hkp2000` → `p2000`, `knife_t` → `knife`, `inferno` → `molotov`, o resto → `other`). Chave desconhecida no cliente: trate como `other`.
-- **Erros**: 404 (Conta ou servidor desconhecido, ou aposentado), 400 (query fora do intervalo; `date` além de 7 dias atrás), 501 enquanto a implementação não entrou.
+- **Erros**: 404 (Conta ou servidor desconhecido, ou aposentado), 400 (query fora do intervalo; `date` além de 7 dias atrás).
+- **Como o servidor lê**: `players` vem da presença (Valkey) + as Contas; `today` junta `server_hours` (rounds, vitórias, placar final do último round de cada mapa) com as Sessões do dia (jogadores por hora, pico, únicos), com cache de 15 s. Onde não há `server_hours` (Deathmatch, ou plugin sem o mapa no round) os mapas saem das Sessões, com o intervalo aproximado (da primeira à última Sessão que passou por ele). `rounds` nulo também quando o servidor não tem nenhum dado detalhado (`since` nulo).
 
 ## Construir contra os contratos antes da API
 

@@ -2,6 +2,8 @@ import {
   type GameMode,
   type LiveServer,
   type LiveServerList,
+  type MatchState,
+  type ScoreboardEntry,
   SERVER_OFFLINE_AFTER_SECONDS,
   type ServerRegion,
 } from '@carmine/contracts';
@@ -24,6 +26,10 @@ export interface ServerPresence {
   players: string[];
   maxPlayers: number;
   at: Date;
+  /** S12b: o placar de times do último batimento; nulo no Deathmatch ou sem placar do plugin. */
+  match?: MatchState | null;
+  /** S12b: o placar por jogador do último batimento; ausente se o plugin não o mandou. */
+  scoreboard?: ScoreboardEntry[] | null;
 }
 
 /** Vagas públicas de cada Modo (S02), para um servidor que ainda não mandou batimento. */
@@ -55,7 +61,8 @@ export function buildLiveServerList(
   };
 }
 
-function toLiveServer(
+/** Um servidor da lista pública em `now`, a partir do último batimento (se houve). */
+export function toLiveServer(
   server: ListedServer,
   presence: ServerPresence | undefined,
   now: Date,
@@ -80,6 +87,7 @@ function toLiveServer(
       players: 0,
       maxPlayers: presence?.maxPlayers ?? DEFAULT_MAX_PLAYERS[server.mode],
       state: 'offline',
+      match: null,
     };
   }
   const players = presence.players.length;
@@ -89,5 +97,7 @@ function toLiveServer(
     players,
     maxPlayers: presence.maxPlayers,
     state: players >= presence.maxPlayers ? 'full' : 'online',
+    // Só enquanto o servidor está no ar: um placar de antes da queda não é o de agora.
+    match: presence.match ?? null,
   };
 }
