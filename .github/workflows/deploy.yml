@@ -6,6 +6,8 @@
 #   - Automático: push no main -> CI verde -> deploy do commit.
 #   - Redeploy ou rollback: "Run workflow" com o commit (40 hex) de uma versão já publicada.
 #   - Freio: variável do repositório DEPLOY_PAUSED=true suspende o deploy automático.
+#   - Depois de implantar, um teste de fumaça bate nas páginas e APIs públicas. Se falhar, o
+#     workflow implanta de novo o commit anterior do main (o pai do que subiu), sem nova volta.
 #   - Sem os secrets abaixo (antes do passo a passo do dono), o job só avisa e termina verde.
 #
 # Acesso à VM: SSH pelo Cloudflare Tunnel (Access com service token), numa chave que só roda
@@ -23,10 +25,17 @@ on:
         description: "Commit (40 hex) a implantar. Vazio: o main atual."
         required: false
         type: string
+      sem_volta:
+        description: "Não voltar ao commit anterior se o teste de fumaça falhar (usado pela própria volta)."
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   packages: read
+  # Para disparar a volta automática (workflow_dispatch deste mesmo workflow).
+  actions: write
 
 concurrency:
   group: deploy
@@ -39,8 +48,7 @@ env:
 jobs:
   deploy:
     name: deploy
-    # Mesmo runner do CI (variável CI_RUNNER; sem ela, o do GitHub).
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     if: >-
       github.event_name == 'workflow_dispatch' ||
@@ -134,3 +142,37 @@ jobs:
           # stdin: usuário, token (só vale durante este job) e o tar de infra/prod do commit.
           { printf '%s\n%s\n' "$GH_USER" "$GH_TOKEN"; tar -czf - infra/prod; } \
             | ssh -F "$RUNNER_TEMP/ssh/config" ssh.stcarmine.com "sha-$SHA"
+
+      # O deploy.sh da VM já volta sozinho se um contêiner não fica saudável. Este teste confere o
+      # site de fora, pelo Cloudflare, como um visitante.
+      - name: Teste de fumaça em produção
+        id: smoke
+        if: steps.target.outputs.run == 'true'
+        run: |
+          set -uo pipefail
+          check() { # check <caminho> <status esperado>
+            for _ in $(seq 1 12); do
+              code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://stcarmine.com$1")"
+              [ "$code" = "$2" ] && { echo "ok  $1 -> $code"; return 0; }
+              sleep 10
+            done
+            echo "::error::$1 respondeu $code (esperado $2)"; return 1
+          }
+          ok=0
+          for p in / /healthz /api/health /ranking /entrar /loadout /inventario /api/stats/week /api/activity/recent; do
+            check "$p" 200 || ok=1
+          done
+          check /pagina-que-nao-existe-smoke 404 || ok=1
+          exit "$ok"
+
+      - name: Voltar ao commit anterior
+        if: failure() && steps.smoke.outcome == 'failure' && inputs.sem_volta != true
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          prev="$(gh api "repos/$REPO/commits/$SHA" --jq '.parents[0].sha')"
+          echo "::warning::teste de fumaça falhou em $SHA: implantando de novo $prev"
+          gh workflow run deploy.yml --repo "$REPO" --ref main -f commit="$prev" -f sem_volta=true

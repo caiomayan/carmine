@@ -1,30 +1,21 @@
-# CI do monorepo em "modo beta" (decisão do dono, 2026-10-22, até o lançamento na VPS):
+# CI do monorepo, nos runners do GitHub (repositório público: minutos ilimitados, inclusive ARM).
 #
-#   - PR para o main (o lote do dev): checagem rápida no job node (lint, tipagem, build,
-#     unitários, OpenAPI). É o único check exigido pelo ruleset (infra/github/main-ruleset.json).
-#   - PRs para o dev não rodam CI: o agente roda `pnpm verify` e os E2E das telas que mexeu.
-#   - Push no main: só as imagens, em arm64 (a VM de produção é ARM), que o deploy (deploy.yml)
-#     usa depois que este workflow termina verde.
-#   - CI completa (integração com Postgres/Valkey reais, E2E inteiro com axe e orçamento de JS,
-#     .NET): Actions > CI > Run workflow com "completa" marcado, em qualquer branch. Usar antes
-#     de entregas grandes. No lançamento, ela volta a ser obrigatória.
+#   - PR para o dev ou para o main: checagem completa em paralelo. verify (lint, tipagem, build,
+#     unitários e OpenAPI), integração com Postgres/Valkey reais, E2E em 3 partes e .NET. O job
+#     `node` junta tudo e é o check que o ruleset do main exige (infra/github/main-ruleset.json).
+#   - Push no main: só as imagens arm64, nativas no runner ARM (a VM de produção é ARM). O deploy
+#     (deploy.yml) roda depois que este workflow termina verde.
+#   - "Run workflow": a mesma checagem completa em qualquer branch.
 #
-# Runner: a variável do repositório CI_RUNNER escolhe onde os jobs rodam (JSON, ex.:
-# ["self-hosted","carmine"] para o runner próprio, docs/operacao/runner-proprio.md). Sem ela,
-# rodam nos runners do GitHub.
+# PRs de forks só rodam com aprovação (configuração do repositório) e não recebem secrets.
 name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      completa:
-        description: "CI completa (integração, E2E e .NET)"
-        type: boolean
-        default: true
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -38,21 +29,11 @@ env:
   DO_NOT_TRACK: "1"
 
 jobs:
-  node:
-    name: node
+  verify:
+    name: verify
     if: github.event_name != 'push'
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 45
-    env:
-      COMPLETA: ${{ github.event_name == 'workflow_dispatch' && inputs.completa }}
-      # Os 4 vCPUs do runner do GitHub; no runner próprio evita 11 bancos de teste ao mesmo tempo.
-      VITEST_MAX_WORKERS: "4"
-      # Portas próprias para o Postgres e o Valkey do E2E: no runner próprio, o WSL divide a rede
-      # com o Docker Desktop, onde o desenvolvimento já ocupa 5432 e 6379.
-      POSTGRES_PORT: "55432"
-      VALKEY_PORT: "56379"
-      E2E_DATABASE_URL: postgres://carmine:carmine@localhost:55432/carmine_e2e
-      VALKEY_URL: redis://localhost:56379
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
@@ -61,7 +42,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      # A checagem rápida é o mesmo `pnpm verify` que os agentes rodam antes do PR.
+      # O mesmo `pnpm verify` que os agentes rodam antes do PR.
       - run: pnpm verify
       - name: OpenAPI versionado está atualizado
         run: |
@@ -70,27 +51,59 @@ jobs:
             echo "::error::apps/api/openapi.json desatualizado. Rode 'pnpm --filter @carmine/api openapi:generate' e faça commit."
             exit 1
           }
-      # Daqui para baixo, só na CI completa.
-      # Integração com Postgres e Valkey reais via Testcontainers (Docker do runner).
-      - if: env.COMPLETA == 'true'
-        run: pnpm --filter @carmine/api test:integration
-      # E2E do web contra os builds de produção (smoke, temas, 404, axe e o login Steam completo):
-      # o Playwright sobe a Steam OpenID falsa, a API e o web; a API usa o Postgres e o Valkey do
-      # Compose.
-      - if: env.COMPLETA == 'true'
-        run: pnpm infra:up
-      - if: env.COMPLETA == 'true'
-        run: pnpm --filter @carmine/web exec playwright install --with-deps chromium
-      - if: env.COMPLETA == 'true'
-        run: pnpm --filter @carmine/web test:e2e
-      # No runner próprio o Docker é persistente: não deixar o Postgres e o Valkey do E2E de pé.
-      - if: always() && env.COMPLETA == 'true'
-        run: docker compose -f infra/docker-compose.yml down -v
+
+  integration:
+    name: integration
+    if: github.event_name != 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @carmine/contracts build
+      # Postgres e Valkey reais via Testcontainers (Docker do runner).
+      - run: pnpm --filter @carmine/api test:integration
+
+  e2e:
+    name: e2e (${{ matrix.shard }}/3)
+    if: github.event_name != 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # O E2E roda contra os builds de produção (smoke, temas, axe, orçamento de JS e o login
+      # Steam completo): o Playwright sobe a Steam OpenID falsa, a API e o web.
+      - run: pnpm build
+      - run: pnpm infra:up
+      - run: pnpm --filter @carmine/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @carmine/web test:e2e --shard=${{ matrix.shard }}/3
+      # Os traces das falhas, para diagnosticar sem rodar de novo.
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-falhas-${{ matrix.shard }}
+          path: apps/web/test-results/
+          retention-days: 7
 
   dotnet:
     name: dotnet
-    if: github.event_name == 'workflow_dispatch' && inputs.completa
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
+    if: github.event_name != 'push'
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
       run:
@@ -98,21 +111,31 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
-        env:
-          # Fora do /usr/share/dotnet, que no runner próprio não é gravável.
-          DOTNET_INSTALL_DIR: ${{ runner.tool_cache }}/dotnet
         with:
           global-json-file: plugins/global.json
       - run: dotnet build Carmine.Plugins.slnx -c Release
       - run: dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
 
-  # Imagens publicadas no GHCR a cada push no main, só em arm64 (a VM de produção). No runner
-  # próprio (x86) o arm64 é emulado pelo QEMU, por isso o limite de tempo é largo.
+  # O check exigido pelo ruleset do main: verde só se todos os jobs acima ficaram verdes.
+  node:
+    name: node
+    if: always() && github.event_name != 'push'
+    needs: [verify, integration, e2e, dotnet]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "resultados: $RESULTS"
+          for r in $RESULTS; do [ "$r" = success ] || { echo "::error::um dos jobs não passou ($r)"; exit 1; }; done
+
+  # Imagens publicadas no GHCR a cada push no main, em arm64 nativo (a VM de produção é ARM).
   image:
     name: ${{ matrix.name }}-image
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '"ubuntu-24.04"') }}
-    timeout-minutes: 60
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
     strategy:
       fail-fast: true
       matrix:
@@ -152,5 +175,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.scope }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.scope }}
+          cache-from: type=gha,scope=${{ matrix.scope }}-arm
+          cache-to: type=gha,mode=max,scope=${{ matrix.scope }}-arm
