@@ -215,7 +215,7 @@ test('o selo VIP aparece no Perfil só com Período VIP ativo, também para quem
 });
 
 test.describe('Jogando agora no Perfil de outra pessoa', () => {
-  test('o visitante vê o servidor e o "Entrar junto"; num Perfil privado a presença continua pública', async ({
+  test('o visitante vê o servidor e o "Entrar junto"', async ({
     page,
     request,
     expectedConsoleErrors,
@@ -236,7 +236,7 @@ test.describe('Jogando agora no Perfil de outra pessoa', () => {
       const join = page.getByRole('link', { name: /^Entrar junto com Perfil Jogando/ });
       await expect(join).toHaveAttribute('href', `steam://connect/${server.address}`);
       await clickHydrated(join);
-      await expect(page.getByRole('status')).toContainText(
+      await expect(page.locator('header').getByRole('status')).toContainText(
         `no console do CS2: connect ${server.address}`,
       );
     } finally {
