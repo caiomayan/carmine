@@ -747,7 +747,12 @@
     "asVisitorNote": "Você está vendo o seu Perfil como um visitante vê.",
     "backToOwner": "Voltar à visão de dono",
     "privateSeal": "Perfil privado",
-    "presence": "Jogando agora"
+    "presence": "Jogando agora",
+    "join": "Entrar junto",
+    "joinAria": "Entrar junto com {name} no servidor em que a pessoa está jogando",
+    "vip": "VIP",
+    "publicId": "ID {id}",
+    "memberSince": "Membro desde {date}"
   },
   "settings": {
     "metaTitle": "Configurações",
