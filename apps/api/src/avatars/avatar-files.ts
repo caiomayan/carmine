@@ -1,4 +1,4 @@
-import { AVATAR_SIZES, type AvatarSize } from '@carmine/contracts';
+import { AVATAR_SIZES, type AvatarSize } from '@carmine/contracts/avatar';
 import type { Database } from '../database/database.js';
 import { avatarDeletions, avatarPrivateKey, avatarPublicKey } from './avatar-keys.js';
 import type { MediaDeletions } from './media-deletions.js';

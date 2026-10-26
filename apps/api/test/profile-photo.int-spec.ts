@@ -1,3 +1,4 @@
+import { profileSchema } from '@carmine/contracts';
 import {
   AVATAR_ERROR_STATUS,
   AVATAR_SIZES,
@@ -5,8 +6,7 @@ import {
   type AvatarState,
   avatarErrorSchema,
   avatarStateSchema,
-  profileSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import { eq, gt, lte } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

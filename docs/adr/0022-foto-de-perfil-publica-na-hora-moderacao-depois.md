@@ -26,7 +26,7 @@ Hoje o avatar de toda Conta é o da Steam (ou o neutro). O dono decidiu (2026-10
 ## Consequences
 
 - A funcionalidade só liga com as seis variáveis base; a purga da CDN é opcional (sem ela, só a expiração do cache tira uma foto apagada de circulação; em produção, configure).
-- O web precisa de `https://img.stcarmine.com` em `img-src` da CSP e escolhe o tamanho pela URL (`avatarVariantUrl`, em `@carmine/contracts`).
+- O web precisa de `https://img.stcarmine.com` em `img-src` da CSP e escolhe o tamanho pela URL (`avatarVariantUrl`, em `@carmine/contracts/avatar-url`; o resto do contrato da foto, em `@carmine/contracts/avatar`, fora do índice para não pesar no JS das páginas).
 - A janela entre o envio e uma denúncia é real: uma foto imprópria fica visível até duas Contas a denunciarem ou a Staff agir. É o custo da decisão do dono; as mitigações (Conta com 24 h, sem Punição, 3 envios por dia, suspensão com 2 denúncias, fila de até 24 h) a reduzem, não a eliminam.
 - A Cloudflare CSAM Scanning Tool só vê o que já foi publicado e pelo cache; não protege nada antes disso.
 

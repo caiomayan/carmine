@@ -1,4 +1,4 @@
-import { AVATAR_SIZES } from '@carmine/contracts';
+import { AVATAR_SIZES } from '@carmine/contracts/avatar';
 import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import { AvatarRejection, processAvatar, sniffImageType } from './avatar-processor.js';

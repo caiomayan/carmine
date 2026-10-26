@@ -5,7 +5,7 @@ import {
   AVATAR_UPLOADS_PER_DAY,
   type AvatarIneligibleReason,
   type AvatarState,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import { and, asc, desc, eq, gt, inArray } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accountAvatars, accounts } from '../database/schema.js';

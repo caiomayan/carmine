@@ -6,7 +6,7 @@ import {
   AVATAR_SQUARE_TOLERANCE,
   type AvatarErrorCode,
   type AvatarSize,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import sharp from 'sharp';
 
 /** Uma foto recusada, com o código estável do contrato (`AvatarError`). */

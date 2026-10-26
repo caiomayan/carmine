@@ -5,7 +5,7 @@ import {
   type AvatarState,
   avatarErrorSchema,
   avatarStateSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import {
   type ArgumentsHost,
   Body,

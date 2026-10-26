@@ -1,4 +1,8 @@
-import { AVATAR_ERROR_STATUS, AVATAR_MAX_UPLOAD_BYTES, type AvatarError } from '@carmine/contracts';
+import {
+  AVATAR_ERROR_STATUS,
+  AVATAR_MAX_UPLOAD_BYTES,
+  type AvatarError,
+} from '@carmine/contracts/avatar';
 import type { FastifyInstance } from 'fastify';
 
 /** A rota do envio (prefixo `api` incluso): o corpo é o arquivo cru, não JSON. */

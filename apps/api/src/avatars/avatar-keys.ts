@@ -1,4 +1,4 @@
-import { AVATAR_SIZES, type AvatarSize } from '@carmine/contracts';
+import { AVATAR_SIZES, type AvatarSize } from '@carmine/contracts/avatar';
 
 /** Chave de um tamanho no bucket público (servido pela CDN). */
 export const avatarPublicKey = (id: string, size: AvatarSize): string =>
