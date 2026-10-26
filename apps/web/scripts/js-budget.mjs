@@ -85,7 +85,14 @@ for (const page of config.pages) {
   await context.close();
   const first = bytes.first / 1024;
   const later = bytes.later / 1024;
-  rows.push({ ...page, first, later, total: first + later, limit: page.kb ?? config.defaultKb, files });
+  rows.push({
+    ...page,
+    first,
+    later,
+    total: first + later,
+    limit: page.kb ?? config.defaultKb,
+    files,
+  });
 }
 await browser.close();
 
@@ -110,7 +117,9 @@ if (listChunks) {
     console.log(`
 #### ${row.name}: scripts por tamanho`);
     for (const file of row.files.sort((a, b) => b.size - a.size)) {
-      console.log(`${(file.size / 1024).toFixed(1).padStart(7)} kB  ${file.phase === 'later' ? '(sob demanda) ' : ''}${file.url}`);
+      console.log(
+        `${(file.size / 1024).toFixed(1).padStart(7)} kB  ${file.phase === 'later' ? '(sob demanda) ' : ''}${file.url}`,
+      );
     }
   }
 }
