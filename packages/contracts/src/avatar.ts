@@ -11,26 +11,8 @@ import { steamId64Schema } from './steam.js';
  * avatar não muda nada.
  */
 
-export {
-  AVATAR_ACCEPTED_TYPES,
-  AVATAR_BLOCK_DAYS_FIRST,
-  AVATAR_BLOCK_DAYS_MAX,
-  AVATAR_BLOCK_DAYS_REPEAT,
-  AVATAR_MAX_PX,
-  AVATAR_MAX_UPLOAD_BYTES,
-  AVATAR_MIN_ACCOUNT_AGE_HOURS,
-  AVATAR_MIN_PX,
-  AVATAR_REMOVED_RETENTION_DAYS,
-  AVATAR_REPEAT_WINDOW_DAYS,
-  AVATAR_REPORT_SUSPEND_THRESHOLD,
-  AVATAR_REPORTS_PER_HOUR,
-  AVATAR_REVIEW_DEADLINE_HOURS,
-  AVATAR_SIZES,
-  AVATAR_SQUARE_TOLERANCE,
-  AVATAR_UPLOADS_PER_DAY,
-  type AvatarSize,
-  avatarVariantUrl,
-} from './rules.js';
+export * from './avatar-rules.js';
+export * from './avatar-url.js';
 
 /** De onde vem o avatar que todos veem. */
 export const avatarSourceSchema = z.enum(['steam', 'custom']).meta({ id: 'AvatarSource' });

@@ -13,6 +13,14 @@
       "types": "./dist/rules.d.ts",
       "default": "./dist/rules.js"
     },
+    "./avatar-url": {
+      "types": "./dist/avatar-url.d.ts",
+      "default": "./dist/avatar-url.js"
+    },
+    "./avatar-rules": {
+      "types": "./dist/avatar-rules.d.ts",
+      "default": "./dist/avatar-rules.js"
+    },
     "./auth": {
       "types": "./dist/auth.d.ts",
       "default": "./dist/auth.js"
