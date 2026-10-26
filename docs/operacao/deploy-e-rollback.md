@@ -14,6 +14,8 @@ VM: baixa as imagens, dump local do banco, `docker compose up -d --wait`
     (migrate -> api -> web), e volta para a tag anterior se algo não ficar saudável
 ```
 
+A **homologação** (`dev.stcarmine.com`, a cópia do `dev` na mesma VM) tem o próprio fluxo, isolado deste: `docs/operacao/homologacao.md`.
+
 ## Quem aprova
 
 A spec pede "sem passo manual além da aprovação". Verificado na documentação do GitHub: *required reviewers* em *environments* só existe em repositório **público** nos planos Free, Pro e Team (em privado, só Enterprise). Então:
