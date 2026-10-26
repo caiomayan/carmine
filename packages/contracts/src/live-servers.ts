@@ -39,7 +39,8 @@ export type MatchState = z.infer<typeof matchStateSchema>;
 export const scoreboardEntrySchema = z
   .object({
     steamId: steamId64Schema,
-    team: gameTeamSchema.nullable(),
+    // Nulo também vale ausente (o cliente C# omite o que é nulo): ver `killEventSchema`.
+    team: gameTeamSchema.nullable().default(null),
     kills: z.int().nonnegative(),
     deaths: z.int().nonnegative(),
     score: z.int(),

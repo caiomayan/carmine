@@ -82,8 +82,9 @@ export const createReportSchema = z
     reporterSteamId: steamId64Schema,
     targetSteamId: steamId64Schema,
     reason: reportReasonSchema,
-    round: z.int().nonnegative().nullable(),
-    map: z.string().max(64).nullable(),
+    // Nulo também vale ausente (o cliente C# omite o que é nulo): ver `killEventSchema`.
+    round: z.int().nonnegative().nullable().default(null),
+    map: z.string().max(64).nullable().default(null),
   })
   .meta({ id: 'CreateReport' });
 
