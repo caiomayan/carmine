@@ -32,6 +32,7 @@ const option = (name) => {
 const base = (option('--base') ?? 'http://localhost:3000').replace(/\/$/, '');
 const storageStatePath = option('--storage-state');
 const profilePath = option('--profile');
+const listChunks = args.includes('--chunks');
 const config = JSON.parse(await readFile(path.join(webRoot, 'js-budget.json'), 'utf8'));
 const storageState = storageStatePath
   ? JSON.parse(await readFile(storageStatePath, 'utf8'))
@@ -51,6 +52,7 @@ for (const page of config.pages) {
   });
   const tab = await context.newPage();
   const bytes = { first: 0, later: 0 };
+  const files = [];
   let phase = 'first';
   const pending = [];
   tab.on('requestfinished', (request) => {
@@ -59,7 +61,9 @@ for (const page of config.pages) {
       request
         .sizes()
         .then((sizes) => {
-          bytes[phase] += sizes.responseBodySize + sizes.responseHeadersSize;
+          const size = sizes.responseBodySize + sizes.responseHeadersSize;
+          bytes[phase] += size;
+          files.push({ phase, size, url: request.url().slice(base.length) });
         })
         .catch(() => {}),
     );
@@ -81,7 +85,14 @@ for (const page of config.pages) {
   await context.close();
   const first = bytes.first / 1024;
   const later = bytes.later / 1024;
-  rows.push({ ...page, first, later, total: first + later, limit: page.kb ?? config.defaultKb });
+  rows.push({
+    ...page,
+    first,
+    later,
+    total: first + later,
+    limit: page.kb ?? config.defaultKb,
+    files,
+  });
 }
 await browser.close();
 
@@ -100,6 +111,17 @@ for (const row of rows) {
   console.log(
     `| ${row.name} | ${row.first.toFixed(1)} kB | +${row.later.toFixed(1)} kB | ${row.total.toFixed(1)} kB | ${row.limit} kB | ${ok ? 'ok' : 'ACIMA'} |`,
   );
+}
+if (listChunks) {
+  for (const row of rows.filter((r) => !r.skipped)) {
+    console.log(`
+#### ${row.name}: scripts por tamanho`);
+    for (const file of row.files.sort((a, b) => b.size - a.size)) {
+      console.log(
+        `${(file.size / 1024).toFixed(1).padStart(7)} kB  ${file.phase === 'later' ? '(sob demanda) ' : ''}${file.url}`,
+      );
+    }
+  }
 }
 if (over) {
   console.error(`${over} página(s) acima do orçamento de JS.`);
