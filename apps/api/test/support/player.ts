@@ -35,10 +35,30 @@ export async function signedInPlayer(t: TestApp, n: number, options: { vipUntil?
       },
       ...(payload && { payload }),
     });
+  /** Uma chamada com o corpo cru (ex.: a foto de perfil), no `Content-Type` dado. */
+  const raw = (
+    method: 'POST' | 'PUT' | 'PATCH',
+    url: string,
+    payload: Buffer,
+    contentType: string,
+    headers: Record<string, string> = {},
+  ) =>
+    t.app.inject({
+      method,
+      url,
+      headers: {
+        cookie: `${SESSION_COOKIE}=${session.id}`,
+        [CSRF_HEADER]: session.csrfToken,
+        'content-type': contentType,
+        ...headers,
+      },
+      payload,
+    });
   return {
     account,
     steamId,
     call,
+    raw,
     /** Adiciona o Item ao Inventário e devolve o uid; falha o teste se a API recusar. */
     async add(item: Cs2Item): Promise<string> {
       const response = await call('POST', '/api/inventory/items', { item });

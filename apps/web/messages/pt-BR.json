@@ -1696,7 +1696,9 @@
         "account_anonymize": "Anonimizou a Conta",
         "account_reserved_id": "Trocou o ID por um ID reservado",
         "ranking_entry_remove": "Removeu do Ranking",
-        "report_archive": "Arquivou uma Denúncia"
+        "report_archive": "Arquivou uma Denúncia",
+        "avatar_keep": "Manteve uma foto de perfil denunciada",
+        "avatar_remove": "Removeu uma foto de perfil"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
@@ -1739,7 +1741,10 @@
       "report_not_found": "Essa Denúncia não existe mais (ela some 90 dias depois de criada).",
       "report_not_open": "Essa Denúncia já foi arquivada ou virou Punição.",
       "report_target_mismatch": "Essa Denúncia é contra outra Conta.",
-      "report_needs_evidence": "Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link."
+      "report_needs_evidence": "Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link.",
+      "avatar_not_found": "Essa foto não existe mais.",
+      "avatar_not_reviewable": "Essa foto já foi decidida, trocada ou removida.",
+      "no_custom_avatar": "Esta Conta não tem foto própria no ar."
     },
     "ranking": {
       "title": "Ranking",
