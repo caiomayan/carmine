@@ -43,7 +43,9 @@ export const STAFF_ROLE_RANK: Record<StaffRole, number> = { owner: 3, admin: 2, 
  * - `accounts.anonymize`: executar um pedido de exclusão de dados (S08), que anonimiza a Conta e
  *   não tem volta (só o Dono, que é o encarregado na Política de Privacidade);
  * - `ranking.remove`: tirar uma Conta do Ranking de um Modo e semana (S12);
- * - `reports.handle`: ver a fila de Denúncias e arquivá-las (S13).
+ * - `reports.handle`: ver a fila de Denúncias e arquivá-las (S13);
+ * - `avatars.moderate`: a fila de denúncias de foto de perfil, decidir (manter ou remover) e
+ *   remover a foto de uma Conta (ADR 0022). Dono, Admin e Moderador.
  */
 export const STAFF_PERMISSIONS = {
   'accounts.read': ['owner', 'admin', 'moderator'],
@@ -58,6 +60,7 @@ export const STAFF_PERMISSIONS = {
   'accounts.anonymize': ['owner'],
   'ranking.remove': ['owner', 'admin', 'moderator'],
   'reports.handle': ['owner', 'admin', 'moderator'],
+  'avatars.moderate': ['owner', 'admin', 'moderator'],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type StaffPermission = keyof typeof STAFF_PERMISSIONS;
@@ -166,6 +169,8 @@ export const staffAuditActionSchema = z
     'account_reserved_id',
     'ranking_entry_remove',
     'report_archive',
+    'avatar_keep',
+    'avatar_remove',
   ])
   .meta({ id: 'StaffAuditAction' });
 
@@ -465,6 +470,12 @@ export const STAFF_ERROR_CODES = [
   'report_target_mismatch',
   /** Denúncia de cheat ou voz: a Punição precisa de testemunha ou link da evidência. */
   'report_needs_evidence',
+  /** Nenhuma foto de perfil com esse ID. */
+  'avatar_not_found',
+  /** A foto já foi decidida, trocada ou removida: nada a decidir. */
+  'avatar_not_reviewable',
+  /** Remover a foto de uma Conta que não tem foto própria. */
+  'no_custom_avatar',
 ] as const;
 
 export type StaffErrorCode = (typeof STAFF_ERROR_CODES)[number];
@@ -490,6 +501,9 @@ export const STAFF_ERROR_STATUS: Record<StaffErrorCode, number> = {
   report_not_open: 409,
   report_target_mismatch: 400,
   report_needs_evidence: 400,
+  avatar_not_found: 404,
+  avatar_not_reviewable: 409,
+  no_custom_avatar: 409,
 };
 
 export const staffErrorSchema = z
