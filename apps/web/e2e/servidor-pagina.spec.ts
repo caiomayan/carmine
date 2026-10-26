@@ -38,7 +38,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     request,
   }) => {
     const server = createServer();
-    const stop = keepBeating(request, server, () => []);
+    const stop = keepBeating(request, server, () => [], 'de_mirage');
     try {
       await heartbeat(request, server, [], 'de_mirage');
       const id = await serverId(request, server.name);
@@ -73,7 +73,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     request,
   }) => {
     const server = createServer();
-    const stop = keepBeating(request, server, () => []);
+    const stop = keepBeating(request, server, () => [], 'de_nuke');
     await heartbeat(request, server, [], 'de_nuke');
     const id = await serverId(request, server.name);
     await page.goto(`/servidores/${id}`);
@@ -110,7 +110,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
 
   test('o nome do servidor no cartão da Home leva à página dele', async ({ page, request }) => {
     const server = createServer();
-    const stop = keepBeating(request, server, () => []);
+    const stop = keepBeating(request, server, () => [], 'de_inferno');
     try {
       await heartbeat(request, server, [], 'de_inferno');
       const id = await serverId(request, server.name);
@@ -132,8 +132,8 @@ test.describe('Página do servidor: os estados com dados de exemplo (vitrine)', 
     const score = page.getByTestId('placar');
     await expect(score).toContainText('Placar ao vivo');
     await expect(score).toContainText('Rounds ganhos por lado neste mapa');
-    await expect(page.getByRole('list', { name: 'Contra-terroristas' })).toBeVisible();
-    await expect(page.getByRole('list', { name: 'Terroristas' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Contra-terroristas', exact: true })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Terroristas', exact: true })).toBeVisible();
 
     const privateRows = page.locator('[data-testid="jogador"][data-private]');
     await expect(privateRows).toHaveCount(2);
@@ -170,7 +170,7 @@ test.describe('Página do servidor: os estados com dados de exemplo (vitrine)', 
     await expect(leader).toContainText('No mapa há 23 min');
     await expect(page.getByRole('list', { name: 'Jogadores por pontos' })).toBeVisible();
     await expect(page.getByTestId('jogador')).toHaveCount(12);
-    await expect(page.getByRole('list', { name: 'Terroristas' })).toHaveCount(0);
+    await expect(page.getByRole('list', { name: 'Terroristas', exact: true })).toHaveCount(0);
     // Sem lado nem rounds: o histórico não mostra rounds ganhos e o gráfico é de jogadores por hora.
     await expect(page.getByTestId('hoje')).not.toContainText('Rounds ganhos');
     await expect(page.getByRole('heading', { name: 'Jogadores por hora' })).toBeVisible();
@@ -245,7 +245,7 @@ for (const theme of ['dark', 'light'] as const) {
     test('a página de um servidor real: axe sem violações', async ({ page, request }) => {
       await saveTheme(page, theme);
       const server = createServer();
-      const stop = keepBeating(request, server, () => []);
+      const stop = keepBeating(request, server, () => [], 'de_anubis');
       try {
         await heartbeat(request, server, [], 'de_anubis');
         const id = await serverId(request, server.name);
