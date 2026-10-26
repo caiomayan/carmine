@@ -101,7 +101,7 @@ export function ServerPageView({
         </div>
 
         <RosterSection server={server} roster={extras.roster} warmup={warmup} />
-        <TodaySection today={extras.today} live={live} dm={dm} art={art} />
+        <TodaySection today={extras.today} live={live} art={art} />
       </div>
     </div>
   );
@@ -128,10 +128,13 @@ function HeroSlot({
     if (extras.roster.status === 'collecting') {
       return <CollectingBlock kind="leader" since={extras.roster.since} hero />;
     }
-    return extras.roster.data.length === 0 ? (
-      <EmptyCard server={server} modeLabel={modeLabel} />
+    const { players, scoreboard } = extras.roster.data;
+    if (players.length === 0) return <EmptyCard server={server} modeLabel={modeLabel} />;
+    // Sem o placar por jogador (plugin antigo) não há líder a mostrar: só as vagas.
+    return scoreboard ? (
+      <LeaderCard players={players} today={today} server={server} />
     ) : (
-      <LeaderCard players={extras.roster.data} today={today} server={server} />
+      <SlotsCard server={server} />
     );
   }
 

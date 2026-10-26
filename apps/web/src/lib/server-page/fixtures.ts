@@ -1,5 +1,5 @@
 import type { LiveServer } from '@carmine/contracts';
-import type { Match, RosterPlayer, ServerExtras, Side, Today, TodayMap } from './types';
+import type { Match, Roster, RosterPlayer, ServerExtras, Side, Today, TodayMap } from './types';
 
 /**
  * Os estados da página do servidor com dados de exemplo (nomes fictícios), para a vitrine de dev
@@ -14,6 +14,7 @@ export type ScenarioKey =
   | 'warmup'
   | 'deathmatch'
   | 'coletando'
+  | 'antigo'
   | 'nunca';
 
 export type Scenario = {
@@ -106,6 +107,7 @@ const todayLive: Today = {
     { map: 'de_mirage', from: '20:41', to: null, rounds: 14, ctWins: 8, tWins: 6 },
   ],
   hours: HOURS,
+  hoursMetric: 'rounds',
   peakPlayers: { at: '20:12', count: 9 },
   uniquePlayers: 31,
   since: '2026-10-24T03:00:00.000Z',
@@ -131,22 +133,33 @@ const todayWarmup: Today = {
   hours: HOURS.map((rounds, hour) => (hour === 21 ? 24 : rounds)),
 };
 
+/** O Deathmatch não tem rounds por lado: os mapas vêm das Sessões e o gráfico mostra jogadores por hora. */
 const todayDm: Today = {
   date: '2026-10-26',
   clock: '21:07',
-  rounds: { played: 32, ctWins: null, tWins: null },
+  rounds: null,
   maps: [
-    { map: 'de_anubis', from: '18:20', to: '18:50', rounds: 6, ctWins: null, tWins: null },
-    { map: 'de_overpass', from: '18:50', to: '19:20', rounds: 6, ctWins: null, tWins: null },
-    { map: 'de_nuke', from: '19:20', to: '19:48', rounds: 6, ctWins: null, tWins: null },
-    { map: 'de_inferno', from: '19:48', to: '20:15', rounds: 5, ctWins: null, tWins: null },
-    { map: 'de_mirage', from: '20:15', to: '20:44', rounds: 6, ctWins: null, tWins: null },
-    { map: 'de_dust2', from: '20:44', to: null, rounds: 3, ctWins: null, tWins: null },
+    { map: 'de_anubis', from: '18:20', to: '18:50', rounds: null, ctWins: null, tWins: null },
+    { map: 'de_overpass', from: '18:50', to: '19:20', rounds: null, ctWins: null, tWins: null },
+    { map: 'de_nuke', from: '19:20', to: '19:48', rounds: null, ctWins: null, tWins: null },
+    { map: 'de_inferno', from: '19:48', to: '20:15', rounds: null, ctWins: null, tWins: null },
+    { map: 'de_mirage', from: '20:15', to: '20:44', rounds: null, ctWins: null, tWins: null },
+    { map: 'de_dust2', from: '20:44', to: null, rounds: null, ctWins: null, tWins: null },
   ],
-  hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 11, 9, 4, 0, 0],
+  hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 14, 16, 12, 0, 0],
+  hoursMetric: 'players',
   peakPlayers: { at: '21:02', count: 16 },
   uniquePlayers: 44,
   since: '2026-10-24T03:00:00.000Z',
+};
+
+/** Servidor com plugin antigo: o histórico existe, mas sem rounds, pico nem jogadores diferentes. */
+const todayOld: Today = {
+  ...todayDm,
+  maps: todayLive.maps.map((row) => ({ ...row, rounds: null, ctWins: null, tWins: null })),
+  hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 8, 9, 9, 9, 7, 0, 0],
+  peakPlayers: null,
+  uniquePlayers: null,
 };
 
 const ready = <T>(data: T) => ({ status: 'ready', data }) as const;
@@ -163,7 +176,7 @@ export const SCENARIOS: Record<ScenarioKey, Scenario> = {
     server: base,
     extras: {
       match: ready<Match | null>({ round: 15, ctScore: 8, tScore: 6, warmup: false }),
-      roster: ready(FULL_ROSTER),
+      roster: ready<Roster>({ players: FULL_ROSTER, scoreboard: true }),
       today: ready(todayLive),
     },
   },
@@ -171,7 +184,11 @@ export const SCENARIOS: Record<ScenarioKey, Scenario> = {
     key: 'vazio',
     label: 'Ao vivo, vazio',
     server: { ...base, players: 0, state: 'online' },
-    extras: { match: ready<Match | null>(null), roster: ready([]), today: ready(todayEnded) },
+    extras: {
+      match: ready<Match | null>(null),
+      roster: ready<Roster>({ players: [], scoreboard: true }),
+      today: ready(todayEnded),
+    },
   },
   offline: {
     key: 'offline',
@@ -183,7 +200,11 @@ export const SCENARIOS: Record<ScenarioKey, Scenario> = {
       state: 'offline',
       lastHeartbeatAt: '2026-10-26T20:42:00.000Z',
     },
-    extras: { match: ready<Match | null>(null), roster: ready([]), today: ready(todayEnded) },
+    extras: {
+      match: ready<Match | null>(null),
+      roster: ready<Roster>({ players: [], scoreboard: true }),
+      today: ready(todayEnded),
+    },
   },
   warmup: {
     key: 'warmup',
@@ -191,7 +212,7 @@ export const SCENARIOS: Record<ScenarioKey, Scenario> = {
     server: { ...base, map: 'de_inferno', lastMap: 'de_inferno', players: 6, state: 'online' },
     extras: {
       match: ready<Match | null>({ round: 0, ctScore: 0, tScore: 0, warmup: true }),
-      roster: ready(WARMUP_ROSTER),
+      roster: ready<Roster>({ players: WARMUP_ROSTER, scoreboard: true }),
       today: ready(todayWarmup),
     },
   },
@@ -214,7 +235,7 @@ export const SCENARIOS: Record<ScenarioKey, Scenario> = {
     // Todos contra todos: sem placar de times; quem manda é a lista por pontos.
     extras: {
       match: ready<Match | null>(null),
-      roster: ready(DM_ROSTER),
+      roster: ready<Roster>({ players: DM_ROSTER, scoreboard: true }),
       today: ready(todayDm),
     },
   },
@@ -223,6 +244,20 @@ export const SCENARIOS: Record<ScenarioKey, Scenario> = {
     label: 'Coletando (hoje)',
     server: base,
     extras: collecting,
+  },
+  antigo: {
+    key: 'antigo',
+    label: 'Plugin antigo',
+    server: base,
+    // Sem `match` (coletando) e sem placar por jogador: só os nomes; o histórico sem rounds.
+    extras: {
+      match: { status: 'collecting', since: null },
+      roster: ready<Roster>({
+        players: FULL_ROSTER.map((row) => ({ ...row, team: null, kills: 0, deaths: 0, score: 0 })),
+        scoreboard: false,
+      }),
+      today: ready(todayOld),
+    },
   },
   nunca: {
     key: 'nunca',

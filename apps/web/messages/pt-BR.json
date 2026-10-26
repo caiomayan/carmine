@@ -499,7 +499,9 @@
       "ratioSr": "Abates por morte",
       "killsShort": "A",
       "deathsShort": "M",
-      "pointsShort": "P"
+      "pointsShort": "P",
+      "namesTitle": "Em ordem alfabética",
+      "namesAria": "Jogadores em ordem alfabética"
     },
     "today": {
       "title": "Hoje no servidor",
@@ -509,7 +511,6 @@
         "roundsFoot": "em {count, plural, one {# mapa} other {# mapas}}",
         "won": "Rounds ganhos",
         "maps": "Mapas hoje",
-        "mapsFoot": "{count, plural, one {# round jogado} other {# rounds jogados}}",
         "peak": "Pico de jogadores",
         "peakAt": "às {time}",
         "unique": "Jogadores diferentes",
@@ -528,12 +529,16 @@
       },
       "hours": {
         "title": "Rounds por hora",
-        "aria": "Rounds por hora. O mais movimentado foi às {hour}h, com {rounds, plural, one {# round} other {# rounds}}.",
-        "bar": "{hour}h: {rounds, plural, one {# round} other {# rounds}}",
+        "titlePlayers": "Jogadores por hora",
+        "aria": "Rounds por hora. O mais movimentado foi às {hour}h, com {count, plural, one {# round} other {# rounds}}.",
+        "ariaPlayers": "Jogadores por hora. O mais movimentado foi às {hour}h, com {count, plural, one {# jogador} other {# jogadores}}.",
+        "bar": "{hour}h: {count, plural, one {# round} other {# rounds}}",
+        "barPlayers": "{hour}h: {count, plural, one {# jogador} other {# jogadores}}",
         "axis": "{hour}h",
         "from": "Movimento desde as {hour}h.",
         "busiest": "O mais cheio foi às {hour}h.",
-        "none": "Sem rounds hoje."
+        "none": "Sem rounds hoje.",
+        "nonePlayers": "Sem jogadores hoje."
       },
       "since": "Histórico detalhado coletado desde {date}."
     },

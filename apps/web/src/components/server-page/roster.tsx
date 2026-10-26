@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { PlayerAvatar } from '@/components/home/player-avatar';
 import { StatusDot } from '@/components/status-dot';
-import type { Collectable, RosterPlayer, Side } from '@/lib/server-page/types';
+import type { Collectable, Roster, RosterPlayer, Side } from '@/lib/server-page/types';
 import {
   alphabeticalBySide,
   killDeathRatio,
+  namesOnly,
   rankedAll,
   rankedBySide,
 } from '@/lib/server-page/view';
@@ -29,13 +30,15 @@ export function RosterSection({
   warmup,
 }: {
   server: LiveServer;
-  roster: Collectable<RosterPlayer[]>;
+  roster: Collectable<Roster>;
   warmup: boolean;
 }) {
   const t = useTranslations('serverPage.roster');
   const live = server.state !== 'offline';
   const dm = server.mode === 'deathmatch';
-  const players = roster.status === 'ready' ? roster.data : [];
+  const players = roster.status === 'ready' ? roster.data.players : [];
+  // Sem o placar por jogador (plugin antigo) não há time nem número: só os nomes, em ordem alfabética.
+  const scoreboard = roster.status === 'ready' ? roster.data.scoreboard : true;
 
   return (
     <section aria-labelledby="vs-roster" className="vs-section" data-testid="jogadores">
@@ -55,9 +58,13 @@ export function RosterSection({
           <p className="vs-empty-title">{live ? t('emptyLive') : t('emptyOffline')}</p>
           <p>{live ? t('emptyLiveBody') : t('emptyOfflineBody')}</p>
         </div>
+      ) : !scoreboard ? (
+        <div className="vs-teams" data-single>
+          <AllList players={namesOnly(players)} numbers={false} />
+        </div>
       ) : dm ? (
         <div className="vs-teams" data-single>
-          <AllList players={rankedAll(players)} />
+          <AllList players={rankedAll(players)} numbers />
         </div>
       ) : (
         <div className="vs-teams">
@@ -115,18 +122,24 @@ function TeamList({
   );
 }
 
-/** A lista única do Deathmatch: todos contra todos, por pontos. */
-function AllList({ players }: { players: RosterPlayer[] }) {
+/** A lista única: o Deathmatch (todos contra todos, por pontos) ou, sem o placar por jogador, só os nomes. */
+function AllList({ players, numbers }: { players: RosterPlayer[]; numbers: boolean }) {
   const t = useTranslations('serverPage.roster');
   return (
     <div className="vs-team-panel" data-side="all">
       <div className="vs-team-head">
-        <span className="vs-team-title">{t('allTitle')}</span>
-        <Columns ratio />
+        <span className="vs-team-title">{numbers ? t('allTitle') : t('namesTitle')}</span>
+        {numbers ? <Columns ratio /> : null}
       </div>
-      <ul aria-label={t('allAria')} className="vs-rows">
+      <ul aria-label={numbers ? t('allAria') : t('namesAria')} className="vs-rows">
         {players.map((player, index) => (
-          <PlayerRow key={player.id} player={player} rank={index + 1} numbers ratio />
+          <PlayerRow
+            key={player.id}
+            player={player}
+            rank={numbers ? index + 1 : null}
+            numbers={numbers}
+            ratio={numbers}
+          />
         ))}
       </ul>
     </div>

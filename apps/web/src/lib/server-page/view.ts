@@ -40,15 +40,21 @@ export function rankedAll(players: readonly RosterPlayer[]): RosterPlayer[] {
   return [...players].sort(byScore);
 }
 
+function byName(a: RosterPlayer, b: RosterPlayer): number {
+  return (
+    Number(a.name === null) - Number(b.name === null) ||
+    (a.name ?? '').localeCompare(b.name ?? '', 'pt-BR')
+  );
+}
+
 /** Em ordem alfabética, Perfil privado por último (o aquecimento: sem número, a ordem não quer dizer nada). */
 export function alphabeticalBySide(players: readonly RosterPlayer[], side: Side): RosterPlayer[] {
-  return players
-    .filter((player) => player.team === side)
-    .sort(
-      (a, b) =>
-        Number(a.name === null) - Number(b.name === null) ||
-        (a.name ?? '').localeCompare(b.name ?? '', 'pt-BR'),
-    );
+  return players.filter((player) => player.team === side).sort(byName);
+}
+
+/** Todos, em ordem alfabética (sem o placar por jogador não há time nem pontos para ordenar). */
+export function namesOnly(players: readonly RosterPlayer[]): RosterPlayer[] {
+  return [...players].sort(byName);
 }
 
 /** Abates por morte, com 2 casas (morrer 0 vezes conta como 1, como o placar do jogo). */

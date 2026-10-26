@@ -35,11 +35,13 @@ export function DevGallery({
   const scenario = SCENARIOS[scenarioKey];
   const { extras } = scenario;
   const initialMatch = extras.match.status === 'ready' ? extras.match.data : null;
-  const initialRoster = extras.roster.status === 'ready' ? extras.roster.data : [];
+  const initialRoster = extras.roster.status === 'ready' ? extras.roster.data.players : [];
+  const scoreboard = extras.roster.status === 'ready' ? extras.roster.data.scoreboard : false;
   const dm = scenario.server.mode === 'deathmatch';
   const canSim =
     scenario.server.state !== 'offline' &&
     extras.roster.status === 'ready' &&
+    scoreboard &&
     initialRoster.length > 0 &&
     (dm || (initialMatch !== null && !initialMatch.warmup));
 
@@ -60,7 +62,7 @@ export function DevGallery({
     ? {
         ...extras,
         match: { status: 'ready', data: game.match },
-        roster: { status: 'ready', data: game.players },
+        roster: { status: 'ready', data: { players: game.players, scoreboard: true } },
       }
     : extras;
 

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ServerPageLive } from '@/components/server-page/server-page-live';
 import { artTable } from '@/components/vida/map-art';
-import { getLiveServers } from '@/lib/api-server';
+import { getLiveServers, getServerPlayers, getServerToday } from '@/lib/api-server';
 import { serverLabel } from '@/lib/live-servers';
 
 type Params = Promise<{ id: string }>;
@@ -36,5 +36,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 export default async function ServerPage({ params }: { params: Params }) {
   const { id } = await params;
   const { list } = await loadServer(id);
-  return <ServerPageLive id={id} initial={list} art={artTable()} />;
+  // Os blocos da S12b que a API já responde saem prontos na primeira pintura; os outros, "coletando".
+  const [players, today] = await Promise.all([getServerPlayers(id), getServerToday(id)]);
+  return (
+    <ServerPageLive id={id} initial={list} initialExtras={{ players, today }} art={artTable()} />
+  );
 }

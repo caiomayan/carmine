@@ -23,17 +23,17 @@ function useDayLabel() {
 
 /**
  * "Hoje no servidor": os números do dia, os mapas (horário, rounds e rounds ganhos CT × TR somados por mapa: o
- * Retake não tem partida) e os rounds por hora. Sem o histórico da API ainda, o bloco "coletando".
+ * Retake não tem partida) e o movimento por hora. Sem rounds (Deathmatch, ou plugin antigo) nada vira zero: some o
+ * que depende deles e o gráfico passa a mostrar os jogadores por hora. Sem o histórico da API ainda, o bloco
+ * "coletando".
  */
 export function TodaySection({
   today,
   live,
-  dm,
   art,
 }: {
   today: Collectable<Today>;
   live: boolean;
-  dm: boolean;
   art: Record<string, ArtPair>;
 }) {
   const t = useTranslations('serverPage.today');
@@ -54,9 +54,9 @@ export function TodaySection({
         <CollectingBlock kind="today" since={today.since} />
       ) : (
         <>
-          <Tiles today={today.data} dm={dm} />
+          <Tiles today={today.data} />
           <div className="vs-today-grid">
-            <MapsCard today={today.data} live={live} dm={dm} art={art} />
+            <MapsCard today={today.data} live={live} art={art} />
             <HoursCard today={today.data} />
           </div>
           {today.data.since ? (
@@ -70,24 +70,18 @@ export function TodaySection({
   );
 }
 
-function Tiles({ today, dm }: { today: Today; dm: boolean }) {
+function Tiles({ today }: { today: Today }) {
   const t = useTranslations('serverPage.today.tiles');
   const sr = useTranslations('serverPage.today.maps');
   const { rounds } = today;
-  const sides = rounds.ctWins !== null && rounds.tWins !== null;
-  const share = ctShare(rounds.ctWins ?? 0, rounds.tWins ?? 0);
+  const share = rounds ? ctShare(rounds.ctWins, rounds.tWins) : 50;
+  // Quantos blocos há (o CSS reparte as colunas por isso): sem rounds, só o dos mapas.
+  const count =
+    (rounds ? 2 : 1) + (today.peakPlayers ? 1 : 0) + (today.uniquePlayers !== null ? 1 : 0);
 
   return (
-    <div className="vs-tiles" data-n={dm ? 3 : 4}>
-      {dm ? (
-        <div className="vs-tile">
-          <p className="v-label">{t('maps')}</p>
-          <p className="vs-tile-num v-serif">
-            <Ticker value={today.maps.length} />
-          </p>
-          <p className="vs-tile-foot">{t('mapsFoot', { count: rounds.played })}</p>
-        </div>
-      ) : (
+    <div className="vs-tiles" data-n={count}>
+      {rounds ? (
         <>
           <div className="vs-tile">
             <p className="v-label">{t('rounds')}</p>
@@ -96,51 +90,60 @@ function Tiles({ today, dm }: { today: Today; dm: boolean }) {
             </p>
             <p className="vs-tile-foot">{t('roundsFoot', { count: today.maps.length })}</p>
           </div>
-          {sides ? (
-            <div className="vs-tile">
-              <p className="v-label">{t('won')}</p>
-              <p className="vs-tile-num v-serif tabular-nums">
-                <span>
-                  <span className="sr-only">{sr('ct')} </span>
-                  {rounds.ctWins}
-                </span>
-                <span aria-hidden="true" className="vs-tile-x">
-                  ×
-                </span>
-                <span>
-                  <span className="sr-only">{sr('t')} </span>
-                  {rounds.tWins}
-                </span>
-              </p>
-              <div className="vs-split vs-split-sm" aria-hidden="true">
-                <i data-side="ct" style={{ '--rest': `${100 - share}%` } as React.CSSProperties} />
-              </div>
-              <p className="vs-tile-foot" aria-hidden="true">
-                <span className="vs-key" data-side="ct">
-                  {sr('ct')}
-                </span>{' '}
-                <span className="vs-key" data-side="t">
-                  {sr('t')}
-                </span>
-              </p>
+          <div className="vs-tile">
+            <p className="v-label">{t('won')}</p>
+            <p className="vs-tile-num v-serif tabular-nums">
+              <span>
+                <span className="sr-only">{sr('ct')} </span>
+                {rounds.ctWins}
+              </span>
+              <span aria-hidden="true" className="vs-tile-x">
+                ×
+              </span>
+              <span>
+                <span className="sr-only">{sr('t')} </span>
+                {rounds.tWins}
+              </span>
+            </p>
+            <div className="vs-split vs-split-sm" aria-hidden="true">
+              <i data-side="ct" style={{ '--rest': `${100 - share}%` } as React.CSSProperties} />
             </div>
-          ) : null}
+            <p className="vs-tile-foot" aria-hidden="true">
+              <span className="vs-key" data-side="ct">
+                {sr('ct')}
+              </span>{' '}
+              <span className="vs-key" data-side="t">
+                {sr('t')}
+              </span>
+            </p>
+          </div>
         </>
+      ) : (
+        <div className="vs-tile">
+          <p className="v-label">{t('maps')}</p>
+          <p className="vs-tile-num v-serif">
+            <Ticker value={today.maps.length} />
+          </p>
+        </div>
       )}
-      <div className="vs-tile">
-        <p className="v-label">{t('peak')}</p>
-        <p className="vs-tile-num v-serif">
-          <Ticker value={today.peakPlayers.count} />
-        </p>
-        <p className="vs-tile-foot">{t('peakAt', { time: today.peakPlayers.at })}</p>
-      </div>
-      <div className="vs-tile">
-        <p className="v-label">{t('unique')}</p>
-        <p className="vs-tile-num v-serif">
-          <Ticker value={today.uniquePlayers} />
-        </p>
-        <p className="vs-tile-foot">{t('uniqueFoot')}</p>
-      </div>
+      {today.peakPlayers ? (
+        <div className="vs-tile">
+          <p className="v-label">{t('peak')}</p>
+          <p className="vs-tile-num v-serif">
+            <Ticker value={today.peakPlayers.count} />
+          </p>
+          <p className="vs-tile-foot">{t('peakAt', { time: today.peakPlayers.at })}</p>
+        </div>
+      ) : null}
+      {today.uniquePlayers !== null ? (
+        <div className="vs-tile">
+          <p className="v-label">{t('unique')}</p>
+          <p className="vs-tile-num v-serif">
+            <Ticker value={today.uniquePlayers} />
+          </p>
+          <p className="vs-tile-foot">{t('uniqueFoot')}</p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -148,15 +151,14 @@ function Tiles({ today, dm }: { today: Today; dm: boolean }) {
 function MapsCard({
   today,
   live,
-  dm,
   art,
 }: {
   today: Today;
   live: boolean;
-  dm: boolean;
   art: Record<string, ArtPair>;
 }) {
   const t = useTranslations('serverPage.today.maps');
+  const anySides = today.maps.some((row) => row.ctWins !== null && row.tWins !== null);
   return (
     <div className="vs-card">
       <h3 className="vs-card-title">{t('title')}</h3>
@@ -189,7 +191,7 @@ function MapsCard({
                 ) : null}
                 {warming ? null : (
                   <>
-                    {hasSides && !dm ? (
+                    {hasSides ? (
                       <>
                         <span>
                           <span className="sr-only">{t('ct')} </span>
@@ -208,7 +210,9 @@ function MapsCard({
                         </span>
                       </>
                     ) : null}
-                    <span className="vs-map-rounds">{t('rounds', { count: row.rounds })}</span>
+                    {row.rounds !== null ? (
+                      <span className="vs-map-rounds">{t('rounds', { count: row.rounds })}</span>
+                    ) : null}
                   </>
                 )}
               </span>
@@ -216,24 +220,29 @@ function MapsCard({
           );
         })}
       </ol>
-      {dm ? null : <p className="vs-card-foot">{t('foot')}</p>}
+      {anySides ? <p className="vs-card-foot">{t('foot')}</p> : null}
     </div>
   );
 }
 
 function HoursCard({ today }: { today: Today }) {
   const t = useTranslations('serverPage.today.hours');
+  const players = today.hoursMetric === 'players';
   const busiest = busiestHour(today.hours);
   const first = firstActiveHour(today.hours);
   const max = Math.max(1, ...today.hours);
 
   return (
     <div className="vs-card vs-card-chart">
-      <h3 className="vs-card-title">{t('title')}</h3>
+      <h3 className="vs-card-title">{players ? t('titlePlayers') : t('title')}</h3>
       <div
         className="vs-hours"
         role="img"
-        aria-label={busiest ? t('aria', { hour: busiest.hour, rounds: busiest.rounds }) : t('none')}
+        aria-label={
+          busiest
+            ? t(players ? 'ariaPlayers' : 'aria', { hour: busiest.hour, count: busiest.rounds })
+            : t(players ? 'nonePlayers' : 'none')
+        }
       >
         {today.hours.map((count, hour) => (
           <span
@@ -242,7 +251,7 @@ function HoursCard({ today }: { today: Today }) {
             className="vs-hour"
             data-now={hour === Number(today.clock.slice(0, 2)) || undefined}
             data-empty={count === 0 || undefined}
-            title={t('bar', { hour, rounds: count })}
+            title={t(players ? 'barPlayers' : 'bar', { hour, count })}
           >
             <i style={{ height: `${Math.max(2, (count / max) * 100)}%` }} />
           </span>
@@ -256,7 +265,7 @@ function HoursCard({ today }: { today: Today }) {
         ))}
       </div>
       <p className="vs-card-foot">
-        {first === null ? t('none') : t('from', { hour: first })}
+        {first === null ? t(players ? 'nonePlayers' : 'none') : t('from', { hour: first })}
         {busiest ? ` ${t('busiest', { hour: busiest.hour })}` : ''}
       </p>
     </div>

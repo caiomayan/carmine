@@ -7,7 +7,16 @@ import { createServer, heartbeat, keepBeating } from './live-servers';
  * do dia), então a página real mostra "coletando" e os estados "prontos" vêm da vitrine de dev (/dev/servidor).
  */
 
-const STATES = ['cheio', 'vazio', 'offline', 'warmup', 'deathmatch', 'coletando', 'nunca'] as const;
+const STATES = [
+  'cheio',
+  'vazio',
+  'offline',
+  'warmup',
+  'deathmatch',
+  'coletando',
+  'antigo',
+  'nunca',
+] as const;
 
 const gallery = (state: string, query = '') => `/dev/servidor?estado=${state}&barra=0${query}`;
 
@@ -81,7 +90,12 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     await expect(page.getByTestId('connect')).toHaveCount(0);
   });
 
-  test('um servidor que não existe leva o 404 do servidor', async ({ page }) => {
+  test('um servidor que não existe leva o 404 do servidor', async ({
+    page,
+    expectedConsoleErrors,
+  }) => {
+    // O navegador registra o 404 do próprio documento no console.
+    expectedConsoleErrors.push(/status of 404/);
     const missing = '00000000-0000-4000-8000-000000000000';
     for (const path of [`/servidores/${missing}`, '/servidores/nao-e-um-id']) {
       const response = await page.goto(path);
@@ -157,8 +171,25 @@ test.describe('Página do servidor: os estados com dados de exemplo (vitrine)', 
     await expect(page.getByRole('list', { name: 'Jogadores por pontos' })).toBeVisible();
     await expect(page.getByTestId('jogador')).toHaveCount(12);
     await expect(page.getByRole('list', { name: 'Terroristas' })).toHaveCount(0);
-    // Sem lado, sem rounds ganhos por lado.
+    // Sem lado nem rounds: o histórico não mostra rounds ganhos e o gráfico é de jogadores por hora.
     await expect(page.getByTestId('hoje')).not.toContainText('Rounds ganhos');
+    await expect(page.getByRole('heading', { name: 'Jogadores por hora' })).toBeVisible();
+  });
+
+  test('plugin antigo: sem placar nem números por jogador, só os nomes, e nada vira zero', async ({
+    page,
+  }) => {
+    await page.goto(gallery('antigo'));
+    await expect(page.getByTestId('collecting-score')).toBeVisible();
+    await expect(page.getByTestId('placar')).toHaveCount(0);
+    await expect(page.getByRole('list', { name: 'Jogadores em ordem alfabética' })).toBeVisible();
+    await expect(page.getByTestId('jogador')).toHaveCount(9);
+    await expect(page.locator('.vs-nums')).toHaveCount(0);
+    const today = page.getByTestId('hoje');
+    await expect(today).toContainText('Mapas hoje');
+    await expect(today).not.toContainText('Rounds ganhos');
+    await expect(today).not.toContainText('Pico de jogadores');
+    await expect(page.getByRole('heading', { name: 'Jogadores por hora' })).toBeVisible();
   });
 
   test('vazio e offline: estados vazios claros, sem placar vivo', async ({ page }) => {

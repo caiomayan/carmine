@@ -9,6 +9,7 @@ import {
   killDeathRatio,
   minutesBetween,
   minutesOnMap,
+  namesOnly,
   rankedAll,
   rankedBySide,
   serverHref,
@@ -59,6 +60,10 @@ describe('ordem dos jogadores', () => {
   it('no aquecimento, em ordem alfabética com o privado no fim', () => {
     expect(alphabeticalBySide(roster, 'ct').map((p) => p.id)).toEqual(['a', 'b', 'c', 'privado']);
   });
+
+  it('sem placar por jogador, todos juntos por nome com o privado no fim', () => {
+    expect(namesOnly(roster).map((p) => p.id)).toEqual(['a', 'b', 'c', 'x', 'privado']);
+  });
 });
 
 describe('números', () => {
@@ -86,6 +91,7 @@ describe('histórico do dia', () => {
     rounds: { played: 0, ctWins: 0, tWins: 0 },
     maps,
     hours: [],
+    hoursMetric: 'rounds',
     peakPlayers: { at: '20:12', count: 9 },
     uniquePlayers: 3,
     since: null,

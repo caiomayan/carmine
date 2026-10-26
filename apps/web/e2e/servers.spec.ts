@@ -87,9 +87,11 @@ test.describe('Servidores ao vivo', () => {
     await expect(line).toHaveAttribute('data-state', 'offline', { timeout: 20_000 });
     await openOfflineGroup(page);
     await expect(line).toBeVisible();
-    // Sem botão morto: nem "Jogar" desabilitado, nem link; só o motivo, por extenso.
+    // Sem botão morto: nem "Jogar" desabilitado, nem link de jogar; só o nome (que leva à página do servidor) e o
+    // motivo, por extenso.
     await expect(line.getByRole('button')).toHaveCount(0);
-    await expect(line.getByRole('link')).toHaveCount(0);
+    await expect(line.getByRole('link', { name: /^Jogar/ })).toHaveCount(0);
+    await expect(line.getByTestId('server-link')).toHaveCount(1);
     await expect(line.getByText(/^Offline há /)).toBeVisible();
   });
 

@@ -152,7 +152,7 @@ export function OfflineCard({ server, today }: { server: LiveServer; today: Toda
             map: mapDisplayName(last.map) ?? '',
             ct: last.ctWins ?? 0,
             t: last.tWins ?? 0,
-            rounds: last.rounds,
+            rounds: last.rounds ?? 0,
             b: (chunks) => <b>{chunks}</b>,
           })}
         </p>

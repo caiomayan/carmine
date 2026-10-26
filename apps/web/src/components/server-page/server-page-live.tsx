@@ -8,7 +8,7 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { useLiveServers } from '@/components/servers/use-live-servers';
 import { Button } from '@/components/ui/button';
 import type { ArtPair } from '@/components/vida/map-art';
-import { useServerExtras } from '@/lib/server-page/use-server-extras';
+import { type InitialExtras, useServerExtras } from '@/lib/server-page/use-server-extras';
 import { ServerPageView } from './server-page-view';
 
 /**
@@ -19,11 +19,14 @@ import { ServerPageView } from './server-page-view';
 export function ServerPageLive({
   id,
   initial,
+  initialExtras,
   art,
 }: {
   id: string;
   /** A lista lida no servidor do site; nula com a API fora. */
   initial: LiveServerList | null;
+  /** Os jogadores e o histórico lidos no servidor do site (nulos: a API não respondeu ou a rota não existe ainda). */
+  initialExtras: InitialExtras;
   art: Record<string, ArtPair>;
 }) {
   const { state, retry } = useLiveServers(initial);
@@ -33,11 +36,19 @@ export function ServerPageLive({
     null;
 
   if (!server) return <Unavailable onRetry={retry} />;
-  return <Loaded server={server} art={art} />;
+  return <Loaded server={server} initialExtras={initialExtras} art={art} />;
 }
 
-function Loaded({ server, art }: { server: LiveServer; art: Record<string, ArtPair> }) {
-  const extras = useServerExtras(server);
+function Loaded({
+  server,
+  initialExtras,
+  art,
+}: {
+  server: LiveServer;
+  initialExtras: InitialExtras;
+  art: Record<string, ArtPair>;
+}) {
+  const extras = useServerExtras(server, initialExtras);
   return <ServerPageView server={server} extras={extras} art={art} />;
 }
 

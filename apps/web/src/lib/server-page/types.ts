@@ -32,23 +32,29 @@ export type TodayMap = {
   from: string;
   /** Nulo no mapa de agora. */
   to: string | null;
-  rounds: number;
-  /** Rounds ganhos por lado neste mapa; nulos no Deathmatch. */
+  /** Rounds e rounds ganhos por lado neste mapa; nulos sem rounds (Deathmatch, ou plugin antigo). */
+  rounds: number | null;
   ctWins: number | null;
   tWins: number | null;
 };
+
+/** Os jogadores de agora e se o servidor mandou o placar por jogador (sem ele não há time nem número). */
+export type Roster = { players: RosterPlayer[]; scoreboard: boolean };
 
 export type Today = {
   /** O dia, ISO (`2026-10-26`). */
   date: string;
   /** A hora de agora no relógio de Brasília ("HH:MM"): o mapa de agora e o "há N min" saem dela. */
   clock: string;
-  rounds: { played: number; ctWins: number | null; tWins: number | null };
+  /** O dia somado; nulo sem rounds (Deathmatch, ou plugin antigo): a página não mostra zero no lugar. */
+  rounds: { played: number; ctWins: number; tWins: number } | null;
   maps: TodayMap[];
-  /** Rounds por hora, de 0h a 23h (24 valores). */
+  /** O que o gráfico por hora mostra, de 0h a 23h (24 valores): rounds, ou jogadores quando não há rounds. */
   hours: number[];
-  peakPlayers: { at: string; count: number };
-  uniquePlayers: number;
+  hoursMetric: 'rounds' | 'players';
+  /** Nulos sem Sessões (a API não sabe). */
+  peakPlayers: { at: string; count: number } | null;
+  uniquePlayers: number | null;
   /** Desde quando há dado detalhado do servidor (ISO); nulo se a API não disse. */
   since: string | null;
 };
@@ -64,7 +70,7 @@ export type Collectable<T> =
 /** `match` pronto e nulo é "sem partida em andamento" (servidor vazio, ou Deathmatch). */
 export type ServerExtras = {
   match: Collectable<Match | null>;
-  roster: Collectable<RosterPlayer[]>;
+  roster: Collectable<Roster>;
   today: Collectable<Today>;
 };
 
