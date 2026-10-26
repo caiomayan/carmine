@@ -4,8 +4,20 @@ using Carmine.Api.Client;
 
 namespace Carmine.Core;
 
-/// <summary>O estado do servidor agora: mapa, jogadores humanos conectados e vagas públicas.</summary>
-public sealed record ServerSnapshot(string Map, IReadOnlyList<ulong> Players, int MaxPlayers);
+/// <summary>Uma linha do placar de um jogador, como no jogo (S12b). <c>Team</c> é nulo onde não há time (Deathmatch).</summary>
+public sealed record ScoreboardRow(ulong SteamId, GameTeam? Team, int Kills, int Deaths, int Score);
+
+/// <summary>
+/// O estado do servidor agora: mapa, jogadores humanos conectados e vagas públicas. S12b: o placar
+/// de times (<see cref="Match"/>, só onde existe: nulo no Deathmatch) e o placar por jogador
+/// (<see cref="Scoreboard"/>); ambos opcionais para a API, que usa <see cref="Players"/> como presença.
+/// </summary>
+public sealed record ServerSnapshot(
+    string Map,
+    IReadOnlyList<ulong> Players,
+    int MaxPlayers,
+    MatchSnapshot? Match = null,
+    IReadOnlyList<ScoreboardRow>? Scoreboard = null);
 
 public enum HeartbeatReportKind
 {
@@ -68,6 +80,19 @@ public sealed class HeartbeatReporter(ICarmineApiClient api)
                     Map = snapshot.Map,
                     Players = [.. snapshot.Players.Select(id => id.ToString(CultureInfo.InvariantCulture))],
                     MaxPlayers = snapshot.MaxPlayers,
+                    Match = snapshot.Match is { } match
+                        ? new MatchState { Round = match.Round, CtScore = match.CtScore, TScore = match.TScore, Warmup = match.Warmup }
+                        : null,
+                    Scoreboard = snapshot.Scoreboard is { } rows
+                        ? [.. rows.Select(row => new ScoreboardEntry
+                        {
+                            SteamId = row.SteamId.ToString(CultureInfo.InvariantCulture),
+                            Team = row.Team,
+                            Kills = row.Kills,
+                            Deaths = row.Deaths,
+                            Score = row.Score,
+                        })]
+                        : null,
                 },
                 cancellationToken).ConfigureAwait(false);
         }
