@@ -5,6 +5,7 @@ import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { LiveCount } from '@/components/live-count';
 import { StatusDot } from '@/components/status-dot';
 import { type LiveState, updatedSecondsAgo } from '@/lib/live-servers';
+import { isLive } from '@/lib/servers';
 
 /**
  * O "ao vivo" da lista: o ponto, os totais (que rolam quando mudam) e, com a conexão caída,
@@ -28,6 +29,8 @@ export function LiveStatus({ state }: { state: LiveState }) {
   }, [connection, t]);
 
   const summary = state.list?.summary;
+  // Conectado mas com 0 servidores no ar não é "ao vivo": é pausa (a mesma regra do rodapé e do topo da Home).
+  const paused = connection === 'live' && summary !== undefined && !isLive(summary);
   const strong = (chunks: ReactNode) => <b className="font-semibold text-foreground">{chunks}</b>;
 
   return (
@@ -38,10 +41,12 @@ export function LiveStatus({ state }: { state: LiveState }) {
     >
       <span className="inline-flex items-center gap-2 label-caps text-[11px] text-foreground">
         <StatusDot
-          tone={connection === 'live' ? 'online' : connection === 'lost' ? 'warn' : 'offline'}
-          pulse={connection === 'live'}
+          tone={
+            connection === 'live' && !paused ? 'online' : connection === 'lost' ? 'warn' : 'offline'
+          }
+          pulse={connection === 'live' && !paused}
         />
-        {t(connection)}
+        {t(paused ? 'paused' : connection)}
       </span>
       {connection === 'lost' && seconds !== null ? (
         <span data-testid="live-updated" className="tabular-nums">
