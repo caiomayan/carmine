@@ -30,10 +30,13 @@ COPY apps/web apps/web
 COPY docs/legal docs/legal
 # next/font baixa a Inter no build e a serve do próprio domínio (sem Google em runtime).
 # Os contratos (@carmine/contracts) são compilados antes, como dependência do web.
+# O standalone não leva o .next/static nem o public/: os dois são copiados para dentro dele (sem o
+# public/, a arte dos mapas dava 404 em produção).
 RUN pnpm --filter @carmine/contracts run build  && NEXT_OUTPUT=standalone pnpm --filter @carmine/web run build \
  && cd apps/web/.next/standalone \
  && find . \( -path '*/@img/*' -o -path '*/node_modules/sharp' \) -prune -exec rm -rf {} + \
  && cp -r ../static apps/web/.next/static \
+ && cp -r ../../public apps/web/public \
  && if find . -name '*.node' | grep -q .; then echo 'binário nativo no standalone' >&2; exit 1; fi
 
 FROM ${NODE_IMAGE} AS runtime
