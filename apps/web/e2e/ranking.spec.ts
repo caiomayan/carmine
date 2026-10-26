@@ -158,7 +158,10 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
   page,
   request,
 }) => {
-  const player = await createUnclaimedAccount(request, 'Progresso Rank');
+  // Um nome por tentativa: o retry cria outra Conta, e a Conta da tentativa anterior continua no
+  // Ranking. Com o mesmo nome, `Progresso Rank` casaria com duas linhas e a asserção quebraria.
+  const name = `Progresso Rank ${randomUUID().slice(0, 6)}`;
+  const player = await createUnclaimedAccount(request, name);
   await play(request, { rounds: { steamIds: [player.steamId], count: 38 } });
   await signInByRequest(page, player.steamId);
 
@@ -174,16 +177,17 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
       { timeout: 1_000 },
     );
   }).toPass({ timeout: 15_000 });
-  await expect(
-    page.getByTestId('ranking-row').filter({ hasText: 'Progresso Rank' }),
-  ).toHaveAttribute('data-self', 'true');
+  await expect(page.getByTestId('ranking-row').filter({ hasText: name })).toHaveAttribute(
+    'data-self',
+    'true',
+  );
 
   // A U3e leva de "minha posição" para /ranking#minha-linha: só a linha própria tem o id, e o
   // scroll-margin a mantém fora de baixo do header.
   const mine = page.locator('#minha-linha');
   await expect(mine).toHaveCount(1);
   await expect(mine).toHaveAttribute('data-self', 'true');
-  await expect(mine).toContainText('Progresso Rank');
+  await expect(mine).toContainText(name);
   await page.goto('/ranking?modo=retake#minha-linha');
   await expect(mine).toBeInViewport();
   const header = await page.getByRole('banner').boundingBox();
