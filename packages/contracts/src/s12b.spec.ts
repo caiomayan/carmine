@@ -5,6 +5,7 @@ import {
   scoreboardEntrySchema,
   serverHeartbeatSchema,
 } from './live-servers.js';
+import { createReportSchema } from './reports.js';
 import { serverPlayersSchema, serverTodaySchema } from './server-detail.js';
 import { eventBatchSchema, killEventSchema, roundEndEventSchema } from './stats.js';
 import {
@@ -291,5 +292,50 @@ describe('S12b · servidor', () => {
       }).success,
     ).toBe(true);
     expect(serverTodaySchema.safeParse({ ...today, hours: hours.slice(1) }).success).toBe(false);
+  });
+});
+
+describe('campos nulos ausentes (o cliente C# omite o que é nulo)', () => {
+  it('uma kill sem assistente, sem assassino ou sem vítima vale e vira null', () => {
+    const { killerSteamId: _k, victimSteamId: _v, assisterSteamId: _a, ...bare } = kill;
+    const parsed = killEventSchema.parse(bare);
+    expect([parsed.killerSteamId, parsed.victimSteamId, parsed.assisterSteamId]).toEqual([
+      null,
+      null,
+      null,
+    ]);
+    expect(killEventSchema.parse({ ...bare, assisterSteamId: STEAM_ID }).assisterSteamId).toBe(
+      STEAM_ID,
+    );
+  });
+
+  it('um lote com a kill do jeito que o plugin manda é aceito', () => {
+    const { assisterSteamId: _a, ...plugin } = kill;
+    expect(
+      eventBatchSchema.safeParse({
+        kills: [plugin],
+        damages: [],
+        roundEnds: [],
+        sessionStarts: [],
+        sessionEnds: [],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('o SteamID presente continua tendo de ser válido', () => {
+    expect(killEventSchema.safeParse({ ...kill, assisterSteamId: '123' }).success).toBe(false);
+  });
+
+  it('a Denúncia sem round ou mapa e a linha do placar sem time valem', () => {
+    expect(
+      createReportSchema.parse({
+        reporterSteamId: STEAM_ID,
+        targetSteamId: STEAM_ID,
+        reason: 'cheat',
+      }),
+    ).toMatchObject({ round: null, map: null });
+    expect(
+      scoreboardEntrySchema.parse({ steamId: STEAM_ID, kills: 1, deaths: 0, score: 3 }).team,
+    ).toBeNull();
   });
 });
