@@ -353,7 +353,7 @@ export class AvatarModeration {
           byReason: reasons
             .filter((row) => row.avatarId === avatar.id)
             .map((row) => ({ reason: row.reason, count: row.total }))
-            .sort((a, b) => b.count - a.count),
+            .sort((a, b) => b.count - a.count || a.reason.localeCompare(b.reason)),
           // Sem denúncia (remoção direta da ficha): o envio é o que há de mais antigo.
           firstAt: (total ? asDate(total.firstAt) : avatar.createdAt).toISOString(),
           lastAt: (total ? asDate(total.lastAt) : avatar.createdAt).toISOString(),

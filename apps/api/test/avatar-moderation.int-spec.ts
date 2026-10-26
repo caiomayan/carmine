@@ -289,22 +289,29 @@ describe('Moderação da foto de perfil (F2)', () => {
         made.push(avatarId);
       }
 
-      const first = staffAvatarCasePageSchema.parse(
-        (await moderator.call('GET', '/api/staff/avatar-reports?limit=2')).json(),
-      );
-      expect(first.cases).toHaveLength(2);
-      expect(first.nextCursor).toBeTruthy();
-      const second = staffAvatarCasePageSchema.parse(
-        (
-          await moderator.call(
-            'GET',
-            `/api/staff/avatar-reports?limit=2&before=${first.nextCursor}`,
-          )
-        ).json(),
-      );
-      const ids = [...first.cases, ...second.cases].map((c) => c.avatar.id);
+      // A fila é compartilhada com os outros testes: anda de duas em duas até acabar.
+      const ids: string[] = [];
+      let cursor: string | null = null;
+      let pages = 0;
+      do {
+        const response = await moderator.call(
+          'GET',
+          `/api/staff/avatar-reports?limit=2${cursor ? `&before=${cursor}` : ''}`,
+        );
+        expect(response.statusCode, response.body).toBe(200);
+        const page = staffAvatarCasePageSchema.parse(response.json());
+        expect(page.cases.length).toBeLessThanOrEqual(2);
+        ids.push(...page.cases.map((c) => c.avatar.id));
+        cursor = page.nextCursor;
+        pages += 1;
+      } while (cursor && pages < 50);
+      expect(pages).toBeGreaterThan(1);
       expect(new Set(ids).size).toBe(ids.length);
       for (const id of made) expect(ids).toContain(id);
+      // As mais antigas primeiro: a ordem em que foram denunciadas.
+      expect(made.map((id) => ids.indexOf(id))).toEqual(
+        [...made.map((id) => ids.indexOf(id))].sort((x, y) => x - y),
+      );
       const invalid = await moderator.call('GET', '/api/staff/avatar-reports?before=lixo');
       expect(invalid.statusCode).toBe(400);
     });
