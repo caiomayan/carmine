@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { staffReasonSchema } from './staff.js';
 import { steamId64Schema } from './steam.js';
