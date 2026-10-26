@@ -11,6 +11,7 @@ import {
   type PointerEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -79,6 +80,8 @@ export function PresetHand({
   const hand = useRef<HTMLUListElement>(null);
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const [width, setWidth] = useState(0);
+  // O servidor e a hidratação não sabem a largura: a mão nasce invisível e só aparece, já no modo certo, depois de medida.
+  const [measured, setMeasured] = useState(false);
   const [focused, setFocused] = useState<number | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -102,12 +105,14 @@ export function PresetHand({
   const roving = Math.min(rovingAt, slots - 1);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  useEffect(() => {
+  // Antes da pintura: a primeira imagem da mão já sai no modo certo (leque ou fileira), sem o salto.
+  useLayoutEffect(() => {
     const element = section.current;
     if (!element) return;
     const observer = new ResizeObserver(() => setWidth(element.clientWidth));
     observer.observe(element);
     setWidth(element.clientWidth);
+    setMeasured(true);
     return () => observer.disconnect();
   }, []);
 
@@ -126,7 +131,7 @@ export function PresetHand({
 
   // Na fileira, a carta ativa vem para o meio quando ela aparece (a cada troca de modo).
   // biome-ignore lint/correctness/useExhaustiveDependencies: só a troca de modo recentraliza.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (mode !== 'row' || activeIndex < 0) return;
     const card = hand.current?.children[activeIndex] as HTMLElement | undefined;
     card?.scrollIntoView({ inline: 'center', block: 'nearest' });
@@ -249,12 +254,14 @@ export function PresetHand({
           if (!menuOpen && !event.currentTarget.contains(event.relatedTarget)) setFocused(null);
         }}
         className={cn(
-          'relative',
+          'relative transition-opacity duration-(--dur-base) ease-std motion-reduce:transition-none',
+          measured ? 'opacity-100' : 'opacity-0',
           fan
             ? 'mx-auto w-full'
-            : 'flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-3 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+            : 'flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pt-1 pb-2.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
         )}
-        style={fan ? { height: HAND.lift + HAND.peek, clipPath: PEEK_CLIP } : undefined}
+        // A mesma altura nos dois modos: trocar de modo (ou medir) não empurra o que vem abaixo.
+        style={{ height: HAND.lift + HAND.peek, ...(fan ? { clipPath: PEEK_CLIP } : null) }}
       >
         {cards.map((card, index) => (
           <HandSlot

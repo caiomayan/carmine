@@ -340,6 +340,7 @@
     },
     "live": {
       "live": "Ao vivo",
+      "paused": "Em pausa",
       "connecting": "Conectando",
       "lost": "Reconectando",
       "updated": "atualizado há {seconds, plural, one {# s} other {# s}}",
