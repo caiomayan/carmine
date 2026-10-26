@@ -23,6 +23,9 @@ const MOVE_MS = 12_000;
 const HEAD =
   'px-3 pb-2 font-semibold md:whitespace-nowrap label-caps leading-[1.25] text-muted-foreground';
 
+/** O `id` da linha da própria Conta: o destino de "minha posição" (`/ranking#minha-linha`). */
+const SELF_ROW_ID = 'minha-linha';
+
 /** Quem a linha é: o `publicId`, ou a posição para o Perfil privado (que não dá para seguir). */
 const identity = (entry: RankingEntry) =>
   entry.player.publicId === null ? `private-${entry.position}` : String(entry.player.publicId);
@@ -69,6 +72,18 @@ export function RankingBoard({ ranking }: { ranking: Ranking }) {
       document.removeEventListener('visibilitychange', refresh);
     };
   }, [live, router]);
+
+  // ---- âncora: a linha própria nasce depois do esqueleto e da hidratação, quando o navegador e o
+  // roteador já tentaram rolar até `#minha-linha` sem encontrá-la. Ao montar com o hash e a
+  // linha presentes, a rolagem é feita aqui, com o respiro do header fixo (`scroll-padding-top` da
+  // página + `scroll-mt` da linha). Só na montagem: as releituras ao vivo não puxam a página.
+  useEffect(() => {
+    if (window.location.hash !== `#${SELF_ROW_ID}`) return;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document
+      .getElementById(SELF_ROW_ID)
+      ?.scrollIntoView({ block: 'start', behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, []);
 
   // ---- presença de quem está vendo: só a própria Conta (a dos outros nunca vai para o Ranking).
   const hasSelf = ranking.entries.some((entry) => entry.self);
@@ -252,7 +267,7 @@ function PodiumSlot({
       data-position={entry.position}
       data-self={entry.self || undefined}
       data-private={player.private || undefined}
-      id={entry.self ? 'minha-linha' : undefined}
+      id={entry.self ? SELF_ROW_ID : undefined}
       className={cn(
         'rk-slot v-panel v-panel-lg v-spot relative flex min-w-0 scroll-mt-24 flex-col items-center gap-2 overflow-hidden px-3 pt-5 text-center max-md:px-2',
         SLOT_HEIGHT[place] ?? SLOT_HEIGHT[2],
@@ -359,7 +374,7 @@ function TableRow({
       transition={{ type: 'spring', stiffness: 520, damping: 42 }}
       data-testid="ranking-row"
       data-position={entry.position}
-      id={entry.self ? 'minha-linha' : undefined}
+      id={entry.self ? SELF_ROW_ID : undefined}
       data-self={entry.self || undefined}
       data-private={player.private || undefined}
       style={{ '--i': index } as CSSProperties}

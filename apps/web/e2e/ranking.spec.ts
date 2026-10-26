@@ -196,6 +196,61 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
   expect(row.y).toBeGreaterThanOrEqual(header.y + header.height);
 });
 
+/**
+ * A linha própria nasce depois do esqueleto (`loading.tsx`) e da hidratação: o navegador e o
+ * roteador já tentaram rolar até `#minha-linha` quando ela ainda não existia. Quem vem de outra
+ * página pelo "minha posição" do header precisa chegar na linha, não no topo do Ranking.
+ */
+test.describe('"minha posição" do header leva à própria linha', () => {
+  /** Quatro Contas com mais rounds, para a linha própria ficar abaixo do pódio e da dobra. */
+  async function seatedBehindFour(request: APIRequestContext) {
+    const tag = randomUUID().slice(0, 6);
+    const ahead = await Promise.all(
+      [1, 2, 3, 4].map((n) => createUnclaimedAccount(request, `Na Frente ${n} ${tag}`)),
+    );
+    const player = await createUnclaimedAccount(request, `Âncora Rank ${tag}`);
+    await play(request, { rounds: { steamIds: ahead.map((a) => a.steamId), count: 90 } });
+    await play(request, { rounds: { steamIds: [player.steamId], count: 50 } });
+    return player;
+  }
+
+  for (const from of ['/loadout', '/ranking'] as const) {
+    test(`vindo de ${from}`, async ({ page, request }) => {
+      const player = await seatedBehindFour(request);
+      await signInByRequest(page, player.steamId);
+      // Janela baixa: a linha própria (5º ou pior) começa fora da tela.
+      await page.setViewportSize({ width: 1280, height: 500 });
+
+      // O cache do Ranking dura 1 s no E2E: relê até a posição aparecer.
+      await expect(async () => {
+        await page.goto('/ranking');
+        await expect(page.getByTestId('viewer-note')).toContainText(/Você está na posição \d+/, {
+          timeout: 1_000,
+        });
+      }).toPass({ timeout: 15_000 });
+      await page.goto(from);
+
+      const nav = page.getByRole('navigation', { name: 'Principal' });
+      await expect(async () => {
+        await nav.getByRole('link', { name: 'Ranking', exact: true }).hover();
+        await expect(page.getByTestId('panel-ranking')).toBeVisible({ timeout: 1_000 });
+      }).toPass({ timeout: 15_000 });
+      await page.getByTestId('preview-mine').first().click();
+      await expect(page).toHaveURL(/\/ranking\?modo=retake#minha-linha$/);
+
+      const mine = page.locator('#minha-linha');
+      await expect(mine).toBeInViewport();
+      // Fica fora de baixo do header fixo: o respiro vem do scroll-padding da página.
+      await expect(async () => {
+        const header = await page.getByRole('banner').boundingBox();
+        const row = await mine.boundingBox();
+        if (!header || !row) throw new Error('header ou linha própria sem caixa');
+        expect(row.y).toBeGreaterThanOrEqual(header.y + header.height);
+      }).toPass({ timeout: 5_000 });
+    });
+  }
+});
+
 test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em vez de sumir', async ({
   page,
   request,
