@@ -41,7 +41,10 @@ const rows = readdirSync(chunksDir)
       .filter(([, pattern]) => pattern.test(source))
       .map(([key]) => key);
     const own = [...source.matchAll(/\[project\]\/(src\/[\w@./()[\]-]+)/g)].map((m) => m[1]);
-    return { name, kb, has, own: [...new Set(own)] };
+    const zod = /ZodError|ZodType/.exec(source);
+    const sample = zod ? source.slice(Math.max(0, zod.index - 200), zod.index + 200) : '';
+    const head = source.slice(0, 400);
+    return { name, kb, has, own: [...new Set(own)], sample, head };
   })
   .sort((a, b) => b.kb - a.kb);
 
@@ -49,6 +52,8 @@ console.log('--- chunks do build (gzip) ---');
 for (const row of rows.slice(0, 40)) {
   console.log(`${row.kb.toFixed(1).padStart(6)} kB  ${row.name}  [${row.has.join(', ')}]`);
   for (const own of row.own.slice(0, 12)) console.log(`          ${own}`);
+  if (row.kb > 30 && row.kb < 100) console.log(`   HEAD: ${row.head}
+   ZOD: ${row.sample}`);
 }
 
 const manifests = find(path.join(root, 'server', 'app'), `${route}/page_client-reference-manifest.js`);
