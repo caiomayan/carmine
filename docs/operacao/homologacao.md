@@ -72,11 +72,25 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
   - `hml_key.pub` (uma linha) → usada no passo 4.
   - `hml_key` (o arquivo inteiro, com as linhas `BEGIN`/`END`) → GitHub, *Settings > Secrets and variables > Actions > New repository secret*: **`DEPLOY_HML_SSH_KEY`**. Depois apague `hml_key` do PC.
   - Os secrets `DEPLOY_SSH_HOST_KEY`, `CF_ACCESS_CLIENT_ID` e `CF_ACCESS_CLIENT_SECRET` já existem e são reaproveitados.
-- [ ] **4. Na VM.**
+- [ ] **4. Na VM.** A porta 22 da VM está **fechada** na Oracle (de propósito: `checklist-do-dono.md`, passo 12), então `ssh ubuntu@<IP da VM>` dá timeout. O caminho recomendado é o SSH **pelo Cloudflare**, que não abre nada para a internet e serve sempre, não só desta vez:
+
+  **4a. Uma vez só, o seu acesso humano.** Zero Trust > Access > Applications > `carmine-ssh` > *Policies* > *Add a policy*: nome `dono`, ação **Allow**, regra *Emails* = o seu e-mail. Mantenha a política *Service Auth* do deploy como está. (Hoje o app só tem a política do token do GitHub, então ninguém além do deploy entra.)
+
+  **4b. Uma vez só, o atalho no PC.** No arquivo `config` da pasta `.ssh` do seu usuário (no Windows, `%USERPROFILE%\.ssh\config`), com o `cloudflared` no PATH:
+  ```
+  Host vm-carmine
+    HostName ssh.stcarmine.com
+    User ubuntu
+    IdentityFile <caminho da sua chave da VM>
+    ProxyCommand cloudflared access ssh --hostname %h
+  ```
+  Na primeira conexão o `cloudflared` abre o navegador para o login do Access (PIN no seu e-mail); depois o login fica guardado por um tempo.
+
+  **4c. Copiar e rodar.**
   ```bash
-  # no PC (na pasta do repositório, branch dev ou main já com este PR)
-  scp -i ~/.ssh/carmine-oracle -r infra/hml ubuntu@144.22.255.77:/tmp/carmine-hml
-  ssh -i ~/.ssh/carmine-oracle ubuntu@144.22.255.77
+  # no PC, na pasta do repositório (dev atualizado)
+  scp -r infra/hml vm-carmine:/tmp/carmine-hml
+  ssh vm-carmine
   # na VM
   free -h && docker stats --no-stream            # antes: me mande esta saída
   sudo bash /tmp/carmine-hml/bin/bootstrap.sh "ssh-ed25519 AAAA... carmine-hml"   # a chave PÚBLICA do passo 3
@@ -84,6 +98,9 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
   sudo /opt/carmine-hml/bin/tunnel                # sobe só o túnel novo
   ```
   No `.env`, opcionais: `DEMO_OWNER_STEAM_ID` (o seu SteamID64: a sua Conta ganha a demonstração e o papel de Dono) e `STEAM_WEB_API_KEY` (a mesma de produção, para o seu nome e avatar).
+
+  **Se o 4c não entrar** (o Access deixou passar, mas o `ssh` recusou a chave para `ubuntu`), plano B: abrir a 22 só para você por alguns minutos. Oracle > Networking > a VCN > Security Lists > *Add Ingress Rules*: origem `<seu IP público>/32` (busque "meu ip"), TCP, porta 22. No atalho, troque `HostName` por `<IP da VM>` e tire a linha `ProxyCommand`. Terminou? **Remova a regra** na hora. Último recurso, sem mexer em regra: *Compute > Instances > a VM > Console connection*.
+
 - [ ] **5. Ligar.** Depois do próximo release dev → main (o maestro faz), o workflow *Deploy homologação* passa a rodar a cada push no `dev`. Para o primeiro deploy sem esperar um push: *Actions > Deploy homologação > Run workflow*.
 - [ ] **6. Conferir no celular.** Abra `https://dev.stcarmine.com`, passe pelo PIN do Access, entre com a Steam. A home mostra 3 servidores, o Ranking tem gente nos dois Modos.
 
