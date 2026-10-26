@@ -18,3 +18,4 @@ O web só publica os quatro arquivos da tabela acima (lista fixa em `apps/web/sr
 | Arquivo | Entra com | Em |
 |---|---|---|
 | `rascunho-a1-analytics.md` | A1 (analytics de produto, PostHog) e, o bloco final, a abertura (GA4) | `politica-de-privacidade.md` |
+| `rascunho-foto-de-perfil.md` | A foto de perfil (F3 do web e as variáveis `R2_MEDIA_*` na VM), com a revisão do advogado | `politica-de-privacidade.md`, `regras-de-conduta.md` e `termos-de-uso.md` |
