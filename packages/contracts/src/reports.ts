@@ -42,6 +42,10 @@ export const REPORT_CHAT_WINDOW_MINUTES = 5;
 export const CHAT_RETENTION_DAYS = 30;
 export const GAME_EVENT_RETENTION_DAYS = 30;
 export const REPORT_RETENTION_DAYS = 90;
+/** S12b: o dado diário (mapa de calor) e o histórico por hora dos servidores 400 dias; as Sessões de jogo 90. */
+export const STATS_DAILY_RETENTION_DAYS = 400;
+export const SERVER_HOURS_RETENTION_DAYS = 400;
+export const PLAY_SESSION_RETENTION_DAYS = 90;
 
 /** Maior mensagem de chat guardada (o jogo já limita bem abaixo disto). */
 export const CHAT_TEXT_MAX = 256;

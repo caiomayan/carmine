@@ -385,6 +385,123 @@ export const accountStatsWeekly = pgTable(
   ],
 );
 
+/** Lado de um jogador num round (S12b). */
+export const gameTeam = pgEnum('game_team', ['ct', 't']);
+
+/**
+ * Atividade de uma Conta por Modo e por dia de Brasília (S12b): o mapa de calor do Perfil. Mesmas
+ * somas de `account_stats_weekly`, escritas na mesma transação; o dia vem da hora do evento.
+ * Guardada por `STATS_DAILY_RETENTION_DAYS` (o heatmap pede até 52 semanas).
+ */
+export const accountStatsDaily = pgTable(
+  'account_stats_daily',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    mode: gameMode().notNull(),
+    day: date({ mode: 'string' }).notNull(),
+    kills: integer().notNull().default(0),
+    deaths: integer().notNull().default(0),
+    assists: integer().notNull().default(0),
+    headshots: integer().notNull().default(0),
+    damage: bigint({ mode: 'number' }).notNull().default(0),
+    roundsPlayed: integer().notNull().default(0),
+    roundsWon: integer().notNull().default(0),
+    secondsPlayed: integer().notNull().default(0),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId, table.mode, table.day] }),
+    index('account_stats_daily_day_idx').on(table.day),
+  ],
+);
+
+/**
+ * Abates de uma Conta por arma e lado do assassino (S12b): o radar do Perfil, "de sempre". A arma
+ * é a chave normalizada (`stats/weapons.ts`, uma das `STAT_WEAPONS`), então a cardinalidade é
+ * limitada. Só entra a kill que conta nas Estatísticas e que veio com o lado (`killerTeam`).
+ */
+export const accountWeaponStats = pgTable(
+  'account_weapon_stats',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    mode: gameMode().notNull(),
+    weapon: text().notNull(),
+    side: gameTeam().notNull(),
+    kills: integer().notNull().default(0),
+    headshots: integer().notNull().default(0),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.mode, table.weapon, table.side] })],
+);
+
+/**
+ * Sessão de jogo (S12b): o `id` é o `sessionId` do plugin. O início e o fim chegam em eventos
+ * separados e em qualquer ordem, então os dois são upserts na mesma linha. Sem `endedAt`: a Sessão
+ * está aberta ou o servidor caiu (a leitura esconde as abertas há mais de 24 h sem presença).
+ * Guardada por `PLAY_SESSION_RETENTION_DAYS`.
+ */
+export const playSessions = pgTable(
+  'play_sessions',
+  {
+    id: uuid().primaryKey(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    /** O Modo do servidor (da chave), não do evento. */
+    mode: gameMode().notNull(),
+    startedAt: timestamptz().notNull(),
+    endedAt: timestamptz(),
+    /** Fim − início, só com um fim válido (acima de zero e até 24 h). */
+    seconds: integer(),
+    /** O mapa em que a pessoa entrou; nulo se o plugin não disse. */
+    map: text(),
+    /** Os mapas distintos por onde passou, em ordem. */
+    maps: text().array().notNull().default(sql`'{}'::text[]`),
+  },
+  (table) => [
+    index('play_sessions_account_idx').on(table.accountId, table.startedAt),
+    index('play_sessions_server_idx').on(table.serverId, table.startedAt),
+    index('play_sessions_started_idx').on(table.startedAt),
+  ],
+);
+
+/**
+ * O histórico de rounds de um Servidor Carmine por hora cheia e mapa (S12b), para a página do
+ * servidor. Só rounds de verdade (sem aquecimento) que vieram com o mapa; independe de haver
+ * Conta. `firstRoundAt`/`lastRoundAt` e o placar do último round (`scoreCt`, `scoreT`,
+ * `lastRoundNumber`) dão o intervalo e o placar final do mapa. Guardada por
+ * `SERVER_HOURS_RETENTION_DAYS`.
+ */
+export const serverHours = pgTable(
+  'server_hours',
+  {
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    hourStart: timestamptz().notNull(),
+    map: text().notNull(),
+    roundsPlayed: integer().notNull().default(0),
+    ctWins: integer().notNull().default(0),
+    tWins: integer().notNull().default(0),
+    firstRoundAt: timestamptz().notNull(),
+    lastRoundAt: timestamptz().notNull(),
+    lastRoundNumber: integer(),
+    scoreCt: integer(),
+    scoreT: integer(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.serverId, table.hourStart, table.map] }),
+    index('server_hours_hour_idx').on(table.hourStart),
+  ],
+);
+
 /**
  * Entradas que a Staff removeu do Ranking semanal (S12): Conta × Modo × semana, com o motivo. A
  * remoção não apaga as Estatísticas (`account_stats_weekly` continua igual); só tira a Conta

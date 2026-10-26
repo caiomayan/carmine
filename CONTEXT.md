@@ -119,7 +119,7 @@ _Evitar_: partida (no Retake e no Deathmatch não há partida)
 Um jogo com início e fim definidos; só existe no 5v5.
 
 **Estatísticas** (`Stats`):
-Números de desempenho de uma Conta, por Modo e no total. Saem dos **eventos do jogo** (`GameEvent`): kill, dano em inimigo, fim de round e início e fim de Sessão de jogo, que o Servidor Carmine envia em lotes idempotentes (cada evento tem o seu ID; ADR 0018). Bots, aquecimento e kill em aliado não contam (a kill em aliado fica registrada para a moderação). As contagens são guardadas por **semana** (segunda a domingo, horário de Brasília), de onde saem o Perfil e o Ranking.
+Números de desempenho de uma Conta, por Modo e no total. Saem dos **eventos do jogo** (`GameEvent`): kill, dano em inimigo, fim de round e início e fim de Sessão de jogo, que o Servidor Carmine envia em lotes idempotentes (cada evento tem o seu ID; ADR 0018). Bots, aquecimento e kill em aliado não contam (a kill em aliado fica registrada para a moderação). As contagens são guardadas por **semana** (segunda a domingo, horário de Brasília), de onde saem o Perfil e o Ranking. Desde a S12b há também o **detalhe**: atividade por dia (o mapa de calor), abates por arma e lado (o radar), Sessões de jogo e o histórico de rounds do servidor por hora e mapa. O detalhe só existe desde que o plugin novo foi para os servidores ("coletando desde"), e Perfil privado o esconde como esconde as Estatísticas.
 _Evitar_: stats (na interface), métricas
 
 **Ranking** (`Leaderboard`):

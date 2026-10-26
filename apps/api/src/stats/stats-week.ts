@@ -69,3 +69,38 @@ export function weekClosesAt(weekStart: string): string {
     Date.parse(`${weekStart}T00:00:00Z`) + 7 * DAY_MS - BRASILIA_OFFSET_MS,
   ).toISOString();
 }
+
+/** O dia (`YYYY-MM-DD`), no horário de Brasília, em que o instante cai. */
+export function dayOf(at: Date): string {
+  return new Date(at.getTime() + BRASILIA_OFFSET_MS).toISOString().slice(0, 10);
+}
+
+/** Um pedaço de uma Sessão de jogo dentro de um dia. */
+export interface DaySeconds {
+  day: string;
+  seconds: number;
+}
+
+/**
+ * Divide `[start, end)` pelos dias de Brasília que cruza, como {@link splitByWeek} faz com as
+ * semanas; vazio quando `end` não vem depois de `start`. Os pedaços somam a duração inteira.
+ */
+export function splitByDay(start: Date, end: Date): DaySeconds[] {
+  const pieces: DaySeconds[] = [];
+  const elapsed = (at: number) => Math.floor((at - start.getTime()) / 1000);
+  let cursor = start.getTime();
+  while (cursor < end.getTime()) {
+    const local = cursor + BRASILIA_OFFSET_MS;
+    const nextMidnight = (Math.floor(local / DAY_MS) + 1) * DAY_MS - BRASILIA_OFFSET_MS;
+    const pieceEnd = Math.min(end.getTime(), nextMidnight);
+    const seconds = elapsed(pieceEnd) - elapsed(cursor);
+    if (seconds > 0) pieces.push({ day: dayOf(new Date(cursor)), seconds });
+    cursor = pieceEnd;
+  }
+  return pieces;
+}
+
+/** A hora cheia (UTC; o fuso de Brasília é de horas inteiras) em que o instante cai. */
+export function hourStartOf(at: Date): Date {
+  return new Date(Math.floor(at.getTime() / 3_600_000) * 3_600_000);
+}

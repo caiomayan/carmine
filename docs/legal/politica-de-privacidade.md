@@ -30,7 +30,7 @@ Mesmo que você nunca entre no site, ao conectar num Servidor Carmine nós receb
 | **Avatar Steam** e link do perfil Steam (buscados na Steam Web API) | Mostrar no seu Perfil e nos servidores |
 | **ID público** e **Nome de exibição** | Identificar você no site e no jogo |
 | **Presença**: em qual servidor você está agora, quando conectou e desconectou (Sessões de jogo) | A lista de servidores ao vivo, o bloco "amigos jogando" e as Estatísticas |
-| **Estatísticas**: kills, mortes, assistências, dano, headshots, rounds e tempo jogado | O seu Perfil e o Ranking semanal |
+| **Estatísticas**: kills, mortes, assistências, dano, headshots, rounds e tempo jogado, e o detalhe: atividade por dia, armas mais usadas por lado e Sessões de jogo recentes | O seu Perfil e o Ranking semanal |
 | **Chat de texto dos servidores**: cada mensagem com a hora, o servidor, o seu time e se foi chat de time | Moderação: analisar denúncias e aplicar as [Regras de conduta](/regras). Registramos o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off` |
 | **Denúncias** que você faz (com `!report`) ou recebe: motivo, servidor, mapa, round, horário e uma cópia das últimas linhas do chat do servidor | Moderação: a fila da Staff |
 | **Punições** (tipo, categoria, data, duração, motivo e quem aplicou) | Moderação, reincidência e o selo e histórico no Perfil |
@@ -139,6 +139,8 @@ Cada um desses serviços tem a sua própria política de privacidade.
 | Conta, Inventário, Loadout, Presets e Estatísticas | Enquanto a Conta existir. Contas que nunca entraram no site e ficaram 24 meses sem conectar são anonimizadas |
 | Lista de amigos Steam | Cerca de 60 segundos, em cache |
 | Vínculo com o Discord (ID, nome de usuário e cargos aplicados) | Até você desvincular ou excluir a Conta. O token de acesso do Discord não é guardado |
+| Atividade por dia (o mapa de calor do Perfil) | 400 dias, apagada automaticamente. As somas semanais e as armas mais usadas ficam enquanto a Conta existir |
+| Sessões de jogo (dia, mapa e duração de cada vez que você jogou) | 90 dias, apagadas automaticamente |
 | Chat de texto dos servidores | 30 dias, apagado automaticamente. As linhas copiadas para uma Denúncia ficam só com a Denúncia (próxima linha) |
 | Denúncias (com a cópia do chat), abertas, arquivadas ou que viraram punição | 90 dias depois de feitas, apagadas automaticamente. A punição que saiu de uma Denúncia é outro registro (abaixo) e não é apagada junto |
 | Punições no Perfil | Selo enquanto a punição estiver ativa; histórico por 12 meses (ban permanente por cheat: enquanto durar) |
