@@ -11,11 +11,12 @@ import { CachedFriendLists } from './cached-friend-lists.js';
 import { FriendsPlayingController } from './friends-playing.controller.js';
 import { FriendsPlayingFinder } from './friends-playing.js';
 import { NowPlayingController } from './now-playing.controller.js';
+import { ProfilePlayingController } from './profile-playing.controller.js';
 
-/** "Seus amigos jogando agora" (S06) e "Jogando agora" do menu da Conta (U1b). Sem chave da Steam Web API, o bloco fica indisponível. */
+/** "Seus amigos jogando agora" (S06) e "Jogando agora" do menu da Conta (U1b) e do Perfil. Sem chave da Steam Web API, o bloco fica indisponível. */
 @Module({
   imports: [AccountsModule, LiveServersModule],
-  controllers: [FriendsPlayingController, NowPlayingController],
+  controllers: [FriendsPlayingController, NowPlayingController, ProfilePlayingController],
   providers: [
     {
       provide: FriendsPlayingFinder,

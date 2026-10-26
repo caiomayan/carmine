@@ -35,6 +35,7 @@ import {
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
 import { RARITIES } from '@/lib/catalog/types';
 import { buildShowcase, type ShowcaseView } from '@/lib/loadout/build';
+import { memberSinceLabel } from '@/lib/profile-identity';
 import { NOINDEX, profileMetadata } from '@/lib/profile-metadata';
 import { statsState } from '@/lib/profile-stats';
 import { settingsHref } from '@/lib/settings-nav';
@@ -150,12 +151,7 @@ export default async function ProfilePage({
       <div aria-hidden="true" className="pf-banner" data-testid="profile-banner" />
 
       <div className="container-page pb-24">
-        <ProfileHeader
-          profile={profile}
-          isOwner={isOwner}
-          asVisitor={asVisitor}
-          presence={isOwner}
-        />
+        <ProfileHeader profile={profile} isOwner={isOwner} asVisitor={asVisitor} />
 
         {invite ? <ClaimInvite profile={profile} /> : null}
 
@@ -254,15 +250,14 @@ async function ProfileHeader({
   profile,
   isOwner,
   asVisitor,
-  presence,
 }: {
   profile: Profile;
   isOwner: boolean;
   asVisitor: boolean;
-  /** Só o dono tem a presença: a API ainda não diz onde os outros jogam. */
-  presence: boolean;
 }) {
   const t = await getTranslations('profile');
+  // O "Entrar junto" é de cliente (abre o `steam://connect` e a instrução do console): só as mensagens dele vão ao navegador.
+  const { servers } = await getMessages();
   const unclaimed = !profile.claimed;
 
   return (
@@ -295,9 +290,40 @@ async function ProfileHeader({
               {t('privateSeal')}
             </span>
           ) : null}
-          {presence ? <PresenceChip label={t('presence')} /> : null}
+          {profile.isVip ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-(--fill-rest) px-3 py-1.5 text-status-vip"
+              data-testid="profile-vip"
+            >
+              <span aria-hidden="true" className="size-1.5 shrink-0 rotate-45 bg-status-vip" />
+              {t('vip')}
+            </span>
+          ) : null}
+          <NextIntlClientProvider
+            messages={{
+              servers: { connect: servers.connect, row: { fullHint: servers.row.fullHint } },
+            }}
+          >
+            <PresenceChip
+              publicId={profile.publicId}
+              label={t('presence')}
+              join={
+                isOwner
+                  ? undefined
+                  : {
+                      label: t('join'),
+                      aria: t('joinAria', { name: profile.displayName }),
+                    }
+              }
+            />
+          </NextIntlClientProvider>
           <SanctionBadges active={profile.sanctions.active} />
         </div>
+        <p className="text-body-sm text-muted-foreground" data-testid="profile-identity">
+          <time dateTime={profile.memberSince} data-testid="member-since">
+            {t('memberSince', { date: memberSinceLabel(profile.memberSince) })}
+          </time>
+        </p>
         {unclaimed && !isOwner ? (
           <p className="text-body-sm text-muted-foreground" data-testid="unclaimed-note">
             {t('unclaimed')}

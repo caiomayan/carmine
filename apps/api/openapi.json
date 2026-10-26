@@ -2654,6 +2654,67 @@
         ]
       }
     },
+    "/api/profiles/{publicId}/playing": {
+      "get": {
+        "operationId": "getProfilePlaying",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O servidor (com endereço e estado) ou `server` nulo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfilePlaying"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse ID público (ou ela foi excluída)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Presença indisponível no momento"
+          }
+        },
+        "summary": "Servidor Carmine em que uma Conta está jogando agora, se estiver; público, inclusive no Perfil privado",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
     "/api/staff/accounts": {
       "get": {
         "operationId": "searchStaffAccounts",
@@ -5141,6 +5202,14 @@
           "claimed": {
             "type": "boolean"
           },
+          "memberSince": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "isVip": {
+            "type": "boolean"
+          },
           "loadoutShowcase": {
             "$ref": "#/components/schemas/LoadoutShowcase"
           },
@@ -5158,6 +5227,8 @@
           "steamId",
           "steamProfileUrl",
           "claimed",
+          "memberSince",
+          "isVip",
           "loadoutShowcase",
           "sanctions",
           "isPrivate"
@@ -6855,6 +6926,60 @@
               "showcaseName",
               "mode",
               "map"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "server"
+        ],
+        "additionalProperties": false
+      },
+      "ProfilePlaying": {
+        "type": "object",
+        "properties": {
+          "server": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "showcaseName": {
+                "nullable": true,
+                "type": "string",
+                "minLength": 1
+              },
+              "mode": {
+                "$ref": "#/components/schemas/GameMode"
+              },
+              "map": {
+                "nullable": true,
+                "type": "string",
+                "minLength": 1
+              },
+              "address": {
+                "type": "string",
+                "minLength": 1
+              },
+              "state": {
+                "$ref": "#/components/schemas/LiveServerState"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "showcaseName",
+              "mode",
+              "map",
+              "address",
+              "state"
             ],
             "additionalProperties": false
           }

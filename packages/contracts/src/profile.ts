@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { cs2ItemSchema } from './inventory.js';
+import { liveServerSchema } from './live-servers.js';
 import { loadoutSlotSchema, loadoutSlotSideSchema } from './loadout.js';
 import { ownSanctionSchema, profileSanctionsSchema } from './moderation.js';
 import { staffRoleSchema } from './staff.js';
@@ -41,6 +42,13 @@ export const profileSchema = z
     steamProfileUrl: z.url(),
     /** A pessoa já fez login no site (Conta reivindicada). */
     claimed: z.boolean(),
+    /** Quando a Conta nasceu (o primeiro connect a um Servidor Carmine ou o primeiro login no site). */
+    memberSince: z.iso.datetime({ offset: true }),
+    /**
+     * Período VIP ativo agora: só o selo. Quando o VIP acaba ou quanto falta é da própria Conta
+     * (`vip` em `/api/me`), nunca do Perfil público.
+     */
+    isVip: z.boolean(),
     loadoutShowcase: z
       .object({
         items: z.array(showcaseItemSchema),
@@ -58,6 +66,29 @@ export const profileSchema = z
   .meta({ id: 'Profile' });
 
 export type Profile = z.infer<typeof profileSchema>;
+
+/**
+ * `GET /api/profiles/{publicId}/playing`: o Servidor Carmine em que a Conta está jogando agora,
+ * ou `server` nulo. A presença é pública, também no Perfil privado (só as Estatísticas somem
+ * dele). Leva o endereço porque o Perfil oferece "Entrar junto" (`steam://connect`).
+ */
+export const profilePlayingSchema = z
+  .object({
+    server: liveServerSchema
+      .pick({
+        id: true,
+        name: true,
+        showcaseName: true,
+        mode: true,
+        map: true,
+        address: true,
+        state: true,
+      })
+      .nullable(),
+  })
+  .meta({ id: 'ProfilePlaying' });
+
+export type ProfilePlaying = z.infer<typeof profilePlayingSchema>;
 
 /** Quando a Conta pode trocar o Nome de exibição e se ela tem um nome próprio (S11). */
 export const displayNameChangeSchema = z

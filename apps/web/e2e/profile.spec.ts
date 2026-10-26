@@ -2,17 +2,20 @@ import { randomInt } from 'node:crypto';
 import {
   chooseSteamAccount,
   createUnclaimedAccount,
+  grantVip,
   newSteamId,
   reconnectPlayer,
+  signInByRequest,
   signInFromHeader,
 } from './accounts';
 import { runApiCli } from './api-cli';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
-import { openAccountMenu } from './hydration';
+import { clickHydrated, openAccountMenu } from './hydration';
+import { createServer, keepBeating } from './live-servers';
 
 const NOT_FOUND = /404 \(Not Found\)/;
 
-test('Perfil mostra Nome de exibição, avatar, link da Steam e o Loadout vazio, sem o #ID', async ({
+test('Perfil mostra Nome de exibição, avatar, data de entrada, link da Steam e o Loadout vazio, sem o #ID', async ({
   page,
   request,
 }) => {
@@ -23,6 +26,10 @@ test('Perfil mostra Nome de exibição, avatar, link da Steam e o Loadout vazio,
   // O ID público fica só na URL: nenhuma tela o mostra (spec, "ID público fora da interface").
   await expect(page.getByText(`#${account.publicId}`)).toHaveCount(0);
   await expect(page.getByRole('main')).not.toContainText(String(account.publicId));
+  // Sob o nome, só o mês de entrada.
+  await expect(page.getByTestId('member-since')).toHaveText(/^Membro desde [a-zç]+ de 20\d\d$/);
+  await expect(page.getByTestId('profile-vip')).toHaveCount(0);
+  await expect(page.getByTestId('presence-chip')).toHaveCount(0);
   await expect(page.getByRole('img', { name: 'Avatar de Perfil Visitado' })).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'Perfil de Perfil Visitado na Steam (abre em outra aba)' }),
@@ -34,6 +41,8 @@ test('Perfil mostra Nome de exibição, avatar, link da Steam e o Loadout vazio,
   await expect(page.getByTestId('profile-stats')).toHaveCount(0);
   await expect(page).toHaveTitle('Perfil Visitado · Carmine');
 
+  // A aba e a prévia do link continuam sem o ID.
+  await expect(page).not.toHaveTitle(new RegExp(String(account.publicId)));
   // Prévia simples do link.
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     'content',
@@ -186,3 +195,75 @@ for (const theme of ['dark', 'light'] as const) {
     }
   });
 }
+
+test('o selo VIP aparece no Perfil só com Período VIP ativo, também para quem visita sem sessão', async ({
+  page,
+  request,
+}) => {
+  const vip = await createUnclaimedAccount(request, 'Perfil Com Vip');
+  const plain = await createUnclaimedAccount(request, 'Perfil Sem Vip');
+  grantVip(vip.steamId, 5);
+
+  await page.goto(`/${vip.publicId}`);
+  await expect(page.getByTestId('profile-vip')).toHaveText('VIP');
+  // O selo não diz até quando: isso é da própria Conta.
+  await expect(page.getByTestId('profile-vip')).not.toContainText(/dia|\d/);
+
+  await page.goto(`/${plain.publicId}`);
+  await expect(page.getByTestId('profile-identity')).toBeVisible();
+  await expect(page.getByTestId('profile-vip')).toHaveCount(0);
+});
+
+test.describe('Jogando agora no Perfil de outra pessoa', () => {
+  test('o visitante vê o servidor e o "Entrar junto"', async ({
+    page,
+    request,
+    expectedConsoleErrors,
+  }) => {
+    // O Chrome do teste não tem a Steam: o steam:// não abre (é justamente o caso do IP).
+    expectedConsoleErrors.push(/steam:\/\//);
+    const steamId = newSteamId();
+    const server = createServer();
+    const { publicId } = await reconnectPlayer(request, steamId, 'Perfil Jogando');
+    const stop = keepBeating(request, server, () => [steamId]);
+    try {
+      await page.goto(`/${publicId}`);
+      const chip = page.getByTestId('presence-chip');
+      await expect(chip).toContainText('Jogando agora');
+      await expect(chip).toContainText(server.name);
+      await expect(chip).toContainText('de_mirage');
+
+      const join = page.getByRole('link', { name: /^Entrar junto com Perfil Jogando/ });
+      await expect(join).toHaveAttribute('href', `steam://connect/${server.address}`);
+      await clickHydrated(join);
+      await expect(page.locator('header').getByRole('status')).toContainText(
+        `no console do CS2: connect ${server.address}`,
+      );
+    } finally {
+      stop();
+    }
+  });
+
+  test('o dono vê a própria presença, sem "Entrar junto"', async ({ page, request }) => {
+    const steamId = newSteamId();
+    const server = createServer();
+    const { publicId } = await reconnectPlayer(request, steamId, 'Dono Jogando');
+    await signInByRequest(page, steamId);
+    const stop = keepBeating(request, server, () => [steamId]);
+    try {
+      await page.goto(`/${publicId}`);
+      await expect(page.getByTestId('presence-chip')).toContainText(server.name);
+      await expect(page.getByTestId('join-together')).toHaveCount(0);
+    } finally {
+      stop();
+    }
+  });
+
+  test('fora de um servidor não há marca nem botão', async ({ page, request }) => {
+    const account = await createUnclaimedAccount(request, 'Perfil Parado');
+    await page.goto(`/${account.publicId}`);
+    await expect(page.getByTestId('profile-identity')).toBeVisible();
+    await expect(page.getByTestId('presence-chip')).toHaveCount(0);
+    await expect(page.getByTestId('join-together')).toHaveCount(0);
+  });
+});

@@ -32,7 +32,7 @@ type Help = 'closed' | 'connect' | 'copy';
  * Jogar num servidor: abre o `steam://connect` e, logo abaixo, a instrução do console com o IP
  * copiável (para quando o `steam://` não abre). A linha e o cartão usam o mesmo comportamento.
  */
-export function useConnect(server: LiveServer) {
+export function useConnect(server: Pick<LiveServer, 'address'>) {
   const [help, setHelp] = useState<Help>('closed');
   const { status: copyStatus, copy } = useCopy();
   const helpId = useId();
@@ -133,7 +133,7 @@ export function ConnectHelp({
   showFullHint,
   className,
 }: {
-  server: LiveServer;
+  server: Pick<LiveServer, 'address' | 'state'>;
   connect: Connect;
   /** A linha avisa do Lotado aqui; o cartão já o diz o tempo todo. */
   showFullHint: boolean;
@@ -162,7 +162,7 @@ function HelpBody({
   full,
   className,
 }: {
-  server: LiveServer;
+  server: Pick<LiveServer, 'address' | 'state'>;
   connect: Connect;
   full: boolean;
   className?: string;
