@@ -58,6 +58,7 @@ test('o JS de cada página fica dentro do orçamento', async ({ page, request, b
     storageState,
     '--profile',
     `/${player.publicId}`,
+    '--chunks',
   ];
   let table = '';
   let failed = false;
@@ -70,7 +71,9 @@ test('o JS de cada página fica dentro do orçamento', async ({ page, request, b
   }
   console.log(`\nOrçamento de JS por página (gzip, cache frio, 1440 px)\n\n${table}`);
   if (process.env.GITHUB_STEP_SUMMARY) {
-    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Orçamento de JS por página\n\n${table}\n`);
+    // No resumo só a tabela; a lista dos scripts de cada página (--chunks) fica no log.
+    const summary = table.split('\n####')[0];
+    appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Orçamento de JS por página\n\n${summary}\n`);
   }
   expect(failed, `alguma página passou do orçamento de JS:\n${table}`).toBe(false);
   expect(table, 'nenhuma página foi pulada').not.toContain('pulada');
