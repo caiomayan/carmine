@@ -1,52 +1,63 @@
 #!/usr/bin/env node
 /**
- * Diagnóstico (não é parte da CI): para a rota dada, lista os chunks de cliente que o manifesto de referências
- * do build amarra aos módulos dela, com o tamanho em gzip e os módulos de cada chunk.
+ * Diagnóstico (não é parte da CI): lista todos os chunks de cliente do build com o tamanho em gzip e o que cada um
+ * leva (pacotes e módulos do projeto), e os módulos de cliente que o manifesto da rota liga a cada chunk.
  *   node scripts/chunk-report.mjs /loadout
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { gzipSync } from 'node:zlib';
 
 const route = process.argv[2] ?? '/loadout';
 const root = path.join(import.meta.dirname, '..', '.next');
-const file = path.join(root, 'server', 'app', route, 'page_client-reference-manifest.js');
-const sandbox = { globalThis: {} };
-sandbox.globalThis.__RSC_MANIFEST = {};
-vm.runInNewContext(readFileSync(file, 'utf8'), sandbox);
-const manifest = Object.values(sandbox.globalThis.__RSC_MANIFEST)[0];
+const chunksDir = path.join(root, 'static', 'chunks');
 
-const byChunk = new Map();
-for (const [module, entry] of Object.entries(manifest.clientModules)) {
-  for (const chunk of entry.chunks ?? []) {
-    const list = byChunk.get(chunk) ?? [];
-    list.push(module);
-    byChunk.set(chunk, list);
+function find(dir, name, found = []) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) find(full, name, found);
+    else if (full.replaceAll('\\', '/').endsWith(name)) found.push(full);
+  }
+  return found;
+}
+
+const markers = {
+  'framer-motion': /useReducedMotion|AnimatePresence|MotionConfig|LazyMotion/,
+  radix: /data-radix|@radix-ui|radix-/,
+  'next-intl': /NextIntl|IntlProvider/,
+  zod: /ZodError|ZodType/,
+  'simple-icons': /simple-icons/,
+  'react-dom': /react-dom|react\.production/,
+  'next/router': /app-router|AppRouter/,
+};
+
+const rows = readdirSync(chunksDir)
+  .filter((name) => name.endsWith('.js'))
+  .map((name) => {
+    const source = readFileSync(path.join(chunksDir, name), 'utf8');
+    const kb = gzipSync(source).length / 1024;
+    const has = Object.entries(markers)
+      .filter(([, pattern]) => pattern.test(source))
+      .map(([key]) => key);
+    const own = [...source.matchAll(/\[project\]\/(src\/[\w@./()[\]-]+)/g)].map((m) => m[1]);
+    return { name, kb, has, own: [...new Set(own)] };
+  })
+  .sort((a, b) => b.kb - a.kb);
+
+console.log('--- chunks do build (gzip) ---');
+for (const row of rows.slice(0, 40)) {
+  console.log(`${row.kb.toFixed(1).padStart(6)} kB  ${row.name}  [${row.has.join(', ')}]`);
+  for (const own of row.own.slice(0, 12)) console.log(`          ${own}`);
+}
+
+const manifests = find(path.join(root, 'server', 'app'), `${route}/page_client-reference-manifest.js`);
+for (const file of manifests) {
+  const sandbox = { globalThis: { __RSC_MANIFEST: {} } };
+  vm.runInNewContext(readFileSync(file, 'utf8'), sandbox);
+  const manifest = Object.values(sandbox.globalThis.__RSC_MANIFEST)[0];
+  console.log(`\n--- ${file} ---`);
+  for (const [module, entry] of Object.entries(manifest.clientModules)) {
+    console.log(`${module} -> ${(entry.chunks ?? []).map((c) => c.split('/').pop()).join(' ')}`);
   }
 }
-const rows = [];
-for (const [chunk, modules] of byChunk) {
-  const clean = chunk.replace(/^\/?_next\//, '').replace(/\?.*$/, '');
-  let kb = 0;
-  try {
-    kb = gzipSync(readFileSync(path.join(root, clean))).length / 1024;
-  } catch {}
-  rows.push({ chunk: clean, kb, modules });
-}
-rows.sort((a, b) => b.kb - a.kb);
-for (const row of rows) {
-  console.log(`\n${row.kb.toFixed(1)} kB  ${row.chunk}`);
-  for (const module of row.modules.slice(0, 25)) console.log(`    ${module}`);
-  if (row.modules.length > 25) console.log(`    … +${row.modules.length - 25}`);
-}
-const dir = path.join(root, 'static', 'chunks');
-const all = readdirSync(dir).filter((name) => name.endsWith('.js'));
-const sizes = all.map((name) => ({
-  name,
-  kb: gzipSync(readFileSync(path.join(dir, name))).length / 1024,
-}));
-sizes.sort((a, b) => b.kb - a.kb);
-console.log('\n--- maiores chunks do build (gzip) ---');
-for (const s of sizes.slice(0, 25)) console.log(`${s.kb.toFixed(1)} kB  ${s.name}`);
-void statSync;
