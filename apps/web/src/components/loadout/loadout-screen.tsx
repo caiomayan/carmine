@@ -1,15 +1,9 @@
 'use client';
 
 import type { LoadoutSide } from '@carmine/contracts';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { type KeyboardEvent, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/animate-ui/components/radix/sheet';
 import {
   Tabs,
   TabsContent,
@@ -38,8 +32,13 @@ import '@/components/vida/loadout-inventario.css';
 import { ambientFor } from '@/components/vida/skin-ambient';
 import { BoardCard } from './board-card';
 import { SlotDock } from './slot-dock';
-import { SlotPicker } from './slot-picker';
 import { useLastSide } from './use-last-side';
+
+/** A folha do seletor de Itens só é baixada quando a pessoa chega perto do quadro (ou clica em "Trocar"). */
+const loadPickerSheet = () => import('./picker-sheet');
+const PickerSheet = dynamic(() => loadPickerSheet().then((module) => module.PickerSheet), {
+  ssr: false,
+});
 
 /** TR à esquerda, CT à direita, sempre. */
 const SIDES = ['t', 'ct'] as const;
@@ -81,12 +80,13 @@ export function LoadoutScreen({
   hand?: ReactNode;
 }) {
   const t = useTranslations('loadout');
-  const tc = useTranslations('common');
   const wide = useMediaQuery(WIDE);
   const [side, setSide] = useLastSide();
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [chosenColumn, setChosenColumn] = useState<BoardColumnId | null>(null);
   const [picker, setPicker] = useState<'closed' | 'right' | 'bottom'>('closed');
+  // A folha é montada no primeiro "Trocar" e fica montada (fecha e abre com a animação de sempre).
+  const [pickerMounted, setPickerMounted] = useState(false);
   const [flash, setFlash] = useState(0);
   const focusKey = useRef<string | null>(null);
   const dockRef = useRef<HTMLDivElement>(null);
@@ -216,6 +216,7 @@ export function LoadoutScreen({
   }
 
   function openPicker() {
+    setPickerMounted(true);
     setPicker(wide ? 'right' : 'bottom');
   }
 
@@ -242,6 +243,8 @@ export function LoadoutScreen({
       data-vida="on"
       data-side={side}
       data-testid="loadout-ambient"
+      onPointerOver={() => void loadPickerSheet()}
+      onFocusCapture={() => void loadPickerSheet()}
       style={{ '--amb-1': amb1, '--amb-2': amb2, '--amb-3': amb3 } as React.CSSProperties}
     >
       <div aria-hidden="true" className="v-ambient">
@@ -395,54 +398,36 @@ export function LoadoutScreen({
           ) : null}
         </div>
 
-        <Sheet open={picker !== 'closed'} onOpenChange={(open) => !open && setPicker('closed')}>
-          <SheetContent
-            side={picker === 'bottom' ? 'bottom' : 'right'}
-            closeLabel={tc('close')}
-            className={cn(
-              'overflow-y-auto',
-              picker === 'bottom'
-                ? 'h-auto max-h-[88dvh] rounded-t-xl pb-[max(20px,env(safe-area-inset-bottom))]'
-                : 'w-[min(420px,100%-48px)]',
+        {pickerMounted ? (
+          <PickerSheet
+            mode={picker}
+            onClose={() => setPicker('closed')}
+            onDone={() => {
+              setPicker('closed');
+              setFlash((n) => n + 1);
+            }}
+            slot={selected}
+            title={
+              selected
+                ? selected.side
+                  ? `${titleOf(selected)} · ${t(`sidesShort.${selected.side}`)}`
+                  : titleOf(selected)
+                : ''
+            }
+            otherSide={pickerOther}
+            equippedSides={equippedSides}
+            candidates={candidates.filter(
+              (candidate) =>
+                !!selected &&
+                candidate.slot === selected.slot &&
+                (candidate.sides === null ||
+                  (selected.side !== null && candidate.sides.includes(selected.side))),
             )}
-          >
-            {selected ? (
-              <>
-                <SheetHeader className="pr-14">
-                  <SheetTitle>
-                    {t('panel.pickerTitle', {
-                      slot: selected.side
-                        ? `${titleOf(selected)} · ${t(`sidesShort.${selected.side}`)}`
-                        : titleOf(selected),
-                    })}
-                  </SheetTitle>
-                  <SheetDescription>{t('panel.pickerDescription')}</SheetDescription>
-                </SheetHeader>
-                <div className="px-4 pb-4">
-                  <SlotPicker
-                    key={selected.key}
-                    slot={selected}
-                    otherSide={pickerOther}
-                    equippedSides={equippedSides}
-                    candidates={candidates.filter(
-                      (candidate) =>
-                        candidate.slot === selected.slot &&
-                        (candidate.sides === null ||
-                          (selected.side !== null && candidate.sides.includes(selected.side))),
-                    )}
-                    catalogHref={catalogHref(selected)}
-                    rarityLabels={rarityLabels}
-                    names={names}
-                    onDone={() => {
-                      setPicker('closed');
-                      setFlash((n) => n + 1);
-                    }}
-                  />
-                </div>
-              </>
-            ) : null}
-          </SheetContent>
-        </Sheet>
+            catalogHref={selected ? catalogHref(selected) : ''}
+            rarityLabels={rarityLabels}
+            names={names}
+          />
+        ) : null}
       </Tabs>
     </div>
   );

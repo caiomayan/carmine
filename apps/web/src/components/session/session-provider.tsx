@@ -24,6 +24,7 @@ import {
 import { signInHref } from '@/lib/auth-links';
 import { loadContracts } from '@/lib/contracts-schemas';
 import { FIRST_STEPS_COOKIE, firstStepsCookie } from '@/lib/first-steps';
+import { isKnownSession } from '@/lib/same-session';
 
 export type SessionStatus = 'authenticated' | 'anonymous' | 'unknown';
 
@@ -122,6 +123,8 @@ export function SessionProvider({
   pathRef.current = pathname;
   const statusRef = useRef(state.status);
   statusRef.current = state.status;
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const routerRef = useRef(router);
   routerRef.current = router;
 
@@ -151,6 +154,8 @@ export function SessionProvider({
           // API fora do ar: fica o último estado conhecido, nunca "saiu".
           if (!response.ok) return;
           const body = await response.json();
+          // A conferência de rotina devolve a sessão que já temos: nada a validar, e o Zod nem é baixado.
+          if (isKnownSession(stateRef.current, body)) return;
           const { currentSessionSchema } = await loadContracts();
           setState(stateFrom(currentSessionSchema.parse(body), 'authenticated'));
         })

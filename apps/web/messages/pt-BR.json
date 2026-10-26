@@ -428,6 +428,142 @@
       "lastMap": "Último mapa"
     }
   },
+  "serverPage": {
+    "metaTitle": "{name}",
+    "metaDescription": "O placar ao vivo, os jogadores e o histórico do dia de {name}, um Servidor Carmine de {mode}.",
+    "back": "Servidores",
+    "notFound": {
+      "title": "Servidor não encontrado",
+      "body": "Esse servidor não existe mais ou o endereço está errado. Veja os servidores que estão no ar.",
+      "back": "Ver servidores"
+    },
+    "status": {
+      "live": "Ao vivo",
+      "full": "Lotado",
+      "warmup": "Esquentando",
+      "offline": "Offline"
+    },
+    "lastMap": "Último mapa",
+    "offline": {
+      "sinceMap": "Offline {ago} · último mapa {map}",
+      "since": "Offline {ago}",
+      "never": "Nunca ficou online",
+      "note": "O servidor não manda sinal. Quando voltar, o placar e os jogadores aparecem aqui."
+    },
+    "address": "Endereço",
+    "score": {
+      "live": "Placar ao vivo",
+      "round": "Round",
+      "caption": "Rounds ganhos por lado neste mapa",
+      "ctName": "Contra-terroristas",
+      "tName": "Terroristas",
+      "ct": "CT",
+      "t": "TR",
+      "warmupLabel": "Sem placar ainda",
+      "warmupTitle": "Esquentando",
+      "warmupBody": "O placar começa a contar no primeiro round do mapa.",
+      "emptyLabel": "Sem jogo",
+      "emptyTitle": "Ninguém por aqui",
+      "emptyBody": "Entre agora e comece a jogar {mode}.",
+      "offlineLabel": "Servidor offline",
+      "offlineTitle": "Dormindo",
+      "offlineLast": "O último mapa de hoje foi <b>{map}</b>: {ct} × {t} em rounds ganhos, {rounds} no total.",
+      "players": "jogadores"
+    },
+    "leader": {
+      "label": "Líder agora",
+      "onMap": "No mapa há {minutes} min",
+      "points": "Pontos",
+      "kills": "abates",
+      "deaths": "mortes",
+      "ahead": "{points, plural, one {# ponto} other {# pontos}} à frente do segundo lugar",
+      "alone": "Sozinho na liderança",
+      "private": "Jogador privado"
+    },
+    "roster": {
+      "title": "Jogadores",
+      "count": "{count} no servidor agora",
+      "countOnly": "{count, plural, one {# jogador} other {# jogadores}} no servidor agora",
+      "emptyLive": "Ninguém jogando agora",
+      "emptyLiveBody": "Os jogadores aparecem aqui assim que alguém entrar.",
+      "emptyOffline": "Ninguém conectado",
+      "emptyOfflineBody": "O servidor está offline. Os jogadores aparecem aqui quando ele voltar.",
+      "private": "Jogador privado",
+      "allTitle": "Todos contra todos · por pontos",
+      "allAria": "Jogadores por pontos",
+      "warmup": "Esquentando",
+      "kills": "Abates",
+      "deaths": "Mortes",
+      "points": "Pontos",
+      "ratio": "K/D",
+      "ratioSr": "Abates por morte",
+      "killsShort": "A",
+      "deathsShort": "M",
+      "pointsShort": "P",
+      "namesTitle": "Em ordem alfabética",
+      "namesAria": "Jogadores em ordem alfabética"
+    },
+    "today": {
+      "title": "Hoje no servidor",
+      "note": "Hoje, {date} · horário de Brasília",
+      "tiles": {
+        "rounds": "Rounds jogados",
+        "roundsFoot": "em {count, plural, one {# mapa} other {# mapas}}",
+        "won": "Rounds ganhos",
+        "maps": "Mapas hoje",
+        "peak": "Pico de jogadores",
+        "peakAt": "às {time}",
+        "unique": "Jogadores diferentes",
+        "uniqueFoot": "passaram por aqui hoje"
+      },
+      "maps": {
+        "title": "Mapas de hoje",
+        "now": "Agora",
+        "warming": "Esquentando",
+        "range": "{from} – {to}",
+        "rangeNow": "{from} – agora",
+        "rounds": "{count, plural, one {# round} other {# rounds}}",
+        "ct": "CT",
+        "t": "TR",
+        "foot": "Rounds ganhos por lado em cada mapa. O Retake não tem partida: o mapa roda até a rotação."
+      },
+      "hours": {
+        "title": "Rounds por hora",
+        "titlePlayers": "Jogadores por hora",
+        "aria": "Rounds por hora. O mais movimentado foi às {hour}h, com {count, plural, one {# round} other {# rounds}}.",
+        "ariaPlayers": "Jogadores por hora. O mais movimentado foi às {hour}h, com {count, plural, one {# jogador} other {# jogadores}}.",
+        "bar": "{hour}h: {count, plural, one {# round} other {# rounds}}",
+        "barPlayers": "{hour}h: {count, plural, one {# jogador} other {# jogadores}}",
+        "axis": "{hour}h",
+        "from": "Movimento desde as {hour}h.",
+        "busiest": "O mais cheio foi às {hour}h.",
+        "none": "Sem rounds hoje.",
+        "nonePlayers": "Sem jogadores hoje."
+      },
+      "since": "Histórico detalhado coletado desde {date}."
+    },
+    "collecting": {
+      "status": "Coletando",
+      "since": "Coletando desde {date}",
+      "never": "Ainda não coletamos esse dado.",
+      "score": {
+        "title": "Placar ao vivo",
+        "body": "O placar CT × TR e o round aparecem aqui quando os servidores começarem a mandar esse dado."
+      },
+      "roster": {
+        "title": "Jogadores",
+        "body": "A lista de jogadores, com time e abates, aparece aqui quando os servidores começarem a mandar esse dado."
+      },
+      "today": {
+        "title": "Hoje no servidor",
+        "body": "Rounds, mapas e movimento por hora aparecem aqui quando começarmos a guardar o histórico do servidor."
+      },
+      "leader": {
+        "title": "Líder agora",
+        "body": "O líder, os pontos e o tempo no mapa aparecem aqui quando os servidores começarem a mandar esse dado."
+      }
+    }
+  },
   "inventory": {
     "title": "Inventário",
     "subtitle": "Os Itens que você montar aqui valem em todos os Servidores Carmine.",

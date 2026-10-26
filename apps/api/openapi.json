@@ -7270,6 +7270,7 @@
             "$ref": "#/components/schemas/SteamId64"
           },
           "team": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -7295,7 +7296,6 @@
         },
         "required": [
           "steamId",
-          "team",
           "kills",
           "deaths",
           "score"
@@ -9202,6 +9202,7 @@
             "type": "boolean"
           },
           "killerSteamId": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -9213,6 +9214,7 @@
             "type": "boolean"
           },
           "victimSteamId": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -9224,6 +9226,7 @@
             "type": "boolean"
           },
           "assisterSteamId": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -9257,11 +9260,8 @@
           "id",
           "at",
           "warmup",
-          "killerSteamId",
           "killerIsBot",
-          "victimSteamId",
           "victimIsBot",
-          "assisterSteamId",
           "assisterIsBot",
           "headshot",
           "weapon",
@@ -10901,12 +10901,14 @@
             "$ref": "#/components/schemas/ReportReason"
           },
           "round": {
+            "default": null,
             "nullable": true,
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
           },
           "map": {
+            "default": null,
             "nullable": true,
             "type": "string",
             "maxLength": 64
@@ -10915,9 +10917,7 @@
         "required": [
           "reporterSteamId",
           "targetSteamId",
-          "reason",
-          "round",
-          "map"
+          "reason"
         ]
       },
       "ReportResult": {

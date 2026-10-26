@@ -32,6 +32,11 @@ export const roundWinnerSchema = z.enum(['ct', 't', 'none']).meta({ id: 'RoundWi
 export type RoundWinner = z.infer<typeof roundWinnerSchema>;
 
 /**
+ * Os campos nulos (SteamID do assassino, da vítima e do assistente) também valem AUSENTES: o cliente
+ * C# do plugin, gerado do OpenAPI, deixa fora do JSON o que é nulo (`WhenWritingNull`), então uma kill
+ * sem assistente chegava sem `assisterSteamId` e o lote inteiro era recusado (400). `default(null)` os
+ * normaliza: o resto da API só vê `null`.
+ *
  * Uma morte no servidor. Gera, conforme as regras da S12: kill (do assassino), morte (da vítima)
  * e assistência. `killerSteamId` nulo com `killerIsBot` falso é o mundo (queda, bomba): conta só
  * a morte, como no suicídio. Um bot como assassino ou vítima anula o evento para todos; um bot só
@@ -43,11 +48,11 @@ export const killEventSchema = z
     id: eventIdSchema,
     at: eventTimeSchema,
     warmup: z.boolean(),
-    killerSteamId: steamId64Schema.nullable(),
+    killerSteamId: steamId64Schema.nullable().default(null),
     killerIsBot: z.boolean(),
-    victimSteamId: steamId64Schema.nullable(),
+    victimSteamId: steamId64Schema.nullable().default(null),
     victimIsBot: z.boolean(),
-    assisterSteamId: steamId64Schema.nullable(),
+    assisterSteamId: steamId64Schema.nullable().default(null),
     assisterIsBot: z.boolean(),
     headshot: z.boolean(),
     weapon: z.string().max(64),
