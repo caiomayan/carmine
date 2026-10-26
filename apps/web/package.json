@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "maps": "node scripts/maps.mjs",
     "budget:js": "node scripts/js-budget.mjs",
+    "budget:js:ci": "playwright test --config playwright.budget.config.ts",
     "test:unit": "vitest run"
   },
   "dependencies": {

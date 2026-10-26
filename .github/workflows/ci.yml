@@ -93,6 +93,11 @@ jobs:
       - run: pnpm infra:up
       - run: pnpm --filter @carmine/web exec playwright install --with-deps chromium
       - run: pnpm --filter @carmine/web test:e2e --shard=${{ matrix.shard }}/3
+      # O orçamento de JS por página (js-budget.json: 360 kB, Perfil 425), medido neste mesmo build de
+      # produção com uma Conta semeada. Roda numa parte só (a tabela por página vai para o log e para o
+      # resumo do job) e reprova o PR se alguma página estourar, mesmo se um teste do E2E falhou.
+      - if: ${{ !cancelled() && matrix.shard == 1 }}
+        run: pnpm --filter @carmine/web budget:js:ci
       # Os traces das falhas, para diagnosticar sem rodar de novo.
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
