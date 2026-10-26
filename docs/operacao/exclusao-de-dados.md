@@ -33,6 +33,7 @@ Conta da Staff sai da Staff antes (`staff revoke`). Não tem volta.
 | Perfil público (responde 404, também pelo SteamID64) | Com um ban valendo, o SteamID64 na Conta, para o ban continuar valendo; o vínculo some no primeiro connect ou login depois que o ban acabar |
 | Inventário, Presets, Loadout, Períodos VIP, a preferência de chat (`!chat off`) e as Estatísticas (semanais, por dia, por arma e as Sessões de jogo) | Os registros de pagamento (S14), pelo prazo legal, em tabela própria |
 | O chat que a pessoa escreveu (`chat_messages`) e as linhas dela no chat copiado em Denúncias de outras pessoas (S13); o vínculo com as Denúncias que ela fez | As Denúncias feitas contra ela, com o chat copiado, até os 90 dias (registro de moderação, como as Punições) |
+| A foto de perfil própria (ADR 0022): todos os arquivos no R2 (no ar, guardados e já trocados), a purga na CDN e as denúncias contra ela; a Conta sai das denúncias de foto que fez | O registro da ação no log de auditoria, com quantas fotos saíram |
 | Reivindicação e sessões do site (caem na hora) | O ID público, que nunca é reaproveitado |
 | O vínculo com a Steam (`steamId` vira `-publicId`) | |
 

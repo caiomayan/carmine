@@ -108,6 +108,24 @@ const envSchema = z
     // status. O aceite da S15 pede até 1 minuto para o cargo mudar.
     DISCORD_SYNC_SECONDS: z.coerce.number().int().positive().default(30),
     DISCORD_STATUS_SECONDS: z.coerce.number().int().positive().default(60),
+    // Foto de perfil própria (ADR 0022): o R2 de mídia (separado do bucket de backup). Sem o conjunto
+    // base (as seis primeiras), a funcionalidade fica desligada. A purga da CDN é opcional (sem ela,
+    // só a expiração do cache tira uma foto apagada de circulação; em produção, configure).
+    R2_MEDIA_ENDPOINT: z.union([z.literal(''), urlWithProtocol(['https:', 'http:'])]).default(''),
+    R2_MEDIA_ACCESS_KEY_ID: z.string().trim().default(''),
+    R2_MEDIA_SECRET_ACCESS_KEY: z.string().trim().default(''),
+    R2_MEDIA_PUBLIC_BUCKET: z.string().trim().default(''),
+    R2_MEDIA_PRIVATE_BUCKET: z.string().trim().default(''),
+    // Origem pública das fotos (o domínio do bucket público na Cloudflare), ex.: https://img.stcarmine.com.
+    MEDIA_PUBLIC_URL: z.union([z.literal(''), origin()]).default(''),
+    CLOUDFLARE_ZONE_ID: z.string().trim().default(''),
+    CLOUDFLARE_PURGE_TOKEN: z.string().trim().default(''),
+    // Só os testes mudam esta (a API falsa local); em produção vale a padrão.
+    CLOUDFLARE_API_URL: urlWithProtocol(['https:', 'http:']).default(
+      'https://api.cloudflare.com/client/v4',
+    ),
+    // De quanto em quanto tempo a fila de remoção de arquivos roda (0 desliga).
+    MEDIA_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(30),
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
@@ -150,6 +168,8 @@ const envSchema = z
         'STAFF_REPORTS_WEBHOOK_URL',
         'DISCORD_API_URL',
         'DISCORD_AUTHORIZE_URL',
+        'R2_MEDIA_ENDPOINT',
+        'MEDIA_PUBLIC_URL',
       ] as const) {
         if (env[key] !== '' && new URL(env[key]).protocol !== 'https:') {
           ctx.addIssue({ code: 'custom', path: [key], message: 'deve usar https em produção' });
@@ -189,6 +209,10 @@ export interface AppConfig {
   discord: DiscordConfig | null;
   /** Variáveis base do Discord que faltam quando só parte delas foi preenchida (a S15 fica desligada). */
   discordMissing: string[];
+  /** Foto de perfil própria (ADR 0022); nulo (desligada) sem o conjunto base de variáveis. */
+  media: MediaConfig | null;
+  /** Variáveis base da foto de perfil que faltam quando só parte delas foi preenchida. */
+  mediaMissing: string[];
   /** Sentry (S09): sem DSN, desligado. */
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
@@ -212,6 +236,19 @@ export interface DiscordConfig {
   authorizeUrl: string;
   syncMs: number;
   statusMs: number;
+}
+
+export interface MediaConfig {
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicBucket: string;
+  privateBucket: string;
+  /** Origem pública das fotos, sem barra final. */
+  publicUrl: string;
+  /** Purga da CDN depois de apagar; nulo: só a expiração do cache. */
+  purge: { zoneId: string; token: string; apiUrl: string } | null;
+  sweepMs: number;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -268,6 +305,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       retentionSweepMs: e.RETENTION_SWEEP_MINUTES * 60_000,
     },
     ...discordConfig(e),
+    ...mediaConfig(e),
     sentry: {
       dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
       environment: e.SENTRY_ENVIRONMENT === '' ? e.NODE_ENV : e.SENTRY_ENVIRONMENT,
@@ -319,6 +357,46 @@ function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
       authorizeUrl: e.DISCORD_AUTHORIZE_URL,
       syncMs: e.DISCORD_SYNC_SECONDS * 1000,
       statusMs: e.DISCORD_STATUS_SECONDS * 1000,
+    },
+  };
+}
+
+const MEDIA_BASE_VARS = [
+  'R2_MEDIA_ENDPOINT',
+  'R2_MEDIA_ACCESS_KEY_ID',
+  'R2_MEDIA_SECRET_ACCESS_KEY',
+  'R2_MEDIA_PUBLIC_BUCKET',
+  'R2_MEDIA_PRIVATE_BUCKET',
+  'MEDIA_PUBLIC_URL',
+] as const;
+
+/** A foto de perfil liga só com o conjunto base inteiro; parcial desliga e a API avisa o que falta no boot. */
+function mediaConfig(e: Env): Pick<AppConfig, 'media' | 'mediaMissing'> {
+  const missing = MEDIA_BASE_VARS.filter((key) => e[key] === '');
+  if (missing.length > 0) {
+    return {
+      media: null,
+      mediaMissing: missing.length === MEDIA_BASE_VARS.length ? [] : missing,
+    };
+  }
+  return {
+    mediaMissing: [],
+    media: {
+      endpoint: e.R2_MEDIA_ENDPOINT,
+      accessKeyId: e.R2_MEDIA_ACCESS_KEY_ID,
+      secretAccessKey: e.R2_MEDIA_SECRET_ACCESS_KEY,
+      publicBucket: e.R2_MEDIA_PUBLIC_BUCKET,
+      privateBucket: e.R2_MEDIA_PRIVATE_BUCKET,
+      publicUrl: e.MEDIA_PUBLIC_URL.replace(/\/+$/, ''),
+      purge:
+        e.CLOUDFLARE_ZONE_ID !== '' && e.CLOUDFLARE_PURGE_TOKEN !== ''
+          ? {
+              zoneId: e.CLOUDFLARE_ZONE_ID,
+              token: e.CLOUDFLARE_PURGE_TOKEN,
+              apiUrl: e.CLOUDFLARE_API_URL.replace(/\/+$/, ''),
+            }
+          : null,
+      sweepMs: e.MEDIA_SWEEP_SECONDS * 1000,
     },
   };
 }

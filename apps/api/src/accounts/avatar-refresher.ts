@@ -1,5 +1,5 @@
 import { type BeforeApplicationShutdown, Logger } from '@nestjs/common';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts } from '../database/schema.js';
 import type { SteamProfiles, SteamSummary } from './steam-profiles.js';
@@ -26,7 +26,7 @@ export class AvatarRefresher implements BeforeApplicationShutdown {
   refreshInBackground(
     account: {
       steamId: string;
-      avatarUrl: string | null;
+      steamAvatarUrl: string | null;
       avatarFetchedAt: Date | null;
       anonymizedAt?: Date | null;
     },
@@ -34,7 +34,7 @@ export class AvatarRefresher implements BeforeApplicationShutdown {
   ): void {
     if (account.anonymizedAt) return;
     const fresh =
-      account.avatarUrl !== null &&
+      account.steamAvatarUrl !== null &&
       account.avatarFetchedAt !== null &&
       now.getTime() - account.avatarFetchedAt.getTime() < STALE_AFTER_MS;
     if (fresh || this.profiles === null || this.inFlight.has(account.steamId)) {
@@ -73,7 +73,12 @@ export class AvatarRefresher implements BeforeApplicationShutdown {
     }
     await this.db
       .update(accounts)
-      .set({ avatarUrl: summary.avatarUrl, avatarFetchedAt: new Date() })
+      .set({
+        steamAvatarUrl: summary.avatarUrl,
+        avatarFetchedAt: new Date(),
+        // Com foto própria no ar, o avatar efetivo é a foto: só o da Steam guardado se atualiza.
+        avatarUrl: sql`case when ${accounts.avatarSource} = 'steam' then ${summary.avatarUrl} else ${accounts.avatarUrl} end`,
+      })
       // Uma Conta anonimizada (S08) nunca recebe o avatar de volta.
       .where(and(eq(accounts.steamId, BigInt(steamId)), isNull(accounts.anonymizedAt)));
   }

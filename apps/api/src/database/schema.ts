@@ -53,6 +53,9 @@ export const gameServers = pgTable('game_servers', {
 /** Contador `n` do ID público (ADR 0013): cada valor vira um bloco exclusivo de 3 números. */
 export const publicIdCounter = pgSequence('public_id_counter', { startWith: 0, minValue: 0 });
 
+/** De onde vem o avatar efetivo da Conta (ADR 0022). */
+export const avatarSource = pgEnum('avatar_source', ['steam', 'custom']);
+
 /** Conta (`Account`): nasce no primeiro connect a um Servidor Carmine (ADR 0007). */
 export const accounts = pgTable(
   'accounts',
@@ -81,9 +84,18 @@ export const accounts = pgTable(
     displayNameChangedAt: timestamptz(),
     /** Perfil privado (S11): esconde as Estatísticas e a identidade no Ranking. */
     profilePrivate: boolean().notNull().default(false),
-    /** URL do avatar Steam; nulo enquanto a Steam não respondeu (vale o avatar neutro). */
+    /**
+     * O avatar efetivo, o que todo mundo lê: a URL do avatar Steam (`avatarSource` `steam`) ou a
+     * da foto própria no ar (`custom`, ADR 0022). Nulo enquanto a Steam não respondeu (vale o
+     * avatar neutro).
+     */
     avatarUrl: text(),
     avatarFetchedAt: timestamptz(),
+    /** O avatar da Steam, sempre guardado: é para onde a Conta volta. O `AvatarRefresher` o mantém. */
+    steamAvatarUrl: text(),
+    avatarSource: avatarSource().notNull().default('steam'),
+    /** Envio de foto bloqueado até aqui (reincidente, ADR 0022); só a Staff vê. */
+    avatarUploadBlockedUntil: timestamptz(),
     /** Nulo enquanto a Conta não foi reivindicada por login Steam no site (S03). */
     claimedAt: timestamptz(),
     /** Nulos enquanto a Conta nunca conectou num Servidor Carmine (criada pelo site, S03). */
@@ -228,6 +240,8 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'account_reserved_id',
   'ranking_entry_remove',
   'report_archive',
+  'avatar_keep',
+  'avatar_remove',
 ]);
 
 /**
@@ -667,3 +681,110 @@ export const discordStatusMessages = pgTable('discord_status_messages', {
   messageId: text().notNull(),
   updatedAt: timestamptz().notNull().defaultNow(),
 });
+
+/** Estado de uma foto de perfil própria (ADR 0022). */
+export const avatarStatus = pgEnum('avatar_status', [
+  'active',
+  'suspended',
+  'removed',
+  'replaced',
+  'reverted',
+]);
+
+/** Motivo de uma denúncia de foto ou da remoção pela Staff. */
+export const avatarReason = pgEnum('avatar_reason', [
+  'sexual',
+  'violence',
+  'hate',
+  'minor',
+  'personal_data',
+  'other',
+]);
+
+/**
+ * Foto de perfil própria (ADR 0022): publica na hora e a moderação vem depois. Os arquivos
+ * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`; `suspended` (duas
+ * Contas denunciaram) e `removed` (Staff) os tiram de lá e guardam o de 512 px no bucket
+ * privado (`removed/<id>/512.webp`) até a limpeza; `replaced` e `reverted` os apagam. Uma Conta
+ * tem no máximo uma foto `active` ou `suspended`.
+ */
+export const accountAvatars = pgTable(
+  'account_avatars',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    status: avatarStatus().notNull().default('active'),
+    createdAt: timestamptz().notNull().defaultNow(),
+    /** Quando saiu do ar (suspensa ou removida). */
+    takenDownAt: timestamptz(),
+    /** Quando deixou de ser a foto da Conta (removida, trocada ou devolvida à Steam). */
+    retiredAt: timestamptz(),
+    /** A decisão da Staff (manter ou remover): a última. Nula sem decisão. */
+    decision: text().$type<'keep' | 'remove'>(),
+    decidedAt: timestamptz(),
+    decidedBySteamId: bigint({ mode: 'bigint' }),
+    decisionReason: avatarReason(),
+    decisionNote: text(),
+  },
+  (table) => [
+    uniqueIndex('account_avatars_current_idx')
+      .on(table.accountId)
+      .where(sql`${table.status} in ('active', 'suspended')`),
+    index('account_avatars_account_idx').on(table.accountId, table.createdAt),
+    index('account_avatars_removed_idx')
+      .on(table.accountId, table.decidedAt)
+      .where(sql`${table.status} = 'removed'`),
+  ],
+);
+
+/**
+ * Denúncia de uma foto (ADR 0022). Uma por Conta e foto; `dismissedAt` marca as arquivadas quando
+ * a Staff mantém a foto. A Conta que denuncia e é excluída deixa a denúncia sem autor.
+ */
+export const avatarReports = pgTable(
+  'avatar_reports',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    avatarId: uuid()
+      .notNull()
+      .references(() => accountAvatars.id, { onDelete: 'cascade' }),
+    reporterAccountId: uuid().references(() => accounts.id, { onDelete: 'set null' }),
+    reason: avatarReason().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+    dismissedAt: timestamptz(),
+  },
+  (table) => [
+    uniqueIndex('avatar_reports_once_idx').on(table.avatarId, table.reporterAccountId),
+    index('avatar_reports_avatar_idx').on(table.avatarId, table.createdAt),
+    index('avatar_reports_reporter_idx').on(table.reporterAccountId, table.createdAt),
+  ],
+);
+
+/** Em que bucket do R2 um arquivo está (ADR 0022). */
+export const mediaBucket = pgEnum('media_bucket', ['public', 'private']);
+
+/**
+ * Fila de remoção de arquivos do R2 (ADR 0022): o R2 não participa da transação do Postgres, então
+ * trocar, devolver à Steam, excluir a Conta e a limpeza das removidas só enfileiram aqui, na mesma
+ * transação, e um job apaga com nova tentativa. `runAt` no futuro é a retenção. `purge`: depois de
+ * apagar do bucket público, tira a URL pública (origem + chave) do cache da CDN.
+ */
+export const mediaDeletions = pgTable(
+  'media_deletions',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    bucket: mediaBucket().notNull(),
+    key: text().notNull(),
+    purge: boolean().notNull().default(false),
+    runAt: timestamptz().notNull().defaultNow(),
+    attempts: integer().notNull().default(0),
+    lastError: text(),
+    createdAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('media_deletions_object_idx').on(table.bucket, table.key),
+    index('media_deletions_due_idx').on(table.runAt),
+  ],
+);

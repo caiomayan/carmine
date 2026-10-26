@@ -4136,7 +4136,9 @@
                 "account_anonymize",
                 "account_reserved_id",
                 "ranking_entry_remove",
-                "report_archive"
+                "report_archive",
+                "avatar_keep",
+                "avatar_remove"
               ],
               "type": "string"
             }
@@ -5095,6 +5097,245 @@
         "summary": "Registra a Denúncia (`!report`) de um jogador contra outro; aplica os limites e avisa a Staff",
         "tags": [
           "server"
+        ]
+      }
+    },
+    "/api/me/avatar": {
+      "get": {
+        "operationId": "getAvatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria (no ar ou suspensa), se pode enviar e por que não",
+        "tags": [
+          "me"
+        ]
+      },
+      "post": {
+        "operationId": "uploadAvatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A imagem (o recorte que o navegador fez)",
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Publicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Conta com menos de 24 horas, com Punição ativa ou com o envio bloqueado (account_too_new, punished, upload_blocked), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Maior que 1 MiB (too_large)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Tipo fora de JPEG, PNG e WebP, ou bytes que não são do tipo informado (unsupported_type)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Não abre como imagem, é animada ou não é quadrada de 256 a 1024 px (invalid_image, bad_dimensions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "3 envios em 24 horas (daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Funcionalidade desligada neste ambiente (disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Envia a foto de perfil e a publica na hora. O corpo é a imagem crua (JPEG, PNG ou WebP, até 1 MiB, quadrada de 256 a 1024 px); a API a refaz em 4 tamanhos WebP sem EXIF",
+        "tags": [
+          "me"
+        ]
+      },
+      "delete": {
+        "operationId": "revertAvatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Com a foto da Steam",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Volta à foto da Steam na hora, sem moderação; a foto própria é apagada. Sem foto própria, não muda nada",
+        "tags": [
+          "me"
         ]
       }
     }
@@ -8206,7 +8447,9 @@
           "account_anonymize",
           "account_reserved_id",
           "ranking_entry_remove",
-          "report_archive"
+          "report_archive",
+          "avatar_keep",
+          "avatar_remove"
         ]
       },
       "StaffError": {
@@ -8239,7 +8482,10 @@
               "report_not_found",
               "report_not_open",
               "report_target_mismatch",
-              "report_needs_evidence"
+              "report_needs_evidence",
+              "avatar_not_found",
+              "avatar_not_reviewable",
+              "no_custom_avatar"
             ]
           },
           "message": {
@@ -10716,6 +10962,167 @@
           "same_target_cooldown",
           "hourly_limit"
         ]
+      },
+      "AvatarState": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AvatarSource"
+          },
+          "steamAvatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          },
+          "custom": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "suspended"
+                ]
+              },
+              "uploadedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              }
+            },
+            "required": [
+              "url",
+              "status",
+              "uploadedAt"
+            ],
+            "additionalProperties": false
+          },
+          "canUpload": {
+            "type": "boolean"
+          },
+          "cannotUploadReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarIneligibleReason"
+              }
+            ]
+          },
+          "retryAfter": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "removal": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "reason": {
+                "$ref": "#/components/schemas/AvatarReason"
+              }
+            },
+            "required": [
+              "at",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "enabled",
+          "source",
+          "steamAvatarUrl",
+          "custom",
+          "canUpload",
+          "cannotUploadReason",
+          "retryAfter",
+          "removal"
+        ],
+        "additionalProperties": false
+      },
+      "AvatarSource": {
+        "type": "string",
+        "enum": [
+          "steam",
+          "custom"
+        ]
+      },
+      "AvatarIneligibleReason": {
+        "type": "string",
+        "enum": [
+          "account_too_new",
+          "punished",
+          "upload_blocked",
+          "daily_limit"
+        ]
+      },
+      "AvatarReason": {
+        "type": "string",
+        "enum": [
+          "sexual",
+          "violence",
+          "hate",
+          "minor",
+          "personal_data",
+          "other"
+        ]
+      },
+      "AvatarError": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "invalid_body",
+              "unsupported_type",
+              "too_large",
+              "invalid_image",
+              "bad_dimensions",
+              "account_too_new",
+              "punished",
+              "upload_blocked",
+              "daily_limit",
+              "no_custom_avatar",
+              "own_avatar",
+              "already_reported",
+              "report_limit"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryAfter": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
       }
     }
   }

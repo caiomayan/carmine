@@ -35,6 +35,8 @@ describe('loadConfig', () => {
       reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },
       discord: null,
       discordMissing: [],
+      media: null,
+      mediaMissing: [],
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
@@ -243,6 +245,59 @@ describe('loadConfig', () => {
           DISCORD_API_URL: 'http://discord.test/api',
         }),
       ).toThrow(/DISCORD_API_URL/);
+    });
+  });
+
+  describe('foto de perfil (R2 de mídia)', () => {
+    const media = {
+      R2_MEDIA_ENDPOINT: 'https://conta.r2.cloudflarestorage.com',
+      R2_MEDIA_ACCESS_KEY_ID: 'chave',
+      R2_MEDIA_SECRET_ACCESS_KEY: 'segredo',
+      R2_MEDIA_PUBLIC_BUCKET: 'carmine-media',
+      R2_MEDIA_PRIVATE_BUCKET: 'carmine-media-removidas',
+      MEDIA_PUBLIC_URL: 'https://img.stcarmine.com/',
+    };
+
+    it('desligada sem nenhuma variável, sem aviso do que falta', () => {
+      expect(loadConfig(validEnv)).toMatchObject({ media: null, mediaMissing: [] });
+    });
+
+    it('liga com o conjunto base; a purga da CDN é opcional', () => {
+      const config = loadConfig({ ...validEnv, ...media });
+
+      expect(config.media).toMatchObject({
+        publicBucket: 'carmine-media',
+        privateBucket: 'carmine-media-removidas',
+        publicUrl: 'https://img.stcarmine.com',
+        purge: null,
+        sweepMs: 30_000,
+      });
+      expect(
+        loadConfig({
+          ...validEnv,
+          ...media,
+          CLOUDFLARE_ZONE_ID: 'zona',
+          CLOUDFLARE_PURGE_TOKEN: 'token',
+        }).media?.purge,
+      ).toEqual({ zoneId: 'zona', token: 'token', apiUrl: 'https://api.cloudflare.com/client/v4' });
+    });
+
+    it('parcial desliga e diz o que falta', () => {
+      const config = loadConfig({ ...validEnv, ...media, R2_MEDIA_SECRET_ACCESS_KEY: '' });
+
+      expect(config.media).toBeNull();
+      expect(config.mediaMissing).toEqual(['R2_MEDIA_SECRET_ACCESS_KEY']);
+    });
+
+    it('em produção, o endpoint e a origem pública exigem https', () => {
+      expect(() =>
+        loadConfig({
+          ...validEnv,
+          ...media,
+          NODE_ENV: 'production',
+          MEDIA_PUBLIC_URL: 'http://img.stcarmine.com',
+        }),
+      ).toThrow(/MEDIA_PUBLIC_URL: deve usar https em produção/);
     });
   });
 });

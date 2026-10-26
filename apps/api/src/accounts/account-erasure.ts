@@ -1,5 +1,6 @@
 import { ANONYMIZED_DISPLAY_NAME } from '@carmine/contracts';
 import { and, eq, ne, sql } from 'drizzle-orm';
+import { eraseAvatarsOf } from '../avatars/avatar-erasure.js';
 import type { Database } from '../database/database.js';
 import {
   accountStatsDaily,
@@ -107,6 +108,8 @@ export class AccountErasure {
           .delete(discordLinks)
           .where(eq(discordLinks.accountId, accountId))
           .returning({ discordId: discordLinks.discordId });
+        // Foto de perfil própria (ADR 0022): os arquivos saem pela fila de remoção, na mesma transação.
+        const removedAvatars = await eraseAvatarsOf(tx, accountId);
         const removedVip = await tx
           .delete(vipPeriods)
           .where(eq(vipPeriods.accountId, accountId))
@@ -169,6 +172,9 @@ export class AccountErasure {
             profilePrivate: false,
             avatarUrl: null,
             avatarFetchedAt: null,
+            steamAvatarUrl: null,
+            avatarSource: 'steam',
+            avatarUploadBlockedUntil: null,
             claimedAt: null,
             chatHidden: false,
             anonymizedAt: now,
@@ -192,6 +198,7 @@ export class AccountErasure {
               reportsUnlinked: unlinkedReports.length,
               reportsScrubbed: scrubbedReports.length,
               discordLinks: unlinkedDiscord ? 1 : 0,
+              avatars: removedAvatars,
             },
           },
           at: now,
