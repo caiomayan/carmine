@@ -22,6 +22,10 @@ import {
   type RecentActivity,
   rankingSchema,
   recentActivitySchema,
+  type ServerPlayers,
+  type ServerToday,
+  serverPlayersSchema,
+  serverTodaySchema,
   type WeekSummary,
   weekSummarySchema,
 } from '@carmine/contracts';
@@ -166,6 +170,31 @@ export const getRecentActivity = cache(async (): Promise<RecentActivity | null> 
     const response = await apiGet('/activity/recent', { visitorIp: await visitorIp() });
     if (!response.ok) return null;
     return recentActivitySchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/**
+ * Os jogadores de um servidor agora (S12b; público). Nulo com a API fora ou enquanto a rota não responde (501): a
+ * página mostra o bloco "coletando" em vez de uma lista inventada.
+ */
+export const getServerPlayers = cache(async (serverId: string): Promise<ServerPlayers | null> => {
+  try {
+    const response = await apiGet(`/servers/${serverId}/players`, { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return serverPlayersSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});
+
+/** O histórico do dia de um servidor (S12b; público). Nulo com a API fora ou enquanto a rota não responde. */
+export const getServerToday = cache(async (serverId: string): Promise<ServerToday | null> => {
+  try {
+    const response = await apiGet(`/servers/${serverId}/today`, { visitorIp: await visitorIp() });
+    if (!response.ok) return null;
+    return serverTodaySchema.parse(await response.json());
   } catch {
     return null;
   }
