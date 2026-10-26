@@ -7,6 +7,16 @@ export const gameModeSchema = z.enum(['retake', 'deathmatch']).meta({ id: 'GameM
 
 export type GameMode = z.infer<typeof gameModeSchema>;
 
+/** Nome do mapa como o jogo o conhece (`de_mirage`), sem tratamento. */
+export const mapNameSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(64)
+  .meta({ id: 'MapName', example: 'de_mirage' });
+
+export type MapName = z.infer<typeof mapNameSchema>;
+
 /**
  * Corpo de `POST /api/server/player-connects`: o Carmine.Core avisa que um jogador conectou.
  * `connectedAt` só vem quando o plugin reenvia um connect guardado enquanto a API estava fora.
