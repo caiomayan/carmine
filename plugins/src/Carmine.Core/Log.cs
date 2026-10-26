@@ -61,6 +61,13 @@ internal static partial class Log
     [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: {Count} evento(s) do jogo não saíram antes de o plugin descarregar")]
     public static partial void EventsLeftBehind(ILogger logger, int count);
 
+    [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: a partida recomeçou; a contagem de rounds do placar voltou a zero")]
+    public static partial void MatchRestarted(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Carmine.Core: o placar do jogo diverge da contagem do plugin (plugin: {Rounds} rounds, CT {Ct} x T {T}; jogo: {GameRounds} rounds, CT {GameCt} x T {GameT}); vale a contagem do plugin")]
+    public static partial void MatchDiverged(ILogger logger, int rounds, int ct, int t, int gameRounds, int gameCt, int gameT);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: Denúncia de {Reporter} contra {Target} ({Reason}); aceita: {Accepted}")]
     public static partial void ReportSent(ILogger logger, ulong reporter, ulong target, ReportReason reason, bool accepted);
 }
