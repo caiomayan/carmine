@@ -6,7 +6,7 @@ import {
   avatarErrorSchema,
   avatarReportInputSchema,
   avatarReportReceivedSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import {
   type ArgumentsHost,
   BadRequestException,

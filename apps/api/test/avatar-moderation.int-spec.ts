@@ -1,3 +1,4 @@
+import { profileSchema, STAFF_ERROR_STATUS, staffErrorSchema } from '@carmine/contracts';
 import {
   AVATAR_BLOCK_DAYS_FIRST,
   AVATAR_BLOCK_DAYS_REPEAT,
@@ -8,13 +9,10 @@ import {
   avatarErrorSchema,
   avatarReportReceivedSchema,
   avatarStateSchema,
-  profileSchema,
-  STAFF_ERROR_STATUS,
   staffAccountAvatarSchema,
   staffAvatarCasePageSchema,
   staffAvatarCaseSchema,
-  staffErrorSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -246,7 +244,6 @@ describe('Moderação da foto de perfil (F2)', () => {
     it('lista o caso aberto com quem denunciou, os motivos e a imagem; só a Staff com a permissão vê', async () => {
       const { player, avatarId } = await withPhoto();
       await report(await reporter(), player, 'hate');
-      await report(await reporter(), player, 'hate');
       await report(await reporter(), player, 'minor');
       const moderator = await staff('moderator');
 
@@ -258,14 +255,16 @@ describe('Moderação da foto de perfil (F2)', () => {
       expect(found).toMatchObject({
         avatar: { status: 'suspended', url: null },
         account: { publicId: player.account.publicId },
-        reports: { reporters: 3 },
+        reports: { reporters: 2 },
         previousRemovals: 0,
         decision: null,
       });
       expect(found?.reports.byReason).toEqual([
-        { reason: 'hate', count: 2 },
+        { reason: 'hate', count: 1 },
         { reason: 'minor', count: 1 },
       ]);
+      // Suspensa, a foto já não aparece para denunciar: a terceira pessoa não consegue (ela nem vê a foto).
+      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(404);
       expect(page.openCount).toBeGreaterThanOrEqual(1);
 
       const image = await moderator.call('GET', `/api/staff/avatars/${avatarId}/image`);
@@ -421,7 +420,12 @@ describe('Moderação da foto de perfil (F2)', () => {
     it('a reincidência em 90 dias bloqueia 30 dias; blockDays troca a regra (0 não bloqueia)', async () => {
       const { player, avatarId } = await withPhoto();
       const moderator = await staff();
-      await decide(moderator, avatarId, { decision: 'remove', reason: 'hate', note: 'primeira' });
+      const first = await decide(moderator, avatarId, {
+        decision: 'remove',
+        reason: 'hate',
+        note: 'primeira',
+      });
+      expect(first.statusCode, first.body).toBe(200);
       // Liberado o bloqueio, a pessoa envia outra foto e a Staff remove de novo.
       await t.postgres.db
         .update(accounts)

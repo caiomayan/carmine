@@ -1,16 +1,18 @@
 import {
-  type AvatarDecisionInput,
-  avatarDecisionInputSchema,
   STAFF_REPORTS_PAGE_DEFAULT,
   STAFF_REPORTS_PAGE_MAX,
+  staffErrorSchema,
+} from '@carmine/contracts';
+import {
+  type AvatarDecisionInput,
+  avatarDecisionInputSchema,
   type StaffAccountAvatar,
   type StaffAvatarCase,
   type StaffAvatarCasePage,
   staffAccountAvatarSchema,
   staffAvatarCasePageSchema,
   staffAvatarCaseSchema,
-  staffErrorSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import {
   Body,
   Controller,

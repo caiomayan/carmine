@@ -1,4 +1,4 @@
-import { AVATAR_REASON_LABELS, type AvatarReason } from '@carmine/contracts';
+import { AVATAR_REASON_LABELS, type AvatarReason } from '@carmine/contracts/avatar';
 import { Logger } from '@nestjs/common';
 import type { DiscordWebhook } from '../alerts/discord-webhook.js';
 

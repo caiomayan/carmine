@@ -1,3 +1,4 @@
+import { STAFF_REPORTS_PAGE_DEFAULT } from '@carmine/contracts';
 import {
   AVATAR_BLOCK_DAYS_FIRST,
   AVATAR_BLOCK_DAYS_REPEAT,
@@ -8,12 +9,11 @@ import {
   type AvatarDecisionInput,
   type AvatarReason,
   type AvatarReportReceived,
-  STAFF_REPORTS_PAGE_DEFAULT,
   type StaffAccountAvatar,
   type StaffAvatar,
   type StaffAvatarCase,
   type StaffAvatarCasePage,
-} from '@carmine/contracts';
+} from '@carmine/contracts/avatar';
 import { Logger } from '@nestjs/common';
 import {
   aliasedTable,
@@ -26,8 +26,6 @@ import {
   inArray,
   isNotNull,
   isNull,
-  lt,
-  or,
   type SQL,
   sql,
 } from 'drizzle-orm';
@@ -55,6 +53,15 @@ const decider = aliasedTable(accounts, 'decider');
 
 /** Um valor de data que o driver pode devolver como `Date` ou como texto (colunas calculadas). */
 const asDate = (value: Date | string): Date => (value instanceof Date ? value : new Date(value));
+
+/**
+ * O instante da primeira denúncia ainda aberta da foto (a ordem da fila aberta). Colunas por extenso: ver
+ * o comentário em `page`.
+ */
+const FIRST_OPEN = sql`(
+  select min(r.created_at) from avatar_reports r
+  where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+)`;
 
 /**
  * A moderação da foto de perfil (ADR 0022), depois da publicação na hora: a denúncia (duas Contas
@@ -197,12 +204,10 @@ export class AvatarModeration {
   ): Promise<StaffAvatarCasePage> {
     const limit = options.limit ?? STAFF_REPORTS_PAGE_DEFAULT;
     const open = status === 'open';
-    const sortAt = open
-      ? sql<Date | string>`(
-          select min(r.created_at) from avatar_reports r
-          where r.avatar_id = ${accountAvatars.id} and r.dismissed_at is null
-        )`
-      : sql<Date | string>`${accountAvatars.decidedAt}`;
+    // Colunas escritas por extenso de propósito: numa seleção de uma tabela só, o drizzle tira o prefixo das
+    // colunas dentro de `sql`, e a subconsulta passaria a comparar com as colunas dela mesma.
+    const sortAt = open ? FIRST_OPEN : sql`"account_avatars"."decided_at"`;
+    const sortKey = sql<string>`to_char(${sortAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
     const conditions: SQL[] = open
       ? [
           inArray(accountAvatars.status, ['active', 'suspended']),
@@ -230,17 +235,14 @@ export class AvatarModeration {
           ),
         ];
     if (options.before) {
-      const { at, id } = decodeCursor(options.before);
-      const before = open
-        ? sql`(${sortAt} > ${at.toISOString()}::timestamptz or (${sortAt} = ${at.toISOString()}::timestamptz and ${accountAvatars.id} > ${id}))`
-        : or(
-            lt(accountAvatars.decidedAt, at),
-            and(eq(accountAvatars.decidedAt, at), lt(accountAvatars.id, id)),
-          );
-      if (before) conditions.push(before);
+      const { key, id } = decodeCursor(options.before);
+      const after = open ? sql`>` : sql`<`;
+      conditions.push(
+        sql`(${sortAt} ${after} ${key}::timestamptz or (${sortAt} = ${key}::timestamptz and ${accountAvatars.id} ${after} ${id}))`,
+      );
     }
     const rows = await this.db
-      .select({ avatar: accountAvatars, sortAt })
+      .select({ avatar: accountAvatars, sortKey })
       .from(accountAvatars)
       .where(and(...conditions))
       .orderBy(
@@ -273,7 +275,7 @@ export class AvatarModeration {
       );
     return {
       cases,
-      nextCursor: last ? encodeCursor(asDate(last.sortAt), last.avatar.id) : null,
+      nextCursor: last ? encodeCursor(last.sortKey, last.avatar.id) : null,
       openCount: counted?.openCount ?? 0,
     };
   }
@@ -326,17 +328,19 @@ export class AvatarModeration {
         .from(avatarReports)
         .where(inArray(avatarReports.avatarId, ids))
         .groupBy(avatarReports.avatarId, avatarReports.reason),
+      // As fotos já removidas das Contas desta página; a própria foto não conta como "anterior".
       this.db
-        .select({
-          avatarId: accountAvatars.id,
-          removals: sql<number>`(
-            select count(*)::int from account_avatars other
-            where other.account_id = ${accountAvatars.accountId}
-              and other.status = 'removed' and other.id <> ${accountAvatars.id}
-          )`,
-        })
+        .select({ id: accountAvatars.id, accountId: accountAvatars.accountId })
         .from(accountAvatars)
-        .where(inArray(accountAvatars.id, ids)),
+        .where(
+          and(
+            eq(accountAvatars.status, 'removed'),
+            inArray(
+              accountAvatars.accountId,
+              avatars.map((avatar) => avatar.accountId),
+            ),
+          ),
+        ),
     ]);
     return avatars.map((avatar): StaffAvatarCase => {
       const who = people.find((row) => row.avatarId === avatar.id);
@@ -354,7 +358,9 @@ export class AvatarModeration {
           firstAt: (total ? asDate(total.firstAt) : avatar.createdAt).toISOString(),
           lastAt: (total ? asDate(total.lastAt) : avatar.createdAt).toISOString(),
         },
-        previousRemovals: previous.find((row) => row.avatarId === avatar.id)?.removals ?? 0,
+        previousRemovals: previous.filter(
+          (row) => row.accountId === avatar.accountId && row.id !== avatar.id,
+        ).length,
         decision:
           avatar.decision && avatar.decidedAt
             ? {
@@ -467,6 +473,8 @@ export class AvatarModeration {
         // No ar: copia para o privado antes (se falhar, nada muda). Suspensa: já está no privado.
         if (avatar.status === 'active') await this.files.takeDown(tx, avatar.id);
         await this.files.retain(tx, avatar.id, AVATAR_REMOVED_RETENTION_DAYS, now);
+        // Antes de marcar esta como removida: a reincidência são as remoções de antes.
+        blockDays = input.blockDays ?? (await this.defaultBlockDays(tx, account.id, now));
         await tx
           .update(accountAvatars)
           .set({
@@ -477,7 +485,6 @@ export class AvatarModeration {
           })
           .where(eq(accountAvatars.id, avatar.id));
         await this.backToSteam(tx, account);
-        blockDays = input.blockDays ?? (await this.defaultBlockDays(tx, account.id, now));
         if (blockDays > 0) {
           blockedUntil = new Date(now.getTime() + blockDays * DAY_MS);
           await tx
@@ -622,15 +629,15 @@ export class AvatarModeration {
   }
 }
 
-function encodeCursor(at: Date, id: string): string {
-  return Buffer.from(`${at.toISOString()}|${id}`).toString('base64url');
+/** O cursor leva o instante com microssegundos (como o banco o guarda): um `Date` os perderia e repetiria o último caso. */
+function encodeCursor(key: string, id: string): string {
+  return Buffer.from(`${key}|${id}`).toString('base64url');
 }
 
-function decodeCursor(cursor: string): { at: Date; id: string } {
-  const [iso = '', id = ''] = Buffer.from(cursor, 'base64url').toString().split('|');
-  const at = new Date(iso);
-  if (Number.isNaN(at.getTime()) || !/^[0-9a-f-]{36}$/.test(id)) {
+function decodeCursor(cursor: string): { key: string; id: string } {
+  const [key = '', id = ''] = Buffer.from(cursor, 'base64url').toString().split('|');
+  if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/.test(key) || !/^[0-9a-f-]{36}$/.test(id)) {
     throw new InvalidAvatarCursor('cursor inválido');
   }
-  return { at, id };
+  return { key, id };
 }
