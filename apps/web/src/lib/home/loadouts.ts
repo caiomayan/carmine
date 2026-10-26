@@ -8,6 +8,26 @@ import { RARITIES, type Rarity } from '@/lib/catalog/types';
  */
 export type ItemLookup = (itemId: number) => { rarity: Rarity; type: string } | null;
 
+/** Quantos dos melhores de cada Modo entram na busca da vitrine. */
+export const LOADOUT_CANDIDATES = 8;
+
+type RankedPlayers = {
+  entries: readonly { player: { private: boolean; publicId: number | null } }[];
+};
+
+/**
+ * Tem alguém, entre os melhores de cada Modo, com Perfil público? É o sinal, já no servidor, de que a vitrine
+ * "Loadouts da semana" provavelmente tem o que mostrar: sem ele (Ranking vazio, ou só Perfil privado) a Home não
+ * reserva espaço nem mostra esqueleto para ela.
+ */
+export function hasLoadoutCandidates(rankings: readonly (RankedPlayers | null)[]): boolean {
+  return rankings.some((ranking) =>
+    ranking?.entries
+      .slice(0, LOADOUT_CANDIDATES)
+      .some(({ player }) => !player.private && player.publicId !== null),
+  );
+}
+
 const rank = (rarity: Rarity) => RARITIES.indexOf(rarity);
 
 /** O Item em destaque da vitrine de uma pessoa, ou nulo se ela não tem nenhum que o catálogo conheça. */

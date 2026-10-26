@@ -1,0 +1,154 @@
+import {
+  friendsPlayingSchema,
+  liveServerListSchema,
+  profilePlayingSchema,
+} from '@carmine/contracts';
+import { describe, expect, it } from 'vitest';
+import { parseFriendsPlaying, parseLiveServerList, parseProfilePlaying } from './api-guards';
+
+const ID = '5a0e9c3e-1d2b-4c47-9a55-3b7a2f0c8d11';
+const AT = '2026-10-26T21:07:00.000-03:00';
+
+const server = (over: Record<string, unknown> = {}) => ({
+  id: ID,
+  name: 'retake-1',
+  showcaseName: 'Retake · Rotação',
+  code: null,
+  mode: 'retake',
+  address: '203.0.113.5:27015',
+  region: 'sao-paulo',
+  map: 'de_mirage',
+  players: 4,
+  maxPlayers: 9,
+  state: 'online',
+  lastHeartbeatAt: AT,
+  lastMap: 'de_mirage',
+  ...over,
+});
+
+const list = (servers: unknown[], over: Record<string, unknown> = {}) => ({
+  servers,
+  summary: { online: 1, players: 4 },
+  generatedAt: AT,
+  ...over,
+});
+
+/**
+ * A conferência leve tem de concordar com o schema do contrato nos casos que importam: o que o schema aceita ela
+ * aceita, e o que quebraria a tela (campo faltando ou de outro tipo) ela recusa. As exceções (formato de texto) ficam
+ * documentadas no último teste.
+ */
+describe('parseLiveServerList concorda com liveServerListSchema', () => {
+  const cases: [string, unknown][] = [
+    ['lista normal', list([server()])],
+    ['vazia', list([], { summary: { online: 0, players: 0 } })],
+    ['com placar', list([server({ match: { round: 3, ctScore: 1, tScore: 1, warmup: false } })])],
+    ['com match nulo', list([server({ match: null })])],
+    ['offline sem mapa', list([server({ state: 'offline', map: null, players: 0, lastMap: 'de_nuke' })])],
+    ['sem lastMap', list([server({ lastMap: undefined })])],
+    ['estado desconhecido', list([server({ state: 'dormindo' })])],
+    ['Modo desconhecido', list([server({ mode: '5v5' })])],
+    ['jogadores como texto', list([server({ players: '4' })])],
+    ['vagas zero', list([server({ maxPlayers: 0 })])],
+    ['jogadores negativos', list([server({ players: -1 })])],
+    ['match quebrado', list([server({ match: { round: 3 } })])],
+    ['servers não é lista', list('x' as unknown as unknown[])],
+    ['sem resumo', { servers: [server()], generatedAt: AT }],
+    ['sem generatedAt', { servers: [server()], summary: { online: 1, players: 4 } }],
+    ['nulo', null],
+    ['texto', 'oi'],
+  ];
+  for (const [label, value] of cases) {
+    it(label, () => {
+      expect(parseLiveServerList(JSON.parse(JSON.stringify(value ?? null))) !== null).toBe(
+        liveServerListSchema.safeParse(JSON.parse(JSON.stringify(value ?? null))).success,
+      );
+    });
+  }
+
+  it('devolve a própria lista, sem copiar nem tirar nada', () => {
+    const value = list([server({ match: null })]);
+    expect(parseLiveServerList(value)).toBe(value);
+  });
+});
+
+describe('parseFriendsPlaying concorda com friendsPlayingSchema', () => {
+  const friend = (over: Record<string, unknown> = {}) => ({
+    steamId: '76561198000000101',
+    publicId: 9000,
+    displayName: 'Ana Souza',
+    avatarUrl: null,
+    serverId: ID,
+    ...over,
+  });
+  const cases: [string, unknown][] = [
+    ['ok com amigos', { status: 'ok', friends: [friend()] }],
+    ['ok vazio', { status: 'ok', friends: [] }],
+    ['privada', { status: 'private', friends: [friend({ avatarUrl: 'https://x.test/a.png' })] }],
+    ['indisponível', { status: 'unavailable' }],
+    ['status novo', { status: 'talvez', friends: [] }],
+    ['amigo sem nome', { status: 'ok', friends: [friend({ displayName: '' })] }],
+    ['publicId zero', { status: 'ok', friends: [friend({ publicId: 0 })] }],
+    ['friends ausente', { status: 'ok' }],
+    ['nulo', null],
+  ];
+  for (const [label, value] of cases) {
+    it(label, () => {
+      expect(parseFriendsPlaying(value) !== null).toBe(friendsPlayingSchema.safeParse(value).success);
+    });
+  }
+
+  it('o resultado tem a forma do contrato (indisponível não leva amigos)', () => {
+    expect(parseFriendsPlaying({ status: 'unavailable', friends: [friend()] })).toEqual({
+      status: 'unavailable',
+    });
+    expect(parseFriendsPlaying({ status: 'ok', friends: [friend()] })).toEqual({
+      status: 'ok',
+      friends: [friend()],
+    });
+  });
+});
+
+describe('parseProfilePlaying concorda com profilePlayingSchema', () => {
+  const playing = (over: Record<string, unknown> = {}) => ({
+    id: ID,
+    name: 'retake-1',
+    showcaseName: null,
+    mode: 'retake',
+    map: 'de_mirage',
+    address: '203.0.113.5:27015',
+    state: 'online',
+    ...over,
+  });
+  const cases: [string, unknown][] = [
+    ['jogando', { server: playing() }],
+    ['fora de servidor', { server: null }],
+    ['mapa nulo', { server: playing({ map: null }) }],
+    ['sem server', {}],
+    ['estado desconhecido', { server: playing({ state: 'x' }) }],
+    ['sem endereço', { server: playing({ address: undefined }) }],
+    ['texto', 'oi'],
+  ];
+  for (const [label, value] of cases) {
+    it(label, () => {
+      const plain = JSON.parse(JSON.stringify(value));
+      expect(parseProfilePlaying(plain) !== null).toBe(profilePlayingSchema.safeParse(plain).success);
+    });
+  }
+
+  it('só leva os campos que a tela lê (o resto da resposta fica de fora)', () => {
+    expect(parseProfilePlaying({ server: { ...playing(), players: 9, extra: true } })).toEqual({
+      server: playing(),
+    });
+  });
+});
+
+describe('o que a conferência leve não confere (o formato do texto)', () => {
+  it('aceita um id que não é UUID e uma data que não é ISO: a API já validou do outro lado', () => {
+    const odd = list([server({ id: 'qualquer-coisa', lastHeartbeatAt: 'ontem' })], {
+      generatedAt: 'agora',
+    });
+    expect(parseLiveServerList(odd)).not.toBeNull();
+    expect(liveServerListSchema.safeParse(odd).success).toBe(false);
+  });
+});

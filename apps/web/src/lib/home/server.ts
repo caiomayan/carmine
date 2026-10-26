@@ -10,7 +10,13 @@ import {
   getWeekSummary,
 } from '@/lib/api-server';
 import { skinPalette } from '@/lib/skin-palette';
-import { type ItemLookup, pickHighlight, sidesOf } from './loadouts';
+import {
+  hasLoadoutCandidates,
+  type ItemLookup,
+  LOADOUT_CANDIDATES,
+  pickHighlight,
+  sidesOf,
+} from './loadouts';
 import { type TopByMode, topRows } from './top';
 import type { HomeData, LoadoutEntry } from './types';
 
@@ -82,11 +88,11 @@ export async function getHomeData(): Promise<HomeData> {
     top,
     week,
     ambient,
+    loadoutsHint: hasLoadoutCandidates([retake, deathmatch]),
   };
 }
 
-/** Quantos dos melhores de cada Modo entram na busca da vitrine, e quantas skins ela tem no máximo. */
-const LOADOUT_CANDIDATES = 8;
+/** Quantas skins a vitrine tem no máximo. */
 const LOADOUT_MAX = 8;
 
 /**

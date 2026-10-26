@@ -42,4 +42,9 @@ export type HomeData = {
   week: WeekSummary | null;
   /** As cores da skin em destaque da pessoa logada (a cor ambiente da Home); nulo sem skin ou deslogado. */
   ambient: readonly string[] | null;
+  /**
+   * Há alguém no Ranking com Perfil público: sinal de que a vitrine "Loadouts da semana" tem conteúdo. Sem ele a
+   * seção nasce depois do dado, sem esqueleto e sem espaço reservado.
+   */
+  loadoutsHint: boolean;
 };

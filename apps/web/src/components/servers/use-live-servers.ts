@@ -3,17 +3,19 @@
 import type { LiveServerList } from '@carmine/contracts';
 import { LIVE_SERVERS_EVENT, LIVE_SERVERS_RETRY_MS } from '@carmine/contracts/rules';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { parseLiveServerList } from '@/lib/api-guards';
 import { initialLive, type LiveState, liveReducer } from '@/lib/live-servers';
 import { publishLiveSummary } from '@/lib/servers';
 
 export const LIVE_SERVERS_URL = '/api/servers/live';
 
-/** A lista de um evento SSE validada pelo contrato; `null` se o texto não é uma lista válida. */
-async function parseLiveList(data: string): Promise<LiveServerList | null> {
+/**
+ * A lista de um evento SSE conferida contra o formato do contrato; `null` se o texto não é uma lista válida. A
+ * conferência é leve (`api-guards`), sem o Zod: ele pesa ~41 kB e entrava na primeira carga da Home só por isto.
+ */
+function parseLiveList(data: string): LiveServerList | null {
   try {
-    const { liveServerListSchema } = await import('@carmine/contracts/live-servers');
-    const parsed = liveServerListSchema.safeParse(JSON.parse(data));
-    return parsed.success ? parsed.data : null;
+    return parseLiveServerList(JSON.parse(data));
   } catch {
     return null;
   }
@@ -47,7 +49,7 @@ export function useLiveServers(initial: LiveServerList | null): {
       const current = new EventSource(LIVE_SERVERS_URL);
       source = current;
       current.addEventListener(LIVE_SERVERS_EVENT, async (event) => {
-        const list = await parseLiveList((event as MessageEvent).data);
+        const list = parseLiveList((event as MessageEvent).data);
         // Uma conexão já fechada (reconexão, desmontagem) não publica mais nada.
         if (list === null || source !== current) return;
         attempt = 0;
