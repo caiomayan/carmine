@@ -9,6 +9,7 @@ import { AvatarFiles } from './avatar-files.js';
 import { AvatarReportsController } from './avatar-moderation.controller.js';
 import { AvatarModeration } from './avatar-moderation.js';
 import { AvatarReportNotifier } from './avatar-moderation-discord.js';
+import { AvatarRetention, AvatarRetentionJob } from './avatar-retention.js';
 import { AvatarsModule } from './avatars.module.js';
 import { MediaDeletions } from './media-deletions.js';
 import { StaffAvatarsController } from './staff-avatars.controller.js';
@@ -31,6 +32,18 @@ import { StaffAvatarsController } from './staff-avatars.controller.js';
           new DiscordWebhook(config.reports.webhookUrl),
           `${config.publicWebUrl}/staff/fotos`,
         ),
+    },
+    {
+      provide: AvatarRetention,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new AvatarRetention(db),
+    },
+    {
+      // A mesma cadência da limpeza de retenção das Denúncias (a primeira rodada é ao subir).
+      provide: AvatarRetentionJob,
+      inject: [AvatarRetention, APP_CONFIG],
+      useFactory: (retention: AvatarRetention, config: AppConfig) =>
+        new AvatarRetentionJob(retention, config.reports.retentionSweepMs),
     },
     {
       provide: AvatarModeration,

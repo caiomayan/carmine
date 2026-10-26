@@ -16,6 +16,7 @@ import {
 import { eq } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AvatarRetention } from '../src/avatars/avatar-retention.js';
 import { MediaDeletions } from '../src/avatars/media-deletions.js';
 import {
   accountAvatars,
@@ -600,6 +601,67 @@ describe('Moderação da foto de perfil (F2)', () => {
           })
         ).statusCode,
       ).toBe(403);
+    });
+  });
+
+  describe('retenção dos registros (90 dias)', () => {
+    const setState = (
+      avatarId: string,
+      status: 'replaced' | 'reverted' | 'removed',
+      daysAgo: number,
+    ) =>
+      t.postgres.db
+        .update(accountAvatars)
+        .set({ status, retiredAt: new Date(Date.now() - daysAgo * DAY_MS) })
+        .where(eq(accountAvatars.id, avatarId));
+
+    const reportsOf = (avatarId: string) =>
+      t.postgres.db.select().from(avatarReports).where(eq(avatarReports.avatarId, avatarId));
+
+    it('apaga a foto trocada, devolvida ou removida há mais de 90 dias e as denúncias dela; o resto fica', async () => {
+      const [old, oldRemoved, recent, live] = [
+        await withPhoto(),
+        await withPhoto(),
+        await withPhoto(),
+        await withPhoto(),
+      ];
+      // Uma denúncia em cada (a fila de denúncias de uma foto que já saiu não conta, mas o registro existe).
+      for (const target of [old, oldRemoved, recent, live]) {
+        await report(await reporter(), target.player);
+      }
+      await setState(old.avatarId, 'replaced', 91);
+      await setState(oldRemoved.avatarId, 'removed', 120);
+      await setState(recent.avatarId, 'removed', 10);
+
+      const result = await t.app.get(AvatarRetention).sweep();
+
+      expect(result.avatars).toBeGreaterThanOrEqual(2);
+      expect(result.reports).toBeGreaterThanOrEqual(2);
+      expect(await row(old.avatarId)).toBeUndefined();
+      expect(await row(oldRemoved.avatarId)).toBeUndefined();
+      expect(await reportsOf(old.avatarId)).toEqual([]);
+      expect(await reportsOf(oldRemoved.avatarId)).toEqual([]);
+      // Recente (10 dias) e a foto no ar ficam, com as denúncias.
+      expect((await row(recent.avatarId))?.status).toBe('removed');
+      expect(await reportsOf(recent.avatarId)).toHaveLength(1);
+      expect((await row(live.avatarId))?.status).toBe('active');
+      expect(await reportsOf(live.avatarId)).toHaveLength(1);
+      // Rodar de novo não apaga mais nada dessas.
+      expect((await t.app.get(AvatarRetention).sweep()).avatars).toBe(0);
+    });
+
+    it('não toca a foto suspensa, mesmo antiga', async () => {
+      const { player, avatarId } = await withPhoto();
+      await report(await reporter(), player);
+      await report(await reporter(), player);
+      await t.postgres.db
+        .update(accountAvatars)
+        .set({ createdAt: new Date(Date.now() - 200 * DAY_MS) })
+        .where(eq(accountAvatars.id, avatarId));
+
+      await t.app.get(AvatarRetention).sweep();
+
+      expect((await row(avatarId))?.status).toBe('suspended');
     });
   });
 });
