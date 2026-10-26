@@ -889,7 +889,48 @@
     "join": "Entrar junto",
     "joinAria": "Entrar junto com {name} no servidor em que a pessoa está jogando",
     "vip": "VIP",
-    "memberSince": "Membro desde {date}"
+    "memberSince": "Membro desde {date}",
+    "avatarEdit": {
+      "label": "Trocar a foto de perfil",
+      "hint": "Trocar"
+    },
+    "avatarReport": {
+      "open": "Denunciar foto",
+      "title": "Denunciar a foto de {name}",
+      "description": "Escolha o motivo. A Staff analisa em até 24 horas, e {name} não vê quem denunciou.",
+      "reasonLabel": "Motivo da denúncia",
+      "send": "Enviar denúncia",
+      "sending": "Enviando…",
+      "cancel": "Cancelar",
+      "close": "Fechar",
+      "sent": "Denúncia enviada. A Staff vai analisar em até 24 horas.",
+      "done": "Pronto",
+      "errors": {
+        "generic": "Não deu para enviar agora. Tente de novo em instantes.",
+        "disabled": "O envio de foto está desligado agora.",
+        "unsupported_type": "Use uma imagem JPEG, PNG ou WebP.",
+        "too_large": "A foto passou de 1 MB depois do recorte. Escolha uma imagem mais simples ou menor.",
+        "invalid_image": "Essa imagem não abre, ou é animada. Escolha outra.",
+        "bad_dimensions": "A foto precisa ser quadrada, de 256 a 1024 px.",
+        "invalid_body": "Não deu para enviar agora. Tente de novo em instantes.",
+        "account_too_new": "Contas com menos de 24 horas ainda não enviam foto.",
+        "punished": "Contas com Punição ativa não enviam foto.",
+        "upload_blocked": "O envio de foto não está disponível agora.",
+        "daily_limit": "Você já enviou {limit} fotos hoje. Libera {when}.",
+        "no_custom_avatar": "Esta pessoa não tem foto própria no ar.",
+        "own_avatar": "Você não denuncia a sua própria foto.",
+        "already_reported": "Você já denunciou esta foto.",
+        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde."
+      },
+      "reasons": {
+        "sexual": "Nudez ou conteúdo sexual",
+        "violence": "Violência",
+        "hate": "Ódio ou discriminação",
+        "minor": "Menor de idade em situação indevida",
+        "personal_data": "Dado pessoal ou foto de terceiro",
+        "other": "Outro"
+      }
+    }
   },
   "settings": {
     "metaTitle": "Configurações",
@@ -1004,6 +1045,75 @@
       "privacyTitle": "O que guardamos",
       "privacyBody": "A Política de privacidade lista os dados da Conta e para que cada um serve.",
       "privacy": "Política de privacidade"
+    },
+    "avatar": {
+      "title": "Foto de perfil",
+      "steamHint": "Hoje vale a foto da Steam. Envie uma só sua: ela aparece para todos no site, no Ranking e no Perfil.",
+      "customHint": "Esta é a sua foto: quem vê o site vê ela, não a da Steam.",
+      "gameNote": "No jogo (placar e chat) segue valendo a foto da Steam.",
+      "guidance": "Prefira arte, jogo ou animal a rosto. Fotos que quebram as Regras são removidas e podem bloquear novos envios.",
+      "send": "Enviar foto",
+      "change": "Trocar foto",
+      "useSteam": "Usar a foto da Steam",
+      "loading": "Carregando a sua foto…",
+      "suspended": "Sua foto está em análise pela Staff, que decide em até 24 horas. Enquanto isso, todos veem a da Steam.",
+      "removed": "A Staff removeu a sua foto em {when} ({reason}). Voltou a valer a da Steam.",
+      "saved": "Pronto: a sua foto já está no ar.",
+      "reverted": "Voltou a valer a foto da Steam.",
+      "pickErrors": {
+        "type": "Use uma imagem JPEG, PNG ou WebP.",
+        "bytes": "A imagem passa de 10 MB.",
+        "pixels": "A imagem passa de 40 megapixels.",
+        "unreadable": "Não deu para abrir essa imagem."
+      },
+      "errors": {
+        "generic": "Não deu para enviar agora. Tente de novo em instantes.",
+        "disabled": "O envio de foto está desligado agora.",
+        "unsupported_type": "Use uma imagem JPEG, PNG ou WebP.",
+        "too_large": "A foto passou de 1 MB depois do recorte. Escolha uma imagem mais simples ou menor.",
+        "invalid_image": "Essa imagem não abre, ou é animada. Escolha outra.",
+        "bad_dimensions": "A foto precisa ser quadrada, de 256 a 1024 px.",
+        "invalid_body": "Não deu para enviar agora. Tente de novo em instantes.",
+        "account_too_new": "Contas com menos de 24 horas ainda não enviam foto.",
+        "punished": "Contas com Punição ativa não enviam foto.",
+        "upload_blocked": "O envio de foto não está disponível agora.",
+        "daily_limit": "Você já enviou {limit} fotos hoje. Libera {when}.",
+        "no_custom_avatar": "Esta pessoa não tem foto própria no ar.",
+        "own_avatar": "Você não denuncia a sua própria foto.",
+        "already_reported": "Você já denunciou esta foto.",
+        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde."
+      },
+      "dialog": {
+        "title": "Recortar a foto",
+        "description": "Arraste e use o zoom até o quadrado ficar como você quer. O que está dentro do círculo é o que aparece.",
+        "close": "Fechar",
+        "cancel": "Cancelar",
+        "confirm": "Usar esta foto",
+        "sending": "Enviando…",
+        "zoom": "Zoom",
+        "preview": "Prévia",
+        "cropLabel": "Área do recorte; use as setas do teclado para mover",
+        "imageAlt": "A imagem escolhida",
+        "tooSmall": "A parte escolhida é pequena demais (mínimo {min} px). Diminua o zoom ou escolha uma imagem maior.",
+        "handles": {
+          "nwDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de cima à esquerda)",
+          "nDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (em cima)",
+          "neDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de cima à direita)",
+          "eDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (à direita)",
+          "seDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de baixo à direita)",
+          "sDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (embaixo)",
+          "swDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de baixo à esquerda)",
+          "wDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (à esquerda)"
+        }
+      },
+      "reasons": {
+        "sexual": "conteúdo sexual",
+        "violence": "violência",
+        "hate": "ódio ou discriminação",
+        "minor": "menor em situação indevida",
+        "personal_data": "dado pessoal",
+        "other": "outro motivo"
+      }
     }
   },
   "firstSteps": {

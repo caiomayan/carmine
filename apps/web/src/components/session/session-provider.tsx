@@ -49,6 +49,7 @@ type SessionContextValue = SessionState & {
   updateAccount: (change: {
     displayName?: string;
     isPrivate?: boolean;
+    avatarUrl?: string | null;
     displayNameChange?: DisplayNameChange;
   }) => void;
   /** Encerra a sessão na API (com o token CSRF); `false` se não deu. */
@@ -205,6 +206,7 @@ export function SessionProvider({
               ...current.account,
               ...(change.displayName !== undefined && { displayName: change.displayName }),
               ...(change.isPrivate !== undefined && { isPrivate: change.isPrivate }),
+              ...(change.avatarUrl !== undefined && { avatarUrl: change.avatarUrl }),
             },
             displayNameChange: change.displayNameChange ?? current.displayNameChange,
           },

@@ -3,8 +3,20 @@ import { VIEWER_ORIGIN } from './viewer/viewer-src';
 /** Cabeçalho (só de requisição, entre o proxy e o layout) com o nonce do `<script>` do tema. */
 export const NONCE_HEADER = 'x-nonce';
 
-/** CDN das imagens dos Itens (`cs2-lib`) e dos avatares da Steam: o único conteúdo externo do site. */
+/** CDN das imagens dos Itens (`cs2-lib`) e dos avatares da Steam: o conteúdo externo de sempre do site. */
 const IMAGE_ORIGINS = ['https://cdn.cstrike.app', 'https://*.steamstatic.com'];
+
+/**
+ * A origem pública das fotos de perfil (ADR 0022), a mesma `MEDIA_PUBLIC_URL` da API em cada ambiente; sem ela a
+ * foto de perfil está desligada e o CSP não muda.
+ */
+export function mediaOrigin(): string | null {
+  try {
+    return process.env.MEDIA_PUBLIC_URL ? new URL(process.env.MEDIA_PUBLIC_URL).origin : null;
+  } catch {
+    return null;
+  }
+}
 
 export function generateNonce(): string {
   return btoa(crypto.randomUUID());
@@ -27,12 +39,13 @@ export function buildContentSecurityPolicy({
   /** Origem de ingestão do Sentry (do DSN), a única conexão externa do navegador. */
   reportingOrigin?: string | null;
 }): string {
+  const media = mediaOrigin();
   return [
     "default-src 'self'",
     // No desenvolvimento o React usa eval para reconstruir as pilhas de erro do servidor.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ''}`,
     "style-src 'self' 'unsafe-inline'",
-    `img-src 'self' data: blob: ${IMAGE_ORIGINS.join(' ')}`,
+    `img-src 'self' data: blob: ${[...IMAGE_ORIGINS, ...(media ? [media] : [])].join(' ')}`,
     "font-src 'self'",
     `connect-src 'self'${reportingOrigin ? ` ${reportingOrigin}` : ''}`,
     `frame-src ${VIEWER_ORIGIN}`,
