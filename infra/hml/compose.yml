@@ -222,6 +222,10 @@ services:
     profiles: ["demo"]
     image: *api-image
     command: ["node", "dist/demo/demo.cli.js", "simulate"]
+    # A imagem é a da API, cujo HEALTHCHECK confere a porta 3333, que o simulador não escuta: sem
+    # isto ele fica "unhealthy" e o `up --wait` do deploy reprova a release.
+    healthcheck:
+      disable: true
     environment:
       CARMINE_DEMO: homologacao
       DEMO_SEED_SECRET: ${DEMO_SEED_SECRET:-}
