@@ -1,0 +1,144 @@
+# Deploy da homologação (dev.stcarmine.com): a cada push no dev, depois que o CI inteiro do push
+# terminou verde, a pilha `carmine-hml` da VM de produção é atualizada (docs/operacao/homologacao.md).
+#
+#   - Automático: push no dev -> CI verde (imagens arm64) -> deploy do commit.
+#   - Manual: "Run workflow" com o commit (40 hex) de uma versão já publicada, e `zerar_banco` para
+#     apagar o banco e o cache da homologação antes de subir.
+#   - Freio: variável do repositório DEPLOY_HML_PAUSED=true suspende o deploy automático.
+#   - Sem os secrets abaixo (antes do passo a passo do dono), o job só avisa e termina verde.
+#
+# O GitHub só dispara `workflow_run` e `workflow_dispatch` com este arquivo no branch padrão: a
+# homologação liga no primeiro release dev -> main depois de entrar aqui.
+#
+# Acesso à VM: o mesmo SSH pelo Cloudflare Tunnel do deploy de produção (Access com service token),
+# mas com OUTRO usuário e OUTRA chave (DEPLOY_HML_SSH_KEY), que só roda /opt/carmine-hml/bin/deploy
+# (infra/hml/bin/bootstrap.sh). Não há como chegar à produção por ela.
+name: Deploy homologação
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [dev]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit (40 hex) a implantar. Vazio: o dev atual."
+        required: false
+        type: string
+      zerar_banco:
+        description: "Apagar o banco e o cache da homologação antes de subir (o seed recria a demonstração)."
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: deploy-hml
+  cancel-in-progress: false
+
+env:
+  CLOUDFLARED_VERSION: "2026.10.1"
+  CLOUDFLARED_SHA256: "200573c872174ab449965655febadef8edfbb144ebcaa391b700b2dedbadb3cd"
+
+jobs:
+  deploy:
+    name: deploy-hml
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    steps:
+      - name: Escolher o commit
+        id: target
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_COMMIT: ${{ inputs.commit }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          PAUSED: ${{ vars.DEPLOY_HML_PAUSED }}
+          HAS_KEY: ${{ secrets.DEPLOY_HML_SSH_KEY != '' && secrets.DEPLOY_SSH_HOST_KEY != '' && secrets.CF_ACCESS_CLIENT_ID != '' }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          head="$(gh api "repos/$REPO/commits/dev" --jq .sha)"
+          if [ "$EVENT" = workflow_dispatch ]; then
+            sha="${INPUT_COMMIT:-$head}"
+          else
+            sha="$RUN_SHA"
+            if [ "$PAUSED" = true ]; then
+              echo "::notice::DEPLOY_HML_PAUSED=true: deploy automático suspenso (use Run workflow para implantar)."
+              echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+            if [ "$sha" != "$head" ]; then
+              echo "::notice::$sha não é mais a ponta do dev ($head): um deploy mais novo cuida disso."
+              echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          fi
+          if ! [[ "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::commit inválido: $sha"; exit 1
+          fi
+          if [ "$HAS_KEY" != true ]; then
+            echo "::notice::Homologação ainda não configurada (faltam os secrets DEPLOY_HML_SSH_KEY, DEPLOY_SSH_HOST_KEY e CF_ACCESS_*): veja docs/operacao/homologacao.md."
+            echo "run=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "run=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - if: steps.target.outputs.run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.target.outputs.sha }}
+
+      - name: Instalar o cloudflared (versão e hash fixos)
+        if: steps.target.outputs.run == 'true'
+        run: |
+          set -euo pipefail
+          curl -fsSL -o cloudflared.deb "https://github.com/cloudflare/cloudflared/releases/download/${CLOUDFLARED_VERSION}/cloudflared-linux-amd64.deb"
+          echo "${CLOUDFLARED_SHA256}  cloudflared.deb" | sha256sum -c -
+          sudo dpkg -i cloudflared.deb
+
+      - name: Configurar o SSH
+        if: steps.target.outputs.run == 'true'
+        env:
+          DEPLOY_HML_SSH_KEY: ${{ secrets.DEPLOY_HML_SSH_KEY }}
+          DEPLOY_SSH_HOST_KEY: ${{ secrets.DEPLOY_SSH_HOST_KEY }}
+        # A chave fica no RUNNER_TEMP, que o runner apaga ao fim de cada job.
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/ssh"
+          install -d -m 700 "$dir"
+          printf '%s\n' "$DEPLOY_HML_SSH_KEY" > "$dir/deploy_key"
+          chmod 600 "$dir/deploy_key"
+          printf 'ssh.stcarmine.com %s\n' "$DEPLOY_SSH_HOST_KEY" > "$dir/known_hosts"
+          cat > "$dir/config" <<EOF
+          Host ssh.stcarmine.com
+            User deployhml
+            IdentityFile $dir/deploy_key
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile $dir/known_hosts
+            ServerAliveInterval 20
+            ProxyCommand cloudflared access ssh --hostname %h
+          EOF
+
+      # O deploy.sh da VM faz tudo, inclusive o teste de fumaça (por dentro da pilha, porque o
+      # Access barra quem vem de fora) e a volta para a tag anterior se algo não ficar saudável.
+      - name: Implantar
+        if: steps.target.outputs.run == 'true'
+        env:
+          SHA: ${{ steps.target.outputs.sha }}
+          RESET: ${{ inputs.zerar_banco == true && ' reset' || '' }}
+          TUNNEL_SERVICE_TOKEN_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          TUNNEL_SERVICE_TOKEN_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+          GH_USER: ${{ github.actor }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # stdin: usuário, token (só vale durante este job) e o tar de infra/hml do commit.
+          { printf '%s\n%s\n' "$GH_USER" "$GH_TOKEN"; tar -czf - infra/hml; } \
+            | ssh -F "$RUNNER_TEMP/ssh/config" ssh.stcarmine.com "sha-${SHA}${RESET}"

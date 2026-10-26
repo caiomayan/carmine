@@ -1,0 +1,254 @@
+# Homologação (dev.stcarmine.com): uma segunda pilha na MESMA VM Oracle A1 da produção, atualizada a
+# cada merge no dev e protegida pelo Cloudflare Access (docs/operacao/homologacao.md).
+#
+# Isolada da produção em tudo: projeto `carmine-hml` (contêineres, redes e volumes próprios), pasta
+# /opt/carmine-hml, `.env` próprio, Postgres e Valkey próprios, túnel próprio. Nada aqui lê ou escreve
+# em /opt/carmine.
+#
+# Regras que este arquivo cumpre e que não devem ser desfeitas:
+#   - NENHUMA porta publicada (`ports:`); o único caminho até o web e a API é o túnel da homologação.
+#   - `data` é interna (sem rota para fora): Postgres e Valkey nunca falam com a internet.
+#   - A homologação cede à produção: `cpu_shares` baixo (só perde CPU quando há disputa) e
+#     `oom_score_adj: 500` (se a memória da VM acabar, o kernel mata a homologação primeiro).
+#   - Limites de memória: 2,2 GB em regime e 2,6 GB no pico (migração ou seed), somados aos 6,8/7,3 GB
+#     da produção (infra/prod/compose.yml) dos 12 GB da VM. O deploy ainda recusa subir com pouca
+#     memória livre (bin/deploy.sh).
+#   - Discord, alertas, Sentry e backup ficam vazios/ausentes: nada sai da homologação para ninguém.
+#
+# Uso (feito pelo deploy, infra/hml/bin/deploy.sh):
+#   IMAGE_TAG=sha-<commit> docker compose -p carmine-hml --env-file /opt/carmine-hml/.env -f compose.yml up -d --wait
+name: carmine-hml
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "5m"
+    max-file: "2"
+
+# Prioridade baixa e primeira a morrer: a produção divide a VM.
+x-polite: &polite
+  cpu_shares: 128
+  oom_score_adj: 500
+
+x-api-env: &api-env
+  NODE_ENV: production
+  HOST: 0.0.0.0
+  PORT: "3333"
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  NODE_OPTIONS: --max-old-space-size=448
+  DATABASE_URL: postgres://carmine:${POSTGRES_PASSWORD:?}@postgres:5432/carmine
+  VALKEY_URL: redis://:${VALKEY_PASSWORD:?}@valkey:6379
+  PUBLIC_WEB_URL: https://dev.stcarmine.com
+  # Só o cloudflared e o web (/32), como na produção.
+  TRUSTED_PROXIES: 172.31.0.10/32,172.31.0.11/32
+  STEAM_WEB_API_KEY: ${STEAM_WEB_API_KEY:-}
+  SENTRY_ENVIRONMENT: staging
+  SENTRY_RELEASE: ${IMAGE_TAG}
+
+# O que a demonstração (apps/api/src/demo) lê; a API de verdade não recebe nada disso.
+x-demo-env: &demo-env
+  CARMINE_DEMO: homologacao
+  DEMO_SEED_SECRET: ${DEMO_SEED_SECRET:-}
+  DEMO_OWNER_STEAM_ID: ${DEMO_OWNER_STEAM_ID:-}
+
+x-api-image: &api-image ghcr.io/caiomayan/carmine-api:${IMAGE_TAG:?defina IMAGE_TAG (sha-<commit>)}
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.1
+    command: tunnel --no-autoupdate --metrics 127.0.0.1:2000 run
+    environment:
+      # O token do túnel `carmine-hml` (painel Zero Trust > Networks > Tunnels); as rotas ficam no
+      # painel (infra/hml/tunnel/ingress.json é a cópia versionada).
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?}
+    networks:
+      edge:
+        ipv4_address: 172.31.0.10
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "--metrics", "127.0.0.1:2000", "ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    mem_limit: 96m
+    <<: *polite
+    restart: unless-stopped
+    logging: *logging
+
+  web:
+    image: ghcr.io/caiomayan/carmine-web:${IMAGE_TAG}
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:3333
+      NODE_OPTIONS: --max-old-space-size=448
+      SENTRY_ENVIRONMENT: staging
+      SENTRY_RELEASE: ${IMAGE_TAG}
+    networks:
+      edge:
+        ipv4_address: 172.31.0.11
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 640m
+    <<: *polite
+    restart: unless-stopped
+    logging: *logging
+
+  api:
+    image: *api-image
+    environment: *api-env
+    networks:
+      edge: {}
+      data: {}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+    mem_limit: 640m
+    <<: *polite
+    restart: unless-stopped
+    logging: *logging
+
+  # Migrações do Drizzle antes de a API subir. Falhou, a API não sobe e o deploy volta atrás.
+  migrate:
+    image: *api-image
+    command: ["node", "dist/database/migrate.cli.js"]
+    environment: *api-env
+    networks:
+      data: {}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 384m
+    <<: *polite
+    restart: "no"
+    logging: *logging
+
+  postgres:
+    image: postgres:18.6-alpine
+    command:
+      - postgres
+      - -c
+      - shared_buffers=128MB
+      - -c
+      - effective_cache_size=256MB
+      - -c
+      - work_mem=4MB
+      - -c
+      - maintenance_work_mem=64MB
+      - -c
+      - max_connections=50
+      - -c
+      - wal_compression=on
+    environment:
+      POSTGRES_USER: carmine
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: carmine
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    networks:
+      data: {}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carmine -d carmine"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
+    shm_size: 128m
+    mem_limit: 640m
+    <<: *polite
+    stop_grace_period: 30s
+    restart: unless-stopped
+    logging: *logging
+
+  valkey:
+    image: valkey/valkey:9.0.6-alpine
+    command:
+      - valkey-server
+      - --requirepass
+      - ${VALKEY_PASSWORD:?}
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --save
+      - ""
+      - --maxmemory
+      - 64mb
+      - --maxmemory-policy
+      - noeviction
+    volumes:
+      - valkey-data:/data
+    networks:
+      data: {}
+    healthcheck:
+      test: ["CMD-SHELL", "valkey-cli -a \"$$VALKEY_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    environment:
+      VALKEY_PASSWORD: ${VALKEY_PASSWORD:?}
+    mem_limit: 96m
+    <<: *polite
+    restart: unless-stopped
+    logging: *logging
+
+  # --- Demonstração (perfil `demo`, ligado por DEMO_ENABLED=true no .env; o deploy.sh cuida) -----------
+  # Contas fictícias, servidores, estatísticas, ranking, inventário e loadout de exemplo. Só roda com
+  # CARMINE_DEMO=homologacao E PUBLIC_WEB_URL de homologação E um banco sem servidores de verdade
+  # (apps/api/src/demo/demo-guard.ts): impossível em produção.
+  demo-seed:
+    profiles: ["demo"]
+    image: *api-image
+    command: ["node", "dist/demo/demo.cli.js", "seed"]
+    environment:
+      <<: [*api-env, *demo-env]
+      NODE_OPTIONS: --max-old-space-size=256
+    networks:
+      edge: {}
+      data: {}
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 384m
+    <<: *polite
+    restart: "no"
+    logging: *logging
+
+  # Batimentos e partidas simuladas (um processo leve que fala com a API pela rede interna, igual a
+  # um servidor de verdade: heartbeat e eventos com a chave do servidor).
+  demo-sim:
+    profiles: ["demo"]
+    image: *api-image
+    command: ["node", "dist/demo/demo.cli.js", "simulate"]
+    environment:
+      CARMINE_DEMO: homologacao
+      DEMO_SEED_SECRET: ${DEMO_SEED_SECRET:-}
+      PUBLIC_WEB_URL: https://dev.stcarmine.com
+      SENTRY_ENVIRONMENT: staging
+      DEMO_API_URL: http://api:3333
+      NODE_OPTIONS: --max-old-space-size=64
+    networks:
+      edge: {}
+    depends_on:
+      demo-seed:
+        condition: service_completed_successfully
+    mem_limit: 128m
+    <<: *polite
+    restart: unless-stopped
+    logging: *logging
+
+networks:
+  edge:
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+          # Endereços dinâmicos só da metade de cima: .10 e .11 ficam sempre para os fixos.
+          ip_range: 172.31.0.128/25
+  data:
+    internal: true
+
+volumes:
+  postgres-data:
+  valkey-data:

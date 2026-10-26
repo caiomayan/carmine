@@ -5,6 +5,7 @@
 #     `node` junta tudo e é o check que o ruleset do main exige (infra/github/main-ruleset.json).
 #   - Push no main: só as imagens arm64, nativas no runner ARM (a VM de produção é ARM). O deploy
 #     (deploy.yml) roda depois que este workflow termina verde.
+#   - Push no dev: as mesmas imagens (sem a tag `latest`), para a homologação (deploy-hml.yml).
 #   - "Run workflow": a mesma checagem completa em qualquer branch.
 #
 # PRs de forks só rodam com aprovação (configuração do repositório) e não recebem secrets.
@@ -14,7 +15,7 @@ on:
   pull_request:
     branches: [main, dev]
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
 
 concurrency:
@@ -130,10 +131,11 @@ jobs:
           echo "resultados: $RESULTS"
           for r in $RESULTS; do [ "$r" = success ] || { echo "::error::um dos jobs não passou ($r)"; exit 1; }; done
 
-  # Imagens publicadas no GHCR a cada push no main, em arm64 nativo (a VM de produção é ARM).
+  # Imagens publicadas no GHCR a cada push no main (produção) e no dev (homologação), em arm64
+  # nativo (a VM é ARM). A tag `latest` é só do main.
   image:
     name: ${{ matrix.name }}-image
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev')
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     strategy:
