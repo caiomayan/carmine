@@ -109,6 +109,7 @@ const live = () => [
     state: 'offline',
     players: 0,
     map: null,
+    lastMap: 'de_nuke',
     lastHeartbeatAt: new Date(Date.now() - 25 * 60_000).toISOString(),
   }),
 ];
@@ -206,6 +207,7 @@ test.describe('os estados do hero', () => {
         state: 'offline',
         players: 0,
         map: null,
+        lastMap: null,
         lastHeartbeatAt: new Date(Date.now() - 25 * 60_000).toISOString(),
       }),
     ]);
@@ -242,6 +244,11 @@ test.describe('os estados do hero', () => {
 });
 
 test.describe('Top 3 e a semana, com dados de verdade', () => {
+  // Com `fullyParallel`, dois workers podem pegar um teste cada deste bloco e CADA UM roda o
+  // beforeAll: dois "Craque Home" no Top 3 e o link do teste deixa de ser único. Em série, o bloco
+  // inteiro vai para um worker só e semeia uma vez.
+  test.describe.configure({ mode: 'serial' });
+
   test.beforeAll(async ({ playwright, baseURL }) => {
     const request = await playwright.request.newContext({ baseURL });
     await playRounds(request, 'Craque Home');

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
 import { gameSanctionSchema } from './moderation.js';
+import { gameTeamSchema } from './stats.js';
 import { steamId64Schema } from './steam.js';
 
 /**
@@ -15,6 +16,39 @@ export const HEARTBEAT_INTERVAL_SECONDS = 10;
 export const SERVER_OFFLINE_AFTER_SECONDS = 45;
 
 /**
+ * S12b · O placar de times de uma partida de rounds (Retake): o estado inteiro, como o resto do
+ * batimento. `round` é o round em andamento (1 = o primeiro do mapa); os placares são os rounds já
+ * vencidos por cada lado. `warmup`: o servidor está no aquecimento (o placar ainda não vale).
+ * Nulo/ausente onde não há placar de times (Deathmatch) ou o plugin não manda.
+ */
+export const matchStateSchema = z
+  .object({
+    round: z.int().positive().max(999),
+    ctScore: z.int().nonnegative().max(999),
+    tScore: z.int().nonnegative().max(999),
+    warmup: z.boolean(),
+  })
+  .meta({ id: 'MatchState' });
+
+export type MatchState = z.infer<typeof matchStateSchema>;
+
+/**
+ * S12b · Uma linha do placar por jogador, como no jogo. `team` é nulo onde não há time (Deathmatch,
+ * todos contra todos) ou o jogador está de espectador. `score` são os pontos do placar do jogo.
+ */
+export const scoreboardEntrySchema = z
+  .object({
+    steamId: steamId64Schema,
+    team: gameTeamSchema.nullable(),
+    kills: z.int().nonnegative(),
+    deaths: z.int().nonnegative(),
+    score: z.int(),
+  })
+  .meta({ id: 'ScoreboardEntry' });
+
+export type ScoreboardEntry = z.infer<typeof scoreboardEntrySchema>;
+
+/**
  * Corpo de `POST /api/server/heartbeat`: o estado atual do servidor, inteiro (não um delta),
  * então um batimento perdido não deixa nada para trás e não há fila a reenviar.
  * `players` são só os jogadores humanos conectados (sem bots nem a HLTV). `maxPlayers` são as
@@ -26,6 +60,13 @@ export const serverHeartbeatSchema = z
     map: z.string().trim().min(1).max(64),
     players: z.array(steamId64Schema).max(128),
     maxPlayers: z.int().min(1).max(128),
+    /** S12b: o placar de times; nulo no Deathmatch, ausente no plugin antigo. */
+    match: matchStateSchema.nullable().optional(),
+    /**
+     * S12b: o placar por jogador (máx. 128). `players` continua sendo a presença (só SteamID64);
+     * `scoreboard` descreve as mesmas pessoas com time e números, e a API só o usa para o placar.
+     */
+    scoreboard: z.array(scoreboardEntrySchema).max(128).optional(),
   })
   .meta({ id: 'ServerHeartbeat' });
 
@@ -64,7 +105,7 @@ export const liveServerStateSchema = z
 export type LiveServerState = z.infer<typeof liveServerStateSchema>;
 
 /**
- * Um Servidor Carmine na lista pública. Offline: `map` nulo e `players` 0; `maxPlayers` é o do
+ * Um Servidor Carmine na lista pública. Offline: `map` nulo (o último está em `lastMap`) e `players` 0; `maxPlayers` é o do
  * último batimento (ou o padrão do Modo, se o servidor nunca mandou um).
  */
 export const liveServerSchema = z
@@ -87,6 +128,16 @@ export const liveServerSchema = z
     state: liveServerStateSchema,
     /** Último batimento recebido (também offline: "visto há X min"); nulo se nunca mandou. */
     lastHeartbeatAt: z.iso.datetime({ offset: true }).nullable(),
+    /**
+     * O mapa do último batimento, também offline (o `map` fica nulo): o cartão do servidor parado
+     * mostra a arte dele. Nulo se o servidor nunca mandou batimento; no ar, igual a `map`.
+     */
+    lastMap: z.string().min(1).nullable(),
+    /**
+     * S12b: o placar de times ao vivo. Ausente ou nulo: sem placar (Deathmatch, servidor offline,
+     * plugin antigo ou número não confiável). Nunca um placar inventado.
+     */
+    match: matchStateSchema.nullable().optional(),
   })
   .meta({ id: 'LiveServer' });
 

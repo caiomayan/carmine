@@ -1,5 +1,14 @@
 # Carmine
 
+Código da plataforma dos servidores comunitários Saint Carmine ([stcarmine.com](https://stcarmine.com)).
+
+**Código visível, todos os direitos reservados.** Este repositório é público para consulta, mas não tem
+licença de código aberto: copiar, modificar, redistribuir ou usar o código, os textos ou os recursos
+visuais em outro projeto exige autorização por escrito. Counter-Strike 2 e Valve são marcas da Valve
+Corporation; a Carmine não é afiliada nem endossada por ela.
+
+Encontrou uma falha de segurança? Não abra issue pública: escreva para privacidade@stcarmine.com.
+
 ## Pré-requisitos
 
 - Node.js 24 LTS (`.nvmrc`) e pnpm 12 (`npm i -g pnpm@12.11.2`; a versão exata está em `package.json`).

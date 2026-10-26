@@ -1,5 +1,7 @@
 # Runner próprio do CI
 
+> **Desativado em 2026-10-26.** O repositório ficou público e o CI e o deploy rodam nos runners do GitHub (minutos ilimitados, inclusive ARM). Runner próprio em repositório público deixaria PRs de terceiros rodarem código no PC do dono: não religue sem tornar o repositório privado de novo. O texto abaixo fica como histórico.
+
 O CI e o deploy podem rodar num runner do GitHub Actions no PC do dono, em vez dos runners do GitHub. Ele existe para quando os minutos grátis do mês acabam: o orçamento do Actions é **US$ 0**, então, sem minutos, a CI do GitHub para e nenhum merge passa no ruleset.
 
 ## Como liga e desliga

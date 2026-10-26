@@ -15,6 +15,7 @@ const server = (overrides: Partial<LiveServer>): LiveServer => ({
   players: 5,
   maxPlayers: 9,
   lastHeartbeatAt: '2026-10-19T12:00:00.000Z',
+  lastMap: 'de_nuke',
   ...overrides,
 });
 

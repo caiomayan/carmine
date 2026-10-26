@@ -63,7 +63,10 @@ export function Panel({
       className={cn('v-panel v-panel-lg v-spot p-5 max-md:p-4', className)}
     >
       <header className="flex items-center justify-between gap-3 pb-3.5">
-        <h2 id={titleId} className="inline-flex items-center gap-2.5 label-caps text-foreground">
+        <h2
+          id={titleId}
+          className="inline-flex items-center gap-2.5 label-caps whitespace-nowrap text-foreground"
+        >
           <span aria-hidden="true" className="size-1.5 shrink-0 rotate-45 bg-foreground" />
           {title}
         </h2>
@@ -462,30 +465,25 @@ export function TopPanel({ top, className }: { top: TopByMode | null; className?
   const [mode, setMode] = useState<Mode>('retake');
   const rows = top?.[mode] ?? [];
   return (
-    <Panel
-      testId="top3"
-      className={className}
-      title={t('title')}
-      aside={
-        <fieldset className="m-0 flex min-w-0 rounded-full border-0 bg-(--fill-rest) p-0.5">
-          <legend className="sr-only">{t('modeLabel')}</legend>
-          {MODES.map((m) => (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={mode === m}
-              onClick={() => setMode(m)}
-              className={cn(
-                'min-h-7 rounded-full px-3 text-caption font-semibold text-muted-foreground transition-colors duration-(--dur-fast) max-md:min-h-(--tap)',
-                mode === m && 'bg-(--fill-active) text-foreground',
-              )}
-            >
-              {tm(m)}
-            </button>
-          ))}
-        </fieldset>
-      }
-    >
+    <Panel testId="top3" className={className} title={t('title')}>
+      {/* As abas moram numa fileira própria, abaixo do título: ao lado dele o título quebrava em 2 linhas. */}
+      <fieldset className="m-0 mb-3 grid min-w-0 grid-cols-2 rounded-full border-0 bg-(--fill-rest) p-0.5">
+        <legend className="sr-only">{t('modeLabel')}</legend>
+        {MODES.map((m) => (
+          <button
+            key={m}
+            type="button"
+            aria-pressed={mode === m}
+            onClick={() => setMode(m)}
+            className={cn(
+              'min-h-7 rounded-full px-3 text-caption font-semibold text-muted-foreground transition-colors duration-(--dur-fast) max-md:min-h-(--tap)',
+              mode === m && 'bg-(--fill-active) text-foreground',
+            )}
+          >
+            {tm(m)}
+          </button>
+        ))}
+      </fieldset>
       {top === null ? (
         <p className="py-2 text-body-sm text-muted-foreground" data-testid="top3-unavailable">
           {t('unavailable')}

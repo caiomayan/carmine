@@ -96,10 +96,10 @@ Vínculo da Conta, cargos Jogador/VIP/Staff/Dono e a mensagem de status dos serv
 ## 9. Preparar a VM (quem conduz faz, com o dono presente)
 
 ```bash
-# no PC: copiar infra/prod para a VM
-scp -i ~/.ssh/carmine-oracle -r infra/prod ubuntu@144.22.255.77:/tmp/carmine-prod
+# no PC: copiar infra/prod para a VM (como chegar à VM com a 22 fechada: docs/operacao/homologacao.md, passo 4)
+scp -i <sua chave da VM> -r infra/prod ubuntu@<IP da VM>:/tmp/carmine-prod
 # na VM
-ssh -i ~/.ssh/carmine-oracle ubuntu@144.22.255.77
+ssh -i <sua chave da VM> ubuntu@<IP da VM>
 sudo /tmp/carmine-prod/bin/bootstrap.sh "ssh-ed25519 AAAA... carmine-deploy"   # a chave PÚBLICA do passo 4
 sudoedit /opt/carmine/.env                                                       # colar os valores dos passos 1 a 8
 sudo /opt/carmine/bin/tunnel                                                     # sobe só o túnel (veja abaixo)
@@ -129,7 +129,7 @@ Peça a quem conduz para rodar com você (comandos em `docs/operacao/deploy-e-ro
 
 Antes: confirme que **você** consegue entrar na VM pelo túnel (`cloudflared access ssh --hostname ssh.stcarmine.com` com a sua conta no Access) **ou** que a *Console Connection* da Oracle funciona (Compute > Instances > a VM > Console connection), porque será a sua porta de emergência.
 
-Depois: Oracle > Networking > a VCN > Security Lists > remova a regra de entrada TCP/22 (e a regra da `iptables` pode ficar). Teste que `ssh -i ... ubuntu@144.22.255.77` agora dá timeout e que *Run workflow* no Deploy ainda funciona.
+Depois: Oracle > Networking > a VCN > Security Lists > remova a regra de entrada TCP/22 (e a regra da `iptables` pode ficar). Teste que `ssh -i ... ubuntu@<IP da VM>` agora dá timeout e que *Run workflow* no Deploy ainda funciona.
 
 ## 13. Monitor externo (UptimeRobot ou Better Stack)
 

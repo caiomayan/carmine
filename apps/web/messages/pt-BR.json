@@ -340,6 +340,7 @@
     },
     "live": {
       "live": "Ao vivo",
+      "paused": "Em pausa",
       "connecting": "Conectando",
       "lost": "Reconectando",
       "updated": "atualizado há {seconds, plural, one {# s} other {# s}}",
@@ -423,7 +424,8 @@
       "title": "Offline ({count})",
       "listLabel": "Servidores offline",
       "since": "Offline {ago}",
-      "never": "Nunca ficou online"
+      "never": "Nunca ficou online",
+      "lastMap": "Último mapa"
     }
   },
   "inventory": {
@@ -747,7 +749,11 @@
     "asVisitorNote": "Você está vendo o seu Perfil como um visitante vê.",
     "backToOwner": "Voltar à visão de dono",
     "privateSeal": "Perfil privado",
-    "presence": "Jogando agora"
+    "presence": "Jogando agora",
+    "join": "Entrar junto",
+    "joinAria": "Entrar junto com {name} no servidor em que a pessoa está jogando",
+    "vip": "VIP",
+    "memberSince": "Membro desde {date}"
   },
   "settings": {
     "metaTitle": "Configurações",

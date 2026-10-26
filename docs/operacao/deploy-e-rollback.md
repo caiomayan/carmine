@@ -14,6 +14,8 @@ VM: baixa as imagens, dump local do banco, `docker compose up -d --wait`
     (migrate -> api -> web), e volta para a tag anterior se algo não ficar saudável
 ```
 
+A **homologação** (`dev.stcarmine.com`, a cópia do `dev` na mesma VM) tem o próprio fluxo, isolado deste: `docs/operacao/homologacao.md`.
+
 ## Quem aprova
 
 A spec pede "sem passo manual além da aprovação". Verificado na documentação do GitHub: *required reviewers* em *environments* só existe em repositório **público** nos planos Free, Pro e Team (em privado, só Enterprise). Então:
@@ -64,7 +66,8 @@ Nada publica porta. O deploy não reinicia o Postgres nem o Valkey a menos que a
 
 ## Rollback
 
-- **Automático**: item 6 acima.
+- **Automático na VM**: item 6 acima (contêiner que não fica saudável).
+- **Automático pelo teste de fumaça**: depois de implantar, o deploy.yml confere de fora (pelo Cloudflare) as páginas e APIs públicas por até 2 min. Se alguma falha, ele implanta de novo o commit anterior do `main` (o primeiro pai do commit que subiu) com `sem_volta`, para não entrar em laço.
 - **Manual**: *Run workflow* com o commit bom anterior (o `previous.tag` da VM e o histórico do `main` dizem qual). É um deploy normal de uma versão antiga: baixa as imagens daquela tag e usa o compose daquele commit.
 - **Migrações só andam para a frente.** O rollback troca as imagens, não desfaz o schema. Por isso toda migração deve ser compatível com a versão anterior do código (expandir, depois contrair em outro deploy: coluna nova nullable ou com default; só apague coluna/tabela uma versão depois que nada mais a lê). Uma migração que quebra a versão anterior exige restaurar o backup (`docs/operacao/backup-e-restauracao.md`): o dump local pré-deploy mais recente está no volume `backups`.
 - **Se até o rollback falhar** (log: "O ROLLBACK TAMBÉM FALHOU"): entre na VM (SSH do `ubuntu`) e use `/opt/carmine/bin/dc ps` e `/opt/carmine/bin/dc logs api` (o `dc` é o `docker compose` apontado para a release no ar; se a `current.tag` ficou desatualizada, rode o compose da release que quiser a partir de `/opt/carmine/releases/<tag>`). O site fica fora do ar até corrigir; o alerta do monitor externo avisa no Discord.

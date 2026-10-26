@@ -3,6 +3,7 @@ import {
   changeDisplayNameInputSchema,
   currentSessionSchema,
   displayNameChangeSchema,
+  profilePlayingSchema,
   profileSchema,
 } from './profile.js';
 
@@ -13,6 +14,8 @@ const profile = {
   steamId: '76561198000000001',
   steamProfileUrl: 'https://steamcommunity.com/profiles/76561198000000001',
   claimed: false,
+  memberSince: '2026-09-02T14:30:00.000Z',
+  isVip: false,
   loadoutShowcase: { items: [] },
   sanctions: { active: [], history: [] },
   isPrivate: false,
@@ -97,5 +100,46 @@ describe('Perfil privado e troca de nome (S11)', () => {
       false,
     );
     expect(changeDisplayNameInputSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('identidade do Perfil público', () => {
+  it('exige a data de entrada e o selo VIP', () => {
+    const { memberSince: _since, ...withoutSince } = profile;
+    const { isVip: _vip, ...withoutVip } = profile;
+
+    expect(profileSchema.safeParse(withoutSince).success).toBe(false);
+    expect(profileSchema.safeParse(withoutVip).success).toBe(false);
+    expect(profileSchema.safeParse({ ...profile, memberSince: 'ontem' }).success).toBe(false);
+  });
+
+  it('o VIP no Perfil é só o selo: o fim do Período não viaja', () => {
+    expect(profileSchema.parse({ ...profile, isVip: true, vipEndsAt: 'x' })).toEqual({
+      ...profile,
+      isVip: true,
+    });
+  });
+});
+
+describe('profilePlayingSchema', () => {
+  const server = {
+    id: '3f9c8b1e-7a52-4c1e-9d3a-2f6a8e0b4c11',
+    name: 'retake-1',
+    showcaseName: 'Retake · Rotação',
+    mode: 'retake',
+    map: 'de_mirage',
+    address: '177.54.0.10:27015',
+    state: 'online',
+  };
+
+  it('aceita o servidor com endereço e estado, ou nulo', () => {
+    expect(profilePlayingSchema.parse({ server })).toEqual({ server });
+    expect(profilePlayingSchema.parse({ server: null })).toEqual({ server: null });
+  });
+
+  it('exige o endereço (o "Entrar junto" abre o steam://connect)', () => {
+    const { address: _address, ...withoutAddress } = server;
+
+    expect(profilePlayingSchema.safeParse({ server: withoutAddress }).success).toBe(false);
   });
 });

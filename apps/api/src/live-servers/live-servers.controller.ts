@@ -2,10 +2,15 @@ import {
   LIVE_SERVERS_EVENT,
   type LiveServerList,
   liveServerListSchema,
+  SERVER_TODAY_MAX_DAYS_BACK,
   type ServerHeartbeat,
   type ServerHeartbeatResult,
+  type ServerPlayers,
+  type ServerToday,
   serverHeartbeatResultSchema,
   serverHeartbeatSchema,
+  serverPlayersSchema,
+  serverTodaySchema,
 } from '@carmine/contracts';
 import {
   Body,
@@ -22,9 +27,13 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiNotFoundResponse,
+  ApiNotImplementedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiProduces,
+  ApiQuery,
   ApiServiceUnavailableResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -34,6 +43,7 @@ import { type GameServer, hostnameOf } from '../game-servers/game-server-registr
 import { CurrentGameServer, ServerKeyGuard } from '../game-servers/server-key.guard.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { s12bPending } from '../stats/s12b-pending.js';
 import { LiveServerStreams } from './live-server-streams.js';
 import { LiveServers } from './live-servers.js';
 
@@ -121,5 +131,44 @@ export class LiveServersController {
   @ApiOkResponse({ description: 'Stream aberto' })
   stream(@Res() reply: FastifyReply): void {
     this.streams.stream(reply);
+  }
+
+  // --- S12b: contratos publicados, implementação nos PRs da API (501 até lá) ---------------------
+
+  @Get(':id/players')
+  @RateLimit('public')
+  @ApiOperation({
+    operationId: 'getServerPlayers',
+    summary:
+      'Quem está no servidor agora, com time, kills, mortes e pontos; Perfil privado aparece como "Jogador privado"',
+    description: 'S12b: o contrato está publicado; responde 501 até a implementação entrar.',
+  })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiOkResponse({ description: 'Os jogadores agora', standardSchema: serverPlayersSchema })
+  @ApiNotFoundResponse({ description: 'Servidor desconhecido ou aposentado' })
+  @ApiNotImplementedResponse({ description: 'S12b: a implementação ainda não entrou' })
+  players(): Promise<ServerPlayers> {
+    return s12bPending();
+  }
+
+  @Get(':id/today')
+  @RateLimit('public')
+  @ApiOperation({
+    operationId: 'getServerToday',
+    summary: 'Histórico do dia do servidor: rounds, mapas, horas, pico e jogadores únicos',
+    description: 'S12b: o contrato está publicado; responde 501 até a implementação entrar.',
+  })
+  @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
+  @ApiQuery({
+    name: 'date',
+    required: false,
+    description: `Dia (YYYY-MM-DD, Brasília); sem ele, hoje; até ${SERVER_TODAY_MAX_DAYS_BACK} dias atrás`,
+  })
+  @ApiOkResponse({ description: 'O dia do servidor', standardSchema: serverTodaySchema })
+  @ApiBadRequestResponse({ description: 'date inválida ou mais antiga que o limite' })
+  @ApiNotFoundResponse({ description: 'Servidor desconhecido ou aposentado' })
+  @ApiNotImplementedResponse({ description: 'S12b: a implementação ainda não entrou' })
+  today(): Promise<ServerToday> {
+    return s12bPending();
   }
 }

@@ -1,0 +1,9 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["$TURBO_EXTENDS$", "typecheck"]
+    }
+  }
+}

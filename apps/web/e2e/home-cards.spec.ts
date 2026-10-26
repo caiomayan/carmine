@@ -22,6 +22,7 @@ for (const theme of ['dark', 'light'] as const) {
             players: 0,
             map: null,
             lastHeartbeatAt: null,
+            lastMap: null,
           }),
         ),
       ]);
