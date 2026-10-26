@@ -4,12 +4,15 @@ import { describe, expect, it } from 'vitest';
 
 /**
  * O GSAP só existe no Sobre e o three.js só na carta (decisão do dono): quem importa essas bibliotecas fora dos
- * diretórios dos protótipos puxaria o peso delas para as outras páginas. Este teste varre o código do web.
+ * módulos dos protótipos puxaria o peso delas para as outras páginas. Cada biblioteca entra por UM módulo (`film.ts`
+ * e `lanyard-scene.ts`), que por sua vez só é carregado por `import()` dinâmico: assim a biblioteca fica num chunk
+ * sob demanda e o manifesto de chunks do runtime (que vai em toda página) ganha uma entrada, não várias. Este teste
+ * varre o código do web.
  */
 const SRC = join(__dirname, '..', '..');
-const ALLOWED: Record<string, string[]> = {
-  gsap: [`components${sep}proto-sobre`],
-  three: [`components${sep}proto-carta`],
+const ENTRY: Record<string, string> = {
+  gsap: join('components', 'proto-sobre', 'film.ts'),
+  three: join('components', 'proto-carta', 'lanyard-scene.ts'),
 };
 
 function files(dir: string): string[] {
@@ -20,39 +23,45 @@ function files(dir: string): string[] {
   });
 }
 
+const all = files(SRC).map((file) => ({
+  file: relative(SRC, file),
+  text: readFileSync(file, 'utf8'),
+}));
+
 /** Qualquer menção à biblioteca como módulo: `from 'x'`, `import('x')` ou `import 'x'`. */
 const mention = (library: string) =>
   new RegExp(`(?:from|import)\\s*\\(?\\s*['"]${library}(?:/[^'"]*)?['"]`);
 
-/** Só o `import ... from 'x'` no começo de uma linha (estático); `import type` não pesa no pacote. */
-const staticImport = (library: string) =>
-  new RegExp(`^import\\s+(?!type\\b)[^;]*?from\\s+['"]${library}(?:/[^'"]*)?['"]`, 'm');
-
 describe('bibliotecas pesadas só onde foram aprovadas', () => {
-  for (const [library, allowed] of Object.entries(ALLOWED)) {
-    it(`${library} só é mencionado em ${allowed.join(', ')}`, () => {
+  for (const [library, entry] of Object.entries(ENTRY)) {
+    it(`${library} só é importado em ${entry}`, () => {
       const pattern = mention(library);
-      const offenders = files(SRC)
-        .filter((file) => pattern.test(readFileSync(file, 'utf8')))
-        .map((file) => relative(SRC, file))
-        .filter((file) => !allowed.some((dir) => file.startsWith(dir)));
-      expect(offenders).toEqual([]);
-    });
-
-    it(`${library} nunca é importado estaticamente (só por import())`, () => {
-      const pattern = staticImport(library);
-      const offenders = files(SRC)
-        .filter((file) => pattern.test(readFileSync(file, 'utf8')))
-        .map((file) => relative(SRC, file));
+      const offenders = all
+        .filter(({ text }) => pattern.test(text))
+        .map(({ file }) => file)
+        .filter((file) => file !== entry);
       expect(offenders).toEqual([]);
     });
   }
 
-  it('o varredor acha de verdade: reconhece as duas formas de import', () => {
+  it('os dois módulos pesados só são carregados por import() dinâmico, nunca estático', () => {
+    for (const entry of Object.values(ENTRY)) {
+      const name = entry.split(sep).pop()?.replace(/\.ts$/, '') ?? '';
+      const staticImport = new RegExp(`^import\\s+[^;]*?from\\s+['"]\\./${name}['"]`, 'm');
+      const offenders = all.filter(({ text }) => staticImport.test(text)).map(({ file }) => file);
+      expect(offenders, `${entry} importado estaticamente`).toEqual([]);
+      const dynamic = new RegExp(`import\\(\\s*['"]\\./${name}['"]\\s*\\)`);
+      expect(
+        all.some(({ text }) => dynamic.test(text)),
+        `${entry} nunca é carregado`,
+      ).toBe(true);
+    }
+  });
+
+  it('o varredor acha de verdade: reconhece as formas de import', () => {
     expect(mention('gsap').test("const { gsap } = await import('gsap');")).toBe(true);
     expect(mention('gsap').test("import { ScrollTrigger } from 'gsap/ScrollTrigger';")).toBe(true);
-    expect(staticImport('gsap').test("import { gsap } from 'gsap';")).toBe(true);
-    expect(staticImport('gsap').test("import type { gsap } from 'gsap';")).toBe(false);
-    expect(staticImport('gsap').test("const x = await import('gsap');")).toBe(false);
+    expect(mention('three').test("import * as THREE from 'three';")).toBe(true);
+    expect(mention('three').test("const x = 'threejs';")).toBe(false);
   });
 });

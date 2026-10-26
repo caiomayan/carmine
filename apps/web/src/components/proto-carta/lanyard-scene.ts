@@ -1,6 +1,4 @@
-import type * as T from 'three';
-
-type Three = typeof T;
+import * as THREE from 'three';
 
 /**
  * O Lanyard da carta do jogador: um cordão preto com o nome da marca e o cartão pendurado, com física de verdade (uma
@@ -21,14 +19,9 @@ const GRAVITY = -15;
 const DAMPING = 0.994;
 const ITERATIONS = 12;
 
-type Node = { p: T.Vector3; prev: T.Vector3 };
+type Node = { p: THREE.Vector3; prev: THREE.Vector3 };
 
-export function mountLanyard(
-  THREE: Three,
-  host: HTMLElement,
-  imageUrl: string,
-  onReady: () => void,
-): () => void {
+export function mountLanyard(host: HTMLElement, imageUrl: string, onReady: () => void): () => void {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;

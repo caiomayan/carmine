@@ -23,15 +23,12 @@ export function Lanyard({ imageUrl, label }: { imageUrl: string; label: string }
     let teardown: (() => void) | undefined;
     void (async () => {
       try {
-        const [THREE, { mountLanyard }] = await Promise.all([
-          import('three'),
-          import('./lanyard-scene'),
-        ]);
+        const { mountLanyard } = await import('./lanyard-scene');
         if (disposed) return;
         // As fontes do cordão e do verso precisam estar prontas antes de desenhar o texto nas texturas.
         await document.fonts.ready;
         if (disposed) return;
-        teardown = mountLanyard(THREE, element, imageUrl, () => {
+        teardown = mountLanyard(element, imageUrl, () => {
           if (!disposed) setMode('live');
         });
       } catch {

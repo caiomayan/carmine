@@ -1,23 +1,25 @@
-import type { gsap as Gsap } from 'gsap';
-import type { ScrollTrigger as ScrollTriggerType } from 'gsap/ScrollTrigger';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 /**
- * A montagem do "filme" do Sobre: as cenas, na ordem, cada uma presa à rolagem. **Só este arquivo e o
- * `sobre-filme.tsx` importam o GSAP** (e só por `import()`): nenhuma outra página do site carrega a biblioteca.
- * Roda dentro de um `gsap.matchMedia()` (só sem `prefers-reduced-motion`) e tudo o que cria é desfeito quando a
- * condição deixa de valer ou a página sai.
+ * A montagem do "filme" do Sobre: as cenas, na ordem, cada uma presa à rolagem. **Este é o único arquivo que importa
+ * o GSAP**, e o `sobre-filme.tsx` só o carrega por um `import('./film')` depois da hidratação: nenhuma outra página
+ * do site baixa a biblioteca (e um só `import()` dinâmico, em vez de três, mantém o manifesto de chunks do runtime,
+ * que vai em toda página, do mesmo tamanho). Roda dentro de um `gsap.matchMedia()` (só sem
+ * `prefers-reduced-motion`) e tudo o que cria é desfeito quando a condição deixa de valer ou a página sai.
  */
 
-type Gsap_ = typeof Gsap;
-type ScrollTrigger_ = typeof ScrollTriggerType;
+/** Monta o filme em `root` se a pessoa aceita movimento; devolve a função que desfaz tudo. */
+export function startFilm(root: HTMLElement): () => void {
+  gsap.registerPlugin(ScrollTrigger);
+  const media = gsap.matchMedia();
+  media.add('(prefers-reduced-motion: no-preference)', () => buildFilm(root));
+  return () => media.revert();
+}
 
 const SMALL = '(max-width: 760px)';
 
-export function buildFilm(
-  gsap: Gsap_,
-  ScrollTrigger: ScrollTrigger_,
-  root: HTMLElement,
-): () => void {
+function buildFilm(root: HTMLElement): () => void {
   /** O que o GSAP não desfaz sozinho (ouvintes do DOM e a classe do filme). */
   const undo: (() => void)[] = [];
   const q = gsap.utils.selector(root);

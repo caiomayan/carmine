@@ -67,19 +67,10 @@ export function SobreFilme({ art, retakeSkins, deathmatchSkins, discordUrl }: So
     let cancelled = false;
     let revert: (() => void) | undefined;
     void (async () => {
-      const [{ gsap }, { ScrollTrigger }, { buildFilm }] = await Promise.all([
-        import('gsap'),
-        import('gsap/ScrollTrigger'),
-        import('./film'),
-      ]);
+      const { startFilm } = await import('./film');
       const element = root.current;
       if (cancelled || !element) return;
-      gsap.registerPlugin(ScrollTrigger);
-      const media = gsap.matchMedia();
-      media.add('(prefers-reduced-motion: no-preference)', () =>
-        buildFilm(gsap, ScrollTrigger, element),
-      );
-      revert = () => media.revert();
+      revert = startFilm(element);
     })();
     return () => {
       cancelled = true;
