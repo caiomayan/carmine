@@ -1,10 +1,18 @@
 import type { APIRequestContext, Page } from '@playwright/test';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
-import { createServer, heartbeat, keepBeating } from './live-servers';
+import {
+  connectPlayer,
+  createServer,
+  friendSteamId,
+  heartbeat,
+  keepBeating,
+  keepBeatingWith,
+} from './live-servers';
 
 /**
- * A página do servidor (/servidores/[id]). A API ainda não entrega os blocos da S12b (placar, jogadores, histórico
- * do dia), então a página real mostra "coletando" e os estados "prontos" vêm da vitrine de dev (/dev/servidor).
+ * A página do servidor (/servidores/[id]) com a API de verdade (S12b: `match` no batimento, `/players` e `/today`).
+ * Os estados "prontos" de cada Modo vêm da vitrine de dev (/dev/servidor); aqui ficam os que a API real produz:
+ * servidor vazio, com placar e jogadores, e o histórico do dia ainda sem coleta.
  */
 
 const STATES = [
@@ -33,7 +41,7 @@ const noHorizontalScroll = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
 test.describe('Página do servidor: o que a API já entrega', () => {
-  test('mostra mapa, estado e ações, e os blocos da S12b em "coletando"', async ({
+  test('servidor vazio: mapa, estado e ações; sem jogo, sem jogadores e o histórico em "coletando"', async ({
     page,
     request,
   }) => {
@@ -54,15 +62,56 @@ test.describe('Página do servidor: o que a API já entrega', () => {
       );
       await expect(page.getByTestId('copy-ip')).toBeVisible();
 
-      // Nada de número inventado: cada bloco da S12b é o estado "coletando", com o que ele vai mostrar.
-      for (const kind of ['score', 'roster', 'today']) {
-        const block = page.getByTestId(`collecting-${kind}`);
-        await expect(block).toBeVisible();
-        await expect(block).toContainText('Coletando');
-        await expect(block).toContainText('Ainda não coletamos esse dado.');
-      }
+      // Sem ninguém: o cartão "Sem jogo" e a lista vazia, nunca um placar ou jogadores inventados.
+      await expect(page.getByRole('region', { name: 'Sem jogo' })).toContainText(
+        'Ninguém por aqui',
+      );
+      await expect(page.getByTestId('jogadores')).toContainText('Ninguém jogando agora');
       await expect(page.getByTestId('placar')).toHaveCount(0);
       await expect(page.getByTestId('jogador')).toHaveCount(0);
+      // O servidor ainda não guardou nada do dia (sem plugin novo): "coletando", não zero rounds.
+      const today = page.getByTestId('collecting-today');
+      await expect(today).toBeVisible();
+      await expect(today).toContainText('Coletando');
+      await expect(today).toContainText('Ainda não coletamos esse dado.');
+    } finally {
+      stop();
+    }
+  });
+
+  test('com o placar do batimento: o placar de times ao vivo e os jogadores com os números', async ({
+    page,
+    request,
+  }) => {
+    const server = createServer();
+    const first = friendSteamId();
+    const second = (BigInt(first) + 1n).toString();
+    await connectPlayer(request, server, first, 'Craque Placar');
+    await connectPlayer(request, server, second, 'Parceiro Placar');
+    const stop = keepBeatingWith(request, server, () => ({
+      map: 'de_mirage',
+      players: [first, second],
+      maxPlayers: 9,
+      match: { round: 6, ctScore: 4, tScore: 1, warmup: false },
+      scoreboard: [
+        { steamId: first, team: 'ct', kills: 7, deaths: 2, score: 14 },
+        { steamId: second, team: 't', kills: 1, deaths: 6, score: 2 },
+      ],
+    }));
+    try {
+      const id = await serverId(request, server.name);
+      await page.goto(`/servidores/${id}`);
+
+      await expect(page.getByTestId('server-page')).toHaveAttribute('data-estado', 'live');
+      const board = page.getByTestId('placar');
+      await expect(board).toBeVisible();
+      await expect(board).toContainText('4');
+      await expect(board).toContainText('1');
+      await expect(page.getByTestId('collecting-score')).toHaveCount(0);
+      await expect(page.getByTestId('collecting-roster')).toHaveCount(0);
+      await expect(page.getByTestId('jogador')).toHaveCount(2);
+      await expect(page.getByTestId('jogadores')).toContainText('Craque Placar');
+      await expect(page.getByTestId('jogadores')).toContainText('Parceiro Placar');
     } finally {
       stop();
     }

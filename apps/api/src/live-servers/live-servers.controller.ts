@@ -13,13 +13,18 @@ import {
   serverTodaySchema,
 } from '@carmine/contracts';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
+  NotFoundException,
+  Param,
   Post,
+  Query,
+  Req,
   Res,
   ServiceUnavailableException,
   UseGuards,
@@ -28,7 +33,6 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiNotFoundResponse,
-  ApiNotImplementedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -38,14 +42,15 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
 import { type GameServer, hostnameOf } from '../game-servers/game-server-registry.js';
 import { CurrentGameServer, ServerKeyGuard } from '../game-servers/server-key.guard.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
-import { s12bPending } from '../stats/s12b-pending.js';
 import { LiveServerStreams } from './live-server-streams.js';
 import { LiveServers } from './live-servers.js';
+import { ServerPlayersReader } from './server-players.js';
+import { InvalidServerDay, ServerTodayReader } from './server-today.js';
 
 const UNAVAILABLE = 'Servidores ao vivo indisponíveis no momento; tente de novo';
 
@@ -102,6 +107,8 @@ export class LiveServersController {
   constructor(
     @Inject(LiveServers) private readonly live: LiveServers,
     @Inject(LiveServerStreams) private readonly streams: LiveServerStreams,
+    @Inject(ServerPlayersReader) private readonly playersReader: ServerPlayersReader,
+    @Inject(ServerTodayReader) private readonly todayReader: ServerTodayReader,
   ) {}
 
   @Get()
@@ -133,7 +140,7 @@ export class LiveServersController {
     this.streams.stream(reply);
   }
 
-  // --- S12b: contratos publicados, implementação nos PRs da API (501 até lá) ---------------------
+  // --- S12b: a página do servidor ----------------------------------------------------------------
 
   @Get(':id/players')
   @RateLimit('public')
@@ -141,14 +148,24 @@ export class LiveServersController {
     operationId: 'getServerPlayers',
     summary:
       'Quem está no servidor agora, com time, kills, mortes e pontos; Perfil privado aparece como "Jogador privado"',
-    description: 'S12b: o contrato está publicado; responde 501 até a implementação entrar.',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiOkResponse({ description: 'Os jogadores agora', standardSchema: serverPlayersSchema })
   @ApiNotFoundResponse({ description: 'Servidor desconhecido ou aposentado' })
-  @ApiNotImplementedResponse({ description: 'S12b: a implementação ainda não entrou' })
-  players(): Promise<ServerPlayers> {
-    return s12bPending();
+  @ApiServiceUnavailableResponse({ description: UNAVAILABLE })
+  async players(@Param('id') id: string, @Req() request: FastifyRequest): Promise<ServerPlayers> {
+    try {
+      const found = await this.live.find(id);
+      if (!found) throw new NotFoundException('Servidor não encontrado');
+      return await this.playersReader.read(
+        found.server,
+        found.presence,
+        request.carmineSession?.accountId ?? null,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      throw new ServiceUnavailableException(UNAVAILABLE);
+    }
   }
 
   @Get(':id/today')
@@ -156,7 +173,6 @@ export class LiveServersController {
   @ApiOperation({
     operationId: 'getServerToday',
     summary: 'Histórico do dia do servidor: rounds, mapas, horas, pico e jogadores únicos',
-    description: 'S12b: o contrato está publicado; responde 501 até a implementação entrar.',
   })
   @ApiParam({ name: 'id', type: 'string', format: 'uuid' })
   @ApiQuery({
@@ -167,8 +183,18 @@ export class LiveServersController {
   @ApiOkResponse({ description: 'O dia do servidor', standardSchema: serverTodaySchema })
   @ApiBadRequestResponse({ description: 'date inválida ou mais antiga que o limite' })
   @ApiNotFoundResponse({ description: 'Servidor desconhecido ou aposentado' })
-  @ApiNotImplementedResponse({ description: 'S12b: a implementação ainda não entrou' })
-  today(): Promise<ServerToday> {
-    return s12bPending();
+  async today(
+    @Param('id') id: string,
+    @Query('date') date: string | undefined,
+  ): Promise<ServerToday> {
+    try {
+      const found = await this.live.find(id);
+      if (!found) throw new NotFoundException('Servidor não encontrado');
+      return await this.todayReader.read(found.server, date);
+    } catch (error) {
+      if (error instanceof NotFoundException) throw error;
+      if (error instanceof InvalidServerDay) throw new BadRequestException(error.message);
+      throw error;
+    }
   }
 }

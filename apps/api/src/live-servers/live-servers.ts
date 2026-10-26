@@ -1,7 +1,7 @@
 import type { LiveServer, LiveServerList, ServerHeartbeat } from '@carmine/contracts';
 import { Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
-import type { GameServerRegistry } from '../game-servers/game-server-registry.js';
-import { buildLiveServerList } from './live-server-list.js';
+import type { GameServer, GameServerRegistry } from '../game-servers/game-server-registry.js';
+import { buildLiveServerList, type ServerPresence } from './live-server-list.js';
 import type { ServerPresenceStore } from './server-presence-store.js';
 
 export interface LiveServersOptions {
@@ -51,8 +51,21 @@ export class LiveServers implements OnModuleInit, OnApplicationShutdown {
       players: [...new Set(heartbeat.players)],
       maxPlayers: heartbeat.maxPlayers,
       at: this.now(),
+      // O estado inteiro de cada batimento: sem `match`, o placar anterior não sobra.
+      match: heartbeat.match ?? null,
+      scoreboard: heartbeat.scoreboard ?? null,
     });
     void this.refresh();
+  }
+
+  /** Um servidor em operação e o último batimento dele; nulo se não existe ou foi aposentado. */
+  async find(
+    serverId: string,
+  ): Promise<{ server: GameServer; presence: ServerPresence | undefined } | null> {
+    const server = (await this.registry.list()).find((candidate) => candidate.id === serverId);
+    if (!server) return null;
+    const presences = await this.presence.readAll([server.id]);
+    return { server, presence: presences.get(server.id) };
   }
 
   /** A lista pública agora; rejeita se o Postgres ou o Valkey falharem. */

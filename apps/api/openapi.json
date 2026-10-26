@@ -2544,7 +2544,6 @@
     },
     "/api/servers/{id}/players": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getServerPlayers",
         "parameters": [
           {
@@ -2594,8 +2593,8 @@
               }
             }
           },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
+          "503": {
+            "description": "Servidores ao vivo indisponíveis no momento; tente de novo"
           }
         },
         "summary": "Quem está no servidor agora, com time, kills, mortes e pontos; Perfil privado aparece como \"Jogador privado\"",
@@ -2606,16 +2605,8 @@
     },
     "/api/servers/{id}/today": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getServerToday",
         "parameters": [
-          {
-            "name": "date",
-            "required": false,
-            "in": "query",
-            "description": "Dia (YYYY-MM-DD, Brasília); sem ele, hoje; até 7 dias atrás",
-            "schema": {}
-          },
           {
             "name": "id",
             "required": true,
@@ -2624,6 +2615,13 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Dia (YYYY-MM-DD, Brasília); sem ele, hoje; até 7 dias atrás",
+            "schema": {}
           }
         ],
         "responses": {
@@ -2665,9 +2663,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
           }
         },
         "summary": "Histórico do dia do servidor: rounds, mapas, horas, pico e jogadores únicos",

@@ -34,6 +34,9 @@ export interface SimServer {
   mapChangesAt: number;
   /** Quando sai o próximo round (Retake) ou o próximo punhado de abates (Deathmatch). */
   nextActionAt: number;
+  /** O placar de times do Retake (zera a cada mapa) e os números de cada jogador no servidor. */
+  match: { played: number; ct: number; t: number };
+  board: Map<string, { team: 'ct' | 't' | null; kills: number; deaths: number; score: number }>;
 }
 
 export interface Tick {
@@ -50,6 +53,8 @@ export function createSimServer(def: DemoServer, now: Date, random: Random): Sim
     map: pick(random, def.maps),
     mapChangesAt: now.getTime() + minutes(random, MAP_MINUTES),
     nextActionAt: now.getTime() + between(random, 5_000, 20_000),
+    match: { played: 0, ct: 0, t: 0 },
+    board: new Map(),
   };
 }
 
@@ -71,6 +76,9 @@ export function tick(state: SimServer, now: Date, random: Random, newId: () => s
       state.def.maps.filter((map) => map !== state.map),
     );
     state.mapChangesAt = now.getTime() + minutes(random, MAP_MINUTES);
+    // Mapa novo: o placar de times e os números do placar recomeçam.
+    state.match = { played: 0, ct: 0, t: 0 };
+    for (const row of state.board.values()) Object.assign(row, { kills: 0, deaths: 0, score: 0 });
   }
 
   if (now.getTime() >= state.nextActionAt && state.present.size >= 2) {
@@ -78,10 +86,30 @@ export function tick(state: SimServer, now: Date, random: Random, newId: () => s
     else playDeathmatchBurst(state, now, random, newId, batch);
   }
 
+  const retake = state.def.mode === 'retake';
   const heartbeat: ServerHeartbeat = {
     map: state.map,
     players: [...state.present.keys()],
     maxPlayers: state.def.maxPlayers,
+    // Como o Carmine.Core: placar de times só no Retake, placar por jogador nos dois Modos.
+    match: retake
+      ? {
+          round: state.match.played + 1,
+          ctScore: state.match.ct,
+          tScore: state.match.t,
+          warmup: false,
+        }
+      : null,
+    scoreboard: [...state.present.keys()].map((steamId) => {
+      const row = state.board.get(steamId);
+      return {
+        steamId,
+        team: retake ? (row?.team ?? null) : null,
+        kills: row?.kills ?? 0,
+        deaths: row?.deaths ?? 0,
+        score: row?.score ?? 0,
+      };
+    }),
   };
   const quiet =
     batch.kills.length +
@@ -100,7 +128,14 @@ function emptyBatch(): EventBatch {
 function join(state: SimServer, steamId: string, at: Date, newId: () => string, batch: EventBatch) {
   const sessionId = newId();
   state.present.set(steamId, { sessionId, startedAt: at });
-  batch.sessionStarts.push({ id: newId(), at: at.toISOString(), sessionId, steamId });
+  state.board.set(steamId, { team: null, kills: 0, deaths: 0, score: 0 });
+  batch.sessionStarts.push({
+    id: newId(),
+    at: at.toISOString(),
+    sessionId,
+    steamId,
+    map: state.map,
+  });
 }
 
 function leave(
@@ -113,6 +148,7 @@ function leave(
   const session = state.present.get(steamId);
   if (!session) return;
   state.present.delete(steamId);
+  state.board.delete(steamId);
   batch.sessionEnds.push({
     id: newId(),
     at: at.toISOString(),
@@ -168,10 +204,12 @@ function playRetakeRound(
 
   const kills = Math.round(between(random, 3, 7.99));
   for (let n = 0; n < kills; n++) {
-    const [attackers, victims] = random() < 0.5 ? [ct, t] : [t, ct];
+    const killerSide = random() < 0.5 ? 'ct' : 't';
+    const [attackers, victims] = killerSide === 'ct' ? [ct, t] : [t, ct];
     const killer = pick(random, attackers);
     const victim = pick(random, victims);
     const assisters = attackers.filter((steamId) => steamId !== killer);
+    credit(state, killer, victim);
     const at = new Date(now.getTime() - (kills - n) * 700);
     batch.kills.push({
       id: newId(),
@@ -186,6 +224,7 @@ function playRetakeRound(
       headshot: random() < 0.42,
       weapon: pick(random, WEAPONS),
       teamKill: false,
+      killerTeam: killerSide,
     });
     batch.damages.push({
       id: newId(),
@@ -197,11 +236,26 @@ function playRetakeRound(
       amount: Math.round(between(random, 45, 100)),
     });
   }
+  for (const steamId of ct) {
+    const row = state.board.get(steamId);
+    if (row) row.team = 'ct';
+  }
+  for (const steamId of t) {
+    const row = state.board.get(steamId);
+    if (row) row.team = 't';
+  }
+  state.match.played += 1;
+  if (winner === 'ct') state.match.ct += 1;
+  else state.match.t += 1;
   batch.roundEnds.push({
     id: newId(),
     at: now.toISOString(),
     warmup: false,
     winner,
+    map: state.map,
+    roundNumber: state.match.played,
+    scoreCt: state.match.ct,
+    scoreT: state.match.t,
     players: [
       ...ct.map((steamId) => ({ steamId, team: 'ct' as const })),
       ...t.map((steamId) => ({ steamId, team: 't' as const })),
@@ -226,6 +280,7 @@ function playDeathmatchBurst(
       humans.filter((steamId) => steamId !== killer),
     );
     const at = new Date(now.getTime() - (kills - n) * 800);
+    credit(state, killer, victim);
     batch.kills.push({
       id: newId(),
       at: at.toISOString(),
@@ -251,4 +306,15 @@ function playDeathmatchBurst(
     });
   }
   state.nextActionAt = now.getTime() + between(random, 8_000, 15_000);
+}
+
+/** Os números do placar por jogador: 2 pontos por abate, como no jogo. */
+function credit(state: SimServer, killer: string, victim: string): void {
+  const k = state.board.get(killer);
+  if (k) {
+    k.kills += 1;
+    k.score += 2;
+  }
+  const v = state.board.get(victim);
+  if (v) v.deaths += 1;
 }

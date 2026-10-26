@@ -44,6 +44,7 @@ describe('buildLiveServerList', () => {
         state: 'online',
         lastHeartbeatAt: '2026-10-12T17:59:55.000Z',
         lastMap: 'de_mirage',
+        match: null,
       },
     ]);
     expect(list.summary).toEqual({ online: 1, players: 2 });
@@ -120,5 +121,28 @@ describe('buildLiveServerList', () => {
 
     expect(list.servers.map((s) => s.name)).toEqual(['retake-1', 'retake-2', 'dm-1']);
     expect(list.summary).toEqual({ online: 2, players: 3 });
+  });
+
+  it('S12b: o placar de times vai junto enquanto o servidor está no ar e some quando cai', () => {
+    const match = { round: 15, ctScore: 8, tScore: 6, warmup: false };
+    const up = buildLiveServerList([retake], new Map([[retake.id, presence({ match })]]), now);
+    const down = buildLiveServerList(
+      [retake],
+      new Map([[retake.id, presence({ match, at: secondsAgo(60) })]]),
+      now,
+    );
+
+    expect(up.servers[0]?.match).toEqual(match);
+    expect(down.servers[0]).toMatchObject({ state: 'offline', match: null });
+  });
+
+  it('S12b: sem placar (Deathmatch, plugin antigo) o match é nulo', () => {
+    const list = buildLiveServerList(
+      [deathmatch],
+      new Map([[deathmatch.id, presence({ match: null, scoreboard: [] })]]),
+      now,
+    );
+
+    expect(list.servers[0]?.match).toBeNull();
   });
 });
