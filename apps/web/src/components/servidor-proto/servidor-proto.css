@@ -898,3 +898,140 @@
   opacity: 0.4;
   pointer-events: none;
 }
+
+/* ---------- legenda do placar, selo de aquecimento, lista única e líder ---------- */
+.vs-score-cap {
+  margin-top: -8px;
+  font-size: 13px;
+  color: var(--on-map-muted);
+}
+.vs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius-sm);
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+.vs-row[data-bare] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.vs-teams[data-single] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.vs-team-panel[data-side="all"] {
+  --side: var(--text);
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--text) 7%, transparent), transparent 150px),
+    var(--surface);
+}
+.vs-team-panel[data-side="all"] .vs-row[data-first] {
+  background: var(--fill-rest);
+}
+.vs-cols[data-cols="4"],
+.vs-nums[data-cols="4"] {
+  grid-template-columns: repeat(4, 76px);
+}
+@media (max-width: 760px) {
+  .vs-cols[data-cols="4"],
+  .vs-nums[data-cols="4"] {
+    grid-template-columns: repeat(3, 40px);
+  }
+}
+.vs-ratio {
+  justify-content: flex-end;
+  font-weight: 500;
+  color: var(--on-map-muted);
+}
+
+.vs-leader-who {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  animation: vs-fade 520ms var(--ease-out) both;
+}
+.vs-leader-name {
+  min-width: 0;
+  font-family: var(--v-serif);
+  font-size: 38px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+a.vs-leader-name:hover {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text) 40%, transparent);
+  text-underline-offset: 6px;
+}
+.vs-private.vs-leader-name {
+  font-family: var(--v-serif);
+  font-style: normal;
+  color: var(--on-map-muted);
+}
+.vs-leader-score {
+  display: flex;
+  align-items: flex-end;
+  gap: 22px;
+}
+.vs-leader-stats {
+  display: grid;
+  gap: 6px;
+  padding-bottom: 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.vs-leader-stats .v-label {
+  color: var(--on-map-muted);
+}
+.vs-leader-stats .vs-digits {
+  display: inline-flex;
+  vertical-align: bottom;
+}
+.vs-anon-lg .vs-anon-disc {
+  width: 56px;
+  height: 56px;
+}
+@keyframes vs-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vs-leader-who {
+    animation: none;
+  }
+}
+
+/* ---------- Hoje: o mapa com a divisão dos rounds ganhos ---------- */
+.vs-mini {
+  display: flex;
+  gap: 2px;
+  width: 76px;
+  height: 5px;
+}
+.vs-mini > i {
+  display: block;
+  min-width: 4px;
+  border-radius: 999px;
+}
+.vs-mini > [data-side="ct"] {
+  background: var(--side-ct);
+}
+.vs-mini > [data-side="t"] {
+  background: var(--side-t);
+}
+.vs-tiles[data-n="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1000px) {
+  .vs-tiles[data-n="3"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .vs-tiles[data-n="3"] > :first-child {
+    grid-column: 1 / -1;
+  }
+}

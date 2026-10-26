@@ -16,10 +16,13 @@ import { mapDisplayName, mapSlug } from '@/lib/map-art';
 import { cn } from '@/lib/utils';
 import {
   advance,
+  alphabetical,
   type LiveState,
   type Match,
+  minutesBetween,
   type RosterPlayer,
   ranked,
+  rankedAll,
   SCENARIO_KEYS,
   SCENARIOS,
   type Scenario,
@@ -36,8 +39,9 @@ const SIDE_SHORT: Record<Side, string> = { ct: 'CT', t: 'TR' };
 
 /**
  * PROTÓTIPO da página do servidor (/servidores/[id]) na linguagem Vida: o mapa de borda a borda com a cor dele, o
- * placar ao vivo CT×TR (dígitos rolando), os jogadores dos dois lados e o histórico do dia. Dados fixos de exemplo
- * (`data.ts`); a barra do fim troca o estado e liga a simulação de rounds.
+ * placar ao vivo CT×TR (dígitos rolando), os jogadores dos dois lados e o histórico do dia. O Deathmatch troca o
+ * placar de times pelo líder e a lista dos dois lados por uma lista única por pontos. Dados fixos de exemplo
+ * (`data.ts`); a barra do fim troca o estado e liga a simulação.
  */
 export function ServidorProto({
   scenarioKey,
@@ -56,6 +60,7 @@ export function ServidorProto({
   const { server, today } = scenario;
   const live = server.state !== 'offline';
   const warmup = scenario.match?.warmup === true;
+  const dm = server.mode === 'deathmatch';
   const shownMap = live ? server.map : server.lastMap;
   const slug = mapSlug(shownMap);
   const pair = slug ? art[slug] : undefined;
@@ -66,17 +71,17 @@ export function ServidorProto({
   // ---- a simulação: o estado do jogo vive aqui para o placar, a lista e a barra de vagas andarem juntos.
   const [sim, setSim] = useState(simFromUrl);
   const [game, setGame] = useState<LiveState>({
-    match: scenario.match ?? { round: 0, ctScore: 0, tScore: 0, warmup: false },
+    match: scenario.match,
     players: scenario.players,
     step: 0,
   });
-  const canSim = scenario.match !== null && !warmup && live;
+  const canSim =
+    live && !warmup && (scenario.match !== null || (dm && scenario.players.length > 0));
   useEffect(() => {
     if (!sim || !canSim) return;
     const timer = setInterval(() => setGame((state) => advance(state)), simMs);
     return () => clearInterval(timer);
   }, [sim, canSim, simMs]);
-  const match: Match | null = scenario.match ? game.match : null;
 
   return (
     <div
@@ -104,11 +109,20 @@ export function ServidorProto({
 
         <div className="vs-hero">
           <Head scenario={scenario} warmup={warmup} mapName={mapDisplayName(shownMap)} />
-          <ScoreCard scenario={scenario} match={match} players={game.players} sim={sim && canSim} />
+          {dm && live ? (
+            <LeaderCard scenario={scenario} players={game.players} sim={sim && canSim} />
+          ) : (
+            <ScoreCard
+              scenario={scenario}
+              match={game.match}
+              players={game.players}
+              sim={sim && canSim}
+            />
+          )}
         </div>
 
-        <Roster scenario={scenario} players={game.players} />
-        <TodayPanel today={today} live={live} art={art} />
+        <Roster scenario={scenario} players={game.players} warmup={warmup} />
+        <TodayPanel today={today} live={live} dm={dm} art={art} />
       </div>
 
       {bar ? (
@@ -171,13 +185,9 @@ function Head({
       <p className="vs-meta">
         <span className="vs-status">
           <StatusDot tone={live ? (full ? 'warn' : 'online') : 'offline'} pulse={live && !full} />
-          {live ? (full ? 'Lotado' : warmup ? 'Aquecimento' : 'Ao vivo') : 'Offline'}
+          {live ? (full ? 'Lotado' : warmup ? 'Esquentando' : 'Ao vivo') : 'Offline'}
         </span>
         <span className="vs-chip">{server.mode === 'retake' ? 'Retake' : 'Deathmatch'}</span>
-        <span className="vs-meta-text">
-          {server.code ? <span className="tabular-nums">{server.code}</span> : null}
-          <span>São Paulo</span>
-        </span>
       </p>
 
       {mapName ? (
@@ -187,14 +197,13 @@ function Head({
         </p>
       ) : null}
       <h1 className="vs-name">{serverLabel(server)}</h1>
-      <p className="vs-sub">
-        <span>{server.name}</span>
-        {!live ? (
+      {!live ? (
+        <p className="vs-sub">
           <span>
             Offline há {offlineMinutes} min · último mapa {mapName}
           </span>
-        ) : null}
-      </p>
+        </p>
+      ) : null}
 
       {live ? (
         <>
@@ -241,7 +250,7 @@ function Head({
   );
 }
 
-/* ---------- placar ao vivo ---------- */
+/* ---------- placar ao vivo (Retake) ---------- */
 
 function ScoreCard({
   scenario,
@@ -256,9 +265,9 @@ function ScoreCard({
 }) {
   const { server, today } = scenario;
   const live = server.state !== 'offline';
-  const lastMatch = today.maps.at(-1);
+  const lastMap = today.maps.at(-1);
 
-  // Offline: a última partida do dia (o que o histórico já sabe), sem placar vivo.
+  // Offline: o último mapa do dia (o que o histórico já sabe), sem placar vivo.
   if (!live) {
     return (
       <section className="vs-score" aria-labelledby="vs-score-title" data-kind="offline">
@@ -266,13 +275,13 @@ function ScoreCard({
           Servidor offline
         </p>
         <p className="vs-score-big v-serif">Dormindo</p>
-        {lastMatch ? (
+        {lastMap && lastMap.ctWins !== null ? (
           <p className="vs-score-lead">
-            A última partida de hoje foi em <b>{mapDisplayName(lastMatch.map)}</b>:{' '}
+            O último mapa de hoje foi <b>{mapDisplayName(lastMap.map)}</b>:{' '}
             <span className="tabular-nums">
-              {lastMatch.ctWins} × {lastMatch.tWins}
+              {lastMap.ctWins} × {lastMap.tWins}
             </span>{' '}
-            em {lastMatch.rounds} rounds.
+            em rounds ganhos, {lastMap.rounds} no total.
           </p>
         ) : null}
         <Slots count={0} max={server.maxPlayers} />
@@ -284,10 +293,10 @@ function ScoreCard({
     return (
       <section className="vs-score" aria-labelledby="vs-score-title" data-kind="warmup">
         <p id="vs-score-title" className="v-label vs-live">
-          <StatusDot tone="warn" pulse /> Aquecimento
+          <StatusDot tone="warn" pulse /> Sem placar ainda
         </p>
         <p className="vs-score-big v-serif">Esquentando</p>
-        <p className="vs-score-lead">O placar começa a contar no primeiro round da partida.</p>
+        <p className="vs-score-lead">O placar começa a contar no primeiro round do mapa.</p>
         <Slots count={players.length} max={server.maxPlayers} />
       </section>
     );
@@ -297,12 +306,10 @@ function ScoreCard({
     return (
       <section className="vs-score" aria-labelledby="vs-score-title" data-kind="empty">
         <p id="vs-score-title" className="v-label">
-          Sem partida
+          Sem jogo
         </p>
         <p className="vs-score-big v-serif">Ninguém por aqui</p>
-        <p className="vs-score-lead">
-          Entre agora e comece uma partida de {server.mode === 'retake' ? 'Retake' : 'Deathmatch'}.
-        </p>
+        <p className="vs-score-lead">Entre agora e comece a jogar Retake.</p>
         <Slots count={0} max={server.maxPlayers} />
       </section>
     );
@@ -341,6 +348,7 @@ function ScoreCard({
         <span style={{ width: `${ctShare}%` }} data-side="ct" />
         <span style={{ width: `${100 - ctShare}%` }} data-side="t" />
       </div>
+      <p className="vs-score-cap">Rounds ganhos por lado neste mapa</p>
 
       <Slots count={players.length} max={server.maxPlayers} />
       {sim ? <p className="vs-sim v-label">Simulando rounds</p> : null}
@@ -362,6 +370,86 @@ function Team({ side, score, dim }: { side: Side; score: number; dim: boolean })
   );
 }
 
+/* ---------- o líder (Deathmatch) ---------- */
+
+function LeaderCard({
+  scenario,
+  players,
+  sim,
+}: {
+  scenario: Scenario;
+  players: RosterPlayer[];
+  sim: boolean;
+}) {
+  const { server, today } = scenario;
+  const order = rankedAll(players);
+  const leader = order[0];
+  const second = order[1];
+  const currentMap = today.maps.at(-1);
+  const minutes =
+    currentMap && currentMap.to === null ? minutesBetween(currentMap.from, today.clock) : null;
+  if (!leader) return null;
+
+  return (
+    <section
+      className="vs-score vs-leader"
+      aria-labelledby="vs-score-title"
+      data-kind="leader"
+      data-testid="lider"
+    >
+      <div className="vs-score-top">
+        <p id="vs-score-title" className="v-label vs-live">
+          <StatusDot tone="online" pulse /> Líder agora
+        </p>
+        {minutes !== null ? (
+          <p className="v-label vs-round">
+            No mapa há <span className="vs-round-digits tabular-nums">{minutes}</span> min
+          </p>
+        ) : null}
+      </div>
+
+      <div key={leader.id} className="vs-leader-who">
+        {leader.name === null ? (
+          <>
+            <span className="vs-anon vs-anon-lg">
+              <span aria-hidden="true" className="vs-anon-disc" />
+            </span>
+            <span className="vs-leader-name vs-private">Jogador privado</span>
+          </>
+        ) : (
+          <>
+            <PlayerAvatar src={null} name={leader.name} size={56} playing />
+            <Link href={`/${leader.publicId}` as never} className="vs-leader-name">
+              {leader.name}
+            </Link>
+          </>
+        )}
+      </div>
+
+      <div className="vs-leader-score">
+        <span className="vs-score-digits v-sign">
+          <Digits value={leader.score} />
+        </span>
+        <span className="vs-leader-stats">
+          <span className="v-label">Pontos</span>
+          <span className="tabular-nums">
+            <Digits value={leader.kills} /> abates · <Digits value={leader.deaths} /> mortes
+          </span>
+        </span>
+      </div>
+
+      <p className="vs-score-cap">
+        {second
+          ? `${leader.score - second.score} ${leader.score - second.score === 1 ? 'ponto' : 'pontos'} à frente do segundo lugar`
+          : 'Sozinho na liderança'}
+      </p>
+
+      <Slots count={players.length} max={server.maxPlayers} />
+      {sim ? <p className="vs-sim v-label">Simulando abates</p> : null}
+    </section>
+  );
+}
+
 function Slots({ count, max }: { count: number; max: number }) {
   return (
     <div className="vs-slots">
@@ -379,11 +467,20 @@ function Slots({ count, max }: { count: number; max: number }) {
   );
 }
 
-/* ---------- jogadores dos dois lados ---------- */
+/* ---------- jogadores ---------- */
 
-function Roster({ scenario, players }: { scenario: Scenario; players: RosterPlayer[] }) {
+function Roster({
+  scenario,
+  players,
+  warmup,
+}: {
+  scenario: Scenario;
+  players: RosterPlayer[];
+  warmup: boolean;
+}) {
   const { server } = scenario;
   const live = server.state !== 'offline';
+  const dm = server.mode === 'deathmatch';
 
   return (
     <section aria-labelledby="vs-roster" className="vs-section" data-testid="jogadores">
@@ -403,29 +500,90 @@ function Roster({ scenario, players }: { scenario: Scenario; players: RosterPlay
           <p className="vs-empty-title">{live ? 'Ninguém jogando agora' : 'Ninguém conectado'}</p>
           <p>
             {live
-              ? 'Os jogadores aparecem aqui, separados por lado, assim que alguém entrar.'
+              ? 'Os jogadores aparecem aqui assim que alguém entrar.'
               : 'O servidor está offline. Os jogadores aparecem aqui quando ele voltar.'}
           </p>
         </div>
+      ) : dm ? (
+        <div className="vs-teams" data-single>
+          <AllList players={rankedAll(players)} />
+        </div>
       ) : (
         <div className="vs-teams">
-          <TeamList side="ct" players={ranked(players, 'ct')} />
-          <TeamList side="t" players={ranked(players, 't')} />
+          <TeamList
+            side="ct"
+            players={warmup ? alphabetical(players, 'ct') : ranked(players, 'ct')}
+            warmup={warmup}
+          />
+          <TeamList
+            side="t"
+            players={warmup ? alphabetical(players, 't') : ranked(players, 't')}
+            warmup={warmup}
+          />
         </div>
       )}
     </section>
   );
 }
 
-function TeamList({ side, players }: { side: Side; players: RosterPlayer[] }) {
+function TeamList({
+  side,
+  players,
+  warmup,
+}: {
+  side: Side;
+  players: RosterPlayer[];
+  warmup: boolean;
+}) {
   return (
-    <div className="vs-team-panel" data-side={side}>
+    <div className="vs-team-panel" data-side={side} data-warmup={warmup || undefined}>
       <div className="vs-team-head">
         <span className="vs-team-title">
           <span aria-hidden="true" className="vs-dot" />
           {SIDE_NAME[side]}
         </span>
-        <span className="vs-cols" aria-hidden="true">
+        {warmup ? (
+          <span className="vs-badge">
+            <StatusDot tone="warn" pulse /> Esquentando
+          </span>
+        ) : (
+          <span className="vs-cols" aria-hidden="true">
+            <span>
+              <span className="max-md:hidden">Abates</span>
+              <span className="md:hidden">A</span>
+            </span>
+            <span>
+              <span className="max-md:hidden">Mortes</span>
+              <span className="md:hidden">M</span>
+            </span>
+            <span>
+              <span className="max-md:hidden">Pontos</span>
+              <span className="md:hidden">P</span>
+            </span>
+          </span>
+        )}
+      </div>
+      <ul aria-label={SIDE_NAME[side]} className="vs-rows">
+        {players.map((player, index) => (
+          <PlayerRow
+            key={player.id}
+            player={player}
+            rank={warmup ? null : index + 1}
+            numbers={!warmup}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** A lista única do Deathmatch: todos contra todos, por pontos. */
+function AllList({ players }: { players: RosterPlayer[] }) {
+  return (
+    <div className="vs-team-panel" data-side="all">
+      <div className="vs-team-head">
+        <span className="vs-team-title">Todos contra todos · por pontos</span>
+        <span className="vs-cols" data-cols="4" aria-hidden="true">
           <span>
             <span className="max-md:hidden">Abates</span>
             <span className="md:hidden">A</span>
@@ -434,52 +592,80 @@ function TeamList({ side, players }: { side: Side; players: RosterPlayer[] }) {
             <span className="max-md:hidden">Mortes</span>
             <span className="md:hidden">M</span>
           </span>
+          <span className="max-md:hidden">K/D</span>
           <span>
             <span className="max-md:hidden">Pontos</span>
             <span className="md:hidden">P</span>
           </span>
         </span>
       </div>
-      <ul aria-label={SIDE_NAME[side]} className="vs-rows">
+      <ul aria-label="Jogadores por pontos" className="vs-rows">
         {players.map((player, index) => (
-          <m.li
-            key={player.id}
-            layout="position"
-            transition={{ type: 'spring', stiffness: 520, damping: 42 }}
-            className="vs-row"
-            data-private={player.name === null || undefined}
-            data-testid="jogador"
-          >
-            <span className="vs-rank v-sign" aria-hidden="true">
-              {index + 1}
-            </span>
-            <span className="vs-who">
-              {player.name === null ? (
-                <>
-                  <span className="vs-anon">
-                    <span aria-hidden="true" className="vs-anon-disc" />
-                    <span aria-hidden="true" className="vs-presence" />
-                  </span>
-                  <span className="vs-private">Jogador privado</span>
-                </>
-              ) : (
-                <>
-                  <PlayerAvatar src={null} name={player.name} size={36} playing />
-                  <Link href={`/${player.publicId}` as never} className="vs-player-link">
-                    {player.name}
-                  </Link>
-                </>
-              )}
-            </span>
-            <span className="vs-nums">
-              <Stat label="Abates" value={player.kills} />
-              <Stat label="Mortes" value={player.deaths} />
-              <Stat label="Pontos" value={player.score} strong />
-            </span>
-          </m.li>
+          <PlayerRow key={player.id} player={player} rank={index + 1} numbers ratio />
         ))}
       </ul>
     </div>
+  );
+}
+
+function PlayerRow({
+  player,
+  rank,
+  numbers,
+  ratio = false,
+}: {
+  player: RosterPlayer;
+  rank: number | null;
+  numbers: boolean;
+  ratio?: boolean;
+}) {
+  return (
+    <m.li
+      layout="position"
+      transition={{ type: 'spring', stiffness: 520, damping: 42 }}
+      className="vs-row"
+      data-private={player.name === null || undefined}
+      data-first={rank === 1 || undefined}
+      data-bare={rank === null || undefined}
+      data-testid="jogador"
+    >
+      {rank !== null ? (
+        <span className="vs-rank v-sign" aria-hidden="true">
+          {rank}
+        </span>
+      ) : null}
+      <span className="vs-who">
+        {player.name === null ? (
+          <>
+            <span className="vs-anon">
+              <span aria-hidden="true" className="vs-anon-disc" />
+              <span aria-hidden="true" className="vs-presence" />
+            </span>
+            <span className="vs-private">Jogador privado</span>
+          </>
+        ) : (
+          <>
+            <PlayerAvatar src={null} name={player.name} size={36} playing />
+            <Link href={`/${player.publicId}` as never} className="vs-player-link">
+              {player.name}
+            </Link>
+          </>
+        )}
+      </span>
+      {numbers ? (
+        <span className="vs-nums" data-cols={ratio ? '4' : undefined}>
+          <Stat label="Abates" value={player.kills} />
+          <Stat label="Mortes" value={player.deaths} />
+          {ratio ? (
+            <span className="vs-stat vs-ratio max-md:hidden tabular-nums">
+              <span className="sr-only">Abates por morte </span>
+              {(player.kills / Math.max(1, player.deaths)).toFixed(2)}
+            </span>
+          ) : null}
+          <Stat label="Pontos" value={player.score} strong />
+        </span>
+      ) : null}
+    </m.li>
   );
 }
 
@@ -497,14 +683,17 @@ function Stat({ label, value, strong }: { label: string; value: number; strong?:
 function TodayPanel({
   today,
   live,
+  dm,
   art,
 }: {
   today: Today;
   live: boolean;
+  dm: boolean;
   art: Record<string, ArtPair>;
 }) {
   const { rounds } = today;
-  const ctShare = rounds.played === 0 ? 50 : (rounds.ctWins / rounds.played) * 100;
+  const sides = rounds.ctWins !== null && rounds.tWins !== null;
+  const ctShare = sides && rounds.played > 0 ? ((rounds.ctWins ?? 0) / rounds.played) * 100 : 50;
   const maxHour = Math.max(1, ...today.hours);
   const busiest = today.hours.indexOf(Math.max(...today.hours));
   const first = today.hours.findIndex((n) => n > 0);
@@ -518,42 +707,52 @@ function TodayPanel({
         <p className="vs-section-note">{today.dateLabel} · horário de Brasília</p>
       </div>
 
-      <div className="vs-tiles">
-        <div className="vs-tile">
-          <p className="v-label">Rounds jogados</p>
-          <p className="vs-tile-num v-serif">
-            <Ticker value={rounds.played} />
-          </p>
-          <p className="vs-tile-foot">
-            em <span className="tabular-nums">{today.maps.length}</span> partidas
-          </p>
-        </div>
-        <div className="vs-tile">
-          <p className="v-label">Vitórias</p>
-          <p className="vs-tile-num v-serif tabular-nums">
-            <span data-side="ct" data-win={rounds.ctWins > rounds.tWins || undefined}>
-              {rounds.ctWins}
-            </span>
-            <span aria-hidden="true" className="vs-tile-x">
-              ×
-            </span>
-            <span data-side="t" data-win={rounds.tWins > rounds.ctWins || undefined}>
-              {rounds.tWins}
-            </span>
-          </p>
-          <div className="vs-split vs-split-sm" aria-hidden="true">
-            <span style={{ width: `${ctShare}%` }} data-side="ct" />
-            <span style={{ width: `${100 - ctShare}%` }} data-side="t" />
+      <div className="vs-tiles" data-n={dm ? 3 : 4}>
+        {dm ? (
+          <div className="vs-tile">
+            <p className="v-label">Mapas hoje</p>
+            <p className="vs-tile-num v-serif">
+              <Ticker value={today.maps.length} />
+            </p>
+            <p className="vs-tile-foot">
+              <span className="tabular-nums">{rounds.played}</span> rounds jogados
+            </p>
           </div>
-          <p className="vs-tile-foot">
-            <span className="vs-key" data-side="ct">
-              CT
-            </span>{' '}
-            <span className="vs-key" data-side="t">
-              TR
-            </span>
-          </p>
-        </div>
+        ) : (
+          <>
+            <div className="vs-tile">
+              <p className="v-label">Rounds jogados</p>
+              <p className="vs-tile-num v-serif">
+                <Ticker value={rounds.played} />
+              </p>
+              <p className="vs-tile-foot">
+                em <span className="tabular-nums">{today.maps.length}</span> mapas
+              </p>
+            </div>
+            <div className="vs-tile">
+              <p className="v-label">Rounds ganhos</p>
+              <p className="vs-tile-num v-serif tabular-nums">
+                <span data-side="ct">{rounds.ctWins}</span>
+                <span aria-hidden="true" className="vs-tile-x">
+                  ×
+                </span>
+                <span data-side="t">{rounds.tWins}</span>
+              </p>
+              <div className="vs-split vs-split-sm" aria-hidden="true">
+                <span style={{ width: `${ctShare}%` }} data-side="ct" />
+                <span style={{ width: `${100 - ctShare}%` }} data-side="t" />
+              </div>
+              <p className="vs-tile-foot">
+                <span className="vs-key" data-side="ct">
+                  CT
+                </span>{' '}
+                <span className="vs-key" data-side="t">
+                  TR
+                </span>
+              </p>
+            </div>
+          </>
+        )}
         <div className="vs-tile">
           <p className="v-label">Pico de jogadores</p>
           <p className="vs-tile-num v-serif">
@@ -574,11 +773,15 @@ function TodayPanel({
 
       <div className="vs-today-grid">
         <div className="vs-card">
-          <h3 className="vs-card-title">Partidas</h3>
+          <h3 className="vs-card-title">Mapas de hoje</h3>
           <ol className="vs-maps">
             {[...today.maps].reverse().map((row) => {
               const rowSlug = mapSlug(row.map) ?? '';
               const now = row.to === null;
+              const hasSides = row.ctWins !== null && row.tWins !== null;
+              const wins = (row.ctWins ?? 0) + (row.tWins ?? 0);
+              const share = wins === 0 ? 50 : ((row.ctWins ?? 0) / wins) * 100;
+              const warming = now && row.rounds === 0;
               return (
                 <li
                   key={`${row.map}-${row.from}`}
@@ -600,28 +803,41 @@ function TodayPanel({
                     </span>
                   </span>
                   <span className="vs-map-score tabular-nums">
-                    {now ? (
+                    {now && live ? (
                       <span className="vs-now">
-                        <StatusDot tone="online" pulse /> Agora
+                        <StatusDot tone={warming ? 'warn' : 'online'} pulse />{' '}
+                        {warming ? 'Esquentando' : 'Agora'}
                       </span>
                     ) : null}
-                    <span>
-                      <span data-side="ct" data-win={row.ctWins > row.tWins || undefined}>
-                        {row.ctWins}
-                      </span>
-                      <span aria-hidden="true" className="vs-map-x">
-                        ×
-                      </span>
-                      <span data-side="t" data-win={row.tWins > row.ctWins || undefined}>
-                        {row.tWins}
-                      </span>
-                    </span>
-                    <span className="vs-map-rounds">{row.rounds} rounds</span>
+                    {warming ? null : hasSides ? (
+                      <>
+                        <span>
+                          <span className="sr-only">CT </span>
+                          {row.ctWins}
+                          <span aria-hidden="true" className="vs-map-x">
+                            ×
+                          </span>
+                          <span className="sr-only"> TR </span>
+                          {row.tWins}
+                        </span>
+                        <span className="vs-mini" aria-hidden="true">
+                          <i data-side="ct" style={{ width: `${share}%` }} />
+                          <i data-side="t" style={{ width: `${100 - share}%` }} />
+                        </span>
+                      </>
+                    ) : null}
+                    {warming ? null : <span className="vs-map-rounds">{row.rounds} rounds</span>}
                   </span>
                 </li>
               );
             })}
           </ol>
+          {dm ? null : (
+            <p className="vs-card-foot">
+              Rounds ganhos por lado em cada mapa. O Retake não tem partida: o mapa roda até a
+              rotação.
+            </p>
+          )}
         </div>
 
         <div className="vs-card vs-card-chart">
@@ -698,7 +914,7 @@ function ProtoBar({
         disabled={!canSim}
         onClick={onSim}
       >
-        {sim ? 'Parar rounds' : 'Simular rounds'}
+        {sim ? 'Parar simulação' : 'Simular'}
       </button>
     </nav>
   );
