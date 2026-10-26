@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { parseWeekStart, splitByWeek, weekClosesAt, weekEndOf, weekStartOf } from './stats-week.js';
+import {
+  dayOf,
+  hourStartOf,
+  parseWeekStart,
+  splitByDay,
+  splitByWeek,
+  weekClosesAt,
+  weekEndOf,
+  weekStartOf,
+} from './stats-week.js';
 
 describe('weekStartOf', () => {
   it('a semana começa na segunda-feira às 00:00 de Brasília', () => {
@@ -85,5 +94,58 @@ describe('weekClosesAt', () => {
 
     expect(weekStartOf(new Date(closes.getTime() - 1))).toBe('2026-10-19');
     expect(weekStartOf(closes)).toBe('2026-10-26');
+  });
+});
+
+describe('dayOf', () => {
+  it('é o dia de Brasília, não o de UTC', () => {
+    expect(dayOf(new Date('2026-10-14T02:59:59Z'))).toBe('2026-10-13');
+    expect(dayOf(new Date('2026-10-14T03:00:00Z'))).toBe('2026-10-14');
+    expect(dayOf(new Date('2026-10-14T23:59:59-03:00'))).toBe('2026-10-14');
+  });
+});
+
+describe('splitByDay', () => {
+  it('uma Sessão dentro do dia fica inteira nele', () => {
+    expect(
+      splitByDay(new Date('2026-10-14T20:00:00-03:00'), new Date('2026-10-14T21:30:00-03:00')),
+    ).toEqual([{ day: '2026-10-14', seconds: 5400 }]);
+  });
+
+  it('divide na meia-noite de Brasília, também na virada da semana', () => {
+    expect(
+      splitByDay(new Date('2026-10-18T23:30:00-03:00'), new Date('2026-10-19T00:45:00-03:00')),
+    ).toEqual([
+      { day: '2026-10-18', seconds: 1800 },
+      { day: '2026-10-19', seconds: 2700 },
+    ]);
+  });
+
+  it('os pedaços de uma Sessão de vários dias somam a duração inteira', () => {
+    const start = new Date('2026-10-14T22:10:07.400-03:00');
+    const end = new Date('2026-10-17T01:05:30.900-03:00');
+    const pieces = splitByDay(start, end);
+    expect(pieces.map((piece) => piece.day)).toEqual([
+      '2026-10-14',
+      '2026-10-15',
+      '2026-10-16',
+      '2026-10-17',
+    ]);
+    const total = pieces.reduce((sum, piece) => sum + piece.seconds, 0);
+    expect(total).toBe(Math.floor((end.getTime() - start.getTime()) / 1000));
+  });
+
+  it('sem duração positiva não há pedaços', () => {
+    const at = new Date('2026-10-14T20:00:00Z');
+    expect(splitByDay(at, at)).toEqual([]);
+    expect(splitByDay(at, new Date(at.getTime() - 1000))).toEqual([]);
+  });
+});
+
+describe('hourStartOf', () => {
+  it('é a hora cheia', () => {
+    expect(hourStartOf(new Date('2026-10-14T20:59:59.999Z')).toISOString()).toBe(
+      '2026-10-14T20:00:00.000Z',
+    );
   });
 });

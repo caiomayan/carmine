@@ -2,11 +2,14 @@ import { ANONYMIZED_DISPLAY_NAME } from '@carmine/contracts';
 import { and, eq, ne, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import {
+  accountStatsDaily,
   accountStatsWeekly,
   accounts,
+  accountWeaponStats,
   chatMessages,
   discordLinks,
   inventoryItems,
+  playSessions,
   presets,
   reports,
   sanctions,
@@ -112,6 +115,19 @@ export class AccountErasure {
           .delete(accountStatsWeekly)
           .where(eq(accountStatsWeekly.accountId, accountId))
           .returning({ weekStart: accountStatsWeekly.weekStart });
+        // S12b: o detalhe das Estatísticas (a linha da Conta não é apagada, então o cascade não age).
+        const removedDaily = await tx
+          .delete(accountStatsDaily)
+          .where(eq(accountStatsDaily.accountId, accountId))
+          .returning({ day: accountStatsDaily.day });
+        const removedWeapons = await tx
+          .delete(accountWeaponStats)
+          .where(eq(accountWeaponStats.accountId, accountId))
+          .returning({ weapon: accountWeaponStats.weapon });
+        const removedSessions = await tx
+          .delete(playSessions)
+          .where(eq(playSessions.accountId, accountId))
+          .returning({ id: playSessions.id });
         const removedChat = await tx
           .delete(chatMessages)
           .where(eq(chatMessages.accountId, accountId))
@@ -169,6 +185,9 @@ export class AccountErasure {
               presets: removedPresets.length,
               vipPeriods: removedVip.length,
               statsWeeks: removedStats.length,
+              statsDays: removedDaily.length,
+              weaponStats: removedWeapons.length,
+              playSessions: removedSessions.length,
               chatMessages: removedChat.length,
               reportsUnlinked: unlinkedReports.length,
               reportsScrubbed: scrubbedReports.length,

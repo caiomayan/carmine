@@ -14,14 +14,8 @@ describe('S12b · contratos (PR só de contratos)', () => {
     await t?.stop();
   });
 
-  it('as rotas novas existem e respondem 501 até a implementação entrar', async () => {
-    for (const url of [
-      '/api/profiles/10000/stats/activity',
-      '/api/profiles/10000/stats/weapons',
-      '/api/profiles/10000/sessions',
-      `/api/servers/${SERVER_ID}/players`,
-      `/api/servers/${SERVER_ID}/today`,
-    ]) {
+  it('as rotas do servidor existem e respondem 501 até a implementação entrar (PR C)', async () => {
+    for (const url of [`/api/servers/${SERVER_ID}/players`, `/api/servers/${SERVER_ID}/today`]) {
       const response = await t.app.inject({ url });
       expect(response.statusCode, url).toBe(501);
     }

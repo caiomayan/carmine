@@ -1,6 +1,6 @@
 # S12b · Estatísticas detalhadas: contratos
 
-Os contratos (Zod em `packages/contracts`, OpenAPI em `apps/api/openapi.json`) da S12b, publicados **antes** da implementação para o web (página do servidor, blocos do Perfil) e o plugin construírem em paralelo. Desenho, custo e decisões D1 a D6: `carmine-s12b-proposta.md`. Este PR só traz os contratos: as rotas novas respondem **501** (`apps/api/src/stats/s12b-pending.ts`) até os PRs da API entrarem, e nada grava nem lê tabela nova ainda.
+Os contratos (Zod em `packages/contracts`, OpenAPI em `apps/api/openapi.json`) da S12b, publicados **antes** da implementação para o web (página do servidor, blocos do Perfil) e o plugin construírem em paralelo. Desenho, custo e decisões D1 a D6: `carmine-s12b-proposta.md`. Estado: os três endpoints do **Perfil** já respondem de verdade (PR A, tabelas da migração 0014); `players` e `today` do servidor respondem **501** (`apps/api/src/stats/s12b-pending.ts`) até o PR C. A API já grava o detalhe a partir dos campos novos dos eventos; `match` e `scoreboard` do batimento são aceitos e ainda não guardados (PR C).
 
 ## O que é opcional, e por quê
 

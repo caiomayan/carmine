@@ -1,10 +1,13 @@
 import {
   type EventBatch,
+  type GameTeam,
   type KillEvent,
   PLAY_SESSION_MAX_SECONDS,
   type RoundEndEvent,
+  type StatWeapon,
 } from '@carmine/contracts';
-import { splitByWeek, weekStartOf } from './stats-week.js';
+import { dayOf, splitByDay, splitByWeek, weekStartOf } from './stats-week.js';
+import { normalizeWeapon } from './weapons.js';
 
 /** O que um lote soma nas Estatísticas de uma Conta numa semana (de Brasília). */
 export interface StatsDelta {
@@ -21,6 +24,21 @@ export interface StatsDelta {
   secondsPlayed: number;
 }
 
+/** O que um lote soma na atividade de uma Conta num dia de Brasília (S12b, o mapa de calor). */
+export interface DayDelta extends Omit<StatsDelta, 'weekStart'> {
+  /** `YYYY-MM-DD`. */
+  day: string;
+}
+
+/** Abates de uma Conta com uma arma, por lado do assassino (S12b, o radar). */
+export interface WeaponDelta {
+  steamId: string;
+  weapon: StatWeapon;
+  side: GameTeam;
+  kills: number;
+  headshots: number;
+}
+
 /** Uma kill em aliado, guardada para a moderação (não entra nas Estatísticas). */
 export interface TeamKill {
   id: string;
@@ -32,6 +50,10 @@ export interface TeamKill {
 
 export interface CollectedStats {
   deltas: StatsDelta[];
+  /** As mesmas somas por dia (S12b): o que entra em uma entra na outra, pelas mesmas regras. */
+  dailyDeltas: DayDelta[];
+  /** Só a kill que conta e veio com o lado do assassino (`killerTeam`); plugin velho não entra. */
+  weapons: WeaponDelta[];
   teamKills: TeamKill[];
   /**
    * Eventos que, por regra, não mudaram nenhuma Estatística: bot, aquecimento, kill em aliado,
@@ -51,14 +73,17 @@ export function collectStats(
   batch: EventBatch,
   knownSteamIds: ReadonlySet<string>,
 ): CollectedStats {
-  const deltas = new Map<string, StatsDelta>();
+  const weekly = new Map<string, StatsDelta>();
+  const daily = new Map<string, StatsDelta>();
+  const weapons = new Map<string, WeaponDelta>();
   const teamKills: TeamKill[] = [];
   let ignored = 0;
 
-  /** Soma para a Conta, se existir; diz se algo foi somado. */
+  /** Soma para a Conta, se existir, na semana e no dia; diz se algo foi somado. */
   const add = (steamId: string, at: Date, counters: Partial<Counters>): boolean => {
     if (!knownSteamIds.has(steamId)) return false;
-    addTo(deltas, steamId, weekStartOf(at), counters);
+    addTo(weekly, steamId, weekStartOf(at), counters);
+    addTo(daily, steamId, dayOf(at), counters);
     return true;
   };
 
@@ -68,7 +93,7 @@ export function collectStats(
       ignored++;
       continue;
     }
-    const counted = countKill(kill, at, knownSteamIds, add, teamKills);
+    const counted = countKill(kill, at, knownSteamIds, add, teamKills, weapons);
     if (!counted) ignored++;
   }
 
@@ -94,11 +119,20 @@ export function collectStats(
       continue;
     }
     for (const piece of splitByWeek(start, stop)) {
-      addTo(deltas, end.steamId, piece.weekStart, { secondsPlayed: piece.seconds });
+      addTo(weekly, end.steamId, piece.weekStart, { secondsPlayed: piece.seconds });
+    }
+    for (const piece of splitByDay(start, stop)) {
+      addTo(daily, end.steamId, piece.day, { secondsPlayed: piece.seconds });
     }
   }
 
-  return { deltas: [...deltas.values()], teamKills, ignored };
+  return {
+    deltas: [...weekly.values()],
+    dailyDeltas: [...daily.values()].map(({ weekStart, ...rest }) => ({ ...rest, day: weekStart })),
+    weapons: [...weapons.values()],
+    teamKills,
+    ignored,
+  };
 }
 
 type Add = (steamId: string, at: Date, counters: Partial<Counters>) => boolean;
@@ -109,6 +143,7 @@ function countKill(
   known: ReadonlySet<string>,
   add: Add,
   teamKills: TeamKill[],
+  weapons: Map<string, WeaponDelta>,
 ): boolean {
   // Um bot como assassino ou vítima anula o evento para todos.
   if (kill.killerIsBot || kill.victimIsBot || kill.victimSteamId === null) return false;
@@ -125,7 +160,18 @@ function countKill(
 
   let counted = add(victimSteamId, at, { deaths: 1 });
   if (killerSteamId !== null) {
-    counted = add(killerSteamId, at, { kills: 1, headshots: kill.headshot ? 1 : 0 }) || counted;
+    const killerCounted = add(killerSteamId, at, { kills: 1, headshots: kill.headshot ? 1 : 0 });
+    counted = killerCounted || counted;
+    // O radar (S12b) é a mesma kill, com a arma e o lado; sem o lado (plugin velho), só não entra nele.
+    if (killerCounted && kill.killerTeam) {
+      addWeapon(
+        weapons,
+        killerSteamId,
+        normalizeWeapon(kill.weapon),
+        kill.killerTeam,
+        kill.headshot,
+      );
+    }
   }
   const assister = kill.assisterSteamId;
   if (
@@ -152,6 +198,21 @@ function countRound(round: RoundEndEvent, add: Add): boolean {
   return counted;
 }
 
+function addWeapon(
+  weapons: Map<string, WeaponDelta>,
+  steamId: string,
+  weapon: StatWeapon,
+  side: GameTeam,
+  headshot: boolean,
+): void {
+  const key = `${steamId}|${weapon}|${side}`;
+  const delta = weapons.get(key) ?? { steamId, weapon, side, kills: 0, headshots: 0 };
+  delta.kills += 1;
+  delta.headshots += headshot ? 1 : 0;
+  weapons.set(key, delta);
+}
+
+/** `period` é a semana ou o dia: quem chama diz qual (o campo `weekStart` carrega os dois). */
 function addTo(
   deltas: Map<string, StatsDelta>,
   steamId: string,
