@@ -43,6 +43,10 @@ A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há 
 
 **2,2 GB em regime e 2,6 GB no pico** (a migração e o seed nunca rodam juntos). Somados aos 6,8 GB em regime e 7,3 GB no pico da produção (`infra/prod/compose.yml`): **9,0 GB e 9,9 GB dos 12 GB** da VM. São tetos; o uso real é bem menor.
 
+## As vitrines /dev/*
+
+O web da homologação roda com `CARMINE_UI_GALLERY=1` (só em `infra/hml/compose.yml`; a produção não tem a variável e as rotas respondem 404). É por onde o dono vê **protótipos de tela** antes de a tela existir de verdade: cada protótipo é uma vitrine `/dev/<nome>` no `dev` (hoje `/dev/componentes`, `/dev/servidor`), com dados fixos de exemplo e a mesma CI dos outros PRs. Protótipo = vitrine no `dev`, não branch solto.
+
 ## A demonstração
 
 Com `DEMO_ENABLED=true` no `.env` (o padrão do bootstrap), cada deploy roda o `demo-seed` e deixa o `demo-sim` ligado. A homologação nunca fica vazia.
