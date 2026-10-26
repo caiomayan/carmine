@@ -52,6 +52,7 @@ describe('liveServerListSchema', () => {
           maxPlayers: 9,
           state: 'full',
           lastHeartbeatAt: '2026-10-12T18:00:00.000Z',
+          lastMap: 'de_mirage',
         },
         {
           id: '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f',
@@ -66,6 +67,7 @@ describe('liveServerListSchema', () => {
           maxPlayers: 16,
           state: 'offline',
           lastHeartbeatAt: null,
+          lastMap: null,
         },
       ],
       summary: { online: 1, players: 9 },

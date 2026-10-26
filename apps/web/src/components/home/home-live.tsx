@@ -281,6 +281,7 @@ export function HomeLive({ data }: { data: HomeData }) {
                 )}
                 <OfflineGroup
                   servers={offlineServers}
+                  art={data.art}
                   defaultOpen={offlineGroupOpen(liveServers.length, offlineServers.length)}
                   startIndex={liveServers.length}
                 />

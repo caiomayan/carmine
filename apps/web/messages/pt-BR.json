@@ -423,7 +423,8 @@
       "title": "Offline ({count})",
       "listLabel": "Servidores offline",
       "since": "Offline {ago}",
-      "never": "Nunca ficou online"
+      "never": "Nunca ficou online",
+      "lastMap": "Último mapa"
     }
   },
   "inventory": {

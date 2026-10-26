@@ -433,6 +433,7 @@ test.describe('Home: os cartões de servidor', () => {
         players: 0,
         map: null,
         lastHeartbeatAt: heartbeat,
+        lastMap: heartbeat ? 'de_mirage' : null,
       });
     await routeLiveServers(page, [
       fakeServer({ name: 'fixo-no-ar' }),

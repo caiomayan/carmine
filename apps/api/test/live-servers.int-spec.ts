@@ -113,6 +113,7 @@ describe('Servidores ao vivo (S06)', () => {
       map: null,
       players: 0,
       lastHeartbeatAt: null,
+      lastMap: null,
     });
   });
 
@@ -175,7 +176,12 @@ describe('Servidores ao vivo (S06)', () => {
       const listed = liveServerListSchema
         .parse(JSON.parse(offline.data))
         .servers.find((s) => s.id === server.id);
-      expect(listed).toMatchObject({ map: null, players: 0, maxPlayers: 9 });
+      expect(listed).toMatchObject({
+        map: null,
+        lastMap: 'de_anubis',
+        players: 0,
+        maxPlayers: 9,
+      });
       expect(listed?.lastHeartbeatAt).not.toBeNull();
     } finally {
       stream.close();

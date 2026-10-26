@@ -109,6 +109,7 @@ const live = () => [
     state: 'offline',
     players: 0,
     map: null,
+    lastMap: 'de_nuke',
     lastHeartbeatAt: new Date(Date.now() - 25 * 60_000).toISOString(),
   }),
 ];
@@ -206,6 +207,7 @@ test.describe('os estados do hero', () => {
         state: 'offline',
         players: 0,
         map: null,
+        lastMap: null,
         lastHeartbeatAt: new Date(Date.now() - 25 * 60_000).toISOString(),
       }),
     ]);

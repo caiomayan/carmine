@@ -94,6 +94,7 @@ export function fakeServer(over: Partial<LiveServer> = {}): LiveServer {
     maxPlayers: 9,
     state: 'online',
     lastHeartbeatAt: new Date().toISOString(),
+    lastMap: 'de_inferno',
     ...over,
   };
 }

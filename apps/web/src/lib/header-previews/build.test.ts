@@ -20,6 +20,7 @@ const server = (over: Record<string, unknown> = {}) => ({
   maxPlayers: 9,
   state: 'online' as const,
   lastHeartbeatAt: '2026-10-22T18:00:00.000Z',
+  lastMap: 'de_mirage',
   ...over,
 });
 

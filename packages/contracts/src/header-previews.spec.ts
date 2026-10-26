@@ -17,6 +17,7 @@ const server = {
   maxPlayers: 9,
   state: 'online',
   lastHeartbeatAt: '2026-10-22T18:00:00.000Z',
+  lastMap: 'de_mirage',
 };
 
 const anonymous = {
