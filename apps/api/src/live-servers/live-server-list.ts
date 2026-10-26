@@ -71,6 +71,7 @@ function toLiveServer(
     address,
     region,
     lastHeartbeatAt: presence?.at.toISOString() ?? null,
+    lastMap: presence?.map ?? null,
   };
   if (presence === undefined || now.getTime() - presence.at.getTime() >= offlineAfterMs) {
     return {

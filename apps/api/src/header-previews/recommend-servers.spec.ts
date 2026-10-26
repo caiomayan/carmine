@@ -18,6 +18,7 @@ const server = (over: Partial<LiveServer> = {}): LiveServer => {
     maxPlayers: 9,
     state: 'online',
     lastHeartbeatAt: '2026-10-22T18:00:00.000Z',
+    lastMap: 'de_mirage',
     ...over,
   };
 };

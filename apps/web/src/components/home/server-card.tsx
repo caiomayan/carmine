@@ -22,12 +22,16 @@ const FRIEND_FACES = 3;
 /**
  * Cartão de servidor, de tela de loading: a arte do mapa colorida, o nome do mapa em display condensado, a cor do
  * mapa no selo do Modo e na barra, jogadores com contagem, amigos que estão lá e os botões (Conectar, que abre o
- * `steam://connect`, e Copiar IP, que também abre a instrução do console). O offline é um cartão compacto, sem
- * arte (o servidor sem batimento não tem mapa), com o motivo por extenso e sem botão de jogar.
+ * `steam://connect`, e Copiar IP, que também abre a instrução do console). O offline é um cartão compacto, sem botão
+ * de jogar e com o motivo por extenso: a arte e o nome grande são os do último mapa conhecido (o servidor parado
+ * não informa mapa), apagados em tom de "dormindo"; sem mapa conhecido, a arte de reserva do Modo (só estética) e o
+ * nome do servidor no lugar do mapa.
  */
 export function ServerCard({
   server,
   art,
+  artSlug,
+  placeholderArt,
   index,
   solo,
   friends,
@@ -35,7 +39,12 @@ export function ServerCard({
   className,
 }: {
   server: LiveServer;
+  /** A arte do mapa do cartão: o do ar, o atual do servidor; o offline, o último (`sleepingArt`). */
   art: ArtPair | undefined;
+  /** A chave da arte em `public/maps` (o offline pode ter a arte de reserva do Modo, não a do seu mapa). */
+  artSlug?: string | null;
+  /** A arte é a de reserva do Modo: não é o mapa do servidor, então o cartão a apaga e não a nomeia. */
+  placeholderArt?: boolean;
   index: number;
   solo?: boolean;
   friends: PlayingFriend[];
@@ -47,10 +56,12 @@ export function ServerCard({
   const live = isLiveServer(server);
   const full = server.state === 'full';
   const connect = useConnect(server);
-  const choice = useArtChoice(live ? art : undefined);
-  const vars = useMemo(() => mapVars(choice?.colors), [choice]);
-  const mapName = mapDisplayName(server.map);
+  const choice = useArtChoice(art);
+  // Só o cartão no ar tem a cor do mapa (selo, barra, brilho): o offline fica neutro.
+  const vars = useMemo(() => mapVars(live ? choice?.colors : undefined), [live, choice]);
+  const mapName = mapDisplayName(live ? server.map : server.lastMap);
   const slug = mapSlug(server.map);
+  const pictureSlug = artSlug ?? slug;
   const fill = Math.min(1, server.players / server.maxPlayers);
   const fullLabel = serverFullLabel(server);
   const style = { ...vars, '--i': index } as CSSProperties;
@@ -62,6 +73,7 @@ export function ServerCard({
       data-server={server.name}
       data-state={server.state}
       data-map={live ? (server.map ?? undefined) : undefined}
+      data-art={!live && art ? (placeholderArt ? 'placeholder' : 'last-map') : undefined}
       style={style}
       onPointerEnter={() => live && onFocusMap?.(slug)}
       onPointerLeave={() => live && onFocusMap?.(null)}
@@ -69,17 +81,17 @@ export function ServerCard({
       onBlur={() => live && onFocusMap?.(null)}
       className={cn(
         'vh-card v-card v-spot v-panel v-panel-lg enter-stagger relative flex list-none scroll-mt-24 flex-col overflow-hidden',
-        live ? 'min-h-[320px]' : 'vh-offline min-h-[184px]',
+        live ? 'min-h-[320px]' : 'vh-offline min-h-[224px]',
         // Com arte, o cartão não tem fundo próprio por baixo da imagem (a borda da imagem escalada deixaria um filete).
-        live && art && 'vh-card-art',
+        art && 'vh-card-art',
         solo && 'min-[1280px]:min-h-[360px]',
         className,
       )}
     >
-      {live && art ? (
+      {art ? (
         <>
           <MapPicture
-            map={slug ?? ''}
+            map={pictureSlug ?? ''}
             art={art}
             priority={index < 2}
             sizes="(min-width: 1280px) 440px, (min-width: 760px) 50vw, 100vw"
@@ -103,21 +115,24 @@ export function ServerCard({
 
         <div className="mt-auto grid gap-3">
           <div className="grid gap-1">
-            {live ? (
+            {live || mapName ? (
               <p
                 className={cn(
-                  'v-sign text-[64px] max-md:text-[52px]',
-                  solo && 'min-[1280px]:text-[84px]',
+                  'v-sign',
+                  live
+                    ? cn('text-[64px] max-md:text-[52px]', solo && 'min-[1280px]:text-[84px]')
+                    : 'text-[48px] max-md:text-[40px]',
                 )}
               >
+                {!live ? <span className="sr-only">{t('offline.lastMap')}: </span> : null}
                 {mapName ?? t('row.noMap')}
               </p>
             ) : null}
             <h3
               className={cn(
                 'leading-tight tracking-[-0.02em]',
-                live
-                  ? cn('text-[20px] font-bold', solo && 'min-[1280px]:text-[24px]')
+                live || mapName
+                  ? cn('text-[20px] font-bold', solo && live && 'min-[1280px]:text-[24px]')
                   : 'v-sign text-[40px]',
               )}
             >

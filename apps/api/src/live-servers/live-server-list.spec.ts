@@ -43,6 +43,7 @@ describe('buildLiveServerList', () => {
         maxPlayers: 9,
         state: 'online',
         lastHeartbeatAt: '2026-10-12T17:59:55.000Z',
+        lastMap: 'de_mirage',
       },
     ]);
     expect(list.summary).toEqual({ online: 1, players: 2 });
@@ -67,7 +68,7 @@ describe('buildLiveServerList', () => {
     expect(overflow.summary).toEqual({ online: 1, players: 10 });
   });
 
-  it('sem batimento há 45 s fica offline: sem mapa nem jogadores, mas com o último batimento', () => {
+  it('sem batimento há 45 s fica offline: sem mapa nem jogadores, mas com o último batimento e o último mapa', () => {
     const list = buildLiveServerList(
       [retake],
       new Map([[retake.id, presence({ at: secondsAgo(45), maxPlayers: 10 })]]),
@@ -80,6 +81,7 @@ describe('buildLiveServerList', () => {
       maxPlayers: 10,
       state: 'offline',
       lastHeartbeatAt: '2026-10-12T17:59:15.000Z',
+      lastMap: 'de_mirage',
     });
     expect(list.summary).toEqual({ online: 0, players: 0 });
   });
@@ -97,9 +99,11 @@ describe('buildLiveServerList', () => {
   it('um servidor que nunca mandou batimento está offline com as vagas padrão do Modo', () => {
     const list = buildLiveServerList([deathmatch, retake], new Map(), now);
 
-    expect(list.servers.map((s) => [s.name, s.state, s.maxPlayers, s.lastHeartbeatAt])).toEqual([
-      ['retake-1', 'offline', 9, null],
-      ['dm-1', 'offline', 16, null],
+    expect(
+      list.servers.map((s) => [s.name, s.state, s.maxPlayers, s.lastHeartbeatAt, s.lastMap]),
+    ).toEqual([
+      ['retake-1', 'offline', 9, null, null],
+      ['dm-1', 'offline', 16, null, null],
     ]);
   });
 

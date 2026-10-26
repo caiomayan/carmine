@@ -64,7 +64,7 @@ export const liveServerStateSchema = z
 export type LiveServerState = z.infer<typeof liveServerStateSchema>;
 
 /**
- * Um Servidor Carmine na lista pública. Offline: `map` nulo e `players` 0; `maxPlayers` é o do
+ * Um Servidor Carmine na lista pública. Offline: `map` nulo (o último está em `lastMap`) e `players` 0; `maxPlayers` é o do
  * último batimento (ou o padrão do Modo, se o servidor nunca mandou um).
  */
 export const liveServerSchema = z
@@ -87,6 +87,11 @@ export const liveServerSchema = z
     state: liveServerStateSchema,
     /** Último batimento recebido (também offline: "visto há X min"); nulo se nunca mandou. */
     lastHeartbeatAt: z.iso.datetime({ offset: true }).nullable(),
+    /**
+     * O mapa do último batimento, também offline (o `map` fica nulo): o cartão do servidor parado
+     * mostra a arte dele. Nulo se o servidor nunca mandou batimento; no ar, igual a `map`.
+     */
+    lastMap: z.string().min(1).nullable(),
   })
   .meta({ id: 'LiveServer' });
 

@@ -100,6 +100,10 @@
 .vh-offline .vh-map-img {
   filter: grayscale(0.55) brightness(0.58) contrast(1.05);
 }
+/* a arte de reserva do Modo (servidor sem mapa conhecido) dorme mais fundo que a do último mapa */
+.vh-offline[data-art="placeholder"] .vh-map-img {
+  filter: grayscale(0.85) brightness(0.42) contrast(1.05);
+}
 .vh-card:hover .vh-map-img,
 .vh-card:focus-within .vh-map-img {
   scale: 1.05;
@@ -123,7 +127,7 @@
   background: linear-gradient(
     to top,
     color-mix(in srgb, var(--bg) 97%, transparent),
-    color-mix(in srgb, var(--bg) 62%, transparent)
+    color-mix(in srgb, var(--bg) 72%, transparent)
   );
 }
 .vh-chip {

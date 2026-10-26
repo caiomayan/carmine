@@ -433,6 +433,7 @@ test.describe('Home: os cartões de servidor', () => {
         players: 0,
         map: null,
         lastHeartbeatAt: heartbeat,
+        lastMap: heartbeat ? 'de_mirage' : null,
       });
     await routeLiveServers(page, [
       fakeServer({ name: 'fixo-no-ar' }),
@@ -455,6 +456,33 @@ test.describe('Home: os cartões de servidor', () => {
     // Sem botão morto (só o do próprio grupo) e sem o texto truncado.
     await expect(group.getByRole('button')).toHaveCount(1);
     expect(await never.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(false);
+  });
+
+  test('o cartão offline mostra a arte e o nome do último mapa; sem mapa, a arte do Modo sem nomear mapa', async ({
+    page,
+  }) => {
+    const offline = (name: string, over: Parameters<typeof fakeServer>[0]) =>
+      fakeServer({ name, state: 'offline', players: 0, map: null, ...over });
+    await routeLiveServers(page, [
+      offline('fixo-visto', { lastMap: 'de_nuke' }),
+      offline('fixo-novo', { lastMap: null, lastHeartbeatAt: null }),
+      offline('fixo-novo-dm', { mode: 'deathmatch', lastMap: null, lastHeartbeatAt: null }),
+    ]);
+    await page.goto('/');
+
+    const seen = row(page, 'fixo-visto');
+    await expect(seen).toHaveAttribute('data-art', 'last-map');
+    await expect(seen.locator('img')).toHaveAttribute('src', /nuke/);
+    await expect(seen.locator('p.v-sign')).toHaveText('Último mapa: Nuke');
+    await expect(seen.getByRole('heading', { name: 'fixo-visto' })).toBeVisible();
+
+    // A arte de reserva é só estética: nenhum nome de mapa na tela.
+    const fresh = row(page, 'fixo-novo');
+    await expect(fresh).toHaveAttribute('data-art', 'placeholder');
+    await expect(fresh.locator('img')).toHaveAttribute('src', /mirage/);
+    await expect(fresh.locator('p.v-sign')).toHaveCount(0);
+    await expect(fresh.getByText(/mirage/i)).toHaveCount(0);
+    await expect(row(page, 'fixo-novo-dm').locator('img')).toHaveAttribute('src', /dust2/);
   });
 
   test('sem nada no ar, diz isso e deixa o grupo offline aberto', async ({ page }) => {

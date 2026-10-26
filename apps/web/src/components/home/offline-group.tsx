@@ -4,20 +4,25 @@ import type { LiveServer } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import type { ArtPair } from '@/components/vida/map-art';
+import { sleepingArt } from '@/lib/home/offline-art';
 import { cn } from '@/lib/utils';
 import { ServerCard } from './server-card';
 
 /**
- * Os servidores offline, no fim da lista, em cartões compactos (sem arte, sem botão de jogar, com o motivo por
- * extenso). Com poucos o grupo já nasce aberto; com muitos (resíduo de teste, manutenção) fica recolhido atrás de
+ * Os servidores offline, no fim da lista, em cartões compactos (arte apagada do último mapa, sem botão de jogar,
+ * com o motivo por extenso). Com poucos o grupo já nasce aberto; com muitos (resíduo de teste, manutenção) fica recolhido atrás de
  * "Offline (n)". Só a escolha da pessoa fica guardada: sem ela, o padrão acompanha a lista ao vivo.
  */
 export function OfflineGroup({
   servers,
+  art,
   defaultOpen,
   startIndex,
 }: {
   servers: LiveServer[];
+  /** A tabela de artes (a do dia de cada mapa): cada cartão pega a do último mapa do seu servidor. */
+  art: Record<string, ArtPair>;
   defaultOpen: boolean;
   startIndex: number;
 }) {
@@ -68,15 +73,20 @@ export function OfflineGroup({
             aria-label={t('listLabel')}
             className="grid gap-4 pt-3 min-[760px]:grid-cols-2"
           >
-            {servers.map((server, i) => (
-              <ServerCard
-                key={server.id}
-                server={server}
-                art={undefined}
-                index={startIndex + i}
-                friends={[]}
-              />
-            ))}
+            {servers.map((server, i) => {
+              const sleeping = sleepingArt(server, art);
+              return (
+                <ServerCard
+                  key={server.id}
+                  server={server}
+                  art={sleeping?.art}
+                  artSlug={sleeping?.slug}
+                  placeholderArt={sleeping?.placeholder}
+                  index={startIndex + i}
+                  friends={[]}
+                />
+              );
+            })}
           </ul>
         </div>
       </div>
