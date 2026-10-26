@@ -2542,6 +2542,140 @@
         ]
       }
     },
+    "/api/servers/{id}/players": {
+      "get": {
+        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
+        "operationId": "getServerPlayers",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Os jogadores agora",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerPlayers"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Servidor desconhecido ou aposentado"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "S12b: a implementação ainda não entrou"
+          }
+        },
+        "summary": "Quem está no servidor agora, com time, kills, mortes e pontos; Perfil privado aparece como \"Jogador privado\"",
+        "tags": [
+          "servers"
+        ]
+      }
+    },
+    "/api/servers/{id}/today": {
+      "get": {
+        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
+        "operationId": "getServerToday",
+        "parameters": [
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Dia (YYYY-MM-DD, Brasília); sem ele, hoje; até 7 dias atrás",
+            "schema": {}
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O dia do servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerToday"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "date inválida ou mais antiga que o limite"
+          },
+          "404": {
+            "description": "Servidor desconhecido ou aposentado"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "S12b: a implementação ainda não entrou"
+          }
+        },
+        "summary": "Histórico do dia do servidor: rounds, mapas, horas, pico e jogadores únicos",
+        "tags": [
+          "servers"
+        ]
+      }
+    },
     "/api/me/friends-playing": {
       "get": {
         "operationId": "getFriendsPlaying",
@@ -4451,6 +4585,235 @@
           }
         },
         "summary": "Série semanal de uma Conta (últimas 8 semanas) e horas por Modo na semana e no total; num Perfil privado, só a própria Conta a vê",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/profiles/{publicId}/stats/activity": {
+      "get": {
+        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
+        "operationId": "getProfileStatsActivity",
+        "parameters": [
+          {
+            "name": "weeks",
+            "required": false,
+            "in": "query",
+            "description": "Quantas semanas (1 a 52); padrão 20",
+            "schema": {}
+          },
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A atividade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileActivity"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "weeks fora do intervalo"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse ID público (ou ela foi excluída)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "S12b: a implementação ainda não entrou"
+          }
+        },
+        "summary": "Atividade por dia (o mapa de calor) das últimas semanas; num Perfil privado, só a própria Conta a vê",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/profiles/{publicId}/stats/weapons": {
+      "get": {
+        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
+        "operationId": "getProfileStatsWeapons",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantas armas (1 a 20); padrão 8",
+            "schema": {}
+          },
+          {
+            "name": "mode",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "retake",
+                "deathmatch",
+                "all"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "As armas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileWeapons"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "mode ou limit inválidos"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse ID público (ou ela foi excluída)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "S12b: a implementação ainda não entrou"
+          }
+        },
+        "summary": "Armas mais usadas (abates e headshots por lado); num Perfil privado, só a própria Conta as vê",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/profiles/{publicId}/sessions": {
+      "get": {
+        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
+        "operationId": "getProfileSessions",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantas Sessões (1 a 30); padrão 10",
+            "schema": {}
+          },
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "As Sessões",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSessions"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "limit fora do intervalo"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse ID público (ou ela foi excluída)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "S12b: a implementação ainda não entrou"
+          }
+        },
+        "summary": "Sessões de jogo recentes (Modo, mapa, dia e duração); horário exato e \"em andamento\" só para a própria Conta e amigos",
         "tags": [
           "profiles"
         ]
@@ -6617,12 +6980,103 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 128
+          },
+          "match": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              }
+            ]
+          },
+          "scoreboard": {
+            "maxItems": 128,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ScoreboardEntry"
+            }
           }
         },
         "required": [
           "map",
           "players",
           "maxPlayers"
+        ]
+      },
+      "MatchState": {
+        "type": "object",
+        "properties": {
+          "round": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 999
+          },
+          "ctScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999
+          },
+          "tScore": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999
+          },
+          "warmup": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "round",
+          "ctScore",
+          "tScore",
+          "warmup"
+        ],
+        "additionalProperties": false
+      },
+      "ScoreboardEntry": {
+        "type": "object",
+        "properties": {
+          "steamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "team": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameTeam"
+              }
+            ]
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "deaths": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "score": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "steamId",
+          "team",
+          "kills",
+          "deaths",
+          "score"
+        ]
+      },
+      "GameTeam": {
+        "type": "string",
+        "enum": [
+          "ct",
+          "t"
         ]
       },
       "ServerHeartbeatResult": {
@@ -6731,6 +7185,14 @@
             "nullable": true,
             "type": "string",
             "minLength": 1
+          },
+          "match": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              }
+            ]
           }
         },
         "required": [
@@ -6788,6 +7250,387 @@
         "required": [
           "online",
           "players"
+        ],
+        "additionalProperties": false
+      },
+      "ServerPlayers": {
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "state": {
+            "$ref": "#/components/schemas/LiveServerState"
+          },
+          "map": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapName"
+              }
+            ]
+          },
+          "maxPlayers": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "match": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MatchState"
+              }
+            ]
+          },
+          "scoreboard": {
+            "type": "boolean"
+          },
+          "updatedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "players": {
+            "maxItems": 128,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerPlayer"
+            }
+          }
+        },
+        "required": [
+          "serverId",
+          "mode",
+          "state",
+          "map",
+          "maxPlayers",
+          "scoreboard",
+          "updatedAt",
+          "players"
+        ],
+        "additionalProperties": false
+      },
+      "MapName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 64,
+        "example": "de_mirage"
+      },
+      "ServerPlayer": {
+        "type": "object",
+        "properties": {
+          "player": {
+            "$ref": "#/components/schemas/RankingPlayer"
+          },
+          "team": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameTeam"
+              }
+            ]
+          },
+          "kills": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "deaths": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "score": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "self": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "player",
+          "team",
+          "kills",
+          "deaths",
+          "score",
+          "self"
+        ],
+        "additionalProperties": false
+      },
+      "RankingPlayer": {
+        "type": "object",
+        "properties": {
+          "private": {
+            "type": "boolean"
+          },
+          "publicId": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "avatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          }
+        },
+        "required": [
+          "private",
+          "publicId",
+          "displayName",
+          "avatarUrl"
+        ],
+        "additionalProperties": false
+      },
+      "ServerToday": {
+        "type": "object",
+        "properties": {
+          "serverId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "date": {
+            "$ref": "#/components/schemas/CalendarDay"
+          },
+          "isToday": {
+            "type": "boolean"
+          },
+          "since": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarDay"
+              }
+            ]
+          },
+          "rounds": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServerRounds"
+              }
+            ]
+          },
+          "maps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerTodayMap"
+            }
+          },
+          "hours": {
+            "minItems": 24,
+            "maxItems": 24,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ServerTodayHour"
+            }
+          },
+          "peakPlayers": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServerPeak"
+              }
+            ]
+          },
+          "uniquePlayers": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "generatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "serverId",
+          "mode",
+          "date",
+          "isToday",
+          "since",
+          "rounds",
+          "maps",
+          "hours",
+          "peakPlayers",
+          "uniquePlayers",
+          "generatedAt"
+        ],
+        "additionalProperties": false
+      },
+      "CalendarDay": {
+        "type": "string",
+        "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+        "example": "2026-10-26"
+      },
+      "ServerRounds": {
+        "type": "object",
+        "properties": {
+          "played": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ctWins": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tWins": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "played",
+          "ctWins",
+          "tWins"
+        ],
+        "additionalProperties": false
+      },
+      "ServerTodayMap": {
+        "type": "object",
+        "properties": {
+          "map": {
+            "$ref": "#/components/schemas/MapName"
+          },
+          "from": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "to": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "rounds": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ctWins": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "tWins": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "finalScore": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ServerFinalScore"
+              }
+            ]
+          }
+        },
+        "required": [
+          "map",
+          "from",
+          "to",
+          "rounds",
+          "ctWins",
+          "tWins",
+          "finalScore"
+        ],
+        "additionalProperties": false
+      },
+      "ServerFinalScore": {
+        "type": "object",
+        "properties": {
+          "ct": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "ct",
+          "t"
+        ],
+        "additionalProperties": false
+      },
+      "ServerTodayHour": {
+        "type": "object",
+        "properties": {
+          "hour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23
+          },
+          "rounds": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "players": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "hour",
+          "rounds",
+          "players"
+        ],
+        "additionalProperties": false
+      },
+      "ServerPeak": {
+        "type": "object",
+        "properties": {
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "at",
+          "count"
         ],
         "additionalProperties": false
       },
@@ -8166,6 +9009,14 @@
           },
           "teamKill": {
             "type": "boolean"
+          },
+          "killerTeam": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameTeam"
+              }
+            ]
           }
         },
         "required": [
@@ -8249,6 +9100,29 @@
             "items": {
               "$ref": "#/components/schemas/RoundPlayer"
             }
+          },
+          "map": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapName"
+              }
+            ]
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 999
+          },
+          "scoreCt": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999
+          },
+          "scoreT": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 999
           }
         },
         "required": [
@@ -8282,13 +9156,6 @@
           "team"
         ]
       },
-      "GameTeam": {
-        "type": "string",
-        "enum": [
-          "ct",
-          "t"
-        ]
-      },
       "SessionStartEvent": {
         "type": "object",
         "properties": {
@@ -8309,6 +9176,13 @@
           },
           "steamId": {
             "$ref": "#/components/schemas/SteamId64"
+          },
+          "map": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapName"
+              }
+            ]
           }
         },
         "required": [
@@ -8343,6 +9217,13 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "maps": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapName"
+            }
           }
         },
         "required": [
@@ -8728,6 +9609,279 @@
         ],
         "additionalProperties": false
       },
+      "ProfileActivity": {
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "since": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarDay"
+              }
+            ]
+          },
+          "days": {
+            "maxItems": 364,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileActivityDay"
+            }
+          }
+        },
+        "required": [
+          "visible",
+          "since",
+          "days"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileActivityDay": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "$ref": "#/components/schemas/CalendarDay"
+          },
+          "secondsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "roundsPlayed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "day",
+          "secondsPlayed",
+          "roundsPlayed",
+          "kills"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileWeapons": {
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "since": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarDay"
+              }
+            ]
+          },
+          "mode": {
+            "$ref": "#/components/schemas/WeaponsMode"
+          },
+          "weapons": {
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileWeapon"
+            }
+          }
+        },
+        "required": [
+          "visible",
+          "since",
+          "mode",
+          "weapons"
+        ],
+        "additionalProperties": false
+      },
+      "WeaponsMode": {
+        "type": "string",
+        "enum": [
+          "retake",
+          "deathmatch",
+          "all"
+        ]
+      },
+      "ProfileWeapon": {
+        "type": "object",
+        "properties": {
+          "weapon": {
+            "$ref": "#/components/schemas/StatWeapon"
+          },
+          "kills": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "headshots": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "ct": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "t": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "weapon",
+          "kills",
+          "headshots",
+          "ct",
+          "t"
+        ],
+        "additionalProperties": false
+      },
+      "StatWeapon": {
+        "type": "string",
+        "enum": [
+          "ak47",
+          "m4a1",
+          "m4a1_silencer",
+          "famas",
+          "galilar",
+          "aug",
+          "sg556",
+          "awp",
+          "ssg08",
+          "scar20",
+          "g3sg1",
+          "mp9",
+          "mac10",
+          "mp7",
+          "mp5sd",
+          "ump45",
+          "p90",
+          "bizon",
+          "nova",
+          "xm1014",
+          "mag7",
+          "sawedoff",
+          "m249",
+          "negev",
+          "glock",
+          "p2000",
+          "usp_silencer",
+          "p250",
+          "fiveseven",
+          "tec9",
+          "cz75a",
+          "deagle",
+          "elite",
+          "revolver",
+          "knife",
+          "taser",
+          "hegrenade",
+          "molotov",
+          "other"
+        ]
+      },
+      "ProfileSessions": {
+        "type": "object",
+        "properties": {
+          "visible": {
+            "type": "boolean"
+          },
+          "since": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CalendarDay"
+              }
+            ]
+          },
+          "sessions": {
+            "maxItems": 30,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSession"
+            }
+          }
+        },
+        "required": [
+          "visible",
+          "since",
+          "sessions"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileSession": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/GameMode"
+          },
+          "map": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapName"
+              }
+            ]
+          },
+          "maps": {
+            "maxItems": 8,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MapName"
+            }
+          },
+          "day": {
+            "$ref": "#/components/schemas/CalendarDay"
+          },
+          "startedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "seconds": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "live": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "mode",
+          "map",
+          "maps",
+          "day",
+          "startedAt",
+          "endedAt",
+          "seconds",
+          "live"
+        ],
+        "additionalProperties": false
+      },
       "Ranking": {
         "type": "object",
         "properties": {
@@ -8849,37 +10003,6 @@
           "roundsPlayed",
           "secondsPlayed",
           "self"
-        ],
-        "additionalProperties": false
-      },
-      "RankingPlayer": {
-        "type": "object",
-        "properties": {
-          "private": {
-            "type": "boolean"
-          },
-          "publicId": {
-            "nullable": true,
-            "type": "integer",
-            "minimum": 0,
-            "exclusiveMinimum": true,
-            "maximum": 9007199254740991
-          },
-          "displayName": {
-            "type": "string",
-            "minLength": 1
-          },
-          "avatarUrl": {
-            "nullable": true,
-            "type": "string",
-            "format": "uri"
-          }
-        },
-        "required": [
-          "private",
-          "publicId",
-          "displayName",
-          "avatarUrl"
         ],
         "additionalProperties": false
       },

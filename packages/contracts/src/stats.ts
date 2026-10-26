@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { gameModeSchema } from './game-server.js';
+import { gameModeSchema, mapNameSchema } from './game-server.js';
 import { weekStartSchema } from './ranking.js';
 import { chatMessageEventSchema } from './reports.js';
 import { steamId64Schema } from './steam.js';
@@ -53,6 +53,12 @@ export const killEventSchema = z
     weapon: z.string().max(64),
     /** O assassino e a vítima são de times aliados (nunca no Deathmatch, todos contra todos). */
     teamKill: z.boolean(),
+    /**
+     * S12b: o lado do assassino na hora da morte, para o radar de armas por lado. Opcional: plugin
+     * antigo não manda, e então a kill conta nas Estatísticas mas não entra no radar. Nulo (ou
+     * ausente) quando o assassino é o mundo, um bot ou não tem lado.
+     */
+    killerTeam: gameTeamSchema.nullable().optional(),
   })
   .meta({ id: 'KillEvent' });
 
@@ -92,6 +98,15 @@ export const roundEndEventSchema = z
     warmup: z.boolean(),
     winner: roundWinnerSchema,
     players: z.array(roundPlayerSchema).max(64),
+    /**
+     * S12b (todos opcionais; o Deathmatch pode nem ter `round_end`): o mapa do round, o número dele
+     * no mapa (1 = primeiro) e o placar de times DEPOIS do round. O placar final do mapa é o do
+     * último round dele; o histórico do servidor agrupa por mapa e hora.
+     */
+    map: mapNameSchema.optional(),
+    roundNumber: z.int().positive().max(999).optional(),
+    scoreCt: z.int().nonnegative().max(999).optional(),
+    scoreT: z.int().nonnegative().max(999).optional(),
   })
   .meta({ id: 'RoundEndEvent' });
 
@@ -104,6 +119,8 @@ export const sessionStartEventSchema = z
     at: eventTimeSchema,
     sessionId: z.uuid(),
     steamId: steamId64Schema,
+    /** S12b: o mapa em que a pessoa entrou. Opcional (plugin antigo). */
+    map: mapNameSchema.optional(),
   })
   .meta({ id: 'SessionStartEvent' });
 
@@ -120,6 +137,11 @@ export const sessionEndEventSchema = z
     sessionId: z.uuid(),
     steamId: steamId64Schema,
     startedAt: eventTimeSchema,
+    /**
+     * S12b: os mapas distintos por onde a Sessão passou, em ordem (no máximo 8): o Deathmatch
+     * rotaciona o mapa com a pessoa dentro. Opcional (plugin antigo).
+     */
+    maps: z.array(mapNameSchema).max(8).optional(),
   })
   .meta({ id: 'SessionEndEvent' });
 
