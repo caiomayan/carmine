@@ -76,6 +76,33 @@ export function keepBeating(
   };
 }
 
+/**
+ * Como {@link keepBeating}, mas o corpo do batimento é todo do teste (S12b: `match`, `scoreboard`). O batimento
+ * é o estado inteiro, então o laço precisa mandar o placar a cada vez ou ele some.
+ */
+export function keepBeatingWith(
+  request: APIRequestContext,
+  server: E2eServer,
+  body: () => Record<string, unknown>,
+): () => void {
+  let stopped = false;
+  const loop = async () => {
+    while (!stopped) {
+      await request
+        .post('/api/server/heartbeat', {
+          headers: { authorization: `Bearer ${server.key}` },
+          data: body(),
+        })
+        .catch(() => {});
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  };
+  void loop();
+  return () => {
+    stopped = true;
+  };
+}
+
 /** Um SteamID64 do intervalo que a Steam falsa trata como amigo de todo mundo (…0001 a …0999). */
 export function friendSteamId(): string {
   return (76561198000000000n + BigInt(randomInt(100, 1000))).toString();
