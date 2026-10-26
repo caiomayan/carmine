@@ -157,7 +157,7 @@ test('o Perfil privado aparece como "Jogador privado", sem link, nome nem avatar
 test('o jogador logado vê quanto falta para o mínimo e, depois, a própria posição', async ({
   page,
   request,
-}, testInfo) => {
+}) => {
   // Um nome por tentativa: o retry cria outra Conta, e a Conta da tentativa anterior continua no
   // Ranking. Com o mesmo nome, `Progresso Rank` casaria com duas linhas e a asserção quebraria.
   const name = `Progresso Rank ${randomUUID().slice(0, 6)}`;
@@ -194,8 +194,6 @@ test('o jogador logado vê quanto falta para o mínimo e, depois, a própria pos
   const row = await mine.boundingBox();
   if (!header || !row) throw new Error('header ou linha própria sem caixa');
   expect(row.y).toBeGreaterThanOrEqual(header.y + header.height);
-  // TEMPORÁRIO (prova do retry): a 1ª tentativa falha depois de criar a Conta e passar pelo Ranking.
-  if (testInfo.retry === 0) throw new Error('falha de propósito para provar o retry');
 });
 
 test('no celular o HS% e os rounds descem para uma segunda linha sob o nome, em vez de sumir', async ({
