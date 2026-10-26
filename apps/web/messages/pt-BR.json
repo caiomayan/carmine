@@ -751,7 +751,6 @@
     "join": "Entrar junto",
     "joinAria": "Entrar junto com {name} no servidor em que a pessoa está jogando",
     "vip": "VIP",
-    "publicId": "ID {id}",
     "memberSince": "Membro desde {date}"
   },
   "settings": {

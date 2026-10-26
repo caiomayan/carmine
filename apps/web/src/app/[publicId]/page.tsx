@@ -319,14 +319,7 @@ async function ProfileHeader({
           </NextIntlClientProvider>
           <SanctionBadges active={profile.sanctions.active} />
         </div>
-        <p
-          className="flex flex-wrap items-center gap-x-2 gap-y-1 text-body-sm text-muted-foreground"
-          data-testid="profile-identity"
-        >
-          <span data-testid="profile-public-id" className="tabular-nums">
-            {t('publicId', { id: String(profile.publicId) })}
-          </span>
-          <span aria-hidden="true">·</span>
+        <p className="text-body-sm text-muted-foreground" data-testid="profile-identity">
           <time dateTime={profile.memberSince} data-testid="member-since">
             {t('memberSince', { date: memberSinceLabel(profile.memberSince) })}
           </time>

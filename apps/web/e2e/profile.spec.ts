@@ -15,7 +15,7 @@ import { createServer, keepBeating } from './live-servers';
 
 const NOT_FOUND = /404 \(Not Found\)/;
 
-test('Perfil mostra Nome de exibição, avatar, ID, data de entrada, link da Steam e o Loadout vazio', async ({
+test('Perfil mostra Nome de exibição, avatar, data de entrada, link da Steam e o Loadout vazio, sem o #ID', async ({
   page,
   request,
 }) => {
@@ -23,9 +23,10 @@ test('Perfil mostra Nome de exibição, avatar, ID, data de entrada, link da Ste
   await page.goto(`/${account.publicId}`);
 
   await expect(page.getByRole('heading', { level: 1, name: 'Perfil Visitado' })).toBeVisible();
-  // A identidade sob o nome: o ID público (sem `#` nem separador de milhar) e o mês de entrada.
-  await expect(page.getByTestId('profile-public-id')).toHaveText(`ID ${account.publicId}`);
+  // O ID público fica só na URL: nenhuma tela o mostra (spec, "ID público fora da interface").
   await expect(page.getByText(`#${account.publicId}`)).toHaveCount(0);
+  await expect(page.getByRole('main')).not.toContainText(String(account.publicId));
+  // Sob o nome, só o mês de entrada.
   await expect(page.getByTestId('member-since')).toHaveText(/^Membro desde [a-zç]+ de 20\d\d$/);
   await expect(page.getByTestId('profile-vip')).toHaveCount(0);
   await expect(page.getByTestId('presence-chip')).toHaveCount(0);
