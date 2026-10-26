@@ -11,7 +11,7 @@ Registro vivo do custo de manter o Carmine no ar. **Revise a cada fatia que aume
 | Oracle Cloud, VM A1 (2 OCPU, 12 GB, ARM, São Paulo) | Always Free | 0 | Limite de 2 OCPU / 12 GB desde 2026-06-15. A Oracle recolhe instância ociosa (CPU, rede e memória abaixo de 20% por 7 dias): ver "Riscos". |
 | Cloudflare (DNS, Tunnel, Access, proxy, regras) | Free | 0 | Access grátis até 50 usuários. |
 | Cloudflare R2 (backups do Postgres) | Free tier | 0 | 10 GB-mês grátis; um dump é de poucos MB e guardamos 30 dias. Operações dentro da cota grátis. |
-| Cloudflare R2 (fotos de perfil, ADR 0022) | Free tier | 0 | Dois buckets (público e privado), ~60 kB por Conta nos 4 tamanhos: 10 mil Contas ≈ 600 MB, dentro dos 10 GB grátis. Saída grátis; operações dentro da cota. *Confirmar os números no painel da Cloudflare.* |
+| Cloudflare R2 (fotos de perfil, ADR 0022) | Free tier | 0 | Dois buckets (público e privado), ~60 kB por Conta nos 4 tamanhos: 10 mil Contas ≈ 600 MB, dentro dos 10 GB grátis. Saída grátis; operações dentro da cota. *Conferido na página oficial de preços do R2 em 2026-10-26.* |
 | GHCR (imagens) e GitHub Actions | GitHub Pro (conta do dono) | ~4 | Repositório privado: minutos de Actions e pacotes dentro da cota do plano. *estimativa de preço* |
 | Domínio `stcarmine.com` | anual | ~1 (≈ US$ 10–12/ano) | *estimativa*; renovação anual. |
 | Sentry | Developer (grátis) | 0 | Cota de eventos pequena; só erros. Se estourar, filtrar ruído antes de pagar. |
