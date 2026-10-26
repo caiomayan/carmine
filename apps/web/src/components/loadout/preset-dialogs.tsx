@@ -12,8 +12,6 @@ import {
   DialogFooter,
   DialogTitle,
 } from '@/components/animate-ui/components/radix/dialog';
-import { LockIcon } from '@/components/icons/animated/lock';
-import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { useInventory } from '@/components/inventory/inventory-provider';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
@@ -22,21 +20,7 @@ import { useLoadoutApi } from './use-loadout-api';
 /** Os diálogos só precisam destes campos do Preset (a carta da mão os tem). */
 export type PresetRef = Pick<Preset, 'id' | 'name' | 'active'>;
 
-/** Os diálogos de Preset (criar, renomear, apagar) e o aviso de somente leitura da mão de Presets. */
-
-export function Explanation({ children, testId }: { children: React.ReactNode; testId: string }) {
-  return (
-    <div
-      role="note"
-      data-testid={testId}
-      data-icon-trigger
-      className="flex max-w-[56ch] animate-fade-up flex-wrap items-start gap-x-2.5 gap-y-1 rounded-lg bg-surface px-3 py-2 text-[12.5px] leading-[1.5]"
-    >
-      <AnimatedIcon icon={LockIcon} size={14} className="mt-0.5 text-status-vip" />
-      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">{children}</div>
-    </div>
-  );
-}
+/** Os diálogos de Preset (criar, renomear, apagar): só são baixados quando a pessoa abre um. */
 
 /** Criar (nome e ponto de partida) ou renomear um Preset. */
 export function NameDialog({

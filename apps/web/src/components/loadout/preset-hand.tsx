@@ -3,6 +3,7 @@
 import type { LoadoutSide, PresetList } from '@carmine/contracts';
 import { PRESETS_VIP_LIMIT } from '@carmine/contracts/rules';
 import { m, type PanInfo, useReducedMotion } from 'framer-motion';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
@@ -10,7 +11,6 @@ import {
   type KeyboardEvent,
   type PointerEvent,
   useCallback,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -32,9 +32,18 @@ import { CARD, focusAt, HAND, type HandMode, handLayout, handMode } from '@/lib/
 import type { HandCard, HandPiece } from '@/lib/loadout/hand-view';
 import { useMediaQuery } from '@/lib/use-media-query';
 import { cn } from '@/lib/utils';
-import { DeleteDialog, Explanation, NameDialog } from './preset-dialogs';
 import { useLastSide } from './use-last-side';
 import { LoadoutApiError, useLoadoutApi } from './use-loadout-api';
+
+/**
+ * Os diálogos (criar, renomear, apagar) só abrem depois de uma ação: o código deles vem sob demanda, e o
+ * ponteiro sobre a mão (ou o foco nela) já o busca, então o diálogo não espera a rede.
+ */
+const loadDialogs = () => import('./preset-dialogs');
+const NameDialog = dynamic(() => loadDialogs().then((module) => module.NameDialog), { ssr: false });
+const DeleteDialog = dynamic(() => loadDialogs().then((module) => module.DeleteDialog), {
+  ssr: false,
+});
 
 /** Até onde (px) a carta é jogada para cima, e o quanto basta para valer como jogada. */
 const PLAY_DRAG_LIMIT = 170;
@@ -222,6 +231,8 @@ export function PresetHand({
       className="relative z-10 grid min-w-0 gap-2"
       data-testid="presets"
       data-mode={mode}
+      onPointerOver={() => void loadDialogs()}
+      onFocusCapture={() => void loadDialogs()}
     >
       <ul
         ref={hand}
@@ -501,6 +512,21 @@ function HandSlot({
     >
       {children}
     </m.li>
+  );
+}
+
+/** O aviso de somente leitura da mão (sem VIP). */
+function Explanation({ children, testId }: { children: React.ReactNode; testId: string }) {
+  return (
+    <div
+      role="note"
+      data-testid={testId}
+      data-icon-trigger
+      className="flex max-w-[56ch] animate-fade-up flex-wrap items-start gap-x-2.5 gap-y-1 rounded-lg bg-surface px-3 py-2 text-[12.5px] leading-[1.5]"
+    >
+      <AnimatedIcon icon={LockIcon} size={14} className="mt-0.5 text-status-vip" />
+      <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-3 gap-y-1">{children}</div>
+    </div>
   );
 }
 
