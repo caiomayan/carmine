@@ -163,6 +163,8 @@ jobs:
             check "$p" 200 || ok=1
           done
           check /pagina-que-nao-existe-smoke 404 || ok=1
+          # Um arquivo do public/ (a arte dos mapas): a imagem do web precisa levá-lo.
+          check /maps/mirage/d0-480.webp 200 || ok=1
           exit "$ok"
 
       - name: Voltar ao commit anterior

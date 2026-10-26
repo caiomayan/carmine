@@ -81,6 +81,9 @@ services:
       NODE_ENV: production
       API_URL: http://api:3333
       NODE_OPTIONS: --max-old-space-size=448
+      # As vitrines /dev/* (componentes, protótipos de tela) só existem aqui e no dev local: lido em tempo de
+      # execução, nunca no build, e a produção (infra/prod/compose.yml) não tem esta variável.
+      CARMINE_UI_GALLERY: "1"
       SENTRY_ENVIRONMENT: staging
       SENTRY_RELEASE: ${IMAGE_TAG}
     networks:
@@ -222,6 +225,10 @@ services:
     profiles: ["demo"]
     image: *api-image
     command: ["node", "dist/demo/demo.cli.js", "simulate"]
+    # A imagem é a da API, cujo HEALTHCHECK confere a porta 3333, que o simulador não escuta: sem
+    # isto ele fica "unhealthy" e o `up --wait` do deploy reprova a release.
+    healthcheck:
+      disable: true
     environment:
       CARMINE_DEMO: homologacao
       DEMO_SEED_SECRET: ${DEMO_SEED_SECRET:-}

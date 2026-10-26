@@ -90,6 +90,23 @@ describe('Eventos do jogo e Estatísticas (S12)', () => {
     expect((await send(batch({}), 'chave-errada')).statusCode).toBe(401);
   });
 
+  it('aceita a kill do jeito que o plugin manda: o que é nulo vem sem o campo', async () => {
+    const killer = await player();
+    const victim = await player();
+    // O cliente C# omite os nulos (sem assistente, sem "assisterSteamId"): nenhum lote pode ser recusado por isso.
+    const { assisterSteamId: _omitted, ...wire } = kill(killer.steamId, victim.steamId);
+    const response = await t.app.inject({
+      method: 'POST',
+      url: '/api/server/events',
+      headers: { authorization: `Bearer ${t.serverKey}` },
+      payload: { kills: [wire], damages: [], roundEnds: [], sessionStarts: [], sessionEnds: [] },
+    });
+
+    expect(response.statusCode, response.body).toBe(200);
+    expect(eventBatchResultSchema.parse(response.json()).accepted).toBe(1);
+    expect((await statsOf(killer.account.publicId)).total?.kills).toBe(1);
+  });
+
   it('rejeita lote inválido', async () => {
     const response = await t.app.inject({
       method: 'POST',

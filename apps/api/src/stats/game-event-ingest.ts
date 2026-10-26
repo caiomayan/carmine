@@ -4,19 +4,27 @@ import {
   type EventBatch,
   type EventBatchResult,
   type GameMode,
+  PLAY_SESSION_MAX_SECONDS,
 } from '@carmine/contracts';
 import { inArray, sql } from 'drizzle-orm';
 import type { ActivityRecorder } from '../activity/activity-feed.js';
 import { detectMultiKills } from '../activity/multi-kills.js';
 import type { Database } from '../database/database.js';
 import {
+  accountStatsDaily,
   accountStatsWeekly,
   accounts,
+  accountWeaponStats,
   chatMessages,
   gameEvents,
+  playSessions,
+  serverHours,
   teamKills,
 } from '../database/schema.js';
-import { collectStats } from './stats-deltas.js';
+import { collectServerHours } from './server-hours.js';
+import { type CollectedStats, collectStats } from './stats-deltas.js';
+
+type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
 /** Quem mandou o lote: o Servidor Carmine autenticado pela chave. */
 export interface EventSource {
@@ -77,6 +85,8 @@ export class GameEventIngest {
 
       const {
         deltas,
+        dailyDeltas,
+        weapons,
         teamKills: teamKillEvents,
         ignored,
       } = collectStats(news, new Set(accountBySteamId.keys()));
@@ -111,6 +121,10 @@ export class GameEventIngest {
             },
           });
       }
+
+      // S12b: o detalhe das mesmas somas (dia, arma e lado, Sessões, horas do servidor), na mesma
+      // transação e só com o que é novo: reenviar um lote não muda nenhuma destas tabelas.
+      await this.writeDetails(tx, server, news, accountBySteamId, { dailyDeltas, weapons });
 
       if (teamKillEvents.length > 0) {
         await tx
@@ -159,6 +173,171 @@ export class GameEventIngest {
     });
     await this.announce(server, news, accountBySteamId);
     return result;
+  }
+
+  /** As tabelas da S12b (docs/specs/s12b-contratos.md); ver o adendo do ADR 0018. */
+  private async writeDetails(
+    tx: Transaction,
+    server: EventSource,
+    news: EventBatch,
+    accountBySteamId: ReadonlyMap<string, string>,
+    collected: Pick<CollectedStats, 'dailyDeltas' | 'weapons'>,
+  ): Promise<void> {
+    const byKey = <T extends { accountId: string }>(rows: T[], key: (row: T) => string) =>
+      // Ordem fixa das linhas, para dois lotes ao mesmo tempo não se travarem um no outro.
+      rows.sort((a, b) => `${a.accountId}${key(a)}`.localeCompare(`${b.accountId}${key(b)}`));
+
+    const daily = byKey(
+      collected.dailyDeltas.map(({ steamId, ...counters }) => ({
+        accountId: accountBySteamId.get(steamId) as string,
+        mode: server.mode,
+        ...counters,
+      })),
+      (row) => row.day,
+    );
+    if (daily.length > 0) {
+      const t = accountStatsDaily;
+      await tx
+        .insert(accountStatsDaily)
+        .values(daily)
+        .onConflictDoUpdate({
+          target: [t.accountId, t.mode, t.day],
+          set: {
+            kills: sql`${t.kills} + excluded.kills`,
+            deaths: sql`${t.deaths} + excluded.deaths`,
+            assists: sql`${t.assists} + excluded.assists`,
+            headshots: sql`${t.headshots} + excluded.headshots`,
+            damage: sql`${t.damage} + excluded.damage`,
+            roundsPlayed: sql`${t.roundsPlayed} + excluded.rounds_played`,
+            roundsWon: sql`${t.roundsWon} + excluded.rounds_won`,
+            secondsPlayed: sql`${t.secondsPlayed} + excluded.seconds_played`,
+            updatedAt: sql`now()`,
+          },
+        });
+    }
+
+    const weapons = byKey(
+      collected.weapons.map(({ steamId, ...counters }) => ({
+        accountId: accountBySteamId.get(steamId) as string,
+        mode: server.mode,
+        ...counters,
+      })),
+      (row) => `${row.weapon}${row.side}`,
+    );
+    if (weapons.length > 0) {
+      const t = accountWeaponStats;
+      await tx
+        .insert(accountWeaponStats)
+        .values(weapons)
+        .onConflictDoUpdate({
+          target: [t.accountId, t.mode, t.weapon, t.side],
+          set: {
+            kills: sql`${t.kills} + excluded.kills`,
+            headshots: sql`${t.headshots} + excluded.headshots`,
+            updatedAt: sql`now()`,
+          },
+        });
+    }
+
+    await this.writeSessions(tx, server, news, accountBySteamId);
+
+    const hours = collectServerHours(news.roundEnds);
+    if (hours.length > 0) {
+      const t = serverHours;
+      // O placar é o do round mais recente: só troca se o do lote não é mais antigo que o guardado.
+      const newer = sql`excluded.last_round_at >= ${t.lastRoundAt}`;
+      await tx
+        .insert(serverHours)
+        .values(hours.map((hour) => ({ serverId: server.id, ...hour })))
+        .onConflictDoUpdate({
+          target: [t.serverId, t.hourStart, t.map],
+          set: {
+            roundsPlayed: sql`${t.roundsPlayed} + excluded.rounds_played`,
+            ctWins: sql`${t.ctWins} + excluded.ct_wins`,
+            tWins: sql`${t.tWins} + excluded.t_wins`,
+            firstRoundAt: sql`least(${t.firstRoundAt}, excluded.first_round_at)`,
+            lastRoundAt: sql`greatest(${t.lastRoundAt}, excluded.last_round_at)`,
+            lastRoundNumber: sql`case when ${newer} then excluded.last_round_number else ${t.lastRoundNumber} end`,
+            scoreCt: sql`case when ${newer} then excluded.score_ct else ${t.scoreCt} end`,
+            scoreT: sql`case when ${newer} then excluded.score_t else ${t.scoreT} end`,
+          },
+        });
+    }
+  }
+
+  /**
+   * Sessões de jogo (S12b): início e fim são eventos separados, em qualquer ordem, então os dois
+   * são upserts na mesma linha (o `sessionId`). O fim preenche uma Sessão ainda aberta e cria a
+   * linha se o início não chegou; o início só completa o mapa que faltar. Conta desconhecida não
+   * tem Sessão.
+   */
+  private async writeSessions(
+    tx: Transaction,
+    server: EventSource,
+    news: EventBatch,
+    accountBySteamId: ReadonlyMap<string, string>,
+  ): Promise<void> {
+    const t = playSessions;
+    const starts = new Map<string, typeof t.$inferInsert>();
+    for (const start of news.sessionStarts) {
+      const accountId = accountBySteamId.get(start.steamId);
+      if (!accountId) continue;
+      starts.set(start.sessionId, {
+        id: start.sessionId,
+        accountId,
+        serverId: server.id,
+        mode: server.mode,
+        startedAt: new Date(start.at),
+        map: start.map ?? null,
+        maps: start.map ? [start.map] : [],
+      });
+    }
+    if (starts.size > 0) {
+      await tx
+        .insert(playSessions)
+        .values([...starts.values()])
+        .onConflictDoUpdate({
+          target: t.id,
+          set: {
+            map: sql`coalesce(${t.map}, excluded.map)`,
+            maps: sql`case when cardinality(${t.maps}) = 0 and excluded.map is not null then array[excluded.map] else ${t.maps} end`,
+          },
+        });
+    }
+
+    const ends = new Map<string, typeof t.$inferInsert>();
+    for (const end of news.sessionEnds) {
+      const accountId = accountBySteamId.get(end.steamId);
+      if (!accountId) continue;
+      const startedAt = new Date(end.startedAt);
+      const endedAt = new Date(end.at);
+      const seconds = Math.floor((endedAt.getTime() - startedAt.getTime()) / 1000);
+      ends.set(end.sessionId, {
+        id: end.sessionId,
+        accountId,
+        serverId: server.id,
+        mode: server.mode,
+        startedAt,
+        endedAt,
+        seconds: seconds > 0 && seconds <= PLAY_SESSION_MAX_SECONDS ? seconds : null,
+        maps: end.maps ?? [],
+      });
+    }
+    if (ends.size > 0) {
+      await tx
+        .insert(playSessions)
+        .values([...ends.values()])
+        .onConflictDoUpdate({
+          target: t.id,
+          // Só fecha uma Sessão aberta: um fim repetido (ou atrasado) não a reescreve.
+          setWhere: sql`${t.endedAt} is null`,
+          set: {
+            endedAt: sql`excluded.ended_at`,
+            seconds: sql`excluded.seconds`,
+            maps: sql`case when cardinality(excluded.maps) > 0 then excluded.maps else ${t.maps} end`,
+          },
+        });
+    }
   }
 
   /**

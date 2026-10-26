@@ -56,7 +56,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private const float KickDelaySeconds = 5.0f;
 
     public override string ModuleName => "Carmine.Core";
-    public override string ModuleVersion => "0.10.0";
+    public override string ModuleVersion => "0.11.0";
     public override string ModuleAuthor => "Carmine";
     public override string ModuleDescription => "Conta, Nome de exibição e integração dos Servidores Carmine com a API.";
 
@@ -307,16 +307,18 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             return;
         }
-        var players = Utilities.GetPlayers()
+        var humans = Utilities.GetPlayers()
             .Where(p => IsHuman(p) && p.Connected == PlayerConnectedState.Connected)
-            .Select(p => p.SteamID)
-            .Distinct()
+            .DistinctBy(p => p.SteamID)
             .ToList();
+        var players = humans.Select(p => p.SteamID).ToList();
         IReadOnlyCollection<ulong> present = players;
         var snapshot = new ServerSnapshot(
             Server.MapName,
             players,
-            Config.PublicSlots > 0 ? Config.PublicSlots : Server.MaxPlayers);
+            Config.PublicSlots > 0 ? Config.PublicSlots : Server.MaxPlayers,
+            MatchForHeartbeat(),
+            humans.Count > 0 ? ScoreboardRows(humans) : null);
         RunInBackground(async token =>
         {
             var report = await heartbeat.SendAsync(snapshot, token);

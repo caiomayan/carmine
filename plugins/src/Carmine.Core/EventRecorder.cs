@@ -14,11 +14,39 @@ public sealed record PlayerRef(ulong SteamId, bool IsBot, GameTeam? Team);
 /// põe na fila (<see cref="EventReporter"/>). Só diz o que aconteceu; quem decide o que conta nas
 /// Estatísticas é a API (bot, aquecimento, kill em aliado). Só roda na thread do jogo. Um round
 /// abandonado no meio conta como jogado: a lista do round é a de quem estava nele no começo.
+/// S12b: os eventos levam o que a API precisa para o detalhe (o lado de quem matou, o mapa, o
+/// número e o placar do round, os mapas de cada Sessão); tudo opcional para a API.
 /// </summary>
-public sealed class EventRecorder(EventReporter reporter, TimeProvider time)
+/// <param name="match">O placar de times (Retake); sem ele os rounds saem sem número nem placar.</param>
+public sealed class EventRecorder(EventReporter reporter, TimeProvider time, MatchTracker? match = null)
 {
-    private readonly Dictionary<ulong, (Guid SessionId, DateTimeOffset StartedAt)> _sessions = [];
+    /// <summary>Quantos mapas distintos uma Sessão leva (o limite do contrato).</summary>
+    public const int MaxSessionMaps = 8;
+
+    private const int MaxMapNameLength = 64;
+
+    private sealed record OpenSession(Guid SessionId, DateTimeOffset StartedAt, List<string> Maps);
+
+    private readonly Dictionary<ulong, OpenSession> _sessions = [];
     private List<RoundPlayer> _roster = [];
+    private string? _map;
+
+    /// <summary>O mapa atual: entra no início das Sessões que abrem e nos fins de round.</summary>
+    public string? Map => _map;
+
+    /// <summary>Um mapa começou: as Sessões abertas passam a incluí-lo (o Deathmatch rotaciona com gente dentro).</summary>
+    public void MapStarted(string? map)
+    {
+        _map = Clean(map);
+        if (_map is null)
+        {
+            return;
+        }
+        foreach (var session in _sessions.Values)
+        {
+            AddMap(session.Maps, _map);
+        }
+    }
 
     /// <summary>Um jogador humano entrou no servidor (uma Sessão de jogo por vez para cada um).</summary>
     public void PlayerJoined(ulong steamId)
@@ -29,8 +57,15 @@ public sealed class EventRecorder(EventReporter reporter, TimeProvider time)
         }
         var now = time.GetUtcNow();
         var sessionId = NewId();
-        _sessions[steamId] = (sessionId, now);
-        reporter.Add(new SessionStartEvent { Id = NewId(), At = now, SessionId = sessionId, SteamId = Text(steamId) });
+        _sessions[steamId] = new OpenSession(sessionId, now, _map is null ? [] : [_map]);
+        reporter.Add(new SessionStartEvent
+        {
+            Id = NewId(),
+            At = now,
+            SessionId = sessionId,
+            SteamId = Text(steamId),
+            Map = _map,
+        });
     }
 
     public void PlayerLeft(ulong steamId)
@@ -103,6 +138,7 @@ public sealed class EventRecorder(EventReporter reporter, TimeProvider time)
             Warmup = warmup,
             KillerSteamId = SteamIdOf(killer),
             KillerIsBot = killer?.IsBot ?? false,
+            KillerTeam = IsHuman(killer) ? killer!.Team : null,
             VictimSteamId = SteamIdOf(victim),
             VictimIsBot = victim.IsBot,
             AssisterSteamId = SteamIdOf(assister),
@@ -149,12 +185,19 @@ public sealed class EventRecorder(EventReporter reporter, TimeProvider time)
                 .Select(p => new RoundPlayer { SteamId = Text(p.SteamId), Team = p.Team!.Value }),
         ];
 
-    public void RoundEnded(RoundWinner winner, bool warmup)
+    /// <summary>
+    /// O round acabou. Fora do aquecimento e com humanos nos dois lados, o evento leva o número do
+    /// round no mapa e o placar depois dele (<see cref="MatchTracker"/>); sem isso (ou num mapa sem
+    /// placar de times, <paramref name="teammatesAreEnemies"/>), só o mapa.
+    /// </summary>
+    public void RoundEnded(RoundWinner winner, bool warmup, bool teammatesAreEnemies = false)
     {
         if (_roster.Count == 0)
         {
             return;
         }
+        var humansOnBothSides = _roster.Any(p => p.Team == GameTeam.Ct) && _roster.Any(p => p.Team == GameTeam.T);
+        var result = teammatesAreEnemies ? null : match?.RoundEnded(winner, warmup, humansOnBothSides);
         reporter.Add(new RoundEndEvent
         {
             Id = NewId(),
@@ -162,18 +205,38 @@ public sealed class EventRecorder(EventReporter reporter, TimeProvider time)
             Warmup = warmup,
             Winner = winner,
             Players = _roster,
+            Map = _map,
+            RoundNumber = result?.RoundNumber,
+            ScoreCt = result?.CtScore,
+            ScoreT = result?.TScore,
         });
         _roster = [];
     }
 
-    private SessionEndEvent Ended(ulong steamId, (Guid SessionId, DateTimeOffset StartedAt) session) => new()
+    private SessionEndEvent Ended(ulong steamId, OpenSession session) => new()
     {
         Id = NewId(),
         At = time.GetUtcNow(),
         SessionId = session.SessionId,
         SteamId = Text(steamId),
         StartedAt = session.StartedAt,
+        Maps = session.Maps.Count > 0 ? [.. session.Maps] : null,
     };
+
+    private static void AddMap(List<string> maps, string map)
+    {
+        if (maps.Count < MaxSessionMaps && !maps.Contains(map))
+        {
+            maps.Add(map);
+        }
+    }
+
+    /// <summary>O nome do mapa como o contrato o quer: sem espaços nas pontas, até 64 caracteres, nunca vazio.</summary>
+    private static string? Clean(string? map)
+    {
+        var name = map?.Trim();
+        return string.IsNullOrEmpty(name) ? null : name.Length > MaxMapNameLength ? name[..MaxMapNameLength] : name;
+    }
 
     private static bool IsHuman(PlayerRef? player) => player is { IsBot: false, SteamId: not 0 };
 

@@ -61,11 +61,12 @@ export function keepBeating(
   request: APIRequestContext,
   server: E2eServer,
   players: () => string[],
+  map = 'de_mirage',
 ): () => void {
   let stopped = false;
   const loop = async () => {
     while (!stopped) {
-      await heartbeat(request, server, players()).catch(() => {});
+      await heartbeat(request, server, players(), map).catch(() => {});
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   };

@@ -4592,16 +4592,8 @@
     },
     "/api/profiles/{publicId}/stats/activity": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getProfileStatsActivity",
         "parameters": [
-          {
-            "name": "weeks",
-            "required": false,
-            "in": "query",
-            "description": "Quantas semanas (1 a 52); padrão 20",
-            "schema": {}
-          },
           {
             "name": "publicId",
             "required": true,
@@ -4610,6 +4602,13 @@
               "example": 10016,
               "type": "integer"
             }
+          },
+          {
+            "name": "weeks",
+            "required": false,
+            "in": "query",
+            "description": "Quantas semanas (1 a 52); padrão 20",
+            "schema": {}
           }
         ],
         "responses": {
@@ -4651,9 +4650,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
           }
         },
         "summary": "Atividade por dia (o mapa de calor) das últimas semanas; num Perfil privado, só a própria Conta a vê",
@@ -4664,9 +4660,17 @@
     },
     "/api/profiles/{publicId}/stats/weapons": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getProfileStatsWeapons",
         "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "example": 10016,
+              "type": "integer"
+            }
+          },
           {
             "name": "limit",
             "required": false,
@@ -4685,15 +4689,6 @@
                 "all"
               ],
               "type": "string"
-            }
-          },
-          {
-            "name": "publicId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "example": 10016,
-              "type": "integer"
             }
           }
         ],
@@ -4736,9 +4731,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
           }
         },
         "summary": "Armas mais usadas (abates e headshots por lado); num Perfil privado, só a própria Conta as vê",
@@ -4749,16 +4741,8 @@
     },
     "/api/profiles/{publicId}/sessions": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getProfileSessions",
         "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "description": "Quantas Sessões (1 a 30); padrão 10",
-            "schema": {}
-          },
           {
             "name": "publicId",
             "required": true,
@@ -4767,6 +4751,13 @@
               "example": 10016,
               "type": "integer"
             }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Quantas Sessões (1 a 30); padrão 10",
+            "schema": {}
           }
         ],
         "responses": {
@@ -4808,12 +4799,9 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
           }
         },
-        "summary": "Sessões de jogo recentes (Modo, mapa, dia e duração); horário exato e \"em andamento\" só para a própria Conta e amigos",
+        "summary": "Sessões de jogo recentes (Modo, mapa, dia e duração); horário exato e \"em andamento\" só para a própria Conta",
         "tags": [
           "profiles"
         ]
@@ -7041,6 +7029,7 @@
             "$ref": "#/components/schemas/SteamId64"
           },
           "team": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -7066,7 +7055,6 @@
         },
         "required": [
           "steamId",
-          "team",
           "kills",
           "deaths",
           "score"
@@ -8968,6 +8956,7 @@
             "type": "boolean"
           },
           "killerSteamId": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -8979,6 +8968,7 @@
             "type": "boolean"
           },
           "victimSteamId": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -8990,6 +8980,7 @@
             "type": "boolean"
           },
           "assisterSteamId": {
+            "default": null,
             "nullable": true,
             "allOf": [
               {
@@ -9023,11 +9014,8 @@
           "id",
           "at",
           "warmup",
-          "killerSteamId",
           "killerIsBot",
-          "victimSteamId",
           "victimIsBot",
-          "assisterSteamId",
           "assisterIsBot",
           "headshot",
           "weapon",
@@ -10667,12 +10655,14 @@
             "$ref": "#/components/schemas/ReportReason"
           },
           "round": {
+            "default": null,
             "nullable": true,
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
           },
           "map": {
+            "default": null,
             "nullable": true,
             "type": "string",
             "maxLength": 64
@@ -10681,9 +10671,7 @@
         "required": [
           "reporterSteamId",
           "targetSteamId",
-          "reason",
-          "round",
-          "map"
+          "reason"
         ]
       },
       "ReportResult": {

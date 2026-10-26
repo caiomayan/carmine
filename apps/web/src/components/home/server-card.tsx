@@ -1,6 +1,7 @@
 'use client';
 
 import type { LiveServer, PlayingFriend } from '@carmine/contracts';
+import Link from 'next/link';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { type CSSProperties, useMemo } from 'react';
 import { ConnectHelp, useConnect } from '@/components/servers/connect';
@@ -12,6 +13,7 @@ import { mapVars } from '@/lib/home/map-colors';
 import { isLiveServer } from '@/lib/home/state';
 import { serverAnchor, serverFullLabel, serverLabel, steamConnectUrl } from '@/lib/live-servers';
 import { mapDisplayName, mapSlug } from '@/lib/map-art';
+import { serverHref } from '@/lib/server-page/view';
 import { cn } from '@/lib/utils';
 import { DynamicButton } from './dynamic-button';
 import { PlayerAvatar } from './player-avatar';
@@ -136,7 +138,13 @@ export function ServerCard({
                   : 'v-sign text-[40px]',
               )}
             >
-              {serverLabel(server)}
+              <Link
+                href={serverHref(server.id) as never}
+                data-testid="server-link"
+                className="rounded-xs underline decoration-transparent decoration-2 underline-offset-[5px] transition-[text-decoration-color] duration-(--dur-fast) ease-std hover:decoration-current focus-visible:decoration-current"
+              >
+                {serverLabel(server)}
+              </Link>
             </h3>
             <p className="flex flex-wrap items-center gap-x-2 text-body-sm text-(--on-map-muted)">
               {server.code ? (

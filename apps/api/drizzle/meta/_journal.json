@@ -99,6 +99,13 @@
       "when": 1792554013062,
       "tag": "0013_u1b_nomes_ficticios",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793051035970,
+      "tag": "0014_s12b_estatisticas_detalhadas",
+      "breakpoints": true
     }
   ]
 }

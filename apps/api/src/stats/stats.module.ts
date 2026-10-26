@@ -7,9 +7,12 @@ import { RankingLeaderWatch } from '../activity/ranking-leader-watch.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
+import { LiveServers } from '../live-servers/live-servers.js';
+import { LiveServersModule } from '../live-servers/live-servers.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { GameEventIngest } from './game-event-ingest.js';
 import { GameEventsController } from './game-events.controller.js';
+import { ProfileDetailReader } from './profile-detail.js';
 import { ProfileStatsController } from './profile-stats.controller.js';
 import { ProfileStatsReader } from './profile-stats.js';
 import { RankingController } from './ranking.controller.js';
@@ -20,7 +23,7 @@ import { WeeklyRanking } from './weekly-ranking.js';
 
 /** Eventos do jogo e Estatísticas das Contas (S12). */
 @Module({
-  imports: [GameServersModule, AccountsModule, ActivityModule],
+  imports: [GameServersModule, AccountsModule, ActivityModule, LiveServersModule],
   controllers: [
     GameEventsController,
     ProfileStatsController,
@@ -37,6 +40,12 @@ import { WeeklyRanking } from './weekly-ranking.js';
       provide: ProfileStatsReader,
       inject: [DATABASE],
       useFactory: (db: Database) => new ProfileStatsReader(db),
+    },
+    {
+      // O detalhe do Perfil (S12b); a presença decide o "em andamento" da própria Conta.
+      provide: ProfileDetailReader,
+      inject: [DATABASE, LiveServers],
+      useFactory: (db: Database, live: LiveServers) => new ProfileDetailReader(db, live),
     },
     {
       // A home pede a cada visita: poucos segundos na memória bastam (o número só se mexe com os lotes de eventos).
