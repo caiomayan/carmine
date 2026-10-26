@@ -24,7 +24,8 @@ const isRecord = (value: unknown): value is Json =>
 const isString = (value: unknown): value is string => typeof value === 'string';
 const isNullableString = (value: unknown): value is string | null =>
   value === null || typeof value === 'string';
-const isCount = (value: unknown): value is number => Number.isInteger(value) && (value as number) >= 0;
+const isCount = (value: unknown): value is number =>
+  Number.isInteger(value) && (value as number) >= 0;
 
 const MODES = new Set(['retake', 'deathmatch']);
 const STATES = new Set(['online', 'full', 'offline']);

@@ -44,7 +44,10 @@ describe('parseLiveServerList concorda com liveServerListSchema', () => {
     ['vazia', list([], { summary: { online: 0, players: 0 } })],
     ['com placar', list([server({ match: { round: 3, ctScore: 1, tScore: 1, warmup: false } })])],
     ['com match nulo', list([server({ match: null })])],
-    ['offline sem mapa', list([server({ state: 'offline', map: null, players: 0, lastMap: 'de_nuke' })])],
+    [
+      'offline sem mapa',
+      list([server({ state: 'offline', map: null, players: 0, lastMap: 'de_nuke' })]),
+    ],
     ['sem lastMap', list([server({ lastMap: undefined })])],
     ['estado desconhecido', list([server({ state: 'dormindo' })])],
     ['Modo desconhecido', list([server({ mode: '5v5' })])],
@@ -94,7 +97,9 @@ describe('parseFriendsPlaying concorda com friendsPlayingSchema', () => {
   ];
   for (const [label, value] of cases) {
     it(label, () => {
-      expect(parseFriendsPlaying(value) !== null).toBe(friendsPlayingSchema.safeParse(value).success);
+      expect(parseFriendsPlaying(value) !== null).toBe(
+        friendsPlayingSchema.safeParse(value).success,
+      );
     });
   }
 
@@ -132,7 +137,9 @@ describe('parseProfilePlaying concorda com profilePlayingSchema', () => {
   for (const [label, value] of cases) {
     it(label, () => {
       const plain = JSON.parse(JSON.stringify(value));
-      expect(parseProfilePlaying(plain) !== null).toBe(profilePlayingSchema.safeParse(plain).success);
+      expect(parseProfilePlaying(plain) !== null).toBe(
+        profilePlayingSchema.safeParse(plain).success,
+      );
     });
   }
 
