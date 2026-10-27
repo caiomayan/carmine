@@ -3,6 +3,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { AccountsModule } from './accounts/accounts.module.js';
 import { ActivityModule } from './activity/activity.module.js';
 import { AlertsModule } from './alerts/alerts.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AvatarModerationModule } from './avatars/avatar-moderation.module.js';
 import { AvatarsModule } from './avatars/avatars.module.js';
@@ -62,6 +63,7 @@ export class AppModule {
         AvatarModerationModule,
         PaymentsModule.forRoot(config),
         VipHoldModule,
+        AnalyticsModule,
       ],
     };
   }

@@ -120,6 +120,13 @@
       "when": 1793059620736,
       "tag": "0016_s14_pagamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793065082212,
+      "tag": "0017_a1_analytics",
+      "breakpoints": true
     }
   ]
 }

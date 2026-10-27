@@ -19,3 +19,4 @@ O web só publica os quatro arquivos da tabela acima (lista fixa em `apps/web/sr
 |---|---|---|
 | `rascunho-a1-analytics.md` | A1 (analytics de produto, PostHog) e, o bloco final, a abertura (GA4) | `politica-de-privacidade.md` |
 | `rascunho-foto-de-perfil.md` | A foto de perfil (F3 do web e as variáveis `R2_MEDIA_*` na VM), com a revisão do advogado | `politica-de-privacidade.md`, `regras-de-conduta.md` e `termos-de-uso.md` |
+| `rascunho-s14-vip-e-pagamentos.md` | A cobrança (`PAYMENTS_ENABLED=true`) e a guarda de 30 dias dos Itens VIP (`VIP_HOLD_ENABLED=true`), no mesmo dia, depois da revisão do advogado | `termos-de-uso.md`, `politica-de-reembolso.md` e `politica-de-privacidade.md` |

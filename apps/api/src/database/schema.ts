@@ -96,6 +96,11 @@ export const accounts = pgTable(
     avatarSource: avatarSource().notNull().default('steam'),
     /** Envio de foto bloqueado até aqui (reincidente, ADR 0022); só a Staff vê. */
     avatarUploadBlockedUntil: timestamptz(),
+    /**
+     * A pessoa desligou a chave "Participar da análise de uso" (A1, ADR 0021): a API não envia nenhum evento
+     * dela. Padrão `false` (a Conta participa até desligar, decisão do dono).
+     */
+    analyticsOptOut: boolean().notNull().default(false),
     /** Nulo enquanto a Conta não foi reivindicada por login Steam no site (S03). */
     claimedAt: timestamptz(),
     /** Nulos enquanto a Conta nunca conectou num Servidor Carmine (criada pelo site, S03). */

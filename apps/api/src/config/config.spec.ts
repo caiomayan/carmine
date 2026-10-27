@@ -46,6 +46,7 @@ describe('loadConfig', () => {
       discordMissing: [],
       media: null,
       mediaMissing: [],
+      analytics: { mode: 'off', environment: 'producao', posthog: null },
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
@@ -360,6 +361,56 @@ describe('loadConfig', () => {
         expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'production' })).toThrow(recusado);
         expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'Production' })).toThrow(recusado);
       });
+    });
+  });
+
+  describe('analytics (A1)', () => {
+    it('sem a chave do PostHog está desligado, como o Discord', () => {
+      expect(loadConfig(validEnv).analytics).toEqual({
+        mode: 'off',
+        environment: 'producao',
+        posthog: null,
+      });
+    });
+
+    it('com a chave liga o PostHog da região UE; a exclusão de pessoas pede a chave pessoal e o projeto', () => {
+      const on = loadConfig({ ...validEnv, POSTHOG_API_KEY: 'phc_x' }).analytics;
+      expect(on).toMatchObject({
+        mode: 'posthog',
+        posthog: {
+          apiKey: 'phc_x',
+          host: 'https://eu.i.posthog.com',
+          apiHost: 'https://eu.posthog.com',
+          erasure: null,
+          flushMs: 5000,
+        },
+      });
+
+      const full = loadConfig({
+        ...validEnv,
+        POSTHOG_API_KEY: 'phc_x',
+        POSTHOG_PERSONAL_API_KEY: 'phx_y',
+        POSTHOG_PROJECT_ID: '99',
+        POSTHOG_HOST: 'https://eu.i.posthog.com/',
+      }).analytics;
+      expect(full.posthog?.erasure).toEqual({ personalApiKey: 'phx_y', projectId: '99' });
+      expect(full.posthog?.host).toBe('https://eu.i.posthog.com');
+    });
+
+    it('ANALYTICS_DRIVER=log (a homologação) só registra e ganha da chave: nada sai de lá', () => {
+      const config = loadConfig({
+        ...validEnv,
+        ANALYTICS_DRIVER: 'log',
+        POSTHOG_API_KEY: 'phc_x',
+        ANALYTICS_ENVIRONMENT: 'staging',
+      });
+
+      expect(config.analytics).toEqual({ mode: 'log', environment: 'staging', posthog: null });
+    });
+
+    it('recusa um driver ou um ambiente desconhecido', () => {
+      expect(() => loadConfig({ ...validEnv, ANALYTICS_DRIVER: 'sentry' })).toThrow();
+      expect(() => loadConfig({ ...validEnv, ANALYTICS_ENVIRONMENT: 'dev' })).toThrow();
     });
   });
 });

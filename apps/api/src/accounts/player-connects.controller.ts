@@ -3,6 +3,7 @@ import {
   type PlayerConnectResult,
   playerConnectResultSchema,
   playerConnectSchema,
+  vipNoticeAt,
 } from '@carmine/contracts';
 import { Body, Controller, HttpCode, HttpStatus, Inject, Post, UseGuards } from '@nestjs/common';
 import {
@@ -17,6 +18,7 @@ import { ServerKeyGuard } from '../game-servers/server-key.guard.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { VipPeriods } from '../vip/vip-periods.js';
+import { toVipStatus } from '../vip/vip-status.js';
 import { AccountsService } from './accounts.service.js';
 
 @ApiTags('server')
@@ -51,6 +53,12 @@ export class PlayerConnectsController {
       this.vip.statusOf(accountId),
       this.sanctions.forGame([connect.steamId]),
     ]);
-    return { ...account, isVip: vip.active, sanctions };
+    return {
+      ...account,
+      isVip: vip.active,
+      vipNotice: vipNoticeAt(toVipStatus(vip), new Date()),
+      vipEndsAt: vip.endsAt?.toISOString() ?? null,
+      sanctions,
+    };
   }
 }

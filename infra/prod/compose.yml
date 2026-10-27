@@ -42,6 +42,10 @@ x-api-env: &api-env
   MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
   CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-}
   CLOUDFLARE_PURGE_TOKEN: ${CLOUDFLARE_PURGE_TOKEN:-}
+  # Analytics de produto (A1, ADR 0021): vazio desliga; região UE (os hosts padrão da API).
+  POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
+  POSTHOG_PERSONAL_API_KEY: ${POSTHOG_PERSONAL_API_KEY:-}
+  POSTHOG_PROJECT_ID: ${POSTHOG_PROJECT_ID:-}
   # Discord integrado (S15): vazio desliga (docs/operacao/discord.md).
   DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
   DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}

@@ -368,6 +368,74 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/vip": {
+      "get": {
+        "operationId": "getPlayerVip",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VIP ativo e até quando, ou quando acabou, e o aviso do fim a mostrar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerVip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "O VIP da Conta agora (para o !vip do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/server/players/{steamId}/chat-preference": {
       "put": {
         "operationId": "setPlayerChatPreference",
@@ -6918,6 +6986,123 @@
           "staff"
         ]
       }
+    },
+    "/api/me/analytics": {
+      "get": {
+        "operationId": "getAnalyticsPreference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A escolha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Se a Conta participa da análise de uso (padrão: sim) e se a análise está ligada neste ambiente",
+        "tags": [
+          "me"
+        ]
+      },
+      "put": {
+        "operationId": "setAnalyticsPreference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPreferenceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A escolha nova",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Liga ou desliga a participação na análise de uso. Desligada, nenhum evento da Conta é enviado (vale na hora)",
+        "tags": [
+          "me"
+        ]
+      }
     }
   },
   "info": {
@@ -7161,6 +7346,20 @@
           "isVip": {
             "type": "boolean"
           },
+          "vipNotice": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VipNotice"
+              }
+            ]
+          },
+          "vipEndsAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
           "sanctions": {
             "type": "array",
             "items": {
@@ -7176,10 +7375,20 @@
           "displayName",
           "isFirstConnect",
           "isVip",
+          "vipNotice",
+          "vipEndsAt",
           "sanctions",
           "chatHidden"
         ],
         "additionalProperties": false
+      },
+      "VipNotice": {
+        "type": "string",
+        "enum": [
+          "ending_soon",
+          "ending_today",
+          "ended_today"
+        ]
       },
       "GameSanction": {
         "type": "object",
@@ -7242,6 +7451,41 @@
           "doxxing",
           "ban_evasion"
         ]
+      },
+      "PlayerVip": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "endsAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "notice": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VipNotice"
+              }
+            ]
+          }
+        },
+        "required": [
+          "active",
+          "endsAt",
+          "endedAt",
+          "notice"
+        ],
+        "additionalProperties": false
       },
       "PlayerChatPreference": {
         "type": "object",
@@ -13914,6 +14158,33 @@
           "publicId"
         ],
         "additionalProperties": false
+      },
+      "AnalyticsPreference": {
+        "type": "object",
+        "properties": {
+          "participate": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "participate",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "AnalyticsPreferenceInput": {
+        "type": "object",
+        "properties": {
+          "participate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "participate"
+        ]
       }
     }
   }
