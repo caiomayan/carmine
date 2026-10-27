@@ -10,7 +10,7 @@
 #   - `data` é interna (sem rota para fora): Postgres e Valkey nunca falam com a internet.
 #   - A homologação cede à produção: `cpu_shares` baixo (só perde CPU quando há disputa) e
 #     `oom_score_adj: 500` (se a memória da VM acabar, o kernel mata a homologação primeiro).
-#   - Limites de memória: 2,2 GB em regime e 2,6 GB no pico (migração ou seed), somados aos 6,8/7,3 GB
+#   - Limites de memória: 2,3 GB em regime e 2,7 GB no pico (migração ou seed), somados aos 6,8/7,3 GB
 #     da produção (infra/prod/compose.yml) dos 12 GB da VM. O deploy ainda recusa subir com pouca
 #     memória livre (bin/deploy.sh).
 #   - Discord, alertas, Sentry e backup ficam vazios/ausentes: nada sai da homologação para ninguém.
@@ -51,6 +51,18 @@ x-demo-env: &demo-env
   DEMO_SEED_SECRET: ${DEMO_SEED_SECRET:-}
   DEMO_OWNER_STEAM_ID: ${DEMO_OWNER_STEAM_ID:-}
 
+# A foto de perfil na homologação: um R2 de mentira em disco (serviço `media`), sem conta nem bucket da
+# Cloudflare. A API fala com ele pela rede interna; o navegador pega a foto em dev.stcarmine.com/avatars/...
+# (a mesma forma de img.stcarmine.com em produção), que o túnel manda para a porta pública do `media`.
+# A chave é só um cinto: a rede é interna e nada aqui é segredo. A produção usa o R2 de verdade.
+x-media-env: &media-env
+  R2_MEDIA_ENDPOINT: http://media:9000
+  R2_MEDIA_ACCESS_KEY_ID: carmine-hml
+  R2_MEDIA_SECRET_ACCESS_KEY: homologacao
+  R2_MEDIA_PUBLIC_BUCKET: carmine-media-hml
+  R2_MEDIA_PRIVATE_BUCKET: carmine-media-removidas-hml
+  MEDIA_PUBLIC_URL: https://dev.stcarmine.com
+
 x-api-image: &api-image ghcr.io/caiomayan/carmine-api:${IMAGE_TAG:?defina IMAGE_TAG (sha-<commit>)}
 
 services:
@@ -84,6 +96,9 @@ services:
       # As vitrines /dev/* (componentes, protótipos de tela) só existem aqui e no dev local: lido em tempo de
       # execução, nunca no build, e a produção (infra/prod/compose.yml) não tem esta variável.
       CARMINE_UI_GALLERY: "1"
+      # A foto de perfil está ligada aqui (a mídia fica no serviço `media`, no mesmo host): a mesma variável da
+      # API libera as imagens no CSP e liga o convite do Perfil.
+      MEDIA_PUBLIC_URL: https://dev.stcarmine.com
       SENTRY_ENVIRONMENT: staging
       SENTRY_RELEASE: ${IMAGE_TAG}
     networks:
@@ -99,7 +114,8 @@ services:
 
   api:
     image: *api-image
-    environment: *api-env
+    environment:
+      <<: [*api-env, *media-env]
     networks:
       edge: {}
       data: {}
@@ -107,6 +123,8 @@ services:
       migrate:
         condition: service_completed_successfully
       valkey:
+        condition: service_healthy
+      media:
         condition: service_healthy
     mem_limit: 640m
     <<: *polite
@@ -126,6 +144,38 @@ services:
     mem_limit: 384m
     <<: *polite
     restart: "no"
+    logging: *logging
+
+  # O armazenamento de mídia de mentira (apps/api/src/demo/demo-media.ts): a imagem da API com o comando `media`,
+  # que só roda com a trava da homologação (CARMINE_DEMO, PUBLIC_WEB_URL de homologação, SENTRY_ENVIRONMENT).
+  # Duas portas: 9000 é o S3 da API (interna, com a chave) e 8080 é a pública, só GET das fotos no ar, que o túnel
+  # expõe em /avatars/. As fotos ficam no volume `media-data` (sobrevivem aos deploys; o `reset` as apaga).
+  media:
+    image: *api-image
+    command: ["node", "dist/demo/demo.cli.js", "media"]
+    environment:
+      CARMINE_DEMO: homologacao
+      PUBLIC_WEB_URL: https://dev.stcarmine.com
+      SENTRY_ENVIRONMENT: staging
+      NODE_OPTIONS: --max-old-space-size=48
+      MEDIA_ROOT: /media-data
+      R2_MEDIA_ACCESS_KEY_ID: carmine-hml
+      R2_MEDIA_PUBLIC_BUCKET: carmine-media-hml
+      R2_MEDIA_PRIVATE_BUCKET: carmine-media-removidas-hml
+    volumes:
+      - media-data:/media-data
+    # A imagem confere a porta 3333 da API; aqui vale a porta pública.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8080/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      edge: {}
+    mem_limit: 96m
+    <<: *polite
+    restart: unless-stopped
     logging: *logging
 
   postgres:
@@ -259,3 +309,4 @@ networks:
 volumes:
   postgres-data:
   valkey-data:
+  media-data:
