@@ -207,6 +207,7 @@ test.describe('Configurações', () => {
     const nav = page.getByRole('navigation', { name: 'Seções das configurações' });
     await expect(nav.getByRole('link')).toHaveText([
       'Perfil',
+      'Compras',
       'Conexões',
       'Aparência',
       'Dados e conta',

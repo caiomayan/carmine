@@ -69,6 +69,11 @@ export default defineConfig({
         HEADER_PREVIEWS_CACHE_TTL_SECONDS: '0',
         // E a faixa de atividade ao vivo: sem cache, o E2E vê o evento na hora.
         ACTIVITY_CACHE_TTL_SECONDS: '0',
+        // Pagamentos (S14): a cobrança ligada com o provedor FALSO (a API só o aceita em localhost ou
+        // homologação). A chave é só do E2E (32 bytes em base64): cifra o CPF do Pagador de mentira.
+        PAYMENTS_ENABLED: 'true',
+        PAYMENTS_PROVIDER: 'fake',
+        PAYMENTS_DATA_KEY: 'ZTJlLWNhcm1pbmUtc2VtLXNlZ3JlZG8tMzItYnl0ZXM=',
         // Todo pedido do E2E chega à API do mesmo IP (o Next repassa /api/*): sem limite real.
         RATE_LIMIT_LOGIN_PER_MINUTE: '100000',
         RATE_LIMIT_PUBLIC_PER_MINUTE: '100000',

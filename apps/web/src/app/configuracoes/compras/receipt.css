@@ -1,0 +1,49 @@
+/* O recibo (S14b): na tela, um cartão da Liberty; no papel (ou "salvar em PDF"), só o texto, preto no branco. */
+
+.receipt {
+  max-width: 640px;
+}
+
+.receipt-line {
+  display: grid;
+  grid-template-columns: minmax(9rem, 12rem) minmax(0, 1fr);
+  gap: 0.25rem 1rem;
+}
+@media (max-width: 480px) {
+  .receipt-line {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media print {
+  /* Fora do papel: o cabeçalho e o rodapé do site, a navegação das Configurações e os botões. */
+  header,
+  footer,
+  nav,
+  [data-print-hide] {
+    display: none !important;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .v-ambient {
+    display: none !important;
+  }
+  .receipt {
+    max-width: none;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+  .receipt * {
+    color: #000 !important;
+    background: transparent !important;
+  }
+  @page {
+    margin: 18mm;
+  }
+}
