@@ -116,6 +116,8 @@ describe('Eventos de analytics: login e Inventário', () => {
         payload: { steamId, steamName: 'coldzera' },
       });
       expect(connect.statusCode, connect.body).toBe(200);
+      // O connect mede a própria Conta (jogo), sem esperar a resposta: espera chegar para não cair no login.
+      await events('conta_criada');
       sent.length = 0;
 
       await loginViaSteam(new Browser(t.app), openId, steamId, '/inventario');
