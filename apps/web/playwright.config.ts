@@ -81,6 +81,10 @@ export default defineConfig({
         RATE_LIMIT_EQUIPPED_PER_MINUTE: '100000',
         RATE_LIMIT_MUTATIONS_PER_MINUTE: '100000',
         RATE_LIMIT_SERVER_PER_MINUTE: '100000',
+        // Pagamentos (S14): o E2E compra com o provedor FALSO (que só roda em localhost). A chave de dados é só do teste.
+        PAYMENTS_ENABLED: 'true',
+        PAYMENTS_PROVIDER: 'fake',
+        PAYMENTS_DATA_KEY: Buffer.alloc(32, 7).toString('base64'),
       },
       timeout: 60_000,
     },
