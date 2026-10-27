@@ -18,6 +18,7 @@ export * from './ranking.js';
 export * from './reports.js';
 export * from './server-detail.js';
 export * from './staff.js';
+export * from './staff-payments.js';
 export * from './stats.js';
 export * from './stats-detail.js';
 export * from './steam.js';

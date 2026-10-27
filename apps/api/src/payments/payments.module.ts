@@ -4,6 +4,8 @@ import { AccountsModule } from '../accounts/accounts.module.js';
 import { DiscordWebhook } from '../alerts/discord-webhook.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
+import { ModerationModule } from '../moderation/moderation.module.js';
+import { StaffGuard } from '../staff/staff.guard.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { VipModule } from '../vip/vip.module.js';
 import { VipCompensation } from '../vip/vip-compensation.js';
@@ -20,6 +22,8 @@ import {
 } from './payments.controller.js';
 import { Payments } from './payments.js';
 import { PaymentsJob } from './payments-job.js';
+import { StaffPaymentsController } from './staff-payments.controller.js';
+import { StaffPayments } from './staff-payments.js';
 
 export const PAYMENTS_GATEWAY = Symbol('PAYMENTS_GATEWAY');
 
@@ -34,14 +38,16 @@ export class PaymentsModule {
     const fake = config.payments.provider === 'fake';
     return {
       module: PaymentsModule,
-      imports: [VipModule, VipHoldModule, AccountsModule],
+      imports: [VipModule, VipHoldModule, AccountsModule, ModerationModule],
       controllers: [
         VipCatalogController,
         PurchasesController,
         WebhooksController,
+        StaffPaymentsController,
         ...(fake ? [DevPaymentsController] : []),
       ],
       providers: [
+        StaffGuard,
         {
           provide: PAYMENTS_GATEWAY,
           inject: [VALKEY, APP_CONFIG],
@@ -101,6 +107,13 @@ export class PaymentsModule {
             const alerts = new DiscordWebhook(appConfig.alerts.discordWebhookUrl);
             return new VipCompensation(db, vip, (message) => alerts.send(`🕒 ${message}`));
           },
+        },
+        {
+          // O painel da Staff nos pagamentos (S14): faz o que o CLI `payments ...` faz.
+          provide: StaffPayments,
+          inject: [DATABASE, Payments, VipCompensation],
+          useFactory: (db: Database, payments: Payments, compensation: VipCompensation) =>
+            new StaffPayments(db, payments, compensation),
         },
         {
           provide: PaymentsJob,
