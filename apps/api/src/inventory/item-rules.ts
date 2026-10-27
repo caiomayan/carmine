@@ -39,6 +39,9 @@ const TIPO: Record<string, 'arma' | 'faca' | 'luvas' | 'agente' | 'music_kit'> =
   musickit: 'music_kit',
 };
 
+/** O tipo do plano para o `type` do catálogo da cs2-lib; `null` se não é um Item do Inventário. */
+export const itemKindOf = (type: string) => TIPO[type] ?? null;
+
 /** As propriedades de Item que `item_adicionado` e `item_editado` levam (plano de eventos, A1). */
 export interface ItemEventProps {
   tipo: 'arma' | 'faca' | 'luvas' | 'agente' | 'music_kit';
