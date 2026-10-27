@@ -1261,6 +1261,77 @@
       }
     }
   },
+  "vip": {
+    "metaTitle": "VIP",
+    "metaDescription": "Vaga reservada nos servidores lotados, mais Presets e os Itens exclusivos do Loadout. Pagamento único, sem renovação.",
+    "eyebrow": "VIP",
+    "title": "Jogue com o Loadout completo.",
+    "subtitle": "Vaga reservada nos servidores lotados, mais Presets e os Itens exclusivos. Pagamento único, sem renovação automática.",
+    "sandbox": {
+      "title": "Ambiente de teste",
+      "body": "O pagamento aqui é de mentira: ninguém é cobrado e nada do que você fizer vale fora desta homologação."
+    },
+    "yours": {
+      "active": "Seu VIP vai até {date}.",
+      "activeBody": "Comprar outro Pacote soma os dias ao fim atual.",
+      "ended": "Seu VIP acabou em {date}.",
+      "endedBody": "Os Itens VIP continuam no seu Inventário e voltam ao jogo quando você comprar um Pacote."
+    },
+    "packages": {
+      "title": "Escolha um Pacote",
+      "subtitle": "Pagamento único: sem renovação, nada é cobrado de novo. Os Pacotes se somam.",
+      "listLabel": "Pacotes VIP",
+      "months": "{months, plural, one {# mês} other {# meses}}",
+      "days": "{days} dias de VIP",
+      "perMonth": "{price} por mês",
+      "save": "Economize {percent}%",
+      "best": "Melhor preço",
+      "buy": "Comprar",
+      "buyAria": "Comprar o Pacote de {months, plural, one {# mês} other {# meses}}, por {price}",
+      "soon": "Em breve",
+      "signIn": "Entrar para comprar",
+      "unavailable": "Não deu para carregar os Pacotes agora",
+      "unavailableBody": "Tente de novo em instantes. Nada foi cobrado."
+    },
+    "notices": {
+      "soon": "A compra do VIP ainda não abriu. Quando abrir, os Pacotes já aparecem aqui prontos para comprar.",
+      "banned": "Contas com ban permanente não compram VIP.",
+      "purchases_blocked": "As compras desta Conta estão bloqueadas. Fale com a Staff no Discord.",
+      "purchase_in_progress": "Você tem um pagamento em análise. Espere a resposta antes de comprar de novo.",
+      "daily_limit": "Você chegou ao limite de compras de hoje. Tente de novo amanhã.",
+      "myPurchases": "Ver minhas compras"
+    },
+    "compare": {
+      "title": "O que muda com o VIP",
+      "free": "Plano grátis",
+      "vip": "VIP",
+      "freeItems": {
+        "skins": "Inventário livre: skins de armas, facas e luvas",
+        "attachments": "Stickers e charms nas suas skins",
+        "preset": "{count, plural, one {# Preset de Loadout (o principal)} other {# Presets de Loadout}}",
+        "servers": "Os servidores, o Ranking e o Perfil"
+      },
+      "vipItems": {
+        "all": "Tudo do plano grátis",
+        "reserved": "Vaga reservada nos servidores lotados",
+        "presets": "Até {count} Presets de Loadout",
+        "agents": "Agentes e music kits",
+        "attributes": "StatTrak™ e nametag nas skins",
+        "discord": "O cargo VIP no nosso Discord"
+      },
+      "reservedNote": "No Retake, a vaga vem da saída de um jogador sem VIP; no Deathmatch, de vagas extras."
+    },
+    "how": {
+      "title": "Como funciona",
+      "once": "Pagamento único, sem renovação automática: nada é cobrado de novo sem você pagar outro Pacote.",
+      "starts": "O VIP começa quando o pagamento é confirmado, normalmente em segundos. Pix ou cartão.",
+      "payer": "Quem paga precisa ser maior de 18 anos. Pode ser outra pessoa, como pai, mãe ou responsável, comprando para a Conta de um jogador.",
+      "refund": "Desistiu? Em até {days} dias você recebe o valor de volta.",
+      "refundLink": "Política de Reembolso",
+      "ban": "Ban permanente encerra o VIP, sem reembolso dos dias restantes.",
+      "termsLink": "Termos de Uso"
+    }
+  },
   "firstSteps": {
     "title": "Boas-vindas à Carmine, {name}",
     "intro": "Sua Conta é a mesma dos servidores: o que você monta aqui vai para o jogo.",
