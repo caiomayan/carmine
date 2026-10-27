@@ -1,13 +1,24 @@
 import type { VipStatus } from '@carmine/contracts';
 import { vipNoticeAt } from '@carmine/contracts/rules';
+import type { Route } from 'next';
+import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { cn } from '@/lib/utils';
 
 /**
  * Aviso do fim do Período VIP (S05): 3 dias antes, no dia do fim e no dia em que acabou. Sóbrio:
- * a cor de contexto do VIP fica só no ponto; o texto diz o que muda no jogo.
+ * a cor de contexto do VIP fica só no ponto; o texto diz o que muda no jogo. Com `renewHref`, o aviso leva aos Pacotes
+ * (S14b): quem está perto do fim, ou acabou de perder o VIP, vê de onde renovar.
  */
-export async function VipNotice({ vip, className }: { vip: VipStatus; className?: string }) {
+export async function VipNotice({
+  vip,
+  className,
+  renewHref,
+}: {
+  vip: VipStatus;
+  className?: string;
+  renewHref?: string;
+}) {
   const notice = vipNoticeAt(vip, new Date());
   if (!notice) return null;
   const t = await getTranslations('loadout.vip');
@@ -33,6 +44,19 @@ export async function VipNotice({ vip, className }: { vip: VipStatus; className?
                 time: format.dateTime(endsAt, { hour: '2-digit', minute: '2-digit' }),
               })
             : t('ended_today')}
+        {renewHref ? (
+          <>
+            {' '}
+            <Link
+              href={renewHref as Route}
+              prefetch={false}
+              data-testid="vip-notice-renew"
+              className="font-semibold underline underline-offset-4"
+            >
+              {t('renew')}
+            </Link>
+          </>
+        ) : null}
       </span>
     </p>
   );
