@@ -304,9 +304,62 @@ describe('loadConfig', () => {
           ...validEnv,
           ...media,
           NODE_ENV: 'production',
+          R2_MEDIA_ENDPOINT: 'http://media:9000',
+        }),
+      ).toThrow(/R2_MEDIA_ENDPOINT: deve usar https em produção/);
+      expect(() =>
+        loadConfig({
+          ...validEnv,
+          ...media,
+          NODE_ENV: 'production',
           MEDIA_PUBLIC_URL: 'http://img.stcarmine.com',
         }),
       ).toThrow(/MEDIA_PUBLIC_URL: deve usar https em produção/);
+    });
+
+    describe('o R2 de mentira da homologação (http pela rede interna)', () => {
+      const hml = {
+        ...validEnv,
+        ...media,
+        NODE_ENV: 'production',
+        R2_MEDIA_ENDPOINT: 'http://media:9000',
+        MEDIA_PUBLIC_URL: 'https://dev.stcarmine.com',
+        PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
+        SENTRY_ENVIRONMENT: 'staging',
+        CARMINE_DEMO: 'homologacao',
+      };
+
+      it('com a trava da homologação, o endpoint http é aceito em NODE_ENV=production', () => {
+        expect(loadConfig(hml).media).toMatchObject({
+          endpoint: 'http://media:9000',
+          publicUrl: 'https://dev.stcarmine.com',
+        });
+      });
+
+      it('a origem pública continua exigindo https mesmo na homologação', () => {
+        expect(() => loadConfig({ ...hml, MEDIA_PUBLIC_URL: 'http://dev.stcarmine.com' })).toThrow(
+          /MEDIA_PUBLIC_URL: deve usar https em produção/,
+        );
+      });
+
+      it('em produção nunca: faltando qualquer uma das três chaves da trava, o http é recusado', () => {
+        const recusado = /R2_MEDIA_ENDPOINT: deve usar https em produção/;
+        // Sem a variável da homologação.
+        expect(() => loadConfig({ ...hml, CARMINE_DEMO: '' })).toThrow(recusado);
+        // Com um valor que não é o da homologação.
+        expect(() => loadConfig({ ...hml, CARMINE_DEMO: 'sim' })).toThrow(recusado);
+        // O endereço de produção, mesmo com a variável (alguém copiou o compose da homologação).
+        expect(() =>
+          loadConfig({
+            ...hml,
+            PUBLIC_WEB_URL: 'https://stcarmine.com',
+            MEDIA_PUBLIC_URL: 'https://img.stcarmine.com',
+          }),
+        ).toThrow(recusado);
+        // O ambiente do Sentry de produção.
+        expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'production' })).toThrow(recusado);
+        expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'Production' })).toThrow(recusado);
+      });
     });
   });
 });
