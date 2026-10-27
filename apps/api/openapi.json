@@ -4133,7 +4133,10 @@
                 "ranking_entry_remove",
                 "report_archive",
                 "avatar_keep",
-                "avatar_remove"
+                "avatar_remove",
+                "payment_refund",
+                "purchase_unblock",
+                "vip_compensation"
               ],
               "type": "string"
             }
@@ -5899,6 +5902,452 @@
         "summary": "A imagem (WebP, 512 px) de uma foto de perfil, no ar, suspensa ou guardada em privado, só para a Staff",
         "tags": [
           "staff"
+        ]
+      }
+    },
+    "/api/vip/packages": {
+      "get": {
+        "operationId": "getVipPackages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VipPackages"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Os Pacotes VIP, os preços e se a compra está aberta (a cobrança nasce desligada)",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/me/purchases": {
+      "get": {
+        "operationId": "listPurchases",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "As compras",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "As compras de VIP da Conta, da mais nova",
+        "tags": [
+          "vip"
+        ]
+      },
+      "post": {
+        "operationId": "createPurchase",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Repetir a chamada com a mesma chave devolve a mesma compra (duplo clique)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchase"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "A compra criada (ou a pendente igual)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Ban permanente (banned) ou compras suspensas (purchases_blocked), ou CSRF",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Há um pagamento em análise (purchase_in_progress)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O VIP passaria do limite à frente (vip_horizon)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Muitas compras hoje (daily_limit)\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O provedor não respondeu (provider_unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A cobrança está desligada (payments_disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Compra um Pacote VIP para a Conta da sessão (Pix ou cartão). Devolve a compra pendente com o Pix ou o endereço do checkout",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/me/purchases/{id}": {
+      "get": {
+        "operationId": "getPurchase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A compra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "Compra não encontrada (not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Uma compra; a pendente pergunta ao provedor, sem esperar o webhook",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/me/purchases/{id}/refund": {
+      "post": {
+        "operationId": "refundPurchase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A compra, já reembolsada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "Compra não encontrada (not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Fora do prazo ou não aprovada (refund_unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O provedor não confirmou o estorno (provider_unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Direito de arrependimento: reembolso integral em até 7 dias da aprovação, sem motivo; os dias saem do VIP",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/webhooks/mercadopago": {
+      "post": {
+        "operationId": "receivePaymentWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Recebido"
+          },
+          "401": {
+            "description": "Assinatura inválida ou ausente"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"webhook\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"webhook\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"webhook\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Aviso do provedor de pagamento (assinado). Nunca concede nada pelo corpo: consulta o pagamento",
+        "tags": [
+          "webhooks"
         ]
       }
     }
@@ -9012,7 +9461,10 @@
           "ranking_entry_remove",
           "report_archive",
           "avatar_keep",
-          "avatar_remove"
+          "avatar_remove",
+          "payment_refund",
+          "purchase_unblock",
+          "vip_compensation"
         ]
       },
       "StaffError": {
@@ -12062,6 +12514,271 @@
           "removals"
         ],
         "additionalProperties": false
+      },
+      "VipPackages": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "sandbox": {
+            "type": "boolean"
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VipPackage"
+            }
+          }
+        },
+        "required": [
+          "enabled",
+          "sandbox",
+          "packages"
+        ],
+        "additionalProperties": false
+      },
+      "VipPackage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/VipPackageId"
+          },
+          "months": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "priceCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "months",
+          "days",
+          "priceCents"
+        ],
+        "additionalProperties": false
+      },
+      "VipPackageId": {
+        "type": "string",
+        "enum": [
+          "vip-1m",
+          "vip-3m",
+          "vip-6m"
+        ]
+      },
+      "PurchaseList": {
+        "type": "object",
+        "properties": {
+          "purchases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Purchase"
+            }
+          }
+        },
+        "required": [
+          "purchases"
+        ],
+        "additionalProperties": false
+      },
+      "Purchase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "package": {
+            "$ref": "#/components/schemas/VipPackageId"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "amountCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "expiresAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "approvedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "refundedCents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pix": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PurchasePix"
+              }
+            ]
+          },
+          "redirectUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "simulationUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "payerDocumentMasked": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "package",
+          "days",
+          "amountCents",
+          "method",
+          "createdAt",
+          "expiresAt",
+          "approvedAt",
+          "refundedCents",
+          "pix",
+          "redirectUrl",
+          "simulationUrl",
+          "payerDocumentMasked"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "created",
+          "pending",
+          "in_review",
+          "approved",
+          "rejected",
+          "expired",
+          "cancelled",
+          "refunded",
+          "partially_refunded",
+          "charged_back"
+        ]
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": [
+          "pix",
+          "card"
+        ]
+      },
+      "PurchasePix": {
+        "type": "object",
+        "properties": {
+          "copyPaste": {
+            "type": "string",
+            "minLength": 1
+          },
+          "qrCodeBase64": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "copyPaste",
+          "qrCodeBase64"
+        ],
+        "additionalProperties": false
+      },
+      "PurchaseError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "payments_disabled",
+              "invalid_body",
+              "banned",
+              "purchases_blocked",
+              "vip_horizon",
+              "daily_limit",
+              "provider_unavailable",
+              "not_found",
+              "purchase_in_progress",
+              "refund_unavailable"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreatePurchase": {
+        "type": "object",
+        "properties": {
+          "package": {
+            "$ref": "#/components/schemas/VipPackageId"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "adultDeclaration": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "declarationVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "package",
+          "method",
+          "adultDeclaration",
+          "declarationVersion"
+        ]
       }
     }
   }
