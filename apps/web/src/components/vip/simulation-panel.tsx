@@ -4,6 +4,7 @@ import { type FakePayment, fakePaymentSchema } from '@carmine/contracts/payments
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useState } from 'react';
+import { useSession } from '@/components/session/session-provider';
 import { Button } from '@/components/ui/button';
 import {
   ACTION_HINT,
@@ -28,6 +29,8 @@ export function SimulationPanel({
   providerId: string;
   initial: FakePayment;
 }) {
+  // Quem está logado manda o token CSRF em toda mutação (a API o exige com sessão, mesmo nesta rota): o `mutate` da sessão o leva.
+  const { mutate } = useSession();
   const [payment, setPayment] = useState<Omit<FakePayment, 'actions'>>(initial);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -40,7 +43,9 @@ export function SimulationPanel({
     setBusy(action);
     setError(false);
     try {
-      const response = await fetch(`/api/dev/payments/${providerId}/${action}`, { method: 'POST' });
+      const response = await mutate(`/api/dev/payments/${providerId}/${action}`, {
+        method: 'POST',
+      });
       if (!response.ok) throw new Error(String(response.status));
       setPayment(resultSchema.parse(await response.json()));
     } catch {
