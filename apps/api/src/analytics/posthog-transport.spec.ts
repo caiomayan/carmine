@@ -80,7 +80,8 @@ describe('PostHogTransport: envio', () => {
     transport.send(event(2));
     await transport.flush();
 
-    const last = JSON.parse((fetchMock.mock.calls.at(-1)?.[1] as RequestInit).body as string);
+    const lastCall = fetchMock.mock.calls.at(-1) as [string, RequestInit];
+    const last = JSON.parse(lastCall[1].body as string);
     expect(last.batch.map((e: OutgoingEvent) => e.uuid)).toEqual([event(1).uuid, event(2).uuid]);
   });
 
