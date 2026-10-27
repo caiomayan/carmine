@@ -86,7 +86,12 @@ test.describe('provedor falso', () => {
     expect(await vipActive(page)).toBe(false);
   });
 
-  test('uma cobrança que não existe, ou um id fora do formato, dá 404', async ({ page }) => {
+  test('uma cobrança que não existe, ou um id fora do formato, dá 404', async ({
+    page,
+    expectedConsoleErrors,
+  }) => {
+    // O navegador registra o 404 do próprio documento no console.
+    expectedConsoleErrors.push(/status of 404/);
     const missing = await page.goto('/dev/pagamento/nao-existe-000000');
     expect(missing?.status()).toBe(404);
     const malformed = await page.goto('/dev/pagamento/a%20b');
