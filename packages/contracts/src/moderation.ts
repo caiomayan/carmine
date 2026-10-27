@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { isLastingSanction } from './rules.js';
 import { steamId64Schema } from './steam.js';

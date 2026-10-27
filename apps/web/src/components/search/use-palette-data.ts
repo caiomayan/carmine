@@ -3,7 +3,6 @@
 import type { LiveServer, PlayerSearchHit } from '@carmine/contracts';
 import { SEARCH_MIN_LENGTH } from '@carmine/contracts/rules';
 import { useCallback, useEffect, useState } from 'react';
-import { loadContracts } from '@/lib/contracts-schemas';
 import type { ItemSearch } from '@/lib/search/items';
 
 /** Espera depois da última tecla antes de consultar (a paleta pesquisa enquanto se digita). */
@@ -26,13 +25,13 @@ const loadItems = async (signal: AbortSignal, query: string) =>
 
 async function loadPlayers(signal: AbortSignal, query: string) {
   const body = await getJson(`/api/players/search?q=${encodeURIComponent(query)}`, signal);
-  const { playerSearchSchema } = await loadContracts();
+  const { playerSearchSchema } = await import('@carmine/contracts/player-search');
   return playerSearchSchema.parse(body).players;
 }
 
 async function loadServers(signal: AbortSignal) {
   const body = await getJson('/api/servers', signal);
-  const { liveServerListSchema } = await loadContracts();
+  const { liveServerListSchema } = await import('@carmine/contracts/live-servers');
   return liveServerListSchema.parse(body).servers;
 }
 

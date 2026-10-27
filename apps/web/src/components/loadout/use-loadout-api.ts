@@ -10,7 +10,6 @@ import type {
 } from '@carmine/contracts';
 import { useMemo } from 'react';
 import { useSession } from '@/components/session/session-provider';
-import { loadContracts } from '@/lib/contracts-schemas';
 
 /**
  * Falha de uma chamada do Loadout ou dos Presets. `code` vem do contrato (`LoadoutErrorCode`);
@@ -24,7 +23,7 @@ export class LoadoutApiError extends Error {
 
 async function failure(response: Response): Promise<LoadoutApiError> {
   if (response.status === 401) return new LoadoutApiError('session');
-  const { loadoutErrorSchema } = await loadContracts();
+  const { loadoutErrorSchema } = await import('@carmine/contracts/loadout');
   const parsed = loadoutErrorSchema.safeParse(await response.json().catch(() => null));
   return new LoadoutApiError(parsed.success ? parsed.data.code : 'unexpected');
 }
@@ -52,7 +51,7 @@ export function useLoadoutApi() {
 
     const change = async (path: `/api/${string}`, body: unknown): Promise<LoadoutChange> => {
       const json = await (await send(path, 'POST', body)).json();
-      const { loadoutChangeSchema } = await loadContracts();
+      const { loadoutChangeSchema } = await import('@carmine/contracts/loadout');
       return loadoutChangeSchema.parse(json);
     };
 
@@ -75,7 +74,7 @@ export function useLoadoutApi() {
       addItem: async (item: unknown): Promise<string> => {
         const response = await send('/api/inventory/items', 'POST', { item });
         const json = await response.json();
-        const { inventoryItemSchema } = await loadContracts();
+        const { inventoryItemSchema } = await import('@carmine/contracts/inventory');
         return inventoryItemSchema.parse(json).uid;
       },
     };

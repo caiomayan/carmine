@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { SEARCH_MAX_LENGTH, SEARCH_MIN_LENGTH } from './rules.js';
 

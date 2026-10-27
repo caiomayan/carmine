@@ -3,7 +3,6 @@
 import type { LiveServerList } from '@carmine/contracts';
 import { LIVE_SERVERS_EVENT, LIVE_SERVERS_RETRY_MS } from '@carmine/contracts/rules';
 import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { loadContracts } from '@/lib/contracts-schemas';
 import { initialLive, type LiveState, liveReducer } from '@/lib/live-servers';
 import { publishLiveSummary } from '@/lib/servers';
 
@@ -12,7 +11,7 @@ export const LIVE_SERVERS_URL = '/api/servers/live';
 /** A lista de um evento SSE validada pelo contrato; `null` se o texto não é uma lista válida. */
 async function parseLiveList(data: string): Promise<LiveServerList | null> {
   try {
-    const { liveServerListSchema } = await loadContracts();
+    const { liveServerListSchema } = await import('@carmine/contracts/live-servers');
     const parsed = liveServerListSchema.safeParse(JSON.parse(data));
     return parsed.success ? parsed.data : null;
   } catch {

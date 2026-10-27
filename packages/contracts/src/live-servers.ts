@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
 import { gameSanctionSchema } from './moderation.js';

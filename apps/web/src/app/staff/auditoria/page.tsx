@@ -1,9 +1,5 @@
-import {
-  staffAuditActionSchema,
-  staffAuditPageSchema,
-  staffCan,
-  steamId64Schema,
-} from '@carmine/contracts';
+import { staffAuditActionSchema, staffAuditPageSchema, staffCan } from '@carmine/contracts/staff';
+import { steamId64Schema } from '@carmine/contracts/steam';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AuditLog } from '@/components/staff/audit-log';

@@ -1,4 +1,4 @@
-import { staffCan } from '@carmine/contracts';
+import { staffCan } from '@carmine/contracts/staff';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';

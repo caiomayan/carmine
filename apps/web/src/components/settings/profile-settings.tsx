@@ -16,7 +16,6 @@ import { useSession } from '@/components/session/session-provider';
 import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
-import { loadContracts } from '@/lib/contracts-schemas';
 import { cn } from '@/lib/utils';
 
 /**
@@ -94,7 +93,9 @@ function NameRow() {
       });
       if (response.status === 401) return;
       const body: unknown = await response.json().catch(() => null);
-      const { displayNameChangedSchema, displayNameErrorSchema } = await loadContracts();
+      const { displayNameChangedSchema, displayNameErrorSchema } = await import(
+        '@carmine/contracts/profile'
+      );
       if (response.ok) {
         const changed = displayNameChangedSchema.parse(body);
         updateAccount({
@@ -134,7 +135,7 @@ function NameRow() {
       const response = await mutate('/api/me/display-name', { method: 'DELETE' });
       if (response.status === 401) return;
       const body: unknown = await response.json().catch(() => null);
-      const { displayNameRevertedSchema } = await loadContracts();
+      const { displayNameRevertedSchema } = await import('@carmine/contracts/profile');
       if (!response.ok) throw new Error(String(response.status));
       const reverted = displayNameRevertedSchema.parse(body);
       updateAccount({

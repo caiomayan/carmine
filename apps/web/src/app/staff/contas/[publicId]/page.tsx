@@ -1,4 +1,4 @@
-import { staffAccountDetailSchema } from '@carmine/contracts';
+import { staffAccountDetailSchema } from '@carmine/contracts/staff';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AccountFile } from '@/components/staff/account-file';

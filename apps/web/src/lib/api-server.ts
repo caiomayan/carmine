@@ -1,34 +1,33 @@
+import type {
+  CurrentSession,
+  HeaderPreviews,
+  Inventory,
+  LiveServerList,
+  Loadout,
+  LoadoutSide,
+  PresetList,
+  Profile,
+  ProfileSeries,
+  ProfileStats,
+  Ranking,
+  RecentActivity,
+  ServerPlayers,
+  ServerToday,
+  WeekSummary,
+} from '@carmine/contracts';
+import { recentActivitySchema } from '@carmine/contracts/activity';
+import { headerPreviewsSchema } from '@carmine/contracts/header-previews';
+import { inventorySchema } from '@carmine/contracts/inventory';
+import { liveServerListSchema } from '@carmine/contracts/live-servers';
+import { loadoutSchema, presetListSchema } from '@carmine/contracts/loadout';
+import { currentSessionSchema, profileSchema } from '@carmine/contracts/profile';
+import { rankingSchema } from '@carmine/contracts/ranking';
+import { serverPlayersSchema, serverTodaySchema } from '@carmine/contracts/server-detail';
 import {
-  type CurrentSession,
-  currentSessionSchema,
-  type HeaderPreviews,
-  headerPreviewsSchema,
-  type Inventory,
-  inventorySchema,
-  type LiveServerList,
-  type Loadout,
-  type LoadoutSide,
-  liveServerListSchema,
-  loadoutSchema,
-  type PresetList,
-  type Profile,
-  type ProfileSeries,
-  type ProfileStats,
-  presetListSchema,
-  profileSchema,
   profileSeriesSchema,
   profileStatsSchema,
-  type Ranking,
-  type RecentActivity,
-  rankingSchema,
-  recentActivitySchema,
-  type ServerPlayers,
-  type ServerToday,
-  serverPlayersSchema,
-  serverTodaySchema,
-  type WeekSummary,
   weekSummarySchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/stats';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { apiGet, VISITOR_IP_HEADER } from './api-base';

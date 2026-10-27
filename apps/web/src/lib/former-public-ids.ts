@@ -1,4 +1,4 @@
-import { formerPublicIdsSchema } from '@carmine/contracts';
+import { formerPublicIdsSchema } from '@carmine/contracts/profile';
 import { apiGet } from './api-base';
 
 type Redirect = { from: number; to: number };

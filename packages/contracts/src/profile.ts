@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { cs2ItemSchema } from './inventory.js';
 import { liveServerSchema } from './live-servers.js';

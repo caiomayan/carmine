@@ -1,10 +1,7 @@
 'use client';
 
-import {
-  type StaffAuditEntry,
-  type StaffAuditPage,
-  staffAuditPageSchema,
-} from '@carmine/contracts';
+import type { StaffAuditEntry, StaffAuditPage } from '@carmine/contracts';
+import { staffAuditPageSchema } from '@carmine/contracts/staff';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';

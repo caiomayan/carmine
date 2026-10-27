@@ -1,4 +1,5 @@
-import { liveServerSchema, serverPlayersSchema, serverTodaySchema } from '@carmine/contracts';
+import { liveServerSchema } from '@carmine/contracts/live-servers';
+import { serverPlayersSchema, serverTodaySchema } from '@carmine/contracts/server-detail';
 import { describe, expect, it } from 'vitest';
 import { brasiliaClock, matchOf, rosterOf, todayOf } from './adapt';
 

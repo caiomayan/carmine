@@ -2,7 +2,6 @@
 
 import type { LiveServer, ServerPlayers, ServerToday } from '@carmine/contracts';
 import { useEffect, useRef, useState } from 'react';
-import { loadContracts } from '@/lib/contracts-schemas';
 import { matchOf, rosterOf, todayOf } from './adapt';
 import type { Collectable, Roster, ServerExtras, Today } from './types';
 
@@ -103,7 +102,7 @@ export function useServerExtras(server: LiveServer, initial: InitialExtras): Ser
     `/api/servers/${server.id}/players`,
     initial.players ? rosterOf(initial.players) : COLLECTING,
     async (raw) => {
-      const { serverPlayersSchema } = await loadContracts();
+      const { serverPlayersSchema } = await import('@carmine/contracts/server-detail');
       const parsed = serverPlayersSchema.safeParse(raw);
       return parsed.success ? parsed.data : null;
     },
@@ -117,7 +116,7 @@ export function useServerExtras(server: LiveServer, initial: InitialExtras): Ser
     `/api/servers/${server.id}/today`,
     initial.today ? todayOf(initial.today, liveMap) : COLLECTING,
     async (raw) => {
-      const { serverTodaySchema } = await loadContracts();
+      const { serverTodaySchema } = await import('@carmine/contracts/server-detail');
       const parsed = serverTodaySchema.safeParse(raw);
       return parsed.success ? parsed.data : null;
     },

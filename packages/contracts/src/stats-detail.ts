@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { gameModeSchema, mapNameSchema } from './game-server.js';
 
