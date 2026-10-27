@@ -45,6 +45,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # O mesmo `pnpm verify` que os agentes rodam antes do PR.
       - run: pnpm verify
+      - name: Deploy da homologação se atualiza sozinho (teste sem Docker)
+        run: bash infra/hml/test/deploy-self-update.test.sh
       - name: OpenAPI versionado está atualizado
         run: |
           pnpm --filter @carmine/api openapi:generate
