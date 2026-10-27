@@ -34,7 +34,7 @@ A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há 
 
 ## Pagamentos de mentira (S14)
 
-A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Detalhes e as variáveis em `docs/operacao/pagamentos.md`. Numa homologação já criada, acrescente ao `.env` `PAYMENTS_ENABLED=true`, `PAYMENTS_PROVIDER=fake`, `PAYMENTS_DATA_KEY` (`openssl rand -base64 32`) e `VIP_HOLD_ENABLED=true`.
+A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Tudo vem do compose (a chave de dados é sorteada sozinha); nada a preencher no `.env`. Detalhes em `docs/operacao/pagamentos.md`.
 
 ## Memória (tetos do compose)
 

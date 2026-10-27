@@ -33,8 +33,6 @@ if [[ ! -f "$ROOT/.env" ]]; then
   for key in POSTGRES_PASSWORD VALKEY_PASSWORD DEMO_SEED_SECRET; do
     sed -i "s|^${key}=\$|${key}=$(openssl rand -hex 24)|" "$ROOT/.env"
   done
-  # A chave dos dados de pagamento (32 bytes em base64; o base64 não tem `|`, então o sed é seguro).
-  sed -i "s|^PAYMENTS_DATA_KEY=\$|PAYMENTS_DATA_KEY=$(openssl rand -base64 32)|" "$ROOT/.env"
   echo "Criado $ROOT/.env com as senhas sorteadas. Falta colar CLOUDFLARE_TUNNEL_TOKEN (sudoedit $ROOT/.env)."
 fi
 

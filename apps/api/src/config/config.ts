@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { parseTrustedProxies } from '../client-ip/client-ip.js';
 import type { RateLimitPolicyName } from '../rate-limit/policies.js';
@@ -285,8 +286,27 @@ export interface MediaConfig {
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
+/**
+ * `PAYMENTS_DATA_KEY_FILE`: a chave de dados vinda de um arquivo (a homologação a sorteia sozinha num volume,
+ * sem passar pelo .env). A variável `PAYMENTS_DATA_KEY`, se houver, vale mais. Arquivo ilegível é erro, e a
+ * mensagem não repete o conteúdo.
+ */
+function withDataKeyFile(
+  env: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const file = env.PAYMENTS_DATA_KEY_FILE?.trim();
+  if (!file || env.PAYMENTS_DATA_KEY?.trim()) return env;
+  try {
+    return { ...env, PAYMENTS_DATA_KEY: readFileSync(file, 'utf8').trim() };
+  } catch {
+    throw new Error(`Configuração inválida:
+  - PAYMENTS_DATA_KEY_FILE: não consegui ler ${file}`);
+  }
+}
+
 /** Lê e valida as variáveis de ambiente; falha listando todas as inválidas de uma vez. */
-export function loadConfig(env: Record<string, string | undefined>): AppConfig {
+export function loadConfig(rawEnv: Record<string, string | undefined>): AppConfig {
+  const env = withDataKeyFile(rawEnv);
   const result = envSchema.safeParse(env);
   if (!result.success) {
     const problems = result.error.issues
