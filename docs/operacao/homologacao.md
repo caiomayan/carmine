@@ -34,7 +34,7 @@ A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há 
 
 ## Pagamentos de mentira (S14)
 
-A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Detalhes e as variáveis em `docs/operacao/pagamentos.md`. Numa homologação já criada, acrescente ao `.env` `PAYMENTS_ENABLED=true`, `PAYMENTS_PROVIDER=fake`, `PAYMENTS_DATA_KEY` (`openssl rand -base64 32`) e `VIP_HOLD_ENABLED=true`.
+A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Tudo vem do compose (a chave de dados é sorteada sozinha); nada a preencher no `.env`. Detalhes em `docs/operacao/pagamentos.md`.
 
 ## Memória (tetos do compose)
 
@@ -115,6 +115,7 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
   sudoedit /opt/carmine-hml/.env                  # colar só CLOUDFLARE_TUNNEL_TOKEN (passo 2); as senhas já vêm sorteadas
   sudo /opt/carmine-hml/bin/tunnel                # sobe só o túnel novo
   ```
+  **O deploy se atualiza sozinho.** O bootstrap instala o `deploy` em `/opt/carmine-hml/self/` (dono `deployhml`; `/opt/carmine-hml/bin/deploy` é um link para ele). Quando o `deploy.sh` da release difere do instalado, o instalado verifica a versão nova (`bash -n`, shebang, tamanho), troca-se por ela de forma atômica (guardando `deploy.anterior`), registra os dois sha256 no log e refaz o mesmo deploy com ela. Por isso mudar o `deploy.sh` **não pede mais o bootstrap**: rode-o de novo só uma vez, para sair do `deploy` antigo (que só avisava), ou se mudar o próprio `bootstrap.sh`. A confiança é a do `compose.yml` que vem no mesmo tar (o usuário já está no grupo `docker`); a produção tem deploy próprio, com dono root, e não se autoatualiza. Se uma versão quebrada do `deploy.sh` entrar no `dev`, a seguinte, corrigida, se instala sozinha; em último caso, o bootstrap reinstala. Teste: `bash infra/hml/test/deploy-self-update.test.sh` (roda no CI).
   No `.env`, opcionais: `DEMO_OWNER_STEAM_ID` (o seu SteamID64: a sua Conta ganha a demonstração e o papel de Dono) e `STEAM_WEB_API_KEY` (a mesma de produção, para o seu nome e avatar).
 
   **Se o 4c não entrar** (o Access deixou passar, mas o `ssh` recusou a chave para `ubuntu`), plano B: abrir a 22 só para você por alguns minutos. Oracle > Networking > a VCN > Security Lists > *Add Ingress Rules*: origem `<seu IP público>/32` (busque "meu ip"), TCP, porta 22. No atalho, troque `HostName` por `<IP da VM>` e tire a linha `ProxyCommand`. Terminou? **Remova a regra** na hora. Último recurso, sem mexer em regra: *Compute > Instances > a VM > Console connection*.

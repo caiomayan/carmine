@@ -42,12 +42,14 @@ x-api-env: &api-env
   # Só o cloudflared e o web (/32), como na produção.
   TRUSTED_PROXIES: 172.31.0.10/32,172.31.0.11/32
   STEAM_WEB_API_KEY: ${STEAM_WEB_API_KEY:-}
-  # S14: a homologação vende com o provedor FALSO (a API recusa o falso fora de host de homologação).
-  PAYMENTS_ENABLED: ${PAYMENTS_ENABLED:-false}
-  PAYMENTS_PROVIDER: ${PAYMENTS_PROVIDER:-}
-  PAYMENTS_DATA_KEY: ${PAYMENTS_DATA_KEY:-}
-  # A guarda de 30 dias dos Itens VIP (S14, D3) roda aqui para o dono validar.
-  VIP_HOLD_ENABLED: ${VIP_HOLD_ENABLED:-false}
+  # S14: a homologação vende com o provedor FALSO (a API recusa o falso fora de host de homologação) e
+  # guarda os Itens VIP, para o dono validar. Nada disso é segredo nem depende do .env da VM.
+  PAYMENTS_ENABLED: "true"
+  PAYMENTS_PROVIDER: fake
+  VIP_HOLD_ENABLED: "true"
+  # A chave que cifra o CPF do Pagador é sorteada sozinha na primeira subida (serviço `payments-key`) e
+  # fica num volume, lido só como arquivo: não passa pelo .env, pelo log nem por variável de ambiente.
+  PAYMENTS_DATA_KEY_FILE: /keys/payments-data-key
   SENTRY_ENVIRONMENT: staging
   SENTRY_RELEASE: ${IMAGE_TAG}
 
@@ -72,6 +74,10 @@ x-media-env: &media-env
   R2_MEDIA_PUBLIC_BUCKET: carmine-media-hml
   R2_MEDIA_PRIVATE_BUCKET: carmine-media-removidas-hml
   MEDIA_PUBLIC_URL: https://dev.stcarmine.com
+
+# A chave de dados de pagamento (somente leitura) para quem carrega a configuração da API.
+x-payments-key: &payments-key
+  - payments-key:/keys:ro
 
 x-api-image: &api-image ghcr.io/caiomayan/carmine-api:${IMAGE_TAG:?defina IMAGE_TAG (sha-<commit>)}
 
@@ -128,6 +134,7 @@ services:
     image: *api-image
     environment:
       <<: [*api-env, *media-env]
+    volumes: *payments-key
     networks:
       edge: {}
       data: {}
@@ -143,16 +150,49 @@ services:
     restart: unless-stopped
     logging: *logging
 
+  # Sorteia a chave de dados de pagamento UMA vez (flag `wx`: nunca troca uma existente) e a grava num volume
+  # só desta pilha; o `reset` apaga o volume junto com o banco que ela protege. Roda como root só para
+  # criar o arquivo (0400, dono `node`); não imprime a chave.
+  payments-key:
+    image: *api-image
+    user: root
+    command:
+      - node
+      - -e
+      - |
+        const fs = require('node:fs');
+        const file = '/keys/payments-data-key';
+        try {
+          fs.writeFileSync(file, require('node:crypto').randomBytes(32).toString('base64'), { flag: 'wx', mode: 0o400 });
+          fs.chownSync(file, 1000, 1000);
+          console.log('chave de pagamentos criada');
+        } catch (error) {
+          if (error.code !== 'EEXIST') throw error;
+          console.log('chave de pagamentos já existe');
+        }
+    volumes:
+      - payments-key:/keys
+    network_mode: none
+    healthcheck:
+      disable: true
+    mem_limit: 64m
+    <<: *polite
+    restart: "no"
+    logging: *logging
+
   # Migrações do Drizzle antes de a API subir. Falhou, a API não sobe e o deploy volta atrás.
   migrate:
     image: *api-image
     command: ["node", "dist/database/migrate.cli.js"]
     environment: *api-env
+    volumes: *payments-key
     networks:
       data: {}
     depends_on:
       postgres:
         condition: service_healthy
+      payments-key:
+        condition: service_completed_successfully
     mem_limit: 384m
     <<: *polite
     restart: "no"
@@ -270,6 +310,7 @@ services:
     environment:
       <<: [*api-env, *demo-env]
       NODE_OPTIONS: --max-old-space-size=256
+    volumes: *payments-key
     networks:
       edge: {}
       data: {}
@@ -322,3 +363,4 @@ volumes:
   postgres-data:
   valkey-data:
   media-data:
+  payments-key:
