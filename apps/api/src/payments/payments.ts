@@ -5,6 +5,7 @@ import {
   PURCHASE_EXPIRES_MINUTES,
   PURCHASES_PER_DAY_LIMIT,
   type Purchase,
+  type PurchaseEligibility,
   type PurchaseError,
   REFUND_WINDOW_DAYS,
   VIP_MAX_HORIZON_DAYS,
@@ -74,12 +75,38 @@ export class Payments {
     return this.options.enabled && this.options.gateway !== null;
   }
 
-  catalog(): VipPackages {
+  async catalog(accountId: string | null = null, now = this.clock()): Promise<VipPackages> {
     return {
       enabled: this.available,
       sandbox: this.options.gateway?.name === 'fake',
       packages: VIP_PACKAGES.map((p) => ({ ...p })),
+      eligibility: accountId === null ? null : await this.eligibility(accountId, now),
     };
+  }
+
+  /** Se a Conta pode comprar agora, na mesma ordem em que `create` recusa. */
+  async eligibility(accountId: string, now = this.clock()): Promise<PurchaseEligibility> {
+    const [account] = await this.db
+      .select({ blockedAt: accounts.purchaseBlockedAt })
+      .from(accounts)
+      .where(eq(accounts.id, accountId));
+    if (await this.hasPermanentBan(this.db, accountId)) return 'banned';
+    if (account?.blockedAt) return 'purchases_blocked';
+    const [open] = await this.db
+      .select({ n: count() })
+      .from(payments)
+      .where(and(eq(payments.accountId, accountId), eq(payments.status, 'in_review')));
+    if ((open?.n ?? 0) > 0) return 'purchase_in_progress';
+    const [recent] = await this.db
+      .select({ n: count() })
+      .from(payments)
+      .where(
+        and(
+          eq(payments.accountId, accountId),
+          gt(payments.createdAt, new Date(now.getTime() - DAY_MS)),
+        ),
+      );
+    return (recent?.n ?? 0) >= PURCHASES_PER_DAY_LIMIT ? 'daily_limit' : 'ok';
   }
 
   // --- Compra -------------------------------------------------------------------------------------
@@ -222,7 +249,7 @@ export class Payments {
         method: row.method,
         description: `Saint Carmine · VIP ${row.days} dias`,
         expiresAt: row.expiresAt as Date,
-        backUrl: `${this.options.publicWebUrl}/configuracoes/compras`,
+        backUrl: `${this.options.publicWebUrl}/vip/compra/${row.id}?retorno=cartao`,
       });
       const [updated] = await this.db
         .update(payments)
@@ -799,7 +826,7 @@ export class Payments {
       : null;
   }
 
-  private async hasPermanentBan(tx: Tx, accountId: string): Promise<boolean> {
+  private async hasPermanentBan(tx: Tx | Database, accountId: string): Promise<boolean> {
     const [ban] = await tx
       .select({ id: sanctions.id })
       .from(sanctions)

@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import {
   CSRF_HEADER,
   type Cs2Item,
+  fakePaymentSchema,
   inventorySchema,
   type Purchase,
   purchaseErrorSchema,
@@ -12,7 +13,13 @@ import {
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
-import { paymentEvents, payments, vipHeldItems, vipPeriods } from '../src/database/schema.js';
+import {
+  accounts,
+  paymentEvents,
+  payments,
+  vipHeldItems,
+  vipPeriods,
+} from '../src/database/schema.js';
 import { Sanctions } from '../src/moderation/sanctions.js';
 import type { FakePaymentsGateway } from '../src/payments/fake-gateway.js';
 import { Payments } from '../src/payments/payments.js';
@@ -112,12 +119,59 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
         (await t.app.inject({ url: '/api/vip/packages' })).json(),
       );
 
-      expect(body).toMatchObject({ enabled: true, sandbox: true });
+      expect(body).toMatchObject({ enabled: true, sandbox: true, eligibility: null });
       expect(body.packages.map((p) => [p.id, p.priceCents])).toEqual([
         ['vip-1m', 990],
         ['vip-3m', 2690],
         ['vip-6m', 4990],
       ]);
+    });
+
+    it('com sessão, diz se a Conta pode comprar agora e por que não', async () => {
+      const eligibility = async (who: Player) =>
+        vipPackagesSchema.parse((await who.call('GET', '/api/vip/packages')).json()).eligibility;
+
+      const free = await player();
+      expect(await eligibility(free)).toBe('ok');
+
+      const reviewing = await player();
+      const p = await created(reviewing, { method: 'card' });
+      await db().update(payments).set({ status: 'in_review' }).where(eq(payments.id, p.id));
+      expect(await eligibility(reviewing)).toBe('purchase_in_progress');
+
+      const blocked = await player();
+      await db()
+        .update(accounts)
+        .set({ purchaseBlockedAt: new Date(), purchaseBlockReason: 'teste' })
+        .where(eq(accounts.id, blocked.account.id));
+      expect(await eligibility(blocked)).toBe('purchases_blocked');
+
+      const busy = await player();
+      for (let n = 0; n < 10; n++) {
+        await db()
+          .insert(payments)
+          .values({
+            accountId: busy.account.id,
+            package: 'vip-1m',
+            days: 30,
+            amountCents: 990,
+            method: 'pix',
+            status: 'rejected',
+            provider: 'fake',
+            adultDeclaredAt: new Date(),
+            declarationVersion: 'x',
+            idempotencyKey: `e${n}`,
+          });
+      }
+      expect(await eligibility(busy)).toBe('daily_limit');
+    });
+
+    it('o Pix do falso já vem com o QR em PNG (o web não precisa de biblioteca)', async () => {
+      const who = await player();
+      const p = await created(who);
+
+      const png = Buffer.from(p.pix?.qrCodeBase64 as string, 'base64');
+      expect([...png.subarray(0, 4)]).toEqual([0x89, 0x50, 0x4e, 0x47]);
     });
 
     it('exige sessão', async () => {
@@ -364,6 +418,7 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
 
       const shown = await t.app.inject({ url: `/api/dev/payments/${id}` });
       expect(shown.json()).toMatchObject({ status: 'pending', externalReference: p.id });
+      expect(fakePaymentSchema.safeParse(shown.json()).success).toBe(true);
       const paid = await t.app.inject({ method: 'POST', url: `/api/dev/payments/${id}/pay` });
       expect(paid.json()).toMatchObject({ status: 'approved' });
       expect(

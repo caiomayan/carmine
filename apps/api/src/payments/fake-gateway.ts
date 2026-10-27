@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { PaymentMethod, PaymentStatus } from '@carmine/contracts';
 import type { Redis } from 'ioredis';
+import QRCode from 'qrcode';
 import type {
   CreateChargeInput,
   PaymentsGateway,
@@ -91,15 +92,15 @@ export class FakePaymentsGateway implements PaymentsGateway {
       paid: false,
     };
     await this.save(charge);
-    return input.method === 'pix'
-      ? {
-          providerPaymentId: id,
-          pix: {
-            copyPaste: `00020126FAKE${id}5204000053039865406${(input.amountCents / 100).toFixed(2)}5802BR5910CARMINE6009SAO PAULO62070503***6304${randomBytes(2).toString('hex').toUpperCase()}`,
-            qrCodeBase64: null,
-          },
-        }
-      : { providerPaymentId: id, redirectUrl: this.simulationUrl(id) };
+    if (input.method !== 'pix')
+      return { providerPaymentId: id, redirectUrl: this.simulationUrl(id) };
+    const copyPaste = `00020126FAKE${id}5204000053039865406${(input.amountCents / 100).toFixed(2)}5802BR5910CARMINE6009SAO PAULO62070503***6304${randomBytes(2).toString('hex').toUpperCase()}`;
+    // Como o Mercado Pago: o QR já vem em PNG (base64), então o web não precisa de biblioteca de QR.
+    const png = await QRCode.toBuffer(copyPaste, { type: 'png', margin: 1, width: 280 });
+    return {
+      providerPaymentId: id,
+      pix: { copyPaste, qrCodeBase64: png.toString('base64') },
+    };
   }
 
   /** A página de simulação desta cobrança (no web). */

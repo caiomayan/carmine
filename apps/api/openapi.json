@@ -5944,7 +5944,7 @@
             }
           }
         },
-        "summary": "Os Pacotes VIP, os preços e se a compra está aberta (a cobrança nasce desligada)",
+        "summary": "Os Pacotes VIP, os preços, se a compra está aberta (a cobrança nasce desligada) e, com sessão, se a Conta pode comprar agora",
         "tags": [
           "vip"
         ]
@@ -12529,12 +12529,21 @@
             "items": {
               "$ref": "#/components/schemas/VipPackage"
             }
+          },
+          "eligibility": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PurchaseEligibility"
+              }
+            ]
           }
         },
         "required": [
           "enabled",
           "sandbox",
-          "packages"
+          "packages",
+          "eligibility"
         ],
         "additionalProperties": false
       },
@@ -12577,6 +12586,16 @@
           "vip-1m",
           "vip-3m",
           "vip-6m"
+        ]
+      },
+      "PurchaseEligibility": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "banned",
+          "purchases_blocked",
+          "purchase_in_progress",
+          "daily_limit"
         ]
       },
       "PurchaseList": {

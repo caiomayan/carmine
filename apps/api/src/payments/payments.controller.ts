@@ -92,11 +92,12 @@ export class VipCatalogController {
   @RateLimit('public')
   @ApiOperation({
     operationId: 'getVipPackages',
-    summary: 'Os Pacotes VIP, os preços e se a compra está aberta (a cobrança nasce desligada)',
+    summary:
+      'Os Pacotes VIP, os preços, se a compra está aberta (a cobrança nasce desligada) e, com sessão, se a Conta pode comprar agora',
   })
   @ApiOkResponse({ description: 'O catálogo', standardSchema: vipPackagesSchema })
-  packages(): VipPackages {
-    return this.payments.catalog();
+  packages(@Req() request: FastifyRequest): Promise<VipPackages> {
+    return this.payments.catalog(request.carmineSession?.accountId ?? null);
   }
 }
 

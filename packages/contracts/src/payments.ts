@@ -97,6 +97,26 @@ export const createPurchaseSchema = z
 
 export type CreatePurchase = z.infer<typeof createPurchaseSchema>;
 
+/**
+ * Se a Conta da sessão pode comprar agora (para o botão já nascer desabilitado, com o motivo):
+ * `ok`; `banned` (ban permanente); `purchases_blocked` (a Staff bloqueou depois de uma contestação);
+ * `purchase_in_progress` (há um pagamento em análise); `daily_limit` (10 compras em 24 h). O limite de
+ * VIP à frente depende do Pacote: some {@link VIP_MAX_HORIZON_DAYS} ao fim do VIP da sessão.
+ */
+export const PURCHASE_ELIGIBILITY = [
+  'ok',
+  'banned',
+  'purchases_blocked',
+  'purchase_in_progress',
+  'daily_limit',
+] as const;
+
+export const purchaseEligibilitySchema = z
+  .enum(PURCHASE_ELIGIBILITY)
+  .meta({ id: 'PurchaseEligibility' });
+
+export type PurchaseEligibility = z.infer<typeof purchaseEligibilitySchema>;
+
 /** `GET /api/vip/packages`: o que a página do VIP precisa para mostrar (ou desligar) a compra. */
 export const vipPackagesSchema = z
   .object({
@@ -105,6 +125,8 @@ export const vipPackagesSchema = z
     /** O provedor é o falso (dev e homologação): a tela avisa que o pagamento é de mentira. */
     sandbox: z.boolean(),
     packages: z.array(vipPackageSchema),
+    /** Se a Conta da sessão pode comprar agora; nulo para visitante (sem sessão). */
+    eligibility: purchaseEligibilitySchema.nullable(),
   })
   .meta({ id: 'VipPackages' });
 
@@ -189,3 +211,36 @@ export const purchaseErrorSchema = z
   .meta({ id: 'PurchaseError' });
 
 export type PurchaseError = z.infer<typeof purchaseErrorSchema>;
+
+/** O que a página de simulação do provedor FALSO (dev e homologação) pode fazer com uma cobrança. */
+export const FAKE_PAYMENT_ACTIONS = ['pay', 'reject', 'expire', 'refund', 'chargeback'] as const;
+
+export const fakePaymentActionSchema = z.enum(FAKE_PAYMENT_ACTIONS);
+
+export type FakePaymentAction = z.infer<typeof fakePaymentActionSchema>;
+
+/**
+ * `GET /api/dev/payments/{providerId}` e o corpo de `POST /api/dev/payments/{providerId}/{action}`: a
+ * cobrança no provedor falso. `externalReference` é o `id` da compra (a página volta para
+ * `/vip/compra/<externalReference>`). Só existe com o provedor falso (404 nos outros).
+ */
+export const fakePaymentSchema = z.object({
+  providerPaymentId: z.string(),
+  externalReference: z.uuid(),
+  status: paymentStatusSchema,
+  amountCents: z.int().positive(),
+  refundedCents: z.int().nonnegative(),
+  method: paymentMethodSchema,
+  approvedAt: z.iso.datetime({ offset: true }).nullable(),
+  payer: z
+    .object({
+      name: z.string().nullable(),
+      document: z.string().nullable(),
+      email: z.string().nullable(),
+    })
+    .nullable(),
+  /** As ações que a página oferece. */
+  actions: z.array(fakePaymentActionSchema),
+});
+
+export type FakePayment = z.infer<typeof fakePaymentSchema>;
