@@ -362,10 +362,13 @@ test.describe('Loadouts da semana', () => {
     await page.mouse.wheel(0, 4000);
     await expect(page.getByTestId('loadouts-week')).toHaveCount(0);
     await expect(page.getByTestId('week-strip')).toBeVisible();
-    // Sem dado, o lugar da seção não reserva espaço (nada de salto de layout) nem mostra esqueleto.
+    // Sem dado, o lugar da seção não reserva espaço (nada de salto de layout) nem mostra esqueleto. Se o servidor
+    // sinalizou conteúdo (o banco do E2E tem Ranking de outros testes), o esqueleto aparece e fecha suave: espera.
     const slot = page.getByTestId('loadouts-slot');
     await expect(slot).not.toHaveAttribute('data-open');
-    expect((await slot.boundingBox())?.height ?? 0).toBeLessThan(1);
+    await expect
+      .poll(async () => (await slot.boundingBox())?.height ?? 0, { timeout: 5000 })
+      .toBeLessThan(1);
   });
 });
 
