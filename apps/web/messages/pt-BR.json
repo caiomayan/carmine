@@ -940,6 +940,7 @@
       "label": "Seções das configurações",
       "back": "Configurações",
       "perfil": "Perfil",
+      "compras": "Compras",
       "conexoes": "Conexões",
       "aparencia": "Aparência",
       "dados": "Dados e conta"
@@ -957,6 +958,10 @@
       "perfil": {
         "title": "Perfil",
         "intro": "Como você aparece no site e nos Servidores Carmine."
+      },
+      "compras": {
+        "title": "Compras",
+        "intro": "Os Pacotes VIP que você comprou, os pagamentos em andamento e os recibos."
       },
       "conexoes": {
         "title": "Conexões",
@@ -1113,6 +1118,146 @@
         "minor": "menor em situação indevida",
         "personal_data": "dado pessoal",
         "other": "outro motivo"
+      }
+    },
+    "purchases": {
+      "empty": {
+        "title": "Nenhuma compra ainda",
+        "body": "Quando você comprar um Pacote VIP, ele aparece aqui, com o recibo."
+      },
+      "unavailable": {
+        "title": "Não deu para carregar as suas compras agora",
+        "body": "Tente de novo em instantes. Se você acabou de pagar, o VIP chega mesmo assim.",
+        "retry": "Tentar de novo"
+      },
+      "sandbox": "Ambiente de teste: o pagamento é de mentira e ninguém é cobrado.",
+      "list": "Suas compras",
+      "package": "VIP · {months, plural, one {# mês} other {# meses}}",
+      "days": "{days} dias de VIP",
+      "method": {
+        "pix": "Pix",
+        "card": "Cartão"
+      },
+      "status": {
+        "created": "Preparando",
+        "pending": "Aguardando o pagamento",
+        "in_review": "Em análise",
+        "approved": "Pago",
+        "rejected": "Recusado",
+        "expired": "Expirado",
+        "cancelled": "Cancelado",
+        "refunded": "Reembolsado",
+        "partially_refunded": "Reembolsado em parte",
+        "charged_back": "Contestado"
+      },
+      "meta": {
+        "createdAt": "Criada em {date}",
+        "approvedAt": "Paga em {date}",
+        "vipUntil": "VIP até {date}",
+        "id": "Identificador {id}"
+      },
+      "notes": {
+        "expired": "O QR venceu sem cobrança: nada foi cobrado.",
+        "rejected": "O pagamento foi recusado: nada foi cobrado.",
+        "cancelled": "A compra foi cancelada antes do pagamento: nada foi cobrado.",
+        "refunded": "Reembolsado: {amount}. Os dias saíram do seu VIP.",
+        "partiallyRefunded": "Reembolsado em parte: {amount}.",
+        "chargedBack": "O pagamento foi contestado e as novas compras ficam bloqueadas até a Staff revisar. Fale com o suporte."
+      },
+      "pix": {
+        "title": "Pague com Pix",
+        "hint": "Abra o app do seu banco, escolha Pix e leia o QR ou cole o código.",
+        "qrAlt": "QR code do Pix",
+        "code": "Código Pix copia e cola",
+        "copy": "Copiar código",
+        "copied": "Código copiado",
+        "copyFailed": "Não deu para copiar. Selecione o código e copie à mão.",
+        "expiresIn": "O QR vale por mais {time}",
+        "expired": "O QR venceu. Atualizando…"
+      },
+      "card": {
+        "title": "Pagamento com cartão",
+        "hint": "O pagamento é feito no checkout do Mercado Pago. Se você fechou a janela, continue de onde parou.",
+        "continue": "Continuar o pagamento",
+        "review": "O cartão está em análise. Isso costuma levar poucos instantes."
+      },
+      "processing": {
+        "title": "Já pagou?",
+        "body": "A confirmação costuma levar poucos segundos. Esta página atualiza sozinha e o VIP chega assim que o pagamento for confirmado.",
+        "supportTitle": "Passaram {minutes} minutos e o pagamento ainda não confirmou",
+        "support": "Fale com o suporte e informe o identificador desta compra.",
+        "contact": "Falar com o suporte",
+        "copyId": "Copiar o identificador",
+        "idCopied": "Identificador copiado"
+      },
+      "simulation": {
+        "open": "Abrir a simulação do pagamento",
+        "hint": "Só no ambiente de teste: a simulação paga, recusa ou vence a cobrança."
+      },
+      "receipt": {
+        "link": "Ver recibo"
+      },
+      "refund": {
+        "open": "Pedir reembolso",
+        "until": "Até {date}",
+        "title": "Pedir o reembolso?",
+        "body": "O valor de {amount} volta pelo mesmo meio de pagamento e os {days} dias saem do seu VIP. Quanto tempo o dinheiro leva para aparecer depende do banco ou da operadora do cartão.",
+        "confirm": "Pedir reembolso",
+        "done": "Reembolso pedido. Os dias saíram do seu VIP.",
+        "errors": {
+          "refund_unavailable": "O reembolso pelo site não vale mais para esta compra: ele vai até 7 dias depois da aprovação. Fale com o suporte.",
+          "not_found": "Não achamos essa compra.",
+          "provider_unavailable": "O provedor de pagamento não respondeu agora. Tente de novo em instantes.",
+          "generic": "Não deu para pedir o reembolso agora. Tente de novo em instantes."
+        }
+      }
+    },
+    "receipt": {
+      "title": "Recibo de compra",
+      "number": "Nº {id}",
+      "numberHint": "O número do recibo é o identificador da compra.",
+      "back": "Voltar às compras",
+      "print": "Imprimir ou salvar em PDF",
+      "supplier": {
+        "title": "Fornecedor",
+        "placeholder": "Nome, CPF e endereço do fornecedor: a informar.",
+        "document": "CPF {document}"
+      },
+      "buyer": {
+        "title": "Conta beneficiada",
+        "profile": "Perfil no Carmine"
+      },
+      "payer": {
+        "title": "Pagador",
+        "name": "Nome",
+        "document": "CPF"
+      },
+      "item": {
+        "title": "O que foi comprado",
+        "package": "Pacote",
+        "duration": "Duração",
+        "vipUntil": "VIP até",
+        "amount": "Valor",
+        "method": "Meio de pagamento",
+        "approvedAt": "Pago em",
+        "status": "Situação",
+        "refunded": "Reembolsado"
+      },
+      "notes": {
+        "once": "Pagamento único, sem renovação automática.",
+        "noInvoice": "Este recibo não é nota fiscal: o fornecedor é pessoa física."
+      },
+      "notAvailable": {
+        "title": "O recibo ainda não está disponível",
+        "body": "Ele aparece depois que o pagamento é aprovado."
+      },
+      "notFound": {
+        "title": "Não achamos essa compra",
+        "body": "Ela não existe ou é de outra Conta."
+      },
+      "unavailable": {
+        "title": "Não deu para carregar o recibo agora",
+        "body": "Tente de novo em instantes."
       }
     }
   },

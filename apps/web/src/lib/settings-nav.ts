@@ -1,5 +1,5 @@
 /** As seções de /configuracoes, na ordem do menu lateral (e da lista no celular). */
-export const SETTINGS_SECTIONS = ['perfil', 'conexoes', 'aparencia', 'dados'] as const;
+export const SETTINGS_SECTIONS = ['perfil', 'compras', 'conexoes', 'aparencia', 'dados'] as const;
 export type SettingsSection = (typeof SETTINGS_SECTIONS)[number];
 
 export const SETTINGS_BASE = '/configuracoes';
@@ -13,7 +13,8 @@ export const settingsHref = (section: SettingsSection) => `${SETTINGS_BASE}/${se
 export function activeSettingsSection(pathname: string): SettingsSection | null {
   const prefix = `${SETTINGS_BASE}/`;
   if (!pathname.startsWith(prefix)) return null;
-  const section = pathname.slice(prefix.length).replace(/\/+$/, '');
+  // Só o 1º trecho: o recibo (`compras/<id>`) é da seção Compras.
+  const section = pathname.slice(prefix.length).split('/')[0] ?? '';
   return (SETTINGS_SECTIONS as readonly string[]).includes(section)
     ? (section as SettingsSection)
     : null;

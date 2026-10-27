@@ -13,8 +13,8 @@ describe('settingsHref', () => {
     expect(settingsHref('conexoes')).toBe('/configuracoes/conexoes');
   });
 
-  it('a ordem das seções é Perfil, Conexões, Aparência, Dados e conta', () => {
-    expect(SETTINGS_SECTIONS).toEqual(['perfil', 'conexoes', 'aparencia', 'dados']);
+  it('a ordem das seções é Perfil, Compras, Conexões, Aparência, Dados e conta', () => {
+    expect(SETTINGS_SECTIONS).toEqual(['perfil', 'compras', 'conexoes', 'aparencia', 'dados']);
   });
 });
 
@@ -22,6 +22,13 @@ describe('activeSettingsSection', () => {
   it('reconhece a seção pelo caminho', () => {
     expect(activeSettingsSection('/configuracoes/aparencia')).toBe('aparencia');
     expect(activeSettingsSection('/configuracoes/dados/')).toBe('dados');
+  });
+
+  it('o recibo é da seção Compras', () => {
+    expect(activeSettingsSection('/configuracoes/compras')).toBe('compras');
+    expect(
+      activeSettingsSection('/configuracoes/compras/3f9c8b1e-7a52-4c1e-9d3a-2f6a8e0b4c11'),
+    ).toBe('compras');
   });
 
   it('na raiz de /configuracoes, nenhuma está aberta (no celular é a lista)', () => {

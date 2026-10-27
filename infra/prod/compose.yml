@@ -94,6 +94,10 @@ services:
       SENTRY_RELEASE: ${IMAGE_TAG}
       # A origem pública das fotos de perfil (a mesma da API): libera as imagens dela no CSP e liga o convite do Perfil.
       MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
+      # O recibo da compra (S14b) mostra quem vende; vazio, ele diz "a informar" (docs/operacao/pagamentos.md).
+      RECEIPT_SUPPLIER_NAME: ${RECEIPT_SUPPLIER_NAME:-}
+      RECEIPT_SUPPLIER_DOCUMENT: ${RECEIPT_SUPPLIER_DOCUMENT:-}
+      RECEIPT_SUPPLIER_ADDRESS: ${RECEIPT_SUPPLIER_ADDRESS:-}
     networks:
       edge:
         ipv4_address: 172.30.0.11
