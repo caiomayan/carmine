@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { parseTrustedProxies } from '../client-ip/client-ip.js';
 import type { RateLimitPolicyName } from '../rate-limit/policies.js';
+import { SANDBOX_HOSTS } from './sandbox-hosts.js';
 
 const urlWithProtocol = (protocols: string[]) =>
   z.url().refine((value) => protocols.includes(new URL(value).protocol), {
@@ -63,6 +64,20 @@ const envSchema = z
     RATE_LIMIT_EQUIPPED_PER_MINUTE: perMinute(120),
     RATE_LIMIT_MUTATIONS_PER_MINUTE: perMinute(60),
     RATE_LIMIT_SERVER_PER_MINUTE: perMinute(600),
+    RATE_LIMIT_WEBHOOK_PER_MINUTE: perMinute(120),
+    // Pagamentos (S14). A cobrança nasce DESLIGADA: só liga com PAYMENTS_ENABLED=true (a decisão sobre
+    // a verificação de idade é do dono). O provedor é o Mercado Pago ou o falso (dev e homologação; o
+    // falso só sobe num host de homologação). A chave de dados (32 bytes em base64) cifra o CPF do Pagador.
+    PAYMENTS_ENABLED: z.enum(['true', 'false']).default('false'),
+    PAYMENTS_PROVIDER: z.enum(['', 'fake', 'mercadopago']).default(''),
+    PAYMENTS_DATA_KEY: z.string().trim().default(''),
+    PAYMENTS_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(60),
+    // Guarda dos Itens VIP (S14, D3): nasce DESLIGADA e liga junto com os Termos novos (que dizem que os
+    // Itens saem do Inventário quando o VIP acaba). A varredura guarda/devolve/apaga de tantos em tantos s (0: sem varredura).
+    VIP_HOLD_ENABLED: z.enum(['true', 'false']).default('false'),
+    VIP_HOLD_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(60),
+    MERCADOPAGO_ACCESS_TOKEN: z.string().trim().default(''),
+    MERCADOPAGO_WEBHOOK_SECRET: z.string().trim().default(''),
     // Servidores ao vivo (S06): sem batimento por esse tempo, o servidor fica offline; a varredura
     // que percebe isso (e avisa a home ao vivo) roda nesse intervalo. Os dois somados ficam em até
     // 60 s (critério da S06).
@@ -153,6 +168,7 @@ const envSchema = z
       .default(90 * DAY_SECONDS),
   })
   .superRefine((env, ctx) => {
+    checkPayments(env, ctx);
     if (env.SESSION_ABSOLUTE_TTL_SECONDS < env.SESSION_IDLE_TTL_SECONDS) {
       ctx.addIssue({
         code: 'custom',
@@ -178,6 +194,18 @@ const envSchema = z
     }
   });
 
+/** Pagamentos (S14). Desligados por padrão; o falso só existe em host de homologação. */
+export interface PaymentsConfig {
+  enabled: boolean;
+  /** Nulo: nenhum provedor configurado (a compra fica indisponível mesmo ligada). */
+  provider: 'fake' | 'mercadopago' | null;
+  /** Cifra o CPF do Pagador (AES-256-GCM); nulo sem a chave. */
+  dataKey: Buffer | null;
+  mercadopago: { accessToken: string; webhookSecret: string } | null;
+  /** A varredura de vencimento e conciliação (0: desligada). */
+  sweepMs: number;
+}
+
 export interface AppConfig {
   nodeEnv: 'development' | 'test' | 'production';
   host: string;
@@ -193,6 +221,10 @@ export interface AppConfig {
   rateLimitsPerMinute: Record<RateLimitPolicyName, number>;
   /** Servidores ao vivo (S06). */
   liveServers: { offlineAfterMs: number; sweepMs: number };
+  /** Pagamentos (S14). */
+  payments: PaymentsConfig;
+  /** A guarda dos Itens VIP (S14, D3): ligada? e a varredura, em ms (0: sem varredura). */
+  vipHold: { enabled: boolean; sweepMs: number };
   /** Cache do Ranking semanal (S12), em segundos. */
   rankingCacheTtlSeconds: number;
   /** Cache dos números da semana da home, em segundos. */
@@ -286,6 +318,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       equipped: e.RATE_LIMIT_EQUIPPED_PER_MINUTE,
       mutations: e.RATE_LIMIT_MUTATIONS_PER_MINUTE,
       server: e.RATE_LIMIT_SERVER_PER_MINUTE,
+      webhook: e.RATE_LIMIT_WEBHOOK_PER_MINUTE,
     },
     rankingCacheTtlSeconds: e.RANKING_CACHE_TTL_SECONDS,
     weekSummaryCacheTtlSeconds: e.WEEK_SUMMARY_CACHE_TTL_SECONDS,
@@ -294,6 +327,20 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     liveServers: {
       offlineAfterMs: e.SERVER_OFFLINE_AFTER_SECONDS * 1000,
       sweepMs: e.LIVE_SERVERS_SWEEP_SECONDS * 1000,
+    },
+    vipHold: { enabled: e.VIP_HOLD_ENABLED === 'true', sweepMs: e.VIP_HOLD_SWEEP_SECONDS * 1000 },
+    payments: {
+      enabled: e.PAYMENTS_ENABLED === 'true',
+      provider: e.PAYMENTS_PROVIDER === '' ? null : e.PAYMENTS_PROVIDER,
+      dataKey: e.PAYMENTS_DATA_KEY === '' ? null : Buffer.from(e.PAYMENTS_DATA_KEY, 'base64'),
+      mercadopago:
+        e.MERCADOPAGO_ACCESS_TOKEN === '' || e.MERCADOPAGO_WEBHOOK_SECRET === ''
+          ? null
+          : {
+              accessToken: e.MERCADOPAGO_ACCESS_TOKEN,
+              webhookSecret: e.MERCADOPAGO_WEBHOOK_SECRET,
+            },
+      sweepMs: e.PAYMENTS_SWEEP_SECONDS * 1000,
     },
     alerts: {
       discordWebhookUrl: e.DISCORD_ALERT_WEBHOOK_URL === '' ? null : e.DISCORD_ALERT_WEBHOOK_URL,
@@ -321,6 +368,34 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
 }
 
 type Env = z.infer<typeof envSchema>;
+
+/**
+ * Pagamentos (S14): o provedor falso só sobe num host de homologação e nunca com
+ * `SENTRY_ENVIRONMENT=production` (mesmo com a cobrança desligada); ligada, a cobrança exige provedor,
+ * chave de dados e, no Mercado Pago, o token e o segredo do webhook.
+ */
+function checkPayments(env: Env, ctx: z.RefinementCtx): void {
+  const issue = (path: string, message: string) =>
+    ctx.addIssue({ code: 'custom', path: [path], message });
+  if (env.PAYMENTS_PROVIDER === 'fake') {
+    const host = new URL(env.PUBLIC_WEB_URL).hostname;
+    if (!SANDBOX_HOSTS.has(host) || env.SENTRY_ENVIRONMENT.toLowerCase() === 'production') {
+      issue('PAYMENTS_PROVIDER', `o provedor falso não roda em ${host}: só em host de homologação`);
+    }
+  }
+  if (env.PAYMENTS_DATA_KEY !== '' && Buffer.from(env.PAYMENTS_DATA_KEY, 'base64').length !== 32) {
+    issue('PAYMENTS_DATA_KEY', 'deve ter 32 bytes em base64 (openssl rand -base64 32)');
+  }
+  if (env.PAYMENTS_ENABLED !== 'true') return;
+  if (env.PAYMENTS_PROVIDER === '') issue('PAYMENTS_PROVIDER', 'obrigatório com a cobrança ligada');
+  if (env.PAYMENTS_DATA_KEY === '') issue('PAYMENTS_DATA_KEY', 'obrigatória com a cobrança ligada');
+  if (
+    env.PAYMENTS_PROVIDER === 'mercadopago' &&
+    (env.MERCADOPAGO_ACCESS_TOKEN === '' || env.MERCADOPAGO_WEBHOOK_SECRET === '')
+  ) {
+    issue('MERCADOPAGO_ACCESS_TOKEN', 'o Mercado Pago exige o token e o segredo do webhook');
+  }
+}
 
 const DISCORD_BASE_VARS = [
   'DISCORD_CLIENT_ID',

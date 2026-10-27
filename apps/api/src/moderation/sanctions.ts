@@ -69,8 +69,8 @@ export interface AppliedIncident {
   sanctionIds: string[];
   /** Alguma medida é um ban (as sessões do site da Conta devem cair). */
   banned: boolean;
-  /** Ban permanente por cheat: o VIP acaba, sem reembolso. */
-  permanentCheatBan: boolean;
+  /** Ban permanente, por qualquer categoria (J2): o VIP acaba, sem reembolso. */
+  permanentBan: boolean;
 }
 
 /** Uma Punição revogada. */
@@ -173,9 +173,7 @@ export class Sanctions {
       incidentId,
       sanctionIds,
       banned: incident.measures.some((m) => m.type === 'ban'),
-      permanentCheatBan:
-        incident.category === 'cheat' &&
-        incident.measures.some((m) => m.type === 'ban' && m.durationMinutes === null),
+      permanentBan: incident.measures.some((m) => m.type === 'ban' && m.durationMinutes === null),
     };
   }
 

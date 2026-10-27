@@ -42,6 +42,12 @@ x-api-env: &api-env
   # Só o cloudflared e o web (/32), como na produção.
   TRUSTED_PROXIES: 172.31.0.10/32,172.31.0.11/32
   STEAM_WEB_API_KEY: ${STEAM_WEB_API_KEY:-}
+  # S14: a homologação vende com o provedor FALSO (a API recusa o falso fora de host de homologação).
+  PAYMENTS_ENABLED: ${PAYMENTS_ENABLED:-false}
+  PAYMENTS_PROVIDER: ${PAYMENTS_PROVIDER:-}
+  PAYMENTS_DATA_KEY: ${PAYMENTS_DATA_KEY:-}
+  # A guarda de 30 dias dos Itens VIP (S14, D3) roda aqui para o dono validar.
+  VIP_HOLD_ENABLED: ${VIP_HOLD_ENABLED:-false}
   SENTRY_ENVIRONMENT: staging
   SENTRY_RELEASE: ${IMAGE_TAG}
 

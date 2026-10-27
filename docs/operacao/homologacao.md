@@ -32,6 +32,10 @@ O workflow só dispara depois que `deploy-hml.yml` estiver no `main` (o GitHub e
 
 A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há disputa), `oom_score_adj: 500` (se a memória da VM acabar, o kernel mata a homologação primeiro) e o deploy **recusa subir** se a VM tem menos de 1,2 GB de memória disponível.
 
+## Pagamentos de mentira (S14)
+
+A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Detalhes e as variáveis em `docs/operacao/pagamentos.md`. Numa homologação já criada, acrescente ao `.env` `PAYMENTS_ENABLED=true`, `PAYMENTS_PROVIDER=fake`, `PAYMENTS_DATA_KEY` (`openssl rand -base64 32`) e `VIP_HOLD_ENABLED=true`.
+
 ## Memória (tetos do compose)
 
 | Serviço | Teto | | Serviço | Teto |

@@ -15,6 +15,7 @@ import {
   reports,
   sanctions,
   staffMembers,
+  vipHeldItems,
   vipPeriods,
 } from '../database/schema.js';
 import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
@@ -131,6 +132,10 @@ export class AccountErasure {
           .delete(playSessions)
           .where(eq(playSessions.accountId, accountId))
           .returning({ id: playSessions.id });
+        const removedHeld = await tx
+          .delete(vipHeldItems)
+          .where(eq(vipHeldItems.accountId, accountId))
+          .returning({ id: vipHeldItems.id });
         const removedChat = await tx
           .delete(chatMessages)
           .where(eq(chatMessages.accountId, accountId))
@@ -194,6 +199,7 @@ export class AccountErasure {
               statsDays: removedDaily.length,
               weaponStats: removedWeapons.length,
               playSessions: removedSessions.length,
+              vipHeldItems: removedHeld.length,
               chatMessages: removedChat.length,
               reportsUnlinked: unlinkedReports.length,
               reportsScrubbed: scrubbedReports.length,

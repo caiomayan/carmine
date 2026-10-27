@@ -37,6 +37,8 @@ export const RATE_LIMIT_POLICIES = {
   mutations: { subject: 'session', whenUnavailable: 'deny' },
   /** Rotas dos plugins (`/api/server/*`). */
   server: { subject: 'gameServer', whenUnavailable: 'allow' },
+  /** Webhook do provedor de pagamento (S14): sem sessão, por IP; fora do ar não pode perder confirmação. */
+  webhook: { subject: 'ip', whenUnavailable: 'allow' },
 } as const satisfies Record<string, RateLimitPolicy>;
 
 export type RateLimitPolicyName = keyof typeof RATE_LIMIT_POLICIES;

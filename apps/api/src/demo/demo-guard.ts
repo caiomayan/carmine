@@ -1,4 +1,5 @@
 import { steamId64Schema } from '@carmine/contracts';
+import { SANDBOX_HOSTS } from '../config/sandbox-hosts.js';
 
 /**
  * A demonstração (contas, servidores e partidas fictícios) existe só na homologação. A imagem da API
@@ -13,11 +14,7 @@ import { steamId64Schema } from '@carmine/contracts';
  *
  * Além disso o seed recusa um banco com Servidores Carmine de verdade ({@link assertDemoDatabase}).
  */
-export const DEMO_ALLOWED_HOSTS: ReadonlySet<string> = new Set([
-  'dev.stcarmine.com',
-  'localhost',
-  '127.0.0.1',
-]);
+export const DEMO_ALLOWED_HOSTS: ReadonlySet<string> = SANDBOX_HOSTS;
 
 export class DemoNotAllowed extends Error {
   constructor(reason: string) {

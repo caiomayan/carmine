@@ -57,6 +57,7 @@ export async function signedInPlayer(t: TestApp, n: number, options: { vipUntil?
   return {
     account,
     steamId,
+    session,
     call,
     raw,
     /** Adiciona o Item ao Inventário e devolve o uid; falha o teste se a API recusar. */

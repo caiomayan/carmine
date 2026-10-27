@@ -71,7 +71,7 @@ const DETAIL_AUDIT_ENTRIES = 20;
 const STAFF_SEARCH_MAX_LENGTH = 100;
 
 /** Motivo da revogação automática do VIP no ban permanente por cheat. */
-const CHEAT_VIP_REASON = 'Ban permanente por cheat: VIP encerrado sem reembolso';
+const PERMANENT_BAN_VIP_REASON = 'Ban permanente: VIP encerrado sem reembolso';
 
 export interface StaffPanelDeps {
   db: Database;
@@ -179,8 +179,8 @@ export class StaffPanel {
       suggestion?.measures,
     );
     if (applied.banned) await this.dropSessions(target);
-    if (applied.permanentCheatBan)
-      await this.endVip(target, { ...staff, reason: CHEAT_VIP_REASON }, now);
+    if (applied.permanentBan)
+      await this.endVip(target, { ...staff, reason: PERMANENT_BAN_VIP_REASON }, now);
     return this.detailOf(target, now);
   }
 
