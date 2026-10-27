@@ -8,7 +8,7 @@ import { sentryIngestOrigin, sentryWebConfig } from '@/lib/sentry-config';
 const NUMERIC_PATH = /^\/[0-9]+$/;
 
 /**
- * Roda em toda página (menos `/api`, `/healthz`, estáticos e prefetch) e faz duas coisas:
+ * Roda em toda página (menos `/api`, `/healthz`, `/avatars/` (as fotos da homologação), estáticos e prefetch) e faz duas coisas:
  *
  * - Define a CSP da resposta com um nonce novo, que o Next lê do cabeçalho da requisição para
  *   marcar os próprios scripts e que o layout usa no script do tema (`NONCE_HEADER`).
@@ -59,7 +59,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: '/((?!api|healthz|_next/static|_next/image|favicon.ico).*)',
+      source: '/((?!api|healthz|avatars/|_next/static|_next/image|favicon.ico).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

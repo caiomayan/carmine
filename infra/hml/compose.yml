@@ -53,7 +53,8 @@ x-demo-env: &demo-env
 
 # A foto de perfil na homologação: um R2 de mentira em disco (serviço `media`), sem conta nem bucket da
 # Cloudflare. A API fala com ele pela rede interna; o navegador pega a foto em dev.stcarmine.com/avatars/...
-# (a mesma forma de img.stcarmine.com em produção), que o túnel manda para a porta pública do `media`.
+# (a mesma forma de img.stcarmine.com em produção): é uma rota do web que repassa, pela rede interna, para a porta
+# pública do `media` (MEDIA_INTERNAL_URL). O túnel não ganha rota nenhuma.
 # A chave é só um cinto: a rede é interna e nada aqui é segredo. A produção usa o R2 de verdade.
 x-media-env: &media-env
   R2_MEDIA_ENDPOINT: http://media:9000
@@ -99,6 +100,8 @@ services:
       # A foto de perfil está ligada aqui (a mídia fica no serviço `media`, no mesmo host): a mesma variável da
       # API libera as imagens no CSP e liga o convite do Perfil.
       MEDIA_PUBLIC_URL: https://dev.stcarmine.com
+      # De onde o web busca as fotos para servir em /avatars/ (apps/web/src/app/avatars): só a homologação define.
+      MEDIA_INTERNAL_URL: http://media:8080
       SENTRY_ENVIRONMENT: staging
       SENTRY_RELEASE: ${IMAGE_TAG}
     networks:
@@ -148,8 +151,8 @@ services:
 
   # O armazenamento de mídia de mentira (apps/api/src/demo/demo-media.ts): a imagem da API com o comando `media`,
   # que só roda com a trava da homologação (CARMINE_DEMO, PUBLIC_WEB_URL de homologação, SENTRY_ENVIRONMENT).
-  # Duas portas: 9000 é o S3 da API (interna, com a chave) e 8080 é a pública, só GET das fotos no ar, que o túnel
-  # expõe em /avatars/. As fotos ficam no volume `media-data` (sobrevivem aos deploys; o `reset` as apaga).
+  # Duas portas: 9000 é o S3 da API (interna, com a chave) e 8080 é a pública, só GET das fotos no ar, que o web
+  # repassa em /avatars/. As fotos ficam no volume `media-data` (sobrevivem aos deploys; o `reset` as apaga).
   media:
     image: *api-image
     command: ["node", "dist/demo/demo.cli.js", "media"]

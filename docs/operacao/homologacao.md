@@ -48,9 +48,9 @@ A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há 
 
 Ligada **só na homologação**, para o dono validar o fluxo inteiro (enviar, recortar, denunciar, a Staff decidir) sem conta nem bucket da Cloudflare. A produção continua desligada até o dono criar os buckets do R2 (`docs/operacao/foto-de-perfil.md`).
 
-- O serviço **`media`** é a imagem da API com o comando `media` (`apps/api/src/demo/demo-media.ts`): um R2 de mentira que guarda os arquivos num volume (`media-data`, 96 MB de memória). Tem duas portas: a **9000** é o S3 que a API usa (rede interna, com a chave `carmine-hml`) e a **8080** é a pública, só `GET`/`HEAD` das fotos no ar em `/avatars/<id>/<tamanho>.webp`, o mesmo caminho de `img.stcarmine.com` em produção. O bucket privado (fotos suspensas e removidas) nunca sai por ela. Só sobe com a trava da homologação (`CARMINE_DEMO=homologacao`, `PUBLIC_WEB_URL` de homologação e `SENTRY_ENVIRONMENT` diferente de `production`).
-- A API recebe as `R2_MEDIA_*` e `MEDIA_PUBLIC_URL=https://dev.stcarmine.com`; o web recebe `MEDIA_PUBLIC_URL` (liga o convite no Perfil; o CSP já aceita a própria origem, `'self'`). Sem purga de CDN: o navegador guarda a foto por um ano (a URL muda a cada envio).
-- **Um passo manual, uma vez:** a rota `^/avatars/` → `http://media:8080` no túnel `carmine-hml` (painel, ou `infra/hml/tunnel/apply-ingress.sh`; `infra/hml/tunnel/ingress.json` é a cópia versionada). Ela vai **antes** da rota do web. O Access protege também esse caminho, como o resto do `dev.stcarmine.com`.
+- O serviço **`media`** é a imagem da API com o comando `media` (`apps/api/src/demo/demo-media.ts`): um R2 de mentira que guarda os arquivos num volume (`media-data`, 96 MB de memória). Tem duas portas: a **9000** é o S3 que a API usa (rede interna, com a chave `carmine-hml`) e a **8080** é a pública, só `GET`/`HEAD` das fotos no ar em `/avatars/<id>/<tamanho>.webp`, o mesmo caminho de `img.stcarmine.com` em produção; ela nunca é publicada. O bucket privado (fotos suspensas e removidas) nunca sai por ela. Só sobe com a trava da homologação (`CARMINE_DEMO=homologacao`, `PUBLIC_WEB_URL` de homologação e `SENTRY_ENVIRONMENT` diferente de `production`).
+- A API recebe as `R2_MEDIA_*` e `MEDIA_PUBLIC_URL=https://dev.stcarmine.com`; o web recebe `MEDIA_PUBLIC_URL` (liga o convite no Perfil; o CSP já aceita a própria origem, `'self'`) e `MEDIA_INTERNAL_URL=http://media:8080`: a rota `apps/web/src/app/avatars/[id]/[file]/route.ts` repassa `/avatars/<id>/<tamanho>.webp` ao `media` pela rede interna, lendo a variável a cada pedido (o web é a mesma imagem da produção, onde ela não existe e o caminho é um 404 comum). Sem purga de CDN: o navegador guarda a foto por um ano (a URL muda a cada envio).
+- **Nenhum passo manual:** o túnel segue com as duas rotas de sempre (`/api` e o resto para o web); as fotos passam pelo web, atrás do Access como o resto do `dev.stcarmine.com`.
 - Os arquivos sobrevivem aos deploys; o `reset` (que apaga o banco) apaga o volume junto.
 
 ## As vitrines /dev/*
@@ -79,7 +79,6 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
 - [ ] **1. Access.** Zero Trust > Access > Applications > *Add an application* > *Self-hosted*. Nome `Carmine homologação`; domínio `dev.stcarmine.com`; duração da sessão **1 mês** (celular). Política *Allow* com a regra *Emails* = o seu e-mail; login por *One-time PIN*. Nenhuma política *Bypass* nem *Everyone*.
 - [ ] **2. Túnel novo.** Zero Trust > Networks > Tunnels > *Create a tunnel* > *Cloudflared*, nome `carmine-hml` (**não** reuse o `carmine-prod`). Copie o token (o texto longo depois de `--token`; não rode o comando mostrado). Em *Published application routes*, nesta ordem:
   - `dev.stcarmine.com`, caminho `^/api(/|$)` → HTTP `api:3333`
-  - `dev.stcarmine.com`, caminho `^/avatars/` → HTTP `media:8080` (as fotos de perfil; sem esta rota elas não aparecem, veja "A foto de perfil")
   - `dev.stcarmine.com` (sem caminho) → HTTP `web:3000`
 
   O painel cria o registro DNS `dev` sozinho.
