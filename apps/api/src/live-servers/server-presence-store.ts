@@ -1,3 +1,4 @@
+import { matchStateSchema, scoreboardEntrySchema } from '@carmine/contracts';
 import type { Redis } from 'ioredis';
 import { z } from 'zod';
 import type { ServerPresence } from './live-server-list.js';
@@ -15,6 +16,9 @@ const storedSchema = z.object({
   players: z.array(z.string()),
   maxPlayers: z.number(),
   at: z.iso.datetime(),
+  // S12b: ausentes em presença guardada antes do plugin novo.
+  match: matchStateSchema.nullish(),
+  scoreboard: z.array(scoreboardEntrySchema).nullish(),
 });
 
 /** Presença dos Servidores Carmine no Valkey: o último batimento de cada um. */

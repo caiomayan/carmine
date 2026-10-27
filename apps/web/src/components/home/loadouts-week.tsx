@@ -160,9 +160,17 @@ function ambient(entry: LoadoutEntry): [string, string, string] {
  * semana (Perfil público). É o lugar do site onde a cor das skins aparece grande; o fundo da faixa troca para a
  * paleta da skin em foco. A rotação pausa com o mouse ou o foco e tem botão de pausa (WCAG 2.2.2); com movimento
  * reduzido não há rotação. Os dados vêm de `/vitrine/semana` quando a faixa chega perto da tela; sem ninguém para
- * mostrar (ou com a API fora), a seção não aparece.
+ * mostrar (ou com a API fora), a seção não aparece. Quem a abre e fecha com transição é o `LoadoutsSlot`: aqui só se
+ * avisa, por `onResolve`, se há o que mostrar. O esqueleto só entra quando o servidor sinalizou conteúdo
+ * (`expectContent`); sem o sinal, nada é desenhado (nem reservado) até o dado chegar.
  */
-export default function LoadoutsWeek() {
+export default function LoadoutsWeek({
+  expectContent,
+  onResolve,
+}: {
+  expectContent: boolean;
+  onResolve: (hasEntries: boolean) => void;
+}) {
   const t = useTranslations('home.loadouts');
   const [entries, setEntries] = useState<LoadoutEntry[] | null>(null);
   const [index, setIndex] = useState(0);
@@ -174,19 +182,26 @@ export default function LoadoutsWeek() {
     fetch('/vitrine/semana', { headers: { accept: 'application/json' } })
       .then((response) => (response.ok ? (response.json() as Promise<LoadoutsWeekData>) : null))
       .then((data) => {
-        if (!stopped) setEntries(data?.entries ?? []);
+        if (stopped) return;
+        const list = data?.entries ?? [];
+        setEntries(list);
+        onResolve(list.length > 0);
       })
       .catch(() => {
-        if (!stopped) setEntries([]);
+        if (stopped) return;
+        setEntries([]);
+        onResolve(false);
       });
     return () => {
       stopped = true;
     };
-  }, []);
+  }, [onResolve]);
 
-  if (!entries) return <LoadoutsSkeleton />;
+  // Sem dado ainda (ou sem ninguém): o esqueleto só se o servidor sinalizou conteúdo, e então ele fecha suave.
+  const placeholder = expectContent ? <LoadoutsSkeleton /> : null;
+  if (!entries) return placeholder;
   const entry = entries[index];
-  if (!entry) return null;
+  if (!entry) return placeholder;
   const [c1, c2, c3] = ambient(entry);
   const stopped = paused || hold;
 

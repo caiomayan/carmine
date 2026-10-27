@@ -20,12 +20,14 @@
     "db:migrate": "node --env-file=.env.example --env-file-if-exists=.env dist/database/migrate.cli.js",
     "servers": "node --env-file=.env.example --env-file-if-exists=.env dist/game-servers/servers.cli.js",
     "vip": "node --env-file=.env.example --env-file-if-exists=.env dist/vip/vip.cli.js",
+    "payments": "node --env-file=.env.example --env-file-if-exists=.env dist/payments/payments.cli.js",
     "staff": "node --env-file=.env.example --env-file-if-exists=.env dist/staff/staff.cli.js",
     "accounts": "node --env-file=.env.example --env-file-if-exists=.env dist/accounts/accounts.cli.js",
     "fake-steam": "node test/support/fake-steam-openid.cli.ts",
     "openapi:generate": "nest build -p tsconfig.build.json && node dist/openapi/generate.cli.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1156.0",
     "@carmine/contracts": "workspace:*",
     "@fastify/cookie": "11.1.2",
     "@fastify/static": "10.1.6",
@@ -42,8 +44,10 @@
     "pg": "8.23.1",
     "pino": "10.4.0",
     "pino-http": "11.0.0",
+    "qrcode": "1.5.4",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
+    "sharp": "0.35.5",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -53,6 +57,7 @@
     "@testcontainers/valkey": "12.2.0",
     "@types/node": "catalog:",
     "@types/pg": "8.23.1",
+    "@types/qrcode": "1.5.6",
     "drizzle-kit": "0.31.11",
     "pino-pretty": "13.2.0",
     "testcontainers": "12.2.0",

@@ -20,7 +20,6 @@ import { LabelInput } from '@/components/ui/label-input';
 import { ambientFor } from '@/components/vida/skin-ambient';
 import { signInHref } from '@/lib/auth-links';
 import type { ItemSpec } from '@/lib/catalog/catalog';
-import { loadContracts } from '@/lib/contracts-schemas';
 import { formatDecimal } from '@/lib/decimal';
 import {
   type AttachmentLabel,
@@ -169,13 +168,13 @@ export function ItemEditor(props: EditorProps) {
       );
       if (response.status === 401) return;
       if (!response.ok) {
-        const { inventoryErrorSchema } = await loadContracts();
+        const { inventoryErrorSchema } = await import('@carmine/contracts/inventory');
         const parsed = inventoryErrorSchema.safeParse(await response.json().catch(() => null));
         if (parsed.success) setApiIssue(issueFromApiError(parsed.data));
         else setFailure('unexpected');
         return;
       }
-      const { inventoryItemSchema } = await loadContracts();
+      const { inventoryItemSchema } = await import('@carmine/contracts/inventory');
       const saved = inventoryItemSchema.parse(await response.json());
       draft.commit();
       if (andEquip) {

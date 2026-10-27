@@ -1,4 +1,4 @@
-import { DEATHMATCH_MIN_MINUTES, RETAKE_MIN_ROUNDS } from '@carmine/contracts';
+import { DEATHMATCH_MIN_MINUTES, RETAKE_MIN_ROUNDS } from '@carmine/contracts/ranking';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';

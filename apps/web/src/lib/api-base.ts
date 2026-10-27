@@ -1,4 +1,4 @@
-import { profileLocationSchema } from '@carmine/contracts';
+import { profileLocationSchema } from '@carmine/contracts/profile';
 
 /**
  * Chamadas do servidor do web à API, pela rede interna (`API_URL`; ADR 0015). Usado pelos

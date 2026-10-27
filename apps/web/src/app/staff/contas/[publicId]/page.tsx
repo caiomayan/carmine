@@ -1,6 +1,8 @@
-import { staffAccountDetailSchema } from '@carmine/contracts';
+import { staffAccountAvatarSchema } from '@carmine/contracts/avatar';
+import { staffAccountDetailSchema, staffCan } from '@carmine/contracts/staff';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { AccountAvatarPanel } from '@/components/staff/account-avatar';
 import { AccountFile } from '@/components/staff/account-file';
 import { getServerSession, readStaff } from '@/lib/api-server';
 import { parseProfileSegment } from '@/lib/auth-links';
@@ -39,15 +41,28 @@ export default async function StaffAccountPage({
       </p>
     );
   }
+  // A foto de perfil (ADR 0022) é do papel que modera fotos; sem a resposta, a ficha segue sem a seção.
+  const avatar = staffCan(server.session.staffRole, 'avatars.moderate')
+    ? await readStaff(`/staff/accounts/${parsed.publicId}/avatar`, staffAccountAvatarSchema)
+    : null;
   return (
-    <AccountFile
-      // Outra Conta, outra ficha: o estado do formulário não passa de uma para a outra.
-      key={result.data.account.publicId}
-      initial={result.data}
-      viewer={{ steamId: server.session.account.steamId, role: server.session.staffRole }}
-      {...(fromReport && {
-        report: { id: reportId, needsEvidence: first(query.evidencia) === '1' },
-      })}
-    />
+    <>
+      <AccountFile
+        // Outra Conta, outra ficha: o estado do formulário não passa de uma para a outra.
+        key={result.data.account.publicId}
+        initial={result.data}
+        viewer={{ steamId: server.session.account.steamId, role: server.session.staffRole }}
+        {...(fromReport && {
+          report: { id: reportId, needsEvidence: first(query.evidencia) === '1' },
+        })}
+      />
+      {avatar?.status === 'ok' ? (
+        <AccountAvatarPanel
+          key={result.data.account.publicId}
+          publicId={result.data.account.publicId}
+          initial={avatar.data}
+        />
+      ) : null}
+    </>
   );
 }

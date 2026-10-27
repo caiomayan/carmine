@@ -1,0 +1,688 @@
+/*
+ * O Sobre em formato de filme (protótipo, vitrine /dev/sobre). Prefixo `sb-`. Sem a classe `.is-film` (que o
+ * `film.ts` põe na raiz quando o GSAP monta as cenas) a página é estática e inteira legível: as cenas empilham, o
+ * texto aparece por completo, nada fica preso à rolagem. Tudo o que depende do GSAP fica sob `.is-film`.
+ * A marca é preto e branco; a cor vem da arte dos mapas (--v-map*, por cena) e das skins (--rar, a raridade).
+ */
+
+.sb {
+  position: relative;
+  overflow-x: clip;
+}
+
+/* ---------- a cena e o fundo de mapa ---------- */
+.sb-scene {
+  position: relative;
+  isolation: isolate;
+  padding-block: clamp(88px, 14vh, 168px);
+}
+.sb-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+.sb-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--bg) 0%,
+    color-mix(in srgb, var(--bg) 58%, transparent) 26%,
+    color-mix(in srgb, var(--bg) 58%, transparent) 74%,
+    var(--bg) 100%
+  );
+}
+.sb-bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.sb-eyebrow,
+.sb-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--on-map-muted);
+}
+.sb-eyebrow::before {
+  content: "";
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--v-map);
+}
+.sb-h2 {
+  max-width: 15ch;
+  margin-top: 18px;
+  font-family: var(--v-serif);
+  font-size: clamp(42px, 6.4vw, 96px);
+  font-weight: 400;
+  line-height: 1.02;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+.sb-copy {
+  max-width: 52ch;
+  margin-top: 22px;
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+}
+.sb-note {
+  max-width: 62ch;
+  margin-top: 36px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--on-map-muted);
+}
+.sb-cta,
+.sb-actions {
+  margin-top: 30px;
+}
+.sb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- 0 · a abertura ---------- */
+.sb-hero {
+  display: grid;
+  align-content: end;
+  min-height: 100svh;
+  padding-block: 120px 12svh;
+}
+.sb-hero .sb-bg::after {
+  background:
+    linear-gradient(
+      90deg,
+      var(--bg) 0%,
+      color-mix(in srgb, var(--bg) 70%, transparent) 38%,
+      transparent 100%
+    ),
+    linear-gradient(to top, var(--bg) 0%, transparent 42%);
+}
+.sb-hero-copy {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: 22px;
+  justify-items: start;
+}
+.sb-title {
+  font-size: clamp(92px, 18vw, 280px);
+  line-height: 0.84;
+  letter-spacing: 0.01em;
+  color: var(--text);
+}
+.sb-lede {
+  max-width: 40ch;
+  font-size: clamp(17px, 1.7vw, 22px);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--text) 86%, transparent);
+}
+.sb-hint {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  color: var(--on-map-muted);
+}
+.sb-shards {
+  display: none;
+}
+.sb-shard {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+.sb-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .1  0 0 0 0 .09  0 0 0 0 .08  0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+/* ---------- 1 · o Spotlight Text ---------- */
+.sb-spot .sb-bg::after {
+  background: color-mix(in srgb, var(--bg) 84%, transparent);
+}
+.sb-spot {
+  display: grid;
+  align-content: center;
+  min-height: 86svh;
+}
+.sb-spot-text {
+  position: relative;
+  --sx: 50%;
+  --sy: 50%;
+  max-width: 25ch;
+  margin-top: 26px;
+  font-family: var(--v-serif);
+  font-size: clamp(28px, 4.2vw, 64px);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  text-wrap: pretty;
+}
+.sb-spot-base {
+  color: var(--text);
+}
+.sb-spot-lit {
+  display: none;
+}
+
+/* ---------- 2 · os Modos ---------- */
+/* o mapa aparece vivo: a sombra fica só atrás do texto, à esquerda, e no pé */
+.sb-mode .sb-bg::after {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--bg) 90%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 58%, transparent) 42%,
+      color-mix(in srgb, var(--bg) 8%, transparent) 100%
+    ),
+    linear-gradient(to top, var(--bg) 0%, transparent 26%);
+}
+.sb-modes {
+  padding-block: 0;
+}
+.sb-modes-title {
+  position: absolute;
+  top: 84px;
+  left: 50%;
+  z-index: 4;
+  width: min(100% - 32px, 1280px);
+  transform: translateX(-50%);
+  color: var(--on-map-muted);
+}
+.sb-mode-stack {
+  display: grid;
+}
+.sb-mode {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  align-items: center;
+  min-height: 92svh;
+  padding-block: 150px 90px;
+}
+.sb-mode-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  gap: clamp(28px, 5vw, 80px);
+  align-items: center;
+}
+.sb-mode-copy {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+.sb-mode-title {
+  font-size: clamp(64px, 7.8vw, 124px);
+  line-height: 0.86;
+  letter-spacing: 0.01em;
+}
+.sb-server {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  align-items: center;
+  width: min(100%, 460px);
+  margin-top: 8px;
+  border-radius: var(--r-card);
+  padding: 18px 20px 16px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+}
+.sb-server-name {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.sb-server-map {
+  grid-column: 1 / -1;
+  font-size: 44px;
+}
+.sb-server-count {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--on-map-muted);
+}
+.sb-server-count b {
+  font-size: 22px;
+  color: var(--text);
+}
+.sb-server .vh-bar {
+  grid-column: 1 / -1;
+}
+.sb-tag {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--on-map-muted);
+  background: var(--fill-rest);
+}
+.sb-skins {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.sb-skin {
+  display: grid;
+  gap: 10px;
+  border-radius: var(--r-card);
+  padding: 14px 14px 16px;
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--rar) 26%, transparent), transparent 70%),
+    color-mix(in srgb, var(--bg) 60%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+.sb-skin img {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 18px rgb(0 0 0 / 0.45));
+}
+.sb-skin-name {
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--on-map-muted);
+}
+.sb-skin-name b {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.sb-skin-name::before {
+  content: "";
+  width: 26px;
+  height: 3px;
+  margin-bottom: 6px;
+  border-radius: 2px;
+  background: var(--rar);
+}
+
+/* ---------- 3 · o Ranking ---------- */
+.sb-ranking-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: clamp(20px, 3vw, 44px);
+  margin-top: 40px;
+}
+.sb-board {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  border-radius: var(--r-panel);
+  padding: 24px 24px 20px;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
+.sb-board-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--on-map-muted);
+}
+.sb-podium {
+  display: grid;
+  grid-template-columns: 1fr 1.08fr 1fr;
+  align-items: end;
+  gap: 10px;
+  min-height: 240px;
+}
+.sb-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 10px;
+  border-radius: 22px 22px 8px 8px;
+  padding: 14px 14px 8px;
+  background: color-mix(in srgb, var(--v-map) 26%, var(--surface));
+}
+.sb-step[data-rank="1"] {
+  min-height: 236px;
+}
+.sb-step[data-rank="2"] {
+  min-height: 188px;
+}
+.sb-step[data-rank="3"] {
+  min-height: 156px;
+}
+.sb-podium-who {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.sb-podium-who b {
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+.sb-podium-who span {
+  font-size: 22px;
+  font-weight: 700;
+}
+.sb-step-n {
+  align-self: flex-end;
+  font-size: 64px;
+  line-height: 0.8;
+  opacity: 0.55;
+}
+.sb-rows {
+  display: grid;
+  gap: 4px;
+}
+.sb-row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+  align-items: center;
+  min-height: 46px;
+  border-radius: 16px;
+  padding: 0 14px;
+  font-weight: 600;
+  background: var(--fill-rest);
+}
+.sb-row-n {
+  font-size: 22px;
+  color: var(--on-map-muted);
+}
+
+/* ---------- 4 · a comunidade ---------- */
+.sb-marquees {
+  display: grid;
+  gap: 12px;
+  margin-top: 64px;
+  overflow: hidden;
+}
+.sb-marquee {
+  overflow: hidden;
+}
+.sb-marquee-track {
+  display: flex;
+  gap: 12px;
+  width: max-content;
+}
+.sb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--fill-rest);
+}
+
+/* ---------- 5 · o VIP ---------- */
+.sb-slots {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 640px;
+  margin-top: 34px;
+}
+.sb-slot {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--text) 78%, transparent);
+}
+.sb-slot[data-slot="last"] {
+  display: none;
+}
+.sb-slot-vip {
+  display: grid;
+  grid-column: 9;
+  grid-row: 1;
+  place-items: center;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--v-map-ink, #111);
+  background: var(--v-map);
+}
+.sb-perks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 48px;
+}
+.sb-perk {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border-radius: var(--r-card);
+  padding: 22px 22px 24px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--on-map-muted);
+  background: color-mix(in srgb, var(--bg) 64%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+.sb-perk b {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ---------- 6 · o fim ---------- */
+.sb-end {
+  display: grid;
+  align-content: center;
+  min-height: 90svh;
+}
+.sb-end-copy {
+  display: grid;
+  justify-items: start;
+}
+.sb-seal {
+  font-size: clamp(64px, 13vw, 200px);
+  line-height: 0.84;
+  color: transparent;
+  -webkit-text-stroke: 2px color-mix(in srgb, var(--text) 70%, transparent);
+}
+
+/* ---------- o trilho de cenas ---------- */
+.sb-rail {
+  display: none;
+}
+
+/* =================== o filme (só com o GSAP montado) =================== */
+.is-film .sb-hero {
+  height: 100svh;
+  min-height: 0;
+  padding-bottom: 14svh;
+}
+.is-film .sb-shards {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  pointer-events: none;
+}
+.is-film .sb-title,
+.is-film .sb-kicker {
+  color: #171613;
+}
+.is-film .sb-lede {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.is-film .sb-spot-base {
+  opacity: 0.5;
+}
+.is-film .sb-spot-lit {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: var(--text);
+  -webkit-mask-image: radial-gradient(
+    circle clamp(150px, 24vw, 360px) at var(--sx) var(--sy),
+    #000 0%,
+    rgb(0 0 0 / 0.7) 38%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle clamp(150px, 24vw, 360px) at var(--sx) var(--sy),
+    #000 0%,
+    rgb(0 0 0 / 0.7) 38%,
+    transparent 100%
+  );
+}
+.is-film .sb-modes {
+  height: 100svh;
+  overflow: hidden;
+}
+.is-film .sb-mode-stack {
+  position: absolute;
+  inset: 0;
+}
+.is-film .sb-mode {
+  grid-area: 1 / 1;
+  min-height: 0;
+  height: 100svh;
+}
+.is-film .sb-slot[data-slot="last"] {
+  display: block;
+}
+.is-film .sb-slot-vip {
+  opacity: 0;
+}
+@media (min-width: 1100px) {
+  .is-film .sb-rail {
+    position: fixed;
+    top: 50%;
+    right: 22px;
+    z-index: 40;
+    display: grid;
+    gap: 12px;
+    transform: translateY(-50%);
+  }
+  .sb-rail i {
+    display: block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text) 28%, transparent);
+    transition:
+      transform var(--dur-slow) var(--ease-soft),
+      background-color var(--dur-slow) var(--ease-soft);
+  }
+  .sb-rail i[data-on] {
+    transform: scale(1.7);
+    background: var(--text);
+  }
+}
+
+/* ---------- telas estreitas ---------- */
+@media (max-width: 900px) {
+  .sb-ranking-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sb-perks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .sb-mode-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .sb-mode {
+    padding-block: 112px 56px;
+  }
+  .sb-modes-title {
+    top: 76px;
+  }
+  .sb-mode-copy {
+    gap: 12px;
+  }
+  .sb-mode-title {
+    font-size: 72px;
+  }
+  .sb-copy {
+    margin-top: 0;
+    font-size: 15px;
+  }
+  .sb-server {
+    padding: 14px 16px 12px;
+  }
+  .sb-server-map {
+    font-size: 34px;
+  }
+  .sb-skins {
+    gap: 8px;
+  }
+  .sb-skin {
+    padding: 10px 10px 12px;
+  }
+  .sb-skin-name {
+    font-size: 11.5px;
+  }
+  .sb-skin-name b {
+    font-size: 13px;
+  }
+  .sb-board {
+    padding: 18px 14px 14px;
+  }
+  .sb-podium {
+    min-height: 200px;
+    gap: 6px;
+  }
+  .sb-step[data-rank="1"] {
+    min-height: 198px;
+  }
+  .sb-step[data-rank="2"] {
+    min-height: 160px;
+  }
+  .sb-step[data-rank="3"] {
+    min-height: 132px;
+  }
+  .sb-step-n {
+    font-size: 46px;
+  }
+  .sb-podium-who b {
+    font-size: 13px;
+  }
+  .sb-podium-who span {
+    font-size: 18px;
+  }
+  .sb-perks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sb-slots {
+    gap: 5px;
+  }
+  .sb-slot,
+  .sb-slot-vip {
+    border-radius: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sb-rail i {
+    transition: none;
+  }
+}

@@ -399,6 +399,14 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 - DM com 16 jogadores: um VIP entra numa vaga extra sem ninguém sair; um jogador sem VIP não consegue usar as vagas extras.
 - Depois de restaurar um backup, os Períodos VIP são reconciliados com os pagamentos reais do Mercado Pago.
 
+**Decidido na implementação (S14a, ADR 0023; proposta em `carmine-s14-proposta.md`)**
+- **Porta `Payments`** com adaptador do Mercado Pago (S14c) e um adaptador **falso** para dev, E2E e **homologação**, que roda o caminho inteiro (webhook assinado incluso); o falso só sobe em host de homologação. A cobrança nasce desligada (`PAYMENTS_ENABLED`).
+- **Reembolso de 7 dias automático pelo site** (a API estorna no provedor); a Staff só depois dos 7 dias ou no parcial por dias (`payments refund`). **Sem presente** para outra Conta: o Pagador (pai, mãe) paga o QR sem precisar de Conta.
+- **Itens VIP guardados 30 dias:** agente e kit de música saem inteiros; nas skins só o StatTrak e a nametag são guardados (a skin fica). Ligada por `VIP_HOLD_ENABLED`, junto com os Termos novos.
+- **Indisponibilidade acima de 24 h:** a Staff compensa os dias de todos os VIPs ativos de uma vez (`payments compensate`), com alerta; não é automática.
+- **Contestação** tira os dias do Pacote e bloqueia novas compras até a Staff revisar; **todo ban permanente** encerra o VIP sem reembolso e impede a compra (J2). Recibo em página imprimível, sem nota fiscal (pessoa física).
+- **Cartão por Checkout Pro** (checkout hospedado, fora do escopo PCI); Pix pela API, com o QR na própria tela (30 minutos, recuperável em "Minhas compras").
+
 ### S15 · Discord integrado
 
 Depois do beta. Hoje a moderação no Discord é manual (S07). Decisões no ADR 0020; passo a passo do dono em `docs/operacao/discord.md`.
@@ -511,7 +519,7 @@ Decidida com o dono em 2026-10-20. Não é remodelar a identidade Liberty: é po
 Amadurecido com o dono em 2026-10-20; detalhes na nota Maestri "Carmine · Roadmap futuro". Nada disto está em implementação.
 - **Coleta para o futuro**, logo depois da S14: posição de quem matou e de quem morreu, dano, resultado do round, economia e utilitárias pela fila do ADR 0018, e gravação de demos (SourceTV) no R2 por algumas semanas.
 - **Card de boas-vindas no jogo** (HUD Panorama, `custom_hud_layout`, CS2 de 24/08/2026; exige MultiAddonManager e um addon da Workshop): Retake, Deathmatch e 5v5 Casual, nunca em Lobby/Partida privada.
-- **Foto de perfil própria** para todos (R2, refeita no servidor sem EXIF, moderada, com volta à foto da Steam). É uma fatia própria **logo depois da Fase de UI, antes da S14** (dono, 2026-10-21). A troca fica em /configuracoes e no clique no próprio avatar, no Perfil.
+- **Foto de perfil própria** para todos (R2 de mídia, refeita no servidor sem EXIF, com volta à foto da Steam). É uma fatia própria **logo depois da Fase de UI, antes da S14** (dono, 2026-10-21). A troca fica em /configuracoes e no clique no próprio avatar, no Perfil. **Decisões do dono de 2026-10-26** ([ADR 0022](../adr/0022-foto-de-perfil-publica-na-hora-moderacao-depois.md), operação em [foto-de-perfil.md](../operacao/foto-de-perfil.md)): **publica na hora e a moderação é depois** (não há pré-moderação nem bucket de quarentena); a foto **denunciada por 2 Contas diferentes sai do ar sozinha** (volta a da Steam) até a Staff decidir; **Conta com menos de 24 h ou com Punição ativa não envia**; 3 envios por dia; remoção em um clique pela Staff, com log, e bloqueio de reincidente **só no histórico da Staff** (a pessoa vê só "indisponível"); fila de denúncias de foto do Dono, Admin e Moderadores, **em até 24 h**; Cloudflare CSAM Scanning Tool ligado; a prévia do link do Perfil mostra a foto própria; as removidas ficam em bucket privado por 30 dias. Em fatias: **F1** API e armazenamento (contratos, rotas `/api/me/avatar`, R2, fila de remoção, exclusão da Conta; desligada sem `R2_MEDIA_*`), **F2** denúncia, suspensão e fila/decisão da Staff, **F3** o web (recorte, /configuracoes, estados e a fila no painel).
 - **Ping até o servidor** no cartão: o navegador mede o tempo de HTTPS até um endereço leve no mesmo host do servidor de jogo, fora da Cloudflare, como fazem os sites de ping. Entra com a abertura na VPS.
 - **Quem está no servidor** (futuro distante): os jogadores, o tempo no servidor e as estatísticas da partida. Perfil privado aparece como "Jogador privado".
 - **Amigos dentro do Carmine** (seguir ou adicionar, futuro distante): para quem tem a lista de amigos da Steam privada dos dois lados.

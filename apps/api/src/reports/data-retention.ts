@@ -1,6 +1,7 @@
 import {
   CHAT_RETENTION_DAYS,
   GAME_EVENT_RETENTION_DAYS,
+  PAYMENT_EVENT_RETENTION_DAYS,
   PLAY_SESSION_RETENTION_DAYS,
   REPORT_RETENTION_DAYS,
   SERVER_HOURS_RETENTION_DAYS,
@@ -14,6 +15,7 @@ import {
   accountStatsDaily,
   chatMessages,
   gameEvents,
+  paymentEvents,
   playSessions,
   reports,
   serverHours,
@@ -33,6 +35,8 @@ export interface RetentionResult {
   statsDaily: number;
   playSessions: number;
   serverHours: number;
+  /** S14: os webhooks de pagamento recebidos (12 meses). */
+  paymentEvents: number;
 }
 
 /**
@@ -86,7 +90,11 @@ export class DataRetention {
       serverHours,
       lt(serverHours.hourStart, daysAgo(SERVER_HOURS_RETENTION_DAYS)),
     );
-    if (chat.length + old.length + events + statsDaily + sessions + hours > 0) {
+    const paymentLog = await this.sweepBatched(
+      paymentEvents,
+      lt(paymentEvents.receivedAt, daysAgo(PAYMENT_EVENT_RETENTION_DAYS)),
+    );
+    if (chat.length + old.length + events + statsDaily + sessions + hours + paymentLog > 0) {
       this.logger.log(
         `Limpeza de retenção: ${chat.length} mensagem(ns) de chat, ${old.length} Denúncia(s), ${events} ID(s) de evento, ${statsDaily} dia(s) de atividade, ${sessions} Sessão(ões) de jogo e ${hours} hora(s) de servidor apagados`,
       );
@@ -98,6 +106,7 @@ export class DataRetention {
       statsDaily,
       playSessions: sessions,
       serverHours: hours,
+      paymentEvents: paymentLog,
     };
   }
 

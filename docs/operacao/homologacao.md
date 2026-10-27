@@ -10,7 +10,7 @@ merge no dev ──> CI do push (imagens api e web, arm64): ghcr.io/caiomayan/ca
                    SSH por ssh.stcarmine.com (o mesmo túnel e service token da produção)
                    usuário `deployhml`, chave PRÓPRIA que só executa /opt/carmine-hml/bin/deploy
 VM, projeto compose `carmine-hml` (/opt/carmine-hml):
-   cloudflared (túnel NOVO) ─ web ─ api ─ postgres ─ valkey   + demo-seed (uma vez) + demo-sim
+   cloudflared (túnel NOVO) ─ web ─ api ─ postgres ─ valkey ─ media   + demo-seed (uma vez) + demo-sim
 Celular ──> dev.stcarmine.com ──> Cloudflare Access (PIN no e-mail do dono) ──> túnel novo ──> web / api
 ```
 
@@ -32,6 +32,10 @@ O workflow só dispara depois que `deploy-hml.yml` estiver no `main` (o GitHub e
 
 A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há disputa), `oom_score_adj: 500` (se a memória da VM acabar, o kernel mata a homologação primeiro) e o deploy **recusa subir** se a VM tem menos de 1,2 GB de memória disponível.
 
+## Pagamentos de mentira (S14)
+
+A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Detalhes e as variáveis em `docs/operacao/pagamentos.md`. Numa homologação já criada, acrescente ao `.env` `PAYMENTS_ENABLED=true`, `PAYMENTS_PROVIDER=fake`, `PAYMENTS_DATA_KEY` (`openssl rand -base64 32`) e `VIP_HOLD_ENABLED=true`.
+
 ## Memória (tetos do compose)
 
 | Serviço | Teto | | Serviço | Teto |
@@ -40,8 +44,18 @@ A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há 
 | api | 640 MB | | valkey | 96 MB |
 | postgres | 640 MB | | demo-sim | 128 MB |
 | migrate (só no deploy) | 384 MB | | demo-seed (só no deploy) | 384 MB |
+| media (fotos de perfil) | 96 MB | | | |
 
-**2,2 GB em regime e 2,6 GB no pico** (a migração e o seed nunca rodam juntos). Somados aos 6,8 GB em regime e 7,3 GB no pico da produção (`infra/prod/compose.yml`): **9,0 GB e 9,9 GB dos 12 GB** da VM. São tetos; o uso real é bem menor.
+**2,3 GB em regime e 2,7 GB no pico** (a migração e o seed nunca rodam juntos). Somados aos 6,8 GB em regime e 7,3 GB no pico da produção (`infra/prod/compose.yml`): **9,1 GB e 10,0 GB dos 12 GB** da VM. São tetos; o uso real é bem menor.
+
+## A foto de perfil
+
+Ligada **só na homologação**, para o dono validar o fluxo inteiro (enviar, recortar, denunciar, a Staff decidir) sem conta nem bucket da Cloudflare. A produção continua desligada até o dono criar os buckets do R2 (`docs/operacao/foto-de-perfil.md`).
+
+- O serviço **`media`** é a imagem da API com o comando `media` (`apps/api/src/demo/demo-media.ts`): um R2 de mentira que guarda os arquivos num volume (`media-data`, 96 MB de memória). Tem duas portas: a **9000** é o S3 que a API usa (rede interna, com a chave `carmine-hml`) e a **8080** é a pública, só `GET`/`HEAD` das fotos no ar em `/avatars/<id>/<tamanho>.webp`, o mesmo caminho de `img.stcarmine.com` em produção; ela nunca é publicada. O bucket privado (fotos suspensas e removidas) nunca sai por ela. Só sobe com a trava da homologação (`CARMINE_DEMO=homologacao`, `PUBLIC_WEB_URL` de homologação e `SENTRY_ENVIRONMENT` diferente de `production`).
+- A API recebe as `R2_MEDIA_*` e `MEDIA_PUBLIC_URL=https://dev.stcarmine.com`; o web recebe `MEDIA_PUBLIC_URL` (liga o convite no Perfil; o CSP já aceita a própria origem, `'self'`) e `MEDIA_INTERNAL_URL=http://media:8080`: a rota `apps/web/src/app/avatars/[id]/[file]/route.ts` repassa `/avatars/<id>/<tamanho>.webp` ao `media` pela rede interna, lendo a variável a cada pedido (o web é a mesma imagem da produção, onde ela não existe e o caminho é um 404 comum). Sem purga de CDN: o navegador guarda a foto por um ano (a URL muda a cada envio).
+- **Nenhum passo manual:** o túnel segue com as duas rotas de sempre (`/api` e o resto para o web); as fotos passam pelo web, atrás do Access como o resto do `dev.stcarmine.com`.
+- Os arquivos sobrevivem aos deploys; o `reset` (que apaga o banco) apaga o volume junto.
 
 ## As vitrines /dev/*
 

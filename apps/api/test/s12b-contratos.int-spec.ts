@@ -1,9 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 
-const SERVER_ID = '0b9f8c1e-7a4d-4e2b-9c3a-5d6e7f809102';
-
-describe('S12b · contratos (PR só de contratos)', () => {
+describe('S12b · o plugin novo e a API velha convivem', () => {
   let t: TestApp;
 
   beforeAll(async () => {
@@ -12,13 +10,6 @@ describe('S12b · contratos (PR só de contratos)', () => {
 
   afterAll(async () => {
     await t?.stop();
-  });
-
-  it('as rotas do servidor existem e respondem 501 até a implementação entrar (PR C)', async () => {
-    for (const url of [`/api/servers/${SERVER_ID}/players`, `/api/servers/${SERVER_ID}/today`]) {
-      const response = await t.app.inject({ url });
-      expect(response.statusCode, url).toBe(501);
-    }
   });
 
   it('o batimento e os eventos aceitam os campos novos (e os ignoram por enquanto)', async () => {

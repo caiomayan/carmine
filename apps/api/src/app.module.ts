@@ -4,6 +4,8 @@ import { AccountsModule } from './accounts/accounts.module.js';
 import { ActivityModule } from './activity/activity.module.js';
 import { AlertsModule } from './alerts/alerts.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { AvatarModerationModule } from './avatars/avatar-moderation.module.js';
+import { AvatarsModule } from './avatars/avatars.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { ClientIpModule } from './client-ip/client-ip.module.js';
 import { AppConfigModule } from './config/app-config.module.js';
@@ -19,11 +21,13 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { LiveServersModule } from './live-servers/live-servers.module.js';
 import { LoadoutModule } from './loadout/loadout.module.js';
 import { loggerParams } from './logging.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { StaffModule } from './staff/staff.module.js';
 import { StatsModule } from './stats/stats.module.js';
 import { ValkeyModule } from './valkey/valkey.module.js';
+import { VipHoldModule } from './vip/vip-hold.module.js';
 
 @Module({})
 export class AppModule {
@@ -54,6 +58,10 @@ export class AppModule {
         HeaderPreviewsModule,
         ActivityModule,
         ReportsModule,
+        AvatarsModule,
+        AvatarModerationModule,
+        PaymentsModule.forRoot(config),
+        VipHoldModule,
       ],
     };
   }

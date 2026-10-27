@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { parseTrustedProxies } from '../client-ip/client-ip.js';
 import type { RateLimitPolicyName } from '../rate-limit/policies.js';
+import { SANDBOX_HOSTS } from './sandbox-hosts.js';
 
 const urlWithProtocol = (protocols: string[]) =>
   z.url().refine((value) => protocols.includes(new URL(value).protocol), {
@@ -63,6 +64,20 @@ const envSchema = z
     RATE_LIMIT_EQUIPPED_PER_MINUTE: perMinute(120),
     RATE_LIMIT_MUTATIONS_PER_MINUTE: perMinute(60),
     RATE_LIMIT_SERVER_PER_MINUTE: perMinute(600),
+    RATE_LIMIT_WEBHOOK_PER_MINUTE: perMinute(120),
+    // Pagamentos (S14). A cobrança nasce DESLIGADA: só liga com PAYMENTS_ENABLED=true (a decisão sobre
+    // a verificação de idade é do dono). O provedor é o Mercado Pago ou o falso (dev e homologação; o
+    // falso só sobe num host de homologação). A chave de dados (32 bytes em base64) cifra o CPF do Pagador.
+    PAYMENTS_ENABLED: z.enum(['true', 'false']).default('false'),
+    PAYMENTS_PROVIDER: z.enum(['', 'fake', 'mercadopago']).default(''),
+    PAYMENTS_DATA_KEY: z.string().trim().default(''),
+    PAYMENTS_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(60),
+    // Guarda dos Itens VIP (S14, D3): nasce DESLIGADA e liga junto com os Termos novos (que dizem que os
+    // Itens saem do Inventário quando o VIP acaba). A varredura guarda/devolve/apaga de tantos em tantos s (0: sem varredura).
+    VIP_HOLD_ENABLED: z.enum(['true', 'false']).default('false'),
+    VIP_HOLD_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(60),
+    MERCADOPAGO_ACCESS_TOKEN: z.string().trim().default(''),
+    MERCADOPAGO_WEBHOOK_SECRET: z.string().trim().default(''),
     // Servidores ao vivo (S06): sem batimento por esse tempo, o servidor fica offline; a varredura
     // que percebe isso (e avisa a home ao vivo) roda nesse intervalo. Os dois somados ficam em até
     // 60 s (critério da S06).
@@ -108,11 +123,32 @@ const envSchema = z
     // status. O aceite da S15 pede até 1 minuto para o cargo mudar.
     DISCORD_SYNC_SECONDS: z.coerce.number().int().positive().default(30),
     DISCORD_STATUS_SECONDS: z.coerce.number().int().positive().default(60),
+    // Foto de perfil própria (ADR 0022): o R2 de mídia (separado do bucket de backup). Sem o conjunto
+    // base (as seis primeiras), a funcionalidade fica desligada. A purga da CDN é opcional (sem ela,
+    // só a expiração do cache tira uma foto apagada de circulação; em produção, configure).
+    R2_MEDIA_ENDPOINT: z.union([z.literal(''), urlWithProtocol(['https:', 'http:'])]).default(''),
+    R2_MEDIA_ACCESS_KEY_ID: z.string().trim().default(''),
+    R2_MEDIA_SECRET_ACCESS_KEY: z.string().trim().default(''),
+    R2_MEDIA_PUBLIC_BUCKET: z.string().trim().default(''),
+    R2_MEDIA_PRIVATE_BUCKET: z.string().trim().default(''),
+    // Origem pública das fotos (o domínio do bucket público na Cloudflare), ex.: https://img.stcarmine.com.
+    MEDIA_PUBLIC_URL: z.union([z.literal(''), origin()]).default(''),
+    CLOUDFLARE_ZONE_ID: z.string().trim().default(''),
+    CLOUDFLARE_PURGE_TOKEN: z.string().trim().default(''),
+    // Só os testes mudam esta (a API falsa local); em produção vale a padrão.
+    CLOUDFLARE_API_URL: urlWithProtocol(['https:', 'http:']).default(
+      'https://api.cloudflare.com/client/v4',
+    ),
+    // De quanto em quanto tempo a fila de remoção de arquivos roda (0 desliga).
+    MEDIA_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(30),
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
     SENTRY_DSN: z.union([z.literal(''), urlWithProtocol(['https:', 'http:'])]).default(''),
     SENTRY_ENVIRONMENT: z.string().trim().default(''),
+    // A trava da homologação (só o compose dela define `homologacao`): com ela, e só com ela, o R2 de mentira pode
+    // ser http. A produção nunca tem esta variável. Ver {@link isHomologation}.
+    CARMINE_DEMO: z.string().trim().default(''),
     SENTRY_RELEASE: z.string().trim().default(''),
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
@@ -135,6 +171,7 @@ const envSchema = z
       .default(90 * DAY_SECONDS),
   })
   .superRefine((env, ctx) => {
+    checkPayments(env, ctx);
     if (env.SESSION_ABSOLUTE_TTL_SECONDS < env.SESSION_IDLE_TTL_SECONDS) {
       ctx.addIssue({
         code: 'custom',
@@ -150,13 +187,29 @@ const envSchema = z
         'STAFF_REPORTS_WEBHOOK_URL',
         'DISCORD_API_URL',
         'DISCORD_AUTHORIZE_URL',
+        'R2_MEDIA_ENDPOINT',
+        'MEDIA_PUBLIC_URL',
       ] as const) {
+        // O R2 de mentira da homologação fala http pela rede interna (http://media:9000); em produção, nunca.
+        if (key === 'R2_MEDIA_ENDPOINT' && isHomologation(env)) continue;
         if (env[key] !== '' && new URL(env[key]).protocol !== 'https:') {
           ctx.addIssue({ code: 'custom', path: [key], message: 'deve usar https em produção' });
         }
       }
     }
   });
+
+/** Pagamentos (S14). Desligados por padrão; o falso só existe em host de homologação. */
+export interface PaymentsConfig {
+  enabled: boolean;
+  /** Nulo: nenhum provedor configurado (a compra fica indisponível mesmo ligada). */
+  provider: 'fake' | 'mercadopago' | null;
+  /** Cifra o CPF do Pagador (AES-256-GCM); nulo sem a chave. */
+  dataKey: Buffer | null;
+  mercadopago: { accessToken: string; webhookSecret: string } | null;
+  /** A varredura de vencimento e conciliação (0: desligada). */
+  sweepMs: number;
+}
 
 export interface AppConfig {
   nodeEnv: 'development' | 'test' | 'production';
@@ -173,6 +226,10 @@ export interface AppConfig {
   rateLimitsPerMinute: Record<RateLimitPolicyName, number>;
   /** Servidores ao vivo (S06). */
   liveServers: { offlineAfterMs: number; sweepMs: number };
+  /** Pagamentos (S14). */
+  payments: PaymentsConfig;
+  /** A guarda dos Itens VIP (S14, D3): ligada? e a varredura, em ms (0: sem varredura). */
+  vipHold: { enabled: boolean; sweepMs: number };
   /** Cache do Ranking semanal (S12), em segundos. */
   rankingCacheTtlSeconds: number;
   /** Cache dos números da semana da home, em segundos. */
@@ -189,6 +246,10 @@ export interface AppConfig {
   discord: DiscordConfig | null;
   /** Variáveis base do Discord que faltam quando só parte delas foi preenchida (a S15 fica desligada). */
   discordMissing: string[];
+  /** Foto de perfil própria (ADR 0022); nulo (desligada) sem o conjunto base de variáveis. */
+  media: MediaConfig | null;
+  /** Variáveis base da foto de perfil que faltam quando só parte delas foi preenchida. */
+  mediaMissing: string[];
   /** Sentry (S09): sem DSN, desligado. */
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
@@ -212,6 +273,19 @@ export interface DiscordConfig {
   authorizeUrl: string;
   syncMs: number;
   statusMs: number;
+}
+
+export interface MediaConfig {
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicBucket: string;
+  privateBucket: string;
+  /** Origem pública das fotos, sem barra final. */
+  publicUrl: string;
+  /** Purga da CDN depois de apagar; nulo: só a expiração do cache. */
+  purge: { zoneId: string; token: string; apiUrl: string } | null;
+  sweepMs: number;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -249,6 +323,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       equipped: e.RATE_LIMIT_EQUIPPED_PER_MINUTE,
       mutations: e.RATE_LIMIT_MUTATIONS_PER_MINUTE,
       server: e.RATE_LIMIT_SERVER_PER_MINUTE,
+      webhook: e.RATE_LIMIT_WEBHOOK_PER_MINUTE,
     },
     rankingCacheTtlSeconds: e.RANKING_CACHE_TTL_SECONDS,
     weekSummaryCacheTtlSeconds: e.WEEK_SUMMARY_CACHE_TTL_SECONDS,
@@ -257,6 +332,20 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     liveServers: {
       offlineAfterMs: e.SERVER_OFFLINE_AFTER_SECONDS * 1000,
       sweepMs: e.LIVE_SERVERS_SWEEP_SECONDS * 1000,
+    },
+    vipHold: { enabled: e.VIP_HOLD_ENABLED === 'true', sweepMs: e.VIP_HOLD_SWEEP_SECONDS * 1000 },
+    payments: {
+      enabled: e.PAYMENTS_ENABLED === 'true',
+      provider: e.PAYMENTS_PROVIDER === '' ? null : e.PAYMENTS_PROVIDER,
+      dataKey: e.PAYMENTS_DATA_KEY === '' ? null : Buffer.from(e.PAYMENTS_DATA_KEY, 'base64'),
+      mercadopago:
+        e.MERCADOPAGO_ACCESS_TOKEN === '' || e.MERCADOPAGO_WEBHOOK_SECRET === ''
+          ? null
+          : {
+              accessToken: e.MERCADOPAGO_ACCESS_TOKEN,
+              webhookSecret: e.MERCADOPAGO_WEBHOOK_SECRET,
+            },
+      sweepMs: e.PAYMENTS_SWEEP_SECONDS * 1000,
     },
     alerts: {
       discordWebhookUrl: e.DISCORD_ALERT_WEBHOOK_URL === '' ? null : e.DISCORD_ALERT_WEBHOOK_URL,
@@ -268,6 +357,7 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
       retentionSweepMs: e.RETENTION_SWEEP_MINUTES * 60_000,
     },
     ...discordConfig(e),
+    ...mediaConfig(e),
     sentry: {
       dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
       environment: e.SENTRY_ENVIRONMENT === '' ? e.NODE_ENV : e.SENTRY_ENVIRONMENT,
@@ -283,6 +373,47 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
 }
 
 type Env = z.infer<typeof envSchema>;
+
+/**
+ * A trava da homologação, o mesmo critério da demonstração (`demo/demo-guard.ts`) e do provedor de pagamento falso: a
+ * variável `CARMINE_DEMO=homologacao`, o `PUBLIC_WEB_URL` num host de homologação e `SENTRY_ENVIRONMENT` diferente
+ * de `production`. As três precisam valer; a produção não tem nenhuma.
+ */
+function isHomologation(env: Env): boolean {
+  return (
+    env.CARMINE_DEMO === 'homologacao' &&
+    SANDBOX_HOSTS.has(new URL(env.PUBLIC_WEB_URL).hostname) &&
+    env.SENTRY_ENVIRONMENT.toLowerCase() !== 'production'
+  );
+}
+
+/**
+ * Pagamentos (S14): o provedor falso só sobe num host de homologação e nunca com
+ * `SENTRY_ENVIRONMENT=production` (mesmo com a cobrança desligada); ligada, a cobrança exige provedor,
+ * chave de dados e, no Mercado Pago, o token e o segredo do webhook.
+ */
+function checkPayments(env: Env, ctx: z.RefinementCtx): void {
+  const issue = (path: string, message: string) =>
+    ctx.addIssue({ code: 'custom', path: [path], message });
+  if (env.PAYMENTS_PROVIDER === 'fake') {
+    const host = new URL(env.PUBLIC_WEB_URL).hostname;
+    if (!SANDBOX_HOSTS.has(host) || env.SENTRY_ENVIRONMENT.toLowerCase() === 'production') {
+      issue('PAYMENTS_PROVIDER', `o provedor falso não roda em ${host}: só em host de homologação`);
+    }
+  }
+  if (env.PAYMENTS_DATA_KEY !== '' && Buffer.from(env.PAYMENTS_DATA_KEY, 'base64').length !== 32) {
+    issue('PAYMENTS_DATA_KEY', 'deve ter 32 bytes em base64 (openssl rand -base64 32)');
+  }
+  if (env.PAYMENTS_ENABLED !== 'true') return;
+  if (env.PAYMENTS_PROVIDER === '') issue('PAYMENTS_PROVIDER', 'obrigatório com a cobrança ligada');
+  if (env.PAYMENTS_DATA_KEY === '') issue('PAYMENTS_DATA_KEY', 'obrigatória com a cobrança ligada');
+  if (
+    env.PAYMENTS_PROVIDER === 'mercadopago' &&
+    (env.MERCADOPAGO_ACCESS_TOKEN === '' || env.MERCADOPAGO_WEBHOOK_SECRET === '')
+  ) {
+    issue('MERCADOPAGO_ACCESS_TOKEN', 'o Mercado Pago exige o token e o segredo do webhook');
+  }
+}
 
 const DISCORD_BASE_VARS = [
   'DISCORD_CLIENT_ID',
@@ -319,6 +450,46 @@ function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
       authorizeUrl: e.DISCORD_AUTHORIZE_URL,
       syncMs: e.DISCORD_SYNC_SECONDS * 1000,
       statusMs: e.DISCORD_STATUS_SECONDS * 1000,
+    },
+  };
+}
+
+const MEDIA_BASE_VARS = [
+  'R2_MEDIA_ENDPOINT',
+  'R2_MEDIA_ACCESS_KEY_ID',
+  'R2_MEDIA_SECRET_ACCESS_KEY',
+  'R2_MEDIA_PUBLIC_BUCKET',
+  'R2_MEDIA_PRIVATE_BUCKET',
+  'MEDIA_PUBLIC_URL',
+] as const;
+
+/** A foto de perfil liga só com o conjunto base inteiro; parcial desliga e a API avisa o que falta no boot. */
+function mediaConfig(e: Env): Pick<AppConfig, 'media' | 'mediaMissing'> {
+  const missing = MEDIA_BASE_VARS.filter((key) => e[key] === '');
+  if (missing.length > 0) {
+    return {
+      media: null,
+      mediaMissing: missing.length === MEDIA_BASE_VARS.length ? [] : missing,
+    };
+  }
+  return {
+    mediaMissing: [],
+    media: {
+      endpoint: e.R2_MEDIA_ENDPOINT,
+      accessKeyId: e.R2_MEDIA_ACCESS_KEY_ID,
+      secretAccessKey: e.R2_MEDIA_SECRET_ACCESS_KEY,
+      publicBucket: e.R2_MEDIA_PUBLIC_BUCKET,
+      privateBucket: e.R2_MEDIA_PRIVATE_BUCKET,
+      publicUrl: e.MEDIA_PUBLIC_URL.replace(/\/+$/, ''),
+      purge:
+        e.CLOUDFLARE_ZONE_ID !== '' && e.CLOUDFLARE_PURGE_TOKEN !== ''
+          ? {
+              zoneId: e.CLOUDFLARE_ZONE_ID,
+              token: e.CLOUDFLARE_PURGE_TOKEN,
+              apiUrl: e.CLOUDFLARE_API_URL.replace(/\/+$/, ''),
+            }
+          : null,
+      sweepMs: e.MEDIA_SWEEP_SECONDS * 1000,
     },
   };
 }

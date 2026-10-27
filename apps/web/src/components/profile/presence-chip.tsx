@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { ConnectHelp, CopyGlyph, useConnect } from '@/components/servers/connect';
 import { StatusDot } from '@/components/status-dot';
 import { Button } from '@/components/ui/button';
-import { loadContracts } from '@/lib/contracts-schemas';
+import { parseProfilePlaying } from '@/lib/api-guards';
 import { steamConnectUrl } from '@/lib/live-servers';
 
 /** Releitura da presença com a página aberta: o batimento do jogo muda a cada 10 s. */
@@ -31,9 +31,8 @@ function usePlaying(publicId: number): PlayingServer | null {
           cache: 'no-store',
           signal: controller.signal,
         });
-        const { profilePlayingSchema } = await loadContracts();
-        const parsed = response.ok ? profilePlayingSchema.safeParse(await response.json()) : null;
-        setServer(parsed?.success ? parsed.data.server : null);
+        const data = response.ok ? parseProfilePlaying(await response.json()) : null;
+        setServer(data?.server ?? null);
       } catch {
         if (!controller.signal.aborted) setServer(null);
       }

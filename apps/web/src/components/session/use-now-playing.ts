@@ -2,7 +2,7 @@
 
 import type { NowPlaying } from '@carmine/contracts';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { loadContracts } from '@/lib/contracts-schemas';
+import { parseNowPlaying } from '@/lib/api-guards';
 import { useSession } from './session-provider';
 
 export const NOW_PLAYING_URL = '/api/me/playing';
@@ -30,10 +30,9 @@ export function useNowPlaying(): { server: NowPlaying['server']; load: () => voi
     controller.current = current;
     fetch(NOW_PLAYING_URL, { cache: 'no-store', signal: current.signal })
       .then(async (response) => {
-        const { nowPlayingSchema } = await loadContracts();
-        const parsed = response.ok ? nowPlayingSchema.safeParse(await response.json()) : null;
+        const parsed = response.ok ? parseNowPlaying(await response.json()) : null;
         // Sem resposta boa não se sabe onde a Conta está: a linha some em vez de ficar velha.
-        setServer(parsed?.success ? parsed.data.server : null);
+        setServer(parsed ? parsed.server : null);
       })
       .catch(() => {
         if (current.signal.aborted) return;

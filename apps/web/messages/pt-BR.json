@@ -889,7 +889,48 @@
     "join": "Entrar junto",
     "joinAria": "Entrar junto com {name} no servidor em que a pessoa está jogando",
     "vip": "VIP",
-    "memberSince": "Membro desde {date}"
+    "memberSince": "Membro desde {date}",
+    "avatarEdit": {
+      "label": "Trocar a foto de perfil",
+      "hint": "Trocar"
+    },
+    "avatarReport": {
+      "open": "Denunciar foto",
+      "title": "Denunciar a foto de {name}",
+      "description": "Escolha o motivo. A Staff analisa em até 24 horas, e {name} não vê quem denunciou.",
+      "reasonLabel": "Motivo da denúncia",
+      "send": "Enviar denúncia",
+      "sending": "Enviando…",
+      "cancel": "Cancelar",
+      "close": "Fechar",
+      "sent": "Denúncia enviada. A Staff vai analisar em até 24 horas.",
+      "done": "Pronto",
+      "errors": {
+        "generic": "Não deu para enviar agora. Tente de novo em instantes.",
+        "disabled": "O envio de foto está desligado agora.",
+        "unsupported_type": "Use uma imagem JPEG, PNG ou WebP.",
+        "too_large": "A foto passou de 1 MB depois do recorte. Escolha uma imagem mais simples ou menor.",
+        "invalid_image": "Essa imagem não abre, ou é animada. Escolha outra.",
+        "bad_dimensions": "A foto precisa ser quadrada, de 256 a 1024 px.",
+        "invalid_body": "Não deu para enviar agora. Tente de novo em instantes.",
+        "account_too_new": "Contas com menos de 24 horas ainda não enviam foto.",
+        "punished": "Contas com Punição ativa não enviam foto.",
+        "upload_blocked": "O envio de foto não está disponível agora.",
+        "daily_limit": "Você já enviou {limit} fotos hoje. Libera {when}.",
+        "no_custom_avatar": "Esta pessoa não tem foto própria no ar.",
+        "own_avatar": "Você não denuncia a sua própria foto.",
+        "already_reported": "Você já denunciou esta foto.",
+        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde."
+      },
+      "reasons": {
+        "sexual": "Nudez ou conteúdo sexual",
+        "violence": "Violência",
+        "hate": "Ódio ou discriminação",
+        "minor": "Menor de idade em situação indevida",
+        "personal_data": "Dado pessoal ou foto de terceiro",
+        "other": "Outro"
+      }
+    }
   },
   "settings": {
     "metaTitle": "Configurações",
@@ -1004,6 +1045,75 @@
       "privacyTitle": "O que guardamos",
       "privacyBody": "A Política de privacidade lista os dados da Conta e para que cada um serve.",
       "privacy": "Política de privacidade"
+    },
+    "avatar": {
+      "title": "Foto de perfil",
+      "steamHint": "Hoje vale a foto da Steam. Envie uma só sua: ela aparece para todos no site, no Ranking e no Perfil.",
+      "customHint": "Esta é a sua foto: quem vê o site vê ela, não a da Steam.",
+      "gameNote": "No jogo (placar e chat) segue valendo a foto da Steam.",
+      "guidance": "Prefira arte, jogo ou animal a rosto. Fotos que quebram as Regras são removidas e podem bloquear novos envios.",
+      "send": "Enviar foto",
+      "change": "Trocar foto",
+      "useSteam": "Usar a foto da Steam",
+      "loading": "Carregando a sua foto…",
+      "suspended": "Sua foto está em análise pela Staff, que decide em até 24 horas. Enquanto isso, todos veem a da Steam.",
+      "removed": "A Staff removeu a sua foto em {when} ({reason}). Voltou a valer a da Steam.",
+      "saved": "Pronto: a sua foto já está no ar.",
+      "reverted": "Voltou a valer a foto da Steam.",
+      "pickErrors": {
+        "type": "Use uma imagem JPEG, PNG ou WebP.",
+        "bytes": "A imagem passa de 10 MB.",
+        "pixels": "A imagem passa de 40 megapixels.",
+        "unreadable": "Não deu para abrir essa imagem."
+      },
+      "errors": {
+        "generic": "Não deu para enviar agora. Tente de novo em instantes.",
+        "disabled": "O envio de foto está desligado agora.",
+        "unsupported_type": "Use uma imagem JPEG, PNG ou WebP.",
+        "too_large": "A foto passou de 1 MB depois do recorte. Escolha uma imagem mais simples ou menor.",
+        "invalid_image": "Essa imagem não abre, ou é animada. Escolha outra.",
+        "bad_dimensions": "A foto precisa ser quadrada, de 256 a 1024 px.",
+        "invalid_body": "Não deu para enviar agora. Tente de novo em instantes.",
+        "account_too_new": "Contas com menos de 24 horas ainda não enviam foto.",
+        "punished": "Contas com Punição ativa não enviam foto.",
+        "upload_blocked": "O envio de foto não está disponível agora.",
+        "daily_limit": "Você já enviou {limit} fotos hoje. Libera {when}.",
+        "no_custom_avatar": "Esta pessoa não tem foto própria no ar.",
+        "own_avatar": "Você não denuncia a sua própria foto.",
+        "already_reported": "Você já denunciou esta foto.",
+        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde."
+      },
+      "dialog": {
+        "title": "Recortar a foto",
+        "description": "Arraste e use o zoom até o quadrado ficar como você quer. O que está dentro do círculo é o que aparece.",
+        "close": "Fechar",
+        "cancel": "Cancelar",
+        "confirm": "Usar esta foto",
+        "sending": "Enviando…",
+        "zoom": "Zoom",
+        "preview": "Prévia",
+        "cropLabel": "Área do recorte; use as setas do teclado para mover",
+        "imageAlt": "A imagem escolhida",
+        "tooSmall": "A parte escolhida é pequena demais (mínimo {min} px). Diminua o zoom ou escolha uma imagem maior.",
+        "handles": {
+          "nwDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de cima à esquerda)",
+          "nDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (em cima)",
+          "neDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de cima à direita)",
+          "eDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (à direita)",
+          "seDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de baixo à direita)",
+          "sDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (embaixo)",
+          "swDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (canto de baixo à esquerda)",
+          "wDragHandle": "Alça do recorte; use as setas do teclado para mudar o tamanho (à esquerda)"
+        }
+      },
+      "reasons": {
+        "sexual": "conteúdo sexual",
+        "violence": "violência",
+        "hate": "ódio ou discriminação",
+        "minor": "menor em situação indevida",
+        "personal_data": "dado pessoal",
+        "other": "outro motivo"
+      }
     }
   },
   "firstSteps": {
@@ -1505,7 +1615,8 @@
       "accounts": "Contas",
       "audit": "Auditoria",
       "servers": "Servidores",
-      "reports": "Denúncias"
+      "reports": "Denúncias",
+      "photos": "Fotos"
     },
     "roles": {
       "owner": "Dono",
@@ -1549,7 +1660,17 @@
       "vipActive": "VIP até {date}",
       "vipNone": "Sem VIP",
       "protected": "Esta Conta é da Staff com papel igual ou maior que o seu: você não pode puni-la.",
-      "self": "Esta é a sua Conta: você não pode se punir."
+      "self": "Esta é a sua Conta: você não pode se punir.",
+      "avatar": {
+        "title": "Foto de perfil",
+        "imageAlt": "A foto de perfil da Conta",
+        "steam": "A Conta usa a foto da Steam.",
+        "active": "Foto própria no ar, enviada em {when}.",
+        "suspended": "Foto própria fora do ar (suspensa por denúncias), enviada em {when}. Decida na fila de fotos.",
+        "blockedUntil": "Envio de foto bloqueado até {when} (o jogador só vê \"indisponível\").",
+        "removals": "Remoções anteriores",
+        "removal": "{when}: {reason}. {note} (por {name})"
+      }
     },
     "reason": {
       "label": "Motivo",
@@ -1696,7 +1817,12 @@
         "account_anonymize": "Anonimizou a Conta",
         "account_reserved_id": "Trocou o ID por um ID reservado",
         "ranking_entry_remove": "Removeu do Ranking",
-        "report_archive": "Arquivou uma Denúncia"
+        "report_archive": "Arquivou uma Denúncia",
+        "avatar_keep": "Manteve uma foto de perfil denunciada",
+        "avatar_remove": "Removeu uma foto de perfil",
+        "payment_refund": "Reembolsou um pagamento",
+        "purchase_unblock": "Liberou as compras de uma Conta",
+        "vip_compensation": "Compensou dias de VIP por indisponibilidade"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
@@ -1739,7 +1865,10 @@
       "report_not_found": "Essa Denúncia não existe mais (ela some 90 dias depois de criada).",
       "report_not_open": "Essa Denúncia já foi arquivada ou virou Punição.",
       "report_target_mismatch": "Essa Denúncia é contra outra Conta.",
-      "report_needs_evidence": "Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link."
+      "report_needs_evidence": "Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link.",
+      "avatar_not_found": "Essa foto não existe mais.",
+      "avatar_not_reviewable": "Essa foto já foi decidida, trocada ou removida.",
+      "no_custom_avatar": "Esta Conta não tem foto própria no ar."
     },
     "ranking": {
       "title": "Ranking",
@@ -1786,6 +1915,66 @@
       "resolution": {
         "sanctioned": "Virou Punição, aplicada por {name}.",
         "archived": "Arquivada por {name}: {reason}"
+      },
+      "loadMore": "Carregar mais",
+      "loadFailed": "Não deu para carregar mais agora.",
+      "end": "Fim da fila."
+    },
+    "photos": {
+      "title": "Fotos de perfil",
+      "subtitle": "{count, plural, =0 {Nenhuma foto em análise} one {# foto em análise} other {# fotos em análise}}. A Staff decide em até 24 h; as mais antigas vêm primeiro.",
+      "subtitleBare": "Fotos de perfil denunciadas pelos jogadores.",
+      "tabs": {
+        "label": "Estado das fotos",
+        "open": "Em análise",
+        "decided": "Decididas"
+      },
+      "empty": {
+        "open": "Nenhuma foto para analisar. Quando alguém denunciar uma foto de perfil, ela aparece aqui.",
+        "decided": "Nenhuma foto decidida ainda."
+      },
+      "cardLabel": "Foto de {name}",
+      "imageAlt": "Foto de perfil enviada por {name}",
+      "state": {
+        "active": "No ar",
+        "suspended": "Fora do ar (suspensa)",
+        "removed": "Removida",
+        "replaced": "Trocada",
+        "reverted": "Devolvida à Steam"
+      },
+      "reporters": "{count, plural, one {# Conta denunciou} other {# Contas denunciaram}}",
+      "firstReport": "primeira denúncia {when}",
+      "deadline": {
+        "left": "{hours, plural, =0 {resta menos de 1 hora} one {resta # hora} other {restam # horas}} do prazo de 24 h",
+        "over": "prazo de 24 h vencido há {hours, plural, one {# hora} other {# horas}}"
+      },
+      "previous": "{count, plural, one {Esta Conta já teve # foto removida} other {Esta Conta já teve # fotos removidas}}",
+      "openAccount": "Abrir a Conta",
+      "keep": {
+        "open": "Manter a foto",
+        "submit": "Manter foto",
+        "done": "Foto mantida; as denúncias foram arquivadas."
+      },
+      "remove": {
+        "open": "Remover a foto",
+        "submit": "Remover foto",
+        "done": "Foto removida; a Conta voltou à foto da Steam.",
+        "reason": "Motivo da remoção",
+        "reasonPlaceholder": "Escolha o motivo",
+        "reasonRequired": "Escolha o motivo da remoção.",
+        "blockDays": "Bloquear novos envios por (dias)",
+        "blockPlaceholder": "Pela regra",
+        "blockHint": "Em branco, vale a regra: 7 dias na primeira remoção e 30 na reincidência em 90 dias. 0 não bloqueia. O jogador só vê \"indisponível\".",
+        "blockInvalid": "Use um número inteiro de 0 a {max}.",
+        "confirm": {
+          "title": "Remover esta foto?",
+          "description": "A Conta volta à foto da Steam na hora e a imagem fica guardada em privado por 30 dias.",
+          "label": "Remover foto"
+        }
+      },
+      "decision": {
+        "keep": "Mantida por {name}: {note}",
+        "remove": "Removida por {name} ({reason}): {note}"
       },
       "loadMore": "Carregar mais",
       "loadFailed": "Não deu para carregar mais agora.",

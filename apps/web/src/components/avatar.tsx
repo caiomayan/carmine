@@ -1,3 +1,4 @@
+import { avatarVariantUrl } from '@carmine/contracts/avatar-url';
 import { cn } from '@/lib/utils';
 
 /** Iniciais das duas primeiras palavras que começam com letra ("Alfredo" vira "A"). */
@@ -13,7 +14,7 @@ function initials(name: string): string {
 }
 
 /**
- * Avatar Steam da Conta num círculo de superfície. Sem avatar (a Steam ainda não respondeu),
+ * Avatar da Conta (a foto própria ou a da Steam) num círculo de superfície. Sem avatar (a Steam ainda não respondeu),
  * as iniciais do Nome de exibição no mesmo círculo. `alt` vazio quando o nome já está ao lado.
  */
 export function Avatar({
@@ -47,7 +48,8 @@ export function Avatar({
         // Avatar da Steam: imagem pequena e externa, sem otimização (next.config: unoptimized).
         // biome-ignore lint/performance/noImgElement: o next/image não ganharia nada aqui.
         <img
-          src={src}
+          // A foto própria vem em 4 tamanhos: o menor que cobre o elemento em tela 2× (a da Steam passa intacta).
+          src={avatarVariantUrl(src, size * 2)}
           alt={alt}
           width={size}
           height={size}

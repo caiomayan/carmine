@@ -25,16 +25,27 @@ describe('loadConfig', () => {
         equipped: 120,
         mutations: 60,
         server: 600,
+        webhook: 120,
       },
       rankingCacheTtlSeconds: 45,
       weekSummaryCacheTtlSeconds: 30,
       headerPreviewsCacheTtlSeconds: 15,
       activityCacheTtlSeconds: 5,
       liveServers: { offlineAfterMs: 45_000, sweepMs: 5000 },
+      vipHold: { enabled: false, sweepMs: 60_000 },
+      payments: {
+        enabled: false,
+        provider: null,
+        dataKey: null,
+        mercadopago: null,
+        sweepMs: 60_000,
+      },
       alerts: { discordWebhookUrl: null, serverOfflineConfirmMs: 60_000, sweepMs: 15_000 },
       reports: { webhookUrl: null, retentionSweepMs: 3_600_000 },
       discord: null,
       discordMissing: [],
+      media: null,
+      mediaMissing: [],
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
@@ -243,6 +254,112 @@ describe('loadConfig', () => {
           DISCORD_API_URL: 'http://discord.test/api',
         }),
       ).toThrow(/DISCORD_API_URL/);
+    });
+  });
+
+  describe('foto de perfil (R2 de mídia)', () => {
+    const media = {
+      R2_MEDIA_ENDPOINT: 'https://conta.r2.cloudflarestorage.com',
+      R2_MEDIA_ACCESS_KEY_ID: 'chave',
+      R2_MEDIA_SECRET_ACCESS_KEY: 'segredo',
+      R2_MEDIA_PUBLIC_BUCKET: 'carmine-media',
+      R2_MEDIA_PRIVATE_BUCKET: 'carmine-media-removidas',
+      MEDIA_PUBLIC_URL: 'https://img.stcarmine.com/',
+    };
+
+    it('desligada sem nenhuma variável, sem aviso do que falta', () => {
+      expect(loadConfig(validEnv)).toMatchObject({ media: null, mediaMissing: [] });
+    });
+
+    it('liga com o conjunto base; a purga da CDN é opcional', () => {
+      const config = loadConfig({ ...validEnv, ...media });
+
+      expect(config.media).toMatchObject({
+        publicBucket: 'carmine-media',
+        privateBucket: 'carmine-media-removidas',
+        publicUrl: 'https://img.stcarmine.com',
+        purge: null,
+        sweepMs: 30_000,
+      });
+      expect(
+        loadConfig({
+          ...validEnv,
+          ...media,
+          CLOUDFLARE_ZONE_ID: 'zona',
+          CLOUDFLARE_PURGE_TOKEN: 'token',
+        }).media?.purge,
+      ).toEqual({ zoneId: 'zona', token: 'token', apiUrl: 'https://api.cloudflare.com/client/v4' });
+    });
+
+    it('parcial desliga e diz o que falta', () => {
+      const config = loadConfig({ ...validEnv, ...media, R2_MEDIA_SECRET_ACCESS_KEY: '' });
+
+      expect(config.media).toBeNull();
+      expect(config.mediaMissing).toEqual(['R2_MEDIA_SECRET_ACCESS_KEY']);
+    });
+
+    it('em produção, o endpoint e a origem pública exigem https', () => {
+      expect(() =>
+        loadConfig({
+          ...validEnv,
+          ...media,
+          NODE_ENV: 'production',
+          R2_MEDIA_ENDPOINT: 'http://media:9000',
+        }),
+      ).toThrow(/R2_MEDIA_ENDPOINT: deve usar https em produção/);
+      expect(() =>
+        loadConfig({
+          ...validEnv,
+          ...media,
+          NODE_ENV: 'production',
+          MEDIA_PUBLIC_URL: 'http://img.stcarmine.com',
+        }),
+      ).toThrow(/MEDIA_PUBLIC_URL: deve usar https em produção/);
+    });
+
+    describe('o R2 de mentira da homologação (http pela rede interna)', () => {
+      const hml = {
+        ...validEnv,
+        ...media,
+        NODE_ENV: 'production',
+        R2_MEDIA_ENDPOINT: 'http://media:9000',
+        MEDIA_PUBLIC_URL: 'https://dev.stcarmine.com',
+        PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
+        SENTRY_ENVIRONMENT: 'staging',
+        CARMINE_DEMO: 'homologacao',
+      };
+
+      it('com a trava da homologação, o endpoint http é aceito em NODE_ENV=production', () => {
+        expect(loadConfig(hml).media).toMatchObject({
+          endpoint: 'http://media:9000',
+          publicUrl: 'https://dev.stcarmine.com',
+        });
+      });
+
+      it('a origem pública continua exigindo https mesmo na homologação', () => {
+        expect(() => loadConfig({ ...hml, MEDIA_PUBLIC_URL: 'http://dev.stcarmine.com' })).toThrow(
+          /MEDIA_PUBLIC_URL: deve usar https em produção/,
+        );
+      });
+
+      it('em produção nunca: faltando qualquer uma das três chaves da trava, o http é recusado', () => {
+        const recusado = /R2_MEDIA_ENDPOINT: deve usar https em produção/;
+        // Sem a variável da homologação.
+        expect(() => loadConfig({ ...hml, CARMINE_DEMO: '' })).toThrow(recusado);
+        // Com um valor que não é o da homologação.
+        expect(() => loadConfig({ ...hml, CARMINE_DEMO: 'sim' })).toThrow(recusado);
+        // O endereço de produção, mesmo com a variável (alguém copiou o compose da homologação).
+        expect(() =>
+          loadConfig({
+            ...hml,
+            PUBLIC_WEB_URL: 'https://stcarmine.com',
+            MEDIA_PUBLIC_URL: 'https://img.stcarmine.com',
+          }),
+        ).toThrow(recusado);
+        // O ambiente do Sentry de produção.
+        expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'production' })).toThrow(recusado);
+        expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'Production' })).toThrow(recusado);
+      });
     });
   });
 });

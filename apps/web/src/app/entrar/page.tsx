@@ -1,4 +1,4 @@
-import { safeReturnPath } from '@carmine/contracts';
+import { safeReturnPath } from '@carmine/contracts/auth';
 import type { Metadata, Route } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';

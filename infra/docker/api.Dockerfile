@@ -2,13 +2,14 @@
 # Imagem da API. Construir a partir da raiz do repositório:
 #   docker buildx build -f infra/docker/api.Dockerfile --platform linux/amd64,linux/arm64 .
 #
-# A compilação roda sempre na arquitetura de quem constrói ($BUILDPLATFORM): a API só tem
-# dependências JavaScript puras, então o resultado serve para amd64 e arm64 (Oracle A1)
-# sem emular a instalação. Só o estágio final usa a imagem da arquitetura de destino.
+# A instalação roda na arquitetura de destino: o `sharp` (foto de perfil, ADR 0022) traz binário
+# nativo, então um node_modules instalado em amd64 não serve para a VM ARM (Oracle A1). O CI constrói
+# em runner nativo de cada arquitetura (arm64 para a produção); `--platform=linux/arm64` num PC amd64
+# passa por emulação e fica lento, mas continua certo.
 
 ARG NODE_IMAGE=node:24.21.0-alpine3.24
 
-FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS build
+FROM ${NODE_IMAGE} AS build
 ENV PNPM_HOME=/pnpm \
     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 ENV PATH="$PNPM_HOME:$PATH"
@@ -37,6 +38,9 @@ ENV NODE_ENV=production \
     PORT=3333
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
+# Pasta vazia, do usuário `node`, onde a homologação monta o volume do armazenamento de mídia de mentira
+# (apps/api/src/demo/demo-media.ts): o volume nasce com o dono dela. A produção não usa.
+RUN mkdir /media-data && chown node:node /media-data
 USER node
 EXPOSE 3333
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \

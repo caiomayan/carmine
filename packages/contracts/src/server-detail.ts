@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { gameModeSchema, mapNameSchema } from './game-server.js';
 import { liveServerStateSchema, matchStateSchema } from './live-servers.js';
@@ -119,7 +120,8 @@ export type ServerPeak = z.infer<typeof serverPeakSchema>;
 /**
  * `GET /api/servers/{id}/today?date=YYYY-MM-DD` (padrão: hoje em Brasília; até
  * {@link SERVER_TODAY_MAX_DAYS_BACK} dias atrás; 400 fora disso): o histórico do dia do servidor.
- * - `rounds`: o dia somado; nulo no Deathmatch;
+ * - `rounds`: o dia somado; nulo no Deathmatch e num servidor que ainda não tem dado detalhado
+ *   (`since` nulo): sem coleta não é zero rounds;
  * - `maps`: do mais cedo ao mais tarde;
  * - `hours`: sempre as 24 horas (0 a 23), com zeros;
  * - `peakPlayers`: o pico de jogadores ao mesmo tempo no dia; nulo sem Sessões;

@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import {
   LOADOUT_SIDES,

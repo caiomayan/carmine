@@ -329,7 +329,10 @@ test.describe('Loadouts da semana', () => {
     await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUTS }));
     await page.goto('/');
     const section = page.getByTestId('loadouts-week');
-    await page.getByTestId('loadouts-slot').scrollIntoViewIfNeeded();
+    const slot = page.getByTestId('loadouts-slot');
+    // A seção nasce fechada (sem esqueleto e sem espaço) e só se abre quando o dado chega.
+    await slot.scrollIntoViewIfNeeded();
+    await expect(slot).toHaveAttribute('data-open', 'true');
     await expect(section).toBeVisible();
     await expect(section.getByRole('heading', { name: 'Loadouts da semana' })).toBeVisible();
     const card = section.getByTestId('loadout-card');
@@ -359,6 +362,13 @@ test.describe('Loadouts da semana', () => {
     await page.mouse.wheel(0, 4000);
     await expect(page.getByTestId('loadouts-week')).toHaveCount(0);
     await expect(page.getByTestId('week-strip')).toBeVisible();
+    // Sem dado, o lugar da seção não reserva espaço (nada de salto de layout) nem mostra esqueleto. Se o servidor
+    // sinalizou conteúdo (o banco do E2E tem Ranking de outros testes), o esqueleto aparece e fecha suave: espera.
+    const slot = page.getByTestId('loadouts-slot');
+    await expect(slot).not.toHaveAttribute('data-open');
+    await expect
+      .poll(async () => (await slot.boundingBox())?.height ?? 0, { timeout: 5000 })
+      .toBeLessThan(1);
   });
 });
 

@@ -158,6 +158,34 @@ describe('o simulador de partidas', () => {
     }
   });
 
+  it('S12b: o Retake manda placar de times que cresce com os rounds; o Deathmatch, match nulo', () => {
+    const random = seeded('placar');
+    let n = 0;
+    const newId = () => uuidFor(`placar:${n++}`);
+    const start = new Date('2026-10-28T15:00:00Z').getTime();
+    const retake = DEMO_SERVERS.find((server) => server.name === 'retake-1');
+    const dm = DEMO_SERVERS.find((server) => server.name === 'dm-1');
+    if (!retake || !dm) throw new Error('sem servidores');
+    const state = createSimServer(retake, new Date(start), random);
+    let last = 0;
+    let scoreSeen = false;
+    for (let step = 0; step < 90; step++) {
+      const { heartbeat } = tick(state, new Date(start + step * 10_000), random, newId);
+      const round = heartbeat.match?.round ?? 0;
+      // Dentro de um mapa o round só avança; ao trocar de mapa ele volta ao 1.
+      expect(round === 1 || round >= last).toBe(true);
+      last = round;
+      scoreSeen ||= (heartbeat.match?.ctScore ?? 0) + (heartbeat.match?.tScore ?? 0) > 0;
+      expect(heartbeat.scoreboard?.length).toBe(heartbeat.players.length);
+    }
+    expect(scoreSeen).toBe(true);
+
+    const dmState = createSimServer(dm, new Date(start), random);
+    const { heartbeat } = tick(dmState, new Date(start), random, newId);
+    expect(heartbeat.match).toBeNull();
+    expect(heartbeat.scoreboard?.every((row) => row.team === null)).toBe(true);
+  });
+
   it('o servidor lotado fica lotado', () => {
     const random = seeded('lotado');
     const def = DEMO_SERVERS.find((server) => server.name === 'retake-2');

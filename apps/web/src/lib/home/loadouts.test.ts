@@ -1,7 +1,13 @@
 import type { ShowcaseItem } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
 import type { Rarity } from '@/lib/catalog/types';
-import { type ItemLookup, pickHighlight, sidesOf } from './loadouts';
+import {
+  hasLoadoutCandidates,
+  type ItemLookup,
+  LOADOUT_CANDIDATES,
+  pickHighlight,
+  sidesOf,
+} from './loadouts';
 
 const item = (id: number, slot: string, side: 'ct' | 't' | null = 'ct'): ShowcaseItem =>
   ({ slot, side, item: { id } }) as ShowcaseItem;
@@ -51,5 +57,33 @@ describe('sidesOf', () => {
   it('slot sem lado vale para os dois', () => {
     const glove = item(5, 'gloves', null);
     expect(sidesOf(glove, [glove])).toEqual(['ct', 't']);
+  });
+});
+
+describe('hasLoadoutCandidates', () => {
+  const entry = (publicId: number | null, isPrivate = false) => ({
+    player: { private: isPrivate, publicId },
+  });
+
+  it('sem Ranking (nulo ou vazio) não há sinal de conteúdo', () => {
+    expect(hasLoadoutCandidates([null, null])).toBe(false);
+    expect(hasLoadoutCandidates([{ entries: [] }, { entries: [] }])).toBe(false);
+  });
+
+  it('só Perfil privado não conta: a vitrine só mostra Perfil público', () => {
+    expect(hasLoadoutCandidates([{ entries: [entry(null, true), entry(null, true)] }])).toBe(false);
+    expect(hasLoadoutCandidates([{ entries: [entry(7, true)] }])).toBe(false);
+  });
+
+  it('um Perfil público em qualquer dos Modos basta', () => {
+    expect(
+      hasLoadoutCandidates([{ entries: [] }, { entries: [entry(null, true), entry(12)] }]),
+    ).toBe(true);
+  });
+
+  it('só olha os primeiros 8 de cada Modo, como a busca da vitrine', () => {
+    const privates = Array.from({ length: LOADOUT_CANDIDATES }, () => entry(null, true));
+    expect(hasLoadoutCandidates([{ entries: [...privates, entry(99)] }])).toBe(false);
+    expect(hasLoadoutCandidates([{ entries: [...privates.slice(1), entry(99)] }])).toBe(true);
   });
 });

@@ -2544,7 +2544,6 @@
     },
     "/api/servers/{id}/players": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getServerPlayers",
         "parameters": [
           {
@@ -2594,8 +2593,8 @@
               }
             }
           },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
+          "503": {
+            "description": "Servidores ao vivo indisponíveis no momento; tente de novo"
           }
         },
         "summary": "Quem está no servidor agora, com time, kills, mortes e pontos; Perfil privado aparece como \"Jogador privado\"",
@@ -2606,16 +2605,8 @@
     },
     "/api/servers/{id}/today": {
       "get": {
-        "description": "S12b: o contrato está publicado; responde 501 até a implementação entrar.",
         "operationId": "getServerToday",
         "parameters": [
-          {
-            "name": "date",
-            "required": false,
-            "in": "query",
-            "description": "Dia (YYYY-MM-DD, Brasília); sem ele, hoje; até 7 dias atrás",
-            "schema": {}
-          },
           {
             "name": "id",
             "required": true,
@@ -2624,6 +2615,13 @@
               "format": "uuid",
               "type": "string"
             }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Dia (YYYY-MM-DD, Brasília); sem ele, hoje; até 7 dias atrás",
+            "schema": {}
           }
         ],
         "responses": {
@@ -2665,9 +2663,6 @@
                 }
               }
             }
-          },
-          "501": {
-            "description": "S12b: a implementação ainda não entrou"
           }
         },
         "summary": "Histórico do dia do servidor: rounds, mapas, horas, pico e jogadores únicos",
@@ -4136,7 +4131,12 @@
                 "account_anonymize",
                 "account_reserved_id",
                 "ranking_entry_remove",
-                "report_archive"
+                "report_archive",
+                "avatar_keep",
+                "avatar_remove",
+                "payment_refund",
+                "purchase_unblock",
+                "vip_compensation"
               ],
               "type": "string"
             }
@@ -5095,6 +5095,1259 @@
         "summary": "Registra a Denúncia (`!report`) de um jogador contra outro; aplica os limites e avisa a Staff",
         "tags": [
           "server"
+        ]
+      }
+    },
+    "/api/me/avatar": {
+      "get": {
+        "operationId": "getAvatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O estado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria (no ar ou suspensa), se pode enviar e por que não",
+        "tags": [
+          "me"
+        ]
+      },
+      "post": {
+        "operationId": "uploadAvatar",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "A imagem (o recorte que o navegador fez)",
+          "content": {
+            "image/jpeg": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/png": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "image/webp": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Publicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Conta com menos de 24 horas, com Punição ativa ou com o envio bloqueado (account_too_new, punished, upload_blocked), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Maior que 1 MiB (too_large)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Tipo fora de JPEG, PNG e WebP, ou bytes que não são do tipo informado (unsupported_type)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Não abre como imagem, é animada ou não é quadrada de 256 a 1024 px (invalid_image, bad_dimensions)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "3 envios em 24 horas (daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Funcionalidade desligada neste ambiente (disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Envia a foto de perfil e a publica na hora. O corpo é a imagem crua (JPEG, PNG ou WebP, até 1 MiB, quadrada de 256 a 1024 px); a API a refaz em 4 tamanhos WebP sem EXIF",
+        "tags": [
+          "me"
+        ]
+      },
+      "delete": {
+        "operationId": "revertAvatar",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Com a foto da Steam",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Volta à foto da Steam na hora, sem moderação; a foto própria é apagada. Sem foto própria, não muda nada",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/profiles/{publicId}/avatar-report": {
+      "post": {
+        "operationId": "reportAvatar",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarReportInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A denúncia entrou na fila",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarReportReceived"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Motivo fora da lista (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "O Perfil não tem foto própria no ar (no_custom_avatar)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Esta Conta já denunciou esta foto (already_reported)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "A própria foto não se denuncia (own_avatar)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "5 denúncias de foto na última hora (report_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Funcionalidade desligada neste ambiente (disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Denuncia a foto de perfil própria de um Perfil. Duas Contas diferentes tiram a foto do ar até a Staff decidir; a resposta nunca diz se isso aconteceu",
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
+    "/api/staff/avatar-reports": {
+      "get": {
+        "operationId": "listStaffAvatarReports",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1 a 100",
+            "schema": {}
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "`nextCursor` da página anterior",
+            "schema": {}
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "open",
+                "decided"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uma página",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAvatarCasePage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"avatars.moderate\""
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Fila de denúncias de foto de perfil; as abertas, das mais antigas (o prazo é de 24 h), as decididas, das mais recentes",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/avatars/{id}/decision": {
+      "post": {
+        "operationId": "decideStaffAvatar",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "O id da foto",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarDecisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O caso, já decidido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAvatarCase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"avatars.moderate\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Decide uma foto de perfil: manter (volta ao ar se estava suspensa e arquiva as denúncias) ou remover (a Conta volta à Steam, a imagem fica guardada em privado por 30 dias e o envio é bloqueado conforme a regra). Vai para o log de auditoria",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/accounts/{publicId}/avatar": {
+      "get": {
+        "operationId": "getStaffAccountAvatar",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A foto da Conta",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAccountAvatar"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"avatars.moderate\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "A foto de perfil na ficha da Conta: a atual, o bloqueio de reincidente (só a Staff o vê) e as remoções anteriores",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/accounts/{publicId}/avatar/remove": {
+      "post": {
+        "operationId": "removeStaffAccountAvatar",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AvatarDecisionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A foto da Conta, já removida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffAccountAvatar"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"avatars.moderate\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Remove a foto de perfil da Conta em um clique, sem denúncia (`decision` só vale `remove`); mesmo efeito e mesmo log da decisão",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/avatars/{id}/image": {
+      "get": {
+        "operationId": "getStaffAvatarImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "O id da foto",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A imagem",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"avatars.moderate\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "A imagem (WebP, 512 px) de uma foto de perfil, no ar, suspensa ou guardada em privado, só para a Staff",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/vip/packages": {
+      "get": {
+        "operationId": "getVipPackages",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O catálogo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VipPackages"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Os Pacotes VIP, os preços, se a compra está aberta (a cobrança nasce desligada) e, com sessão, se a Conta pode comprar agora",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/me/purchases": {
+      "get": {
+        "operationId": "listPurchases",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "As compras",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "As compras de VIP da Conta, da mais nova",
+        "tags": [
+          "vip"
+        ]
+      },
+      "post": {
+        "operationId": "createPurchase",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "description": "Repetir a chamada com a mesma chave devolve a mesma compra (duplo clique)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePurchase"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "A compra criada (ou a pendente igual)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Corpo fora do formato (invalid_body)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Ban permanente (banned) ou compras suspensas (purchases_blocked), ou CSRF",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Há um pagamento em análise (purchase_in_progress)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "O VIP passaria do limite à frente (vip_horizon)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Muitas compras hoje (daily_limit)\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O provedor não respondeu (provider_unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A cobrança está desligada (payments_disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Compra um Pacote VIP para a Conta da sessão (Pix ou cartão). Devolve a compra pendente com o Pix ou o endereço do checkout",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/me/purchases/{id}": {
+      "get": {
+        "operationId": "getPurchase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A compra",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "Compra não encontrada (not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Uma compra; a pendente pergunta ao provedor, sem esperar o webhook",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/me/purchases/{id}/refund": {
+      "post": {
+        "operationId": "refundPurchase",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A compra, já reembolsada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Purchase"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "Compra não encontrada (not_found)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Fora do prazo ou não aprovada (refund_unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "O provedor não confirmou o estorno (provider_unavailable)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PurchaseError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Direito de arrependimento: reembolso integral em até 7 dias da aprovação, sem motivo; os dias saem do VIP",
+        "tags": [
+          "vip"
+        ]
+      }
+    },
+    "/api/webhooks/mercadopago": {
+      "post": {
+        "operationId": "receivePaymentWebhook",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Recebido"
+          },
+          "401": {
+            "description": "Assinatura inválida ou ausente"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"webhook\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"webhook\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"webhook\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Aviso do provedor de pagamento (assinado). Nunca concede nada pelo corpo: consulta o pagamento",
+        "tags": [
+          "webhooks"
         ]
       }
     }
@@ -8206,7 +9459,12 @@
           "account_anonymize",
           "account_reserved_id",
           "ranking_entry_remove",
-          "report_archive"
+          "report_archive",
+          "avatar_keep",
+          "avatar_remove",
+          "payment_refund",
+          "purchase_unblock",
+          "vip_compensation"
         ]
       },
       "StaffError": {
@@ -8239,7 +9497,10 @@
               "report_not_found",
               "report_not_open",
               "report_target_mismatch",
-              "report_needs_evidence"
+              "report_needs_evidence",
+              "avatar_not_found",
+              "avatar_not_reviewable",
+              "no_custom_avatar"
             ]
           },
           "message": {
@@ -10715,6 +11976,846 @@
           "unknown_account",
           "same_target_cooldown",
           "hourly_limit"
+        ]
+      },
+      "AvatarState": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "source": {
+            "$ref": "#/components/schemas/AvatarSource"
+          },
+          "steamAvatarUrl": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          },
+          "custom": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string",
+                "format": "uri"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "active",
+                  "suspended"
+                ]
+              },
+              "uploadedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              }
+            },
+            "required": [
+              "url",
+              "status",
+              "uploadedAt"
+            ],
+            "additionalProperties": false
+          },
+          "canUpload": {
+            "type": "boolean"
+          },
+          "cannotUploadReason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarIneligibleReason"
+              }
+            ]
+          },
+          "retryAfter": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "removal": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "reason": {
+                "$ref": "#/components/schemas/AvatarReason"
+              }
+            },
+            "required": [
+              "at",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "enabled",
+          "source",
+          "steamAvatarUrl",
+          "custom",
+          "canUpload",
+          "cannotUploadReason",
+          "retryAfter",
+          "removal"
+        ],
+        "additionalProperties": false
+      },
+      "AvatarSource": {
+        "type": "string",
+        "enum": [
+          "steam",
+          "custom"
+        ]
+      },
+      "AvatarIneligibleReason": {
+        "type": "string",
+        "enum": [
+          "account_too_new",
+          "punished",
+          "upload_blocked",
+          "daily_limit"
+        ]
+      },
+      "AvatarReason": {
+        "type": "string",
+        "enum": [
+          "sexual",
+          "violence",
+          "hate",
+          "minor",
+          "personal_data",
+          "other"
+        ]
+      },
+      "AvatarError": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "code": {
+            "type": "string",
+            "enum": [
+              "disabled",
+              "invalid_body",
+              "unsupported_type",
+              "too_large",
+              "invalid_image",
+              "bad_dimensions",
+              "account_too_new",
+              "punished",
+              "upload_blocked",
+              "daily_limit",
+              "no_custom_avatar",
+              "own_avatar",
+              "already_reported",
+              "report_limit"
+            ]
+          },
+          "message": {
+            "type": "string"
+          },
+          "retryAfter": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "statusCode",
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "AvatarReportInput": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/AvatarReason"
+          }
+        },
+        "required": [
+          "reason"
+        ]
+      },
+      "AvatarReportReceived": {
+        "type": "object",
+        "properties": {
+          "received": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "received"
+        ],
+        "additionalProperties": false
+      },
+      "StaffAvatarCasePage": {
+        "type": "object",
+        "properties": {
+          "cases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffAvatarCase"
+            }
+          },
+          "nextCursor": {
+            "nullable": true,
+            "type": "string"
+          },
+          "openCount": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "cases",
+          "nextCursor",
+          "openCount"
+        ],
+        "additionalProperties": false
+      },
+      "StaffAvatarCase": {
+        "type": "object",
+        "properties": {
+          "avatar": {
+            "$ref": "#/components/schemas/StaffAvatar"
+          },
+          "account": {
+            "type": "object",
+            "properties": {
+              "publicId": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "displayName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "publicId",
+              "displayName"
+            ],
+            "additionalProperties": false
+          },
+          "reports": {
+            "type": "object",
+            "properties": {
+              "reporters": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 9007199254740991
+              },
+              "byReason": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "reason": {
+                      "$ref": "#/components/schemas/AvatarReason"
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "reason",
+                    "count"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "firstAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "lastAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              }
+            },
+            "required": [
+              "reporters",
+              "byReason",
+              "firstAt",
+              "lastAt"
+            ],
+            "additionalProperties": false
+          },
+          "previousRemovals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "decision": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffAvatarDecision"
+              }
+            ]
+          }
+        },
+        "required": [
+          "avatar",
+          "account",
+          "reports",
+          "previousRemovals",
+          "decision"
+        ],
+        "additionalProperties": false
+      },
+      "StaffAvatar": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/AvatarStatus"
+          },
+          "url": {
+            "nullable": true,
+            "type": "string",
+            "format": "uri"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "takenDownAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "url",
+          "uploadedAt",
+          "takenDownAt"
+        ],
+        "additionalProperties": false
+      },
+      "AvatarStatus": {
+        "type": "string",
+        "enum": [
+          "active",
+          "suspended",
+          "removed",
+          "replaced",
+          "reverted"
+        ]
+      },
+      "StaffAvatarDecision": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "remove"
+            ]
+          },
+          "reason": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarReason"
+              }
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "by": {
+            "type": "object",
+            "properties": {
+              "steamId": {
+                "$ref": "#/components/schemas/SteamId64"
+              },
+              "publicId": {
+                "nullable": true,
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "displayName": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "steamId",
+              "publicId",
+              "displayName"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "decision",
+          "reason",
+          "note",
+          "at",
+          "by"
+        ],
+        "additionalProperties": false
+      },
+      "AvatarDecisionInput": {
+        "type": "object",
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "keep",
+              "remove"
+            ]
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AvatarReason"
+              }
+            ]
+          },
+          "note": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "blockDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 365
+          }
+        },
+        "required": [
+          "decision",
+          "note"
+        ]
+      },
+      "StaffAccountAvatar": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/AvatarSource"
+          },
+          "current": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StaffAvatar"
+              }
+            ]
+          },
+          "uploadBlockedUntil": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "removals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "avatarId": {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "reason": {
+                  "$ref": "#/components/schemas/AvatarReason"
+                },
+                "note": {
+                  "type": "string"
+                },
+                "by": {
+                  "type": "object",
+                  "properties": {
+                    "steamId": {
+                      "$ref": "#/components/schemas/SteamId64"
+                    },
+                    "publicId": {
+                      "nullable": true,
+                      "type": "integer",
+                      "minimum": 0,
+                      "exclusiveMinimum": true,
+                      "maximum": 9007199254740991
+                    },
+                    "displayName": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "steamId",
+                    "publicId",
+                    "displayName"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "avatarId",
+                "at",
+                "reason",
+                "note",
+                "by"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "source",
+          "current",
+          "uploadBlockedUntil",
+          "removals"
+        ],
+        "additionalProperties": false
+      },
+      "VipPackages": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "sandbox": {
+            "type": "boolean"
+          },
+          "packages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VipPackage"
+            }
+          },
+          "eligibility": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PurchaseEligibility"
+              }
+            ]
+          }
+        },
+        "required": [
+          "enabled",
+          "sandbox",
+          "packages",
+          "eligibility"
+        ],
+        "additionalProperties": false
+      },
+      "VipPackage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/VipPackageId"
+          },
+          "months": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "priceCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "months",
+          "days",
+          "priceCents"
+        ],
+        "additionalProperties": false
+      },
+      "VipPackageId": {
+        "type": "string",
+        "enum": [
+          "vip-1m",
+          "vip-3m",
+          "vip-6m"
+        ]
+      },
+      "PurchaseEligibility": {
+        "type": "string",
+        "enum": [
+          "ok",
+          "banned",
+          "purchases_blocked",
+          "purchase_in_progress",
+          "daily_limit"
+        ]
+      },
+      "PurchaseList": {
+        "type": "object",
+        "properties": {
+          "purchases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Purchase"
+            }
+          }
+        },
+        "required": [
+          "purchases"
+        ],
+        "additionalProperties": false
+      },
+      "Purchase": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "package": {
+            "$ref": "#/components/schemas/VipPackageId"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "amountCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "expiresAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "approvedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "refundedCents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "pix": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PurchasePix"
+              }
+            ]
+          },
+          "redirectUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "simulationUrl": {
+            "nullable": true,
+            "type": "string"
+          },
+          "payerDocumentMasked": {
+            "nullable": true,
+            "type": "string"
+          },
+          "payerName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "periodEndsAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "refundableUntil": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "package",
+          "days",
+          "amountCents",
+          "method",
+          "createdAt",
+          "expiresAt",
+          "approvedAt",
+          "refundedCents",
+          "pix",
+          "redirectUrl",
+          "simulationUrl",
+          "payerDocumentMasked",
+          "payerName",
+          "periodEndsAt",
+          "refundableUntil"
+        ],
+        "additionalProperties": false
+      },
+      "PaymentStatus": {
+        "type": "string",
+        "enum": [
+          "created",
+          "pending",
+          "in_review",
+          "approved",
+          "rejected",
+          "expired",
+          "cancelled",
+          "refunded",
+          "partially_refunded",
+          "charged_back"
+        ]
+      },
+      "PaymentMethod": {
+        "type": "string",
+        "enum": [
+          "pix",
+          "card"
+        ]
+      },
+      "PurchasePix": {
+        "type": "object",
+        "properties": {
+          "copyPaste": {
+            "type": "string",
+            "minLength": 1
+          },
+          "qrCodeBase64": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "copyPaste",
+          "qrCodeBase64"
+        ],
+        "additionalProperties": false
+      },
+      "PurchaseError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "enum": [
+              "payments_disabled",
+              "invalid_body",
+              "banned",
+              "purchases_blocked",
+              "vip_horizon",
+              "daily_limit",
+              "provider_unavailable",
+              "not_found",
+              "purchase_in_progress",
+              "refund_unavailable"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "additionalProperties": false
+      },
+      "CreatePurchase": {
+        "type": "object",
+        "properties": {
+          "package": {
+            "$ref": "#/components/schemas/VipPackageId"
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "adultDeclaration": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "declarationVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+          }
+        },
+        "required": [
+          "package",
+          "method",
+          "adultDeclaration",
+          "declarationVersion"
         ]
       }
     }

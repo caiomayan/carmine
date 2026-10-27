@@ -11,6 +11,7 @@ export * from './inventory.js';
 export * from './live-servers.js';
 export * from './loadout.js';
 export * from './moderation.js';
+export * from './payments.js';
 export * from './player-search.js';
 export * from './profile.js';
 export * from './ranking.js';

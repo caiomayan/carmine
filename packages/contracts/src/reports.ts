@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { gameModeSchema } from './game-server.js';
 import { steamId64Schema } from './steam.js';
@@ -46,6 +47,8 @@ export const REPORT_RETENTION_DAYS = 90;
 export const STATS_DAILY_RETENTION_DAYS = 400;
 export const SERVER_HOURS_RETENTION_DAYS = 400;
 export const PLAY_SESSION_RETENTION_DAYS = 90;
+/** S14: os webhooks de pagamento recebidos ficam 12 meses (o pagamento em si, 5 anos, por lei). */
+export const PAYMENT_EVENT_RETENTION_DAYS = 365;
 
 /** Maior mensagem de chat guardada (o jogo já limita bem abaixo disto). */
 export const CHAT_TEXT_MAX = 256;

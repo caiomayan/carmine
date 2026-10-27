@@ -1,0 +1,232 @@
+/*
+ * A vitrine da carta do jogador (protótipo, /dev/carta). Prefixos `cv-` (a página) e `lc-` (o Lanyard). Marca preto e
+ * branco; a única cor é a luz de fundo, que vem da skin principal (--cv-glow).
+ */
+
+.cv {
+  position: relative;
+  isolation: isolate;
+  padding-block: 56px 120px;
+}
+.cv::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: -1;
+  height: 720px;
+  pointer-events: none;
+  background: radial-gradient(
+    60% 70% at 70% 8%,
+    color-mix(in srgb, var(--cv-glow, #4b69ff) 30%, transparent),
+    transparent 70%
+  );
+}
+.cv-head {
+  display: grid;
+  gap: 16px;
+  max-width: 62ch;
+  padding-bottom: 36px;
+}
+.cv-eyebrow {
+  color: var(--on-map-muted);
+}
+.cv-title {
+  font-size: clamp(48px, 7vw, 96px);
+  line-height: 0.98;
+  letter-spacing: -0.012em;
+}
+.cv-lead {
+  font-size: clamp(16px, 1.5vw, 19px);
+  line-height: 1.5;
+  color: var(--on-map-muted);
+}
+.cv-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 960px) {
+  .cv-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.cv-panel {
+  display: grid;
+  gap: 16px;
+  border-radius: var(--r-panel);
+  padding: 26px 26px 28px;
+  background: var(--surface);
+}
+@media (max-width: 760px) {
+  .cv-panel {
+    padding: 20px 16px 22px;
+    border-radius: 32px;
+  }
+}
+.cv-h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.cv-hint {
+  margin-top: -6px;
+  font-size: 14px;
+  color: var(--on-map-muted);
+}
+
+/* ---------- o que se compartilha ---------- */
+.cv-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cv-tab,
+.cv-chip {
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--fill-rest);
+  transition:
+    background-color var(--dur-fast) var(--ease-std),
+    color var(--dur-fast) var(--ease-std);
+}
+.cv-tab:hover,
+.cv-chip:hover {
+  background: color-mix(in srgb, var(--text) 13%, transparent);
+}
+.cv-tab[aria-current="page"],
+.cv-chip.is-on {
+  color: var(--bg);
+  background: var(--text);
+}
+.cv-figure {
+  width: min(100%, 460px);
+  margin: 4px auto 0;
+  overflow: hidden;
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--text) 8%, var(--bg));
+  box-shadow: 0 28px 60px -30px rgb(0 0 0 / 0.6);
+}
+.cv-figure img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cv-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+}
+.cv-link {
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text) 28%, transparent);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--dur-fast) var(--ease-std);
+}
+.cv-link:hover {
+  text-decoration-color: var(--text);
+}
+.cv-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---------- como a imagem é gerada ---------- */
+.cv-how {
+  display: grid;
+  gap: 18px;
+  margin-top: 56px;
+}
+.cv-how-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+.cv-how-list li {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  border-radius: var(--r-card);
+  padding: 20px 20px 22px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--on-map-muted);
+  background: var(--surface);
+}
+.cv-how-list b {
+  font-size: 17px;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.cv-how-list code {
+  border-radius: 8px;
+  padding: 1px 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--fill-rest);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- o Lanyard ---------- */
+.lc-stage {
+  position: relative;
+  height: clamp(480px, 74svh, 680px);
+  overflow: hidden;
+  border-radius: var(--r-card);
+  background:
+    radial-gradient(
+      70% 55% at 50% 0%,
+      color-mix(in srgb, var(--text) 9%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--text) 4%, var(--bg));
+}
+.lc-canvas {
+  position: absolute;
+  inset: 0;
+}
+.lc-static {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(72%, 330px);
+  height: auto;
+  transform: translate(-50%, -50%) rotate(-3deg);
+  border-radius: 22px;
+  box-shadow: 0 30px 60px -28px rgb(0 0 0 / 0.7);
+}
+.lc-hint {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 28px);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--on-map-muted);
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  pointer-events: none;
+  animation: lc-fade 600ms var(--ease-out) both;
+}
+@keyframes lc-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lc-hint {
+    animation: none;
+  }
+}

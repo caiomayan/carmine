@@ -1,5 +1,6 @@
 import { ANONYMIZED_DISPLAY_NAME } from '@carmine/contracts';
 import { and, eq, ne, sql } from 'drizzle-orm';
+import { eraseAvatarsOf } from '../avatars/avatar-erasure.js';
 import type { Database } from '../database/database.js';
 import {
   accountStatsDaily,
@@ -14,6 +15,7 @@ import {
   reports,
   sanctions,
   staffMembers,
+  vipHeldItems,
   vipPeriods,
 } from '../database/schema.js';
 import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
@@ -107,6 +109,8 @@ export class AccountErasure {
           .delete(discordLinks)
           .where(eq(discordLinks.accountId, accountId))
           .returning({ discordId: discordLinks.discordId });
+        // Foto de perfil própria (ADR 0022): os arquivos saem pela fila de remoção, na mesma transação.
+        const removedAvatars = await eraseAvatarsOf(tx, accountId);
         const removedVip = await tx
           .delete(vipPeriods)
           .where(eq(vipPeriods.accountId, accountId))
@@ -128,6 +132,10 @@ export class AccountErasure {
           .delete(playSessions)
           .where(eq(playSessions.accountId, accountId))
           .returning({ id: playSessions.id });
+        const removedHeld = await tx
+          .delete(vipHeldItems)
+          .where(eq(vipHeldItems.accountId, accountId))
+          .returning({ id: vipHeldItems.id });
         const removedChat = await tx
           .delete(chatMessages)
           .where(eq(chatMessages.accountId, accountId))
@@ -169,6 +177,9 @@ export class AccountErasure {
             profilePrivate: false,
             avatarUrl: null,
             avatarFetchedAt: null,
+            steamAvatarUrl: null,
+            avatarSource: 'steam',
+            avatarUploadBlockedUntil: null,
             claimedAt: null,
             chatHidden: false,
             anonymizedAt: now,
@@ -188,10 +199,12 @@ export class AccountErasure {
               statsDays: removedDaily.length,
               weaponStats: removedWeapons.length,
               playSessions: removedSessions.length,
+              vipHeldItems: removedHeld.length,
               chatMessages: removedChat.length,
               reportsUnlinked: unlinkedReports.length,
               reportsScrubbed: scrubbedReports.length,
               discordLinks: unlinkedDiscord ? 1 : 0,
+              avatars: removedAvatars,
             },
           },
           at: now,

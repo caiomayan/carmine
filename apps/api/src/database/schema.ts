@@ -53,6 +53,9 @@ export const gameServers = pgTable('game_servers', {
 /** Contador `n` do ID público (ADR 0013): cada valor vira um bloco exclusivo de 3 números. */
 export const publicIdCounter = pgSequence('public_id_counter', { startWith: 0, minValue: 0 });
 
+/** De onde vem o avatar efetivo da Conta (ADR 0022). */
+export const avatarSource = pgEnum('avatar_source', ['steam', 'custom']);
+
 /** Conta (`Account`): nasce no primeiro connect a um Servidor Carmine (ADR 0007). */
 export const accounts = pgTable(
   'accounts',
@@ -81,9 +84,18 @@ export const accounts = pgTable(
     displayNameChangedAt: timestamptz(),
     /** Perfil privado (S11): esconde as Estatísticas e a identidade no Ranking. */
     profilePrivate: boolean().notNull().default(false),
-    /** URL do avatar Steam; nulo enquanto a Steam não respondeu (vale o avatar neutro). */
+    /**
+     * O avatar efetivo, o que todo mundo lê: a URL do avatar Steam (`avatarSource` `steam`) ou a
+     * da foto própria no ar (`custom`, ADR 0022). Nulo enquanto a Steam não respondeu (vale o
+     * avatar neutro).
+     */
     avatarUrl: text(),
     avatarFetchedAt: timestamptz(),
+    /** O avatar da Steam, sempre guardado: é para onde a Conta volta. O `AvatarRefresher` o mantém. */
+    steamAvatarUrl: text(),
+    avatarSource: avatarSource().notNull().default('steam'),
+    /** Envio de foto bloqueado até aqui (reincidente, ADR 0022); só a Staff vê. */
+    avatarUploadBlockedUntil: timestamptz(),
     /** Nulo enquanto a Conta não foi reivindicada por login Steam no site (S03). */
     claimedAt: timestamptz(),
     /** Nulos enquanto a Conta nunca conectou num Servidor Carmine (criada pelo site, S03). */
@@ -98,6 +110,12 @@ export const accounts = pgTable(
      * público não muda mais; o ID antigo fica em `account_public_id_history`.
      */
     publicIdReservedAt: timestamptz(),
+    /**
+     * A Staff bloqueou as compras da Conta (S14): uma contestação de pagamento bloqueia até a Staff
+     * revisar. Nulo: pode comprar. Não afeta o VIP que a Conta já tem.
+     */
+    purchaseBlockedAt: timestamptz(),
+    purchaseBlockReason: text(),
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [check('accounts_public_id_positive', sql`${table.publicId} > 0`)],
@@ -146,6 +164,110 @@ export const inventoryItems = pgTable(
   (table) => [index('inventory_items_account_idx').on(table.accountId, table.createdAt)],
 );
 
+/** Estado do pagamento de um Pacote VIP (S14); ver `PAYMENT_STATUSES` nos contratos. */
+export const paymentStatus = pgEnum('payment_status', [
+  'created',
+  'pending',
+  'in_review',
+  'approved',
+  'rejected',
+  'expired',
+  'cancelled',
+  'refunded',
+  'partially_refunded',
+  'charged_back',
+]);
+
+export const paymentMethod = pgEnum('payment_method', ['pix', 'card']);
+
+/**
+ * Pagamento de um Pacote VIP (S14). O VIP só é concedido depois que o provedor confirma
+ * (webhook + consulta); `provider_payment_id` é único por provedor, e o Período VIP gerado aponta
+ * para cá (`vip_periods.payment_id`, único), então a mesma confirmação nunca concede duas vezes. O
+ * preço fica no pagamento (vale o do momento da compra). O CPF do Pagador, que só o provedor
+ * conhece, fica cifrado; só os 3 últimos dígitos são legíveis. Registro de pagamento NÃO é
+ * apagado na anonimização da Conta (prazo legal de 5 anos).
+ */
+export const payments = pgTable(
+  'payments',
+  {
+    /** Também a `external_reference` mandada ao provedor. */
+    id: uuid().primaryKey().defaultRandom(),
+    /** A Conta beneficiada do VIP. */
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id),
+    package: text().notNull(),
+    days: integer().notNull(),
+    amountCents: integer().notNull(),
+    method: paymentMethod().notNull(),
+    status: paymentStatus().notNull().default('created'),
+    /** `mercadopago` ou `fake` (dev e homologação). */
+    provider: text().notNull(),
+    providerPaymentId: text(),
+    /** Pix: o "copia e cola" e o QR em PNG (base64); recuperáveis até o vencimento. */
+    pixCopyPaste: text(),
+    pixQrBase64: text(),
+    /** Cartão: o checkout hospedado do provedor. */
+    redirectUrl: text(),
+    expiresAt: timestamptz(),
+    approvedAt: timestamptz(),
+    refundedCents: integer().notNull().default(0),
+    /** Dias do Pacote já tirados do VIP por reembolso ou contestação (para nunca tirar duas vezes). */
+    refundedDays: integer().notNull().default(0),
+    refundedAt: timestamptz(),
+    chargedBackAt: timestamptz(),
+    /** A declaração de maioridade do Pagador: quando e qual texto. */
+    adultDeclaredAt: timestamptz().notNull(),
+    declarationVersion: text().notNull(),
+    /** CPF do Pagador (cifrado, AES-256-GCM) e os 3 últimos dígitos; nome vindo do provedor. */
+    payerDocumentEncrypted: text(),
+    payerDocumentLast3: text(),
+    payerName: text(),
+    /** Por que a cobrança não existe/foi cancelada por nós (erro do provedor...). */
+    failureReason: text(),
+    /** A chave de idempotência do cliente: o duplo clique devolve a mesma compra. */
+    idempotencyKey: text().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('payments_provider_payment_idx')
+      .on(table.provider, table.providerPaymentId)
+      .where(sql`${table.providerPaymentId} is not null`),
+    uniqueIndex('payments_account_idempotency_idx').on(table.accountId, table.idempotencyKey),
+    index('payments_account_idx').on(table.accountId, table.createdAt),
+    index('payments_status_idx').on(table.status, table.createdAt),
+    check('payments_amount_positive', sql`${table.amountCents} > 0`),
+  ],
+);
+
+/**
+ * Cada webhook de pagamento recebido (S14): serve de log e de auditoria. Webhook com assinatura
+ * inválida também entra (sem consultar nada). Guardado por `PAYMENT_EVENT_RETENTION_DAYS`.
+ */
+export const paymentEvents = pgTable(
+  'payment_events',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    provider: text().notNull(),
+    /** O `x-request-id` do provedor, quando vem. */
+    requestId: text(),
+    topic: text(),
+    resourceId: text(),
+    signatureValid: boolean().notNull(),
+    paymentId: uuid().references(() => payments.id),
+    /** O que a API fez: `applied`, `unchanged`, `ignored`, `invalid_signature`, `mismatch`, `error`. */
+    outcome: text().notNull(),
+    detail: text(),
+    receivedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    index('payment_events_received_idx').on(table.receivedAt),
+    index('payment_events_payment_idx').on(table.paymentId),
+  ],
+);
+
 /**
  * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. A
  * concessão e a revogação pela Staff (S05, com auditoria) e os Pacotes VIP (S14) mexem aqui.
@@ -159,6 +281,10 @@ export const vipPeriods = pgTable(
       .references(() => accounts.id, { onDelete: 'cascade' }),
     startsAt: timestamptz().notNull(),
     endsAt: timestamptz().notNull(),
+    /** O pagamento que gerou este Período (S14); nulo: concessão da Staff. Único: uma confirmação, um Período. */
+    paymentId: uuid()
+      .unique()
+      .references(() => payments.id),
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [
@@ -214,6 +340,41 @@ export const loadoutSlots = pgTable(
   ],
 );
 
+/**
+ * Itens VIP guardados (S14, D3). Quando o VIP da Conta acaba, os Itens que só existem com VIP saem do
+ * Inventário e do Loadout e ficam aqui por 30 dias; se o VIP volta, voltam inteiros, nos mesmos slots.
+ * Tirar do Inventário de verdade (em vez de filtrar na leitura) garante que nenhuma tela, nem o jogo,
+ * enxerga o que está guardado. Dois tipos:
+ * - `item`: agente ou kit de música inteiro (`item` é o registro todo; `slots`, onde estava equipado);
+ * - `attributes`: o StatTrak e a nametag de uma skin que fica (`item` só tem esses campos).
+ */
+export const vipHeldItems = pgTable(
+  'vip_held_items',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    kind: text().$type<'item' | 'attributes'>().notNull(),
+    /** O `id` do registro em `inventory_items` (o mesmo na volta). */
+    itemId: uuid().notNull(),
+    item: jsonb().$type<Record<string, unknown>>().notNull(),
+    /** Só em `item`: quando entrou no Inventário (a ordem da lista não muda na volta). */
+    itemCreatedAt: timestamptz(),
+    /** Só em `item`: os slots em que estava equipado. */
+    slots: jsonb()
+      .$type<Array<{ presetId: string; slot: string; side: 'ct' | 't' | 'any' }>>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    /** Quando o VIP acabou; os 30 dias contam daqui. */
+    heldAt: timestamptz().notNull(),
+  },
+  (table) => [
+    uniqueIndex('vip_held_items_item_idx').on(table.accountId, table.itemId),
+    index('vip_held_items_held_idx').on(table.heldAt),
+  ],
+);
+
 /** Ações da Staff registradas no log de auditoria (`StaffAuditAction`). */
 export const staffAuditAction = pgEnum('staff_audit_action', [
   'vip_grant',
@@ -228,6 +389,11 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'account_reserved_id',
   'ranking_entry_remove',
   'report_archive',
+  'avatar_keep',
+  'avatar_remove',
+  'payment_refund',
+  'purchase_unblock',
+  'vip_compensation',
 ]);
 
 /**
@@ -667,3 +833,110 @@ export const discordStatusMessages = pgTable('discord_status_messages', {
   messageId: text().notNull(),
   updatedAt: timestamptz().notNull().defaultNow(),
 });
+
+/** Estado de uma foto de perfil própria (ADR 0022). */
+export const avatarStatus = pgEnum('avatar_status', [
+  'active',
+  'suspended',
+  'removed',
+  'replaced',
+  'reverted',
+]);
+
+/** Motivo de uma denúncia de foto ou da remoção pela Staff. */
+export const avatarReason = pgEnum('avatar_reason', [
+  'sexual',
+  'violence',
+  'hate',
+  'minor',
+  'personal_data',
+  'other',
+]);
+
+/**
+ * Foto de perfil própria (ADR 0022): publica na hora e a moderação vem depois. Os arquivos
+ * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`; `suspended` (duas
+ * Contas denunciaram) e `removed` (Staff) os tiram de lá e guardam o de 512 px no bucket
+ * privado (`removed/<id>/512.webp`) até a limpeza; `replaced` e `reverted` os apagam. Uma Conta
+ * tem no máximo uma foto `active` ou `suspended`.
+ */
+export const accountAvatars = pgTable(
+  'account_avatars',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    status: avatarStatus().notNull().default('active'),
+    createdAt: timestamptz().notNull().defaultNow(),
+    /** Quando saiu do ar (suspensa ou removida). */
+    takenDownAt: timestamptz(),
+    /** Quando deixou de ser a foto da Conta (removida, trocada ou devolvida à Steam). */
+    retiredAt: timestamptz(),
+    /** A decisão da Staff (manter ou remover): a última. Nula sem decisão. */
+    decision: text().$type<'keep' | 'remove'>(),
+    decidedAt: timestamptz(),
+    decidedBySteamId: bigint({ mode: 'bigint' }),
+    decisionReason: avatarReason(),
+    decisionNote: text(),
+  },
+  (table) => [
+    uniqueIndex('account_avatars_current_idx')
+      .on(table.accountId)
+      .where(sql`${table.status} in ('active', 'suspended')`),
+    index('account_avatars_account_idx').on(table.accountId, table.createdAt),
+    index('account_avatars_removed_idx')
+      .on(table.accountId, table.decidedAt)
+      .where(sql`${table.status} = 'removed'`),
+  ],
+);
+
+/**
+ * Denúncia de uma foto (ADR 0022). Uma por Conta e foto; `dismissedAt` marca as arquivadas quando
+ * a Staff mantém a foto. A Conta que denuncia e é excluída deixa a denúncia sem autor.
+ */
+export const avatarReports = pgTable(
+  'avatar_reports',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    avatarId: uuid()
+      .notNull()
+      .references(() => accountAvatars.id, { onDelete: 'cascade' }),
+    reporterAccountId: uuid().references(() => accounts.id, { onDelete: 'set null' }),
+    reason: avatarReason().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+    dismissedAt: timestamptz(),
+  },
+  (table) => [
+    uniqueIndex('avatar_reports_once_idx').on(table.avatarId, table.reporterAccountId),
+    index('avatar_reports_avatar_idx').on(table.avatarId, table.createdAt),
+    index('avatar_reports_reporter_idx').on(table.reporterAccountId, table.createdAt),
+  ],
+);
+
+/** Em que bucket do R2 um arquivo está (ADR 0022). */
+export const mediaBucket = pgEnum('media_bucket', ['public', 'private']);
+
+/**
+ * Fila de remoção de arquivos do R2 (ADR 0022): o R2 não participa da transação do Postgres, então
+ * trocar, devolver à Steam, excluir a Conta e a limpeza das removidas só enfileiram aqui, na mesma
+ * transação, e um job apaga com nova tentativa. `runAt` no futuro é a retenção. `purge`: depois de
+ * apagar do bucket público, tira a URL pública (origem + chave) do cache da CDN.
+ */
+export const mediaDeletions = pgTable(
+  'media_deletions',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    bucket: mediaBucket().notNull(),
+    key: text().notNull(),
+    purge: boolean().notNull().default(false),
+    runAt: timestamptz().notNull().defaultNow(),
+    attempts: integer().notNull().default(0),
+    lastError: text(),
+    createdAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('media_deletions_object_idx').on(table.bucket, table.key),
+    index('media_deletions_due_idx').on(table.runAt),
+  ],
+);

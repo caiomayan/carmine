@@ -1,6 +1,7 @@
 'use client';
 
-import { type StaffErrorCode, staffErrorSchema } from '@carmine/contracts';
+import type { StaffErrorCode } from '@carmine/contracts';
+import { staffErrorSchema } from '@carmine/contracts/staff';
 import { useCallback, useState } from 'react';
 import { useSession } from '@/components/session/session-provider';
 

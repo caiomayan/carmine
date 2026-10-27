@@ -23,9 +23,14 @@ export interface Account {
   displayNameChangedAt: Date | null;
   /** Perfil privado (S11): sem Estatísticas e anônima no Ranking. */
   profilePrivate: boolean;
-  /** Nulo: ainda sem avatar Steam; vale o avatar neutro. */
+  /** O avatar efetivo (Steam ou foto própria no ar, ADR 0022). Nulo: vale o avatar neutro. */
   avatarUrl: string | null;
   avatarFetchedAt: Date | null;
+  /** O avatar da Steam, sempre guardado para a volta. Nulo: a Steam ainda não respondeu. */
+  steamAvatarUrl: string | null;
+  avatarSource: 'steam' | 'custom';
+  /** Envio de foto bloqueado até aqui (reincidente); só a Staff vê. */
+  avatarUploadBlockedUntil: Date | null;
   /** Nulo: Conta não reivindicada. */
   claimedAt: Date | null;
   firstConnectedAt: Date | null;
@@ -231,6 +236,7 @@ export class AccountsService {
       claimedAt: now,
       avatarUrl: summary?.avatarUrl ?? null,
       avatarFetchedAt: summary ? now : null,
+      steamAvatarUrl: summary?.avatarUrl ?? null,
     });
     return created ? { account: created, firstLogin: true } : null;
   }

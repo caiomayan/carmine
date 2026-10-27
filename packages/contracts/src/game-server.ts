@@ -1,3 +1,4 @@
+import './zod-jitless.js';
 import { z } from 'zod';
 import { gameSanctionSchema } from './moderation.js';
 import { steamId64Schema } from './steam.js';

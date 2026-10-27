@@ -1,4 +1,5 @@
-import { reportStatusSchema, staffCan, staffReportPageSchema } from '@carmine/contracts';
+import { reportStatusSchema, staffReportPageSchema } from '@carmine/contracts/reports';
+import { staffCan } from '@carmine/contracts/staff';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

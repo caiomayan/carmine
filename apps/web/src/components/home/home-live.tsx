@@ -1,6 +1,5 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { EmptyState } from '@/components/empty-state';
@@ -33,19 +32,14 @@ import { cn } from '@/lib/utils';
 import { ActivityStrip } from './activity-strip';
 import './home.css';
 import { Hero } from './hero';
-import { InView } from './in-view';
 import { LiveStatus } from './live-status';
+import { LoadoutsSlot } from './loadouts-slot';
 import { OfflineGroup } from './offline-group';
 import { FeedPanel, FriendsPanel, TopPanel } from './rail';
 import { ServerCard } from './server-card';
-import { HomeSkeleton, LoadoutsSkeleton } from './skeleton';
+import { HomeSkeleton } from './skeleton';
 import { useActivity } from './use-activity';
 import { WeekStrip } from './week-strip';
-
-const LoadoutsWeek = dynamic(() => import('./loadouts-week'), {
-  ssr: false,
-  loading: () => <LoadoutsSkeleton />,
-});
 
 type Colors = [string, string, string];
 
@@ -291,9 +285,7 @@ export function HomeLive({ data }: { data: HomeData }) {
         </div>
 
         <WeekStrip summary={data.week} />
-        <InView testId="loadouts-slot" fallback={<LoadoutsSkeleton />}>
-          <LoadoutsWeek />
-        </InView>
+        <LoadoutsSlot expectContent={data.loadoutsHint} />
       </div>
     </div>
   );
