@@ -6418,6 +6418,123 @@
           "webhooks"
         ]
       }
+    },
+    "/api/me/analytics": {
+      "get": {
+        "operationId": "getAnalyticsPreference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A escolha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Se a Conta participa da análise de uso (padrão: sim) e se a análise está ligada neste ambiente",
+        "tags": [
+          "me"
+        ]
+      },
+      "put": {
+        "operationId": "setAnalyticsPreference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPreferenceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A escolha nova",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Liga ou desliga a participação na análise de uso. Desligada, nenhum evento da Conta é enviado (vale na hora)",
+        "tags": [
+          "me"
+        ]
+      }
     }
   },
   "info": {
@@ -12943,6 +13060,33 @@
           "method",
           "adultDeclaration",
           "declarationVersion"
+        ]
+      },
+      "AnalyticsPreference": {
+        "type": "object",
+        "properties": {
+          "participate": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "participate",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "AnalyticsPreferenceInput": {
+        "type": "object",
+        "properties": {
+          "participate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "participate"
         ]
       }
     }
