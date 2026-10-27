@@ -29,6 +29,8 @@ export default async function StaffLayout({ children }: { children: ReactNode })
   if (staffCan(role, 'reports.handle')) {
     items.push({ href: '/staff/denuncias', label: t('nav.reports') });
   }
+  if (staffCan(role, 'avatars.moderate'))
+    items.push({ href: '/staff/fotos', label: t('nav.photos') });
   if (staffCan(role, 'audit.read')) items.push({ href: '/staff/auditoria', label: t('nav.audit') });
   if (staffCan(role, 'servers.edit')) {
     items.push({ href: '/staff/servidores', label: t('nav.servers') });
