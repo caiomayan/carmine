@@ -305,3 +305,9 @@
   border-radius: 50%;
   background: var(--on-map-muted);
 }
+
+/* No tema claro o --status-vip é âmbar escuro: o texto sobre ele vira branco (contraste 6:1; o escuro de antes dava 2,9:1). */
+[data-theme="light"] .vp-slot-vip,
+[data-theme="light"] .vp-tag-best {
+  color: #fff;
+}
