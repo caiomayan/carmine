@@ -1,7 +1,16 @@
-import { friendsPlayingSchema, liveServerListSchema } from '@carmine/contracts/live-servers';
+import {
+  friendsPlayingSchema,
+  liveServerListSchema,
+  nowPlayingSchema,
+} from '@carmine/contracts/live-servers';
 import { profilePlayingSchema } from '@carmine/contracts/profile';
 import { describe, expect, it } from 'vitest';
-import { parseFriendsPlaying, parseLiveServerList, parseProfilePlaying } from './api-guards';
+import {
+  parseFriendsPlaying,
+  parseLiveServerList,
+  parseNowPlaying,
+  parseProfilePlaying,
+} from './api-guards';
 
 const ID = '5a0e9c3e-1d2b-4c47-9a55-3b7a2f0c8d11';
 const AT = '2026-10-26T21:07:00.000-03:00';
@@ -144,6 +153,41 @@ describe('parseProfilePlaying concorda com profilePlayingSchema', () => {
     expect(parseProfilePlaying({ server: { ...playing(), players: 9, extra: true } })).toEqual({
       server: playing(),
     });
+  });
+});
+
+describe('parseNowPlaying concorda com nowPlayingSchema', () => {
+  const playing = (over: Record<string, unknown> = {}) => ({
+    id: ID,
+    name: 'retake-1',
+    showcaseName: 'Retake · Rotação',
+    mode: 'retake',
+    map: 'de_mirage',
+    ...over,
+  });
+  const cases: [string, unknown][] = [
+    ['jogando', { server: playing() }],
+    ['fora de servidor', { server: null }],
+    ['mapa nulo', { server: playing({ map: null }) }],
+    ['sem nome de vitrine', { server: playing({ showcaseName: null }) }],
+    ['sem server', {}],
+    ['Modo desconhecido', { server: playing({ mode: '5v5' }) }],
+    ['sem nome', { server: playing({ name: undefined }) }],
+    ['mapa como número', { server: playing({ map: 4 }) }],
+    ['nulo', null],
+    ['texto', 'oi'],
+  ];
+  for (const [label, value] of cases) {
+    it(label, () => {
+      const plain = JSON.parse(JSON.stringify(value ?? null));
+      expect(parseNowPlaying(plain) !== null).toBe(nowPlayingSchema.safeParse(plain).success);
+    });
+  }
+
+  it('só leva os campos que a tela lê (endereço e lotação ficam de fora)', () => {
+    expect(
+      parseNowPlaying({ server: { ...playing(), address: '203.0.113.5:27015', players: 4 } }),
+    ).toEqual({ server: playing() });
   });
 });
 
