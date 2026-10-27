@@ -230,6 +230,7 @@ Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/staff/sta
 - Ban por cheat exige uma testemunha mencionada (`witness`, da plataforma ou não) ou o link da evidência (`evidenceUrl`), ou os dois. O Perfil público só mostra "Cheat" com a evidência; só com testemunha, mostra "Violação das regras".
 - No Perfil, o selo da Punição ativa é público; o histórico só vem para quem está logado (`sanctions.history` nulo para o visitante; o web repassa a sessão). Nenhum Perfil é indexado por buscadores (`noindex`).
 - `!chat off` (ou `css_chat off` no console) oculta para o jogador o chat dos outros jogadores; `!chat on` volta. A escolha fica na Conta (`PUT /api/server/players/{steamId}/chat-preference`) e volta em cada connect. Com gag, o `!chat off` no chat é bloqueado como qualquer mensagem; o console funciona.
+- `!vip` (`css_vip` no console) mostra até quando vai o VIP, perguntando à API na hora (`GET /api/server/players/{steamId}/vip`). O aviso do fim do VIP (3 dias antes, no dia e no dia em que acabou) vem no connect (`vipNotice` e `vipEndsAt`) e sai uma vez por conexão, no primeiro spawn.
 - As mensagens do jogo apontam para `<host do PUBLIC_WEB_URL>/regras#recurso`.
 
 ## Exclusão de dados
