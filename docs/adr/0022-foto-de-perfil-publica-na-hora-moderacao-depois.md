@@ -8,6 +8,8 @@ Hoje o avatar de toda Conta é o da Steam (ou o neutro). O dono decidiu (2026-10
 3. A prévia do link do Perfil mostra a foto própria.
 4. A fila de denúncias de foto é do Dono e dos Moderadores (o Admin, que tem tudo do Moderador, também), com prazo de **até 24 h**.
 5. Sem bucket de quarentena (não há pré-moderação). As removidas ficam **privadas** por tempo limitado, para a Staff e o advogado.
+6. (Decidido depois, no mesmo dia.) Os **registros** de foto trocada, devolvida à Steam ou removida, e as denúncias contra elas, são apagados **90 dias** depois de a foto deixar de ser a da Conta, como as Denúncias do jogo. A limpeza é da F2.
+7. (Idem.) O bucket das fotos fica na **mesma localização do bucket de backup** (automática, sem a jurisdição UE do R2): um só perfil de transferência internacional, que vai para a lista do advogado.
 
 **Onde fica cada coisa.** Dois buckets do R2, **separados do bucket de backup** (que nunca fica público e tem token próprio): `carmine-media`, **público** pelo domínio `img.stcarmine.com` (cache da Cloudflare, saída do R2 grátis), e `carmine-media-removidas`, **privado**. Os 4 tamanhos (64, 128, 256 e 512 px, WebP) de uma foto `<id>` ficam em `avatars/<id>/<tamanho>.webp` no público; o ID é novo a cada envio, então a URL é **imutável** (`cache-control: immutable` de 1 ano) e trocar a foto não exige purga. A foto que sai do ar (suspensa ou removida) é copiada para `removed/<id>/<tamanho>.webp` no privado, antes de sair do público. Sem as variáveis `R2_MEDIA_*` e `MEDIA_PUBLIC_URL`, a funcionalidade fica **desligada** (como o Discord e a Steam Web API) e o resto do site não muda.
 

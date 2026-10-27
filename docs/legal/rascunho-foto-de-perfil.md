@@ -2,15 +2,15 @@
 
 > **NÃO PUBLICAR ainda.** Este arquivo **não** é lido pelo web (só os quatro documentos listados em `docs/legal/README.md` são publicados). Os trechos abaixo entram em `politica-de-privacidade.md`, `regras-de-conduta.md` e `termos-de-uso.md` **juntos com o código**, quando a foto de perfil for ligada (a F3 do web e as variáveis `R2_MEDIA_*` na VM), e com a revisão do advogado. Ao entrar, subir a versão e a data de cada documento e avisar no site e no Discord, como dizem as próprias Regras.
 >
-> Decisões que sustentam o texto: [ADR 0022](../adr/0022-foto-de-perfil-publica-na-hora-moderacao-depois.md) (decisões do dono de 2026-10-26: todos enviam; **publica na hora e a moderação é depois**; a foto denunciada por 2 Contas diferentes sai do ar até a Staff decidir; Conta com menos de 24 h ou com Punição ativa não envia; a prévia do link mostra a foto; a Staff decide em até 24 h; as removidas ficam guardadas em privado por 30 dias). Operação: [foto-de-perfil.md](../operacao/foto-de-perfil.md). Marcas: **[ENTRA COM A FOTO]** = vale quando a funcionalidade for ligada; **[VALIDAR COM ADVOGADO]** = revisão profissional antes de publicar; **[DONO: ...]** = decisão do dono.
+> Decisões que sustentam o texto: [ADR 0022](../adr/0022-foto-de-perfil-publica-na-hora-moderacao-depois.md) (decisões do dono de 2026-10-26: todos enviam; **publica na hora e a moderação é depois**; a foto denunciada por 2 Contas diferentes sai do ar até a Staff decidir; Conta com menos de 24 h ou com Punição ativa não envia; a prévia do link mostra a foto; a Staff decide em até 24 h; as removidas ficam guardadas em privado por 30 dias; **e, mais tarde no mesmo dia, duas decisões que fecham pontos deste rascunho: os registros de foto trocada, devolvida ou removida e as denúncias contra elas são apagados 90 dias depois, e o bucket das fotos fica na mesma localização do bucket de backup**). Operação: [foto-de-perfil.md](../operacao/foto-de-perfil.md). Marcas: **[ENTRA COM A FOTO]** = vale quando a funcionalidade for ligada; **[VALIDAR COM ADVOGADO]** = revisão profissional antes de publicar; **[DONO: ...]** = decisão do dono.
 
 ## Pontos para o advogado e para o dono (leia antes dos textos)
 
 1. **Foto de adolescente é dado pessoal de menor** (LGPD, art. 14, melhor interesse; ECA Digital). Não há verificação de idade no Carmine hoje: o texto não promete o contrário. O que o ECA Digital exige de um serviço que deixa o usuário enviar imagem, e se a verificação de idade pendente (S14) deve valer também aqui, é pergunta para o advogado.
 2. **Comunicação de material de abuso.** A Cloudflare CSAM Scanning Tool bloqueia a URL e avisa por e-mail, mas a comunicação às autoridades é nossa. O texto cita o dever legal em geral; **o procedimento exato** (a quem, como, o que guardar e por quanto tempo) precisa ser definido com o advogado e escrito para quem trata a fila da Staff.
 3. **Retenção das removidas: 30 dias**, privadas. O advogado confirma se o prazo serve (por exemplo, para atender a uma ordem judicial) e se precisa guardar algo além.
-4. **Localização do bucket.** O R2 oferece jurisdição "União Europeia"; o bucket de backup fica no leste dos EUA. [DONO/ADVOGADO: onde ficam as fotos.] A CDN guarda cópias nas pontas, no mundo todo, por design.
-5. **Lacuna de retenção de metadados (decidir antes de ligar).** A exclusão da Conta apaga todas as fotos e denúncias de foto, mas **nenhum job apaga o registro de uma foto trocada, devolvida à Steam ou removida** (nem as denúncias contra ela) enquanto a Conta existir; os arquivos saem, a linha fica. Proposta: apagar esses registros 90 dias depois (o mesmo prazo das Denúncias do jogo). [DONO: confirmar] Vira tarefa da F2 (a limpeza roda junto da retenção de Denúncias).
+4. **Localização do bucket (decidido pelo dono).** As fotos ficam na **mesma localização do bucket de backup** (automática; não se usa a jurisdição "União Europeia" do R2): **um só perfil de transferência internacional** para tudo o que o Carmine guarda no R2. Ele vai para a **lista do advogado**, junto com a transferência já listada na Política (seção 6). A CDN guarda cópias nas pontas, no mundo todo, por design.
+5. **Retenção dos registros (decidido pelo dono: 90 dias).** A exclusão da Conta apaga todas as fotos e denúncias de foto, mas **hoje nenhum job apaga o registro de uma foto trocada, devolvida à Steam ou removida** (nem as denúncias contra ela) enquanto a Conta existir; os arquivos saem, a linha fica. Decisão: apagar esses registros **90 dias depois** de a foto deixar de ser a da Conta (o mesmo prazo das Denúncias do jogo). **Falta implementar** (tarefa da F2: a limpeza roda junto da retenção de Denúncias); o texto da Política só pode ser publicado com essa limpeza no ar.
 6. **Prévia do link com a foto** (decisão do dono): a foto aparece no WhatsApp, Discord e outros, mesmo para quem nunca entrou no Carmine. O texto diz isso com todas as letras.
 7. **Termos de Uso:** hoje não há cláusula sobre conteúdo enviado pela pessoa. O trecho do fim deste arquivo é a proposta mínima.
 
@@ -62,9 +62,9 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 
 > ... também guarda e entrega as **fotos de perfil** (Cloudflare R2 e a rede de entrega), e **confere as imagens entregues contra listas de material de abuso sexual infantil conhecido** (ferramenta de varredura da Cloudflare, que bloqueia a imagem e nos avisa se houver um acerto).
 
-### 6. "Onde os dados ficam": novo item  **[ENTRA COM A FOTO] [VALIDAR COM ADVOGADO] [DONO: localização do bucket]**
+### 6. "Onde os dados ficam": novo item  **[ENTRA COM A FOTO] [VALIDAR COM ADVOGADO]**
 
-> - **As fotos de perfil ficam no Cloudflare R2**, num bucket [DONO: jurisdição/região escolhida], separado do das cópias de segurança. A rede de entrega da Cloudflare guarda cópias das fotos em vários países enquanto elas estão no ar. [VALIDAR COM ADVOGADO: transferência internacional]
+> - **As fotos de perfil ficam no Cloudflare R2**, num bucket **na mesma localização do das cópias de segurança** (leste da América do Norte, EUA), mas separado dele. A rede de entrega da Cloudflare guarda cópias das fotos em vários países enquanto elas estão no ar. [VALIDAR COM ADVOGADO: transferência internacional; é o mesmo perfil das cópias de segurança]
 
 ### 7. "Por quanto tempo guardamos": novas linhas  **[ENTRA COM A FOTO] [VALIDAR COM ADVOGADO]**
 
@@ -73,7 +73,7 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 | Foto de perfil no ar | Enquanto a Conta existir ou até você trocar a foto ou voltar à foto da Steam |
 | Foto que você trocou ou devolveu à Steam | Apagada logo em seguida (em minutos); as cópias da rede de entrega saem pela purga, e o resto expira sozinho |
 | Foto **removida pela Staff** (ou suspensa por denúncias) | 30 dias, **em um local privado** que só a Staff acessa, para analisar uma contestação ou atender a uma ordem judicial; depois, apagada. A Conta volta à foto da Steam na hora |
-| Registro da foto (datas e estado) e as denúncias contra ela | [DONO: confirmar] 90 dias depois de a foto deixar de ser a da Conta; se a Conta for excluída, na hora |
+| Registro da foto (datas e estado) e as denúncias contra ela | 90 dias depois de a foto deixar de ser a da Conta; se a Conta for excluída, na hora |
 
 ### 8. "Os seus direitos": acrescentar  **[ENTRA COM A FOTO]**
 
