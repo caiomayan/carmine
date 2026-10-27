@@ -332,7 +332,7 @@ test.describe('Loadouts da semana', () => {
     const slot = page.getByTestId('loadouts-slot');
     // A seção nasce fechada (sem esqueleto e sem espaço) e só se abre quando o dado chega.
     await slot.scrollIntoViewIfNeeded();
-    await expect(slot).toHaveAttribute('data-open', '');
+    await expect(slot).toHaveAttribute('data-open', 'true');
     await expect(section).toBeVisible();
     await expect(section.getByRole('heading', { name: 'Loadouts da semana' })).toBeVisible();
     const card = section.getByTestId('loadout-card');
@@ -364,7 +364,7 @@ test.describe('Loadouts da semana', () => {
     await expect(page.getByTestId('week-strip')).toBeVisible();
     // Sem dado, o lugar da seção não reserva espaço (nada de salto de layout) nem mostra esqueleto.
     const slot = page.getByTestId('loadouts-slot');
-    await expect(slot).not.toHaveAttribute('data-open', '');
+    await expect(slot).not.toHaveAttribute('data-open');
     expect((await slot.boundingBox())?.height ?? 0).toBeLessThan(1);
   });
 });
