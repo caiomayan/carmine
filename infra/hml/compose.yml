@@ -63,6 +63,9 @@ x-demo-env: &demo-env
 # pública do `media` (MEDIA_INTERNAL_URL). O túnel não ganha rota nenhuma.
 # A chave é só um cinto: a rede é interna e nada aqui é segredo. A produção usa o R2 de verdade.
 x-media-env: &media-env
+  # A trava da homologação: sem ela a API recusa o endpoint http do R2 de mentira em NODE_ENV=production
+  # (apps/api/src/config/config.ts). O PUBLIC_WEB_URL e o SENTRY_ENVIRONMENT dela já são de homologação.
+  CARMINE_DEMO: homologacao
   R2_MEDIA_ENDPOINT: http://media:9000
   R2_MEDIA_ACCESS_KEY_ID: carmine-hml
   R2_MEDIA_SECRET_ACCESS_KEY: homologacao
