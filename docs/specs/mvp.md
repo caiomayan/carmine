@@ -399,6 +399,14 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 - DM com 16 jogadores: um VIP entra numa vaga extra sem ninguém sair; um jogador sem VIP não consegue usar as vagas extras.
 - Depois de restaurar um backup, os Períodos VIP são reconciliados com os pagamentos reais do Mercado Pago.
 
+**Decidido na implementação (S14a, ADR 0022; proposta em `carmine-s14-proposta.md`)**
+- **Porta `Payments`** com adaptador do Mercado Pago (S14c) e um adaptador **falso** para dev, E2E e **homologação**, que roda o caminho inteiro (webhook assinado incluso); o falso só sobe em host de homologação. A cobrança nasce desligada (`PAYMENTS_ENABLED`).
+- **Reembolso de 7 dias automático pelo site** (a API estorna no provedor); a Staff só depois dos 7 dias ou no parcial por dias (`payments refund`). **Sem presente** para outra Conta: o Pagador (pai, mãe) paga o QR sem precisar de Conta.
+- **Itens VIP guardados 30 dias:** agente e kit de música saem inteiros; nas skins só o StatTrak e a nametag são guardados (a skin fica). Ligada por `VIP_HOLD_ENABLED`, junto com os Termos novos.
+- **Indisponibilidade acima de 24 h:** a Staff compensa os dias de todos os VIPs ativos de uma vez (`payments compensate`), com alerta; não é automática.
+- **Contestação** tira os dias do Pacote e bloqueia novas compras até a Staff revisar; **todo ban permanente** encerra o VIP sem reembolso e impede a compra (J2). Recibo em página imprimível, sem nota fiscal (pessoa física).
+- **Cartão por Checkout Pro** (checkout hospedado, fora do escopo PCI); Pix pela API, com o QR na própria tela (30 minutos, recuperável em "Minhas compras").
+
 ### S15 · Discord integrado
 
 Depois do beta. Hoje a moderação no Discord é manual (S07). Decisões no ADR 0020; passo a passo do dono em `docs/operacao/discord.md`.

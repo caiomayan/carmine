@@ -172,6 +172,9 @@ export const staffAuditActionSchema = z
     'report_archive',
     'avatar_keep',
     'avatar_remove',
+    'payment_refund',
+    'purchase_unblock',
+    'vip_compensation',
   ])
   .meta({ id: 'StaffAuditAction' });
 

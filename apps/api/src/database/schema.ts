@@ -110,6 +110,12 @@ export const accounts = pgTable(
      * público não muda mais; o ID antigo fica em `account_public_id_history`.
      */
     publicIdReservedAt: timestamptz(),
+    /**
+     * A Staff bloqueou as compras da Conta (S14): uma contestação de pagamento bloqueia até a Staff
+     * revisar. Nulo: pode comprar. Não afeta o VIP que a Conta já tem.
+     */
+    purchaseBlockedAt: timestamptz(),
+    purchaseBlockReason: text(),
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [check('accounts_public_id_positive', sql`${table.publicId} > 0`)],
@@ -158,6 +164,110 @@ export const inventoryItems = pgTable(
   (table) => [index('inventory_items_account_idx').on(table.accountId, table.createdAt)],
 );
 
+/** Estado do pagamento de um Pacote VIP (S14); ver `PAYMENT_STATUSES` nos contratos. */
+export const paymentStatus = pgEnum('payment_status', [
+  'created',
+  'pending',
+  'in_review',
+  'approved',
+  'rejected',
+  'expired',
+  'cancelled',
+  'refunded',
+  'partially_refunded',
+  'charged_back',
+]);
+
+export const paymentMethod = pgEnum('payment_method', ['pix', 'card']);
+
+/**
+ * Pagamento de um Pacote VIP (S14). O VIP só é concedido depois que o provedor confirma
+ * (webhook + consulta); `provider_payment_id` é único por provedor, e o Período VIP gerado aponta
+ * para cá (`vip_periods.payment_id`, único), então a mesma confirmação nunca concede duas vezes. O
+ * preço fica no pagamento (vale o do momento da compra). O CPF do Pagador, que só o provedor
+ * conhece, fica cifrado; só os 3 últimos dígitos são legíveis. Registro de pagamento NÃO é
+ * apagado na anonimização da Conta (prazo legal de 5 anos).
+ */
+export const payments = pgTable(
+  'payments',
+  {
+    /** Também a `external_reference` mandada ao provedor. */
+    id: uuid().primaryKey().defaultRandom(),
+    /** A Conta beneficiada do VIP. */
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id),
+    package: text().notNull(),
+    days: integer().notNull(),
+    amountCents: integer().notNull(),
+    method: paymentMethod().notNull(),
+    status: paymentStatus().notNull().default('created'),
+    /** `mercadopago` ou `fake` (dev e homologação). */
+    provider: text().notNull(),
+    providerPaymentId: text(),
+    /** Pix: o "copia e cola" e o QR em PNG (base64); recuperáveis até o vencimento. */
+    pixCopyPaste: text(),
+    pixQrBase64: text(),
+    /** Cartão: o checkout hospedado do provedor. */
+    redirectUrl: text(),
+    expiresAt: timestamptz(),
+    approvedAt: timestamptz(),
+    refundedCents: integer().notNull().default(0),
+    /** Dias do Pacote já tirados do VIP por reembolso ou contestação (para nunca tirar duas vezes). */
+    refundedDays: integer().notNull().default(0),
+    refundedAt: timestamptz(),
+    chargedBackAt: timestamptz(),
+    /** A declaração de maioridade do Pagador: quando e qual texto. */
+    adultDeclaredAt: timestamptz().notNull(),
+    declarationVersion: text().notNull(),
+    /** CPF do Pagador (cifrado, AES-256-GCM) e os 3 últimos dígitos; nome vindo do provedor. */
+    payerDocumentEncrypted: text(),
+    payerDocumentLast3: text(),
+    payerName: text(),
+    /** Por que a cobrança não existe/foi cancelada por nós (erro do provedor...). */
+    failureReason: text(),
+    /** A chave de idempotência do cliente: o duplo clique devolve a mesma compra. */
+    idempotencyKey: text().notNull(),
+    createdAt: timestamptz().notNull().defaultNow(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex('payments_provider_payment_idx')
+      .on(table.provider, table.providerPaymentId)
+      .where(sql`${table.providerPaymentId} is not null`),
+    uniqueIndex('payments_account_idempotency_idx').on(table.accountId, table.idempotencyKey),
+    index('payments_account_idx').on(table.accountId, table.createdAt),
+    index('payments_status_idx').on(table.status, table.createdAt),
+    check('payments_amount_positive', sql`${table.amountCents} > 0`),
+  ],
+);
+
+/**
+ * Cada webhook de pagamento recebido (S14): serve de log e de auditoria. Webhook com assinatura
+ * inválida também entra (sem consultar nada). Guardado por `PAYMENT_EVENT_RETENTION_DAYS`.
+ */
+export const paymentEvents = pgTable(
+  'payment_events',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    provider: text().notNull(),
+    /** O `x-request-id` do provedor, quando vem. */
+    requestId: text(),
+    topic: text(),
+    resourceId: text(),
+    signatureValid: boolean().notNull(),
+    paymentId: uuid().references(() => payments.id),
+    /** O que a API fez: `applied`, `unchanged`, `ignored`, `invalid_signature`, `mismatch`, `error`. */
+    outcome: text().notNull(),
+    detail: text(),
+    receivedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [
+    index('payment_events_received_idx').on(table.receivedAt),
+    index('payment_events_payment_idx').on(table.paymentId),
+  ],
+);
+
 /**
  * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. A
  * concessão e a revogação pela Staff (S05, com auditoria) e os Pacotes VIP (S14) mexem aqui.
@@ -171,6 +281,10 @@ export const vipPeriods = pgTable(
       .references(() => accounts.id, { onDelete: 'cascade' }),
     startsAt: timestamptz().notNull(),
     endsAt: timestamptz().notNull(),
+    /** O pagamento que gerou este Período (S14); nulo: concessão da Staff. Único: uma confirmação, um Período. */
+    paymentId: uuid()
+      .unique()
+      .references(() => payments.id),
     createdAt: timestamptz().notNull().defaultNow(),
   },
   (table) => [
@@ -226,6 +340,41 @@ export const loadoutSlots = pgTable(
   ],
 );
 
+/**
+ * Itens VIP guardados (S14, D3). Quando o VIP da Conta acaba, os Itens que só existem com VIP saem do
+ * Inventário e do Loadout e ficam aqui por 30 dias; se o VIP volta, voltam inteiros, nos mesmos slots.
+ * Tirar do Inventário de verdade (em vez de filtrar na leitura) garante que nenhuma tela, nem o jogo,
+ * enxerga o que está guardado. Dois tipos:
+ * - `item`: agente ou kit de música inteiro (`item` é o registro todo; `slots`, onde estava equipado);
+ * - `attributes`: o StatTrak e a nametag de uma skin que fica (`item` só tem esses campos).
+ */
+export const vipHeldItems = pgTable(
+  'vip_held_items',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    kind: text().$type<'item' | 'attributes'>().notNull(),
+    /** O `id` do registro em `inventory_items` (o mesmo na volta). */
+    itemId: uuid().notNull(),
+    item: jsonb().$type<Record<string, unknown>>().notNull(),
+    /** Só em `item`: quando entrou no Inventário (a ordem da lista não muda na volta). */
+    itemCreatedAt: timestamptz(),
+    /** Só em `item`: os slots em que estava equipado. */
+    slots: jsonb()
+      .$type<Array<{ presetId: string; slot: string; side: 'ct' | 't' | 'any' }>>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    /** Quando o VIP acabou; os 30 dias contam daqui. */
+    heldAt: timestamptz().notNull(),
+  },
+  (table) => [
+    uniqueIndex('vip_held_items_item_idx').on(table.accountId, table.itemId),
+    index('vip_held_items_held_idx').on(table.heldAt),
+  ],
+);
+
 /** Ações da Staff registradas no log de auditoria (`StaffAuditAction`). */
 export const staffAuditAction = pgEnum('staff_audit_action', [
   'vip_grant',
@@ -242,6 +391,9 @@ export const staffAuditAction = pgEnum('staff_audit_action', [
   'report_archive',
   'avatar_keep',
   'avatar_remove',
+  'payment_refund',
+  'purchase_unblock',
+  'vip_compensation',
 ]);
 
 /**

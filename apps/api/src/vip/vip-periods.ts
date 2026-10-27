@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, lte } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, lte, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, staffAuditLog, vipPeriods } from '../database/schema.js';
 import { recordStaffAudit, type StaffAction, type Transaction } from '../staff/audit-log.js';
@@ -69,6 +69,65 @@ export class VipPeriods {
       }
     });
     return this.statusOf(accountId, now);
+  }
+
+  /**
+   * Concede os dias de um Pacote pago (S14) dentro da transação do pagamento: soma ao VIP ativo e
+   * liga o Período ao pagamento (`payment_id`, único: a mesma confirmação não concede duas vezes; nulo
+   * na compensação por indisponibilidade).
+   * Devolve o Período criado.
+   */
+  async grantPackage(
+    tx: Transaction,
+    accountId: string,
+    days: number,
+    paymentId: string | null,
+    now = new Date(),
+  ): Promise<{ startsAt: Date; endsAt: Date }> {
+    await this.lock(tx, accountId);
+    const before = await this.activeStatus(tx, accountId, now);
+    const startsAt = before.endsAt ?? now;
+    const endsAt = new Date(startsAt.getTime() + days * DAY_MS);
+    await tx.insert(vipPeriods).values({ accountId, startsAt, endsAt, paymentId });
+    return { startsAt, endsAt };
+  }
+
+  /**
+   * Tira do VIP dias de UM Pacote (reembolso ou contestação): encurta o Período dele em `days` (o
+   * Pacote inteiro, se `days` não vier ou cobrir tudo, apaga) e recua pela mesma duração os Períodos
+   * que vêm depois, então a data de fim recua exatamente esses dias, mesmo que parte já tenha sido
+   * usada. Sem Período (já removido, ou a Staff nunca concedeu): `false`.
+   */
+  async removePackage(tx: Transaction, paymentId: string, days?: number): Promise<boolean> {
+    const [period] = await tx
+      .select()
+      .from(vipPeriods)
+      .where(eq(vipPeriods.paymentId, paymentId))
+      .for('update');
+    if (!period) return false;
+    await this.lock(tx, period.accountId);
+    const duration = period.endsAt.getTime() - period.startsAt.getTime();
+    const removed = days === undefined ? duration : Math.min(days * DAY_MS, duration);
+    if (removed <= 0) return false;
+    if (removed >= duration) {
+      await tx.delete(vipPeriods).where(eq(vipPeriods.id, period.id));
+    } else {
+      await tx
+        .update(vipPeriods)
+        .set({ endsAt: new Date(period.endsAt.getTime() - removed) })
+        .where(eq(vipPeriods.id, period.id));
+    }
+    const shift = sql`make_interval(secs => ${removed / 1000})`;
+    await tx
+      .update(vipPeriods)
+      .set({
+        startsAt: sql`${vipPeriods.startsAt} - ${shift}`,
+        endsAt: sql`${vipPeriods.endsAt} - ${shift}`,
+      })
+      .where(
+        and(eq(vipPeriods.accountId, period.accountId), gte(vipPeriods.startsAt, period.endsAt)),
+      );
+    return true;
   }
 
   /**

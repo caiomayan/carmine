@@ -21,11 +21,13 @@ import { InventoryModule } from './inventory/inventory.module.js';
 import { LiveServersModule } from './live-servers/live-servers.module.js';
 import { LoadoutModule } from './loadout/loadout.module.js';
 import { loggerParams } from './logging.js';
+import { PaymentsModule } from './payments/payments.module.js';
 import { RateLimitModule } from './rate-limit/rate-limit.module.js';
 import { ReportsModule } from './reports/reports.module.js';
 import { StaffModule } from './staff/staff.module.js';
 import { StatsModule } from './stats/stats.module.js';
 import { ValkeyModule } from './valkey/valkey.module.js';
+import { VipHoldModule } from './vip/vip-hold.module.js';
 
 @Module({})
 export class AppModule {
@@ -58,6 +60,8 @@ export class AppModule {
         ReportsModule,
         AvatarsModule,
         AvatarModerationModule,
+        PaymentsModule.forRoot(config),
+        VipHoldModule,
       ],
     };
   }

@@ -1698,7 +1698,10 @@
         "ranking_entry_remove": "Removeu do Ranking",
         "report_archive": "Arquivou uma Denúncia",
         "avatar_keep": "Manteve uma foto de perfil denunciada",
-        "avatar_remove": "Removeu uma foto de perfil"
+        "avatar_remove": "Removeu uma foto de perfil",
+        "payment_refund": "Reembolsou um pagamento",
+        "purchase_unblock": "Liberou as compras de uma Conta",
+        "vip_compensation": "Compensou dias de VIP por indisponibilidade"
       },
       "filters": "Filtros do log",
       "steamIdPlaceholder": "7656119…",
