@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { parseTrustedProxies } from '../client-ip/client-ip.js';
 import type { RateLimitPolicyName } from '../rate-limit/policies.js';
@@ -146,6 +147,9 @@ const envSchema = z
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
     SENTRY_DSN: z.union([z.literal(''), urlWithProtocol(['https:', 'http:'])]).default(''),
     SENTRY_ENVIRONMENT: z.string().trim().default(''),
+    // A trava da homologação (só o compose dela define `homologacao`): com ela, e só com ela, o R2 de mentira pode
+    // ser http. A produção nunca tem esta variável. Ver {@link isHomologation}.
+    CARMINE_DEMO: z.string().trim().default(''),
     SENTRY_RELEASE: z.string().trim().default(''),
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
@@ -187,6 +191,8 @@ const envSchema = z
         'R2_MEDIA_ENDPOINT',
         'MEDIA_PUBLIC_URL',
       ] as const) {
+        // O R2 de mentira da homologação fala http pela rede interna (http://media:9000); em produção, nunca.
+        if (key === 'R2_MEDIA_ENDPOINT' && isHomologation(env)) continue;
         if (env[key] !== '' && new URL(env[key]).protocol !== 'https:') {
           ctx.addIssue({ code: 'custom', path: [key], message: 'deve usar https em produção' });
         }
@@ -285,8 +291,27 @@ export interface MediaConfig {
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
+/**
+ * `PAYMENTS_DATA_KEY_FILE`: a chave de dados vinda de um arquivo (a homologação a sorteia sozinha num volume,
+ * sem passar pelo .env). A variável `PAYMENTS_DATA_KEY`, se houver, vale mais. Arquivo ilegível é erro, e a
+ * mensagem não repete o conteúdo.
+ */
+function withDataKeyFile(
+  env: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const file = env.PAYMENTS_DATA_KEY_FILE?.trim();
+  if (!file || env.PAYMENTS_DATA_KEY?.trim()) return env;
+  try {
+    return { ...env, PAYMENTS_DATA_KEY: readFileSync(file, 'utf8').trim() };
+  } catch {
+    throw new Error(`Configuração inválida:
+  - PAYMENTS_DATA_KEY_FILE: não consegui ler ${file}`);
+  }
+}
+
 /** Lê e valida as variáveis de ambiente; falha listando todas as inválidas de uma vez. */
-export function loadConfig(env: Record<string, string | undefined>): AppConfig {
+export function loadConfig(rawEnv: Record<string, string | undefined>): AppConfig {
+  const env = withDataKeyFile(rawEnv);
   const result = envSchema.safeParse(env);
   if (!result.success) {
     const problems = result.error.issues
@@ -368,6 +393,19 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
 }
 
 type Env = z.infer<typeof envSchema>;
+
+/**
+ * A trava da homologação, o mesmo critério da demonstração (`demo/demo-guard.ts`) e do provedor de pagamento falso: a
+ * variável `CARMINE_DEMO=homologacao`, o `PUBLIC_WEB_URL` num host de homologação e `SENTRY_ENVIRONMENT` diferente
+ * de `production`. As três precisam valer; a produção não tem nenhuma.
+ */
+function isHomologation(env: Env): boolean {
+  return (
+    env.CARMINE_DEMO === 'homologacao' &&
+    SANDBOX_HOSTS.has(new URL(env.PUBLIC_WEB_URL).hostname) &&
+    env.SENTRY_ENVIRONMENT.toLowerCase() !== 'production'
+  );
+}
 
 /**
  * Pagamentos (S14): o provedor falso só sobe num host de homologação e nunca com

@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
-# Deploy da HOMOLOGAÇÃO na VM de produção. Instalado em /opt/carmine-hml/bin/deploy (dono root) pelo
-# bootstrap.sh e chamado SÓ como comando forçado da chave SSH do usuário `deployhml`
-# (authorized_keys com `restrict,command="/opt/carmine-hml/bin/deploy"`): o pedido chega em
+# Deploy da HOMOLOGAÇÃO na VM de produção. Instalado pelo bootstrap.sh em /opt/carmine-hml/self/deploy
+# (dono `deployhml`; /opt/carmine-hml/bin/deploy é um link para ele) e chamado SÓ como comando forçado da
+# chave SSH do usuário `deployhml` (authorized_keys com `restrict,command="/opt/carmine-hml/bin/deploy"`):
+# o pedido chega em
 # $SSH_ORIGINAL_COMMAND, `sha-<40 hex>` com ` reset` opcional no fim (apaga o banco e o cache da
 # homologação antes de subir).
 #
 # Entrada (stdin): linha 1 = usuário do GitHub, linha 2 = token (GITHUB_TOKEN do job, leitura de
 # pacotes; só vale durante o job e nunca é gravado em disco), depois um tar.gz com infra/hml/ do
 # commit.
+#
+# Autoatualização: se o deploy.sh da release difere do instalado, o instalado se troca pela versão da release
+# (só depois de `bash -n`, com log dos dois sha256, de forma atômica) e roda de novo com ela; assim mudar este
+# arquivo não pede mais que o dono rode o bootstrap. Vale só para a homologação (a produção tem deploy próprio,
+# com usuário, chave e dono root); a confiança é a mesma do compose.yml que vem no mesmo tar.
 #
 # Parecido com infra/prod/bin/deploy.sh, mas só mexe no projeto `carmine-hml`:
 #   - recusa subir se a VM está com pouca memória livre (a produção divide a máquina);
@@ -17,6 +23,9 @@
 set -euo pipefail
 
 ROOT="${CARMINE_HML_ROOT:-/opt/carmine-hml}"
+SELF="${CARMINE_HML_SELF:-$ROOT/self/deploy}"
+# 1 quando este processo é a segunda passada, já com o script da release (o tar já foi extraído e a trava é a do pai).
+REEXEC="${CARMINE_HML_REEXEC:-}"
 PROJECT=carmine-hml
 REQUEST="${SSH_ORIGINAL_COMMAND:-${1:-}}"
 WAIT_TIMEOUT="${DEPLOY_WAIT_TIMEOUT:-300}"
@@ -30,8 +39,10 @@ TAG="${BASH_REMATCH[1]}"
 RESET=false
 [[ -n "${BASH_REMATCH[2]}" ]] && RESET=true
 
-exec 9>"$ROOT/state/deploy.lock"
-flock -n 9 || die "outro deploy da homologação está em andamento"
+if [[ "$REEXEC" != 1 ]]; then
+  exec 9>"$ROOT/state/deploy.lock"
+  flock -n 9 || die "outro deploy da homologação está em andamento"
+fi
 
 IFS= read -r GH_USER || die "faltou o usuário do GitHub no stdin"
 IFS= read -r GH_TOKEN || die "faltou o token no stdin"
@@ -47,13 +58,35 @@ available_mb=$(awk '/^MemAvailable:/ { print int($2 / 1024) }' /proc/meminfo)
 if grep -Eqx 'DEMO_ENABLED=true' "$ROOT/.env"; then export COMPOSE_PROFILES=demo; else unset COMPOSE_PROFILES; fi
 
 REL="$ROOT/releases/$TAG"
-rm -rf "$REL"
-mkdir -p "$REL"
-tar -xz --no-same-owner --no-same-permissions --strip-components=2 -C "$REL"
+if [[ "$REEXEC" != 1 ]]; then
+  rm -rf "$REL"
+  mkdir -p "$REL"
+  tar -xz --no-same-owner --no-same-permissions --strip-components=2 -C "$REL"
+fi
 [[ -f "$REL/compose.yml" ]] || die "o tar não trouxe infra/hml/compose.yml"
 
-if [[ -f "$REL/bin/deploy.sh" ]] && ! cmp -s "$REL/bin/deploy.sh" "$ROOT/bin/deploy"; then
-  log "AVISO: o deploy.sh desta release difere do instalado em $ROOT/bin/deploy; rode o bootstrap.sh de novo na VM quando puder"
+# Autoatualização (ver o topo). Só na primeira passada: a segunda já É a versão da release.
+if [[ "$REEXEC" != 1 && -f "$REL/bin/deploy.sh" ]] && ! cmp -s "$REL/bin/deploy.sh" "$SELF"; then
+  new="$REL/bin/deploy.sh"
+  if [[ ! -w "$(dirname "$SELF")" ]]; then
+    log "AVISO: o deploy.sh desta release difere do instalado, mas $(dirname "$SELF") não é gravável por este usuário; rode o bootstrap.sh de novo na VM"
+  elif [[ "$(head -n 1 "$new")" != '#!/usr/bin/env bash' ]] || (( $(wc -c <"$new") > 200000 )) || ! bash -n "$new"; then
+    log "AVISO: o deploy.sh desta release não passou na verificação (shebang, tamanho, bash -n); sigo com o instalado"
+  else
+    log "deploy.sh da release difere do instalado: atualizando ($(sha256sum "$SELF" | cut -c1-12) -> $(sha256sum "$new" | cut -c1-12))"
+    tmp="$(mktemp "$(dirname "$SELF")/.deploy.XXXXXX")"
+    cp "$new" "$tmp"
+    chmod 0755 "$tmp"
+    cp -f "$SELF" "$SELF.anterior" 2>/dev/null || true
+    mv -f "$tmp" "$SELF"
+    # Segunda passada com o script novo: mesmo pedido, mesmos dados no stdin (o tar já está em $REL), trava herdada.
+    # O token só passa por pipe, nunca por argumento nem disco.
+    status=0
+    printf '%s
+%s
+' "$GH_USER" "$GH_TOKEN" | CARMINE_HML_REEXEC=1 SSH_ORIGINAL_COMMAND="$REQUEST" "$SELF" || status=$?
+    exit "$status"
+  fi
 fi
 
 touch "$ROOT/state/pulled.tags"
