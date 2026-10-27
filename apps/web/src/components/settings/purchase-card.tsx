@@ -182,7 +182,7 @@ export async function PurchaseCard({ purchase, now }: { purchase: Purchase; now:
           />
         ) : null}
         <span
-          className="ml-auto font-mono text-caption text-faint select-all"
+          className="ml-auto font-mono text-caption text-muted-foreground select-all"
           title={purchase.id}
           data-testid="purchase-id"
         >
