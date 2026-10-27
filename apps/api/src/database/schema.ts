@@ -26,6 +26,23 @@ export const gameMode = pgEnum('game_mode', ['retake', 'deathmatch']);
 /** Onde o Servidor Carmine roda (S06); no MVP, só a VPS de São Paulo (ADR 0009). */
 export const gameServerRegion = pgEnum('game_server_region', ['sao-paulo']);
 
+/**
+ * Jogadores simultâneos por servidor, uma amostra por minuto (A1, ADR 0021): o pico e a média do "mídia kit". Só o
+ * servidor, o minuto e a contagem; nenhum dado pessoal. Apaga junto com o servidor.
+ */
+export const serverPresenceSamples = pgTable(
+  'server_presence_samples',
+  {
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id, { onDelete: 'cascade' }),
+    /** O minuto da amostra (segundos e milissegundos zerados). */
+    at: timestamptz().notNull(),
+    players: integer().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.serverId, table.at] })],
+);
+
 /** Servidor Carmine (`GameServer`): uma instância de CS2 de um único Modo. */
 export const gameServers = pgTable('game_servers', {
   id: uuid().primaryKey().defaultRandom(),
