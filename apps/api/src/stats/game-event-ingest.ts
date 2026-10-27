@@ -9,6 +9,7 @@ import {
 import { inArray, sql } from 'drizzle-orm';
 import type { ActivityRecorder } from '../activity/activity-feed.js';
 import { detectMultiKills } from '../activity/multi-kills.js';
+import type { Analytics } from '../analytics/analytics.js';
 import type { Database } from '../database/database.js';
 import {
   accountStatsDaily,
@@ -46,13 +47,15 @@ export class GameEventIngest {
   constructor(
     private readonly db: Database,
     private readonly activity: ActivityRecorder | null = null,
+    /** Os eventos do plano de analytics (A1), depois do commit do lote. Sem ele, nada é emitido. */
+    private readonly analytics: Pick<Analytics, 'capture'> = { capture: () => undefined },
   ) {}
 
   async ingest(server: EventSource, batch: EventBatch): Promise<EventBatchResult> {
     const total = countEvents(batch);
     if (total === 0) return { accepted: 0, duplicates: 0, ignored: 0 };
 
-    const { result, news, accountBySteamId } = await this.db.transaction(async (tx) => {
+    const { result, news, accountBySteamId, sessions } = await this.db.transaction(async (tx) => {
       // `on conflict do nothing` também resolve o ID repetido dentro do próprio lote.
       const eventIds = EVENT_KEYS.flatMap((key) =>
         batch[key].map(({ id }) => ({ id, serverId: server.id })),
@@ -84,6 +87,7 @@ export class GameEventIngest {
       const accountBySteamId = new Map(rows.map((row) => [row.steamId.toString(), row.id]));
 
       const {
+        sessions,
         deltas,
         dailyDeltas,
         weapons,
@@ -169,9 +173,24 @@ export class GameEventIngest {
         result: { accepted, duplicates: total - accepted, ignored: ignored + unknownChat },
         news,
         accountBySteamId,
+        sessions,
       };
     });
     await this.announce(server, news, accountBySteamId);
+    // Depois do commit: o fim de cada Sessão de jogo aceita, no horário do fim e com o ID do evento do plugin.
+    for (const session of sessions) {
+      const accountId = accountBySteamId.get(session.steamId);
+      if (!accountId) continue;
+      this.analytics.capture('sessao_de_jogo_encerrada', {
+        accountId,
+        props: {
+          modo: server.mode,
+          duracao_segundos: Math.min(86_400, Math.max(1, Math.round(session.seconds))),
+        },
+        at: session.at,
+        naturalId: session.id,
+      });
+    }
     return result;
   }
 

@@ -8,6 +8,7 @@ const report: CreatedReport = {
   reason: 'voice',
   target: { publicId: 10_016, displayName: 'Alvo *negrito*\n@everyone' },
   server: { id: 'x', name: 'retake-1', code: 'SP·1', mode: 'retake' },
+  reporterAccountId: '8f14e45f-ceea-467a-9575-cd8d7c5a2b11',
 };
 
 describe('reportDiscordMessage', () => {

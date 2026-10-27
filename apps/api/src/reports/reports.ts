@@ -27,15 +27,23 @@ export interface CreatedReport {
   reason: ReportReason;
   target: { publicId: number; displayName: string };
   server: ReportServer;
+  /** Quem denunciou (o `accounts.id`): só o analytics usa; o alvo nunca sai dali. */
+  reporterAccountId: string;
 }
 
 export interface ReportOutcome {
   result: ReportResult;
   /** Preenchido só quando a Denúncia foi aceita. */
   created: CreatedReport | null;
+  /** O denunciante, quando é uma Conta conhecida (nos limites e na Denúncia aceita); senão nulo. */
+  reporterAccountId: string | null;
 }
 
-function refused(refusal: ReportRefusal, retryAfterSeconds: number | null = null): ReportOutcome {
+function refused(
+  refusal: ReportRefusal,
+  retryAfterSeconds: number | null = null,
+  reporterAccountId: string | null = null,
+): ReportOutcome {
   return {
     result: {
       accepted: false,
@@ -44,6 +52,7 @@ function refused(refusal: ReportRefusal, retryAfterSeconds: number | null = null
       retryAfterSeconds,
     },
     created: null,
+    reporterAccountId,
   };
 }
 
@@ -92,7 +101,9 @@ export class Reports {
           ),
         );
       const verdict = checkReportLimits(past, target.id, now);
-      if (!verdict.allowed) return refused(verdict.refusal, verdict.retryAfterSeconds);
+      if (!verdict.allowed) {
+        return refused(verdict.refusal, verdict.retryAfterSeconds, reporter.id);
+      }
 
       const lines = await tx
         .select({
@@ -150,7 +161,9 @@ export class Reports {
           reason: input.reason,
           target: { publicId: target.publicId, displayName: target.displayName },
           server,
+          reporterAccountId: reporter.id,
         },
+        reporterAccountId: reporter.id,
       };
     });
   }

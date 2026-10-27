@@ -403,5 +403,167 @@ describe('Eventos de analytics: login e Inventário', () => {
         });
       });
     });
+
+    describe('jogo', () => {
+      const connect = (steamId: string, over: object = {}) =>
+        t.app.inject({
+          method: 'POST',
+          url: '/api/server/player-connects',
+          headers: { authorization: `Bearer ${t.serverKey}` },
+          payload: { steamId, steamName: 'coldzera', ...over },
+        });
+
+      it('o primeiro connect cria a Conta (origem jogo, com o Modo) e conta como primeiro; o seguinte, não', async () => {
+        const steamId = steamIdFor(700);
+
+        expect((await connect(steamId)).statusCode).toBe(200);
+        const [created] = await events('conta_criada');
+        const [connected] = await events('servidor_conectado');
+        expect(created?.properties).toMatchObject({ origem: 'jogo', modo: 'retake' });
+        expect(connected?.properties).toMatchObject({
+          modo: 'retake',
+          primeiro_connect: true,
+          eh_vip: false,
+          conta_reivindicada: false,
+          itens_equipados: 0,
+          reenvio: false,
+        });
+        expect(JSON.stringify(sent)).not.toContain(steamId);
+
+        sent.length = 0;
+        await connect(steamId);
+        const [again] = await events('servidor_conectado');
+        expect(again?.properties.primeiro_connect).toBe(false);
+        expect(sent.filter((e) => e.event === 'conta_criada')).toEqual([]);
+      });
+
+      it('quem conecta com skin equipada leva itens_equipados > 0 (a promessa central); VIP e reivindicada aparecem', async () => {
+        const player = await signedInPlayer(t, next++, { vipUntil: Date.now() + 86_400_000 });
+        const uid = await player.add(item());
+        await player.call('POST', '/api/loadout/equip', { uid });
+        sent.length = 0;
+
+        expect((await connect(player.steamId)).statusCode).toBe(200);
+
+        const [connected] = await events('servidor_conectado');
+        expect(connected?.properties).toMatchObject({
+          distinct_id: player.account.id,
+          eh_vip: true,
+          conta_reivindicada: true,
+          itens_equipados: 1,
+          primeiro_connect: true,
+        });
+      });
+
+      it('um connect reenviado pelo plugin sai com o horário original e marcado como reenvio', async () => {
+        const steamId = steamIdFor(701);
+        const at = new Date(Date.now() - 5 * 60_000);
+
+        await connect(steamId, { connectedAt: at.toISOString() });
+
+        const [connected] = await events('servidor_conectado');
+        expect(connected?.timestamp).toBe(at.toISOString());
+        expect(connected?.properties.reenvio).toBe(true);
+      });
+
+      it('o fim da Sessão de jogo mede o Modo e a duração; reenviar o lote não duplica', async () => {
+        const player = await signedInPlayer(t, next++);
+        const end = new Date();
+        const start = new Date(end.getTime() - 30 * 60_000);
+        const body = {
+          kills: [],
+          damages: [],
+          roundEnds: [],
+          sessionStarts: [],
+          sessionEnds: [
+            {
+              id: '0199f2a0-7b1c-7000-8000-00000000a001',
+              at: end.toISOString(),
+              sessionId: '0199f2a0-7b1c-7000-8000-00000000a002',
+              steamId: player.steamId,
+              startedAt: start.toISOString(),
+            },
+          ],
+        };
+        const send = () =>
+          t.app.inject({
+            method: 'POST',
+            url: '/api/server/events',
+            headers: { authorization: `Bearer ${t.serverKey}` },
+            payload: body,
+          });
+
+        expect((await send()).statusCode).toBe(200);
+        const [ended] = await events('sessao_de_jogo_encerrada');
+        expect(ended).toMatchObject({ timestamp: end.toISOString() });
+        expect(ended?.properties).toMatchObject({
+          distinct_id: player.account.id,
+          modo: 'retake',
+          duracao_segundos: 1800,
+        });
+
+        // O mesmo lote de novo: o fim já foi contado, nada novo é medido.
+        await send();
+        await quiet();
+        expect(sent.filter((e) => e.event === 'sessao_de_jogo_encerrada')).toHaveLength(1);
+      });
+    });
+
+    describe('Denúncias do jogo', () => {
+      const report = (reporter: string, target: string, reason = 'cheat') =>
+        t.app.inject({
+          method: 'POST',
+          url: '/api/server/reports',
+          headers: { authorization: `Bearer ${t.serverKey}` },
+          payload: {
+            reporterSteamId: reporter,
+            targetSteamId: target,
+            reason,
+            round: 3,
+            map: 'de_nuke',
+          },
+        });
+
+      it('enviada mede só o motivo e o Modo, na Conta de quem denunciou; o alvo nunca sai', async () => {
+        const reporter = await signedInPlayer(t, next++);
+        const target = await signedInPlayer(t, next++);
+
+        const response = await report(reporter.steamId, target.steamId, 'griefing');
+        expect(response.json()).toMatchObject({ accepted: true });
+
+        const [sentReport] = await events('denuncia_enviada');
+        expect(sentReport?.properties).toMatchObject({
+          distinct_id: reporter.account.id,
+          motivo: 'griefing',
+          modo: 'retake',
+        });
+        const text = JSON.stringify(sent);
+        expect(text).not.toContain(target.account.id);
+        expect(text).not.toContain(target.steamId);
+        expect(text).not.toContain(String(target.account.publicId));
+      });
+
+      it('recusada pelo limite (mesmo alvo em 10 minutos) mede a recusa; auto-denúncia e Conta desconhecida não', async () => {
+        const reporter = await signedInPlayer(t, next++);
+        const target = await signedInPlayer(t, next++);
+        await report(reporter.steamId, target.steamId);
+        sent.length = 0;
+
+        const second = await report(reporter.steamId, target.steamId);
+        expect(second.json()).toMatchObject({ accepted: false, refusal: 'same_target_cooldown' });
+        const [refused] = await events('denuncia_recusada');
+        expect(refused?.properties).toMatchObject({
+          distinct_id: reporter.account.id,
+          recusa: 'same_target_cooldown',
+          modo: 'retake',
+        });
+
+        sent.length = 0;
+        await report(reporter.steamId, reporter.steamId);
+        await report(reporter.steamId, steamIdFor(799_999));
+        await quiet();
+        expect(sent).toEqual([]);
+      });
+    });
   });
 });
