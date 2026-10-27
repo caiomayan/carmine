@@ -141,7 +141,9 @@ async function Notice({ state }: { state: NonNullable<ReturnType<typeof buyState
       {t(key)}{' '}
       {state.kind === 'blocked' &&
       (state.reason === 'purchase_in_progress' || state.reason === 'daily_limit') ? (
-        <Link href={'/configuracoes/compras' as Route}>{t('myPurchases')}</Link>
+        <Link href={'/configuracoes/compras' as Route} prefetch={false}>
+          {t('myPurchases')}
+        </Link>
       ) : null}
     </p>
   );
