@@ -92,6 +92,8 @@ services:
       SENTRY_DSN: ${WEB_SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: production
       SENTRY_RELEASE: ${IMAGE_TAG}
+      # A origem pública das fotos de perfil (a mesma da API): libera as imagens dela no CSP e liga o convite do Perfil.
+      MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
     networks:
       edge:
         ipv4_address: 172.30.0.11

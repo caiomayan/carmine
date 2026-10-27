@@ -16,6 +16,7 @@ import { AnimatedIcon } from '@/components/icons/animated-icon';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
+import { AvatarReportButton } from '@/components/profile/avatar-report';
 import { CollectingCard } from '@/components/profile/collecting-card';
 import { PresenceChip } from '@/components/profile/presence-chip';
 import { ProfileEmpty } from '@/components/profile/profile-empty';
@@ -33,6 +34,8 @@ import {
   visitorIp,
 } from '@/lib/api-server';
 import { parseProfileSegment, steamLoginHref } from '@/lib/auth-links';
+import { isCustomAvatarUrl } from '@/lib/avatar';
+import { avatarsEnabled } from '@/lib/avatar-server';
 import { RARITIES } from '@/lib/catalog/types';
 import { buildShowcase, type ShowcaseView } from '@/lib/loadout/build';
 import { memberSinceLabel } from '@/lib/profile-identity';
@@ -151,7 +154,12 @@ export default async function ProfilePage({
       <div aria-hidden="true" className="pf-banner" data-testid="profile-banner" />
 
       <div className="container-page pb-24">
-        <ProfileHeader profile={profile} isOwner={isOwner} asVisitor={asVisitor} />
+        <ProfileHeader
+          profile={profile}
+          isOwner={isOwner}
+          asVisitor={asVisitor}
+          signedIn={viewer !== null}
+        />
 
         {invite ? <ClaimInvite profile={profile} /> : null}
 
@@ -250,34 +258,60 @@ async function ProfileHeader({
   profile,
   isOwner,
   asVisitor,
+  signedIn,
 }: {
   profile: Profile;
   isOwner: boolean;
   asVisitor: boolean;
+  signedIn: boolean;
 }) {
   const t = await getTranslations('profile');
   // O "Entrar junto" é de cliente (abre o `steam://connect` e a instrução do console): só as mensagens dele vão ao navegador.
-  const { servers } = await getMessages();
+  const { servers, profile: profileMessages } = await getMessages();
   const unclaimed = !profile.claimed;
+  const photos = avatarsEnabled();
+  // O dono troca a foto clicando nela (leva à seção de Configurações); os outros, com sessão, podem denunciar a foto própria.
+  const editable = photos && isOwner && !asVisitor;
+  const reportable = photos && signedIn && !isOwner && isCustomAvatarUrl(profile.avatarUrl);
+  const avatar = (
+    <Avatar
+      src={profile.avatarUrl}
+      name={profile.displayName}
+      size={148}
+      alt={t('avatarAlt', { name: profile.displayName })}
+      className={cn(
+        'pf-avatar max-md:[--avatar-size:104px]!',
+        // Sinal de Conta não reivindicada: o avatar fica mais quieto, num fundo mais leve e com as
+        // iniciais em secundário (sem contorno nem opacidade, que desbotavam as letras). Discreto
+        // de propósito; nunca um selo (nada aqui parece "verificado"). A nota ao lado explica.
+        unclaimed && 'bg-(--fill-rest) text-muted-foreground grayscale-[0.4]',
+      )}
+    />
+  );
 
   return (
     <header
       data-claimed={profile.claimed}
       className="pf-head flex animate-fade-up flex-wrap items-end gap-x-6 gap-y-4"
     >
-      <Avatar
-        src={profile.avatarUrl}
-        name={profile.displayName}
-        size={148}
-        alt={t('avatarAlt', { name: profile.displayName })}
-        className={cn(
-          'pf-avatar max-md:[--avatar-size:104px]!',
-          // Sinal de Conta não reivindicada: o avatar fica mais quieto, num fundo mais leve e com as
-          // iniciais em secundário (sem contorno nem opacidade, que desbotavam as letras). Discreto
-          // de propósito; nunca um selo (nada aqui parece "verificado"). A nota ao lado explica.
-          unclaimed && 'bg-(--fill-rest) text-muted-foreground grayscale-[0.4]',
-        )}
-      />
+      {editable ? (
+        <Link
+          href={`${settingsHref('perfil')}#foto` as Route}
+          aria-label={t('avatarEdit.label')}
+          data-testid="avatar-edit"
+          className="group/avatar relative inline-flex shrink-0 rounded-full"
+        >
+          {avatar}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-background/85 px-3 py-1 text-caption font-semibold opacity-0 transition-opacity duration-(--dur-fast) ease-std group-hover/avatar:opacity-100 group-focus-visible/avatar:opacity-100 pointer-coarse:opacity-100"
+          >
+            {t('avatarEdit.hint')}
+          </span>
+        </Link>
+      ) : (
+        avatar
+      )}
       <div className="grid min-w-0 flex-1 gap-2.5 pb-1">
         <h1 className="v-serif text-[clamp(40px,6vw,84px)] break-words">{profile.displayName}</h1>
         <div className="flex flex-wrap items-center gap-2 text-caption font-semibold">
@@ -369,6 +403,13 @@ async function ProfileHeader({
               </Link>
             </Button>
           </>
+        ) : null}
+        {reportable ? (
+          <NextIntlClientProvider
+            messages={{ profile: { avatarReport: profileMessages.avatarReport } }}
+          >
+            <AvatarReportButton publicId={profile.publicId} name={profile.displayName} />
+          </NextIntlClientProvider>
         ) : null}
       </div>
     </header>

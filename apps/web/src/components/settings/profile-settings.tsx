@@ -17,6 +17,7 @@ import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
 import { LabelInput } from '@/components/ui/label-input';
 import { cn } from '@/lib/utils';
+import { AvatarSetting } from './avatar-setting';
 
 /**
  * Ajustes do próprio Perfil (S11), em Configurações > Perfil: o Nome de exibição (uma troca a cada
@@ -29,6 +30,7 @@ export function ProfileSettings() {
 
   return (
     <div className="grid gap-1" data-testid="profile-settings">
+      <AvatarSetting />
       <NameRow />
       <PrivacyRow />
     </div>

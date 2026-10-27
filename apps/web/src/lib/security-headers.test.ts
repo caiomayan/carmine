@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildContentSecurityPolicy,
   generateNonce,
@@ -15,6 +15,8 @@ const directives = (csp: string) =>
   );
 
 describe('buildContentSecurityPolicy', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   const csp = directives(buildContentSecurityPolicy({ nonce: 'abc123', dev: false }));
 
   it('só executa script com o nonce da requisição (sem unsafe-inline nem eval)', () => {
@@ -45,6 +47,24 @@ describe('buildContentSecurityPolicy', () => {
       'https://cdn.cstrike.app',
       'https://*.steamstatic.com',
     ]);
+  });
+
+  it('com a foto de perfil ligada, libera também as imagens da origem pública dela (só ela)', () => {
+    vi.stubEnv('MEDIA_PUBLIC_URL', 'https://img.stcarmine.com/');
+    const withMedia = directives(buildContentSecurityPolicy({ nonce: 'abc123', dev: false }));
+
+    expect(withMedia.get('img-src')).toEqual([
+      "'self'",
+      'data:',
+      'blob:',
+      'https://cdn.cstrike.app',
+      'https://*.steamstatic.com',
+      'https://img.stcarmine.com',
+    ]);
+    vi.stubEnv('MEDIA_PUBLIC_URL', 'isto não é uma URL');
+    expect(
+      directives(buildContentSecurityPolicy({ nonce: 'abc123', dev: false })).get('img-src'),
+    ).toEqual(csp.get('img-src'));
   });
 
   it('com Sentry, o navegador também pode falar com a origem de ingestão do DSN', () => {
