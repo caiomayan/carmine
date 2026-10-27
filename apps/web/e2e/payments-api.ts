@@ -43,6 +43,9 @@ export async function simulate(
 ) {
   const providerId = purchase.simulationUrl?.split('/').pop();
   if (!providerId) throw new Error('compra sem simulationUrl: o provedor não é o falso?');
-  const response = await page.request.post(`/api/dev/payments/${providerId}/${action}`);
+  // Com sessão no navegador, até a rota de simulação pede o token CSRF (toda mutação de quem tem cookie).
+  const response = await page.request.post(`/api/dev/payments/${providerId}/${action}`, {
+    headers: { 'x-csrf-token': await csrfToken(page.context()) },
+  });
   expect(response.ok(), await response.text()).toBe(true);
 }
