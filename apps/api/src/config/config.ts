@@ -142,6 +142,20 @@ const envSchema = z
     ),
     // De quanto em quanto tempo a fila de remoção de arquivos roda (0 desliga).
     MEDIA_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(30),
+    // Analytics de produto (A1, ADR 0021). Sem a chave do projeto do PostHog (e sem ANALYTICS_DRIVER=log) nada é
+    // enviado, como o Discord. Região UE: o host de ingestão é eu.i.posthog.com e o da API de gestão, eu.posthog.com.
+    POSTHOG_API_KEY: z.string().trim().default(''),
+    POSTHOG_HOST: urlWithProtocol(['https:', 'http:']).default('https://eu.i.posthog.com'),
+    POSTHOG_API_HOST: urlWithProtocol(['https:', 'http:']).default('https://eu.posthog.com'),
+    // Para apagar a pessoa no PostHog quando a Conta é anonimizada (S08); sem eles, o passo fica pendente no log.
+    POSTHOG_PERSONAL_API_KEY: z.string().trim().default(''),
+    POSTHOG_PROJECT_ID: z.string().trim().default(''),
+    // `log`: só registra os eventos no log da API (a homologação); ganha da chave do PostHog, então nada sai de lá.
+    ANALYTICS_DRIVER: z.enum(['', 'log']).default(''),
+    // Separa os eventos da homologação dos de verdade (propriedade `ambiente`).
+    ANALYTICS_ENVIRONMENT: z.enum(['producao', 'staging']).default('producao'),
+    // De quanto em quanto tempo a fila de eventos é enviada em lote.
+    ANALYTICS_FLUSH_SECONDS: z.coerce.number().int().positive().default(5),
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
@@ -251,6 +265,8 @@ export interface AppConfig {
   media: MediaConfig | null;
   /** Variáveis base da foto de perfil que faltam quando só parte delas foi preenchida. */
   mediaMissing: string[];
+  /** Analytics de produto (A1): `off` sem chave do PostHog, `log` na homologação, `posthog` ligado. */
+  analytics: AnalyticsConfig;
   /** Sentry (S09): sem DSN, desligado. */
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
@@ -287,6 +303,19 @@ export interface MediaConfig {
   /** Purga da CDN depois de apagar; nulo: só a expiração do cache. */
   purge: { zoneId: string; token: string; apiUrl: string } | null;
   sweepMs: number;
+}
+
+export interface AnalyticsConfig {
+  mode: 'off' | 'log' | 'posthog';
+  environment: 'producao' | 'staging';
+  posthog: {
+    apiKey: string;
+    host: string;
+    apiHost: string;
+    /** Chave pessoal e projeto para apagar pessoas; nulos: a exclusão fica pendente. */
+    erasure: { personalApiKey: string; projectId: string } | null;
+    flushMs: number;
+  } | null;
 }
 
 export const APP_CONFIG = Symbol('APP_CONFIG');
@@ -378,6 +407,7 @@ export function loadConfig(rawEnv: Record<string, string | undefined>): AppConfi
     },
     ...discordConfig(e),
     ...mediaConfig(e),
+    analytics: analyticsConfig(e),
     sentry: {
       dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
       environment: e.SENTRY_ENVIRONMENT === '' ? e.NODE_ENV : e.SENTRY_ENVIRONMENT,
@@ -470,6 +500,27 @@ function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
       authorizeUrl: e.DISCORD_AUTHORIZE_URL,
       syncMs: e.DISCORD_SYNC_SECONDS * 1000,
       statusMs: e.DISCORD_STATUS_SECONDS * 1000,
+    },
+  };
+}
+
+/** O modo do analytics: `log` ganha de tudo (a homologação nunca envia a ninguém); sem a chave do projeto, desligado. */
+function analyticsConfig(e: Env): AnalyticsConfig {
+  const environment = e.ANALYTICS_ENVIRONMENT;
+  if (e.ANALYTICS_DRIVER === 'log') return { mode: 'log', environment, posthog: null };
+  if (e.POSTHOG_API_KEY === '') return { mode: 'off', environment, posthog: null };
+  return {
+    mode: 'posthog',
+    environment,
+    posthog: {
+      apiKey: e.POSTHOG_API_KEY,
+      host: e.POSTHOG_HOST.replace(/\/+$/, ''),
+      apiHost: e.POSTHOG_API_HOST.replace(/\/+$/, ''),
+      erasure:
+        e.POSTHOG_PERSONAL_API_KEY !== '' && e.POSTHOG_PROJECT_ID !== ''
+          ? { personalApiKey: e.POSTHOG_PERSONAL_API_KEY, projectId: e.POSTHOG_PROJECT_ID }
+          : null,
+      flushMs: e.ANALYTICS_FLUSH_SECONDS * 1000,
     },
   };
 }

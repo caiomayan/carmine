@@ -1,8 +1,8 @@
-# Plano de eventos · v1.0.1
+# Plano de eventos · v1.0.2
 
 > Fonte única dos **nomes, quando disparam e propriedades** dos eventos de analytics do Carmine, para o PostHog, o GA4 e o BI (Metabase). Decisões e limites: [ADR 0021](../adr/0021-analytics-posthog-ga4-metabase.md). Linguagem do domínio: [`CONTEXT.md`](../../CONTEXT.md). Spec: seção "A1 · Analytics de produto" de [`docs/specs/mvp.md`](../specs/mvp.md).
 >
-> **Estado:** escrito antes da instalação (A1). Nada aqui está implementado. Os "pontos de disparo" foram lidos no código da API em 2026-10-20 (`apps/api/src`, a partir do commit `95be772`); quando o ponto exige uma pequena mudança em código existente, está dito.
+> **Estado:** a **A1a** está implementada: o contrato dos 35 eventos (`packages/contracts/src/analytics.ts`, comparado com a tabela 1.3 por um teste), a porta `Analytics` e os adaptadores (PostHog UE, log e nulo) na API, a chave `analytics_opt_out` e a exclusão da pessoa no PostHog. Os pontos de disparo, o amostrador de presença e a contagem de páginas no web vêm nas fatias seguintes; tudo desligado até o dono ligar o PostHog. Os "pontos de disparo" foram lidos no código da API em 2026-10-20 (`apps/api/src`, a partir do commit `95be772`); quando o ponto exige uma pequena mudança em código existente, está dito.
 >
 > **Decisões do dono de 2026-10-21** (ADR 0021, que as registra): (1) a chave `analytics_opt_out` vem **desligada** por padrão, ou seja, a Conta participa até a pessoa sair; (2) anúncios só fixos ou contextuais; (3) o amostrador `server_presence_samples` está **aprovado** e entra na A1; (4) **não** há evento de clique em "Conectar", `vip_expirado` vem do job da S14 com marcador, e **não** há dados demográficos; (5) a transferência internacional para a UE está na lista do advogado e a A1 só liga o PostHog depois da resposta.
 
@@ -412,3 +412,4 @@ O objetivo é mudar um evento sem quebrar a série histórica nem os painéis.
 |---|---|---|
 | 1.0.0 | 2026-10-20 | Primeira versão: 35 eventos (29 da A1, 6 da S14), funis, mídia kit e versionamento |
 | 1.0.1 | 2026-10-21 | PATCH: registra as decisões do dono (opt-out ligado por padrão, anúncios só fixos/contextuais, `server_presence_samples` aprovado, sem clique em "Conectar", `vip_expirado` pelo job da S14, sem dados demográficos). Nenhum evento mudou |
+| 1.0.2 | 2026-10-26 | PATCH: registra a implementação da A1a (contrato, porta e adaptadores). Nenhum evento mudou |
