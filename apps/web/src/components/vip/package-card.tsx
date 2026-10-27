@@ -73,6 +73,7 @@ function BuyButton({ pack, state, price }: { pack: VipPackage; state: BuyState; 
       <Button asChild className="vp-buy" data-testid="vip-buy">
         <Link
           href={purchaseHref(pack.id) as never}
+          prefetch={false}
           aria-label={t('buyAria', { months: pack.months, price })}
         >
           {t('buy')}
