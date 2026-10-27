@@ -1,5 +1,5 @@
-import { staffCan } from '@carmine/contracts/staff';
 import { staffAvatarCasePageSchema } from '@carmine/contracts/avatar';
+import { staffCan } from '@carmine/contracts/staff';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

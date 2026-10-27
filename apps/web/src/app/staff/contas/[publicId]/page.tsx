@@ -1,5 +1,5 @@
-import { staffAccountDetailSchema, staffCan } from '@carmine/contracts/staff';
 import { staffAccountAvatarSchema } from '@carmine/contracts/avatar';
+import { staffAccountDetailSchema, staffCan } from '@carmine/contracts/staff';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { AccountAvatarPanel } from '@/components/staff/account-avatar';
