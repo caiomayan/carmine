@@ -1761,7 +1761,8 @@
       "audit": "Auditoria",
       "servers": "Servidores",
       "reports": "Denúncias",
-      "photos": "Fotos"
+      "photos": "Fotos",
+      "payments": "Pagamentos"
     },
     "roles": {
       "owner": "Dono",
@@ -2013,7 +2014,12 @@
       "report_needs_evidence": "Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link.",
       "avatar_not_found": "Essa foto não existe mais.",
       "avatar_not_reviewable": "Essa foto já foi decidida, trocada ou removida.",
-      "no_custom_avatar": "Esta Conta não tem foto própria no ar."
+      "no_custom_avatar": "Esta Conta não tem foto própria no ar.",
+      "payment_not_found": "Esse pagamento não existe.",
+      "payment_not_refundable": "Esse pagamento não pode ser reembolsado agora: só se devolve o que está aprovado e ainda tem dias a devolver.",
+      "payment_provider_unavailable": "O provedor de pagamento não confirmou o estorno agora. Nada foi devolvido; tente de novo em instantes.",
+      "purchases_not_blocked": "As compras dessa Conta não estavam bloqueadas.",
+      "compensation_applied": "Essa compensação (a chave) já foi aplicada: use outra chave para outra queda."
     },
     "ranking": {
       "title": "Ranking",
@@ -2124,6 +2130,152 @@
       "loadMore": "Carregar mais",
       "loadFailed": "Não deu para carregar mais agora.",
       "end": "Fim da fila."
+    },
+    "payments": {
+      "title": "Pagamentos",
+      "subtitle": "Os pagamentos de Pacotes VIP: o estado de cada um, o que o provedor disse e o que dá para fazer.",
+      "unavailable": "Não deu para carregar os pagamentos agora.",
+      "tabs": {
+        "label": "Estado do pagamento",
+        "all": "Todos",
+        "created": "Preparando",
+        "pending": "Pendentes",
+        "in_review": "Em análise",
+        "approved": "Aprovados",
+        "rejected": "Recusados",
+        "expired": "Expirados",
+        "cancelled": "Cancelados",
+        "refunded": "Reembolsados",
+        "partially_refunded": "Reembolso parcial",
+        "charged_back": "Contestados"
+      },
+      "status": {
+        "created": "Preparando",
+        "pending": "Aguardando",
+        "in_review": "Em análise",
+        "approved": "Aprovado",
+        "rejected": "Recusado",
+        "expired": "Expirado",
+        "cancelled": "Cancelado",
+        "refunded": "Reembolsado",
+        "partially_refunded": "Reembolso parcial",
+        "charged_back": "Contestado"
+      },
+      "method": {
+        "pix": "Pix",
+        "card": "Cartão"
+      },
+      "list": {
+        "empty": "Nenhum pagamento neste estado.",
+        "more": "Carregar mais",
+        "loading": "Carregando",
+        "loadFailed": "Não deu para carregar mais agora. Tente de novo.",
+        "open": "Abrir a ficha",
+        "refunded": "devolvido {amount}",
+        "blocked": "compras bloqueadas",
+        "package": "{months, plural, one {# mês} other {# meses}}"
+      },
+      "operations": {
+        "title": "Operações",
+        "reconcile": {
+          "title": "Conciliar com o provedor",
+          "hint": "Confere os pagamentos dos últimos dias com o provedor: pega reembolso, contestação e webhook perdido. Rode depois de restaurar um backup ou quando um VIP pago não apareceu.",
+          "days": "Dias para olhar",
+          "submit": "Conciliar agora",
+          "done": "{checked} conferidos com o provedor, {changed} mudaram."
+        },
+        "compensation": {
+          "title": "Compensar por indisponibilidade",
+          "hint": "Quando os servidores ou os benefícios do VIP ficam fora por mais de 24 horas, soma os mesmos dias a todos os VIPs ativos de uma vez (D4). A chave é única por queda: repetir a mesma não soma de novo.",
+          "open": "Compensar VIPs ativos",
+          "days": "Dias a somar",
+          "key": "Chave da queda",
+          "keyHint": "Só letras, números e . _ : -. Ex.: queda-2026-10-27.",
+          "activeNow": "{count, plural, =0 {Nenhuma Conta com VIP ativo agora.} one {1 Conta com VIP ativo agora vai ganhar os dias.} other {# Contas com VIP ativo agora vão ganhar os dias.}}",
+          "submit": "Compensar",
+          "done": "Compensação aplicada. O alerta foi enviado ao Discord.",
+          "confirmTitle": "Compensar todos os VIPs ativos?",
+          "confirmBody": "Vai somar {days} dia(s) de VIP a {count, plural, one {# Conta} other {# Contas}} com VIP ativo agora, com a chave \"{key}\". Não tem volta: depois de aplicada, a chave não se repete e o alerta vai para o Discord.",
+          "confirm": "Compensar agora",
+          "recent": "Últimas compensações",
+          "recentEmpty": "Nenhuma compensação ainda.",
+          "recentLine": "{days} dia(s) para {accounts} Conta(s)",
+          "by": "por {name}"
+        }
+      },
+      "sheet": {
+        "back": "Pagamentos",
+        "title": "Pagamento {id}",
+        "summary": "Resumo",
+        "amount": "Valor",
+        "package": "Pacote",
+        "method": "Meio",
+        "createdAt": "Criado em",
+        "approvedAt": "Aprovado em",
+        "refunded": "Devolvido",
+        "vipEndsAt": "VIP até (por este pagamento)",
+        "status": "Estado",
+        "account": "Conta beneficiada",
+        "openAccount": "Abrir a ficha da Conta",
+        "payer": "Pagador",
+        "payerName": "Nome",
+        "payerDocument": "CPF",
+        "provider": "Provedor",
+        "providerName": "Provedor",
+        "providerPaymentId": "Id no provedor",
+        "expiresAt": "Vence em",
+        "declared": "Declaração de maioridade",
+        "declaredValue": "{date}, texto de {version}",
+        "failure": "Motivo da falha",
+        "chargedBackAt": "Contestado em",
+        "none": "—",
+        "events": {
+          "title": "Webhooks recebidos",
+          "empty": "Nenhum webhook recebido para este pagamento.",
+          "when": "Quando",
+          "topic": "Tópico",
+          "outcome": "O que a API fez",
+          "signature": "Assinatura",
+          "signatureValid": "válida",
+          "signatureInvalid": "inválida",
+          "outcomes": {
+            "applied": "Aplicado",
+            "unchanged": "Sem mudança",
+            "ignored": "Ignorado",
+            "invalid_signature": "Assinatura recusada",
+            "mismatch": "Valor diferente",
+            "error": "Erro nosso"
+          }
+        },
+        "audit": {
+          "title": "O que a Staff fez",
+          "empty": "Nenhuma ação da Staff neste pagamento.",
+          "by": "por {name}"
+        },
+        "refund": {
+          "title": "Reembolsar",
+          "hint": "Devolve pelo provedor e tira os dias do VIP. Dentro dos 7 dias a própria pessoa faz em Minhas compras; aqui é depois dos 7 dias ou parcial, por indisponibilidade.",
+          "open": "Reembolsar este pagamento",
+          "remaining": "Ainda dá para devolver {days} dia(s), até {amount}.",
+          "days": "Dias a devolver",
+          "daysHint": "Em branco, devolve o que resta. O valor é proporcional aos dias do Pacote.",
+          "submit": "Reembolsar",
+          "done": "Reembolso feito. A ficha foi atualizada.",
+          "confirmTitle": "Reembolsar este pagamento?",
+          "confirmBody": "O provedor devolve o valor e os dias saem do VIP da Conta. Não tem volta.",
+          "confirm": "Reembolsar agora",
+          "unavailable": "Este pagamento não tem o que devolver agora (só se reembolsa pagamento aprovado, com dias a devolver)."
+        },
+        "unblock": {
+          "title": "Compras bloqueadas",
+          "body": "A Conta está com as compras bloqueadas desde {date} (contestação de pagamento). Reabra só depois de revisar.",
+          "reason": "Motivo do bloqueio: {reason}",
+          "open": "Reabrir as compras",
+          "submit": "Reabrir",
+          "done": "Compras reabertas.",
+          "notBlocked": "As compras desta Conta estão liberadas."
+        }
+      }
     }
   },
   "refund": {
