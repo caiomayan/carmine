@@ -1,4 +1,8 @@
-import { type PlayerConnectResult, playerConnectResultSchema } from '@carmine/contracts';
+import {
+  type PlayerConnectResult,
+  playerConnectResultSchema,
+  playerVipSchema,
+} from '@carmine/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { placeholderNameFor } from '../src/accounts/placeholder-names.js';
 import { isPrettyNumber } from '../src/accounts/public-id.js';
@@ -59,6 +63,8 @@ describe('POST /api/server/player-connects', () => {
       displayName: 'FalleN',
       isFirstConnect: false,
       isVip: false,
+      vipNotice: null,
+      vipEndsAt: null,
       sanctions: [],
       chatHidden: false,
     });
@@ -158,6 +164,67 @@ describe('POST /api/server/player-connects', () => {
     });
 
     expect((await connectOk({ steamId, steamName: 'ex-vip' })).isVip).toBe(false);
+  });
+
+  describe('aviso do fim do VIP no chat do jogo (S14)', () => {
+    async function withPeriod(n: number, startsInMs: number, endsInMs: number) {
+      const steamId = steamIdFor(n);
+      await connectOk({ steamId, steamName: `vip${n}` });
+      const account = await t.accounts.findBySteamId(steamId);
+      if (!account) throw new Error('Conta não criada');
+      await t.postgres.db.insert(vipPeriods).values({
+        accountId: account.id,
+        startsAt: new Date(Date.now() + startsInMs),
+        endsAt: new Date(Date.now() + endsInMs),
+      });
+      return steamId;
+    }
+    const DAY = 24 * 60 * 60_000;
+    const vip = (steamId: string) =>
+      t.app.inject({
+        url: `/api/server/players/${steamId}/vip`,
+        headers: { authorization: `Bearer ${t.serverKey}` },
+      });
+
+    it('3 dias antes do fim o connect traz o aviso e o fim; sem VIP ou longe do fim, nada', async () => {
+      const soon = await withPeriod(40, -DAY, 2 * DAY);
+      const far = await withPeriod(41, -DAY, 30 * DAY);
+
+      const result = await connectOk({ steamId: soon, steamName: 'vip40' });
+      expect(result).toMatchObject({ isVip: true, vipNotice: 'ending_soon' });
+      expect(Date.parse(result.vipEndsAt as string)).toBeGreaterThan(Date.now() + DAY);
+      expect(await connectOk({ steamId: far, steamName: 'vip41' })).toMatchObject({
+        isVip: true,
+        vipNotice: null,
+      });
+    });
+
+    it('no dia do fim e no dia em que acabou', async () => {
+      const ending = await withPeriod(42, -DAY, 60_000);
+      const ended = await withPeriod(43, -2 * DAY, -1000);
+
+      expect((await connectOk({ steamId: ending, steamName: 'vip42' })).vipNotice).toBe(
+        'ending_today',
+      );
+      expect(await connectOk({ steamId: ended, steamName: 'vip43' })).toMatchObject({
+        isVip: false,
+        vipNotice: 'ended_today',
+        vipEndsAt: null,
+      });
+    });
+
+    it('GET /api/server/players/{steamId}/vip dá o VIP de agora, e recusa chave errada e Conta desconhecida', async () => {
+      const steamId = await withPeriod(44, -DAY, 2 * DAY);
+
+      const response = await vip(steamId);
+      expect(response.statusCode, response.body).toBe(200);
+      const body = playerVipSchema.parse(response.json());
+      expect(body).toMatchObject({ active: true, endedAt: null, notice: 'ending_soon' });
+
+      expect((await vip(steamIdFor(9999))).statusCode).toBe(404);
+      const unauthorized = await t.app.inject({ url: `/api/server/players/${steamId}/vip` });
+      expect(unauthorized.statusCode).toBe(401);
+    });
   });
 
   it('responde 400 a um SteamID inválido', async () => {

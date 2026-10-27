@@ -2,6 +2,7 @@ import './zod-jitless.js';
 import { z } from 'zod';
 import { gameSanctionSchema } from './moderation.js';
 import { steamId64Schema } from './steam.js';
+import { vipNoticeSchema } from './vip.js';
 
 /** Modo de um Servidor Carmine. O 5v5 casual entra depois do MVP. */
 export const gameModeSchema = z.enum(['retake', 'deathmatch']).meta({ id: 'GameMode' });
@@ -44,6 +45,13 @@ export const playerConnectResultSchema = z
      */
     isVip: z.boolean(),
     /**
+     * O aviso do fim do VIP a mostrar no chat do jogo (S14): 3 dias antes, no dia e no dia em que
+     * acabou. O plugin o mostra uma vez por conexão, no primeiro spawn. Nulo: nenhum aviso.
+     */
+    vipNotice: vipNoticeSchema.nullable(),
+    /** Quando o VIP ativo acaba (para o plugin dizer em quantos dias); nulo sem VIP ativo. */
+    vipEndsAt: z.iso.datetime({ offset: true }).nullable(),
+    /**
      * Punições da Conta a aplicar já no connect (S07): com um `ban`, o plugin mostra a `message`
      * e tira o jogador do servidor; `mute` e `gag` valem desde o primeiro instante.
      */
@@ -57,6 +65,21 @@ export const playerConnectResultSchema = z
   .meta({ id: 'PlayerConnectResult' });
 
 export type PlayerConnectResult = z.infer<typeof playerConnectResultSchema>;
+
+/**
+ * `GET /api/server/players/{steamId}/vip`: o VIP da Conta agora, para o `!vip` do jogo (o connect só
+ * diz o VIP de quando o jogador entrou). 404 se a Conta não existe.
+ */
+export const playerVipSchema = z
+  .object({
+    active: z.boolean(),
+    endsAt: z.iso.datetime({ offset: true }).nullable(),
+    endedAt: z.iso.datetime({ offset: true }).nullable(),
+    notice: vipNoticeSchema.nullable(),
+  })
+  .meta({ id: 'PlayerVip' });
+
+export type PlayerVip = z.infer<typeof playerVipSchema>;
 
 /**
  * `PUT /api/server/players/{steamId}/chat-preference`: o Carmine.Core grava o `!chat off`
