@@ -1,5 +1,6 @@
 import { Logger, Module } from '@nestjs/common';
 import type { Redis } from 'ioredis';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { LiveServers } from '../live-servers/live-servers.js';
@@ -18,7 +19,7 @@ import { DiscordStatusBoard } from './discord-status-board.js';
  * variáveis `DISCORD_*` a integração é nula: o botão do web fica desabilitado e nenhum job roda.
  */
 @Module({
-  imports: [LiveServersModule],
+  imports: [LiveServersModule, AnalyticsModule],
   controllers: [DiscordController],
   providers: [
     {
