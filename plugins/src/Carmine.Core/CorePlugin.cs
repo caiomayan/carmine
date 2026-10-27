@@ -40,6 +40,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HttpClient? _http;
     private AccountSync? _sync;
     private PendingWelcomes? _welcomes;
+    private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
     private bool _heartbeatScheduled;
     private readonly LoadoutNotices _loadoutNotices = new();
@@ -105,6 +106,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
         _heartbeat = new HeartbeatReporter(client);
         _chat = new ChatPreferences(client);
+        _vipInfo = new VipInfo(client, TimeProvider.System);
         LoadReservedSlots(client, hotReload);
         LoadEvents(client, hotReload);
         LoadReports(client);
@@ -116,6 +118,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommandListener("say", OnSay, HookMode.Pre);
         AddCommandListener("say_team", OnSay, HookMode.Pre);
         AddCommand("css_chat", "!chat off oculta o chat dos outros jogadores; !chat on mostra de novo", OnChatCommand);
+        AddCommand("css_vip", "!vip mostra até quando vai o seu VIP", OnVipCommand);
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);
@@ -155,6 +158,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _welcomes = null;
         _heartbeat = null;
         _chat = null;
+        _vipInfo = null;
         _reportDialog = null;
         _reportSender = null;
     }
@@ -218,6 +222,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     current.PrintToChat($" {ChatPreferences.ReminderMessage}");
                 }
+                if (_vipInfo?.TakeOnSpawn(current.SteamID) is { } vipNotice)
+                {
+                    current.PrintToChat($" {vipNotice}");
+                }
             });
         }
         return HookResult.Continue;
@@ -231,6 +239,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _loadoutNotices.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
+            _vipInfo?.OnDisconnect(player.SteamID);
             _reportDialog?.Forget(player.SteamID);
             _kicking.Remove(player.SteamID);
             _reservedSlots?.OnLeave(player.SteamID);
@@ -381,6 +390,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (player is not null)
         {
             _chat?.OnConnectResult(steamId, result.ChatHidden);
+            _vipInfo?.OnConnectResult(steamId, result.VipNotice, result.VipEndsAt);
         }
         var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: player is not null && IsPlaying(player)) == true;
         if (player is null)
@@ -446,6 +456,25 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             {
                 var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
                 current?.PrintToChat($" {result.Message}");
+            });
+        });
+    }
+
+    /// <summary>O <c>!vip</c>: pergunta à API (o connect só sabe o VIP de quando o jogador entrou) e responde no chat.</summary>
+    private void OnVipCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player is null || !IsHuman(player) || _vipInfo is not { } vipInfo)
+        {
+            return;
+        }
+        var steamId = player.SteamID;
+        RunInBackground(async token =>
+        {
+            var message = await vipInfo.StatusAsync(steamId, token);
+            Server.NextFrame(() =>
+            {
+                var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
+                current?.PrintToChat($" {message}");
             });
         });
     }

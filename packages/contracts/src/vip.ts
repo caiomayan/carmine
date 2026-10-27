@@ -18,6 +18,16 @@ export const vipStatusSchema = z
 
 export type VipStatus = z.infer<typeof vipStatusSchema>;
 
+/**
+ * O aviso do fim do VIP ({@link vipNoticeAt}): `ending_soon` (até 3 dias, mas não hoje), `ending_today`
+ * (acaba hoje) e `ended_today` (acabou hoje). Vai no site e, pelo connect, no chat do jogo.
+ */
+export const vipNoticeSchema = z.enum(['ending_soon', 'ending_today', 'ended_today']).meta({
+  id: 'VipNotice',
+});
+
+export type VipNotice = z.infer<typeof vipNoticeSchema>;
+
 /** O que só entra no Inventário com Período VIP ativo. */
 export type VipFeature = 'agent' | 'musicKit' | 'statTrak' | 'nameTag';
 

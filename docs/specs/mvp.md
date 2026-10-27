@@ -406,6 +406,7 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 - **Indisponibilidade acima de 24 h:** a Staff compensa os dias de todos os VIPs ativos de uma vez (`payments compensate`), com alerta; não é automática.
 - **Contestação** tira os dias do Pacote e bloqueia novas compras até a Staff revisar; **todo ban permanente** encerra o VIP sem reembolso e impede a compra (J2). Recibo em página imprimível, sem nota fiscal (pessoa física).
 - **Cartão por Checkout Pro** (checkout hospedado, fora do escopo PCI); Pix pela API, com o QR na própria tela (30 minutos, recuperável em "Minhas compras").
+- **Plugin (S14d):** o connect traz `vipNotice` (`ending_soon`, `ending_today`, `ended_today`) e `vipEndsAt`; o Carmine.Core mostra o aviso no chat uma vez por conexão, no primeiro spawn. O `!vip` pergunta à API (`GET /api/server/players/{steamId}/vip`) e diz até quando vai o VIP. Os textos legais novos estão em `docs/legal/rascunho-s14-vip-e-pagamentos.md`, publicados só junto com a cobrança.
 
 ### S15 · Discord integrado
 
