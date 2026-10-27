@@ -1,8 +1,5 @@
-import {
-  friendsPlayingSchema,
-  liveServerListSchema,
-  profilePlayingSchema,
-} from '@carmine/contracts';
+import { friendsPlayingSchema, liveServerListSchema } from '@carmine/contracts/live-servers';
+import { profilePlayingSchema } from '@carmine/contracts/profile';
 import { describe, expect, it } from 'vitest';
 import { parseFriendsPlaying, parseLiveServerList, parseProfilePlaying } from './api-guards';
 

@@ -14,7 +14,8 @@ import type {
  * formatos de texto (datas, URLs, UUIDs). Resposta que não bate vira `null` e a tela segue como já seguia com o
  * Zod falhando (lista antiga, bloco some). `guards.test.ts` compara cada conferência com o schema de verdade.
  *
- * Quem valida de verdade (formulários, entradas de Staff, o que tem permissão) continua com `loadContracts()`.
+ * Quem valida de verdade (formulários, entradas de Staff, o que tem permissão) continua com o schema do domínio, por
+ * `import('@carmine/contracts/<módulo>')`.
  */
 
 type Json = Record<string, unknown>;
