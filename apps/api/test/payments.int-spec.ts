@@ -216,6 +216,12 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
       expect(paid.status).toBe('approved');
       expect(paid.approvedAt).not.toBeNull();
       expect(paid.payerDocumentMasked).toBe('***.***.909-**');
+      expect(paid.payerName).toBe('Pagador de Mentira');
+      // O recibo diz até quando o VIP vai por causa desta compra, e até quando dá para pedir reembolso.
+      expect(Date.parse(paid.periodEndsAt as string)).toBe((await vipEnd(who))?.getTime());
+      expect(
+        Date.parse(paid.refundableUntil as string) - Date.parse(paid.approvedAt as string),
+      ).toBe(7 * DAY_MS);
       roughly(await vipEnd(who), 30);
       const [row] = await db().select().from(payments).where(eq(payments.id, paid.id));
       expect(row?.payerDocumentEncrypted?.startsWith('v1.')).toBe(true);

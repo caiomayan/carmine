@@ -65,6 +65,9 @@ describe('purchaseSchema', () => {
       redirectUrl: null,
       simulationUrl: null,
       payerDocumentMasked: null,
+      payerName: null,
+      periodEndsAt: null,
+      refundableUntil: null,
     };
     expect(
       purchaseSchema.safeParse({

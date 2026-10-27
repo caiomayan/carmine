@@ -13,7 +13,7 @@ import {
 } from '@carmine/contracts';
 import { and, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
-import { accounts, paymentEvents, payments, sanctions } from '../database/schema.js';
+import { accounts, paymentEvents, payments, sanctions, vipPeriods } from '../database/schema.js';
 import { recordStaffAudit, type StaffAction } from '../staff/audit-log.js';
 import type { VipPeriods } from '../vip/vip-periods.js';
 import type { PaymentsGateway, ProviderPayment, WebhookRequest } from './gateway.js';
@@ -213,7 +213,7 @@ export class Payments {
 
     for (const providerId of toCancel)
       await gateway.cancelCharge(providerId).catch(() => undefined);
-    if (reused || row.status !== 'created') return this.view(row, now);
+    if (reused || row.status !== 'created') return this.viewOf(row, now);
 
     try {
       const charge = await gateway.createCharge({
@@ -236,7 +236,7 @@ export class Payments {
         })
         .where(eq(payments.id, row.id))
         .returning();
-      return this.view(updated as PaymentRow, now);
+      return this.viewOf(updated as PaymentRow, now);
     } catch (error) {
       await this.db
         .update(payments)
@@ -255,7 +255,7 @@ export class Payments {
 
   async get(accountId: string, id: string, now = this.clock()): Promise<Purchase> {
     const row = await this.own(accountId, id);
-    return this.view(row, now);
+    return this.viewOf(row, now);
   }
 
   async list(accountId: string, now = this.clock()): Promise<Purchase[]> {
@@ -265,7 +265,8 @@ export class Payments {
       .where(and(eq(payments.accountId, accountId), sql`${payments.status} <> 'created'`))
       .orderBy(desc(payments.createdAt))
       .limit(100);
-    return rows.map((row) => this.view(row, now));
+    const ends = await this.periodEnds(rows.map((row) => row.id));
+    return rows.map((row) => this.view(row, now, ends.get(row.id) ?? null));
   }
 
   /** A tela de uma compra pendente pergunta ao provedor, sem esperar o webhook. */
@@ -273,9 +274,9 @@ export class Payments {
     const row = await this.own(accountId, id);
     if (['created', 'pending', 'in_review'].includes(row.status) && row.providerPaymentId) {
       await this.sync(row.id, now).catch(() => undefined);
-      return this.view(await this.own(accountId, id), now);
+      return this.viewOf(await this.own(accountId, id), now);
     }
-    return this.view(row, now);
+    return this.viewOf(row, now);
   }
 
   // --- Reembolso ----------------------------------------------------------------------------------
@@ -310,7 +311,7 @@ export class Payments {
       );
     }
     await this.sync(row.id, now);
-    return this.view(await this.own(accountId, id), now);
+    return this.viewOf(await this.own(accountId, id), now);
   }
 
   /**
@@ -393,7 +394,7 @@ export class Payments {
     await this.safely(() => this.options.onVipChanged?.(row.accountId));
     await this.sync(row.id, now).catch(() => undefined);
     const [after] = await this.db.select().from(payments).where(eq(payments.id, row.id));
-    return this.view(after as PaymentRow, now);
+    return this.viewOf(after as PaymentRow, now);
   }
 
   /** A Staff reabre as compras de uma Conta bloqueada (contestação revisada). */
@@ -876,7 +877,7 @@ export class Payments {
   }
 
   /** Como "Minhas compras" mostra o pagamento. */
-  view(row: PaymentRow, now: Date): Purchase {
+  view(row: PaymentRow, now: Date, periodEndsAt: Date | null = null): Purchase {
     const lapsed = row.status === 'pending' && row.expiresAt !== null && row.expiresAt <= now;
     const status = lapsed ? 'expired' : row.status;
     const open = status === 'pending';
@@ -901,6 +902,26 @@ export class Payments {
           ? `${this.options.publicWebUrl}/dev/pagamento/${row.providerPaymentId}`
           : null,
       payerDocumentMasked: maskDocument(row.payerDocumentLast3),
+      payerName: row.payerName,
+      periodEndsAt: periodEndsAt?.toISOString() ?? null,
+      refundableUntil:
+        status === 'approved' && row.approvedAt
+          ? new Date(row.approvedAt.getTime() + REFUND_WINDOW_DAYS * DAY_MS).toISOString()
+          : null,
     };
+  }
+
+  /** O fim do Período VIP que cada pagamento gerou. */
+  private async periodEnds(ids: string[]): Promise<Map<string, Date>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.db
+      .select({ paymentId: vipPeriods.paymentId, endsAt: vipPeriods.endsAt })
+      .from(vipPeriods)
+      .where(inArray(vipPeriods.paymentId, ids));
+    return new Map(rows.flatMap((r) => (r.paymentId ? [[r.paymentId, r.endsAt] as const] : [])));
+  }
+
+  private async viewOf(row: PaymentRow, now: Date): Promise<Purchase> {
+    return this.view(row, now, (await this.periodEnds([row.id])).get(row.id) ?? null);
   }
 }

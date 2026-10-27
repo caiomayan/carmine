@@ -141,8 +141,14 @@ export const purchaseSchema = z
     pix: purchasePixSchema.nullable(),
     redirectUrl: z.string().nullable(),
     simulationUrl: z.string().nullable(),
-    /** `***.***.123-**`: só o meio do CPF do Pagador, depois de aprovado. */
+    /** `***.***.123-**`: só o fim do CPF do Pagador, depois de aprovado. */
     payerDocumentMasked: z.string().nullable(),
+    /** O nome do Pagador, como o provedor o informa (depois de aprovado). */
+    payerName: z.string().nullable(),
+    /** Até quando o VIP vai por causa desta compra (o fim do Período que ela gerou); nulo se não gerou (ou se foi desfeito). */
+    periodEndsAt: z.iso.datetime({ offset: true }).nullable(),
+    /** Até quando o botão "Pedir reembolso" vale (7 dias da aprovação); nulo se não cabe reembolso pelo site. */
+    refundableUntil: z.iso.datetime({ offset: true }).nullable(),
   })
   .meta({ id: 'Purchase' });
 
