@@ -102,6 +102,10 @@ smoke() {
     probe api 3333 "$path" 200 || failed=1
   done
   probe web 3000 /pagina-que-nao-existe-smoke 404 || failed=1
+  # O armazenamento de mídia de mentira (fotos de perfil), pela porta pública.
+  probe media 8080 /healthz 200 || failed=1
+  # E o caminho de ponta a ponta: o web repassa /avatars/ ao media (foto que não existe -> 404 do media).
+  probe web 3000 /avatars/00000000-0000-4000-8000-000000000000/512.webp 404 || failed=1
   return "$failed"
 }
 

@@ -38,6 +38,9 @@ ENV NODE_ENV=production \
     PORT=3333
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./
+# Pasta vazia, do usuário `node`, onde a homologação monta o volume do armazenamento de mídia de mentira
+# (apps/api/src/demo/demo-media.ts): o volume nasce com o dono dela. A produção não usa.
+RUN mkdir /media-data && chown node:node /media-data
 USER node
 EXPOSE 3333
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
