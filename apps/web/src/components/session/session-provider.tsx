@@ -22,7 +22,6 @@ import {
   useState,
 } from 'react';
 import { signInHref } from '@/lib/auth-links';
-import { loadContracts } from '@/lib/contracts-schemas';
 import { FIRST_STEPS_COOKIE, firstStepsCookie } from '@/lib/first-steps';
 import { isKnownSession } from '@/lib/same-session';
 
@@ -156,7 +155,7 @@ export function SessionProvider({
           const body = await response.json();
           // A conferência de rotina devolve a sessão que já temos: nada a validar, e o Zod nem é baixado.
           if (isKnownSession(stateRef.current, body)) return;
-          const { currentSessionSchema } = await loadContracts();
+          const { currentSessionSchema } = await import('@carmine/contracts/profile');
           setState(stateFrom(currentSessionSchema.parse(body), 'authenticated'));
         })
         .catch(() => {});

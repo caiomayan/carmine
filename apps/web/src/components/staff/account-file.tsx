@@ -1,16 +1,13 @@
 'use client';
 
+import type { GameMode, StaffAccountDetail, StaffRole, StaffSanction } from '@carmine/contracts';
+import { gameModeSchema } from '@carmine/contracts/game-server';
 import {
   accountAnonymizedSchema,
-  type GameMode,
-  gameModeSchema,
-  type StaffAccountDetail,
-  type StaffRole,
-  type StaffSanction,
   staffAccountDetailSchema,
   staffCan,
   staffRoleSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/staff';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useFormatter, useNow, useTranslations } from 'next-intl';

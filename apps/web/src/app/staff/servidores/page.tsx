@@ -1,4 +1,4 @@
-import { staffCan, staffServerListSchema } from '@carmine/contracts';
+import { staffCan, staffServerListSchema } from '@carmine/contracts/staff';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ServerEditor } from '@/components/staff/server-editor';

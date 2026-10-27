@@ -12,7 +12,6 @@ import {
 } from '@/components/animate-ui/components/radix/dialog';
 import { useSession } from '@/components/session/session-provider';
 import { Button } from '@/components/ui/button';
-import { loadContracts } from '@/lib/contracts-schemas';
 import { useInventory } from './inventory-provider';
 
 type Usages =
@@ -59,7 +58,7 @@ export function RemoveItemDialog({
     fetch(`/api/inventory/items/${uid}/usages`, { signal: controller.signal, cache: 'no-store' })
       .then(async (response) => {
         if (!response.ok) throw new Error(String(response.status));
-        const { itemUsagesSchema } = await loadContracts();
+        const { itemUsagesSchema } = await import('@carmine/contracts/inventory');
         setUsages({ status: 'ready', usages: itemUsagesSchema.parse(await response.json()) });
       })
       .catch(() => {

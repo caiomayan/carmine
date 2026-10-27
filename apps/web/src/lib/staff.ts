@@ -1,10 +1,5 @@
-import {
-  type SanctionType,
-  STAFF_ROLE_RANK,
-  type StaffRole,
-  type StaffSanction,
-  staffCan,
-} from '@carmine/contracts';
+import type { SanctionType, StaffRole, StaffSanction } from '@carmine/contracts';
+import { STAFF_ROLE_RANK, staffCan } from '@carmine/contracts/staff';
 
 /**
  * Regras do painel da Staff (S07) que o web antecipa para esconder ou explicar o que o papel

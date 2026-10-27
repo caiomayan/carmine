@@ -1,12 +1,7 @@
 'use client';
 
-import {
-  REPORT_REASON_LABELS,
-  type ReportStatus,
-  type StaffReport,
-  type StaffReportPage,
-  staffReportPageSchema,
-} from '@carmine/contracts';
+import type { ReportStatus, StaffReport, StaffReportPage } from '@carmine/contracts';
+import { REPORT_REASON_LABELS, staffReportPageSchema } from '@carmine/contracts/reports';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useFormatter, useNow, useTranslations } from 'next-intl';

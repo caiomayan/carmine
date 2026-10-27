@@ -1,11 +1,10 @@
+import type { StaffAccountSummary, StaffMember } from '@carmine/contracts';
 import {
   STAFF_SEARCH_LIMIT,
   STAFF_SEARCH_MIN_LENGTH,
-  type StaffAccountSummary,
-  type StaffMember,
   staffAccountSearchSchema,
   staffMemberListSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/staff';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';

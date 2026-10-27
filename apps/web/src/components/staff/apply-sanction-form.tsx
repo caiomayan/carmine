@@ -1,18 +1,20 @@
 'use client';
 
+import type {
+  SanctionCategory,
+  SanctionMeasure,
+  SanctionType,
+  StaffAccountDetail,
+} from '@carmine/contracts';
 import {
   isLastingSanction,
   RECIDIVISM_WINDOW_DAYS,
   requiresCheatProof,
   SANCTION_MAX_DURATION_MINUTES,
-  type SanctionCategory,
-  type SanctionMeasure,
-  type SanctionType,
-  type StaffAccountDetail,
   sanctionCategorySchema,
   sanctionEvidenceUrlSchema,
-  staffAccountDetailSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/moderation';
+import { staffAccountDetailSchema } from '@carmine/contracts/staff';
 import { AnimatePresence, m } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useId, useRef, useState } from 'react';

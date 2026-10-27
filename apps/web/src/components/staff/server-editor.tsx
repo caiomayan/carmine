@@ -1,12 +1,12 @@
 'use client';
 
+import type { StaffServer } from '@carmine/contracts';
 import {
-  type StaffServer,
   serverCodeSchema,
   serverHostname,
   serverShowcaseNameSchema,
   staffServerSchema,
-} from '@carmine/contracts';
+} from '@carmine/contracts/staff';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { LabelInput } from '@/components/ui/label-input';
