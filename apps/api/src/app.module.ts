@@ -4,6 +4,7 @@ import { AccountsModule } from './accounts/accounts.module.js';
 import { ActivityModule } from './activity/activity.module.js';
 import { AlertsModule } from './alerts/alerts.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { AvatarModerationModule } from './avatars/avatar-moderation.module.js';
 import { AvatarsModule } from './avatars/avatars.module.js';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { ClientIpModule } from './client-ip/client-ip.module.js';
@@ -56,6 +57,7 @@ export class AppModule {
         ActivityModule,
         ReportsModule,
         AvatarsModule,
+        AvatarModerationModule,
       ],
     };
   }
