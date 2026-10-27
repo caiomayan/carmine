@@ -21,7 +21,7 @@ O VIP é vendido em Pacotes avulsos (1, 3 e 6 meses; Pix e cartão; conta CPF no
 - O webhook perdido, repetido ou fora de ordem não concede nem tira VIP errado; o pior caso é o atraso até a próxima varredura.
 - Trocar de provedor (ou ligar a assinatura quando houver CNPJ) é um adaptador novo, sem mexer no domínio.
 - O falso exercita o caminho inteiro sem o Mercado Pago; o que o sandbox ainda precisa provar são as diferenças do provedor real (S14c).
-- Migração `0015` só aditiva (3 tabelas, 3 valores de enum de auditoria, 3 colunas), então o rollback é de imagem.
+- Migração `0016` só aditiva (3 tabelas, 3 valores de enum de auditoria, 3 colunas), então o rollback é de imagem.
 
 ## Considered Options
 

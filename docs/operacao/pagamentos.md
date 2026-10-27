@@ -1,6 +1,6 @@
 # Pagamentos e VIP (operação)
 
-Como operar a venda de Pacotes VIP (S14). Decisões: ADR 0022. A cobrança nasce **desligada**.
+Como operar a venda de Pacotes VIP (S14). Decisões: ADR 0023. A cobrança nasce **desligada**.
 
 ## Chaves de configuração (`.env` da VM)
 

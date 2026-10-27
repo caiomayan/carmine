@@ -399,7 +399,7 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 - DM com 16 jogadores: um VIP entra numa vaga extra sem ninguém sair; um jogador sem VIP não consegue usar as vagas extras.
 - Depois de restaurar um backup, os Períodos VIP são reconciliados com os pagamentos reais do Mercado Pago.
 
-**Decidido na implementação (S14a, ADR 0022; proposta em `carmine-s14-proposta.md`)**
+**Decidido na implementação (S14a, ADR 0023; proposta em `carmine-s14-proposta.md`)**
 - **Porta `Payments`** com adaptador do Mercado Pago (S14c) e um adaptador **falso** para dev, E2E e **homologação**, que roda o caminho inteiro (webhook assinado incluso); o falso só sobe em host de homologação. A cobrança nasce desligada (`PAYMENTS_ENABLED`).
 - **Reembolso de 7 dias automático pelo site** (a API estorna no provedor); a Staff só depois dos 7 dias ou no parcial por dias (`payments refund`). **Sem presente** para outra Conta: o Pagador (pai, mãe) paga o QR sem precisar de Conta.
 - **Itens VIP guardados 30 dias:** agente e kit de música saem inteiros; nas skins só o StatTrak e a nametag são guardados (a skin fica). Ligada por `VIP_HOLD_ENABLED`, junto com os Termos novos.
