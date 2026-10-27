@@ -2,6 +2,7 @@ import type {
   FriendsPlaying,
   LiveServer,
   LiveServerList,
+  NowPlaying,
   PlayingFriend,
   ProfilePlaying,
 } from '@carmine/contracts';
@@ -122,6 +123,33 @@ export function parseProfilePlaying(value: unknown): ProfilePlaying | null {
       map: server.map,
       address: server.address,
       state: server.state as 'online' | 'full' | 'offline',
+    },
+  };
+}
+
+/** `GET /api/me/playing` (o "jogando agora" do menu e da própria linha do Ranking); `null` se o formato não é o do contrato. */
+export function parseNowPlaying(value: unknown): NowPlaying | null {
+  if (!isRecord(value) || !('server' in value)) return null;
+  const server = value.server;
+  if (server === null) return { server: null };
+  if (
+    !isRecord(server) ||
+    !isString(server.id) ||
+    !isString(server.name) ||
+    !isNullableString(server.showcaseName) ||
+    !isString(server.mode) ||
+    !MODES.has(server.mode) ||
+    !isNullableString(server.map)
+  ) {
+    return null;
+  }
+  return {
+    server: {
+      id: server.id,
+      name: server.name,
+      showcaseName: server.showcaseName,
+      mode: server.mode as NonNullable<NowPlaying['server']>['mode'],
+      map: server.map,
     },
   };
 }
