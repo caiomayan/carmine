@@ -79,6 +79,12 @@ x-media-env: &media-env
 x-payments-key: &payments-key
   - payments-key:/keys:ro
 
+# Analytics de produto na homologação (A1, ADR 0021): o adaptador falso só registra os eventos no log da API
+# (`docker compose logs api | grep Analytics`) e nada sai de lá; o PostHog de verdade nunca é ligado aqui.
+x-analytics-env: &analytics-env
+  ANALYTICS_DRIVER: log
+  ANALYTICS_ENVIRONMENT: staging
+
 x-api-image: &api-image ghcr.io/caiomayan/carmine-api:${IMAGE_TAG:?defina IMAGE_TAG (sha-<commit>)}
 
 services:
@@ -133,7 +139,7 @@ services:
   api:
     image: *api-image
     environment:
-      <<: [*api-env, *media-env]
+      <<: [*api-env, *media-env, *analytics-env]
     volumes: *payments-key
     networks:
       edge: {}

@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { Redis } from 'ioredis';
 import { Pool } from 'pg';
+import { Analytics, AnalyticsPreferences } from '../analytics/analytics.js';
+import { createAnalyticsTransport } from '../analytics/analytics-factory.js';
 import { SessionStore } from '../auth/sessions.js';
 import { loadConfig } from '../config/config.js';
 import { createDatabase } from '../database/database.js';
@@ -24,6 +26,12 @@ const valkey = new Redis(config.valkeyUrl, {
 valkey.on('error', () => {});
 const sessions = new SessionStore(valkey, config.session);
 const cache = new EquippedCache(valkey, db);
+// Para apagar a pessoa no PostHog (A1); sem a chave do projeto, é nulo e o passo não existe.
+const analytics = new Analytics(
+  createAnalyticsTransport(config.analytics),
+  new AnalyticsPreferences(db),
+  config.analytics.environment,
+);
 try {
   process.exitCode = await runAccountsCli(process.argv.slice(2), {
     findAccountId: async (publicId) => {
@@ -44,6 +52,7 @@ try {
     erasure: new AccountErasure(db, {
       dropSessions: (accountId) => sessions.destroyAllOf(accountId),
       invalidateEquipped: (steamId) => cache.invalidate(steamId),
+      erasePerson: (accountId) => analytics.erasePerson(accountId),
     }),
     out: (line) => console.log(line),
     err: (line) => console.error(line),

@@ -42,7 +42,14 @@ export interface ErasureDeps {
   invalidateEquipped: (steamId: string) => Promise<void>;
   /** Tira os cargos do Discord de quem estava vinculado (S15); ausente: o Discord está desligado. */
   removeDiscordRoles?: (discordId: string) => Promise<void>;
+  /**
+   * Apaga a pessoa e os eventos dela no PostHog (A1, ADR 0021); ausente ou `off`: a análise está desligada. `pending`:
+   * não deu agora (sem a chave de gestão ou o PostHog fora) e o Dono apaga à mão (`docs/operacao/exclusao-de-dados.md`).
+   */
+  erasePerson?: (accountId: string) => Promise<AnalyticsErasure>;
 }
+
+export type AnalyticsErasure = 'removed' | 'absent' | 'pending' | 'off';
 
 export interface Erasure {
   publicId: number;
@@ -51,6 +58,8 @@ export interface Erasure {
   steamIdRetained: boolean;
   /** As sessões do site caíram (com o Valkey fora, não; elas expiram sozinhas). */
   sessionsDropped: boolean;
+  /** O que houve com a pessoa no PostHog; `pending` pede o passo manual. */
+  analytics: AnalyticsErasure;
 }
 
 /**
@@ -229,6 +238,14 @@ export class AccountErasure {
       // Melhor esforço: a Conta já foi anonimizada; um cargo que sobrar não identifica ninguém.
       await this.deps.removeDiscordRoles?.(discordId).catch(() => undefined);
     }
-    return { publicId, anonymizedAt: now, steamIdRetained, sessionsDropped };
+    // Depois do commit e sem nunca falhar a exclusão: o que não der agora fica como pendente.
+    const analytics = await this.deps.erasePerson?.(accountId).catch(() => 'pending' as const);
+    return {
+      publicId,
+      anonymizedAt: now,
+      steamIdRetained,
+      sessionsDropped,
+      analytics: analytics ?? 'off',
+    };
   }
 }
