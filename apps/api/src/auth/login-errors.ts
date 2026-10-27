@@ -12,6 +12,7 @@ import {
   Inject,
 } from '@nestjs/common';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Analytics } from '../analytics/analytics.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { RateLimitExceeded } from '../rate-limit/rate-limit.guard.js';
 
@@ -32,9 +33,13 @@ export function loginErrorUrl(publicWebUrl: string, error: LoginError, returnTo:
  */
 @Catch(RateLimitExceeded)
 export class LoginRateLimitFilter implements ExceptionFilter {
-  constructor(@Inject(APP_CONFIG) private readonly config: AppConfig) {}
+  constructor(
+    @Inject(APP_CONFIG) private readonly config: AppConfig,
+    @Inject(Analytics) private readonly analytics: Analytics,
+  ) {}
 
   catch(exception: RateLimitExceeded, host: ArgumentsHost): void {
+    this.analytics.capture('login_falhou', { props: { motivo: 'limite' } });
     const request = host.switchToHttp().getRequest<FastifyRequest>();
     const reply = host.switchToHttp().getResponse<FastifyReply>();
     const { returnTo } = (request.query ?? {}) as { returnTo?: string };

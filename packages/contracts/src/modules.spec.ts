@@ -35,6 +35,7 @@ describe('módulos do contrato como subpaths', () => {
       'avatar-rules.ts',
       'avatar-url.ts',
       'analytics.ts',
+      'analytics-routes.ts',
     ]);
     for (const name of modules) {
       if (['index.ts', 'zod-jitless.ts'].includes(name) || subpathOnly.has(name)) continue;

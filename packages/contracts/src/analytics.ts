@@ -1,5 +1,6 @@
 import './zod-jitless.js';
 import { z } from 'zod';
+import { ANALYTICS_ROUTES } from './analytics-routes.js';
 
 /**
  * Os eventos de analytics de produto (A1, ADR 0021). O **plano de eventos** (`docs/analytics/plano-de-eventos.md`) é
@@ -18,26 +19,9 @@ export const ANALYTICS_PLAN_VERSION = '1.0';
 export const analyticsEnvironmentSchema = z.enum(['producao', 'staging']);
 export type AnalyticsEnvironment = z.infer<typeof analyticsEnvironmentSchema>;
 
-/** As rotas do site como o plano as nomeia (`rota` e `destino`); qualquer outra é `outra`. */
-export const ANALYTICS_ROUTES = [
-  'inicio',
-  'perfil',
-  'ranking',
-  'inventario',
-  'loadout',
-  'entrar',
-  'configuracoes',
-  'vip',
-  'minhas_compras',
-  'regras',
-  'termos',
-  'privacidade',
-  'reembolso',
-  'contato',
-  'outra',
-] as const;
+export { ANALYTICS_ROUTES, type AnalyticsRoute, analyticsRouteOf } from './analytics-routes.js';
+
 export const analyticsRouteSchema = z.enum(ANALYTICS_ROUTES);
-export type AnalyticsRoute = z.infer<typeof analyticsRouteSchema>;
 
 const modo = z.enum(['retake', 'deathmatch']);
 /** O tipo de Item como o plano o nomeia (`INVENTORY_ITEM_TYPES` do contrato do Inventário). */

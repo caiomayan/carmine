@@ -2,6 +2,7 @@ import { Logger, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import type { Redis } from 'ioredis';
 import { AccountsModule } from '../accounts/accounts.module.js';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { LoadoutModule } from '../loadout/loadout.module.js';
 import { ModerationModule } from '../moderation/moderation.module.js';
@@ -23,7 +24,14 @@ const DEFAULT_STEAM_OPENID_URL = 'https://steamcommunity.com/openid/login';
 
 /** Login Steam, sessões do site e proteção CSRF (S03). */
 @Module({
-  imports: [AccountsModule, VipModule, LoadoutModule, SessionsModule, ModerationModule],
+  imports: [
+    AccountsModule,
+    VipModule,
+    LoadoutModule,
+    SessionsModule,
+    ModerationModule,
+    AnalyticsModule,
+  ],
   controllers: [AuthController],
   providers: [
     {

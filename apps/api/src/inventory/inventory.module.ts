@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+import { Analytics } from '../analytics/analytics.js';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { Catalog } from '../catalog/catalog.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { EquippedModule } from '../equipped/equipped.module.js';
@@ -11,7 +13,7 @@ import { ItemRules } from './item-rules.js';
 
 /** Inventário das Contas (S04). O catálogo da cs2-lib vem do `CatalogModule`, carregado uma vez. */
 @Module({
-  imports: [VipModule, EquippedModule],
+  imports: [VipModule, EquippedModule, AnalyticsModule],
   controllers: [InventoryController],
   providers: [
     {
@@ -21,9 +23,14 @@ import { ItemRules } from './item-rules.js';
     },
     {
       provide: Inventory,
-      inject: [DATABASE, ItemRules, VipPeriods, EquippedCache],
-      useFactory: (db: Database, rules: ItemRules, vip: VipPeriods, cache: EquippedCache) =>
-        new Inventory(db, rules, vip, cache),
+      inject: [DATABASE, ItemRules, VipPeriods, EquippedCache, Analytics],
+      useFactory: (
+        db: Database,
+        rules: ItemRules,
+        vip: VipPeriods,
+        cache: EquippedCache,
+        analytics: Analytics,
+      ) => new Inventory(db, rules, vip, cache, () => new Date(), analytics),
     },
   ],
   exports: [Inventory],

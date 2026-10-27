@@ -102,7 +102,9 @@ export class AccountsService {
    * fusão. `firstLogin` diz se foi este login que reivindicou a Conta; sob logins simultâneos,
    * só um deles.
    */
-  async claimOnLogin(steamId: string): Promise<{ account: Account; firstLogin: boolean }> {
+  async claimOnLogin(
+    steamId: string,
+  ): Promise<{ account: Account; firstLogin: boolean; created: boolean }> {
     const known = await this.findBySteamId(steamId);
     const summary =
       known && known.anonymizedAt === null ? null : await this.avatars.lookup(steamId);
@@ -213,7 +215,7 @@ export class AccountsService {
     steamId: bigint,
     summary: SteamSummary | null,
     now: Date,
-  ): Promise<{ account: Account; firstLogin: boolean } | null> {
+  ): Promise<{ account: Account; firstLogin: boolean; created: boolean } | null> {
     const [found] = await tx
       .select()
       .from(accounts)
@@ -223,14 +225,14 @@ export class AccountsService {
     if (existing) {
       // Anonimizada com um ban valendo: entra só para ver o ban, sem reivindicar nada de novo.
       if (existing.claimedAt !== null || existing.anonymizedAt !== null) {
-        return { account: toAccount(existing), firstLogin: false };
+        return { account: toAccount(existing), firstLogin: false, created: false };
       }
       const [claimed] = await tx
         .update(accounts)
         .set({ claimedAt: now })
         .where(eq(accounts.id, existing.id))
         .returning();
-      return { account: toAccount(claimed as AccountRow), firstLogin: true };
+      return { account: toAccount(claimed as AccountRow), firstLogin: true, created: false };
     }
     const created = await insertAccount(tx, steamId, summary?.personaName ?? '', {
       claimedAt: now,
@@ -238,7 +240,7 @@ export class AccountsService {
       avatarFetchedAt: summary ? now : null,
       steamAvatarUrl: summary?.avatarUrl ?? null,
     });
-    return created ? { account: created, firstLogin: true } : null;
+    return created ? { account: created, firstLogin: true, created: true } : null;
   }
 }
 

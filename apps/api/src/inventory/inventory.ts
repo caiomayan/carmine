@@ -7,6 +7,7 @@ import {
   type RemovedInventoryItem,
 } from '@carmine/contracts';
 import { and, count, desc, eq, isNotNull, isNull, lt, sql } from 'drizzle-orm';
+import type { Analytics } from '../analytics/analytics.js';
 import type { Database } from '../database/database.js';
 import { accounts, inventoryItems } from '../database/schema.js';
 import type { LoadoutChangeListener } from '../equipped/equipped-cache.js';
@@ -63,6 +64,8 @@ export class Inventory {
     private readonly vipPeriods: VipPeriods,
     private readonly listener: LoadoutChangeListener,
     private readonly clock: () => Date = () => new Date(),
+    /** Os eventos do plano de analytics (A1); sempre depois do commit. Sem ele, nada é emitido. */
+    private readonly analytics: Pick<Analytics, 'capture'> = { capture: () => undefined },
   ) {}
 
   /** Os Itens da Conta, do mais novo para o mais antigo. */
@@ -78,16 +81,25 @@ export class Inventory {
   async add(accountId: string, item: Cs2Item): Promise<InventoryItem> {
     const valid = await this.validate(accountId, item);
     const now = this.clock();
-    return this.db.transaction(async (tx) => {
+    const { created, total } = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       await this.purge(tx, accountId, now);
-      await this.assertRoom(tx, accountId);
+      const before = await this.assertRoom(tx, accountId);
       const [row] = await tx
         .insert(inventoryItems)
         .values({ accountId, item: withCounterAtZero(valid), createdAt: now, updatedAt: now })
         .returning();
-      return toInventoryItem(row as Row);
+      return { created: toInventoryItem(row as Row), total: before + 1 };
     });
+    const props = this.rules.eventProps(valid);
+    if (props) {
+      this.analytics.capture('item_adicionado', {
+        accountId,
+        props: { ...props, total_apos: total },
+        at: now,
+      });
+    }
+    return created;
   }
 
   /**
@@ -120,6 +132,8 @@ export class Inventory {
     // Removido entre a leitura e a escrita.
     if (!row) throw notFound();
     await this.listener.loadoutChanged(accountId);
+    const props = this.rules.eventProps(valid);
+    if (props) this.analytics.capture('item_editado', { accountId, props });
     return toInventoryItem(row);
   }
 
@@ -136,18 +150,39 @@ export class Inventory {
    */
   async remove(accountId: string, uid: string): Promise<RemovedInventoryItem> {
     const now = this.clock();
-    const removed = await this.db.transaction(async (tx) => {
-      await this.findActive(tx, accountId, uid);
+    const { removed, item, total } = await this.db.transaction(async (tx) => {
+      const current = await this.findActive(tx, accountId, uid);
       const usages = await itemUsagesOf(tx, uid);
       await tx.update(inventoryItems).set({ deletedAt: now }).where(eq(inventoryItems.id, uid));
       await this.purge(tx, accountId, now);
+      const [left] = await tx
+        .select({ total: count() })
+        .from(inventoryItems)
+        .where(and(eq(inventoryItems.accountId, accountId), isNull(inventoryItems.deletedAt)));
       return {
-        uid,
-        usages,
-        restorableUntil: new Date(now.getTime() + RESTORE_WINDOW_MS).toISOString(),
+        removed: {
+          uid,
+          usages,
+          restorableUntil: new Date(now.getTime() + RESTORE_WINDOW_MS).toISOString(),
+        },
+        item: current.item,
+        total: left?.total ?? 0,
       };
     });
     await this.listener.loadoutChanged(accountId);
+    const props = this.rules.eventProps(item);
+    if (props) {
+      this.analytics.capture('item_removido', {
+        accountId,
+        props: {
+          tipo: props.tipo,
+          item_id: props.item_id,
+          em_uso: removed.usages.loadout.length > 0 || removed.usages.presets.length > 0,
+          total_apos: total,
+        },
+        at: now,
+      });
+    }
     return removed;
   }
 
@@ -159,10 +194,11 @@ export class Inventory {
    */
   async restore(accountId: string, uid: string): Promise<InventoryItem> {
     const now = this.clock();
-    const restored = await this.db.transaction(async (tx) => {
+    const { restored, afterSeconds } = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       const row = await this.findOwned(tx, accountId, uid);
-      if (row.deletedAt === null) return toInventoryItem(row);
+      // Um clique repetido: o Item já estava no Inventário, nada voltou (e nada é medido).
+      if (row.deletedAt === null) return { restored: toInventoryItem(row), afterSeconds: null };
       if (now.getTime() - row.deletedAt.getTime() > RESTORE_WINDOW_MS) {
         throw rejection('restore_expired', 'O prazo para desfazer a remoção acabou');
       }
@@ -172,9 +208,19 @@ export class Inventory {
         .set({ deletedAt: null })
         .where(eq(inventoryItems.id, uid))
         .returning();
-      return toInventoryItem(back as Row);
+      return {
+        restored: toInventoryItem(back as Row),
+        afterSeconds: Math.round((now.getTime() - row.deletedAt.getTime()) / 1000),
+      };
     });
     await this.listener.loadoutChanged(accountId);
+    if (afterSeconds !== null) {
+      this.analytics.capture('item_restaurado', {
+        accountId,
+        props: { segundos_ate_desfazer: afterSeconds },
+        at: now,
+      });
+    }
     return restored;
   }
 
@@ -197,14 +243,17 @@ export class Inventory {
       .for('update');
   }
 
-  private async assertRoom(tx: Transaction, accountId: string): Promise<void> {
+  /** Garante espaço para mais um Item e devolve quantos a Conta tem agora. */
+  private async assertRoom(tx: Transaction, accountId: string): Promise<number> {
     const [result] = await tx
       .select({ total: count() })
       .from(inventoryItems)
       .where(and(eq(inventoryItems.accountId, accountId), isNull(inventoryItems.deletedAt)));
-    if ((result?.total ?? 0) >= INVENTORY_MAX_ITEMS) {
+    const total = result?.total ?? 0;
+    if (total >= INVENTORY_MAX_ITEMS) {
       throw rejection('inventory_full', `O Inventário já tem ${INVENTORY_MAX_ITEMS} Itens`);
     }
+    return total;
   }
 
   private async purge(tx: Transaction, accountId: string, now: Date): Promise<void> {
