@@ -1615,7 +1615,8 @@
       "accounts": "Contas",
       "audit": "Auditoria",
       "servers": "Servidores",
-      "reports": "Denúncias"
+      "reports": "Denúncias",
+      "photos": "Fotos"
     },
     "roles": {
       "owner": "Dono",
@@ -1659,7 +1660,17 @@
       "vipActive": "VIP até {date}",
       "vipNone": "Sem VIP",
       "protected": "Esta Conta é da Staff com papel igual ou maior que o seu: você não pode puni-la.",
-      "self": "Esta é a sua Conta: você não pode se punir."
+      "self": "Esta é a sua Conta: você não pode se punir.",
+      "avatar": {
+        "title": "Foto de perfil",
+        "imageAlt": "A foto de perfil da Conta",
+        "steam": "A Conta usa a foto da Steam.",
+        "active": "Foto própria no ar, enviada em {when}.",
+        "suspended": "Foto própria fora do ar (suspensa por denúncias), enviada em {when}. Decida na fila de fotos.",
+        "blockedUntil": "Envio de foto bloqueado até {when} (o jogador só vê \"indisponível\").",
+        "removals": "Remoções anteriores",
+        "removal": "{when}: {reason}. {note} (por {name})"
+      }
     },
     "reason": {
       "label": "Motivo",
@@ -1901,6 +1912,66 @@
       "resolution": {
         "sanctioned": "Virou Punição, aplicada por {name}.",
         "archived": "Arquivada por {name}: {reason}"
+      },
+      "loadMore": "Carregar mais",
+      "loadFailed": "Não deu para carregar mais agora.",
+      "end": "Fim da fila."
+    },
+    "photos": {
+      "title": "Fotos de perfil",
+      "subtitle": "{count, plural, =0 {Nenhuma foto em análise} one {# foto em análise} other {# fotos em análise}}. A Staff decide em até 24 h; as mais antigas vêm primeiro.",
+      "subtitleBare": "Fotos de perfil denunciadas pelos jogadores.",
+      "tabs": {
+        "label": "Estado das fotos",
+        "open": "Em análise",
+        "decided": "Decididas"
+      },
+      "empty": {
+        "open": "Nenhuma foto para analisar. Quando alguém denunciar uma foto de perfil, ela aparece aqui.",
+        "decided": "Nenhuma foto decidida ainda."
+      },
+      "cardLabel": "Foto de {name}",
+      "imageAlt": "Foto de perfil enviada por {name}",
+      "state": {
+        "active": "No ar",
+        "suspended": "Fora do ar (suspensa)",
+        "removed": "Removida",
+        "replaced": "Trocada",
+        "reverted": "Devolvida à Steam"
+      },
+      "reporters": "{count, plural, one {# Conta denunciou} other {# Contas denunciaram}}",
+      "firstReport": "primeira denúncia {when}",
+      "deadline": {
+        "left": "{hours, plural, =0 {resta menos de 1 hora} one {resta # hora} other {restam # horas}} do prazo de 24 h",
+        "over": "prazo de 24 h vencido há {hours, plural, one {# hora} other {# horas}}"
+      },
+      "previous": "{count, plural, one {Esta Conta já teve # foto removida} other {Esta Conta já teve # fotos removidas}}",
+      "openAccount": "Abrir a Conta",
+      "keep": {
+        "open": "Manter a foto",
+        "submit": "Manter foto",
+        "done": "Foto mantida; as denúncias foram arquivadas."
+      },
+      "remove": {
+        "open": "Remover a foto",
+        "submit": "Remover foto",
+        "done": "Foto removida; a Conta voltou à foto da Steam.",
+        "reason": "Motivo da remoção",
+        "reasonPlaceholder": "Escolha o motivo",
+        "reasonRequired": "Escolha o motivo da remoção.",
+        "blockDays": "Bloquear novos envios por (dias)",
+        "blockPlaceholder": "Pela regra",
+        "blockHint": "Em branco, vale a regra: 7 dias na primeira remoção e 30 na reincidência em 90 dias. 0 não bloqueia. O jogador só vê \"indisponível\".",
+        "blockInvalid": "Use um número inteiro de 0 a {max}.",
+        "confirm": {
+          "title": "Remover esta foto?",
+          "description": "A Conta volta à foto da Steam na hora e a imagem fica guardada em privado por 30 dias.",
+          "label": "Remover foto"
+        }
+      },
+      "decision": {
+        "keep": "Mantida por {name}: {note}",
+        "remove": "Removida por {name} ({reason}): {note}"
       },
       "loadMore": "Carregar mais",
       "loadFailed": "Não deu para carregar mais agora.",
