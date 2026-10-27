@@ -51,6 +51,8 @@
   gap: 8px;
   width: min(100%, 460px);
   margin-top: 10px;
+  /* A vaga do VIP entra deslizando da direita: sem isso, nos primeiros instantes ela passa da tela e cria rolagem lateral. */
+  overflow-x: clip;
 }
 .vp-slot {
   display: grid;
