@@ -101,10 +101,10 @@ test.describe('faixa do fim do VIP', () => {
       month: '2-digit',
       day: '2-digit',
     }).format(new Date());
-    await page.evaluate(
-      ([key, value]) => localStorage.setItem(key, value),
-      [KEY, `${today}|ending_today`],
-    );
+    await page.evaluate(({ key, value }) => localStorage.setItem(key, value), {
+      key: KEY,
+      value: `${today}|ending_today`,
+    });
     await page.reload();
     await expect(band(page)).toBeVisible();
   });
