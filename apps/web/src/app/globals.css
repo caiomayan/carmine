@@ -111,7 +111,9 @@
   --animate-rise: rise var(--dur-enter) var(--ease-out) backwards;
   --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
   --animate-shimmer: shimmer var(--dur-skel) linear infinite;
-  --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) infinite;
+  /* O "ao vivo" pulsa 3 vezes ao aparecer e para: 11 pontos pulsando para sempre (Servidor) custavam ~55 ms por quadro. O fim do
+     pulso deixa o halo no tamanho do próprio ponto (mesma cor), então o ponto parado fica igual ao de antes. */
+  --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) 3;
   /* a faixa de atividade da home: o trilho anda a metade (uma cópia) por volta; a duração vem da largura */
   --animate-marquee: marquee var(--marquee-duration, 30s) linear infinite;
 

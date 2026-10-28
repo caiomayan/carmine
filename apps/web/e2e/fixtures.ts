@@ -118,13 +118,15 @@ export async function settle(page: Page) {
       .catch(() => undefined);
     const again = await page.evaluate(async () => {
       const finite = () =>
-        document
-          .getAnimations()
-          .filter(
-            (a) =>
-              a.timeline === document.timeline &&
-              a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
-          );
+        document.getAnimations().filter(
+          (a) =>
+            a.timeline === document.timeline &&
+            a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY &&
+            // O pulso do "ao vivo" é decorativo (3 pulsos de 2,4 s ao aparecer): a página já está parada sem ele.
+            !(
+              a.effect instanceof KeyframeEffect && a.effect.target?.closest?.('.animate-pulse-dot')
+            ),
+        );
       const running = finite();
       await Promise.all(running.map((a) => a.finished.catch(() => undefined)));
       // Dois quadros: o React monta o que acabou de chegar e as entradas novas já se registram.
