@@ -259,7 +259,10 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
   test('o interruptor em Configurações muda na hora, para a contagem e volta atrás se a API recusar', async ({
     page,
     request,
+    expectedConsoleErrors,
   }) => {
+    // A recusa da API (500) é provocada de propósito mais abaixo.
+    expectedConsoleErrors.push(/status of 500/);
     const account = await createUnclaimedAccount(request, 'Analytics Interruptor');
     await signInByRequest(page, account.steamId);
     const posthog = await watchPostHog(page);
