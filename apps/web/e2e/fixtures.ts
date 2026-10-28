@@ -122,9 +122,10 @@ export async function settle(page: Page) {
           (a) =>
             a.timeline === document.timeline &&
             a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY &&
-            // O pulso do "ao vivo" é decorativo (3 pulsos de 2,4 s ao aparecer): a página já está parada sem ele.
+            // O pulso e o brilho do "ao vivo" são decorativos (3 pulsos de 2,4 s e 2 brilhos de 2,6 s ao aparecer): a página já está parada sem ele.
             !(
-              a.effect instanceof KeyframeEffect && a.effect.target?.closest?.('.animate-pulse-dot')
+              a.effect instanceof KeyframeEffect &&
+              a.effect.target?.closest?.('.animate-pulse-dot, .vh-shine')
             ),
         );
       const running = finite();

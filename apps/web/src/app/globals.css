@@ -131,12 +131,11 @@
     }
   }
 
+  /* A faixa de brilho do esqueleto anda por transform (compositor): a versão antiga animava background-position, que repinta
+     o elemento a cada quadro na thread principal. */
   @keyframes shimmer {
-    from {
-      background-position: 120% 0;
-    }
     to {
-      background-position: -120% 0;
+      transform: translateX(100%);
     }
   }
 
@@ -182,15 +181,22 @@
 
 /* silhueta de carregamento com varredura */
 @utility shimmer {
-  background:
-    linear-gradient(
-      90deg,
-      var(--surface-2) 0%,
-      color-mix(in srgb, var(--text) 8%, var(--surface-2)) 50%,
-      var(--surface-2) 100%
-    )
-    0 0 / 240% 100%;
-  animation: var(--animate-shimmer);
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--text) 9%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-100%);
+    animation: var(--animate-shimmer);
+  }
 }
 
 /*
@@ -471,7 +477,7 @@
   }
 
   /* o skeleton e o pulso do "ao vivo" param; o resto já encurta pelos tokens */
-  .shimmer,
+  .shimmer::after,
   .animate-pulse-dot {
     animation: none;
   }

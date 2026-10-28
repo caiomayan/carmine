@@ -72,21 +72,28 @@
     transform: translateY(2px);
   }
 }
+/* A faixa anda por transform num pseudo-elemento (compositor), não por background-position (repintura por quadro). */
 .pf-skel {
-  background:
-    linear-gradient(
-      100deg,
-      transparent 20%,
-      color-mix(in srgb, var(--text) 16%, transparent) 50%,
-      transparent 80%
-    )
-    -120% 0 / 60% 100% no-repeat,
-    var(--surface-2);
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.pf-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--text) 16%, transparent) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
   animation: pf-skel 1.5s linear infinite;
 }
 @keyframes pf-skel {
   to {
-    background-position: 220% 0;
+    transform: translateX(100%);
   }
 }
 
@@ -139,7 +146,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pf-tick-up,
-  .pf-skel {
+  .pf-skel::after {
     animation: none;
   }
 }
