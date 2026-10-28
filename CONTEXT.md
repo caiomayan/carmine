@@ -177,3 +177,50 @@ _Evitar_: report, reclamação
 **Log de chat** (`chat_messages`):
 O registro de tudo o que é dito no chat dos Servidores Carmine (com o horário, o time de quem falou e se foi chat de time), retido por 30 dias, para a moderação. Registra o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off`.
 _Evitar_: histórico de chat, chat log
+
+## Termos planejados (beta aberto)
+
+Termos já decididos para as fatias de [`docs/specs/beta-aberto.md`](docs/specs/beta-aberto.md). Cada fatia, ao entrar, move o seu termo para a seção certa acima e ajusta os termos que ele substitui.
+
+**Plano** (`Plan`), S20:
+O que a Conta assina para ter benefícios. Há dois: **Capo** (`capo`) e **Padrinho** (`padrinho`). Substitui o VIP, que some da interface.
+_Evitar_: VIP, premium, assinatura (a assinatura é só uma forma de pagar)
+
+**Mapa jogado** (`MapPlay`), S17:
+Um mapa do começo ao fim (ou até um reinício) num Servidor Carmine, que agrupa os rounds da coleta por round. Interno: não aparece para o jogador.
+_Evitar_: partida (nos servidores abertos não há Partida)
+
+**Resumo do round** (`RoundSummary`), S17:
+O que cada jogador fez num round (kills, mortes, assistências, dano, sobreviveu, foi trocado, abertura, multi-kill, clutch, KAST), calculado pela API no fim do round e guardado para sempre.
+
+**Rating Carmine** (`rating`), S21:
+A estatística principal de desempenho, com média 1,00, calculada por Modo (Retake e 5v5) a partir dos Resumos do round, mais um **Rating Carmine geral**. Aparece só depois de 100 rounds no Modo ("Calibrando").
+_Evitar_: HLTV Rating (é marca de outra empresa), nota, skill
+
+**Pontuação DM** (`dmScore`), S21:
+O número de desempenho do Deathmatch, numa escala própria em torno de 100, porque o DM não tem round.
+
+**Rating escondido** (`skillRating`), S21:
+O rating de habilidade (Glicko-2) que ninguém vê, usado para equilibrar os times das Salas e, no futuro, no matchmaking.
+
+**Modo anônimo** (`anonymousMode`), S22:
+Benefício do Padrinho: no servidor, o nome vira uma palavra estranha e sem sentido; nas Salas, quem era só aparece na página da Partida depois do fim.
+_Evitar_: streamer mode, incógnito
+
+**Sala** (`Room`), S23:
+Uma partida privada que uma Conta com Plano cria no site, com o Modo escolhido (5v5, Retake ou Deathmatch) e um servidor só para ela.
+_Evitar_: lobby, sala privada (na interface basta "Sala")
+
+**Partida** (`Match`), S23:
+Muda de sentido: passa a ser só o jogo de uma **Sala**, com página, placar e, no 5v5 com 5 contra 5, demo. Os servidores abertos e o 5v5 Casual não têm Partida.
+
+**Amizade** (`Friendship`), S28:
+Vínculo mútuo entre duas Contas no Carmine (um pede, o outro aceita). Os amigos da Steam viram sugestão.
+
+**Time** (`Team`), S30:
+Grupo fixo com nome, tag, logo e dono, que desafia outros Times. Um jogador pode estar em até 5.
+_Evitar_: clã, equipe
+
+**Consigliere** (`agent`), S27:
+O assistente de IA do Carmine: responde sobre os dados e faz ações com confirmação.
+_Evitar_: bot, IA, Treinador
