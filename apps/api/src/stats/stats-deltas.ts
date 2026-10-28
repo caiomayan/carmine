@@ -48,7 +48,18 @@ export interface TeamKill {
   weapon: string;
 }
 
+/** Uma Sessão de jogo aceita (fim novo, com Conta e duração válida): o analytics mede `sessao_de_jogo_encerrada`. */
+export interface AcceptedSession {
+  /** O ID do evento do plugin (UUID v7): o `uuid` do analytics sai dele, então reenviar o lote não duplica. */
+  id: string;
+  steamId: string;
+  at: Date;
+  seconds: number;
+}
+
 export interface CollectedStats {
+  /** As Sessões de jogo que entraram nas somas. */
+  sessions: AcceptedSession[];
   deltas: StatsDelta[];
   /** As mesmas somas por dia (S12b): o que entra em uma entra na outra, pelas mesmas regras. */
   dailyDeltas: DayDelta[];
@@ -77,6 +88,7 @@ export function collectStats(
   const daily = new Map<string, StatsDelta>();
   const weapons = new Map<string, WeaponDelta>();
   const teamKills: TeamKill[] = [];
+  const sessions: AcceptedSession[] = [];
   let ignored = 0;
 
   /** Soma para a Conta, se existir, na semana e no dia; diz se algo foi somado. */
@@ -118,6 +130,7 @@ export function collectStats(
       ignored++;
       continue;
     }
+    sessions.push({ id: end.id, steamId: end.steamId, at: stop, seconds });
     for (const piece of splitByWeek(start, stop)) {
       addTo(weekly, end.steamId, piece.weekStart, { secondsPlayed: piece.seconds });
     }
@@ -127,6 +140,7 @@ export function collectStats(
   }
 
   return {
+    sessions,
     deltas: [...weekly.values()],
     dailyDeltas: [...daily.values()].map(({ weekStart, ...rest }) => ({ ...rest, day: weekStart })),
     weapons: [...weapons.values()],

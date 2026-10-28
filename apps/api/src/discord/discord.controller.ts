@@ -33,6 +33,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Analytics } from '../analytics/analytics.js';
 import { LoginRateLimitFilter } from '../auth/login-errors.js';
 import { AuthenticatedGuard, CurrentSession } from '../auth/session.guard.js';
 import type { Session } from '../auth/sessions.js';
@@ -59,6 +60,7 @@ export class DiscordController {
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Inject(DISCORD) private readonly discord: DiscordIntegration | null,
     @Inject(DiscordLinks) private readonly links: DiscordLinks,
+    @Inject(Analytics) private readonly analytics: Analytics,
   ) {}
 
   @Get('auth/discord/link')
@@ -101,6 +103,10 @@ export class DiscordController {
         maxAge: DISCORD_FLOW_TTL_SECONDS,
       });
       reply.redirect(redirectUrl, HttpStatus.FOUND);
+      this.analytics.capture('discord_vinculo_iniciado', {
+        accountId: session.accountId,
+        props: {},
+      });
     } catch (error) {
       this.logger.error(`Vínculo do Discord não começou: ${(error as Error).message}`);
       reply.redirect(this.backUrl(back, 'indisponivel'), HttpStatus.FOUND);
@@ -141,6 +147,15 @@ export class DiscordController {
         { code: str(query.code), state: str(query.state), error: str(query.error) },
       );
       reply.redirect(this.backUrl(returnTo, result), HttpStatus.SEE_OTHER);
+      // `sem-sessao` e `desligado` não são do vínculo: não medem. O ID e o nome do Discord nunca saem.
+      if (result === 'vinculado') {
+        this.analytics.capture('discord_vinculado', { accountId: session.accountId, props: {} });
+      } else if (result !== 'sem-sessao' && result !== 'desligado') {
+        this.analytics.capture('discord_vinculo_falhou', {
+          accountId: session.accountId,
+          props: { resultado: result },
+        });
+      }
     } catch (error) {
       this.logger.error(`Vínculo do Discord falhou: ${(error as Error).message}`);
       reply.redirect(this.backUrl('/', 'indisponivel'), HttpStatus.SEE_OTHER);
@@ -178,17 +193,31 @@ export class DiscordController {
   @ApiUnauthorizedResponse({ description: 'Sem sessão, ou ela expirou' })
   @ApiServiceUnavailableResponse({ description: 'O Discord não respondeu; o vínculo continua' })
   async unlink(@CurrentSession() session: Session): Promise<void> {
+    const linked = await this.links.of(session.accountId);
     if (!this.discord) {
       // Integração desligada: não há como falar com o Discord, então só desfaz o vínculo.
       await this.links.remove(session.accountId);
+      this.measureUnlink(session.accountId, linked?.linkedAt ?? null);
       return;
     }
     try {
       await this.discord.roles.unlink(session.accountId);
+      this.measureUnlink(session.accountId, linked?.linkedAt ?? null);
     } catch (error) {
       this.logger.warn(`Desvínculo do Discord falhou: ${(error as Error).message}`);
       throw new ServiceUnavailableException('O Discord não respondeu; tente de novo');
     }
+  }
+
+  /** `discord_desvinculado` (só se havia vínculo): há quantos dias estava vinculado. */
+  private measureUnlink(accountId: string, linkedAt: Date | null): void {
+    if (!linkedAt) return;
+    this.analytics.capture('discord_desvinculado', {
+      accountId,
+      props: {
+        dias_vinculado: Math.max(0, Math.floor((Date.now() - linkedAt.getTime()) / 86_400_000)),
+      },
+    });
   }
 
   private backUrl(returnTo: string, result: DiscordLinkResult): string {

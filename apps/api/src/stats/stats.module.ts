@@ -4,6 +4,8 @@ import { AccountsModule } from '../accounts/accounts.module.js';
 import { ActivityModule } from '../activity/activity.module.js';
 import { ActivityFeed } from '../activity/activity-feed.js';
 import { RankingLeaderWatch } from '../activity/ranking-leader-watch.js';
+import { Analytics } from '../analytics/analytics.js';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
@@ -23,7 +25,7 @@ import { WeeklyRanking } from './weekly-ranking.js';
 
 /** Eventos do jogo e Estatísticas das Contas (S12). */
 @Module({
-  imports: [GameServersModule, AccountsModule, ActivityModule, LiveServersModule],
+  imports: [GameServersModule, AccountsModule, ActivityModule, LiveServersModule, AnalyticsModule],
   controllers: [
     GameEventsController,
     ProfileStatsController,
@@ -33,8 +35,9 @@ import { WeeklyRanking } from './weekly-ranking.js';
   providers: [
     {
       provide: GameEventIngest,
-      inject: [DATABASE, ActivityFeed],
-      useFactory: (db: Database, activity: ActivityFeed) => new GameEventIngest(db, activity),
+      inject: [DATABASE, ActivityFeed, Analytics],
+      useFactory: (db: Database, activity: ActivityFeed, analytics: Analytics) =>
+        new GameEventIngest(db, activity, analytics),
     },
     {
       provide: ProfileStatsReader,

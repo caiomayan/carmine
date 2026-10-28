@@ -13,6 +13,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Analytics } from '../analytics/analytics.js';
 import type { GameServer } from '../game-servers/game-server-registry.js';
 import { CurrentGameServer, ServerKeyGuard } from '../game-servers/server-key.guard.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
@@ -27,6 +28,7 @@ export class ServerReportsController {
   constructor(
     @Inject(Reports) private readonly reports: Reports,
     @Inject(ReportNotifier) private readonly notifier: ReportNotifier,
+    @Inject(Analytics) private readonly analytics: Analytics,
   ) {}
 
   @Post()
@@ -48,11 +50,27 @@ export class ServerReportsController {
     @Body({ schema: createReportSchema }) body: CreateReport,
     @CurrentGameServer() server: GameServer,
   ): Promise<ReportResult> {
-    const { result, created } = await this.reports.create(
+    const { result, created, reporterAccountId } = await this.reports.create(
       { id: server.id, name: server.name, code: server.code, mode: server.mode },
       body,
     );
     if (created) this.notifier.notify(created);
+    // Só o motivo e o Modo; nada do alvo, do chat nem do estado da Denúncia sai (moderação não vai a terceiros).
+    if (created) {
+      this.analytics.capture('denuncia_enviada', {
+        accountId: created.reporterAccountId,
+        props: { motivo: body.reason, modo: server.mode },
+        naturalId: created.id,
+      });
+    } else if (
+      reporterAccountId &&
+      (result.refusal === 'same_target_cooldown' || result.refusal === 'hourly_limit')
+    ) {
+      this.analytics.capture('denuncia_recusada', {
+        accountId: reporterAccountId,
+        props: { recusa: result.refusal, modo: server.mode },
+      });
+    }
     return result;
   }
 }

@@ -206,6 +206,19 @@ export class Loadouts {
     return change;
   }
 
+  /**
+   * Quantos slots do Preset ativo têm um Item equipado (as linhas de `loadout_slots`; só leitura, sem criar o Preset
+   * principal). É o `itens_equipados` do `servidor_conectado`: quem conecta com mais de zero viu uma skin no jogo.
+   */
+  async equippedSlotCount(accountId: string): Promise<number> {
+    const [result] = await this.db
+      .select({ value: count() })
+      .from(loadoutSlots)
+      .innerJoin(presets, eq(presets.id, loadoutSlots.presetId))
+      .where(and(eq(presets.accountId, accountId), eq(presets.active, true)));
+    return result?.value ?? 0;
+  }
+
   /** O Preset ativo em vitrine no Perfil: só o que vai para o jogo, sem os atributos VIP. */
   async showcase(accountId: string): Promise<ShowcaseItem[]> {
     const [active] = await this.db

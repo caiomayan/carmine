@@ -1,7 +1,8 @@
 import { currentSessionSchema, discordLinkStatusSchema } from '@carmine/contracts';
 import { eq } from 'drizzle-orm';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountErasure } from '../src/accounts/account-erasure.js';
+import { LogTransport, type OutgoingEvent } from '../src/analytics/analytics-transport.js';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
 import { SessionStore } from '../src/auth/sessions.js';
 import { discordLinks, vipPeriods } from '../src/database/schema.js';
@@ -50,6 +51,8 @@ describe('Discord integrado (S15)', () => {
       // Os jobs rodam de verdade, só que a cada segundo em vez de a cada 30 s / 1 min.
       DISCORD_SYNC_SECONDS: '1',
       DISCORD_STATUS_SECONDS: '1',
+      // Os eventos do vínculo (A1) vão para o log, onde o teste os espiona.
+      ANALYTICS_DRIVER: 'log',
     });
   }, 180_000);
 
@@ -476,6 +479,71 @@ describe('Discord integrado (S15)', () => {
       const me = currentSessionSchema.parse((await p.call('GET', '/api/me')).json());
 
       expect(JSON.stringify(me).toLowerCase()).not.toContain('discord');
+    });
+  });
+
+  describe('analytics (A1)', () => {
+    const sent: OutgoingEvent[] = [];
+
+    beforeEach(() => {
+      sent.length = 0;
+      vi.spyOn(LogTransport.prototype, 'send').mockImplementation((event) => {
+        sent.push(event);
+      });
+    });
+
+    afterEach(() => vi.restoreAllMocks());
+
+    const events = async (name: string) => {
+      for (let i = 0; i < 40 && !sent.some((e) => e.event === name); i += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+      return sent.filter((e) => e.event === name);
+    };
+
+    it('vincular mede o início e o vínculo, sem o ID nem o nome do Discord', async () => {
+      const p = await account();
+
+      expect(resultOf(await link(p)).discord).toBe('vinculado');
+
+      expect((await events('discord_vinculo_iniciado'))[0]?.properties.distinct_id).toBe(
+        p.account.id,
+      );
+      expect((await events('discord_vinculado'))[0]?.properties.distinct_id).toBe(p.account.id);
+      expect(JSON.stringify(sent)).not.toContain(p.user.id);
+      expect(JSON.stringify(sent)).not.toContain(p.user.username);
+    });
+
+    it('o Discord de outra Conta é recusado e mede o resultado (em-uso); não mede vínculo', async () => {
+      const first = await account();
+      const second = await account();
+      await link(first);
+      sent.length = 0;
+
+      expect(resultOf(await link(second, first.user)).discord).toBe('em-uso');
+
+      expect((await events('discord_vinculo_falhou'))[0]?.properties).toMatchObject({
+        resultado: 'em-uso',
+        distinct_id: second.account.id,
+      });
+      expect(sent.filter((e) => e.event === 'discord_vinculado')).toEqual([]);
+    });
+
+    it('desvincular mede os dias vinculados uma vez; sem vínculo, nada', async () => {
+      const p = await account();
+      await link(p);
+      sent.length = 0;
+
+      expect((await p.call('DELETE', '/api/discord/link')).statusCode).toBe(204);
+      expect((await events('discord_desvinculado'))[0]?.properties).toMatchObject({
+        dias_vinculado: 0,
+        distinct_id: p.account.id,
+      });
+
+      sent.length = 0;
+      await p.call('DELETE', '/api/discord/link');
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      expect(sent.filter((e) => e.event === 'discord_desvinculado')).toEqual([]);
     });
   });
 });

@@ -48,6 +48,12 @@ export type ConnectedAccount = Pick<
   'publicId' | 'displayName' | 'isFirstConnect' | 'chatHidden'
 > & {
   accountId: string;
+  /** A Conta nasceu neste connect (o analytics mede `conta_criada`). */
+  created: boolean;
+  /** A Conta já entrou no site alguma vez. */
+  claimed: boolean;
+  /** Quando o connect aconteceu (o horário do plugin, se válido): o do fato, não o do envio. */
+  connectedAt: Date;
 };
 
 type AccountRow = typeof accounts.$inferSelect;
@@ -82,13 +88,16 @@ export class AccountsService {
       );
       if (result) {
         this.avatars.refreshInBackground(result.account);
-        const { account, isFirstConnect } = result;
+        const { account, isFirstConnect, created } = result;
         return {
           accountId: account.id,
           publicId: account.publicId,
           displayName: account.displayName,
           isFirstConnect,
           chatHidden: account.chatHidden,
+          created,
+          claimed: account.claimedAt !== null,
+          connectedAt,
         };
       }
     }
@@ -167,7 +176,7 @@ export class AccountsService {
     tx: Transaction,
     connect: PlayerConnect,
     connectedAt: Date,
-  ): Promise<{ account: Account; isFirstConnect: boolean } | null> {
+  ): Promise<{ account: Account; isFirstConnect: boolean; created: boolean } | null> {
     const steamId = BigInt(connect.steamId);
     const [found] = await tx
       .select()
@@ -178,7 +187,7 @@ export class AccountsService {
 
     if (existing?.anonymizedAt) {
       // Anonimizada com um ban valendo: o ban continua, mas o nome não volta.
-      return { account: toAccount(existing), isFirstConnect: false };
+      return { account: toAccount(existing), isFirstConnect: false, created: false };
     }
     if (existing) {
       const [updated] = await tx
@@ -199,6 +208,7 @@ export class AccountsService {
       return {
         account: toAccount(updated as AccountRow),
         isFirstConnect: existing.firstConnectedAt === null,
+        created: false,
       };
     }
 
@@ -206,7 +216,7 @@ export class AccountsService {
       firstConnectedAt: connectedAt,
       lastConnectedAt: connectedAt,
     });
-    return created ? { account: created, isFirstConnect: true } : null;
+    return created ? { account: created, isFirstConnect: true, created: true } : null;
   }
 
   /** `null` quando um connect do mesmo jogador criou a Conta no meio do caminho. */
