@@ -4,6 +4,10 @@ import { E2E_DATABASE_URL } from './e2e/api-cli';
 const PORT = Number(process.env.WEB_E2E_PORT ?? 3000);
 const baseURL = `http://localhost:${PORT}`;
 const API_PORT = Number(process.env.API_E2E_PORT ?? 3333);
+/** O mesmo build do web com a contagem de páginas ligada (A1d): só o `analytics.spec.ts` roda nele. */
+export const ANALYTICS_WEB_PORT = Number(process.env.WEB_E2E_ANALYTICS_PORT ?? 3100);
+/** O PostHog do E2E: um host de mentira, que o teste intercepta (nada sai da máquina). */
+export const E2E_POSTHOG_HOST = 'http://posthog.e2e.test';
 const FAKE_STEAM_PORT = Number(process.env.FAKE_STEAM_PORT ?? 4555);
 /** Lê o .env.example da API (Postgres e Valkey do infra/docker-compose.yml) e o .env local. */
 const API_NODE = 'node --env-file=.env.example --env-file-if-exists=.env';
@@ -23,7 +27,19 @@ export default defineConfig({
     baseURL,
     trace: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      testIgnore: ['js-budget.spec.ts', 'analytics.spec.ts'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'analytics',
+      testMatch: 'analytics.spec.ts',
+      testIgnore: [],
+      use: { ...devices['Desktop Chrome'], baseURL: `http://localhost:${ANALYTICS_WEB_PORT}` },
+    },
+  ],
   // Na CI, os fluxos longos (ex.: ban e recurso na moderação, ~20–30 s) ganham folga: o runner
   // próprio divide a máquina com o desenvolvimento e fica mais lento que o do GitHub.
   ...(process.env.CI ? { timeout: 60_000 } : {}),
@@ -71,6 +87,9 @@ export default defineConfig({
         ACTIVITY_CACHE_TTL_SECONDS: '0',
         // Pagamentos (S14): a cobrança ligada com o provedor FALSO (a API só o aceita em localhost ou
         // homologação). A chave é só do E2E (32 bytes em base64): cifra o CPF do Pagador de mentira.
+        // Análise de uso (A1d): o adaptador de log liga a chave "Participar da análise de uso" (`enabled`) sem
+        // enviar nada a ninguém. O web do E2E principal não tem POSTHOG_API_KEY: a contagem de páginas fica desligada.
+        ANALYTICS_DRIVER: 'log',
         PAYMENTS_ENABLED: 'true',
         PAYMENTS_PROVIDER: 'fake',
         PAYMENTS_DATA_KEY: 'ZTJlLWNhcm1pbmUtc2VtLXNlZ3JlZG8tMzItYnl0ZXM=',
@@ -96,6 +115,20 @@ export default defineConfig({
         API_URL: `http://localhost:${API_PORT}`,
         // Qualquer erro de i18n derruba a página (src/i18n/request.ts).
         CARMINE_STRICT_I18N: '1',
+      },
+      timeout: 60_000,
+    },
+    {
+      // O mesmo build com POSTHOG_API_KEY: a contagem de páginas e a CSP do PostHog ligadas (analytics.spec.ts).
+      command: `pnpm exec next ${process.env.E2E_DEV === '1' ? 'dev' : 'start'} --port ${ANALYTICS_WEB_PORT}`,
+      url: `http://localhost:${ANALYTICS_WEB_PORT}`,
+      reuseExistingServer: !process.env.CI,
+      env: {
+        API_URL: `http://localhost:${API_PORT}`,
+        CARMINE_STRICT_I18N: '1',
+        POSTHOG_API_KEY: 'phc_e2e',
+        POSTHOG_HOST: E2E_POSTHOG_HOST,
+        ANALYTICS_ENVIRONMENT: 'staging',
       },
       timeout: 60_000,
     },
