@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, useEffect, useState } from 'react';
+import { useVisibleInterval } from '@/hooks/use-visible-interval';
 import { nextWeekTurn } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
 import './week-countdown.css';
@@ -39,13 +40,12 @@ function Unit({ value, label, pad = 2 }: { value: number; label: string; pad?: n
 export function WeekCountdown({ className }: { className?: string }) {
   const t = useTranslations('ranking.countdown');
   const [left, setLeft] = useState<number | null>(null);
+  const tick = () => setLeft(Math.max(0, nextWeekTurn(Date.now()) - Date.now()));
 
-  useEffect(() => {
-    const tick = () => setLeft(Math.max(0, nextWeekTurn(Date.now()) - Date.now()));
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
-  }, []);
+  // O primeiro valor vem depois da hidratação; daí em diante só corre com a aba à vista (ao voltar, atualiza na hora).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `tick` não depende de nada que muda
+  useEffect(tick, []);
+  useVisibleInterval(tick, 1000);
 
   const total = Math.floor((left ?? 0) / 1000);
   const days = Math.floor(total / 86400);
