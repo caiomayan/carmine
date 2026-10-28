@@ -352,7 +352,13 @@ describe('Pagamentos no painel da Staff (S14)', () => {
       expect(staffPurchasesUnblockedSchema.parse(response.json())).toEqual({
         publicId: buyer.account.publicId,
       });
-      expect((await sheet(owner, p.id)).purchaseBlock).toBeNull();
+      const reopened = await sheet(owner, p.id);
+      expect(reopened.purchaseBlock).toBeNull();
+      // Reabrir é da Conta: a ficha de cada pagamento dela mostra a ação, com o motivo.
+      expect(reopened.audit[0]).toMatchObject({
+        action: 'purchase_unblock',
+        reason: 'contestação revisada: o pagamento era legítimo',
+      });
 
       expect(
         refusal(

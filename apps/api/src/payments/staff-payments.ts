@@ -139,7 +139,16 @@ export class StaffPayments {
         })
         .from(staffAuditLog)
         .leftJoin(accounts, eq(accounts.steamId, staffAuditLog.actorSteamId))
-        .where(sql`${staffAuditLog.details}->>'paymentId' = ${id}`)
+        .where(
+          or(
+            sql`${staffAuditLog.details}->>'paymentId' = ${id}`,
+            // Reabrir as compras é da Conta, não do pagamento: aparece em todos os dela.
+            and(
+              eq(staffAuditLog.action, 'purchase_unblock'),
+              eq(staffAuditLog.targetAccountId, row.accountId),
+            ),
+          ),
+        )
         .orderBy(desc(staffAuditLog.createdAt))
         .limit(50),
       this.db
