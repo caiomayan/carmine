@@ -49,3 +49,6 @@ Nenhum evento novo: os cinco tipos bastam. O plugin só passa a mandar **campos 
 - **Descartado:** guardar cada kill (cerca de 9 milhões de linhas por ano no lançamento, e um registro por abate por mais tempo que o necessário) e derivar as Sessões das diferenças de `players` entre batimentos (resolução de 10 s, perde a Sessão quando um batimento falha e escreve a cada batimento).
 - Migração `0014` só aditiva (um enum e quatro tabelas), então o rollback é de imagem.
 
+## Adendo (S17): a coleta por round
+
+Para os Modos com round (Retake, as Salas e o 5v5 Casual), a decisão de não guardar evento a evento **muda**: os eventos brutos passam a ser guardados por 12 meses e o resumo do round, para sempre, porque o Rating, o Consigliere e o matchmaking dependem do que aconteceu em cada round. O "Descartado" acima, sobre guardar cada kill, deixa de valer para eles; o Deathmatch segue só com as somas. Tudo o mais deste ADR (lote idempotente, ID gerado no servidor, Modo vindo da chave, somas da semana e do dia) continua. Detalhes e volume: ADR 0024.
