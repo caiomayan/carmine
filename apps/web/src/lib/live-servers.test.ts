@@ -9,6 +9,7 @@ import {
   nextFriends,
   occupancy,
   offlineGroupOpen,
+  sameVisibleList,
   serverAnchor,
   serverFullLabel,
   serverHref,
@@ -131,6 +132,43 @@ describe('conexão ao vivo', () => {
     });
     expect(fresh.list?.summary.players).toBe(5);
     expect(fresh.connection).toBe('live');
+  });
+
+  it('um evento que não muda nada visível devolve o MESMO estado (sem renderizar a lista de novo)', () => {
+    const live = liveReducer(initialLive(null), {
+      type: 'snapshot',
+      list: list('2026-10-12T12:00:00Z', 4),
+      at: T0,
+    });
+    // Só o generatedAt e o horário do batimento mudam: o que a API não considera uma mudança.
+    const again = list('2026-10-12T12:00:10Z', 4);
+    again.servers = again.servers.map((s) => ({ ...s, lastHeartbeatAt: '2026-10-12T12:00:09Z' }));
+    expect(liveReducer(live, { type: 'snapshot', list: again, at: T0 + 10_000 })).toBe(live);
+    // Mudou um jogador: estado novo.
+    const changed = liveReducer(live, {
+      type: 'snapshot',
+      list: list('2026-10-12T12:00:10Z', 5),
+      at: T0 + 10_000,
+    });
+    expect(changed).not.toBe(live);
+    expect(changed.list?.summary.players).toBe(5);
+    // Voltando de uma queda, o mesmo conteúdo ainda confirma a conexão (estado novo, ao vivo).
+    const lost = liveReducer(live, { type: 'lost', at: T0 + 20_000 });
+    const back = liveReducer(lost, { type: 'snapshot', list: again, at: T0 + 30_000 });
+    expect(back.connection).toBe('live');
+  });
+
+  it('sameVisibleList ignora o horário do batimento e o generatedAt, mas vê mapa, jogadores e estado', () => {
+    const a = list('2026-10-12T12:00:00Z', 4);
+    const b = { ...a, generatedAt: '2026-10-12T12:09:00Z' };
+    expect(sameVisibleList(a, b)).toBe(true);
+    expect(sameVisibleList(a, { ...a, servers: [server({ players: 4, map: 'de_inferno' })] })).toBe(
+      false,
+    );
+    expect(sameVisibleList(a, { ...a, servers: [server({ players: 4, state: 'full' })] })).toBe(
+      false,
+    );
+    expect(sameVisibleList(a, { ...a, servers: [] })).toBe(false);
   });
 
   it('se a conexão cai, fica o último estado conhecido e conta o tempo desde a queda', () => {

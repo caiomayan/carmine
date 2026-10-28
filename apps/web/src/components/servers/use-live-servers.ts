@@ -25,6 +25,13 @@ function parseLiveList(data: string): LiveServerList | null {
 const MAX_RETRY_MS = 30_000;
 
 /**
+ * Quanto tempo a aba pode ficar escondida antes de a conexão ao vivo ser encerrada. Trocar de aba por um instante não
+ * derruba nada; uma aba esquecida em segundo plano deixa de receber (e renderizar) cada mudança que ninguém vê, e de
+ * ocupar uma conexão no servidor. Ao voltar, o stream reabre e a primeira mensagem já traz a lista inteira.
+ */
+export const HIDDEN_CLOSE_MS = 30_000;
+
+/**
  * A lista ao vivo (S06): começa com a leitura do servidor do site e assina o SSE da API. Cada
  * evento traz a lista inteira. Se a conexão cai, fica o último estado conhecido; o próprio
  * EventSource reconecta (o `retry` da API), e quando ele desiste de vez (uma resposta de erro)
@@ -41,6 +48,8 @@ export function useLiveServers(initial: LiveServerList | null): {
   useEffect(() => {
     let source: EventSource | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let hiddenTimer: ReturnType<typeof setTimeout> | undefined;
+    let sleeping = false;
     let attempt = 0;
 
     const connect = () => {
@@ -56,6 +65,8 @@ export function useLiveServers(initial: LiveServerList | null): {
         dispatch({ type: 'snapshot', list, at: Date.now() });
       });
       current.onerror = () => {
+        // Fechada de propósito (aba escondida): não é queda.
+        if (sleeping) return;
         dispatch({ type: 'lost', at: Date.now() });
         if (current.readyState !== EventSource.CLOSED) return;
         const wait = Math.min(MAX_RETRY_MS, LIVE_SERVERS_RETRY_MS * 2 ** attempt);
@@ -68,16 +79,37 @@ export function useLiveServers(initial: LiveServerList | null): {
       if (source?.readyState === EventSource.CLOSED) connect();
     };
 
+    // Aba escondida por mais de HIDDEN_CLOSE_MS: fecha o stream (sem marcar queda: é de propósito). Ao voltar, reabre.
+    const onVisibility = () => {
+      clearTimeout(hiddenTimer);
+      if (document.hidden) {
+        hiddenTimer = setTimeout(() => {
+          sleeping = true;
+          clearTimeout(timer);
+          source?.close();
+        }, HIDDEN_CLOSE_MS);
+        return;
+      }
+      if (sleeping) {
+        sleeping = false;
+        attempt = 0;
+        connect();
+      }
+    };
+
     connectRef.current = () => {
       attempt = 0;
       connect();
     };
     connect();
     window.addEventListener('online', reconnectNow);
+    document.addEventListener('visibilitychange', onVisibility);
     return () => {
       clearTimeout(timer);
+      clearTimeout(hiddenTimer);
       source?.close();
       window.removeEventListener('online', reconnectNow);
+      document.removeEventListener('visibilitychange', onVisibility);
     };
   }, []);
 
