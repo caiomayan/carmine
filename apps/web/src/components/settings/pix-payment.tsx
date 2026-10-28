@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { startVisibleInterval } from '@/lib/visible-interval';
 import { CopyButton } from './copy-button';
 
 /** "24:10": minutos e segundos que faltam, sempre com dois dígitos nos segundos. */
@@ -43,8 +44,8 @@ export function PixPayment({
       }
     };
     tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
+    // Só corre com a aba à vista; ao voltar, atualiza na hora (e relê a página se o QR venceu enquanto isso).
+    return startVisibleInterval(tick, 1000);
   }, [expiresAt, router]);
 
   return (

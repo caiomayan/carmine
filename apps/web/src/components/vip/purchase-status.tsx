@@ -4,9 +4,10 @@ import { type Purchase, purchaseSchema, VIP_PACKAGES } from '@carmine/contracts/
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DynamicButton } from '@/components/vida/dynamic-button';
+import { useVisibleInterval } from '@/hooks/use-visible-interval';
 import { formatBrl } from '@/lib/vip/packages';
 import {
   formatClock,
@@ -58,37 +59,35 @@ export function PurchaseStatus({
 
   const open = isOpen(purchase.status);
 
-  // O relógio do Pix (e o limite do "processando") anda de 1 em 1 segundo enquanto a compra está aberta.
-  useEffect(() => {
-    if (!open || !poll) return;
-    const timer = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, [open, poll]);
+  // O relógio do Pix (e o limite do "processando") anda de 1 em 1 segundo enquanto a compra está aberta e a aba à
+  // vista; ao voltar (por exemplo, do app do banco no celular), atualiza na hora.
+  useVisibleInterval(() => setNow(new Date()), open && poll ? 1000 : null);
 
+  // A releitura da compra também só corre com a aba à vista e, ao voltar, relê na hora: é o momento em que quem pagou
+  // no app do banco quer ver a confirmação.
+  const stopped = useRef(false);
+  const id = purchase.id;
   useEffect(() => {
-    if (!open || !poll) return;
-    let stopped = false;
-    const id = purchase.id;
-    async function refresh() {
-      try {
-        const response = await fetch(`/api/me/purchases/${id}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error(String(response.status));
-        const parsed = purchaseSchema.safeParse(await response.json());
-        if (!parsed.success) throw new Error('shape');
-        if (!stopped) {
-          setPurchase(parsed.data);
-          setPollFailed(false);
-        }
-      } catch {
-        if (!stopped) setPollFailed(true);
-      }
-    }
-    const timer = setInterval(refresh, POLL_MS);
+    stopped.current = false;
     return () => {
-      stopped = true;
-      clearInterval(timer);
+      stopped.current = true;
     };
-  }, [open, poll, purchase.id]);
+  }, [id, open, poll]);
+  const refresh = async () => {
+    try {
+      const response = await fetch(`/api/me/purchases/${id}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(String(response.status));
+      const parsed = purchaseSchema.safeParse(await response.json());
+      if (!parsed.success) throw new Error('shape');
+      if (!stopped.current) {
+        setPurchase(parsed.data);
+        setPollFailed(false);
+      }
+    } catch {
+      if (!stopped.current) setPollFailed(true);
+    }
+  };
+  useVisibleInterval(refresh, open && poll ? POLL_MS : null);
 
   const view = purchaseView(purchase, returnedFromCard, now);
   const day = (iso: string) =>
