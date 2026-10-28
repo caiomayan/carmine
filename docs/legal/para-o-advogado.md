@@ -127,7 +127,7 @@ Hoje **tudo isso está desligado** e nada vai ao ar sem o dono ligar a chave cer
 
 ## B3. Retenção: foto removida por 30 dias e registros por 90 dias
 
-- **Hoje:** a foto **removida pela Staff** (ou tirada do ar por denúncias) fica **30 dias** num bucket **privado**, só para a Staff e para uma ordem judicial; depois é apagada. Os **registros** de foto trocada, devolvida ou removida, e as denúncias contra elas, são apagados **90 dias** depois de a foto deixar de ser a da Conta (o mesmo prazo das Denúncias do jogo). Excluir a Conta apaga tudo na hora. A limpeza dos 90 dias **já está no ar** (o rascunho ainda diz "falta implementar").
+- **Hoje:** a foto **removida pela Staff** (ou tirada do ar por denúncias) fica **30 dias** num bucket **privado**, só para a Staff e para uma ordem judicial; depois é apagada. Os **registros** de foto trocada, devolvida ou removida, e as denúncias contra elas, são apagados **90 dias** depois de a foto deixar de ser a da Conta (o mesmo prazo das Denúncias do jogo). Excluir a Conta apaga tudo na hora. A limpeza dos 90 dias **já está no ar**.
 - **Pergunta:** (1) 30 dias para a foto removida e 90 dias para os registros servem (atender a uma ordem judicial, contestação)? (2) Precisa guardar algo além, por exemplo para a comunicação do B2?
 - **Onde:** `rascunho-foto-de-perfil.md` (pontos 3 e 5, Política seção 7), ADR 0022. Código: `apps/api/src/avatars/avatar-retention.ts` (`AVATAR_RECORD_RETENTION_DAYS = 90`; os 30 dias são `AVATAR_REMOVED_RETENTION_DAYS`).
 - **Se a resposta for não:** são duas constantes de retenção e o texto da Política.
