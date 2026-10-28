@@ -60,7 +60,7 @@ export function Panel({
       aria-labelledby={titleId}
       data-testid={testId}
       data-status={status}
-      className={cn('v-panel v-panel-lg v-spot p-5 max-md:p-4', className)}
+      className={cn('v-panel v-panel-lg v-spot overflow-hidden p-5 max-md:p-4', className)}
     >
       <header className="flex items-center justify-between gap-3 pb-3.5">
         <h2

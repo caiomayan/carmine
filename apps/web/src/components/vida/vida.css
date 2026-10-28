@@ -220,30 +220,39 @@ h1.text-display {
 .v-inner {
   border-radius: max(8px, calc(var(--v-r, var(--r-card)) - var(--v-pad, 20px)));
 }
+/*
+ * Spotlight: o gradiente fica PARADO numa camada de 472 px e quem anda com o ponteiro é o transform (--tx/--ty, o
+ * deslocamento a partir do centro). Antes o centro do radial-gradient seguia --px/--py e o navegador repintava o painel
+ * inteiro a cada movimento; agora é só o compositor movendo uma camada pronta. O painel recorta a camada (todo .v-spot tem
+ * overflow-hidden, que acompanha o border-radius); o will-change vale só enquanto o spotlight está visível.
+ */
 .v-spot {
-  --px: 50%;
-  --py: 50%;
   position: relative;
   isolation: isolate;
 }
 .v-spot::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  left: 50%;
+  top: 50%;
+  width: 472px;
+  height: 472px;
+  margin: -236px 0 0 -236px;
   pointer-events: none;
   z-index: 2;
   opacity: 0;
+  transform: translate(var(--tx, 0px), var(--ty, 0px));
   transition: opacity var(--dur-slow) var(--ease-out);
   background: radial-gradient(
-    380px circle at var(--px) var(--py),
+    circle closest-side,
     color-mix(in srgb, var(--spot, var(--text)) 15%, transparent),
-    transparent 62%
+    transparent
   );
 }
 .v-spot:hover::before,
 .v-spot:focus-within::before {
   opacity: 1;
+  will-change: transform;
 }
 
 .v-tilt {
