@@ -71,7 +71,7 @@ const charge = (over: Partial<Parameters<MercadoPagoGateway['createCharge']>[0]>
   method: 'pix' as const,
   description: 'Saint Carmine · VIP 30 dias',
   expiresAt: new Date(NOW.getTime() + 30 * 60 * 1000),
-  backUrl: `https://stcarmine.com/vip/compra/${EXTERNAL_REFERENCE}?retorno=cartao`,
+  backUrl: `https://stcarmine.com/plans/purchase/${EXTERNAL_REFERENCE}?retorno=cartao`,
   ...over,
 });
 
@@ -233,7 +233,7 @@ describe('criar a cobrança do Pix', () => {
 describe('criar a cobrança do cartão (Checkout Pro)', () => {
   it('cria a preferência só com cartão, e o providerPaymentId é a referência da nossa cobrança', async () => {
     const { gateway, calls } = gatewayWith({ status: 201, json: PREFERENCE_CREATED });
-    const backUrl = `https://stcarmine.com/vip/compra/${EXTERNAL_REFERENCE}?retorno=cartao`;
+    const backUrl = `https://stcarmine.com/plans/purchase/${EXTERNAL_REFERENCE}?retorno=cartao`;
 
     const created = await gateway.createCharge(charge({ method: 'card', backUrl }));
 

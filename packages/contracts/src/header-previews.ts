@@ -56,7 +56,7 @@ export const headerLoadoutSlotSchema = z
     slot: loadoutSlotSchema,
     /** Id do catálogo da cs2-lib do Item equipado. */
     itemId: z.int().positive().nullable(),
-    /** `uid` do Item no Inventário: o editor é `/inventario/<uid>`. */
+    /** `uid` do Item no Inventário: o editor é `/inventory/<uid>`. */
     uid: z.uuid().nullable(),
     statTrak: z.boolean(),
   })

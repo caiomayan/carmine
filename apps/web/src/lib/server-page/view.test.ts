@@ -116,7 +116,7 @@ describe('histórico do dia', () => {
 });
 
 describe('serverHref', () => {
-  it('é /servidores/<id>', () => {
-    expect(serverHref('abc')).toBe('/servidores/abc');
+  it('é /servers/<id>', () => {
+    expect(serverHref('abc')).toBe('/servers/abc');
   });
 });

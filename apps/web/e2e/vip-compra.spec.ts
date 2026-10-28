@@ -3,7 +3,7 @@ import { newSteamId, signInFromHeader } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
 
 /**
- * A confirmação da compra (/vip/comprar) e a página da compra (/vip/compra/{id}), S14b parte (b). O E2E roda com o provedor
+ * A confirmação da compra (/plans/checkout) e a página da compra (/plans/purchase/{id}), S14b parte (b). O E2E roda com o provedor
  * FALSO: o fluxo de verdade (Conta, confirmação, Pix, recuperação pelo id) vai pela API; os estados raros (limite à
  * frente, bloqueios, cada status final, QR ausente) vêm das vitrines `/dev/vip/comprar` e `/dev/vip/compra`.
  */
@@ -139,10 +139,10 @@ test.describe('página da compra (vitrine)', () => {
     const cases: [string, string, string, string | null][] = [
       ['em-analise', 'in_review', 'Pagamento em análise', null],
       ['aprovada', 'approved', 'VIP liberado', '/loadout'],
-      ['recusada', 'rejected', 'Pagamento recusado', '/vip/comprar?pacote=vip-3m'],
-      ['expirada', 'expired', 'O prazo acabou', '/vip/comprar?pacote=vip-3m'],
-      ['cancelada', 'cancelled', 'Compra cancelada', '/vip/comprar?pacote=vip-3m'],
-      ['reembolsada', 'refunded', 'Compra reembolsada', '/vip'],
+      ['recusada', 'rejected', 'Pagamento recusado', '/plans/checkout?pacote=vip-3m'],
+      ['expirada', 'expired', 'O prazo acabou', '/plans/checkout?pacote=vip-3m'],
+      ['cancelada', 'cancelled', 'Compra cancelada', '/plans/checkout?pacote=vip-3m'],
+      ['reembolsada', 'refunded', 'Compra reembolsada', '/plans'],
       ['parcial', 'partially_refunded', 'Reembolso parcial', null],
       ['contestada', 'charged_back', 'Pagamento contestado', null],
     ];
@@ -160,13 +160,13 @@ test.describe('página da compra (vitrine)', () => {
 
 test.describe('o fluxo de verdade (provedor falso)', () => {
   test('visitante vai à Steam e volta para a confirmação do Pacote', async ({ page }) => {
-    await page.goto('/vip/comprar?pacote=vip-1m');
-    await expect(page).toHaveURL(/\/entrar/);
-    expect(decodeURIComponent(page.url())).toContain('/vip/comprar?pacote=vip-1m');
+    await page.goto('/plans/checkout?pacote=vip-1m');
+    await expect(page).toHaveURL(/\/login/);
+    expect(decodeURIComponent(page.url())).toContain('/plans/checkout?pacote=vip-1m');
   });
 
-  test('Pacote desconhecido volta ao /vip', async ({ page }) => {
-    await page.goto('/vip/comprar?pacote=vip-9m');
+  test('Pacote desconhecido volta ao /plans', async ({ page }) => {
+    await page.goto('/plans/checkout?pacote=vip-9m');
     await expect(page).toHaveURL(/\/vip$/);
   });
 
@@ -175,10 +175,10 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
     browser,
   }) => {
     const steamId = newSteamId();
-    await page.goto('/vip');
+    await page.goto('/plans');
     await signInFromHeader(page, steamId);
     await expect(page.getByTestId('account-menu')).toBeVisible();
-    await page.goto('/vip');
+    await page.goto('/plans');
     const buy = page.locator('[data-package="vip-3m"]').getByTestId('vip-buy');
     await buy.click();
     await expect(page).toHaveURL(/\/vip\/comprar\?pacote=vip-3m$/);
@@ -215,20 +215,20 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
     await expect(page).toHaveURL(new RegExp(`${id}$`));
 
     // Comprar o mesmo Pacote por Pix de novo devolve a MESMA pendente (idempotente).
-    await page.goto('/vip/comprar?pacote=vip-3m');
+    await page.goto('/plans/checkout?pacote=vip-3m');
     await hydrated(page.getByTestId('vip-submit'));
     await page.getByTestId('vip-declaration').check();
     await page.getByTestId('vip-submit').click();
-    await expect(page).toHaveURL(new RegExp(`/vip/compra/${id}$`));
+    await expect(page).toHaveURL(new RegExp(`/plans/purchase/${id}$`));
 
     // A compra é só da Conta que comprou: outra Conta não a vê.
     const other = await browser.newContext({ baseURL: new URL(page.url()).origin });
     try {
       const otherPage = await other.newPage();
-      await otherPage.goto('/vip');
+      await otherPage.goto('/plans');
       await signInFromHeader(otherPage, newSteamId());
       await expect(otherPage.getByTestId('account-menu')).toBeVisible();
-      const response = await otherPage.goto(`/vip/compra/${id}`);
+      const response = await otherPage.goto(`/plans/purchase/${id}`);
       expect(response?.status()).toBe(404);
     } finally {
       await other.close();
@@ -241,12 +241,12 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
   }) => {
     // O navegador registra o 404 do próprio documento no console.
     expectedConsoleErrors.push(/status of 404/);
-    await page.goto('/vip');
+    await page.goto('/plans');
     await signInFromHeader(page, newSteamId());
     await expect(page.getByTestId('account-menu')).toBeVisible();
-    const response = await page.goto('/vip/compra/3b1f5e1c-8d0a-4a39-9a55-0f3a7a1c2b10');
+    const response = await page.goto('/plans/purchase/3b1f5e1c-8d0a-4a39-9a55-0f3a7a1c2b10');
     expect(response?.status()).toBe(404);
-    const malformed = await page.goto('/vip/compra/nao-e-um-id');
+    const malformed = await page.goto('/plans/purchase/nao-e-um-id');
     expect(malformed?.status()).toBe(404);
   });
 });

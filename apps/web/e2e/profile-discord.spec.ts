@@ -14,7 +14,7 @@ test('sem a integração configurada, no lugar do botão aparece o selo "Em brev
 }) => {
   const account = await createUnclaimedAccount(request, 'Jogador Do Discord');
   await signInByRequest(page, account.steamId);
-  await page.goto('/configuracoes/conexoes');
+  await page.goto('/settings/connections');
 
   const row = page.getByTestId('discord-setting');
   await expect(row).toBeVisible();
@@ -32,15 +32,15 @@ test('o resultado do vínculo volta na URL, aparece como aviso e a URL é limpa'
   const account = await createUnclaimedAccount(request, 'Jogador Do Discord Dois');
   await signInByRequest(page, account.steamId);
 
-  await page.goto('/configuracoes/conexoes?discord=em-uso');
+  await page.goto('/settings/connections?discord=em-uso');
 
   const notice = page.getByTestId('discord-notice');
   await expect(notice).toContainText('Esse Discord já está ligado a outra Conta do Carmine.');
   await expect(notice).toContainText('Entre nessa Conta e desvincule');
-  await expect(page).toHaveURL(/\/configuracoes\/conexoes$/);
+  await expect(page).toHaveURL(/\/settings\/conexoes$/);
 
   // Um valor que a API nunca manda é ignorado.
-  await page.goto('/configuracoes/conexoes?discord=qualquer-coisa');
+  await page.goto('/settings/connections?discord=qualquer-coisa');
   await expect(page.getByTestId('discord-setting')).toBeVisible();
   await expect(page.getByTestId('discord-notice')).toHaveCount(0);
 });
@@ -55,7 +55,7 @@ for (const theme of ['dark', 'light'] as const) {
     await signInByRequest(page, account.steamId);
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/configuracoes/conexoes?discord=conta-ja-vinculada');
+      await page.goto('/settings/connections?discord=conta-ja-vinculada');
       await expect(page.getByTestId('discord-notice')).toBeVisible();
       expect(await axeViolations(page), `${width}px`).toEqual([]);
       const overflow = await page.evaluate(

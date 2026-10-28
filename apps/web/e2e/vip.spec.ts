@@ -1,7 +1,7 @@
 import { axeViolations, expect, saveTheme, test } from './fixtures';
 
 /**
- * A página do VIP (/vip, S14b). A compra nasce desligada e depende da Conta, então os estados vêm da vitrine
+ * A página do VIP (/plans, S14b). A compra nasce desligada e depende da Conta, então os estados vêm da vitrine
  * `/dev/vip?estado=` (dados de exemplo no formato do contrato `GET /api/vip/packages`); a rota de verdade é
  * conferida contra a API do E2E.
  */
@@ -11,11 +11,11 @@ const state = (name: string) => `/dev/vip?estado=${name}`;
 const noHorizontalScroll = (page: import('@playwright/test').Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
 
-test.describe('/vip com a API de verdade', () => {
+test.describe('/plans com a API de verdade', () => {
   test('mostra os três Pacotes com preço da API; o visitante entra para comprar e avisa que é teste', async ({
     page,
   }) => {
-    await page.goto('/vip');
+    await page.goto('/plans');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
       'Jogue com o Loadout completo.',
     );
@@ -34,16 +34,16 @@ test.describe('/vip com a API de verdade', () => {
   });
 });
 
-test.describe('/vip, estados (vitrine)', () => {
+test.describe('/plans, estados (vitrine)', () => {
   test('compra aberta: três links de compra, melhor preço e economia calculados', async ({
     page,
   }) => {
     await page.goto(state('aberta'));
     const buy = page.getByTestId('vip-buy');
     await expect(buy).toHaveCount(3);
-    await expect(buy.nth(0)).toHaveAttribute('href', '/vip/comprar?pacote=vip-1m');
-    await expect(buy.nth(1)).toHaveAttribute('href', '/vip/comprar?pacote=vip-3m');
-    await expect(buy.nth(2)).toHaveAttribute('href', '/vip/comprar?pacote=vip-6m');
+    await expect(buy.nth(0)).toHaveAttribute('href', '/plans/checkout?pacote=vip-1m');
+    await expect(buy.nth(1)).toHaveAttribute('href', '/plans/checkout?pacote=vip-3m');
+    await expect(buy.nth(2)).toHaveAttribute('href', '/plans/checkout?pacote=vip-6m');
     await expect(page.locator('[data-package="vip-6m"]')).toHaveAttribute('data-best', 'true');
     await expect(page.locator('[data-package="vip-6m"]')).toContainText('Melhor preço');
     await expect(page.locator('[data-package="vip-3m"]')).toContainText('Economize 9%');
@@ -57,7 +57,7 @@ test.describe('/vip, estados (vitrine)', () => {
     const signIn = page.getByTestId('vip-signin');
     await expect(signIn).toHaveCount(3);
     const href = (await signIn.nth(1).getAttribute('href')) ?? '';
-    expect(decodeURIComponent(href)).toContain('/vip/comprar?pacote=vip-3m');
+    expect(decodeURIComponent(href)).toContain('/plans/checkout?pacote=vip-3m');
   });
 
   test('"Em breve" e cada motivo de bloqueio: botões parados e o aviso certo', async ({ page }) => {
@@ -111,7 +111,7 @@ test.describe('/vip, estados (vitrine)', () => {
 });
 
 for (const theme of ['dark', 'light'] as const) {
-  test.describe(`/vip: acessibilidade e 390 px (${theme})`, () => {
+  test.describe(`/plans: acessibilidade e 390 px (${theme})`, () => {
     for (const name of ['aberta', 'em-breve', 'vip-acabando', 'sandbox', 'indisponivel']) {
       test(`"${name}": axe sem violações e sem rolagem lateral`, async ({ page }) => {
         await saveTheme(page, theme);

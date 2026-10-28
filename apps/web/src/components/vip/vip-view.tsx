@@ -9,12 +9,12 @@ import { VipNotice } from '@/components/loadout/vip-notice';
 import { bestValueId, buyState } from '@/lib/vip/packages';
 import { Compare } from './compare';
 import { PackageCard } from './package-card';
-import '@/app/vip/vip.css';
+import '@/app/plans/vip.css';
 
 /**
  * A página do VIP (S14b): o que é grátis e o que é VIP, os Pacotes e como a compra funciona. Só apresenta: os Pacotes
  * e o estado da compra (aberta, "Em breve", se esta Conta pode comprar) vêm da API (`packages`) e o VIP da Conta, da
- * sessão (`vip`); nada de preço escrito à mão. A confirmação da compra é outra página (`/vip/comprar`). A vitrine
+ * sessão (`vip`); nada de preço escrito à mão. A confirmação da compra é outra página (`/plans/checkout`). A vitrine
  * `/dev/vip` mostra cada estado com dados de exemplo.
  */
 export async function VipView({
@@ -120,10 +120,10 @@ export async function VipView({
           <li>{t('how.payer')}</li>
           <li>
             {t('how.refund', { days: REFUND_WINDOW_DAYS })}{' '}
-            <Link href={'/reembolso' as Route}>{t('how.refundLink')}</Link>
+            <Link href={'/refunds' as Route}>{t('how.refundLink')}</Link>
           </li>
           <li>
-            {t('how.ban')} <Link href={'/termos' as Route}>{t('how.termsLink')}</Link>
+            {t('how.ban')} <Link href={'/terms' as Route}>{t('how.termsLink')}</Link>
           </li>
         </ul>
       </section>
@@ -141,7 +141,7 @@ async function Notice({ state }: { state: NonNullable<ReturnType<typeof buyState
       {t(key)}{' '}
       {state.kind === 'blocked' &&
       (state.reason === 'purchase_in_progress' || state.reason === 'daily_limit') ? (
-        <Link href={'/configuracoes/compras' as Route} prefetch={false}>
+        <Link href={'/settings/purchases' as Route} prefetch={false}>
           {t('myPurchases')}
         </Link>
       ) : null}

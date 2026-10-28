@@ -14,7 +14,7 @@
  * com Intel Iris Xe); sem, o raster é por software, um pior caso para efeitos de GPU (backdrop-filter, blur).
  *
  *   node scripts/fps-audit.mjs --base http://localhost:3000 --storage-state sessao.json \
- *        --profile /AbCd123 --server /servidores/<id> [--headed] [--only Home,Perfil] \
+ *        --profile /AbCd123 --server /servers/<id> [--headed] [--only Home,Perfil] \
  *        [--ablate sem-vidro,sem-ambiente|all] [--trace] [--json saida.json]
  *
  * Com `--ablate`, cada página é medida de novo com um efeito neutralizado por CSS injetado, e a tabela mostra
@@ -61,10 +61,10 @@ const PAGES = [
   { name: 'Perfil', path: '{profile}', auth: true },
   { name: 'Ranking', path: '/ranking' },
   { name: 'Loadout', path: '/loadout', auth: true },
-  { name: 'Inventário', path: '/inventario', auth: true },
-  { name: 'Editor', path: '/inventario/adicionar/222' },
+  { name: 'Inventário', path: '/inventory', auth: true },
+  { name: 'Editor', path: '/inventory/add/222' },
   { name: 'Servidor', path: '{server}' },
-  { name: 'Configurações', path: '/configuracoes/perfil', auth: true },
+  { name: 'Configurações', path: '/settings/profile', auth: true },
 ];
 
 const ALL_WINDOWS = ['ocioso', 'rolagem', 'ponteiro'];

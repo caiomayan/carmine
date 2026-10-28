@@ -55,10 +55,10 @@ describe('avisos e páginas', () => {
   });
 
   it('não repete a faixa onde o VIP já é o assunto', () => {
-    for (const path of ['/vip', '/vip/comprar', '/vip/compra/abc', '/loadout']) {
+    for (const path of ['/plans', '/plans/checkout', '/plans/purchase/abc', '/loadout']) {
       expect(hiddenOnPath(path)).toBe(true);
     }
-    for (const path of ['/', '/ranking', '/inventario', '/vipx', '/configuracoes/compras']) {
+    for (const path of ['/', '/ranking', '/inventory', '/vipx', '/settings/purchases']) {
       expect(hiddenOnPath(path)).toBe(false);
     }
   });

@@ -56,7 +56,7 @@ test.describe('provedor falso', () => {
     await expect(page.getByTestId('fake-status')).toHaveAttribute('data-status', 'approved');
     await expect(page.getByTestId('fake-back')).toHaveAttribute(
       'href',
-      `/vip/compra/${purchase.id}`,
+      `/plans/purchase/${purchase.id}`,
     );
     await expect.poll(() => purchaseStatus(page, purchase.id)).toBe('approved');
     expect(await vipActive(page)).toBe(true);
@@ -80,7 +80,7 @@ test.describe('provedor falso', () => {
     await expect(page.getByTestId('fake-status')).toHaveAttribute('data-status', 'rejected');
     await expect(page.getByTestId('fake-back')).toHaveAttribute(
       'href',
-      `/vip/compra/${purchase.id}?retorno=cartao`,
+      `/plans/purchase/${purchase.id}?retorno=cartao`,
     );
     await expect.poll(() => purchaseStatus(page, purchase.id)).toBe('rejected');
     expect(await vipActive(page)).toBe(false);

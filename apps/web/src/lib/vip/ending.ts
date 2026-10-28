@@ -15,7 +15,7 @@ export const isEndingNotice = (notice: string | null): notice is EndingNotice =>
 export const VIP_ENDING_STORAGE_KEY = 'carmine:vip-ending';
 
 /** As páginas que já têm o assunto do VIP e não repetem a faixa. */
-const HIDDEN_ON = ['/vip', '/loadout'];
+const HIDDEN_ON = ['/plans', '/loadout'];
 
 export const hiddenOnPath = (pathname: string) =>
   HIDDEN_ON.some((path) => pathname === path || pathname.startsWith(`${path}/`));

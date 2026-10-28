@@ -10,7 +10,7 @@ import {
 } from './live-servers';
 
 /**
- * A página do servidor (/servidores/[id]) com a API de verdade (S12b: `match` no batimento, `/players` e `/today`).
+ * A página do servidor (/servers/[id]) com a API de verdade (S12b: `match` no batimento, `/players` e `/today`).
  * Os estados "prontos" de cada Modo vêm da vitrine de dev (/dev/servidor); aqui ficam os que a API real produz:
  * servidor vazio, com placar e jogadores, e o histórico do dia ainda sem coleta.
  */
@@ -50,7 +50,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     try {
       await heartbeat(request, server, [], 'de_mirage');
       const id = await serverId(request, server.name);
-      await page.goto(`/servidores/${id}`);
+      await page.goto(`/servers/${id}`);
 
       await expect(page.getByTestId('server-page')).toHaveAttribute('data-estado', 'live');
       await expect(page.getByTestId('server-map')).toHaveText('Mirage');
@@ -100,7 +100,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     }));
     try {
       const id = await serverId(request, server.name);
-      await page.goto(`/servidores/${id}`);
+      await page.goto(`/servers/${id}`);
 
       await expect(page.getByTestId('server-page')).toHaveAttribute('data-estado', 'live');
       const board = page.getByTestId('placar');
@@ -125,7 +125,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     const stop = keepBeating(request, server, () => [], 'de_nuke');
     await heartbeat(request, server, [], 'de_nuke');
     const id = await serverId(request, server.name);
-    await page.goto(`/servidores/${id}`);
+    await page.goto(`/servers/${id}`);
     await expect(page.getByTestId('server-page')).toHaveAttribute('data-estado', 'live');
     await expect(page.getByTestId('server-map')).toHaveText('Nuke');
 
@@ -146,7 +146,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
     // O navegador registra o 404 do próprio documento no console.
     expectedConsoleErrors.push(/status of 404/);
     const missing = '00000000-0000-4000-8000-000000000000';
-    for (const path of [`/servidores/${missing}`, '/servidores/nao-e-um-id']) {
+    for (const path of [`/servers/${missing}`, '/servers/nao-e-um-id']) {
       const response = await page.goto(path);
       expect(response?.status()).toBe(404);
       // O título decifra ao chegar (EncryptedText), mas o nome acessível já é o texto inteiro.
@@ -165,7 +165,7 @@ test.describe('Página do servidor: o que a API já entrega', () => {
       const id = await serverId(request, server.name);
       await page.goto('/');
       await page.locator(`li[data-server="${server.name}"]`).getByTestId('server-link').click();
-      await page.waitForURL(`**/servidores/${id}`);
+      await page.waitForURL(`**/servers/${id}`);
       await expect(page.getByRole('heading', { level: 1 })).toHaveText(server.name);
     } finally {
       stop();
@@ -298,7 +298,7 @@ for (const theme of ['dark', 'light'] as const) {
       try {
         await heartbeat(request, server, [], 'de_anubis');
         const id = await serverId(request, server.name);
-        await page.goto(`/servidores/${id}`);
+        await page.goto(`/servers/${id}`);
         await expect(page.getByTestId('server-map')).toHaveText('Anubis');
         expect(await axeViolations(page)).toEqual([]);
       } finally {

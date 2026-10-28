@@ -250,7 +250,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
     // Desligou: nem a página nova conta, e nada é enviado.
     await setParticipation(false);
     posthog.reset();
-    await page.goto('/inventario');
+    await page.goto('/inventory');
     await page.waitForTimeout(FLUSH_MS);
     expect(posthog.requests).toEqual([]);
 
@@ -271,7 +271,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
     await signInByRequest(page, account.steamId);
     const posthog = await watchPostHog(page);
 
-    await page.goto('/configuracoes/dados');
+    await page.goto('/settings/data');
     const setting = page.getByTestId('analytics-setting');
     await expect(setting).toContainText('Participar da análise de uso');
     await expect(setting).toContainText('direito de se opor');
@@ -295,7 +295,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
     expect(posthog.requests).toEqual([]);
 
     // Recusa da API: volta ao que era e avisa.
-    await page.goto('/configuracoes/dados');
+    await page.goto('/settings/data');
     await page.route('**/api/me/analytics', (route) =>
       route.request().method() === 'PUT'
         ? route.fulfill({ status: 500, body: '{}' })
@@ -318,7 +318,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
 
       for (const width of WIDTHS) {
         await page.setViewportSize({ width, height: 900 });
-        await page.goto('/configuracoes/dados');
+        await page.goto('/settings/data');
         await expect(page.getByTestId('analytics-setting')).toBeVisible();
         expect(await axeViolations(page), `${width}px`).toEqual([]);
         expect(

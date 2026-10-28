@@ -21,7 +21,7 @@ async function getJson(url: string, signal: AbortSignal): Promise<unknown> {
 }
 
 const loadItems = async (signal: AbortSignal, query: string) =>
-  (await getJson(`/busca/itens?q=${encodeURIComponent(query)}`, signal)) as ItemSearch;
+  (await getJson(`/search/items?q=${encodeURIComponent(query)}`, signal)) as ItemSearch;
 
 async function loadPlayers(signal: AbortSignal, query: string) {
   const body = await getJson(`/api/players/search?q=${encodeURIComponent(query)}`, signal);

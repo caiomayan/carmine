@@ -219,7 +219,7 @@ export default async function ProfilePage({
                       action={
                         isOwner ? (
                           <Button asChild variant="ghost" size="sm">
-                            <Link href="/inventario">{t('loadout.toInventory')}</Link>
+                            <Link href="/inventory">{t('loadout.toInventory')}</Link>
                           </Button>
                         ) : null
                       }

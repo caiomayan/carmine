@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { ComponentProps, ReactNode } from 'react';
 import Markdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GAP_HREF, slugify } from '@/lib/legal/document';
+import { GAP_HREF, headingAnchor } from '@/lib/legal/document';
 import { cn } from '@/lib/utils';
 
 /** Texto puro de um nó do markdown (o título vira âncora). */
@@ -14,6 +14,13 @@ function textOf(node: ReactNode): string {
     return textOf((node.props as { children?: ReactNode }).children);
   }
   return '';
+}
+
+/** A âncora do título e o que mostrar: o próprio título, ou só o texto quando ele fixa a âncora (`{#id}`). */
+function anchored(children: ReactNode): { id: string; content: ReactNode } {
+  const raw = textOf(children);
+  const { id, text } = headingAnchor(raw);
+  return { id, content: text === raw.trim() ? children : text };
 }
 
 const linkClass =
@@ -56,22 +63,25 @@ function DocLink({ href = '', children, gapLabel }: ComponentProps<'a'> & { gapL
 function componentsFor(gapLabel: string): Components {
   return {
     h1: ({ children }) => <h2 className="mt-12 text-lg font-semibold">{children}</h2>,
-    h2: ({ children }) => (
-      <h2
-        id={slugify(textOf(children))}
-        className="mt-12 scroll-mt-6 text-lg font-semibold tracking-[-0.01em] text-balance first:mt-0"
-      >
-        {children}
-      </h2>
-    ),
-    h3: ({ children }) => (
-      <h3
-        id={slugify(textOf(children))}
-        className="mt-8 scroll-mt-6 text-md font-semibold text-balance"
-      >
-        {children}
-      </h3>
-    ),
+    h2: ({ children }) => {
+      const { id, content } = anchored(children);
+      return (
+        <h2
+          id={id}
+          className="mt-12 scroll-mt-6 text-lg font-semibold tracking-[-0.01em] text-balance first:mt-0"
+        >
+          {content}
+        </h2>
+      );
+    },
+    h3: ({ children }) => {
+      const { id, content } = anchored(children);
+      return (
+        <h3 id={id} className="mt-8 scroll-mt-6 text-md font-semibold text-balance">
+          {content}
+        </h3>
+      );
+    },
     p: ({ children }) => <p className="mt-3 text-md leading-[1.7] text-pretty">{children}</p>,
     ul: ({ children }) => (
       <ul className="mt-3 grid list-disc gap-1.5 pl-5 text-md leading-[1.65] marker:text-line-strong">

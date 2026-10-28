@@ -140,7 +140,7 @@ test.describe('Pagamentos da Staff', () => {
     await expect(audit).toContainText('Queda de 3 dias em outubro, pedido pelo suporte');
 
     // O comprador vê o reembolso em Minhas compras.
-    await page.goto('/configuracoes/compras');
+    await page.goto('/settings/purchases');
     await expect(
       page.locator(`[data-purchase-id="${paid.id}"]`).getByTestId('purchase-status'),
     ).toHaveText('Reembolsado');

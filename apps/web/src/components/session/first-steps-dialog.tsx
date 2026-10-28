@@ -80,9 +80,9 @@ export function FirstStepsDialog({ labels }: { labels: FirstStepsLabels }) {
           >
             {labels.done}
           </Button>
-          {pathname === '/inventario' ? null : (
+          {pathname === '/inventory' ? null : (
             <Button asChild variant="ghost" size="sm">
-              <Link href="/inventario" onClick={firstSteps.dismiss}>
+              <Link href="/inventory" onClick={firstSteps.dismiss}>
                 {labels.toInventory}
               </Link>
             </Button>

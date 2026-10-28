@@ -222,7 +222,7 @@ export type FakePaymentAction = z.infer<typeof fakePaymentActionSchema>;
 /**
  * `GET /api/dev/payments/{providerId}` e o corpo de `POST /api/dev/payments/{providerId}/{action}`: a
  * cobrança no provedor falso. `externalReference` é o `id` da compra (a página volta para
- * `/vip/compra/<externalReference>`). Só existe com o provedor falso (404 nos outros).
+ * `/plans/purchase/<externalReference>`). Só existe com o provedor falso (404 nos outros).
  */
 export const fakePaymentSchema = z.object({
   providerPaymentId: z.string(),

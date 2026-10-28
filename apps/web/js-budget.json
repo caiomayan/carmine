@@ -3,9 +3,9 @@
   "pages": [
     { "name": "Home", "path": "/" },
     { "name": "Ranking", "path": "/ranking" },
-    { "name": "Entrar", "path": "/entrar" },
+    { "name": "Entrar", "path": "/login" },
     { "name": "Loadout", "path": "/loadout", "auth": true },
-    { "name": "Inventário", "path": "/inventario", "auth": true },
+    { "name": "Inventário", "path": "/inventory", "auth": true },
     { "name": "Perfil", "path": "{profile}", "auth": true, "kb": 425 }
   ]
 }

@@ -17,7 +17,7 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
 
-/** O Pacote do `?pacote=` da confirmação; nulo se faltar ou for desconhecido (a página volta ao `/vip`). */
+/** O Pacote do `?pacote=` da confirmação; nulo se faltar ou for desconhecido (a página volta ao `/plans`). */
 export function packageFromParam(value: string | string[] | undefined): VipPackage | null {
   const id = Array.isArray(value) ? value[0] : value;
   return VIP_PACKAGES.find((pack) => pack.id === id) ?? null;

@@ -94,7 +94,7 @@ No parágrafo "**Exclusão da Conta:**", acrescentar à lista do que deixa de es
 ## 8. Seção 10, "Crianças e adolescentes": acrescentar  **[ENTRA COM A A1]**
 
 > - A análise de uso não grava a tela, não guarda texto escrito por você e não é usada para anúncios nem para perfis de comportamento.
-> - Pais e responsáveis podem pedir que a análise de uso seja desligada na Conta de um menor pela página de [contato](/contato).
+> - Pais e responsáveis podem pedir que a análise de uso seja desligada na Conta de um menor pela página de [contato](/contact).
 
 ## 9. Base legal e fontes: acrescentar  **[ENTRA COM A A1]**
 

@@ -23,7 +23,7 @@ const glass = (page: Page) =>
   });
 
 /** Uma página com rolagem de sobra. */
-const LONG_PAGE = '/termos';
+const LONG_PAGE = '/terms';
 
 for (const theme of ['dark', 'light'] as const) {
   test.describe(`header (${theme})`, () => {

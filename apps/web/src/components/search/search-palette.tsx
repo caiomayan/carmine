@@ -313,9 +313,7 @@ function PaletteBody({
       }
       case 'item':
         return go(
-          row.source === 'inventory'
-            ? `/inventario/${row.hit.uid}`
-            : `/inventario/adicionar/${row.hit.id}`,
+          row.source === 'inventory' ? `/inventory/${row.hit.uid}` : `/inventory/add/${row.hit.id}`,
         );
       case 'player':
         return go(`/${row.hit.publicId}`);
