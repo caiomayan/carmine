@@ -86,7 +86,7 @@
   "AWP": {
     "EnableAwp": 1,
     "EnableRoundType": 2,
-    "AwpPermission": "@css/vip",
+    "AwpPermission": "",
     "ChanceForAwpWeapon": 50,
     "MaxAwpWeaponsPerTeam": { "Terrorist": 1, "CounterTerrorist": 1 },
     "MinPlayersPerTeamForAwpWeapon": { "Terrorist": 2, "CounterTerrorist": 2 }
@@ -94,14 +94,14 @@
   "SSG": {
     "EnableSsg": 0,
     "EnableRoundType": 2,
-    "SsgPermission": "@css/vip",
+    "SsgPermission": "",
     "ChanceForSsgWeapon": 0,
     "MaxSsgWeaponsPerTeam": { "Terrorist": 0, "CounterTerrorist": 0 },
     "MinPlayersPerTeamForSsgWeapon": { "Terrorist": 1, "CounterTerrorist": 1 }
   },
   "EnemyStuff": {
     "EnableEnemyStuff": 0,
-    "EnemyStuffPermission": "@css/vip",
+    "EnemyStuffPermission": "",
     "ChanceForEnemyStuff": 0,
     "MaxEnemyStuffPerTeam": { "Terrorist": -1, "CounterTerrorist": -1 }
   },
