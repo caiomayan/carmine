@@ -10,6 +10,7 @@ import { type CSSProperties, useEffect, useRef, useState } from 'react';
 import { PresenceAvatar, PresenceChip } from '@/components/presence';
 import { useNowPlaying } from '@/components/session/use-now-playing';
 import { Ticker } from '@/components/vida/ticker';
+import { useVisibleInterval } from '@/hooks/use-visible-interval';
 import { ONE_DECIMAL, TWO_DECIMALS } from '@/lib/profile-stats';
 import { playedParts, rankingMoves } from '@/lib/ranking';
 import { cn } from '@/lib/utils';
@@ -89,11 +90,10 @@ export function RankingBoard({ ranking }: { ranking: Ranking }) {
   const hasSelf = ranking.entries.some((entry) => entry.self);
   const nowPlaying = useNowPlaying();
   useEffect(() => {
-    if (!hasSelf) return;
-    nowPlaying.load();
-    const timer = setInterval(nowPlaying.load, REFRESH_MS);
-    return () => clearInterval(timer);
+    if (hasSelf) nowPlaying.load();
   }, [hasSelf, nowPlaying.load]);
+  // Reler a presença só com a aba à vista (ao voltar, relê na hora).
+  useVisibleInterval(nowPlaying.load, hasSelf ? REFRESH_MS : null);
   const selfPlaying = hasSelf && nowPlaying.server !== null;
 
   const podium = ranking.entries.slice(0, 3);
