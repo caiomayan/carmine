@@ -11,6 +11,11 @@ import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
  */
 
 const POSTHOG = 'http://posthog.e2e.test';
+/** O agente de um Chrome comum: a biblioteca descarta robôs, e o do Chromium de teste se anuncia como um. */
+const CHROME_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+
+test.use({ userAgent: CHROME_AGENT });
 const MAIN_WEB = `http://localhost:${process.env.WEB_E2E_PORT ?? 3000}`;
 const NOT_FOUND = /404 \(Not Found\)/;
 

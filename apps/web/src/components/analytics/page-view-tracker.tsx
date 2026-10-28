@@ -61,12 +61,9 @@ let allowed = true;
 
 function connect(config: PageViewTrackerConfig): Promise<Client> {
   loading ??= new Promise<Client>((resolve) => {
-    console.info('[analytics] connect: esperando load e ocioso');
     afterLoadAndIdle(() => {
-      console.info('[analytics] ocioso: importando a biblioteca');
       void import('posthog-js/dist/module.slim.no-external')
         .then((module) => {
-          console.info('[analytics] biblioteca carregada', Object.keys(module as object).join(','));
           const posthog = posthogOf(module);
           posthog.init(config.key, {
             api_host: config.host,
@@ -88,16 +85,9 @@ function connect(config: PageViewTrackerConfig): Promise<Client> {
             rageclick: false,
             before_send: (event) => (allowed ? sanitizeEvent(event) : null),
           });
-          console.info(
-            '[analytics] init feito; robô?',
-            String((posthog as unknown as { _is_bot?: () => unknown })._is_bot?.()),
-            'webdriver',
-            String(navigator.webdriver),
-          );
           resolve({
             capture: (event, properties) => {
-              const result = posthog.capture(event, properties);
-              console.info('[analytics] capture devolveu', String(result?.event));
+              posthog.capture(event, properties);
             },
           });
         })
@@ -156,7 +146,6 @@ function Tracker({ config }: { config: PageViewTrackerConfig }) {
 
   useEffect(() => {
     allowed = ready;
-    console.info('[analytics] efeito', status, String(ready), pathname);
     if (!ready) return;
     const key = `${pathname}?${search}`;
     if (counted.current === key) return;
