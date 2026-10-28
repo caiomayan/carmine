@@ -223,13 +223,12 @@ h1.text-display {
 /*
  * Spotlight: o gradiente fica PARADO numa camada de 472 px e quem anda com o ponteiro é o transform (--tx/--ty, o
  * deslocamento a partir do centro). Antes o centro do radial-gradient seguia --px/--py e o navegador repintava o painel
- * inteiro a cada movimento; agora é só o compositor movendo uma camada pronta. O painel recorta a camada (overflow: clip
- * acompanha o border-radius); o will-change vale só enquanto o spotlight está visível.
+ * inteiro a cada movimento; agora é só o compositor movendo uma camada pronta. O painel recorta a camada (todo .v-spot tem
+ * overflow-hidden, que acompanha o border-radius); o will-change vale só enquanto o spotlight está visível.
  */
 .v-spot {
   position: relative;
   isolation: isolate;
-  overflow: clip;
 }
 .v-spot::before {
   content: "";
