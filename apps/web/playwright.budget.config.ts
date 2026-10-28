@@ -1,5 +1,5 @@
-import { defineConfig } from '@playwright/test';
-import base from './playwright.config';
+import { defineConfig, devices } from '@playwright/test';
+import base, { ANALYTICS_WEB_PORT } from './playwright.config';
 
 /**
  * Só o orçamento de JS (`pnpm budget:js:ci`): a mesma stack do E2E (Steam falsa, API e web de produção), sem
@@ -7,6 +7,11 @@ import base from './playwright.config';
  */
 export default defineConfig({
   ...base,
+  // Sem o web da contagem de páginas (analytics.spec.ts): o orçamento mede o site sem a chave do PostHog.
+  webServer: (Array.isArray(base.webServer) ? base.webServer : []).filter(
+    (server) => !server.url?.includes(`:${ANALYTICS_WEB_PORT}`),
+  ),
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   testIgnore: [],
   testMatch: 'js-budget.spec.ts',
   fullyParallel: false,

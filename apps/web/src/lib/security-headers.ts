@@ -33,11 +33,14 @@ export function buildContentSecurityPolicy({
   nonce,
   dev,
   reportingOrigin = null,
+  analyticsOrigin = null,
 }: {
   nonce: string;
   dev: boolean;
   /** Origem de ingestão do Sentry (do DSN), a única conexão externa do navegador. */
   reportingOrigin?: string | null;
+  /** Origem de ingestão do PostHog (UE), só quando a contagem de páginas está ligada (`POSTHOG_API_KEY`). */
+  analyticsOrigin?: string | null;
 }): string {
   const media = mediaOrigin();
   return [
@@ -47,7 +50,7 @@ export function buildContentSecurityPolicy({
     "style-src 'self' 'unsafe-inline'",
     `img-src 'self' data: blob: ${[...IMAGE_ORIGINS, ...(media ? [media] : [])].join(' ')}`,
     "font-src 'self'",
-    `connect-src 'self'${reportingOrigin ? ` ${reportingOrigin}` : ''}`,
+    `connect-src 'self'${reportingOrigin ? ` ${reportingOrigin}` : ''}${analyticsOrigin ? ` ${analyticsOrigin}` : ''}`,
     `frame-src ${VIEWER_ORIGIN}`,
     "frame-ancestors 'none'",
     "object-src 'none'",

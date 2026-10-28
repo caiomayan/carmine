@@ -26,6 +26,7 @@ O que o web e a API mandam em toda resposta e o que fazer quando o site precisar
 | `img-src` | `https://cdn.cstrike.app` | imagens dos Itens (`cs2-lib`) |
 | `img-src` | `https://*.steamstatic.com` | avatares da Steam |
 | `connect-src` | origem do `SENTRY_DSN` do web | só quando o DSN está configurado (calculada em tempo de execução pelo proxy) |
+| `connect-src` | `https://eu.i.posthog.com` (ou o `POSTHOG_HOST`) | só quando o web tem `POSTHOG_API_KEY` (a contagem de páginas, A1d); sem a chave a CSP não muda |
 
 Tudo mais é `'self'` (API em `/api`, SSE, fontes do `next/font`). O login Steam é uma navegação (`/api/auth/steam/login` responde 302), não um formulário, então `form-action 'self'` basta.
 

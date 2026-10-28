@@ -1,3 +1,4 @@
+import { analyticsPreferenceSchema } from '@carmine/contracts/analytics';
 import {
   friendsPlayingSchema,
   liveServerListSchema,
@@ -6,6 +7,7 @@ import {
 import { profilePlayingSchema } from '@carmine/contracts/profile';
 import { describe, expect, it } from 'vitest';
 import {
+  parseAnalyticsPreference,
   parseFriendsPlaying,
   parseLiveServerList,
   parseNowPlaying,
@@ -188,6 +190,36 @@ describe('parseNowPlaying concorda com nowPlayingSchema', () => {
     expect(
       parseNowPlaying({ server: { ...playing(), address: '203.0.113.5:27015', players: 4 } }),
     ).toEqual({ server: playing() });
+  });
+});
+
+describe('parseAnalyticsPreference concorda com analyticsPreferenceSchema', () => {
+  it('aceita o que o schema aceita e devolve só os dois campos', () => {
+    for (const value of [
+      { participate: true, enabled: true },
+      { participate: false, enabled: false },
+    ]) {
+      expect(analyticsPreferenceSchema.safeParse(value).success).toBe(true);
+      expect(parseAnalyticsPreference(value)).toEqual(value);
+    }
+    expect(parseAnalyticsPreference({ participate: true, enabled: true, extra: 1 })).toEqual({
+      participate: true,
+      enabled: true,
+    });
+  });
+
+  it('recusa o que o schema recusa', () => {
+    for (const value of [
+      null,
+      [],
+      {},
+      { participate: 'sim', enabled: true },
+      { participate: true },
+      { enabled: true },
+    ]) {
+      expect(analyticsPreferenceSchema.safeParse(value).success).toBe(false);
+      expect(parseAnalyticsPreference(value)).toBeNull();
+    }
   });
 });
 

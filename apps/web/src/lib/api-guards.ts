@@ -6,6 +6,7 @@ import type {
   PlayingFriend,
   ProfilePlaying,
 } from '@carmine/contracts';
+import type { AnalyticsPreference } from '@carmine/contracts/analytics';
 
 /**
  * Conferência leve das respostas da nossa própria API no navegador, sem o Zod. Os schemas (`@carmine/contracts`)
@@ -152,4 +153,11 @@ export function parseNowPlaying(value: unknown): NowPlaying | null {
       map: server.map,
     },
   };
+}
+
+/** `GET /api/me/analytics` (a chave "Participar da análise de uso"); `null` se o formato não é o do contrato. */
+export function parseAnalyticsPreference(value: unknown): AnalyticsPreference | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.participate !== 'boolean' || typeof value.enabled !== 'boolean') return null;
+  return { participate: value.participate, enabled: value.enabled };
 }

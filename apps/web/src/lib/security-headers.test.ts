@@ -79,6 +79,37 @@ describe('buildContentSecurityPolicy', () => {
     expect(withSentry.get('connect-src')).toEqual(["'self'", 'https://o1.ingest.sentry.io']);
   });
 
+  it('com a contagem de páginas ligada, o navegador também fala com o PostHog da UE (e só com ela)', () => {
+    const withAnalytics = directives(
+      buildContentSecurityPolicy({
+        nonce: 'abc123',
+        dev: false,
+        analyticsOrigin: 'https://eu.i.posthog.com',
+      }),
+    );
+    const withBoth = directives(
+      buildContentSecurityPolicy({
+        nonce: 'abc123',
+        dev: false,
+        reportingOrigin: 'https://o1.ingest.sentry.io',
+        analyticsOrigin: 'https://eu.i.posthog.com',
+      }),
+    );
+
+    expect(withAnalytics.get('connect-src')).toEqual(["'self'", 'https://eu.i.posthog.com']);
+    expect(withBoth.get('connect-src')).toEqual([
+      "'self'",
+      'https://o1.ingest.sentry.io',
+      'https://eu.i.posthog.com',
+    ]);
+    // Sem a chave, nada muda.
+    expect(
+      directives(
+        buildContentSecurityPolicy({ nonce: 'abc123', dev: false, analyticsOrigin: null }),
+      ).get('connect-src'),
+    ).toEqual(["'self'"]);
+  });
+
   it('fala só com a própria origem (API em /api, SSE)', () => {
     expect(csp.get('connect-src')).toEqual(["'self'"]);
     expect(csp.get('default-src')).toEqual(["'self'"]);
