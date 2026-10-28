@@ -142,12 +142,28 @@ test.describe('a atividade da home', () => {
     expect(await links(page).count()).toBe(readable);
   });
 
+  test('fora da tela a faixa pausa e, ao voltar à vista, corre de novo', async ({ page }) => {
+    await page.setViewportSize(NARROW);
+    await page.goto('/');
+    await expect(strip(page)).toHaveAttribute('data-moving', 'true');
+    await strip(page).scrollIntoViewIfNeeded();
+    await expect.poll(() => playState(page)).toBe('running');
+
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await expect.poll(() => playState(page)).toBe('paused');
+
+    await strip(page).scrollIntoViewIfNeeded();
+    await expect.poll(() => playState(page)).toBe('running');
+  });
+
   test('corre quando não cabe e pausa no mouse, no foco e no botão', async ({ page }) => {
     await page.setViewportSize(NARROW);
     await page.goto('/');
     await expect(strip(page)).toHaveAttribute('data-moving', 'true');
     expect(await animationName(page)).toBe('marquee');
-    expect(await playState(page)).toBe('running');
+    // A faixa só corre à vista: fora da tela ela pausa (o teste seguinte), então traz para a tela antes de olhar.
+    await strip(page).scrollIntoViewIfNeeded();
+    await expect.poll(() => playState(page)).toBe('running');
 
     // Mouse: pausa em cima, volta ao sair.
     await strip(page).hover();
