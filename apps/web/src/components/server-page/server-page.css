@@ -40,18 +40,9 @@
 .vs-art[data-asleep] img {
   filter: grayscale(0.55) brightness(0.55);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .vs-art img {
-    animation: vs-kenburns 40s ease-in-out infinite alternate;
-  }
-}
-@keyframes vs-kenburns {
-  from {
-    transform: scale(1.02);
-  }
-  to {
-    transform: scale(1.1) translate3d(-1.2%, -1%, 0);
-  }
+/* A arte do servidor fica parada, no meio do antigo Ken Burns de 40 s (ver a da Home). */
+.vs-art img {
+  transform: scale(1.06) translate(-0.6%, -0.5%);
 }
 @media (max-width: 760px) {
   .vs-art {
