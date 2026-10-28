@@ -33,6 +33,12 @@ Opções e etapas: `install.sh --help` e o cabeçalho do script. Todas as etapas
 /etc/systemd/system/carmine-cs2@.service  carmine-cs2.target
 ```
 
+## Release do plugin e espelho dos terceiros
+
+- **Carmine.Core** vira uma GitHub Release por tag `core-vX.Y.Z` (`.github/workflows/release-plugin.yml`): `carmine-core-X.Y.Z.zip`, `manifest.json` (versão, commit, SHA-256 do zip, terceiros fixados), `SHA256SUMS` e uma atestação de proveniência. Nasce como pré-lançamento; só a release marcada *Latest* chega aos servidores, e promovê-la é a porta da regra "o plugin só vai depois da API em produção".
+- **Terceiros** continuam em `versions.sh` (URL + SHA-256). O `.github/workflows/versions-check.yml` confere toda semana que o oficial ainda entrega esse SHA-256 e, com os secrets `MIRROR_*`, mantém uma cópia **privada** no R2 do dono (`assets/<sha256>`, só de uso nosso: o RockTheVote não tem licença). O `install.sh` tenta o oficial e, se falhar ou vier com outro conteúdo, o espelho (`/etc/carmine-cs2/mirror.env`: `MIRROR_URL`, `MIRROR_ACCESS_KEY_ID`, `MIRROR_SECRET_ACCESS_KEY`, token só de leitura). Cair no espelho nunca troca a versão fixada: o objeto é endereçado pelo próprio SHA-256.
+- Teste sem rede (manifesto, espelho e o `versions-check`): `bash infra/cs2/test/release-and-mirror.test.sh` (jq, curl, python3; roda no `verify` do CI).
+
 ## Operação
 
 ```sh

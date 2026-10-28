@@ -1,0 +1,86 @@
+# Release do Carmine.Core para os servidores de CS2 (docs/operacao/lancamento-cs2.md).
+#
+# Quem dispara é uma tag `core-vX.Y.Z` (X.Y.Z = ModuleVersion em plugins/src/Carmine.Core/CorePlugin.cs; o job
+# recusa se não baterem). O job testa, publica o plugin (IL puro, vale em qualquer SO) e cria uma GitHub Release
+# como PRÉ-LANÇAMENTO com:
+#   - carmine-core-X.Y.Z.zip   a saída do `dotnet publish`, pronta para addons/counterstrikesharp/plugins/Carmine.Core/
+#   - manifest.json            versão, commit, SHA-256 do zip e dos terceiros fixados em versions.sh (make-manifest.sh)
+#   - SHA256SUMS               do zip e do manifesto
+#   - uma atestação de proveniência do GitHub (gh attestation verify)
+#
+# A porta da regra "o plugin só vai aos servidores depois da API em produção" é o botão do GitHub: os servidores só
+# enxergam a release marcada como *Latest*, e quem promove (o maestro) só faz isso depois do release da API.
+name: Release do plugin
+
+on:
+  push:
+    tags: ["core-v*"]
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+concurrency:
+  group: release-plugin-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: plugins/global.json
+
+      - name: A tag bate com o ModuleVersion
+        id: version
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          [[ "$tag" =~ ^core-v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "tag inválida: $tag (esperado core-vX.Y.Z)"; exit 1; }
+          version="${BASH_REMATCH[1]}"
+          declared="$(sed -nE 's/.*ModuleVersion => "([^"]+)".*/\1/p' plugins/src/Carmine.Core/CorePlugin.cs)"
+          if [[ "$declared" != "$version" ]]; then
+            echo "A tag diz $version, mas ModuleVersion em CorePlugin.cs é '$declared'."
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Compilar e testar
+        working-directory: plugins
+        run: |
+          dotnet build Carmine.Plugins.slnx -c Release
+          dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
+
+      - name: Publicar o Carmine.Core
+        run: |
+          dotnet publish plugins/src/Carmine.Core/Carmine.Core.csproj -c Release -o "$RUNNER_TEMP/core" --artifacts-path "$RUNNER_TEMP/artifacts"
+          test -f "$RUNNER_TEMP/core/Carmine.Core.dll"
+
+      - name: Empacotar (zip, manifesto e SHA256SUMS)
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir dist
+          (cd "$RUNNER_TEMP/core" && zip -qr "$GITHUB_WORKSPACE/dist/carmine-core-$VERSION.zip" .)
+          bash infra/cs2/release/make-manifest.sh --version "$VERSION" --commit "$GITHUB_SHA" \
+            --zip "dist/carmine-core-$VERSION.zip" --openapi apps/api/openapi.json --out dist/manifest.json
+          (cd dist && sha256sum "carmine-core-$VERSION.zip" manifest.json > SHA256SUMS && cat SHA256SUMS)
+
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/carmine-core-*.zip
+            dist/manifest.json
+
+      - name: Criar a release (pré-lançamento)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* --prerelease --verify-tag \
+            --title "Carmine.Core $VERSION" \
+            --notes "Carmine.Core $VERSION (commit $GITHUB_SHA). Pré-lançamento: os servidores só recebem a release marcada como *Latest*; promova-a depois do release da API que ela exige (docs/operacao/lancamento-cs2.md)."

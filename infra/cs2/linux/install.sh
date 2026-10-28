@@ -34,6 +34,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 PROFILES_SRC="$REPO_ROOT/infra/cs2/profiles"
 # shellcheck source=versions.sh
 source "$SCRIPT_DIR/versions.sh"
+# shellcheck source=lib-assets.sh
+source "$SCRIPT_DIR/lib-assets.sh"
+mirror_load_env
 
 HOME_DIR=/srv/carmine-cs2
 SERVICE_USER=carmine-cs2
@@ -139,21 +142,40 @@ assert_game_installed() {
 }
 
 # Baixa uma vez para DOWNLOADS_DIR e confere o SHA-256 (download corrompido ou release trocada param aqui).
+# Tenta o endereço oficial e, se ele falhar ou entregar outro conteúdo, o espelho privado (lib-assets.sh), que
+# só guarda o objeto com exatamente este SHA-256: cair nele nunca troca a versão fixada.
 fetch_verified() {
   local url="$1" sha="$2" name="$3" file="$DOWNLOADS_DIR/$3"
   mkdir -p "$DOWNLOADS_DIR"
-  if [[ ! -f "$file" ]] || ! echo "$sha  $file" | sha256sum --check --status; then
-    echo "    baixando $url" >&2
-    curl -fsSL --retry 3 --retry-delay 3 -o "$file.part" "$url"
+  if [[ -f "$file" ]] && echo "$sha  $file" | sha256sum --check --status; then
+    echo "$file"
+    return
+  fi
+  local why=''
+  echo "    baixando $url" >&2
+  if curl -fsSL --retry 3 --retry-delay 3 -o "$file.part" "$url"; then
     mv -f "$file.part" "$file"
-  fi
-  if ! echo "$sha  $file" | sha256sum --check --status; then
-    local got
-    got="$(sha256sum "$file" | cut -d' ' -f1)"
+    if echo "$sha  $file" | sha256sum --check --status; then
+      echo "$file"
+      return
+    fi
+    why="SHA-256 não confere (esperado $sha, veio $(sha256sum "$file" | cut -d' ' -f1))"
     rm -f "$file"
-    die "SHA-256 de $url não confere (esperado $sha, veio $got)."
+  else
+    rm -f "$file.part"
+    why="o download falhou"
   fi
-  echo "$file"
+  if mirror_configured; then
+    echo "    $url: $why; tentando o espelho" >&2
+    if mirror_get "$sha" "$file.part" && mv -f "$file.part" "$file" \
+      && echo "$sha  $file" | sha256sum --check --status; then
+      echo "$file"
+      return
+    fi
+    rm -f "$file" "$file.part"
+    die "$url: $why, e o espelho também não tem uma cópia com o SHA-256 $sha."
+  fi
+  die "$url: $why (sem espelho configurado: veja lib-assets.sh)."
 }
 
 # O unzip devolve 1 quando só avisa (ex.: zips feitos no Windows com "\" nos nomes, que ele converte).
