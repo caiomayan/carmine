@@ -167,7 +167,7 @@ test.describe('o que a paleta acha', () => {
     await expect(hit).toBeVisible();
     await expect(page.getByTestId('palette-list')).toContainText('Catálogo');
     await hit.click();
-    await expect(page).toHaveURL(/\/inventory\/adicionar\/222$/);
+    await expect(page).toHaveURL(/\/inventory\/add\/222$/);
 
     await openPalette(page);
     await input(page).fill('redline');

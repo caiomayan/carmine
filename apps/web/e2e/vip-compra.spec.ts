@@ -5,7 +5,7 @@ import { axeViolations, expect, saveTheme, test } from './fixtures';
 /**
  * A confirmação da compra (/plans/checkout) e a página da compra (/plans/purchase/{id}), S14b parte (b). O E2E roda com o provedor
  * FALSO: o fluxo de verdade (Conta, confirmação, Pix, recuperação pelo id) vai pela API; os estados raros (limite à
- * frente, bloqueios, cada status final, QR ausente) vêm das vitrines `/dev/vip/comprar` e `/dev/vip/compra`.
+ * frente, bloqueios, cada status final, QR ausente) vêm das vitrines `/dev/plans/checkout` e `/dev/vip/compra`.
  */
 
 const noHorizontalScroll = (page: Page) =>
@@ -19,7 +19,7 @@ async function hydrated(control: Locator) {
 }
 
 const confirm = (state: string, pack = 'vip-3m') =>
-  `/dev/vip/comprar?estado=${state}&pacote=${pack}`;
+  `/dev/plans/checkout?estado=${state}&pacote=${pack}`;
 const purchase = (state: string) => `/dev/vip/compra?estado=${state}`;
 
 test.describe('confirmação (vitrine)', () => {
@@ -167,7 +167,7 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
 
   test('Pacote desconhecido volta ao /plans', async ({ page }) => {
     await page.goto('/plans/checkout?pacote=vip-9m');
-    await expect(page).toHaveURL(/\/vip$/);
+    await expect(page).toHaveURL(/\/plans$/);
   });
 
   test('compra por Pix: confirma, vê o QR, recupera pelo id e repete sem duplicar', async ({
@@ -181,7 +181,7 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
     await page.goto('/plans');
     const buy = page.locator('[data-package="vip-3m"]').getByTestId('vip-buy');
     await buy.click();
-    await expect(page).toHaveURL(/\/vip\/comprar\?pacote=vip-3m$/);
+    await expect(page).toHaveURL(/\/plans\/checkout\?pacote=vip-3m$/);
 
     // A Conta que recebe o VIP é a da sessão.
     const me = (await (await page.request.get('/api/me')).json()) as {
@@ -197,11 +197,11 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
     await hydrated(submit);
     await submit.click();
     await expect(page.getByTestId('vip-form-error')).toContainText('Marque a declaração');
-    await expect(page).toHaveURL(/\/vip\/comprar/);
+    await expect(page).toHaveURL(/\/plans\/checkout/);
 
     await page.getByTestId('vip-declaration').check();
     await submit.click();
-    await expect(page).toHaveURL(/\/vip\/compra\/[0-9a-f-]{36}$/);
+    await expect(page).toHaveURL(/\/plans\/purchase\/[0-9a-f-]{36}$/);
     const id = page.url().split('/').pop() as string;
 
     await expect(page.getByTestId('vip-purchase')).toHaveAttribute('data-status', 'pending');

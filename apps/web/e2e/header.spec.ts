@@ -210,7 +210,7 @@ test.describe('quem entrou: tudo dentro do painel é clicável', () => {
       (p) => p.getByTestId('preview-item').first(),
       new RegExp(`/inventory/${UID_RIFLE}$`),
     );
-    await goes(page, 'Inventário', (p) => p.getByTestId('preview-add'), /\/inventory\/adicionar$/);
+    await goes(page, 'Inventário', (p) => p.getByTestId('preview-add'), /\/inventory\/add$/);
 
     await page.goto('/ranking');
     await hydrated(page);

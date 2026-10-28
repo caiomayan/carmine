@@ -39,7 +39,7 @@ test.describe('faixa do fim do VIP', () => {
   test('o link leva à página dos Pacotes', async ({ page }) => {
     await signInWithVip(page, 1);
     await page.getByTestId('vip-ending-link').click();
-    await expect(page).toHaveURL(/\/vip$/);
+    await expect(page).toHaveURL(/\/plans$/);
     // No /plans, que já fala do VIP, a faixa não repete.
     await expect(band(page)).toHaveCount(0);
   });

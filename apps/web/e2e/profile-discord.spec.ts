@@ -37,7 +37,7 @@ test('o resultado do vínculo volta na URL, aparece como aviso e a URL é limpa'
   const notice = page.getByTestId('discord-notice');
   await expect(notice).toContainText('Esse Discord já está ligado a outra Conta do Carmine.');
   await expect(notice).toContainText('Entre nessa Conta e desvincule');
-  await expect(page).toHaveURL(/\/settings\/conexoes$/);
+  await expect(page).toHaveURL(/\/settings\/connections$/);
 
   // Um valor que a API nunca manda é ignorado.
   await page.goto('/settings/connections?discord=qualquer-coisa');
