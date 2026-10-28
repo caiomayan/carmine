@@ -84,3 +84,67 @@
     transition: none;
   }
 }
+
+/*
+ * Notebook: a tela baixa (1366x768, 1536x864 com a barra do navegador, 1920x1080 com zoom de 125 %) deixava
+ * o rodapé acima dos 85 % da altura e a cortina caía na rolagem normal. Com altura de até 860 px os
+ * respiros do rodapé encolhem para ele caber; o conteúdo, os links e o wordmark ficam iguais.
+ */
+@media (min-width: 1024px) and (max-height: 860px) {
+  [data-site-footer] [data-ft="top"] {
+    padding-top: 1.5rem;
+  }
+
+  [data-site-footer] [data-ft="links"] {
+    padding-top: 1.5rem;
+    padding-bottom: 1rem;
+  }
+
+  [data-site-footer] [data-ft="legal"] {
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+  }
+}
+
+/* Ainda mais baixa (até 720 px): sem a frase da marca e com os respiros no mínimo. */
+@media (min-width: 1024px) and (max-height: 720px) {
+  [data-site-footer] [data-ft="top"] {
+    padding-top: 1rem;
+  }
+
+  [data-site-footer] [data-ft="links"] {
+    padding-top: 1rem;
+    padding-bottom: 0.5rem;
+  }
+
+  [data-site-footer] [data-ft="tagline"] {
+    display: none;
+  }
+}
+
+/*
+ * Reserva da cortina: onde o rodapé não cabe na tela (janela muito baixa) ele fica no fluxo, mas sobe
+ * ao entrar na janela (a mesma sensação de revelar, sem prender nada). Só onde o navegador faz animação
+ * por rolagem (`animation-timeline`), no desktop e sem movimento reduzido.
+ */
+@keyframes ft-rise {
+  from {
+    opacity: 0.35;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    html:not([data-curtain="on"]) [data-site-footer] > div {
+      animation: ft-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 100%;
+    }
+  }
+}
