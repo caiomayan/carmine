@@ -472,12 +472,29 @@ describe('summarizeRound · clutch', () => {
     expect(player(summary, A).survived).toBe(false);
   });
 
-  it('1v2 em que o time vence mas o jogador morreu não é clutch vencido', () => {
+  it('o clutch vencido não exige estar vivo: o T sozinho morre e a bomba explode', () => {
+    const summary = run({
+      kills: [
+        kill(D, C, 1000),
+        kill(B, E, 2000),
+        kill(A, F, 3000),
+        // D é o último T vivo contra A e B, e morre; a bomba (já plantada) explode.
+        kill(B, D, 9000),
+      ],
+      end: end({ winner: 't', reason: 'bomb_exploded', alive: [A, B] }),
+    });
+    expect(player(summary, D)).toMatchObject({
+      survived: false,
+      clutch: { against: 2, won: true },
+    });
+  });
+
+  it('o mesmo vale para o CT: morre, mas o time vence o round', () => {
     const summary = run({
       kills: [...oneVsTwo(), kill(A, D, 12_000), kill(E, A, 14_000)],
       end: end({ winner: 'ct', reason: 'time' }),
     });
-    expect(player(summary, A).clutch).toEqual({ against: 2, won: false });
+    expect(player(summary, A).clutch).toEqual({ against: 2, won: true });
   });
 
   it('o clutch também vale para o lado T', () => {

@@ -21,7 +21,10 @@ export const ROUND_HEALTH = 100;
 /** O maior multi-kill que o resumo guarda (5k). */
 export const MULTI_KILL_MAX = 5;
 
-/** O último vivo do time contra `against` inimigos vivos, e se o time venceu com ele vivo. */
+/**
+ * O último vivo do time contra `against` inimigos vivos, e se o time venceu o round depois disso,
+ * esteja ele vivo ou não no fim (a bomba plantada explode e o clutch é do T que morreu).
+ */
 export interface Clutch {
   against: number;
   won: boolean;
@@ -228,7 +231,7 @@ export function summarizeRound(input: RoundInput): RoundSummary | null {
     player.multiKill = player.kills >= 2 ? Math.min(player.kills, MULTI_KILL_MAX) : null;
     const against = clutchAgainst.get(player.steamId);
     if (against !== undefined) {
-      player.clutch = { against, won: end.winner === player.side && player.survived };
+      player.clutch = { against, won: end.winner === player.side };
     }
     player.kast =
       player.kills > 0 ||
