@@ -46,7 +46,9 @@ export const STAFF_ROLE_RANK: Record<StaffRole, number> = { owner: 3, admin: 2, 
  * - `ranking.remove`: tirar uma Conta do Ranking de um Modo e semana (S12);
  * - `reports.handle`: ver a fila de Denúncias e arquivá-las (S13);
  * - `avatars.moderate`: a fila de denúncias de foto de perfil, decidir (manter ou remover) e
- *   remover a foto de uma Conta (ADR 0022). Dono, Admin e Moderador.
+ *   remover a foto de uma Conta (ADR 0022). Dono, Admin e Moderador;
+ * - `payments.manage`: os pagamentos do VIP (S14): a lista e a ficha, reembolsar, reabrir as compras
+ *   de uma Conta bloqueada, conciliar com o provedor e compensar dias por indisponibilidade. Dono e Admin.
  */
 export const STAFF_PERMISSIONS = {
   'accounts.read': ['owner', 'admin', 'moderator'],
@@ -62,6 +64,7 @@ export const STAFF_PERMISSIONS = {
   'ranking.remove': ['owner', 'admin', 'moderator'],
   'reports.handle': ['owner', 'admin', 'moderator'],
   'avatars.moderate': ['owner', 'admin', 'moderator'],
+  'payments.manage': ['owner', 'admin'],
 } as const satisfies Record<string, readonly StaffRole[]>;
 
 export type StaffPermission = keyof typeof STAFF_PERMISSIONS;
@@ -480,6 +483,16 @@ export const STAFF_ERROR_CODES = [
   'avatar_not_reviewable',
   /** Remover a foto de uma Conta que não tem foto própria. */
   'no_custom_avatar',
+  /** Nenhum pagamento com esse id. */
+  'payment_not_found',
+  /** O reembolso não vale: o pagamento não está aprovado, ou não há dias a devolver. */
+  'payment_not_refundable',
+  /** O provedor de pagamento não confirmou (o estorno não foi feito). */
+  'payment_provider_unavailable',
+  /** As compras da Conta não estavam bloqueadas. */
+  'purchases_not_blocked',
+  /** Esta compensação (a chave) já foi aplicada. */
+  'compensation_applied',
 ] as const;
 
 export type StaffErrorCode = (typeof STAFF_ERROR_CODES)[number];
@@ -508,6 +521,11 @@ export const STAFF_ERROR_STATUS: Record<StaffErrorCode, number> = {
   avatar_not_found: 404,
   avatar_not_reviewable: 409,
   no_custom_avatar: 409,
+  payment_not_found: 404,
+  payment_not_refundable: 409,
+  payment_provider_unavailable: 502,
+  purchases_not_blocked: 409,
+  compensation_applied: 409,
 };
 
 export const staffErrorSchema = z

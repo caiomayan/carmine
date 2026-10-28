@@ -47,3 +47,14 @@ A homologação (`dev.stcarmine.com`) vende com o **provedor falso**: a página 
 - **"Processando":** a API só diz o estado e as datas. A regra é da tela: passados `PURCHASE_PROCESSING_MINUTES` (10) da criação sem a compra mudar, aparece o suporte com o identificador (o `id` inteiro, para copiar).
 - **Recibo:** o número é o identificador da compra, sem nota fiscal (pessoa física). Só existe para compra aprovada (mesmo devolvida depois). Imprime em papel/PDF só com o recibo. O fornecedor vem das variáveis `RECEIPT_SUPPLIER_*` do web.
 - **E2E:** `apps/web/e2e/compras.spec.ts`, com o provedor falso ligado em `playwright.config.ts`.
+
+## Painel da Staff nos pagamentos (S14)
+
+- **Onde:** `/staff/pagamentos`, aba **Pagamentos** do painel. **Só o Dono e o Admin** (permissão `payments.manage`); Moderador e jogador recebem 404, e o Moderador nem vê a aba.
+- **Lista:** do mais recente ao mais antigo, com abas por estado e a contagem de cada um (sempre o total, não só a página). Cada linha mostra o estado, a Conta, o valor, o Pacote, o meio e a data; "Carregar mais" pagina pelo cursor.
+- **Ficha** (`/staff/pagamentos/<id>`): valores, Pacote, Conta beneficiada, Pagador (CPF mascarado), provedor e id lá, o fim do Período VIP gerado, os **webhooks recebidos** (quando, tópico, assinatura, o que a API fez) e o que a Staff já fez nesse pagamento.
+- **Reembolsar:** com motivo e confirmação; sem dias devolve o que resta, com dias é parcial (valor × dias ÷ dias do Pacote). O provedor estorna e os dias saem do VIP. Se o provedor não confirmar, nada é devolvido (erro 502, tente de novo). É o mesmo `payments refund`, com o mesmo log de auditoria (`payment_refund`).
+- **Compras bloqueadas:** se a Conta foi bloqueada por contestação, a ficha mostra o bloqueio e o botão **Reabrir as compras** (motivo obrigatório; `purchase_unblock`).
+- **Conciliar agora:** confere com o provedor os pagamentos dos últimos N dias (padrão 8) e diz quantos foram conferidos e quantos mudaram (o `payments reconcile`).
+- **Compensação em lote (D4):** o painel mostra quantas Contas têm VIP ativo agora, pede os dias (1 a 30), a chave única da queda (sugere `queda-AAAA-MM-DD`) e o motivo, e **confirma com os números** antes de aplicar. Repetir a chave não soma de novo. Avisa no Discord e entra no log (`vip_compensation`); as últimas compensações ficam listadas.
+- **API:** `GET/POST /api/staff/payments*` e `POST /api/staff/accounts/{publicId}/purchases/unblock` (contrato em `packages/contracts/src/staff-payments.ts`). Testes: `apps/api/test/staff-payments.int-spec.ts` e `apps/web/e2e/staff-pagamentos.spec.ts` (a compensação não é aplicada no E2E, porque soma dias a todos os VIPs do banco compartilhado).
