@@ -52,11 +52,13 @@ export function PurchaseForm({
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (sending || demo) return;
+    if (sending) return;
     if (!declared) {
       setError('declaration');
       return;
     }
+    // Vitrine: mostra a validação, mas não cria compra.
+    if (demo) return;
     setError(null);
     setSending(true);
     key.current ??= crypto.randomUUID();

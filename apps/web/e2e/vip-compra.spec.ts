@@ -235,7 +235,12 @@ test.describe('o fluxo de verdade (provedor falso)', () => {
     }
   });
 
-  test('o endereço de uma compra que não existe (ou não é sua) dá 404', async ({ page }) => {
+  test('o endereço de uma compra que não existe (ou não é sua) dá 404', async ({
+    page,
+    expectedConsoleErrors,
+  }) => {
+    // O navegador registra o 404 do próprio documento no console.
+    expectedConsoleErrors.push(/status of 404/);
     await page.goto('/vip');
     await signInFromHeader(page, newSteamId());
     await expect(page.getByTestId('account-menu')).toBeVisible();
