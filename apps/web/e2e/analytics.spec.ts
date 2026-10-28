@@ -6,8 +6,8 @@ import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
 /**
  * A contagem de páginas (A1d, `pagina_vista`) e a chave "Participar da análise de uso". Roda no web com
  * `POSTHOG_API_KEY` (o projeto `analytics`, ver playwright.config.ts); o PostHog é um host de mentira que o teste
- * intercepta, então nada sai da máquina. O Chromium do Playwright se anuncia como robô (`navigator.webdriver`), e a
- * biblioteca não conta robôs: o teste esconde isso para a contagem rodar como num navegador de verdade.
+ * intercepta, então nada sai da máquina. O Chromium do Playwright se anuncia como robô (`navigator.webdriver`, o agente e as marcas
+ * `userAgentData`), e a biblioteca não conta robôs: o teste esconde isso para a contagem rodar como num navegador de verdade.
  */
 
 const POSTHOG = 'http://posthog.e2e.test';
@@ -51,6 +51,8 @@ async function watchPostHog(page: Page) {
   const context: BrowserContext = page.context();
   await context.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
+    // As marcas do cliente (`userAgentData`) também dizem "HeadlessChrome", e a biblioteca as confere.
+    Object.defineProperty(navigator, 'userAgentData', { get: () => undefined });
   });
   const requests: { events: Sent[]; afterLoad: boolean }[] = [];
   const log: string[] = [];
