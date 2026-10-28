@@ -185,7 +185,7 @@ export function ItemTile({
           : undefined
       }
       className={cn(
-        'group/tile v-spot relative grid enter-stagger content-start gap-2 rounded-xl bg-surface p-3 pb-3.5',
+        'group/tile v-spot relative grid overflow-hidden enter-stagger content-start gap-2 rounded-xl bg-surface p-3 pb-3.5',
         (HOLO_RARITIES.has(rarity) || statTrak) && 'v-holo',
         'transition-[background-color,box-shadow] duration-(--dur-base) ease-std hover:bg-surface-2',
         selected && 'bg-surface-2 shadow-[inset_0_0_0_100vmax_var(--fill-selected)]',
