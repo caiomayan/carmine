@@ -234,6 +234,8 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await page.reload();
   await boardReady(page);
   await expect(page.getByTestId('vip-notice')).toBeVisible();
+  // O aviso do fim leva aos Pacotes (S14b): renovar a um clique.
+  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/vip');
   await expect(page.getByTestId('preset-count')).toHaveText('1 de 20');
   await page.getByTestId('preset-new').click();
   await page.getByTestId('preset-name').fill('Retake de sexta');
@@ -251,6 +253,7 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await page.reload();
   await boardReady(page);
   await expect(page.getByTestId('vip-notice')).toHaveAttribute('data-notice', 'ended_today');
+  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/vip');
   await expect(page.getByTestId('preset-active-read-only')).toContainText(
     'ficou somente leitura sem VIP',
   );
