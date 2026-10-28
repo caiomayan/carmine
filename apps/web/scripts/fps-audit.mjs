@@ -42,6 +42,7 @@ export const ABLATIONS = {
     '[class*="kenburns"],[class*="hero-art"] img,[class*="-hero"] img{animation:none!important}',
   'sem-esqueleto':
     '.vh-skel,.pf-skel,.vh-shine,[class*="skel"],[class*="shimmer"]{animation:none!important}',
+  'sem-cortina': '__curtain',
   'sem-animacao': '*,*::before,*::after{animation:none!important}',
   'sem-transicao': '*,*::before,*::after{transition:none!important}',
   'sem-holo-spot': '.v-holo::after,.v-spot::before{display:none!important}',
@@ -79,13 +80,23 @@ const RECORDER = () => {
   try {
     new PerformanceObserver((list) => {
       for (const e of list.getEntries()) {
-        rec.loaf.push({ d: e.duration, b: e.blockingDuration });
+        rec.loaf.push({
+          d: e.duration,
+          b: e.blockingDuration,
+          t: e.startTime,
+          scripts: (e.scripts ?? []).map((x) => ({
+            u: x.sourceURL,
+            f: x.sourceFunctionName,
+            i: x.invoker,
+            d: x.duration,
+          })),
+        });
       }
     }).observe({ type: 'long-animation-frame', buffered: false });
   } catch {}
   try {
     new PerformanceObserver((list) => {
-      for (const e of list.getEntries()) rec.longtasks.push(e.duration);
+      for (const e of list.getEntries()) rec.longtasks.push({ d: e.duration, t: e.startTime });
     }).observe({ type: 'longtask', buffered: false });
   } catch {}
   const loop = (t) => {
@@ -124,6 +135,9 @@ const RECORDER = () => {
     },
   };
   window.__fps = {
+    peek() {
+      return { loaf: rec.loaf, longtasks: rec.longtasks };
+    },
     start() {
       rec.frames = [];
       rec.loaf = [];
@@ -369,13 +383,19 @@ async function measurePage(browser, page, ctx, extraCss) {
   const cdp = await context.newCDPSession(tab);
   await cdp.send('Performance.enable');
   if (ctx.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: ctx.cpu });
-  await tab.goto(`${ctx.base}${page.target}`, { waitUntil: 'load', timeout: 120_000 });
+  const noCurtain = extraCss === '__curtain';
+  const url = `${ctx.base}${page.target}${noCurtain ? `${page.target.includes('?') ? '&' : '?'}curtain=0` : ''}`;
+  await tab.goto(url, { waitUntil: 'load', timeout: 120_000 });
   await tab.evaluate(() => document.fonts.ready);
   await tab.waitForTimeout(2500);
   // Os esqueletos são o estado de carregamento: mede-se a página pronta, não a espera pelo dado.
   const settled = await tab
     .waitForFunction(
-      () => !document.querySelector('.vh-skel, .pf-skel, [data-skeleton]'),
+      () =>
+        ![...document.querySelectorAll('.vh-skel, .pf-skel, [data-skeleton]')].some((el) => {
+          const box = el.getBoundingClientRect();
+          return box.bottom > 0 && box.top < innerHeight && box.width > 0;
+        }),
       undefined,
       {
         timeout: 20_000,
@@ -384,7 +404,7 @@ async function measurePage(browser, page, ctx, extraCss) {
     .then(() => true)
     .catch(() => false);
   await tab.waitForTimeout(500);
-  if (extraCss) await tab.addStyleTag({ content: extraCss });
+  if (extraCss && !noCurtain) await tab.addStyleTag({ content: extraCss });
   await tab.waitForTimeout(400);
 
   const result = { windows: {}, settled };
@@ -479,7 +499,11 @@ async function openPage(browser, page, ctx) {
   await tab.waitForTimeout(2500);
   const loaded = await tab
     .waitForFunction(
-      () => !document.querySelector('.vh-skel, .pf-skel, [data-skeleton]'),
+      () =>
+        ![...document.querySelectorAll('.vh-skel, .pf-skel, [data-skeleton]')].some((el) => {
+          const box = el.getBoundingClientRect();
+          return box.bottom > 0 && box.top < innerHeight && box.width > 0;
+        }),
       undefined,
       { timeout: 20_000 },
     )
@@ -804,6 +828,164 @@ async function runGuard(browser, ctx, { only, serverPath, profilePath }) {
   }
 }
 
+/** O modo --hydration: tarefas longas e quem as causa na carga fria de cada página (CPU lenta). */
+async function runHydration(browser, ctx, { only, serverPath, profilePath }) {
+  console.log(
+    'Carga fria com a CPU ' +
+      ctx.cpu +
+      '× mais lenta: tarefas longas (>50 ms) e os scripts que as causam\n',
+  );
+  console.log(
+    '| Página | TBT ms | tarefas longas | maior ms | JS (script) ms | estilo+layout ms | load ms |',
+  );
+  console.log('|---|---:|---:|---:|---:|---:|---:|');
+  const details = [];
+  for (const page of PAGES) {
+    if (only && !only.includes(page.name)) continue;
+    const target =
+      page.path === '{profile}' ? profilePath : page.path === '{server}' ? serverPath : page.path;
+    if (!target || (page.auth && !ctx.storageState)) continue;
+    const context = await browser.newContext({
+      viewport: ctx.viewport,
+      deviceScaleFactor: ctx.dsf,
+      ...(ctx.storageState ? { storageState: ctx.storageState } : {}),
+    });
+    const tab = await context.newPage();
+    await tab.addInitScript(RECORDER);
+    const cdp = await context.newCDPSession(tab);
+    await cdp.send('Performance.enable');
+    if (ctx.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: ctx.cpu });
+    await tab.goto(ctx.base + target, { waitUntil: 'load', timeout: 120_000 });
+    await tab.waitForTimeout(6000);
+    const raw = await tab.evaluate(() => window.__fps.peek());
+    const timing = await tab.evaluate(() => {
+      const nav = performance.getEntriesByType('navigation')[0];
+      return { load: nav.loadEventEnd };
+    });
+    const m = await metricsOf(cdp);
+    await context.close();
+    const tasks = raw.longtasks.map((x) => x.d);
+    const tbt = tasks.reduce((sum, d) => sum + Math.max(0, d - 50), 0);
+    console.log(
+      '| ' +
+        page.name +
+        ' | ' +
+        Math.round(tbt) +
+        ' | ' +
+        tasks.length +
+        ' | ' +
+        Math.round(Math.max(0, ...tasks)) +
+        ' | ' +
+        Math.round((m.ScriptDuration ?? 0) * 1000) +
+        ' | ' +
+        Math.round(((m.RecalcStyleDuration ?? 0) + (m.LayoutDuration ?? 0)) * 1000) +
+        ' | ' +
+        Math.round(timing.load) +
+        ' |',
+    );
+    const byScript = new Map();
+    for (const frame of raw.loaf) {
+      for (const sc of frame.scripts) {
+        const key = (sc.u || '(inline)').split('/').pop() + ' · ' + (sc.i || sc.f || '');
+        byScript.set(key, (byScript.get(key) ?? 0) + sc.d);
+      }
+    }
+    details.push({ page: page.name, top: [...byScript].sort((a, b) => b[1] - a[1]).slice(0, 5) });
+  }
+  console.log(
+    '\n#### Quem ocupa a thread na carga (soma da duração por script, nos quadros longos)\n',
+  );
+  for (const d of details) {
+    console.log(
+      '- ' +
+        d.page +
+        ': ' +
+        (d.top.map(([k, ms]) => Math.round(ms) + ' ms ' + k).join(' | ') ||
+          '(nenhum quadro longo)'),
+    );
+  }
+}
+
+/** O modo --hidden: o que uma aba em segundo plano ainda faz (pedidos, recálculos, mutações). */
+async function runHidden(browser, ctx, { only, serverPath, profilePath }) {
+  console.log(
+    'Aba em segundo plano (outra aba em primeiro plano), 8 s depois de pronta, medida por 10 s\n',
+  );
+  console.log(
+    '| Página | document.hidden | pedidos | recálculos de estilo/s | layouts/s | mutações do DOM/s |',
+  );
+  console.log('|---|:-:|---:|---:|---:|---:|');
+  const notes = [];
+  for (const page of PAGES) {
+    if (only && !only.includes(page.name)) continue;
+    const target =
+      page.path === '{profile}' ? profilePath : page.path === '{server}' ? serverPath : page.path;
+    if (!target || (page.auth && !ctx.storageState)) continue;
+    const context = await browser.newContext({
+      viewport: ctx.viewport,
+      deviceScaleFactor: ctx.dsf,
+      ...(ctx.storageState ? { storageState: ctx.storageState } : {}),
+    });
+    const tab = await context.newPage();
+    const cdp = await context.newCDPSession(tab);
+    await cdp.send('Performance.enable');
+    const requests = new Map();
+    let counting = false;
+    tab.on('request', (r) => {
+      if (!counting) return;
+      const key = r.method() + ' ' + r.url().replace(ctx.base, '').split('?')[0];
+      requests.set(key, (requests.get(key) ?? 0) + 1);
+    });
+    await tab.goto(ctx.base + target, { waitUntil: 'load', timeout: 120_000 });
+    await tab.waitForTimeout(8000);
+    await tab.evaluate(() => {
+      window.__hid = { mutations: 0 };
+      new MutationObserver((r) => {
+        window.__hid.mutations += r.length;
+      }).observe(document.body, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+        attributes: true,
+      });
+    });
+    const other = await context.newPage();
+    await other.goto('about:blank');
+    await other.bringToFront();
+    await tab.waitForTimeout(500);
+    const hidden = await tab.evaluate(() => document.hidden);
+    const before = await metricsOf(cdp);
+    const mutationsBefore = await tab.evaluate(() => window.__hid.mutations);
+    counting = true;
+    await tab.waitForTimeout(10_000);
+    counting = false;
+    const after = await metricsOf(cdp);
+    const mutations = (await tab.evaluate(() => window.__hid.mutations)) - mutationsBefore;
+    await context.close();
+    const reqs = [...requests].sort((a, b) => b[1] - a[1]);
+    console.log(
+      '| ' +
+        page.name +
+        ' | ' +
+        (hidden ? 'sim' : 'NÃO') +
+        ' | ' +
+        reqs.reduce((n, [, c]) => n + c, 0) +
+        ' | ' +
+        f1((after.RecalcStyleCount - before.RecalcStyleCount) / 10) +
+        ' | ' +
+        f1((after.LayoutCount - before.LayoutCount) / 10) +
+        ' | ' +
+        f1(mutations / 10) +
+        ' |',
+    );
+    notes.push(
+      '- ' + page.name + ': ' + (reqs.map(([k, c]) => c + '× ' + k).join(' | ') || 'nenhum pedido'),
+    );
+  }
+  console.log('\n#### Pedidos de rede feitos com a aba oculta (10 s)\n');
+  for (const n of notes) console.log(n);
+}
+
 /** O modo --animations: a lista das animações contínuas de cada página, ordenada pelo ganho de desligar cada uma. */
 async function runAnimations(browser, ctx, { only, serverPath, profilePath, jsonPath }) {
   const rounds = Math.max(ctx.repeat, 3);
@@ -900,6 +1082,16 @@ async function main() {
   );
 
   ctx.browserCdp = await browser.newBrowserCDPSession();
+  if (flag('--hydration')) {
+    await runHydration(browser, ctx, { only, serverPath, profilePath });
+    await browser.close();
+    return;
+  }
+  if (flag('--hidden')) {
+    await runHidden(browser, ctx, { only, serverPath, profilePath });
+    await browser.close();
+    return;
+  }
   if (flag('--guard')) {
     await runGuard(browser, ctx, { only, serverPath, profilePath });
     await browser.close();
