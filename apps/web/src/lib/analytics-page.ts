@@ -137,7 +137,6 @@ const OWN_PROPERTIES = new Set([
 interface CapturedEvent {
   event: string;
   properties?: Record<string, unknown>;
-  [key: string]: unknown;
 }
 
 /**
