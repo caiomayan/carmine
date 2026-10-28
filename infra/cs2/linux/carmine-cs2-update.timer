@@ -1,0 +1,11 @@
+# A cada 10 minutos pergunta à Steam se há build novo do CS2. Para congelar: systemctl disable --now carmine-cs2-update.timer
+[Unit]
+Description=Procura build novo do CS2 a cada 10 minutos
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=10min
+RandomizedDelaySec=60
+
+[Install]
+WantedBy=timers.target
