@@ -11,6 +11,7 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 **Regras gerais desta fase**
 - **Só o essencial da lei.** Valem as obrigações legais (comunicar material de abuso infantil, arrependimento de 7 dias, apagar dados a pedido, transferência internacional, sorteio, identificação do fornecedor) e a página para pais. As outras travas são escolha de produto e podem ser simplificadas. O levantamento das 40 regras está em [`pesquisas-2026-10-28/travas-legais.md`](pesquisas-2026-10-28/travas-legais.md).
 - **Nada clicável no jogo.** Toda interação no jogo é por comando no chat.
+- **Rotas e comandos em inglês** (S16b), pensando na internacionalização (português e inglês, talvez a partir de 2028). As rotas em português citadas nesta spec passam a ser as equivalentes em inglês da tabela da S16b, e os comandos têm sinônimo em português.
 - **Prefixo das mensagens do Carmine no jogo:** `Carmine`, sem colchetes, em vermelho escuro, o carmim (`ChatColors.DarkRed`), seguido da mensagem na cor padrão. É o "detalhe mínimo" em que o carmim é permitido (decisão U3).
 
 ## Fatias
@@ -18,6 +19,7 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 | Fatia | O que entrega | Depende de |
 |---|---|---|
 | **S16 · Jogo, pacote 1** | AWP do Retake, português, prefixo, `!help`, boas-vindas com curiosidade, `!rank` e `!stats`, aviso do plano, DM com mais mapas e sons, Retake com 50 rounds | — |
+| **S16b · Rotas e comandos em inglês** | Todas as rotas do site em inglês, com redirecionamento permanente das antigas; comandos do jogo em inglês com sinônimos em português | — |
 | **S17 · Coleta por round** | Cada round registrado evento a evento (ordem das kills, dano por vítima, flash assist, sobreviventes, motivo do fim, bomba) | — |
 | **S18 · Foto de perfil no beta** | Liga a foto com R2; 5 envios por 30 min e 10 s entre envios; histórico das últimas 5; menos travas | — |
 | **S19 · Addon dos servidores abertos** | Card de boas-vindas em Panorama (não clicável), logo do Carmine em algumas paredes, download obrigatório | S16 |
@@ -27,6 +29,12 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 | **S23 · Salas privadas** (em fatias a–d) | Criar, convidar e dar ready no site; servidor com o ritual profissional; séries com veto; histórico e demo | S17, S20, S21 |
 | **S24 · 5v5 Casual** | Servidor 5v5 público, aberto 24 h como o Retake e o DM | S16 |
 | **S25 · Painel da Staff** | App separado em `staff.stcarmine.com`, com dashboard moderno; as 7 telas de hoje migradas | — (em paralelo) |
+| **S26 · Home personalizada** | Home por tipo de pessoa e por momento, com regras simples | S21 (os Primeiros passos podem vir antes) |
+| **S27 · Consigliere** | O assistente de IA: responde sobre os dados, faz ações com confirmação, tem memória | S17, S21 |
+| **S28 · Amizades, sininho e visitantes** | Amizade mútua com sugestões, notificações no site, visitantes do Perfil para quem tem plano | S16b |
+| **S29 · Chat** | Conversa 1 a 1 entre amigos e chat da Sala, num dock | S28 |
+| **S30 · Times** | Times com página, desafios que viram Sala, histórico e confronto direto | S23, S28 |
+| **S31 · Jogo, pacote 2, e servidores no site** | Resumo de fim de mapa, gag e mute curtos, fila com posição, `!profile`; fase do mapa e sugestão de servidor no site | S16 |
 
 ---
 
@@ -111,9 +119,53 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 
 ---
 
+### S16b · Rotas e comandos em inglês
+
+O Carmine é nacional até por volta de 2028, mas pode ser internacionalizado (português e inglês). Os textos do site já estão no arquivo de idioma (`apps/web/messages/pt-BR.json`). O que ainda está em português são as **rotas** e os **comandos**. Esta fatia muda os dois **agora**, antes de as páginas novas nascerem em português. A interface continua em português.
+
+**Rotas**
+
+| Hoje | Passa a ser |
+|---|---|
+| `/entrar` | `/login` |
+| `/configuracoes` (e `/perfil`, `/aparencia`, `/conexoes`, `/compras`, `/dados`) | `/settings` (e `/profile`, `/appearance`, `/connections`, `/purchases`, `/data`) |
+| `/servidores/<id>` | `/servers/<id>` |
+| `/inventario` | `/inventory` |
+| `/loadout`, `/ranking` | iguais |
+| `/vip` (e `/comprar`, `/compra`) | `/plans` (e `/checkout`, `/purchase`) |
+| `/regras` (e `#recurso`) | `/rules` (e `#appeal`) |
+| `/termos`, `/privacidade`, `/reembolso`, `/contato` | `/terms`, `/privacy`, `/refunds`, `/contact` |
+| `/atividade/recentes`, `/vitrine/semana`, `/busca/itens` (internas) | `/activity/recent`, `/showcase/week`, `/search/items` |
+| `/<publicId>` (Perfil) | igual |
+
+- Toda rota antiga **redireciona para sempre** (301) para a nova, com a âncora e a query, para que nenhum link compartilhado, nenhuma mensagem do plugin já impressa e nenhum resultado do Google quebre.
+- As rotas novas das próximas fatias já nascem em inglês: `/friends`, `/rooms`, `/match/<id>`, `/teams/<tag>`, `/parents`, `/rating`.
+- O teste de fumaça do deploy, os links do plugin (`APPEAL_PATH`, `!help`), os e-mails, o Discord e os documentos legais passam a usar as rotas novas.
+
+**Comandos do jogo:** o nome principal fica em inglês, e o sinônimo em português continua onde ajuda:
+
+| Comando | Sinônimos |
+|---|---|
+| `!help` | `!ajuda` |
+| `!profile` | `!perfil` |
+| `!plan` | `!plano`, `!vip` |
+| `!report` | `!denunciar` |
+| `!rank`, `!stats`, `!ws`, `!guns`, `!rtv`, `!nominate`, `!chat` | — |
+| Salas: `!ready`, `!start`, `!ct`, `!t`, `!pause`, `!tech`, `!restart`, `!forfeit` | `!restart` = `!reiniciar`, `!forfeit` = `!wo` |
+
+As mensagens continuam em português até a internacionalização.
+
+**Aceite**
+- Cada rota antiga da tabela responde 301 para a nova, mantendo a âncora e a query.
+- Nenhum link interno do site aponta para uma rota antiga.
+- O teste de fumaça do deploy passa com as rotas novas.
+- Cada comando e cada sinônimo da tabela funciona no jogo.
+
+---
+
 ### S17 · Coleta por round
 
-A base do Rating Carmine (S21), das Salas (S23), do Treinador de IA e do matchmaking futuro. Hoje cada evento vira soma da semana e do dia na hora (ADR 0018), então **o histórico não pode ser recalculado**: o rating só vale a partir do dia em que esta coleta começar. Por isso ela vem cedo, antes de existir qualquer tela que a use.
+A base do Rating Carmine (S21), das Salas (S23), do Consigliere (S27) e do matchmaking futuro. Hoje cada evento vira soma da semana e do dia na hora (ADR 0018), então **o histórico não pode ser recalculado**: o rating só vale a partir do dia em que esta coleta começar. Por isso ela vem cedo, antes de existir qualquer tela que a use.
 
 **Onde vale:** Retake agora, e toda Sala e o 5v5 Casual quando existirem. O Deathmatch fica fora da v1, porque não tem round e o volume é alto: continua só com as somas de hoje.
 
@@ -140,7 +192,7 @@ A base do Rating Carmine (S21), das Salas (S23), do Treinador de IA e do matchma
 - As somas da semana e do dia de hoje continuam iguais. Nenhuma tela muda nesta fatia.
 - O resumo do round fica ligado à Conta, então apagar a Conta (LGPD) anonimiza esses resumos como já faz com o resto.
 
-**Novo ADR:** registra por que a decisão do ADR 0018 de não guardar evento a evento muda agora (rating, Treinador e matchmaking), o volume esperado (na ordem de dezenas de milhares de linhas por dia com o Retake cheio) e as partições por mês.
+**Novo ADR:** registra por que a decisão do ADR 0018 de não guardar evento a evento muda agora (rating, Consigliere e matchmaking), o volume esperado (na ordem de dezenas de milhares de linhas por dia com o Retake cheio) e as partições por mês.
 
 **Aceite**
 - Sequências gravadas de eventos, usadas como testes, dão o resumo certo para: trade dentro e fora de 5 s, clutch 1v2 vencido e perdido, multi-kill de 3, abertura, assistência com menos e com mais de 40 de dano, e dano maior que a vida da vítima.
@@ -163,7 +215,13 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
   - **10 s** entre um envio e outro.
 - **Mensagens:** dentro dos 10 s, `Espere alguns segundos para enviar outra foto.`; no limite de 30 min, `Você trocou de foto muitas vezes. Tente de novo mais tarde.` Nenhuma das duas mostra números.
 - **Bloqueio depois de remoção:** sai a escada automática de 7, 30 e 365 dias. Quando remove uma foto, a Staff escolhe se bloqueia novos envios e por quantos dias (padrão sugerido de 7).
-- **Ficam:** quem tem Punição ativa não envia; 2 denúncias de Contas diferentes tiram a foto do ar até a Staff decidir; a Staff decide em até 24 h; a foto é refeita em WebP sem EXIF; o material de abuso infantil é comunicado às autoridades.
+- **Ficam:** quem tem Punição ativa não envia; a Staff decide em até 24 h; a foto é refeita em WebP sem EXIF; o material de abuso infantil é comunicado às autoridades.
+
+**Regra única de moderação de imagem** (vale para a foto de perfil, a logo de Time da S30 e a logo de Sala da S23c; muda o ADR 0022)
+- **A denúncia não tira nada do ar sozinha.** Ela só entra na fila da Staff. Sai a regra de hoje em que 2 denúncias derrubam a foto.
+- **Imagem aprovada fica imune:** depois que a Staff aprova uma imagem, as novas denúncias contra **aquela mesma imagem** são descartadas. Só uma imagem nova pode ser denunciada de novo.
+- **Só a ferramenta de abuso infantil da Cloudflare** (CSAM Scanning Tool) tira uma imagem do ar na hora.
+- **Quem denuncia muito o que a Staff aprova perde peso:** as denúncias dessa Conta vão para o fim da fila.
 
 **Histórico das últimas 5 fotos**
 - No diálogo de trocar a foto, abaixo do envio, aparecem as **últimas 5 fotos que ficaram no ar**, da mais nova para a mais velha, junto com "Voltar à foto da Steam".
@@ -238,7 +296,7 @@ O "VIP" genérico vira **dois planos com nome próprio**, na linha da família i
 | Presets | 1 | **6** | **25** |
 | Criar Sala privada (S23) | — | sim, com o básico | sim, com tudo |
 | Modo anônimo (S22) | — | — | sim |
-| Treinador de IA (futuro) | — | — | sim |
+| Consigliere, o assistente de IA (S27, quando a cobrança for de verdade) | — | — | sim |
 
 - **Pacotes:** 1, 3 e 6 meses em cada plano, com o desconto de hoje (3 meses ≈ 10%, 6 meses ≈ 16%). Os valores exatos ficam em `packages/contracts/src/payments.ts`. A duração é forma de pagamento, não plano. Os números finais podem mudar com o contador.
 - **O que é básico e o que é completo na Sala** está na S23.
@@ -254,11 +312,11 @@ O "VIP" genérico vira **dois planos com nome próprio**, na linha da família i
 - Toda a tela de compra mostra com destaque: `Beta: compra de teste. Nada é cobrado.`
 - O Mercado Pago real continua desligado até o advogado e o contador.
 
-**O que muda no código:** os termos do domínio (`VIP`, `VipPeriod`, `VipPackage` → Plano, Período do plano, Pacote; CONTEXT.md e ADR), as rotas (`/vip` → `/planos`, com redirecionamento), os textos do plugin (`!vip` → `!plano`, com `!vip` como sinônimo), os cargos do Discord e o selo do card. As compras de mentira já feitas viram Capo.
+**O que muda no código:** os termos do domínio (`VIP`, `VipPeriod`, `VipPackage` → Plano, Período do plano, Pacote; CONTEXT.md e ADR), as rotas (`/vip` → `/plans`, com redirecionamento), os textos do plugin (`!vip` → `!plan`, com `!plano` e `!vip` como sinônimos), os cargos do Discord e o selo do card. As compras de mentira já feitas viram Capo.
 
 **Aceite**
 - Nenhuma tela, mensagem do jogo ou cargo do Discord mostra "VIP".
-- `/vip` redireciona para `/planos`, e `!vip` responde como `!plano`.
+- `/vip` redireciona para `/plans`, e `!plano` e `!vip` respondem como `!plan`.
 - Uma Conta grátis tem 1 Preset, a Capo 6 e a Padrinho 25.
 - Comprar Padrinho com Capo ativo guarda os dias do Capo, que voltam depois.
 - Em produção, qualquer Conta compra um plano de teste, sem cobrança e com o aviso de beta.
@@ -347,7 +405,7 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 - **O que continua igual:** o Perfil público, o Ranking (com o nome real) e as Estatísticas.
 
 **3. Página "Para pais e responsáveis"** (ECA Digital, art. 16, para serviço de acesso provável por menores)
-- Uma rota pública, `/responsaveis`, com link no rodapé e no `/regras`. Conteúdo em linguagem simples:
+- Uma rota pública, `/parents`, com link no rodapé e nas regras. Conteúdo em linguagem simples:
   - o que é o Carmine e a classificação indicativa do CS2;
   - os riscos (chat e voz com desconhecidos);
   - como silenciar alguém (`!chat off`, mute do CS2);
@@ -361,7 +419,7 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 - Um Perfil público não tem `noindex`.
 - Com o modo anônimo ligado, um Padrinho entra no Retake com uma palavra estranha como nome, que não muda até o fim do mapa, e o site mostra a mesma palavra sem link.
 - Uma Conta sem Padrinho e sem marcação de criador não vê a opção.
-- `/responsaveis` está no ar, com link no rodapé.
+- `/parents` está no ar, com link no rodapé.
 
 ---
 
@@ -532,13 +590,257 @@ O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**:
 
 ---
 
-## Depois desta spec (sem grilling ainda)
+---
 
-- **Home personalizada:** conteúdo diferente por pessoa e por momento. Próxima sessão de grilling.
-- **Amizades no Carmine**, com sugestões pela Steam, por quem joga junto e por amigos de amigos, e o **chat**, que depende delas. Depois do lançamento.
-- **Times na plataforma:** times fixos, com desafios e histórico entre eles. O que esta spec já prepara para eles:
-  - os resumos de round e de partida da S17 guardam quem jogou com quem;
-  - o nome e a logo de time da Sala (S23c) viram o nome e a logo do Time;
-  - as Estatísticas detalhadas da S21 ganham o filtro por time.
+### S26 · Home personalizada
+
+A Home deixa de ser a mesma para todos. Ela é montada por **regras simples e previsíveis** (tipo de pessoa + momento → quais blocos e em que ordem), **sem algoritmo de recomendação e sem IA**. **A pessoa não mexe na Home**: nada de esconder ou fixar blocos.
+
+**Tipos de pessoa**
+- **Deslogado:** a Home de hoje (V2), sem mudança. É a vitrine.
+- **Novo:** logou, mas **nunca conectou** num servidor **ou nunca equipou** nada.
+- **Frequente:** jogou em **pelo menos 3 dias dos últimos 14**.
+- **Jogador:** qualquer outra pessoa logada.
+- **Com plano:** Capo ou Padrinho ativo. É uma **camada por cima** do tipo: um Capo frequente vê os blocos de frequente e os do plano.
+- A Staff não tem Home própria; tem o painel (S25).
+
+**O que cada tipo vê**
+- **Novo:** os **Primeiros passos** no topo. São 3 passos que se marcam sozinhos: conectar num servidor, equipar o Loadout e ver a skin no jogo. O bloco **some quando os 3 estiverem feitos**. Os Primeiros passos **saem do menu e das outras páginas**, onde hoje aparecem em toda rota até serem dispensados.
+- **Jogador:**
+  - **servidor recomendado** no topo: o Modo que a pessoa mais joga, com vaga agora e, de preferência, com amigos dentro, com o botão de conectar;
+  - **Continuar de onde parou:** o último servidor (com a lotação agora), o último Preset mexido e a última Sala, só o que aconteceu nos últimos 14 dias.
+- **Frequente:** tudo do jogador, mais:
+  - **a sua semana:** o Rating, a posição e o que falta no Ranking;
+  - **o mini-Ranking da semana com os amigos** (S28; até lá, os amigos da Steam), com "você está 2 posições atrás do Fulano".
+- **Com plano:** as **Salas** (criar, as suas e os convites), os **dias que faltam** do plano e, no Padrinho, o atalho do **modo anônimo**.
+- **Os servidores ao vivo** ficam em toda Home: no topo para o deslogado e o novo, e no fim para os outros.
+
+**Destaque do momento**
+- O topo mostra **um destaque só**, o mais urgente agora. Ordem de prioridade:
+  1. convite para Sala ou Sala sua ao vivo;
+  2. amigos jogando agora;
+  3. fim do plano em 3 dias ou menos;
+  4. fim da semana do Ranking (domingo), quando a pessoa está perto do mínimo ou de subir de posição;
+  5. servidor em que a pessoa costuma jogar quase cheio.
+- **Formato:** um destaque, **no máximo 4 blocos** do tipo e a lista de servidores.
+
+**Medir:** com o Analytics ligado (A1), cada bloco registra se foi **visto** e **clicado**, sem dado pessoal, para ajustar as regras.
+
+**Orçamento:** a Home logada é renderizada no servidor, e os blocos só levam ao navegador o JS de que precisam. O teto de JS por página continua valendo.
+
+**Aceite**
+- O deslogado vê a Home de hoje.
+- Uma Conta que nunca conectou vê os Primeiros passos, e eles somem depois dos 3 passos. Nenhuma outra página mostra os Primeiros passos.
+- Uma Conta com 3 dias jogados nos últimos 14 vê a sua semana e o mini-Ranking.
+- Com um convite pendente e amigos jogando ao mesmo tempo, o destaque é o convite.
+- A Home tem no máximo 1 destaque e 4 blocos antes da lista de servidores.
+- O teto de JS da Home passa na CI.
+
+---
+
+### S27 · Consigliere
+
+O **Consigliere** é o **único assistente de IA** do Carmine, o conselheiro da família. Ele **responde** sobre os dados da plataforma e **faz coisas** pela pessoa, sempre com confirmação. A ideia de um "Treinador" separado foi descartada: perguntas sobre desempenho ("onde eu mais morro?", "com quem eu jogo melhor?") são respondidas por ele, a partir dos dados.
+
+**O que ele consulta:** **tudo o que a pessoa vê no site, e nada além**:
+- os próprios dados: Estatísticas, Rating, Partidas, Inventário, Loadout e plano;
+- os dados públicos: Perfis, Ranking, servidores ao vivo e Times;
+- os visitantes do Perfil, só para quem tem plano, como no site.
+
+Ele **nunca lê** o chat de ninguém, as denúncias, nem nada da Staff.
+
+**Ações da v1** (cada uma mostra um cartão **Confirmar** antes de executar)
+- equipar um Preset ou trocar um item do Loadout;
+- mandar um pedido de amizade;
+- convidar um amigo para uma Sala;
+- criar uma Sala com a configuração pedida (dentro do que o plano permite);
+- dar o link para entrar num servidor.
+
+**Nunca:** punir alguém, pagar ou comprar plano, apagar a Conta, nem nada da Staff.
+
+**Regras de resposta**
+- **Todo número vem de uma consulta à API e leva o link** da tela de onde saiu (por exemplo, "K/D 1,12 na Mirage este mês → ver Estatísticas").
+- Sem o dado, ele diz **"não tenho esse dado"** em vez de estimar.
+- Tudo o que vem de jogador (nomes, mensagens, nomes de Time) é **dado, não ordem**, como defesa contra injeção de prompt.
+
+**Memória e conversas**
+- **Memória só se a pessoa aceitar:** ele lembra de preferências e da evolução. A pessoa **vê e apaga** o que ele guardou a qualquer momento.
+- As **conversas ficam sem prazo**, como o chat (S29). A pessoa apaga qualquer uma, e apagar a Conta apaga tudo.
+
+**Onde:** no **Ctrl+K** que já existe, com a linha "Pergunte ao Consigliere", e numa **página própria** com a conversa completa. No celular, só a página. No jogo, nada.
+
+**Quem usa no beta**
+- O **Dono sem limite**, a **Staff com cota** e uma **lista de convidados** escolhida pelo Dono.
+- **Teto global de US$ 30 por mês** de API, com **parada automática** quando chega nele, além da **cota por pessoa** (janela de 5 h e limite semanal, contados por custo, com um medidor visível do tipo "40% da semana").
+- No lançamento, com a cobrança de verdade, ele vira **benefício do Padrinho** (S20). Uma cota pequena para o Capo ou o grátis se decide perto do lançamento, olhando o custo real do beta.
+
+**Arquitetura** (do roadmap)
+- Serviço separado no monorepo (`apps/agent`, TypeScript, Claude Agent SDK), fora da API Nest, para conversas longas não afetarem o caminho do jogo.
+- As **ferramentas são os endpoints da nossa API**, com o esquema derivado dos contratos Zod. **Ele chama a API como a pessoa que pediu**, com as mesmas permissões.
+- O modelo certo por tarefa: um pequeno para as perguntas simples e um maior quando precisar.
+
+**Qualidade**
+- Uma lista de **perguntas de teste** com as respostas certas, rodada a cada mudança.
+- **👍 e 👎** em cada resposta. O Dono revisa as respostas com 👎 toda semana.
+
+**Aceite**
+- "Qual meu K/D na Mirage este mês?" devolve o número certo com o link das Estatísticas.
+- Uma pergunta sem dado devolve "não tenho esse dado".
+- "Equipe meu Preset de Mirage" mostra o cartão Confirmar, e só equipa depois do clique.
+- Pedir para punir alguém, pagar um plano ou apagar a Conta é recusado.
+- Uma Conta fora da lista do beta não vê o Consigliere.
+- Com o teto mensal atingido, ele avisa e para de responder até o mês seguinte.
+- Apagar a memória e as conversas funciona.
+- As perguntas de teste passam na CI.
+
+---
+
+### S28 · Amizades, sininho e visitantes
+
+**Amizade**
+- **Mútua:** um pede e o outro aceita, como na Steam e na FACEIT.
+- Quando esta fatia entra, **"amigos" passa a ser só quem é amigo no Carmine**: nos amigos jogando, no mini-Ranking e na Home. Os amigos da Steam viram **sugestão**.
+- **Sugestões**, nesta ordem:
+  1. amigos da Steam que estão no Carmine, com o botão **Adicionar todos**;
+  2. quem joga muito com a pessoa: 50 rounds no mesmo servidor nos últimos 30 dias, ou uma Sala juntos;
+  3. amigos de amigos, com 2 ou mais em comum.
+
+  Quem foi recusado ou bloqueado nunca volta como sugestão.
+- **Página `/friends`:** a lista, os pedidos recebidos e enviados e as sugestões. No Perfil de qualquer um: **Adicionar amigo**, **Desfazer amizade** e **Bloquear**.
+- **Bloquear:** quem foi bloqueado não pede amizade, não convida para Sala e não manda mensagem (S29). A pessoa **não fica sabendo**, e o Perfil continua público.
+- **Limites** (internos, sem mostrar números): 30 pedidos por dia, 500 amigos, e um pedido recusado só pode ser refeito depois de **1 dia**.
+- **Lista de amigos pública** no Perfil: os visitantes veem a contagem e os amigos em comum. A pessoa **pode esconder** a lista nas Configurações.
+- **Com um amigo:** você vê onde ele está jogando agora (servidor ou Sala) e entra com um clique, o convida para uma Sala direto da lista e o vê no mini-Ranking. Não existe "online no site", só "jogando".
+
+**Sininho (notificações no site)**
+- Um ícone no cabeçalho com o contador de não lidas. Só dentro do site: sem e-mail e sem notificação no celular por enquanto.
+- **Avisos da v1:** pedido de amizade, pedido aceito, convite para Sala, convite para Time (S30), **resumo do mapa para quem saiu no meio** num servidor aberto (S31) e plano acabando.
+
+**Visitantes do Perfil** (como na GamersClub)
+- **Quem tem plano** (Capo ou Padrinho) vê os **10 últimos visitantes** do **próprio Perfil e do Perfil de qualquer outra pessoa**, com o avatar, o dia e a hora.
+- **Quem conta:** só quem está logado, e nunca a própria pessoa. Cada visitante aparece uma vez, com a última visita. Só as 10 últimas ficam guardadas por Perfil.
+- **Grátis** vê só a contagem: "3 pessoas visitaram seu Perfil esta semana", com o convite para o Capo.
+- **Padrinho visita sem aparecer:** uma opção nas Configurações que tira o Padrinho da lista de visitantes de todo mundo.
+
+**Aceite**
+- Um pedido aceito cria a amizade nos dois lados, e a Home e os amigos jogando passam a usar os amigos do Carmine.
+- "Adicionar todos" manda pedidos para os amigos da Steam que estão no Carmine, respeitando o limite diário.
+- Quem foi bloqueado não consegue pedir amizade nem convidar, e não vê nenhum aviso disso.
+- Um pedido recusado pode ser refeito no dia seguinte, não antes.
+- O sininho mostra o pedido e o convite, e o contador zera ao abrir.
+- Um Capo vê os 10 últimos visitantes de um Perfil qualquer, e um grátis vê só a contagem do próprio.
+- Um Padrinho com "visitar sem aparecer" não entra na lista de ninguém.
+- Esconder a lista de amigos a tira do Perfil para os visitantes.
+
+---
+
+### S29 · Chat
+
+O ECA Digital (art. 21) pede que jogos com chat limitem a interação por padrão. No Carmine essa limitação é a **amizade mútua**: só amigos conversam.
+
+**O que existe**
+- **Conversa direta 1 a 1, só entre amigos.**
+- **Chat da Sala**, entre os membros, antes e depois da partida.
+- Sem canais públicos e sem chat geral. Grupos de amigos ficam para depois.
+
+**Conteúdo:** texto e emoji. **Links só do Carmine e da Steam**; os outros aparecem como texto, sem clique. **Sem imagem e sem arquivo.**
+
+**Onde:** um **dock no canto inferior direito**, como na FACEIT e na Steam. Ele fica em todas as páginas, abre e fecha, e o código só carrega quando alguém abre (teto de JS). No celular, vira uma página cheia.
+
+**Sinais:** contador de não lidas no ícone do chat e no sininho, e **"digitando..."**. **Sem "visto".**
+
+**Moderação**
+- Cada mensagem tem **Denunciar**. A denúncia entra na fila da Staff, com o prazo de hoje.
+- **A Staff vê só o trecho denunciado** (as 20 mensagens em volta) e **nunca lê conversas** que ninguém denunciou.
+- **Bloquear** (S28) encerra a conversa dos dois lados.
+- **Filtro de palavrão** opcional e por pessoa, desligado por padrão.
+
+**Guarda**
+- O histórico fica **sem prazo**, enquanto as duas Contas existirem.
+- Cada um **apaga as próprias mensagens**. Apagar a Conta (LGPD) apaga as mensagens dela.
+- Uma mensagem denunciada fica guardada com a denúncia pelo prazo das denúncias (90 dias), mesmo que tenha sido apagada.
+
+**No jogo:** nada. As mensagens do site não aparecem no CS2.
+
+**Tempo real:** pelo mesmo caminho dos servidores ao vivo (SSE da API e envio por POST), sem um serviço novo.
+
+**Aceite**
+- Duas Contas amigas conversam, com "digitando..." e o contador de não lidas.
+- Uma Conta que não é amiga não consegue mandar mensagem.
+- Um link de fora do Carmine e da Steam aparece sem clique.
+- Uma denúncia leva à Staff só as 20 mensagens em volta.
+- Apagar uma mensagem a tira dos dois lados, e uma mensagem denunciada continua na denúncia.
+- O dock não aumenta o JS da primeira carga de nenhuma página.
+
+---
+
+### S30 · Times
+
+**O Time**
+- Nome, **tag** (2 a 5 letras), **logo** e um **dono**. Até **7 membros** (5 titulares e 2 reservas) e, se quiser, **1 técnico**.
+- Página pública em `/teams/<tag>`.
+- **Criar é grátis**, para qualquer Conta. O plano entra no que o Time faz nos desafios, não em existir.
+- **Um jogador pode estar em até 5 Times.**
+
+**Entrar e sair**
+- O dono convida, e o convite chega pelo sininho (S28).
+- O membro sai quando quiser.
+- O dono pode **passar o comando** para outro membro. Se sair sem passar, o comando vai para o membro mais antigo.
+
+**Desafio**
+- O dono ou um capitão de um Time **desafia** outro pelo site, e o outro aceita.
+- O desafio vira uma **Sala de 5v5 montada sozinha** (S23), com os dois Times, os nomes e as logos no servidor e o veto feito pelos capitães.
+- A Sala segue o **plano de quem desafiou**: Capo é MD1; Padrinho tem MD3 ou MD5 e GOTV.
+- **Quem está nos dois Times** escolhe por qual joga quando o desafio é montado. O sistema não deixa a mesma pessoa nos dois lados.
+
+**Histórico**
+- A página do Time mostra vitórias e derrotas, os mapas mais jogados com a % de vitória em cada um, o Rating médio dos membros e o **confronto direto** com cada rival, com o placar de todos os jogos entre os dois.
+- As Estatísticas detalhadas do Perfil (S21) ganham o filtro **por Time**.
+- Um **rating do Time**, pelos resultados dos desafios, é guardado desde o começo. O **Ranking público de Times** só abre com volume (por exemplo, 20 Times com 5 jogos ou mais).
+
+**No Perfil:** a lista de **todos os Times** da pessoa, com a logo e a tag. Ela pode escolher **um para destaque** (opcional), que aparece ao lado do nome no Perfil e no Ranking. Sem destaque, nada aparece ao lado do nome. **No jogo não há tag de Time no placar**, porque um jogador pode estar em vários Times. O nome e a logo do Time só aparecem na Sala do desafio.
+
+**Moderação:** o nome, a tag e a logo seguem a **regra única de moderação de imagem** da S18. A denúncia não derruba sozinha, e uma imagem aprovada fica imune.
+
+**Aceite**
+- Uma Conta grátis cria um Time e convida membros pelo sininho.
+- Uma Conta já em 5 Times não entra num 6º.
+- Um desafio aceito cria a Sala de 5v5 com os dois Times, os nomes e as logos.
+- Um jogador que está nos dois Times de um desafio só joga por um.
+- A página do Time mostra o confronto direto depois de dois desafios entre os mesmos Times.
+- Sem Time de destaque, nada aparece ao lado do nome no Perfil e no Ranking.
+
+---
+
+### S31 · Jogo, pacote 2, e servidores no site
+
+**No jogo (servidores abertos)**
+- **Resumo de fim de mapa no chat:** quando o mapa acaba, o **top 3 do mapa** (pelo Rating da S21 ou, antes dela, pelo K/D) e **a linha de cada um**, só para ele:
+  `Carmine · Você: 18/12 · HS 44% · Rating 1,12`
+- **Quem sai no meio do mapa** recebe esse mesmo resumo no **sininho do site** (S28).
+- **Gag e mute curtos:** uma linha com o tempo que falta (`Carmine · Chat bloqueado por mais 23 min.`), mostrada **no máximo a cada 30 s**, em vez da mensagem inteira a cada tentativa.
+- **Fila do Retake para todos:** quem espera vê a **posição** (`Carmine · Você é o 2º da fila.`) a cada mudança. Quem tem plano vê que a vaga abre no fim do round.
+- **`!profile`** (`!perfil`): imprime o link do próprio Perfil. `!profile <nome>` imprime o de quem está no servidor.
+- **Nas Salas**, o fim da partida segue o padrão das plataformas de matchmaking: o placar final no jogo e a página da Partida no site (S23d).
+
+**No site**
+- **Fase do mapa** no cartão e na página do servidor: **Começou agora** (primeiros 20% dos rounds), **Na metade** ou **Perto de trocar** (últimos 20%), com o round (`round 12/50`). No DM, os minutos que faltam.
+- **Servidor lotado sugere outro:** `Lotado · Tente o Retake #2: Mirage, no começo`. A sugestão procura, nesta ordem, o mesmo mapa, um mapa que a pessoa joga muito e qualquer um com vaga, de preferência no começo do mapa. A sugestão só diz a fase, sem o round.
+
+**Aceite**
+- No fim de um mapa, cada jogador vê o top 3 e a própria linha no chat.
+- Quem saiu no meio recebe o resumo no sininho.
+- Um jogador com gag vê no máximo uma mensagem a cada 30 s, com o tempo que falta.
+- Na fila do Retake, a posição atualiza a cada mudança.
+- O cartão de um Retake no round 45/50 diz "Perto de trocar".
+- Um Retake lotado sugere outro com vaga, preferindo o mesmo mapa.
+
+---
+
+## Depois desta spec
+
 - **Matchmaking (ranqueadas):** num futuro distante, partindo do rating escondido da S21.
-- **Treinador de IA e clipes de destaque:** a partir das demos das Salas e da coleta por round.
+- **Clipes de destaque** na página da Partida, a partir das demos das Salas.
+- **Grupos de amigos no chat**, depois da S29.
+- **Pacote 3 do jogo**, com o que aparecer jogando.
+- A ordem entre as fatias é de prioridade, não de "antes ou depois do lançamento": qualquer uma pode entrar antes dele.
