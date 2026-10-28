@@ -55,6 +55,7 @@ jobs:
           python3 -m unittest infra/cs2/test/test_a2s.py
           bash infra/cs2/test/cs2-update.test.sh
           bash infra/cs2/test/vps-tools.test.sh
+          bash infra/cs2/test/promote-plugin.test.sh
       - name: OpenAPI versionado está atualizado
         run: |
           pnpm --filter @carmine/api openapi:generate
