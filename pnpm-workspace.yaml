@@ -24,5 +24,3 @@ allowBuilds:
   protobufjs: false
   # Watcher nativo do extrator do next-intl (não usamos): dispensável.
   "@parcel/watcher": false
-  # Dependência do posthog-js: o script só mostra um aviso de apoio.
-  core-js: false

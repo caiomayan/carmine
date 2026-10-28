@@ -1,4 +1,3 @@
-import { gunzipSync } from 'node:zlib';
 import type { BrowserContext, Page, Route } from '@playwright/test';
 import { createUnclaimedAccount, csrfToken, signInByRequest } from './accounts';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
@@ -6,12 +5,12 @@ import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
 /**
  * A contagem de páginas (A1d, `pagina_vista`) e a chave "Participar da análise de uso". Roda no web com
  * `POSTHOG_API_KEY` (o projeto `analytics`, ver playwright.config.ts); o PostHog é um host de mentira que o teste
- * intercepta, então nada sai da máquina. O Chromium do Playwright se anuncia como robô (`navigator.webdriver`, o agente e as marcas
- * `userAgentData`), e a biblioteca não conta robôs: o teste esconde isso para a contagem rodar como num navegador de verdade.
+ * intercepta, então nada sai da máquina. O Chromium do Playwright se anuncia como robô (`navigator.webdriver` e o agente
+ * `HeadlessChrome`), e o cliente não conta robôs: o teste esconde isso para a contagem rodar como num navegador de verdade.
  */
 
 const POSTHOG = 'http://posthog.e2e.test';
-/** O agente de um Chrome comum: a biblioteca descarta robôs, e o do Chromium de teste se anuncia como um. */
+/** O agente de um Chrome comum: o cliente descarta robôs, e o do Chromium de teste se anuncia como um. */
 const CHROME_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
 
@@ -19,21 +18,14 @@ test.use({ userAgent: CHROME_AGENT });
 const MAIN_WEB = `http://localhost:${process.env.WEB_E2E_PORT ?? 3000}`;
 const NOT_FOUND = /404 \(Not Found\)/;
 
-type Sent = { event: string; properties: Record<string, unknown> };
+type Sent = { event: string; distinct_id?: string; properties: Record<string, unknown> };
 
-/** O texto do corpo do pedido: gzip, JSON puro ou `data=<base64>` de formulário (as formas que a biblioteca usa). */
+/** O texto do corpo do pedido (o cliente manda JSON puro). */
 function bodyText(buffer: Buffer): string {
-  const raw = buffer[0] === 0x1f && buffer[1] === 0x8b ? gunzipSync(buffer) : buffer;
-  const text = raw.toString('utf8');
-  const form = /^data=([^&]+)/.exec(text);
-  if (!form?.[1]) return text;
-  const decoded = Buffer.from(decodeURIComponent(form[1]), 'base64');
-  return (decoded[0] === 0x1f && decoded[1] === 0x8b ? gunzipSync(decoded) : decoded).toString(
-    'utf8',
-  );
+  return buffer.toString('utf8');
 }
 
-/** O que a biblioteca mandou ao PostHog, desembrulhado em eventos. */
+/** O que o cliente mandou ao PostHog, desembrulhado em eventos. */
 function eventsOf(buffer: Buffer | null): Sent[] {
   if (!buffer) return [];
   try {
@@ -51,10 +43,8 @@ async function watchPostHog(page: Page) {
   const context: BrowserContext = page.context();
   await context.addInitScript(() => {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
-    // As marcas do cliente (`userAgentData`) também dizem "HeadlessChrome", e a biblioteca as confere.
-    Object.defineProperty(navigator, 'userAgentData', { get: () => undefined });
   });
-  const requests: { events: Sent[]; afterLoad: boolean }[] = [];
+  const requests: { events: Sent[]; afterLoad: boolean; url: string; credentials: boolean }[] = [];
   const log: string[] = [];
   let loaded = false;
   page.on('console', (message) =>
@@ -79,7 +69,12 @@ async function watchPostHog(page: Page) {
     log.push(
       `pedido ${route.request().method()} ${route.request().url().slice(0, 120)} corpo=${body ? body.length : 'nulo'} início=${body ? body.subarray(0, 24).toString('hex') : ''}`,
     );
-    requests.push({ events: eventsOf(body), afterLoad: loaded });
+    requests.push({
+      events: eventsOf(body),
+      afterLoad: loaded,
+      url: route.request().url(),
+      credentials: 'cookie' in route.request().headers(),
+    });
     return route.fulfill({ status: 200, headers, json: { status: 1 } });
   });
   return {
@@ -111,7 +106,7 @@ async function waitForViews(posthog: Awaited<ReturnType<typeof watchPostHog>>, c
   }
 }
 
-/** A biblioteca junta os eventos e manda a cada ~3 s: dá a volta toda para provar que NADA foi enviado. */
+/** Dá tempo de sobra (o cliente espera o ocioso do navegador, até 4 s) para provar que NADA foi enviado. */
 const FLUSH_MS = 5000;
 
 test.describe('contagem de páginas', () => {
@@ -141,7 +136,16 @@ test.describe('contagem de páginas', () => {
       versao_plano: '1.0',
       ambiente: 'staging',
       origem_evento: 'web',
+      $cookieless_mode: true,
+      $process_person_profile: false,
+      $browser: 'Chrome',
+      $os: 'Windows',
+      $device_type: 'Desktop',
     });
+    // O identificador anônimo do modo sem cookies, no endpoint de captura, sem cookie nenhum no pedido.
+    expect(view?.distinct_id).toBe('$posthog_cookieless');
+    expect(posthog.requests.map((request) => new URL(request.url).pathname)).toEqual(['/i/v0/e/']);
+    expect(posthog.requests.some((request) => request.credentials)).toBe(false);
     // Nada de URL crua, ID, referenciador cru nem agente do navegador.
     const text = JSON.stringify(posthog.events());
     for (const forbidden of [
