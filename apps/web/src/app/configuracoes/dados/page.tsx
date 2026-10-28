@@ -1,18 +1,25 @@
 import type { Route } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
+import { AnalyticsSetting } from '@/components/settings/analytics-setting';
 import { SettingsSection } from '@/components/settings/settings-section';
 import { Button } from '@/components/ui/button';
+import { getAnalyticsPreference } from '@/lib/api-server';
 
 /**
- * Configurações > Dados e conta. Ainda não há exportação nem exclusão pelo site: o pedido segue o
+ * Configurações > Dados e conta: a chave "Participar da análise de uso" (A1d, quando há análise ligada) e, como ainda não há exportação nem exclusão pelo site: o pedido segue o
  * canal de Contato (em preparação), então a seção diz isso e leva até ele, sem botões que não
  * fazem nada.
  */
 export default async function DataSettingsPage() {
   const t = await getTranslations('settings.data');
+  const analytics = await getAnalyticsPreference();
   return (
     <SettingsSection section="dados">
+      {/* Só com a análise ligada neste ambiente: desligada, não há o que escolher. */}
+      {analytics.status === 'ok' && analytics.data.enabled ? (
+        <AnalyticsSetting participate={analytics.data.participate} />
+      ) : null}
       <Block
         title={t('requestTitle')}
         body={t('requestBody')}

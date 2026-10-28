@@ -1259,6 +1259,14 @@
         "title": "Não deu para carregar o recibo agora",
         "body": "Tente de novo em instantes."
       }
+    },
+    "analytics": {
+      "title": "Participar da análise de uso",
+      "description": "Ajuda a Carmine a entender quais partes do site e do jogo são usadas, só em números do conjunto, para melhorar o que importa.",
+      "detail": "É o seu direito de se opor (LGPD): desligue e a sua Conta deixa de entrar na análise. A contagem de páginas para neste navegador na hora; os eventos que o servidor registra levam até 1 minuto para parar. Ligada por padrão; você pode mudar quando quiser.",
+      "announceOn": "Participação na análise de uso ativada.",
+      "announceOff": "Participação na análise de uso desativada.",
+      "failed": "Não deu para salvar agora. Tente de novo em instantes."
     }
   },
   "vip": {

@@ -16,6 +16,7 @@ import type {
   WeekSummary,
 } from '@carmine/contracts';
 import { recentActivitySchema } from '@carmine/contracts/activity';
+import type { AnalyticsPreference } from '@carmine/contracts/analytics';
 import { headerPreviewsSchema } from '@carmine/contracts/header-previews';
 import { inventorySchema } from '@carmine/contracts/inventory';
 import { liveServerListSchema } from '@carmine/contracts/live-servers';
@@ -33,6 +34,7 @@ import {
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { apiGet, VISITOR_IP_HEADER } from './api-base';
+import { parseAnalyticsPreference } from './api-guards';
 import type { Mode } from './modes';
 
 /**
@@ -107,6 +109,21 @@ async function readAccount<T>(
     return { status: 'unavailable' };
   }
 }
+
+/**
+ * A preferência de análise de uso da Conta da sessão (A1d): `participate` (a chave de /configuracoes) e `enabled`
+ * (há análise ligada neste ambiente; desligada, a chave nem aparece). Sem sessão, `anonymous`.
+ */
+export const getAnalyticsPreference = cache(
+  (): Promise<AccountRead<AnalyticsPreference>> =>
+    readAccount('/me/analytics', {
+      parse: (value) => {
+        const preference = parseAnalyticsPreference(value);
+        if (!preference) throw new Error('formato inesperado');
+        return preference;
+      },
+    }),
+);
 
 export const getInventory = cache(async (): Promise<InventoryResult> => {
   const result = await readAccount('/inventory', inventorySchema);
