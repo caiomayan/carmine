@@ -400,13 +400,14 @@
   overflow: hidden;
 }
 .vs-strip {
-  display: flex;
-  flex-direction: column;
+  display: block;
   transition: transform 820ms var(--ease-out);
 }
-.vs-strip > span {
+/* A fita 0..9: uma linha por dígito (1em cada, então a fita tem 10em e -10% desliza um dígito). Sem elementos filhos. */
+.vs-strip::before {
+  content: '0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9';
   display: block;
-  height: 1em;
+  white-space: pre;
   line-height: 1em;
   text-align: center;
 }
