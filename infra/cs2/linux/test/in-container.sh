@@ -75,6 +75,11 @@ verify() {
   check "unidades habilitadas (links do enable)" test -L /etc/systemd/system/carmine-cs2.target.wants/carmine-cs2@retake.service
   check "carmine-plugin-deploy instalado e achando a biblioteca pelo link"     bash -c 'carmine-plugin-deploy --help | grep -q -- --rollback'
   check "helper A2S instalado" test -x /usr/local/lib/carmine-cs2/a2s-players.py
+  for cmd in carmine-secrets carmine-vps-check carmine-vps-smoke carmine-cs2-update; do
+    check "comando $cmd instalado e com --help" bash -c "$cmd --help | head -n 1 | grep -q ."
+  done
+  check "carmine-vps-check roda e lista os itens" bash -c "carmine-vps-check --no-network --machine | grep -q '|arquitetura|'"
+  check "unidades do update do CS2 instaladas" test -f /etc/systemd/system/carmine-cs2-update.service -a -f /etc/systemd/system/carmine-cs2-update.timer
   check "versão do plugin registrada por instância (compilado no host = local)"     test "$(cat "$P/retake/carmine-core.version")" = local
   check "o timer de entrega só liga com release instalada (aqui compilou no host)"     test ! -e /etc/systemd/system/timers.target.wants/carmine-plugin-sync.timer
 }
@@ -129,7 +134,8 @@ check "chave com aspas é recusada (sem injeção no JSON)" test "$rc" = 78
 echo "### 7. systemd-analyze verify"
 printf 'CARMINE_API_KEY=k\nCS2_GSLT=g\n' >/etc/carmine-cs2/retake.env
 systemd-analyze verify /etc/systemd/system/carmine-cs2@retake.service /etc/systemd/system/carmine-cs2.target \
-  /etc/systemd/system/carmine-plugin-sync.service /etc/systemd/system/carmine-plugin-sync.timer
+  /etc/systemd/system/carmine-plugin-sync.service /etc/systemd/system/carmine-plugin-sync.timer \
+  /etc/systemd/system/carmine-cs2-update.service /etc/systemd/system/carmine-cs2-update.timer
 echo "ok   - unidades válidas"
 
 echo "### TUDO CERTO"

@@ -536,16 +536,25 @@ step_services() {
   install -d -m 0755 "$LIB_DIR"
   install -m 0755 "$SCRIPT_DIR/prestart.sh" "$LIB_DIR/prestart.sh"
   install -m 0644 "$SCRIPT_DIR/lib-release.sh" "$LIB_DIR/lib-release.sh"
+  install -m 0644 "$SCRIPT_DIR/lib-servers.sh" "$LIB_DIR/lib-servers.sh"
   install -m 0755 "$SCRIPT_DIR/a2s-players.py" "$LIB_DIR/a2s-players.py"
   # O deploy do plugin mora no PATH do root e acha a biblioteca e o helper ao lado do script instalado.
   install -m 0755 "$SCRIPT_DIR/plugin-deploy.sh" "$LIB_DIR/plugin-deploy.sh"
   ln -sfn "$LIB_DIR/plugin-deploy.sh" /usr/local/sbin/carmine-plugin-deploy
+  # Os demais comandos do operador (cada um acha as bibliotecas ao lado do script resolvido pelo link).
+  local cmd
+  for cmd in cs2-update:carmine-cs2-update secrets:carmine-secrets vps-check:carmine-vps-check vps-smoke:carmine-vps-smoke; do
+    install -m 0755 "$SCRIPT_DIR/${cmd%%:*}.sh" "$LIB_DIR/${cmd%%:*}.sh"
+    ln -sfn "$LIB_DIR/${cmd%%:*}.sh" "/usr/local/sbin/${cmd##*:}"
+  done
   install -d -m 0755 "$UNIT_DIR"
   sed -e "s|@HOME@|$HOME_DIR|g" -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-cs2@.service" >"$UNIT_DIR/carmine-cs2@.service"
   install -m 0644 "$SCRIPT_DIR/carmine-cs2.target" "$UNIT_DIR/carmine-cs2.target"
   chmod 0644 "$UNIT_DIR/carmine-cs2@.service"
   sed -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-plugin-sync.service" >"$UNIT_DIR/carmine-plugin-sync.service"
   install -m 0644 "$SCRIPT_DIR/carmine-plugin-sync.timer" "$UNIT_DIR/carmine-plugin-sync.timer"
+  sed -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-cs2-update.service" >"$UNIT_DIR/carmine-cs2-update.service"
+  install -m 0644 "$SCRIPT_DIR/carmine-cs2-update.timer" "$UNIT_DIR/carmine-cs2-update.timer"
 
   # Segredos: o systemd lê como root, então 0600 root basta. Arquivo que já existe nunca é tocado.
   install -d -m 0750 "$ETC_DIR"
@@ -571,6 +580,11 @@ step_services() {
     if [[ -f "$HOME_DIR/releases/installed" ]]; then
       systemctl_offline_aware enable carmine-plugin-sync.timer >/dev/null 2>&1
       [[ -d /run/systemd/system ]] && systemctl start carmine-plugin-sync.timer
+    fi
+    # A atualização automática do CS2 só faz sentido com o CS2 instalado (o appmanifest existe).
+    if [[ -f "$SERVER_DIR/steamapps/appmanifest_730.acf" ]]; then
+      systemctl_offline_aware enable carmine-cs2-update.timer >/dev/null 2>&1
+      [[ -d /run/systemd/system ]] && systemctl start carmine-cs2-update.timer
     fi
     for name in "${PROFILES[@]}"; do
       systemctl_offline_aware enable "carmine-cs2@$name.service" >/dev/null 2>&1

@@ -57,6 +57,27 @@ sudo carmine-plugin-deploy --dry-run
 - Estado: `releases/core-X.Y.Z/` (as 3 mais novas e as em uso), `profiles/<perfil>/carmine-core.version` e `carmine-core.previous`.
 - Testes sem CS2 nem GitHub: `bash infra/cs2/test/plugin-deploy.test.sh` e `python3 -m unittest infra/cs2/test/test_a2s.py` (rodam no `verify` do CI).
 
+## Preparar uma VPS nova (um clone, um comando)
+
+```sh
+git clone https://github.com/caiomayan/carmine /opt/carmine-src
+sudo /opt/carmine-src/infra/cs2/linux/vps-bootstrap.sh --ssh-from <seu IP>/32
+```
+
+O `vps-bootstrap.sh` roda o `carmine-vps-check` (x86-64, Ubuntu 24.04, RAM, disco, CPU, banda; FALHA aborta antes de gastar 69 GB), endurece a máquina (SSH só por chave, **somente se já houver uma chave autorizada**; ufw com o UDP do jogo e o 22 só do seu IP; fail2ban; atualizações de segurança sem reboot; chrony; swap; buffers UDP), instala os comandos e dispara o download do CS2 como unidade do systemd. Depois:
+
+| Comando | Para quê |
+| --- | --- |
+| `carmine-secrets profile <perfil>` | chave do servidor e GSLT, digitados sem eco, direto em `/etc/carmine-cs2/<perfil>.env` (0600) |
+| `carmine-secrets gslt <perfil>` | troca de token banido; reinicia só esse servidor |
+| `carmine-secrets alerts` / `mirror` / `show` | webhook do Discord, espelho R2 dos terceiros, o que já está preenchido |
+| `carmine-vps-smoke --start` | sobe e confere cada servidor: serviço, Metamod, Carmine.Core, GSLT, A2S e a lista pública do site |
+| `carmine-cs2-update` | atualiza o CS2 sozinho (timer a cada 10 min): ver abaixo |
+
+**Atualização automática do CS2** (`carmine-cs2-update.timer`): compara o buildid do app 730 na Steam com o instalado. Build novo: espera os servidores esvaziarem (até 20 min; depois atualiza assim mesmo, porque a Valve já barra a entrada), avisa no Discord, faz `git pull --ff-only` do clone, para tudo, roda `install.sh --download-cs2 --steps cs2,metamod,css,build,profiles,services` com a mesma release do Carmine.Core, sobe e confere a saúde de cada servidor. Deu certo: aviso verde. Falhou: os servidores **ficam parados** (subir sem o CounterStrikeSharp funcionando enganaria o jogador), o build fica marcado e o aviso vermelho traz o trecho do log; depois de corrigir (versão do plugin em `versions.sh` ou release nova do Carmine.Core), `carmine-cs2-update --force`.
+
+Testes sem CS2 nem VPS: `bash infra/cs2/test/{cs2-update,vps-tools,plugin-deploy}.test.sh` (rodam no `verify` do CI).
+
 ## Operação
 
 ```sh

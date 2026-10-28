@@ -1,0 +1,16 @@
+# Atualiza o CS2 quando a Valve publica um build novo (carmine-cs2-update.sh). Disparado pelo timer; à mão:
+#   systemctl start carmine-cs2-update.service   ou   carmine-cs2-update --check
+[Unit]
+Description=Atualização automática do CS2 dos servidores Carmine
+Documentation=https://github.com/caiomayan/carmine/tree/main/infra/cs2/linux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# CARMINE_SRC: o clone do repositório que o vps-bootstrap.sh gravou aqui.
+EnvironmentFile=-/etc/carmine-cs2/update.env
+ExecStart=@LIBDIR@/cs2-update.sh
+# O download da diferença pode levar horas em banda ruim.
+TimeoutStartSec=4h
+Nice=10
