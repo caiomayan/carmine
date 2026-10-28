@@ -203,7 +203,7 @@ Sem o script, o mesmo com a CLI: `aws ec2 start-instances --instance-ids <id> --
 
 ## Encerrando o beta (e a transição para a VPS)
 
-1. Na VPS definitiva (Ubuntu 24.04, ≥100 GB), rode o **mesmo** `install.sh --download-cs2`, crie os servidores na API com o IP novo e os mesmos passos 4–5 (nada da AWS é usado).
+1. Na VPS definitiva siga `lancamento-cs2.md` (um clone e `vps-bootstrap.sh`: o mesmo `install.sh` por baixo, com o endurecimento, o plugin por release e a atualização automática do CS2); nada da AWS é usado.
 2. Avise os amigos, `servers retire --name retake-beta` / `dm-beta` na API.
 3. Na AWS, para zerar o custo: terminar a instância, **liberar o Elastic IP** (cobra mesmo parado) e **apagar o volume** (o `DeleteOnTermination=false` o deixa vivo):
 
