@@ -20,7 +20,9 @@ const AWP_ASIIMOV = 306;
  * lenta. Os argumentos extras do script vêm de `FPS_ARGS` (ex.: `--headed --ablate all --only Home,Perfil`).
  *
  * Sem `FPS_ARGS`, é a verificação da CI (`--guard`): parada, a página não pode ocupar a thread principal, refazer layout nem
- * escrever texto sem parar, nem manter animação contínua fora do compositor. Nada disso depende do relógio da
+ * escrever texto sem parar, nem manter animação contínua fora do compositor. O viewer 3D de terceiro do Editor é trocado por um
+ * parado (o script faz isso no `--guard`): o laço de WebGL dele, em raster por software, ocupa a thread principal e varia de
+ * uma execução para outra, e não é trabalho da nossa página. Nada disso depende do relógio da
  * máquina, então vale num runner compartilhado e sem GPU; os fps em si ficam só no relatório da auditoria.
  */
 test('o fps de cada página', async ({ page, request, baseURL }) => {

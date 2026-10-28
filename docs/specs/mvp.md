@@ -1,5 +1,7 @@
 # Spec do MVP · v2
 
+> **Histórico.** As fatias S00 a S15 foram entregues. A spec viva é a [`beta-aberto.md`](beta-aberto.md); esta continua valendo onde aquela não muda nada.
+
 > Linguagem do domínio: [`CONTEXT.md`](../../CONTEXT.md). Decisões: [`docs/adr/`](../adr/). Identidade visual de referência: [`prototypes/identity/liberty-final.html`](../../prototypes/identity/liberty-final.html), com os tokens em [`prototypes/identity/liberty/tokens-exportados-dono-v2.css`](../../prototypes/identity/liberty/tokens-exportados-dono-v2.css) e as cores de contexto em [`prototypes/identity/shared/liberty-status.css`](../../prototypes/identity/shared/liberty-status.css). A direção 2c foi substituída.
 >
 > v2 incorpora a revisão do Product Owner (2026-10-10): núcleo jogável antes de cobrança, regras de gameplay, estados de pagamento, comportamento em falhas e critérios de saída do beta.

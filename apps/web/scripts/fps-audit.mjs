@@ -19,6 +19,9 @@
  *
  * Com `--ablate`, cada página é medida de novo com um efeito neutralizado por CSS injetado, e a tabela mostra
  * quanto cada um custa (a medição antes/depois de cada suspeito, sem mexer no código).
+ *
+ * `--viewer-falso` troca o viewer 3D de terceiro do Editor (3d.cstrike.app) por um parado, no mesmo protocolo; o
+ * `--guard` (a CI) já o usa. Sem a opção, o Editor é medido com o viewer de verdade.
  */
 import { readFile, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -74,6 +77,26 @@ const WINDOWS = (() => {
     ? ALL_WINDOWS
     : process.argv[at + 1].split(',').filter((w) => ALL_WINDOWS.includes(w));
 })();
+
+/**
+ * O viewer 3D do Editor (3d.cstrike.app) é de terceiro: renderiza WebGL sem parar num laço próprio, o que na CI (raster
+ * por software, CPU 4× mais lenta) enche a thread principal (centenas de %) quando carrega e muda de uma execução para a
+ * outra (carrega, é limitado por IP ou nem abre). Isso não é trabalho da nossa página, e a guarda precisa dar o mesmo
+ * resultado sempre. Por isso, na verificação da CI (`--guard`) e com `--viewer-falso`, o endereço dele responde com um
+ * viewer mínimo e parado, no mesmo protocolo postMessage (ver e2e/fake-viewer.ts): o Editor fica no estado "3D pronto",
+ * medindo só a nossa página. A auditoria de fps no hardware do dono (sem essas opções) mede com o viewer de verdade.
+ */
+const FAKE_VIEWER_HTML = `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:0;background:transparent"><script>
+  const post = (type, data, id) => parent.postMessage(Object.assign({ source: '3d.cstrike.app', v: 1, type, data }, id ? { id } : {}), '*');
+  let item = JSON.parse(new URL(location.href).searchParams.get('item') || 'null');
+  addEventListener('message', (event) => {
+    const m = event.data;
+    if (!m || m.source !== '3d.cstrike.app' || m.v !== 1) return;
+    if (m.type === 'ping') { post('ready', { v: 1 }); post('rendered', { item }); }
+    if (m.type === 'setItem') { item = m.data.item; post('rendered', { item }); }
+    if (m.type === 'getState') post('state', { item, selection: null, activeSticker: null, schemaCount: 4 }, m.id);
+  });
+</script></body></html>`;
 
 /** Instalado em cada página antes de qualquer script dela: o gravador de quadros e de tarefas longas. */
 const RECORDER = () => {
@@ -379,6 +402,11 @@ async function measurePage(browser, page, ctx, extraCss) {
     deviceScaleFactor: ctx.dsf,
     ...(ctx.storageState ? { storageState: ctx.storageState } : {}),
   });
+  if (ctx.fakeViewer) {
+    await context.route('https://3d.cstrike.app/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/html', body: FAKE_VIEWER_HTML }),
+    );
+  }
   const tab = await context.newPage();
   await tab.addInitScript(RECORDER);
   const cdp = await context.newCDPSession(tab);
@@ -1064,6 +1092,7 @@ async function main() {
     repeat: Number(option('--repeat') ?? 1),
     diagnostics: [],
     pause: option('--pause'),
+    fakeViewer: flag('--guard') || flag('--viewer-falso'),
     viewport: { width, height },
     storageState: storagePath ? JSON.parse(await readFile(storagePath, 'utf8')) : undefined,
   };
