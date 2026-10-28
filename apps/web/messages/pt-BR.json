@@ -1291,7 +1291,8 @@
       "soon": "Em breve",
       "signIn": "Entrar para comprar",
       "unavailable": "Não deu para carregar os Pacotes agora",
-      "unavailableBody": "Tente de novo em instantes. Nada foi cobrado."
+      "unavailableBody": "Tente de novo em instantes. Nada foi cobrado.",
+      "retry": "Tentar de novo"
     },
     "notices": {
       "soon": "A compra do VIP ainda não abriu. Quando abrir, os Pacotes já aparecem aqui prontos para comprar.",
@@ -1330,6 +1331,159 @@
       "refundLink": "Política de Reembolso",
       "ban": "Ban permanente encerra o VIP, sem reembolso dos dias restantes.",
       "termsLink": "Termos de Uso"
+    },
+    "confirm": {
+      "metaTitle": "Confirmar compra do VIP",
+      "title": "Confirmar compra",
+      "subtitle": "Confira a Conta que recebe o VIP, o valor e a data. Nada é cobrado até você pagar.",
+      "back": "Voltar aos Pacotes",
+      "beneficiary": {
+        "label": "Conta que recebe o VIP",
+        "id": "ID {id}",
+        "profile": "Ver perfil",
+        "note": "O VIP é desta Conta e não passa para outra. Se não é a Conta certa, saia e entre de novo com a Steam de quem vai jogar."
+      },
+      "summary": {
+        "title": "Resumo",
+        "package": "Pacote",
+        "packageValue": "VIP, {months, plural, one {# mês} other {# meses}}",
+        "duration": "Duração",
+        "durationValue": "{days} dias",
+        "price": "Valor",
+        "newEnd": "VIP até",
+        "adds": "Soma ao seu VIP atual, que vai até {date}.",
+        "starts": "Começa quando o pagamento for confirmado.",
+        "once": "Pagamento único, sem renovação automática. Nada é cobrado de novo."
+      },
+      "ban": {
+        "title": "Antes de pagar: ban permanente encerra o VIP",
+        "body": "Se esta Conta receber um ban permanente, o VIP acaba na hora e os dias que sobrarem não são reembolsados.",
+        "refund": "Fora isso, você pode desistir em até {days} dias depois da aprovação e receber o valor de volta.",
+        "terms": "Termos de Uso"
+      },
+      "method": {
+        "legend": "Como pagar",
+        "pix": "Pix",
+        "pixHint": "O QR Code aparece na próxima tela e vale {minutes} minutos.",
+        "card": "Cartão",
+        "cardHint": "Você paga no checkout seguro do provedor e volta para cá."
+      },
+      "declaration": {
+        "label": "Declaro que tenho 18 anos ou mais e que sou eu quem paga. Posso ser o pai, a mãe ou o responsável legal do dono da Conta.",
+        "required": "Marque a declaração para pagar."
+      },
+      "submit": "Pagar {price}",
+      "submitting": "Criando o pagamento",
+      "horizon": {
+        "title": "Esse Pacote passa do limite",
+        "body": "O VIP de uma Conta pode ir até {days} dias à frente. Com este Pacote ele passaria disso: espere o VIP diminuir ou escolha um Pacote menor.",
+        "back": "Escolher outro Pacote"
+      },
+      "blocked": {
+        "title": "Não dá para comprar agora",
+        "banned": "Contas com ban permanente não compram VIP.",
+        "purchases_blocked": "As compras desta Conta estão bloqueadas. Fale com a Staff no Discord.",
+        "purchase_in_progress": "Você tem um pagamento em análise. Espere a resposta antes de comprar de novo.",
+        "daily_limit": "Você chegou ao limite de compras de hoje. Tente de novo amanhã.",
+        "soon": "A compra do VIP ainda não abriu.",
+        "myPurchases": "Ver minhas compras"
+      },
+      "errors": {
+        "payments_disabled": "A compra do VIP ainda não abriu.",
+        "invalid_body": "Não deu para ler o pedido. Recarregue a página e tente de novo.",
+        "banned": "Contas com ban permanente não compram VIP.",
+        "purchases_blocked": "As compras desta Conta estão bloqueadas. Fale com a Staff no Discord.",
+        "vip_horizon": "Esse Pacote passaria do limite de VIP à frente. Escolha um Pacote menor.",
+        "daily_limit": "Você chegou ao limite de compras de hoje. Tente de novo amanhã.",
+        "provider_unavailable": "O provedor de pagamento não respondeu. Nada foi cobrado: tente de novo em instantes.",
+        "not_found": "Não achamos essa compra.",
+        "purchase_in_progress": "Você tem um pagamento em análise. Espere a resposta antes de comprar de novo.",
+        "refund_unavailable": "Esta compra não pode mais ser reembolsada pelo site.",
+        "unknown": "Não deu para criar o pagamento. Nada foi cobrado: tente de novo."
+      }
+    },
+    "purchase": {
+      "metaTitle": "Sua compra do VIP",
+      "sandbox": "Ambiente de teste: o pagamento é de mentira e ninguém é cobrado.",
+      "summary": "{package} · {price}",
+      "packageName": "VIP, {months, plural, one {# mês} other {# meses}}",
+      "statusLabel": "Estado da compra",
+      "waiting": {
+        "pix": {
+          "title": "Pague com Pix",
+          "body": "Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código. O VIP chega sozinho assim que o pagamento for confirmado.",
+          "qrAlt": "QR Code do Pix",
+          "code": "Pix copia e cola",
+          "copy": "Copiar código",
+          "copying": "Copiando",
+          "copied": "Copiado",
+          "expires": "O QR Code vale por mais {clock}.",
+          "expiredLocal": "O prazo do QR Code acabou. Estamos confirmando com o banco se o pagamento chegou.",
+          "noQr": "Use o código acima no app do seu banco."
+        },
+        "card": {
+          "title": "Falta pagar no cartão",
+          "body": "O pagamento é feito no checkout seguro do provedor. Quando você terminar, volte para esta página.",
+          "continue": "Continuar para o checkout",
+          "returned": "Voltou do checkout. Estamos confirmando o pagamento.",
+          "expires": "O checkout vale por mais {clock}."
+        },
+        "checking": "Esta página confere sozinha a cada poucos segundos.",
+        "simulate": "Simular o pagamento (ambiente de teste)"
+      },
+      "processing": {
+        "title": "Ainda estamos processando",
+        "body": "O pagamento ainda não foi confirmado. Pode fechar esta página: se for aprovado, o VIP é liberado sozinho e a compra aparece em Minhas compras.",
+        "myPurchases": "Ver minhas compras"
+      },
+      "in_review": {
+        "title": "Pagamento em análise",
+        "body": "O provedor está analisando o pagamento. Isso pode levar um tempo. Pode fechar esta página: o VIP é liberado sozinho se for aprovado."
+      },
+      "approved": {
+        "title": "VIP liberado",
+        "body": "Pagamento confirmado. Os Itens e as vantagens do VIP já valem na sua Conta.",
+        "until": "Seu VIP vai até {date}.",
+        "receipt": "Ver recibo",
+        "loadout": "Ir ao Loadout",
+        "refundUntil": "Você pode pedir o reembolso até {date}."
+      },
+      "rejected": {
+        "title": "Pagamento recusado",
+        "body": "O pagamento não passou e nada foi cobrado. Tente de novo, com outro cartão ou por Pix.",
+        "retry": "Tentar de novo"
+      },
+      "expired": {
+        "title": "O prazo acabou",
+        "body": "O pagamento não chegou a tempo e nada foi cobrado. Você pode gerar um novo.",
+        "retry": "Gerar um novo pagamento"
+      },
+      "cancelled": {
+        "title": "Compra cancelada",
+        "body": "Esta compra foi cancelada e nada foi cobrado.",
+        "retry": "Comprar de novo"
+      },
+      "refunded": {
+        "title": "Compra reembolsada",
+        "body": "O valor foi devolvido e os dias saíram do seu VIP.",
+        "retry": "Ver os Pacotes"
+      },
+      "partially_refunded": {
+        "title": "Reembolso parcial",
+        "body": "Uma parte do valor foi devolvida. Veja os detalhes em Minhas compras."
+      },
+      "charged_back": {
+        "title": "Pagamento contestado",
+        "body": "O pagamento foi contestado junto ao banco ou à operadora do cartão e o VIP desta compra foi desfeito. Se foi engano, fale com a Staff no Discord."
+      },
+      "poll": {
+        "failed": "Não deu para atualizar agora. Tentamos de novo em instantes."
+      },
+      "notFound": {
+        "title": "Não achamos essa compra",
+        "body": "O endereço pode estar errado, ou a compra é de outra Conta. As suas compras ficam em Minhas compras.",
+        "myPurchases": "Ver minhas compras"
+      }
     }
   },
   "firstSteps": {
