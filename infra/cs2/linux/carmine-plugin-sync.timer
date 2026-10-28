@@ -1,0 +1,12 @@
+# A cada 10 minutos. Para congelar versões: systemctl disable --now carmine-plugin-sync.timer
+[Unit]
+Description=Procura release nova do Carmine.Core a cada 10 minutos
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=10min
+RandomizedDelaySec=60
+Persistent=true
+
+[Install]
+WantedBy=timers.target

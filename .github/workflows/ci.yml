@@ -47,10 +47,12 @@ jobs:
       - run: pnpm verify
       - name: Deploy da homologação se atualiza sozinho (teste sem Docker)
         run: bash infra/hml/test/deploy-self-update.test.sh
-      - name: Servidores CS2 (shellcheck e teste da release e do espelho)
+      - name: Servidores CS2 (shellcheck, release, espelho e entrega do plugin)
         run: |
           shellcheck -x -P SCRIPTDIR -s bash infra/cs2/linux/*.sh infra/cs2/release/*.sh infra/cs2/test/*.sh infra/cs2/linux/test/*.sh
           bash infra/cs2/test/release-and-mirror.test.sh
+          bash infra/cs2/test/plugin-deploy.test.sh
+          python3 -m unittest infra/cs2/test/test_a2s.py
       - name: OpenAPI versionado está atualizado
         run: |
           pnpm --filter @carmine/api openapi:generate
