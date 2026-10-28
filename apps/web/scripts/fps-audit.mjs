@@ -722,10 +722,19 @@ export const GUARD_LIMITS = {
 async function idleGuard(browser, page, ctx) {
   const { context, tab, cdp } = await openPage(browser, page, { ...ctx, cpu: 1 });
   await tab.waitForTimeout(8000);
+  // --pause <nome>: pausa as animações contínuas desse nome (ou 'todas') antes de medir, para atribuir o custo.
+  if (ctx.pause) {
+    await tab.evaluate(
+      (only) => window.__anim.pause(only),
+      ctx.pause === 'todas' ? null : ctx.pause,
+    );
+    await tab.waitForTimeout(300);
+  }
   const before = await metricsOf(cdp);
   const texts = await textMutations(tab, 3);
   const after = await metricsOf(cdp);
   const census = await tab.evaluate(CENSUS);
+  const trace = flag('--trace') ? await traceIdle(browser, tab, 3) : null;
   await context.close();
   const offCompositor = census.animations.filter(
     (a) => a.running && a.infinite && a.offCompositor.length > 0,
@@ -733,11 +742,20 @@ async function idleGuard(browser, page, ctx) {
   return {
     styleRecalcsPerSecond: (after.RecalcStyleCount - before.RecalcStyleCount) / 3,
     layoutsPerSecond: (after.LayoutCount - before.LayoutCount) / 3,
+    mainThreadBusy: (after.TaskDuration - before.TaskDuration) / 3,
     textWritesPerSecond: texts.reduce((sum, t) => sum + t.perSecond, 0),
     offCompositorAnimations: offCompositor.length,
     offCompositorNames: [
       ...new Set(offCompositor.map((a) => `${a.name}(${a.offCompositor.join(',')})`)),
     ],
+    running: [
+      ...new Set(
+        census.animations
+          .filter((a) => a.running)
+          .map((a) => `${a.name}${a.infinite ? ' (infinita)' : ''} em ${a.el}`),
+      ),
+    ],
+    trace,
     topText: texts[0] ? `${texts[0].key} ${f1(texts[0].perSecond)}×/s` : '-',
   };
 }
@@ -745,9 +763,9 @@ async function idleGuard(browser, page, ctx) {
 async function runGuard(browser, ctx, { only, serverPath, profilePath }) {
   console.log('Verificação de repouso (CPU sem estrangular, 3 s parada, 8 s depois de pronta)\n');
   console.log(
-    '| Página | recálculos de estilo/s | layouts/s | escritas de texto/s | animações fora do compositor | |',
+    '| Página | recálculos de estilo/s | layouts/s | escritas de texto/s | thread principal ocupada | animações fora do compositor | |',
   );
-  console.log('|---|---:|---:|---:|---:|---|');
+  console.log('|---|---:|---:|---:|---:|---:|---|');
   const failures = [];
   for (const page of PAGES) {
     if (only && !only.includes(page.name)) continue;
@@ -767,8 +785,17 @@ async function runGuard(browser, ctx, { only, serverPath, profilePath }) {
         `${page.name}: ${broken.join('; ')}${r.offCompositorNames.length ? ` [${r.offCompositorNames.join(', ')}]` : ''}${r.textWritesPerSecond > GUARD_LIMITS.textWritesPerSecond ? ` [texto: ${r.topText}]` : ''}`,
       );
     }
+    if (r.trace) {
+      console.log(`  · ${page.name}: animações rodando: ${r.running.join(' | ') || '-'}`);
+      for (const w of r.trace.work)
+        console.log(`  · ${page.name}: ${f1(w.ms)} ms em ${w.n}× ${w.name}`);
+      for (const x of r.trace.reasons)
+        console.log(`  · ${page.name}: invalidação ${x.n}× ${x.key}`);
+      for (const x of r.trace.stacks) console.log(`  · ${page.name}: pilha ${x.n}× ${x.key}`);
+      for (const x of r.trace.callers) console.log(`  · ${page.name}: ${f1(x.ms)} ms ${x.key}`);
+    }
     console.log(
-      `| ${page.name} | ${f1(r.styleRecalcsPerSecond)} | ${f1(r.layoutsPerSecond)} | ${f1(r.textWritesPerSecond)} | ${r.offCompositorAnimations} | ${broken.length ? 'ACIMA' : 'ok'} |`,
+      `| ${page.name} | ${f1(r.styleRecalcsPerSecond)} | ${f1(r.layoutsPerSecond)} | ${f1(r.textWritesPerSecond)} | ${pct(r.mainThreadBusy)} | ${r.offCompositorAnimations} | ${broken.length ? 'ACIMA' : 'ok'} |`,
     );
   }
   if (failures.length) {
@@ -853,6 +880,7 @@ async function main() {
     seconds: Number(option('--seconds') ?? 3),
     repeat: Number(option('--repeat') ?? 1),
     diagnostics: [],
+    pause: option('--pause'),
     viewport: { width, height },
     storageState: storagePath ? JSON.parse(await readFile(storagePath, 'utf8')) : undefined,
   };
