@@ -267,13 +267,13 @@ export function LoadoutScreen({
       */}
         <div
           ref={barRef}
-          className="max-md:contents md:sticky md:top-(--site-hdr-h) md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:bg-background md:px-1 md:pt-2 md:pb-2.5"
+          className="pointer-events-none max-md:contents md:sticky md:top-(--site-hdr-h) md:z-20 md:-mx-1 md:flex md:flex-wrap md:items-center md:gap-x-4 md:gap-y-1 md:px-1 md:pt-2 md:pb-2.5"
         >
           <div
             ref={barInnerRef}
-            className="max-md:sticky max-md:top-(--site-hdr-h) max-md:z-20 max-md:-mx-1 max-md:bg-background max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
+            className="pointer-events-none max-md:sticky max-md:top-(--site-hdr-h) max-md:z-20 max-md:-mx-1 max-md:px-1 max-md:pt-2 max-md:pb-2.5 md:contents"
           >
-            <div className="md:order-1">
+            <div className="pointer-events-auto md:order-1">
               <TabsList
                 aria-label={t('sidesLabel')}
                 className="max-md:w-full max-md:[&>*]:flex-1 rounded-full bg-surface p-[3px]"
@@ -299,7 +299,7 @@ export function LoadoutScreen({
             </div>
             <nav
               aria-label={t('board.categories')}
-              className="mt-2 flex gap-0.5 overflow-x-auto max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
+              className="pointer-events-auto mt-2 flex w-fit max-w-full gap-0.5 overflow-x-auto rounded-full bg-surface p-[3px] max-md:pr-5 max-md:[mask-image:linear-gradient(to_right,black_calc(100%-1.25rem),transparent)] [scrollbar-width:none] md:order-3 md:basis-full md:mt-0 lg:hidden [&::-webkit-scrollbar]:hidden"
             >
               {columns.map((column) => (
                 <button
