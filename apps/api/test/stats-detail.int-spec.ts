@@ -23,6 +23,10 @@ import { DataRetention } from '../src/reports/data-retention.js';
 import { dayOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date();

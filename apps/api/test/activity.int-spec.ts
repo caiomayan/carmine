@@ -14,6 +14,10 @@ import { GameServerRegistry } from '../src/game-servers/game-server-registry.js'
 import { weekStartOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const NOW = () => new Date().toISOString();
 const THIS_WEEK = weekStartOf(new Date());

@@ -6,6 +6,10 @@ import { weekStartOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { FakeSteam } from './support/fake-steam.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const THIS_WEEK = weekStartOf(new Date());
 
