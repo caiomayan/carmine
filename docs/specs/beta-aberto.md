@@ -243,7 +243,7 @@ O "VIP" genérico vira **dois planos com nome próprio**, na linha da família i
 - **Pacotes:** 1, 3 e 6 meses em cada plano, com o desconto de hoje (3 meses ≈ 10%, 6 meses ≈ 16%). Os valores exatos ficam em `packages/contracts/src/payments.ts`. A duração é forma de pagamento, não plano. Os números finais podem mudar com o contador.
 - **O que é básico e o que é completo na Sala** está na S23.
 
-**Troca de plano** (decisão a confirmar com o dono)
+**Troca de plano**
 - Quem tem Capo e compra Padrinho: o Padrinho começa na hora, e os dias restantes do Capo **ficam guardados** e voltam a correr quando o Padrinho acabar.
 - Quem tem Padrinho e compra Capo: o Capo entra na fila e começa quando o Padrinho acabar.
 
@@ -287,7 +287,7 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 **Regras**
 - **Calibrando:** o Rating de um Modo só aparece depois de **100 rounds** nele. Antes, o Perfil mostra `Calibrando · 37/100`.
 - **Amostra pequena:** com poucos rounds na janela, o Rating é puxado em direção a 1,00, para não haver um 2,40 depois de 3 rounds bons.
-- **Janela do Perfil** (decisão a confirmar com o dono): o Perfil mostra o Rating dos **últimos 90 dias** no Modo, e o Ranking usa o da semana.
+- **Janela do Perfil:** o número de destaque do Perfil é o Rating dos **últimos 90 dias** no Modo, e o Ranking usa o da semana.
 - **As médias são recalculadas toda semana**, e a versão da fórmula fica gravada, para dar para recalcular tudo quando ela mudar.
 - **Fórmula semiaberta:** uma página `/rating` explica **o que entra** (as 5 partes, e depois o Swing), sem os pesos, como faz a HLTV, para ninguém otimizar o número em vez de jogar.
 - **Não contam:** aquecimento, bots, rounds sintéticos do Retake e as partidas de Sala marcadas como "não conta" (S23).
@@ -296,6 +296,19 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 - **Perfil:** o Rating do Modo é o número maior do topo, com o geral abaixo. A Pontuação DM fica na aba do DM.
 - **Ranking de Retake** passa a ordenar pelo **Rating da semana**, com o mesmo mínimo de 50 rounds. O DM continua por abates por minuto. Desempate: rounds jogados, depois a Conta mais antiga.
 - **`!rank` e `!stats`** (S16) e o **card** (S19) mostram o Rating ou o "Calibrando".
+
+**Estatísticas detalhadas com filtro de período** (como na HLTV)
+- O destaque do Perfil é de 90 dias, mas a aba de Estatísticas detalhadas deixa filtrar:
+  - **período:** desde o início da Conta, últimos 30, 90 ou 365 dias, um ano específico ou um intervalo de datas;
+  - **Modo**, **mapa** e **lado** (CT e TR);
+  - **onde:** Tudo, Servidores abertos ou Salas (S23);
+  - **time:** quando existirem os Times da plataforma (futuro).
+- Em qualquer filtro aparecem o **Rating** e o **K/D**, junto com HS%, ADR, KAST, abates, mortes, assistências, rounds e tempo.
+- **De onde vem cada período:**
+  - o **K/D e as somas** desde o início da Conta saem das somas semanais, que nunca expiram;
+  - um **intervalo de datas** usa as somas diárias, que valem por 400 dias, e as semanais antes disso;
+  - o **Rating, o KAST, o mapa e o lado** só existem **a partir da S17**. Para um período anterior, a tela diz `Rating disponível a partir de <data da S17>` em vez de inventar um número.
+- **A URL guarda o filtro**, para dar para compartilhar um recorte.
 
 **Rating escondido e FACEIT**
 - Além do Rating Carmine, que mede desempenho, existe um **rating de habilidade escondido** (Glicko-2), que ninguém vê. Ele serve para **equilibrar os times das Salas** (S23) e para o **matchmaking** do futuro distante. É atualizado pelos resultados das partidas de 5v5 que contam.
@@ -311,6 +324,8 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 - A página `/rating` explica as partes sem mostrar os pesos.
 - Uma Conta com FACEIT vinculada à mesma Steam mostra o selo do nível, e esconder o selo funciona.
 - Nenhum texto do site usa "HLTV Rating".
+- Filtrar as Estatísticas detalhadas por "desde o início" mostra o K/D de toda a vida da Conta, e um período anterior à S17 mostra o aviso no lugar do Rating.
+- Um filtro aberto pela URL compartilhada mostra o mesmo recorte.
 
 ---
 
@@ -435,7 +450,7 @@ A S23 vai em quatro partes.
 
 - **Partida:** **só as Salas** viram Partidas no histórico. Os servidores abertos e o 5v5 Casual não.
 - **Página da Partida:** pública por link, com o placar por mapa, a série e as **estatísticas de cada jogador** (dos resumos da S17: abates, mortes, assistências, ADR, KAST, HS%, Rating da partida). Quem estava em modo anônimo é revelado aqui depois do fim.
-- **Demo:** gravada **só em Sala de 5v5 com 5 contra 5**, a partir do **AO VIVO**, uma por mapa. Guardada por **30 dias** (o Padrinho pode ganhar mais, decisão a confirmar com o dono). **Qualquer um pode baixar.** O aviso aparece no ready.
+- **Demo:** gravada **só em Sala de 5v5 com 5 contra 5**, a partir do **AO VIVO**, uma por mapa. Guardada por **30 dias**, ou **90 dias** quando quem criou a Sala é Padrinho. **Qualquer um pode baixar.** O aviso aparece no ready.
 - **Contar ou não:** quem cria ou um admin decide se a partida conta. Se não contar, ela fica no histórico, com página, placar e demo, mas **fora do Perfil, do Rating e do rating escondido**.
 - **No Perfil**, as Estatísticas ganham o filtro **Tudo / Servidores abertos / Salas** (padrão Tudo). **As Salas nunca entram no Ranking semanal.** Um Ranking de 5v5 próprio fica para quando o 5v5 estiver rodando.
 - **Futuro:** clipes dos melhores momentos na página da Partida, a partir da demo.
@@ -460,7 +475,7 @@ A S23 vai em quatro partes.
 
 Um servidor **5v5 público**, aberto como o Retake e o DM: entra quem quiser, sem montar time e sem ready. É a porta de entrada do 5v5. As Salas são para quem já tem o grupo.
 
-**Regras da v1** (decisões a confirmar com o dono)
+**Regras da v1**
 - **Formato:** MR12 com troca de lado no meio, compra normal, mapas do pool Active Duty com votação ao fim do mapa. Entrar e sair no meio é livre.
 - **Vagas:** 10, mais a vaga reservada dos planos, como no Retake.
 - **Times:** balanceados pelo servidor entre os mapas.
@@ -514,3 +529,16 @@ O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**:
 - `stcarmine.com/staff` redireciona para o painel, e o bundle do site não tem código da Staff.
 - O Início mostra os números certos e leva a cada tela.
 - Denúncias e fotos funcionam bem num celular de 390 px.
+
+---
+
+## Depois desta spec (sem grilling ainda)
+
+- **Home personalizada:** conteúdo diferente por pessoa e por momento. Próxima sessão de grilling.
+- **Amizades no Carmine**, com sugestões pela Steam, por quem joga junto e por amigos de amigos, e o **chat**, que depende delas. Depois do lançamento.
+- **Times na plataforma:** times fixos, com desafios e histórico entre eles. O que esta spec já prepara para eles:
+  - os resumos de round e de partida da S17 guardam quem jogou com quem;
+  - o nome e a logo de time da Sala (S23c) viram o nome e a logo do Time;
+  - as Estatísticas detalhadas da S21 ganham o filtro por time.
+- **Matchmaking (ranqueadas):** num futuro distante, partindo do rating escondido da S21.
+- **Treinador de IA e clipes de destaque:** a partir das demos das Salas e da coleta por round.
