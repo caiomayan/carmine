@@ -42,6 +42,15 @@ x-api-env: &api-env
   MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
   CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-}
   CLOUDFLARE_PURGE_TOKEN: ${CLOUDFLARE_PURGE_TOKEN:-}
+  # Pagamentos e VIP (S14, docs/operacao/pagamentos.md e docs/operacao/mercadopago.md): a cobrança nasce DESLIGADA e
+  # sem provedor; o dono preenche o .env da VM no dia de ligar. `PAYMENTS_PROVIDER=mercadopago` exige o token e o
+  # segredo do webhook; `fake` a API recusa fora de homologação.
+  PAYMENTS_ENABLED: ${PAYMENTS_ENABLED:-false}
+  PAYMENTS_PROVIDER: ${PAYMENTS_PROVIDER:-}
+  PAYMENTS_DATA_KEY: ${PAYMENTS_DATA_KEY:-}
+  MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+  MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
+  VIP_HOLD_ENABLED: ${VIP_HOLD_ENABLED:-false}
   # Analytics de produto (A1, ADR 0021): vazio desliga; região UE (os hosts padrão da API).
   POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
   POSTHOG_PERSONAL_API_KEY: ${POSTHOG_PERSONAL_API_KEY:-}
