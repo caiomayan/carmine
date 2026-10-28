@@ -156,7 +156,7 @@ function Tracker({ config }: { config: PageViewTrackerConfig }) {
 
   useEffect(() => {
     allowed = ready;
-    console.info('[analytics] efeito', status, String(participates), pathname);
+    console.info('[analytics] efeito', status, String(ready), pathname);
     if (!ready) return;
     const key = `${pathname}?${search}`;
     if (counted.current === key) return;
