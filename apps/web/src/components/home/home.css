@@ -39,18 +39,10 @@
     ),
     linear-gradient(to top, var(--bg) 0%, transparent 46%);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .vh-hero-art img {
-    animation: vh-kenburns 36s ease-in-out infinite alternate;
-  }
-}
-@keyframes vh-kenburns {
-  from {
-    transform: scale(1.02);
-  }
-  to {
-    transform: scale(1.1) translate3d(-1.2%, -1%, 0);
-  }
+/* A arte do herói fica parada, no meio do antigo Ken Burns de 36 s: uma imagem de 100vw x 660 px dentro de máscara, animada
+   o tempo todo, mantinha a GPU produzindo quadros em repouso. */
+.vh-hero-art img {
+  transform: scale(1.06) translate(-0.6%, -0.5%);
 }
 @media (max-width: 760px) {
   .vh-hero-art {

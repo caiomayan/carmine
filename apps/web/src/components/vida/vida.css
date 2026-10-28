@@ -135,6 +135,8 @@ h1.text-display {
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
+  /* Isolado do resto da página: nada fora dele o repinta, e ele não repinta nada fora. */
+  contain: layout paint style;
   /* Onde o header rola com a página (celular) o brilho entra em fade logo abaixo dele, sem o corte seco. */
   -webkit-mask-image: linear-gradient(
     to bottom,
@@ -169,15 +171,23 @@ h1.text-display {
     transparent 72%
   );
 }
+/*
+ * Os três blobs ficam PARADOS, na posição do meio do passeio de 14 a 22 s que faziam antes. Animar três camadas de ~1100 px
+ * por baixo de uma máscara obrigava o compositor a refazer a superfície mascarada (~1900 x 1380) a cada quadro, em toda
+ * página com brilho (Home, Perfil, Ranking, Servidor, Editor): era o que derrubava o fps em repouso. Transform 2D (sem
+ * translate3d) para não virar camada própria. A cor ainda troca suave quando muda o mapa ou a skin (as @property abaixo).
+ */
 .v-ambient i:nth-child(1) {
   --c: var(--amb-1);
   left: -14%;
   top: -42%;
+  transform: translate(11%, 9%) scale(1.09);
 }
 .v-ambient i:nth-child(2) {
   --c: var(--amb-2);
   right: -16%;
   top: -34%;
+  transform: translate(-13%, 11%) scale(0.95);
 }
 .v-ambient i:nth-child(3) {
   --c: var(--amb-3);
@@ -185,32 +195,7 @@ h1.text-display {
   top: -52%;
   width: min(60vw, 820px);
   opacity: 0.8;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .v-ambient i:nth-child(1) {
-    animation: v-blob-1 17s ease-in-out infinite alternate;
-  }
-  .v-ambient i:nth-child(2) {
-    animation: v-blob-2 22s ease-in-out infinite alternate;
-  }
-  .v-ambient i:nth-child(3) {
-    animation: v-blob-3 14s ease-in-out infinite alternate;
-  }
-}
-@keyframes v-blob-1 {
-  to {
-    transform: translate3d(22%, 18%, 0) scale(1.18);
-  }
-}
-@keyframes v-blob-2 {
-  to {
-    transform: translate3d(-26%, 22%, 0) scale(0.9);
-  }
-}
-@keyframes v-blob-3 {
-  to {
-    transform: translate3d(-30%, 30%, 0) scale(1.25);
-  }
+  transform: translate(-15%, 15%) scale(1.125);
 }
 
 /* ---------- painéis, spotlight e inclinação ---------- */
@@ -344,22 +329,13 @@ h1.text-display {
 .v-holo[data-hot]::after {
   opacity: 0.85;
 }
+/* Em toque não há ponteiro para o brilho seguir: o holo fica parado numa posição boa (antes varria em loop, repintando o
+   gradiente por quadro, de graça, em cartão que ninguém tocou). */
 @media (hover: none) {
   .v-holo::after {
     opacity: 0.5;
-    animation: v-holo-sweep 5.5s ease-in-out infinite alternate;
-  }
-}
-@keyframes v-holo-sweep {
-  from {
-    --hx: 18%;
-    --hy: 24%;
-    background-position: 20% 20%;
-  }
-  to {
-    --hx: 82%;
-    --hy: 78%;
-    background-position: 80% 80%;
+    --hx: 50%;
+    --hy: 50%;
   }
 }
 
