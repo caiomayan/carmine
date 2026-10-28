@@ -1,12 +1,15 @@
 import { ANALYTICS_EVENTS, ANALYTICS_PLAN_VERSION } from '@carmine/contracts/analytics';
 import { describe, expect, it } from 'vitest';
 import {
+  CAPTURE_PATH,
+  COOKIELESS_DISTINCT_ID,
+  captureBody,
   cleanUtm,
-  commonProperties,
+  deviceOf,
+  isBot,
   isCountedPath,
   pageViewOf,
   referrerLabel,
-  sanitizeEvent,
 } from './analytics-page';
 
 const view = (over: Partial<Parameters<typeof pageViewOf>[0]> = {}) =>
@@ -141,49 +144,117 @@ describe('os utm', () => {
   });
 });
 
-describe('o que a biblioteca anexa ao evento', () => {
-  const raw = {
-    event: 'pagina_vista',
-    uuid: '0198a1b2-0000-7000-8000-000000000001',
-    timestamp: '2026-10-28T01:00:00.000Z',
-    $set: { email: 'a@b.c' },
-    properties: {
-      // O que a biblioteca coloca sozinha (do payload real do posthog-js em modo sem cookies).
-      $current_url: 'https://stcarmine.com/10016?x=1#a',
-      $pathname: '/10016',
-      $host: 'stcarmine.com',
-      $referrer: 'https://discord.com/channels/1/2',
-      $referring_domain: 'discord.com',
-      $raw_user_agent: 'Mozilla/5.0 ...',
-      $timezone: 'America/Sao_Paulo',
-      $screen_width: 1920,
-      $viewport_width: 1280,
-      $lib_custom_api_host: 'https://eu.i.posthog.com',
-      utm_source: 'Sujo',
-      gclid: 'abc',
-      fbclid: 'def',
-      $os: 'Windows',
+describe('o aparelho, em famílias e nunca o agente cru', () => {
+  const CHROME_WIN =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+  const FIREFOX_LINUX = 'Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0';
+  const SAFARI_MAC =
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15';
+  const CHROME_ANDROID =
+    'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
+  const SAFARI_IPHONE =
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+  const EDGE_WIN = `${CHROME_WIN} Edg/130.0.0.0`;
+  const ANDROID_TABLET =
+    'Mozilla/5.0 (Linux; Android 14; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+
+  it('reconhece os navegadores e sistemas comuns', () => {
+    expect(deviceOf(CHROME_WIN, false)).toEqual({
       $browser: 'Chrome',
+      $os: 'Windows',
       $device_type: 'Desktop',
-      $lib: 'web',
-      $lib_version: '1.438.9',
-      $insert_id: 'x1',
-      $time: 1793149769.4,
-      $cookieless_mode: true,
-      $process_person_profile: false,
-      distinct_id: '$posthog_cookieless',
-      token: 'phc_x',
-      // As nossas.
-      ...view({ pathname: '/10016' }),
-      ...commonProperties({ planVersion: ANALYTICS_PLAN_VERSION, environment: 'producao' }),
-    },
-  };
+    });
+    expect(deviceOf(EDGE_WIN, false).$browser).toBe('Microsoft Edge');
+    expect(deviceOf(FIREFOX_LINUX, false)).toEqual({
+      $browser: 'Firefox',
+      $os: 'Linux',
+      $device_type: 'Desktop',
+    });
+    expect(deviceOf(SAFARI_MAC, false)).toEqual({
+      $browser: 'Safari',
+      $os: 'Mac OS X',
+      $device_type: 'Desktop',
+    });
+    expect(deviceOf(CHROME_ANDROID, true)).toEqual({
+      $browser: 'Chrome',
+      $os: 'Android',
+      $device_type: 'Mobile',
+    });
+    expect(deviceOf(SAFARI_IPHONE, true)).toEqual({
+      $browser: 'Safari',
+      $os: 'iOS',
+      $device_type: 'Mobile',
+    });
+  });
 
-  it('só o pagina_vista sai, com as propriedades do plano mais as da biblioteca que o PostHog precisa', () => {
-    const clean = sanitizeEvent(raw);
+  it('o iPad (que se anuncia como Mac) e o tablet Android são Tablet', () => {
+    expect(deviceOf(SAFARI_MAC, true)).toEqual({
+      $browser: 'Safari',
+      $os: 'iOS',
+      $device_type: 'Tablet',
+    });
+    expect(deviceOf(ANDROID_TABLET, true).$device_type).toBe('Tablet');
+  });
 
-    expect(Object.keys(clean?.properties ?? {}).sort()).toEqual(
+  it('o que não se reconhece vira Other, sem repetir o agente', () => {
+    const device = deviceOf('AlgoEstranho/1.0 (id=76561198000000001)', false);
+
+    expect(device.$browser).toBe('Other');
+    expect(device.$os).toBe('Other');
+    expect(JSON.stringify(device)).not.toContain('7656119');
+  });
+});
+
+describe('robôs', () => {
+  it('navegador automatizado e agentes de robô não contam; um Chrome comum conta', () => {
+    const chrome =
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+
+    expect(isBot(chrome, false)).toBe(false);
+    expect(isBot(chrome, true)).toBe(true);
+    for (const agent of [
+      'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/130.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+      'Mozilla/5.0 (compatible; bingbot/2.0)',
+      'curl/8.4.0',
+      'Chrome-Lighthouse',
+    ]) {
+      expect(isBot(agent, false), agent).toBe(true);
+    }
+  });
+});
+
+describe('o corpo do pedido de captura é montado do zero', () => {
+  const body = () =>
+    captureBody({
+      key: 'phc_x',
+      view: pageViewOf({
+        pathname: '/10016',
+        search: '?x=1&utm_source=Sujo',
+        referrer: 'https://discord.com/channels/1/2',
+        siteHost: 'stcarmine.com',
+        loggedIn: true,
+      }) as NonNullable<ReturnType<typeof pageViewOf>>,
+      device: { $browser: 'Chrome', $os: 'Windows', $device_type: 'Desktop' },
+      planVersion: ANALYTICS_PLAN_VERSION,
+      environment: 'producao',
+      uuid: '0198a1b2-0000-7000-8000-000000000001',
+      at: new Date('2026-10-28T12:00:00.000Z'),
+    });
+
+  it('leva só o evento, o identificador anônimo do modo sem cookies e as propriedades do plano', () => {
+    const sent = body();
+
+    expect(CAPTURE_PATH).toBe('/i/v0/e/');
+    expect(sent).toMatchObject({
+      api_key: 'phc_x',
+      event: 'pagina_vista',
+      distinct_id: COOKIELESS_DISTINCT_ID,
+      timestamp: '2026-10-28T12:00:00.000Z',
+    });
+    expect(Object.keys(sent.properties).sort()).toEqual(
       [
+        'token',
         'rota',
         'modo',
         'logado',
@@ -194,52 +265,70 @@ describe('o que a biblioteca anexa ao evento', () => {
         'versao_plano',
         'ambiente',
         'origem_evento',
-        '$os',
         '$browser',
+        '$os',
         '$device_type',
         '$lib',
         '$lib_version',
         '$insert_id',
-        '$time',
         '$cookieless_mode',
         '$process_person_profile',
-        'distinct_id',
-        'token',
       ].sort(),
     );
-    expect(clean?.properties?.utm_source).toBeNull();
-    expect(clean?.properties?.rota).toBe('perfil');
-    expect(clean?.properties?.origem_evento).toBe('web');
-    expect(clean?.properties?.versao_plano).toBe(ANALYTICS_PLAN_VERSION);
+    expect(sent.properties).toMatchObject({
+      rota: 'perfil',
+      logado: true,
+      referenciador: 'discord.com',
+      utm_source: null,
+      versao_plano: ANALYTICS_PLAN_VERSION,
+      ambiente: 'producao',
+      origem_evento: 'web',
+      $cookieless_mode: true,
+      $process_person_profile: false,
+    });
+  });
+
+  it('as propriedades batem com o contrato do pagina_vista', () => {
+    const { rota, modo, logado, referenciador, utm_source, utm_medium, utm_campaign } =
+      body().properties;
+
+    expect(
+      ANALYTICS_EVENTS.pagina_vista.properties.parse({
+        rota,
+        modo,
+        logado,
+        referenciador,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+      }),
+    ).toEqual({ rota, modo, logado, referenciador, utm_source, utm_medium, utm_campaign });
   });
 
   it('a URL crua, o ID, o referenciador cru e o agente do navegador não saem', () => {
-    const text = JSON.stringify(sanitizeEvent(raw));
+    const text = JSON.stringify(body());
 
     for (const forbidden of [
       '10016',
-      '/10016',
       'stcarmine.com',
       'channels/1/2',
       'Mozilla',
-      'gclid',
       'Sujo',
+      '$current_url',
+      '$pathname',
+      '$host',
+      '$referrer',
+      '$raw_user_agent',
     ]) {
       expect(text, forbidden).not.toContain(forbidden);
     }
-    expect(sanitizeEvent(raw)).not.toHaveProperty('$set');
   });
 
-  it('qualquer outro evento é descartado', () => {
-    for (const event of [
-      '$pageview',
-      '$autocapture',
-      '$feature_flag_called',
-      '$exception',
-      '$snapshot',
-    ]) {
-      expect(sanitizeEvent({ ...raw, event })).toBeNull();
-    }
-    expect(sanitizeEvent(null)).toBeNull();
+  it('nenhuma identidade da Conta: o id é o do modo sem cookies e não há pessoa', () => {
+    const sent = body();
+
+    expect(sent.distinct_id).toBe('$posthog_cookieless');
+    expect(sent.properties.$process_person_profile).toBe(false);
+    expect(sent).not.toHaveProperty('$set');
   });
 });
