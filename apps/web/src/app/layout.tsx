@@ -14,6 +14,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeScript } from '@/components/theme-script';
 import { Effects } from '@/components/vida/effects';
+import { VipEndingBar } from '@/components/vip/vip-ending-bar';
 import { locale } from '@/i18n/request';
 import { getServerSession } from '@/lib/api-server';
 import { FIRST_STEPS_COOKIE, hasDismissedFirstSteps } from '@/lib/first-steps';
@@ -136,6 +137,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   >
                     <SanctionNotice />
                   </NextIntlClientProvider>
+                  {/* O aviso do fim do VIP (3 dias antes e no dia): vem do servidor, sem empurrar a página. */}
+                  <VipEndingBar vip={session?.vip ?? null} nonce={nonce} />
                   <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
                     <FirstSteps
                       labels={{

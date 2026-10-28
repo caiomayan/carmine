@@ -1486,6 +1486,13 @@
       }
     }
   },
+  "vipBand": {
+    "label": "Aviso do fim do VIP",
+    "ending_soon": "Seu VIP acaba em {date}.",
+    "ending_today": "Seu VIP acaba hoje, às {time}.",
+    "link": "Ver os Pacotes do VIP",
+    "dismiss": "Dispensar o aviso por hoje"
+  },
   "firstSteps": {
     "title": "Boas-vindas à Carmine, {name}",
     "intro": "Sua Conta é a mesma dos servidores: o que você monta aqui vai para o jogo.",
