@@ -73,6 +73,10 @@ verify() {
   check "env de exemplo criado com 0600" test "$(stat -c %a /etc/carmine-cs2/retake.env)" = 600
   check "unidade e target instalados" test -f /etc/systemd/system/carmine-cs2@.service -a -f /etc/systemd/system/carmine-cs2.target
   check "unidades habilitadas (links do enable)" test -L /etc/systemd/system/carmine-cs2.target.wants/carmine-cs2@retake.service
+  check "carmine-plugin-deploy instalado e achando a biblioteca pelo link"     bash -c 'carmine-plugin-deploy --help | grep -q -- --rollback'
+  check "helper A2S instalado" test -x /usr/local/lib/carmine-cs2/a2s-players.py
+  check "versão do plugin registrada por instância (compilado no host = local)"     test "$(cat "$P/retake/carmine-core.version")" = local
+  check "o timer de entrega só liga com release instalada (aqui compilou no host)"     test ! -e /etc/systemd/system/timers.target.wants/carmine-plugin-sync.timer
 }
 verify
 
@@ -117,14 +121,15 @@ check "FollowCS2ServerGuidelines desligado" \
 check "config com segredo é 0600" test "$(stat -c %a "$CORE")" = 600
 run_prestart deathmatch CARMINE_API_KEY=outra-chave CS2_GSLT=ABCDEF0123456789ABCDEF0123456789 CARMINE_API_BASE_URL=https://exemplo.test/api
 check "deathmatch: fallback_team 1" grep -q '^invsim_fallback_team 1$' "$P/deathmatch/game/csgo/cfg/carmine/inventory-simulator.cfg"
-check "deathmatch: API do ambiente" grep -q '^invsim_url "https://exemplo.test/api"$' "$P/deathmatch/game/csgo/cfg/carmine/inventory-simulator.cfg"
+check "deathmatch: API do ambiente (o /api do fim é removido, #34)" grep -q '^invsim_url "https://exemplo.test"$' "$P/deathmatch/game/csgo/cfg/carmine/inventory-simulator.cfg"
 rc=0
 run_prestart retake CARMINE_API_KEY='a"b' CS2_GSLT=x 2>/dev/null || rc=$?
 check "chave com aspas é recusada (sem injeção no JSON)" test "$rc" = 78
 
 echo "### 7. systemd-analyze verify"
 printf 'CARMINE_API_KEY=k\nCS2_GSLT=g\n' >/etc/carmine-cs2/retake.env
-systemd-analyze verify /etc/systemd/system/carmine-cs2@retake.service /etc/systemd/system/carmine-cs2.target
+systemd-analyze verify /etc/systemd/system/carmine-cs2@retake.service /etc/systemd/system/carmine-cs2.target \
+  /etc/systemd/system/carmine-plugin-sync.service /etc/systemd/system/carmine-plugin-sync.timer
 echo "ok   - unidades válidas"
 
 echo "### TUDO CERTO"

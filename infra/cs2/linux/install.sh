@@ -37,6 +37,8 @@ source "$SCRIPT_DIR/versions.sh"
 # shellcheck source=lib-assets.sh
 source "$SCRIPT_DIR/lib-assets.sh"
 mirror_load_env
+# shellcheck source=lib-release.sh
+source "$SCRIPT_DIR/lib-release.sh"
 
 HOME_DIR=/srv/carmine-cs2
 SERVICE_USER=carmine-cs2
@@ -47,6 +49,7 @@ DOTNET_DIR=/opt/dotnet
 API_BASE_URL='https://stcarmine.com'
 WEB_DISPLAY_URL='stcarmine.com'
 PLUGIN_DIR=''
+CORE_RELEASE=''
 DOWNLOAD_CS2=0
 PROFILES=(retake deathmatch)
 ALL_STEPS=(deps user steamcmd cs2 metamod css build profiles services)
@@ -62,6 +65,7 @@ Uso: sudo install.sh [opções]
   --api-base-url URL      API usada nos arquivos de ambiente novos (origem do site, sem /api; padrão: https://stcarmine.com)
   --web-display-url TEXTO endereço do site que o !ws mostra (padrão: stcarmine.com)
   --plugin-dir DIR        usa um Carmine.Core já compilado em vez de compilar (saída do dotnet publish)
+  --core-release V        usa a release do GitHub (latest, installed ou X.Y.Z) em vez de compilar: sem SDK .NET no host
   -h, --help
 EOF
 }
@@ -90,6 +94,7 @@ while (($#)); do
     --api-base-url) API_BASE_URL="${2:?--api-base-url pede um valor}"; shift ;;
     --web-display-url) WEB_DISPLAY_URL="${2:?--web-display-url pede um valor}"; shift ;;
     --plugin-dir) PLUGIN_DIR="${2:?--plugin-dir pede um valor}"; shift ;;
+    --core-release) CORE_RELEASE="${2:?--core-release pede um valor}"; shift ;;
     -h | --help) usage; exit 0 ;;
     *) usage >&2; die "opção desconhecida: $1" ;;
   esac
@@ -97,6 +102,7 @@ while (($#)); do
 done
 
 [[ $EUID -eq 0 ]] || die "rode como root (sudo)"
+[[ -z "$PLUGIN_DIR" || -z "$CORE_RELEASE" ]] || die "use --plugin-dir ou --core-release, não os dois"
 for s in "${STEPS[@]}"; do
   [[ " ${ALL_STEPS[*]} " == *" $s "* ]] || die "etapa desconhecida: $s (válidas: ${ALL_STEPS[*]})"
 done
@@ -113,6 +119,7 @@ INSTANCES_DIR="$HOME_DIR/profiles"
 DOWNLOADS_DIR="$HOME_DIR/downloads"
 BUILD_DIR="$HOME_DIR/build"
 WORK_DIRS=()
+log() { echo "    $*" >&2; }
 
 cleanup() {
   local d
@@ -299,11 +306,25 @@ find_dotnet() {
 
 step_build() {
   step "Carmine.Core para Linux"
+  if [[ -n "$CORE_RELEASE" ]]; then
+    local version
+    version="$(release_resolve "$CORE_RELEASE")"
+    release_fetch "$version"
+    rm -rf "$BUILD_DIR/Carmine.Core"
+    mkdir -p "$BUILD_DIR"
+    cp -a "$(release_dir "$version")/plugin" "$BUILD_DIR/Carmine.Core"
+    echo "$version" >"$BUILD_DIR/Carmine.Core.version"
+    echo "$version" >"$HOME_DIR/releases/installed"
+    fix_owner "$BUILD_DIR"
+    echo "    usando a release core-v$version"
+    return
+  fi
   if [[ -n "$PLUGIN_DIR" ]]; then
     [[ -f "$PLUGIN_DIR/Carmine.Core.dll" ]] || die "$PLUGIN_DIR/Carmine.Core.dll não existe"
     rm -rf "$BUILD_DIR/Carmine.Core"
     mkdir -p "$BUILD_DIR"
     cp -a "$PLUGIN_DIR" "$BUILD_DIR/Carmine.Core"
+    echo "local" >"$BUILD_DIR/Carmine.Core.version"
     echo "    usando o build pronto de $PLUGIN_DIR"
     return
   fi
@@ -327,6 +348,7 @@ step_build() {
     "$dotnet" publish "$REPO_ROOT/plugins/src/Carmine.Core/Carmine.Core.csproj" \
     -c Release -o "$out" --artifacts-path "$BUILD_DIR/artifacts"
   [[ -f "$out/Carmine.Core.dll" ]] || die "o publish não gerou Carmine.Core.dll"
+  echo "local" >"$BUILD_DIR/Carmine.Core.version"
   fix_owner "$BUILD_DIR"
 }
 
@@ -481,7 +503,9 @@ step_profiles() {
           rm -rf "$game_dir/addons/counterstrikesharp/plugins/Carmine.Core"
           mkdir -p "$game_dir/addons/counterstrikesharp/plugins/Carmine.Core"
           cp -a "$BUILD_DIR/Carmine.Core/." "$game_dir/addons/counterstrikesharp/plugins/Carmine.Core/"
-          echo "    Carmine.Core"
+          # A versão por instância é o que o carmine-plugin-deploy compara; compilado no host vale "local".
+          cat "$BUILD_DIR/Carmine.Core.version" >"$instance/carmine-core.version" 2>/dev/null || echo local >"$instance/carmine-core.version"
+          echo "    Carmine.Core $(cat "$instance/carmine-core.version")"
           ;;
         InventorySimulator) ;; # depois dos arquivos do perfil, abaixo
         *) install_gameplay_plugin "$plugin" "$game_dir" ;;
@@ -511,10 +535,17 @@ step_services() {
   step "Unidades systemd e arquivos de ambiente"
   install -d -m 0755 "$LIB_DIR"
   install -m 0755 "$SCRIPT_DIR/prestart.sh" "$LIB_DIR/prestart.sh"
+  install -m 0644 "$SCRIPT_DIR/lib-release.sh" "$LIB_DIR/lib-release.sh"
+  install -m 0755 "$SCRIPT_DIR/a2s-players.py" "$LIB_DIR/a2s-players.py"
+  # O deploy do plugin mora no PATH do root e acha a biblioteca e o helper ao lado do script instalado.
+  install -m 0755 "$SCRIPT_DIR/plugin-deploy.sh" "$LIB_DIR/plugin-deploy.sh"
+  ln -sfn "$LIB_DIR/plugin-deploy.sh" /usr/local/sbin/carmine-plugin-deploy
   install -d -m 0755 "$UNIT_DIR"
   sed -e "s|@HOME@|$HOME_DIR|g" -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-cs2@.service" >"$UNIT_DIR/carmine-cs2@.service"
   install -m 0644 "$SCRIPT_DIR/carmine-cs2.target" "$UNIT_DIR/carmine-cs2.target"
   chmod 0644 "$UNIT_DIR/carmine-cs2@.service"
+  sed -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-plugin-sync.service" >"$UNIT_DIR/carmine-plugin-sync.service"
+  install -m 0644 "$SCRIPT_DIR/carmine-plugin-sync.timer" "$UNIT_DIR/carmine-plugin-sync.timer"
 
   # Segredos: o systemd lê como root, então 0600 root basta. Arquivo que já existe nunca é tocado.
   install -d -m 0750 "$ETC_DIR"
@@ -536,6 +567,11 @@ step_services() {
   if command -v systemctl >/dev/null; then
     [[ -d /run/systemd/system ]] && systemctl daemon-reload
     systemctl_offline_aware enable carmine-cs2.target >/dev/null 2>&1
+    # Só habilitado com release instalada: quem compilou no host (--plugin-dir/sem --core-release) não quer o timer.
+    if [[ -f "$HOME_DIR/releases/installed" ]]; then
+      systemctl_offline_aware enable carmine-plugin-sync.timer >/dev/null 2>&1
+      [[ -d /run/systemd/system ]] && systemctl start carmine-plugin-sync.timer
+    fi
     for name in "${PROFILES[@]}"; do
       systemctl_offline_aware enable "carmine-cs2@$name.service" >/dev/null 2>&1
     done
