@@ -355,10 +355,17 @@ export const getPurchase = cache(async (id: string): Promise<PurchaseResult> => 
   }
 });
 
-/** Os Pacotes VIP e se a cobrança está ligada (e se é o provedor de mentira); nulo com a API fora. */
+/**
+ * Os Pacotes VIP e se a cobrança está ligada (e se é o provedor de mentira); nulo com a API fora. Com sessão, a API diz
+ * também se a Conta pode comprar (`eligibility`); sem ela, `eligibility` é nulo.
+ */
 export const getVipPackages = cache(async (): Promise<VipPackages | null> => {
   try {
-    const response = await apiGet('/vip/packages', { visitorIp: await visitorIp() });
+    const cookie = await sessionCookie();
+    const response = await apiGet('/vip/packages', {
+      ...(cookie ? { cookie } : {}),
+      visitorIp: await visitorIp(),
+    });
     if (!response.ok) return null;
     return vipPackagesSchema.parse(await response.json());
   } catch {

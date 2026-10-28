@@ -1,0 +1,340 @@
+/*
+ * A confirmação (`vc-`) e a página da compra (`vs-`) do VIP (S14b), linguagem Vida. Preto e branco; a cor de status do
+ * VIP (--status-vip) só em pontos e no aviso de ambiente de teste. O aviso do ban permanente é o bloco mais forte da
+ * tela de propósito: os Termos pedem que ele apareça em destaque antes do pagamento.
+ */
+
+.vc-back {
+  font-size: 14.5px;
+}
+.vc-back a,
+.vc-card a,
+.vc-ban a,
+.vs a:not(.vs-action) {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text) 30%, transparent);
+  text-underline-offset: 4px;
+}
+
+.vc {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .vc {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.vc-col {
+  display: grid;
+  gap: 14px;
+}
+.vc-card {
+  display: grid;
+  gap: 14px;
+  border-radius: var(--r-panel);
+  padding: 24px 26px 26px;
+  background: var(--surface);
+}
+@media (max-width: 760px) {
+  .vc-card {
+    padding: 20px 18px 22px;
+    border-radius: 32px;
+  }
+}
+.vc-label {
+  color: var(--on-map-muted);
+}
+.vc-account {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.vc-account-text {
+  min-width: 0;
+}
+.vc-account-name {
+  overflow-wrap: anywhere;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.vc-account-id {
+  font-size: 14px;
+  color: var(--on-map-muted);
+}
+.vc-note {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--on-map-muted);
+}
+.vc-rows {
+  display: grid;
+  gap: 2px;
+}
+.vc-rows > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--text) 9%, transparent);
+  padding: 10px 0;
+}
+.vc-rows dt {
+  font-size: 14.5px;
+  color: var(--on-map-muted);
+}
+.vc-rows dd {
+  text-align: right;
+  font-size: 16px;
+  font-weight: 600;
+}
+.vc-rows dd.vc-price {
+  font-size: 30px;
+  line-height: 1;
+}
+.vc-once {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* o aviso do ban: o bloco mais forte da tela */
+.vc-ban {
+  display: grid;
+  gap: 10px;
+  border-radius: var(--r-panel);
+  padding: 24px 26px;
+  font-size: 15.5px;
+  line-height: 1.5;
+  background: color-mix(in srgb, var(--status-vip) 16%, var(--surface));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--status-vip) 55%, transparent);
+}
+@media (max-width: 760px) {
+  .vc-ban {
+    padding: 20px 18px;
+    border-radius: 32px;
+  }
+}
+.vc-ban-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.vc-ban-refund {
+  font-size: 14px;
+  color: color-mix(in srgb, var(--text) 80%, transparent);
+}
+.vc-stop-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* o formulário */
+.vc-method {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+.vc-method legend {
+  margin-bottom: 4px;
+  padding: 0;
+}
+.vc-option {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 12px;
+  align-items: start;
+  cursor: pointer;
+  border-radius: var(--r-card);
+  padding: 14px 16px;
+  background: var(--fill-rest);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.vc-option:hover {
+  background: var(--fill-hover, var(--fill-rest));
+}
+.vc-option[data-checked] {
+  box-shadow: inset 0 0 0 2px var(--text);
+}
+.vc-option:has(input:focus-visible),
+.vc-declaration:has(input:focus-visible) {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+.vc-option input,
+.vc-declaration input {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--text);
+}
+.vc-option-text {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  color: var(--on-map-muted);
+}
+.vc-option-text b {
+  font-size: 16px;
+  color: var(--text);
+}
+.vc-declaration {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  gap: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+.vc-error {
+  border-radius: var(--r-card);
+  padding: 12px 16px;
+  font-size: 14.5px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--status-danger, #ff5d5d) 16%, transparent);
+}
+.vc-submit {
+  width: 100%;
+}
+
+/* a página da compra */
+.vs {
+  display: grid;
+  gap: 16px;
+  max-width: 920px;
+}
+.vs-sandbox {
+  max-width: 920px;
+  margin-bottom: 20px;
+  border-radius: var(--r-card);
+  padding: 14px 20px;
+  font-size: 14.5px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--status-vip) 14%, transparent);
+}
+.vs-summary {
+  font-size: 15px;
+  color: var(--on-map-muted);
+}
+.vs-stage {
+  display: grid;
+  gap: 14px;
+  border-radius: var(--r-panel);
+  padding: 30px 32px 32px;
+  background: var(--surface);
+}
+@media (max-width: 760px) {
+  .vs-stage {
+    padding: 22px 18px 24px;
+    border-radius: 32px;
+  }
+}
+.vs-title {
+  font-size: clamp(26px, 3.4vw, 38px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+.vs-body {
+  max-width: 56ch;
+  margin-top: 10px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+}
+.vs-pix {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 760px) {
+  .vs-pix {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .vs-qr {
+    order: -1;
+    justify-self: center;
+  }
+}
+.vs-qr {
+  border-radius: 24px;
+  padding: 12px;
+  background: #fff;
+}
+.vs-qr img {
+  display: block;
+  width: min(232px, 62vw);
+  height: auto;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+.vs-code {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+.vs-code-box {
+  width: 100%;
+  resize: none;
+  border: 0;
+  border-radius: var(--r-card);
+  padding: 12px 14px;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  line-height: 1.45;
+  word-break: break-all;
+  color: var(--text);
+  background: var(--fill-rest);
+}
+.vs-clock {
+  margin-top: 14px;
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--on-map-muted);
+}
+.vs-sim {
+  margin-top: 6px;
+  font-size: 14px;
+}
+.vs-checking {
+  font-size: 13.5px;
+  color: var(--on-map-muted);
+}
+.vs-action {
+  margin-top: 18px;
+}
+.vs-until {
+  margin-top: 14px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.vs-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 22px;
+}
+.vs-link {
+  margin-top: 18px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.vs-title[data-tone="approved"]::before {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 12px;
+  border-radius: 50%;
+  vertical-align: 0.12em;
+  background: var(--status-vip);
+}
