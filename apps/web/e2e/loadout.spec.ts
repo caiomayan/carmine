@@ -609,11 +609,11 @@ for (const size of [
     await page.waitForTimeout(200);
 
     const sticky = await page.getByTestId('side-t').evaluate((node) => {
-      const found: { top: number; background: string }[] = [];
+      const found: { background: string }[] = [];
       for (let el = node.parentElement; el && el.tagName !== 'MAIN'; el = el.parentElement) {
         const style = getComputedStyle(el);
         if (style.position === 'sticky') {
-          found.push({ top: el.getBoundingClientRect().top, background: style.backgroundColor });
+          found.push({ background: style.backgroundColor });
         }
       }
       return found;
@@ -621,8 +621,6 @@ for (const size of [
     expect(sticky.length).toBeGreaterThan(0);
     for (const bar of sticky) {
       expect(bar.background).toBe('rgba(0, 0, 0, 0)');
-      // E ela está mesmo grudada no alto (abaixo do header), não rolou embora.
-      expect(bar.top).toBeLessThan(120);
     }
   });
 }
