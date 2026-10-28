@@ -82,7 +82,13 @@ cat >"$T/bin/a2s" <<'EOF'
 f="$FAKE_STATE/players-$1"
 if [[ -f "$f" ]]; then cat "$f"; else echo 0; fi
 EOF
+cat >"$T/bin/gh" <<'EOF'
+#!/usr/bin/env bash
+# fake: gh attestation verify <arquivo> --repo X; FAKE_GH_FAIL=1 simula uma atestação que não confere
+[[ "${FAKE_GH_FAIL:-0}" != 1 ]]
+EOF
 chmod +x "$T/bin/"*
+export PATH="$T/bin:$PATH"
 export FAKE_STATE="$T/state" FAKE_HOME="$T/home"
 
 # ---- dois perfis instalados ------------------------------------------------------------------------
@@ -174,6 +180,15 @@ grep -q 'SHA-256' "$T/out.txt" || fail "faltou o erro de SHA-256"
 [[ "$(version_of retake)" == 0.10.5 && "$(version_of deathmatch)" == 0.11.0 ]] || fail "release adulterada mexeu nos servidores"
 [[ ! -d "$T/home/releases/core-0.13.0" ]] || fail "release adulterada ficou no disco"
 pass "zip adulterado: recusado antes de tocar em qualquer servidor"
+
+# ---- atestação de proveniência que não confere ------------------------------------------------------
+make_release 0.14.0 dll-0.14.0
+publish 0.14.0 false
+FAKE_GH_FAIL=1 run 1 --version 0.14.0
+grep -q 'atestação' "$T/out.txt" || fail "faltou o erro da atestação"
+[[ "$(version_of retake)" == 0.10.5 && "$(version_of deathmatch)" == 0.11.0 ]] || fail "atestação ruim mexeu nos servidores"
+[[ ! -d "$T/home/releases/core-0.14.0" ]] || fail "release sem atestação ficou no disco"
+pass "atestação de proveniência que não confere: recusada antes de tocar em qualquer servidor"
 
 # ---- servidor parado, dry-run ----------------------------------------------------------------------
 run 0 --version 0.11.0 --dry-run
