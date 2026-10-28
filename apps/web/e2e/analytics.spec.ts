@@ -16,15 +16,23 @@ const NOT_FOUND = /404 \(Not Found\)/;
 
 type Sent = { event: string; properties: Record<string, unknown> };
 
-/** O que a biblioteca mandou ao PostHog (o corpo vem em gzip), desembrulhado em eventos. */
-function eventsOf(route: Route): Sent[] {
-  const buffer = route.request().postDataBuffer();
-  if (!buffer) return [];
-  const text = (buffer[0] === 0x1f && buffer[1] === 0x8b ? gunzipSync(buffer) : buffer).toString(
+/** O texto do corpo do pedido: gzip, JSON puro ou `data=<base64>` de formulário (as formas que a biblioteca usa). */
+function bodyText(buffer: Buffer): string {
+  const raw = buffer[0] === 0x1f && buffer[1] === 0x8b ? gunzipSync(buffer) : buffer;
+  const text = raw.toString('utf8');
+  const form = /^data=([^&]+)/.exec(text);
+  if (!form?.[1]) return text;
+  const decoded = Buffer.from(decodeURIComponent(form[1]), 'base64');
+  return (decoded[0] === 0x1f && decoded[1] === 0x8b ? gunzipSync(decoded) : decoded).toString(
     'utf8',
   );
+}
+
+/** O que a biblioteca mandou ao PostHog, desembrulhado em eventos. */
+function eventsOf(buffer: Buffer | null): Sent[] {
+  if (!buffer) return [];
   try {
-    const body = JSON.parse(text) as { batch?: Sent[] } | Sent[] | Sent;
+    const body = JSON.parse(bodyText(buffer)) as { batch?: Sent[] } | Sent[] | Sent;
     if (Array.isArray(body)) return body;
     if ('batch' in body && body.batch) return body.batch;
     return 'event' in body ? [body] : [];
@@ -40,7 +48,15 @@ async function watchPostHog(page: Page) {
     Object.defineProperty(navigator, 'webdriver', { get: () => false });
   });
   const requests: { events: Sent[]; afterLoad: boolean }[] = [];
+  const log: string[] = [];
   let loaded = false;
+  page.on('console', (message) =>
+    log.push(`console.${message.type()}: ${message.text().slice(0, 300)}`),
+  );
+  page.on('pageerror', (error) => log.push(`pageerror: ${error.message.slice(0, 300)}`));
+  page.on('requestfailed', (request) =>
+    log.push(`falhou: ${request.url().slice(0, 160)} ${request.failure()?.errorText ?? ''}`),
+  );
   page.on('load', () => {
     loaded = true;
   });
@@ -52,11 +68,16 @@ async function watchPostHog(page: Page) {
     if (route.request().method() === 'OPTIONS') {
       return route.fulfill({ status: 204, headers });
     }
-    requests.push({ events: eventsOf(route), afterLoad: loaded });
+    const body = route.request().postDataBuffer();
+    log.push(
+      `pedido ${route.request().method()} ${route.request().url().slice(0, 120)} corpo=${body ? body.length : 'nulo'} início=${body ? body.subarray(0, 24).toString('hex') : ''}`,
+    );
+    requests.push({ events: eventsOf(body), afterLoad: loaded });
     return route.fulfill({ status: 200, headers, json: { status: 1 } });
   });
   return {
     requests,
+    log,
     events: () => requests.flatMap((request) => request.events),
     /** Zera o que já chegou (a página seguinte conta de novo desde o zero). */
     reset: () => {
@@ -67,6 +88,21 @@ async function watchPostHog(page: Page) {
 }
 
 const views = (sent: Sent[]) => sent.filter((event) => event.event === 'pagina_vista');
+
+/** Espera `count` páginas vistas; se não chegarem, a falha traz o que a página e o PostHog de mentira viram. */
+async function waitForViews(posthog: Awaited<ReturnType<typeof watchPostHog>>, count: number) {
+  try {
+    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(count);
+  } catch (error) {
+    throw new Error(
+      [
+        `esperava ${count} pagina_vista, vieram ${views(posthog.events()).length} (${posthog.requests.length} pedidos)`,
+        ...posthog.log,
+      ].join('\n'),
+      { cause: error },
+    );
+  }
+}
 
 /** A biblioteca junta os eventos e manda a cada ~3 s: dá a volta toda para provar que NADA foi enviado. */
 const FLUSH_MS = 5000;
@@ -84,7 +120,7 @@ test.describe('contagem de páginas', () => {
     await page.goto('/ranking?modo=retake&utm_source=discord&utm_campaign=Sujo%20Demais', {
       referer: 'https://discord.com/channels/1/2',
     });
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(1);
+    await waitForViews(posthog, 1);
 
     const [view] = views(posthog.events());
     expect(view?.properties).toMatchObject({
@@ -120,7 +156,7 @@ test.describe('contagem de páginas', () => {
       .getByRole('navigation', { name: 'Principal' })
       .getByRole('link', { name: 'Jogar' })
       .click();
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(2);
+    await waitForViews(posthog, 2);
     expect(views(posthog.events())[1]?.properties).toMatchObject({
       rota: 'inicio',
       modo: null,
@@ -135,7 +171,7 @@ test.describe('contagem de páginas', () => {
     const posthog = await watchPostHog(page);
 
     await page.goto(`/${owner.publicId}?aba=x#ancora`);
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(1);
+    await waitForViews(posthog, 1);
 
     expect(views(posthog.events())[0]?.properties.rota).toBe('perfil');
     expect(JSON.stringify(posthog.events())).not.toContain(String(owner.publicId));
@@ -146,7 +182,7 @@ test.describe('contagem de páginas', () => {
     const posthog = await watchPostHog(page);
 
     await page.goto('/');
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(1);
+    await waitForViews(posthog, 1);
 
     expect(
       (await page.context().cookies()).filter((cookie) => /^ph_|posthog/i.test(cookie.name)),
@@ -197,7 +233,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
 
     // Ligada por padrão: o logado conta, com `logado: true`.
     await page.goto('/ranking');
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(1);
+    await waitForViews(posthog, 1);
     expect(views(posthog.events())[0]?.properties).toMatchObject({ rota: 'ranking', logado: true });
 
     // Desligou: nem a página nova conta, e nada é enviado.
@@ -209,7 +245,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
 
     await setParticipation(true);
     await page.goto('/loadout');
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(1);
+    await waitForViews(posthog, 1);
     expect(views(posthog.events())[0]?.properties.rota).toBe('loadout');
   });
 
@@ -228,7 +264,7 @@ test.describe('quem está logado e a chave "Participar da análise de uso"', () 
     const toggle = page.getByTestId('analytics-switch');
     await expect(toggle).toBeChecked();
     // A contagem da própria página de Configurações entra primeiro (ligada por padrão).
-    await expect.poll(() => views(posthog.events()).length, { timeout: 20_000 }).toBe(1);
+    await waitForViews(posthog, 1);
 
     await toggle.click();
     await expect(page.getByTestId('analytics-status')).toHaveText(

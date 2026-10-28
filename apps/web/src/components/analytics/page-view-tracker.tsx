@@ -37,6 +37,23 @@ function afterLoadAndIdle(callback: () => void) {
   else window.addEventListener('load', idle, { once: true });
 }
 
+type PostHog = typeof import('posthog-js/dist/module.slim.no-external').default;
+
+/**
+ * A biblioteca é ESM num arquivo `.js` sem `type: module`: conforme o empacotador, o `default` do `import()` é o
+ * cliente ou um objeto que o carrega em `default`/`posthog`. Aceita as duas formas.
+ */
+function posthogOf(module: unknown): PostHog {
+  const holder = module as { default?: unknown; posthog?: unknown };
+  const candidates = [holder.default, holder.posthog, (holder.default as typeof holder)?.default];
+  const found = candidates.find(
+    (candidate): candidate is PostHog =>
+      typeof (candidate as PostHog | undefined)?.init === 'function',
+  );
+  if (!found) throw new Error('posthog-js: cliente não encontrado');
+  return found;
+}
+
 /** A conexão com o PostHog é uma só por aba, aberta na primeira página contada. */
 let loading: Promise<Client> | null = null;
 /** `false` descarta o que a biblioteca ainda tem na fila (a Conta desligou a chave). */
@@ -45,33 +62,39 @@ let allowed = true;
 function connect(config: PageViewTrackerConfig): Promise<Client> {
   loading ??= new Promise<Client>((resolve) => {
     afterLoadAndIdle(() => {
-      void import('posthog-js/dist/module.slim.no-external').then(({ default: posthog }) => {
-        posthog.init(config.key, {
-          api_host: config.host,
-          // Sem cookies e sem nada no aparelho: o PostHog calcula no servidor um identificador que não persiste.
-          cookieless_mode: 'always',
-          persistence: 'memory',
-          person_profiles: 'never',
-          // O único evento do navegador é o `pagina_vista`, disparado à mão: tudo o mais desligado.
-          autocapture: false,
-          capture_pageview: false,
-          capture_pageleave: false,
-          capture_dead_clicks: false,
-          capture_heatmaps: false,
-          capture_exceptions: false,
-          disable_session_recording: true,
-          disable_surveys: true,
-          advanced_disable_flags: true,
-          disable_external_dependency_loading: true,
-          rageclick: false,
-          before_send: (event) => (allowed ? sanitizeEvent(event) : null),
+      void import('posthog-js/dist/module.slim.no-external')
+        .then((module) => {
+          const posthog = posthogOf(module);
+          posthog.init(config.key, {
+            api_host: config.host,
+            // Sem cookies e sem nada no aparelho: o PostHog calcula no servidor um identificador que não persiste.
+            cookieless_mode: 'always',
+            persistence: 'memory',
+            person_profiles: 'never',
+            // O único evento do navegador é o `pagina_vista`, disparado à mão: tudo o mais desligado.
+            autocapture: false,
+            capture_pageview: false,
+            capture_pageleave: false,
+            capture_dead_clicks: false,
+            capture_heatmaps: false,
+            capture_exceptions: false,
+            disable_session_recording: true,
+            disable_surveys: true,
+            advanced_disable_flags: true,
+            disable_external_dependency_loading: true,
+            rageclick: false,
+            before_send: (event) => (allowed ? sanitizeEvent(event) : null),
+          });
+          resolve({
+            capture: (event, properties) => {
+              posthog.capture(event, properties);
+            },
+          });
+        })
+        .catch((error: unknown) => {
+          // Sem a biblioteca não há contagem; a página nunca é afetada.
+          console.warn('contagem de páginas indisponível', error);
         });
-        resolve({
-          capture: (event, properties) => {
-            posthog.capture(event, properties);
-          },
-        });
-      });
     });
   });
   return loading;
