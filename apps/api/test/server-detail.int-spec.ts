@@ -11,6 +11,10 @@ import { GameServerRegistry } from '../src/game-servers/game-server-registry.js'
 import { dayOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const NOW = new Date();
 const AT = NOW.toISOString();
