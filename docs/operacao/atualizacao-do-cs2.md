@@ -2,7 +2,9 @@
 
 Um update do CS2 pode quebrar o Metamod, o CounterStrikeSharp ou os plugins (assinaturas de memória mudam). A regra: **valide no staging local antes de tocar na produção**. O staging é o servidor CS2 do PC do autor (`infra/scripts/install-cs2-server.ps1`).
 
-> Em produção os servidores rodam em Linux (`infra/cs2/linux/`): na instância AWS do beta (`aws-beta-cs2.md`) e, depois, na VPS definitiva, com o mesmo procedimento.
+> Em produção os servidores rodam em Linux (`infra/cs2/linux/`): na instância AWS do beta (`aws-beta-cs2.md`) e, depois, na VPS definitiva (`lancamento-cs2.md`).
+>
+> **Na VPS definitiva a atualização do CS2 e a do Carmine.Core são automáticas**: o `carmine-cs2-update.timer` (build novo na Steam) e o `carmine-plugin-sync.timer` (release *Latest* do plugin). Este runbook vale para o **staging** (validar antes de promover uma versão de plugin), para a **AWS do beta** e para quando a atualização automática **falhar** (servidores parados + alerta 🔴 no Discord): a seção 2 abaixo é o que ela faz, passo a passo, e `carmine-cs2-update --force` repete depois de corrigido.
 
 ## Como saber que saiu update
 
@@ -53,6 +55,8 @@ Os dois perfis usam **uma só instalação do CS2** (`/srv/carmine-cs2/server`) 
 - Não é preciso mexer no site: web e API não dependem da versão do CS2.
 
 ## Atualizar só o Carmine.Core (sem update do CS2)
+
+> Na VPS definitiva isto é a release do GitHub: promover a *Latest* (`lancamento-cs2.md`) e o `carmine-plugin-deploy` entrega, um servidor por vez e com volta (`--rollback`). O que segue é o procedimento manual da AWS do beta.
 
 Para uma versão nova do plugin (por exemplo, o envio de eventos da S12) não é preciso baixar o CS2 nem mexer no Metamod: só compilar o plugin e remontar as instâncias. Leva 3–5 minutos fora do ar.
 
