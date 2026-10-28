@@ -16,14 +16,17 @@ Runbook de uma tarde: do "comprei a VPS" até Retake (27015) e Deathmatch (27016
 | 6 | **Secrets do espelho no GitHub** | *Settings > Secrets and variables > Actions*: `MIRROR_URL` = `https://<conta>.r2.cloudflarestorage.com/<bucket>`, `MIRROR_ACCESS_KEY_ID` e `MIRROR_SECRET_ACCESS_KEY` (o token de escrita). Depois *Actions > Terceiros do CS2 > Run workflow*: ele confere os terceiros e **envia as cópias** ao bucket (a primeira vez prova que o R2 aceita o envio). O relatório sai no resumo do job; uma issue abre sozinha se algo faltar. |
 | 7 | Aprovar o download de ~69 GB e a banda da VPS | Ok para você? Há franquia? |
 
-**Com o maestro:** `servers create` na VM de produção (passo 5 do dia), a release do Carmine.Core (abaixo) e a validação no jogo.
+**Com o maestro:** `servers create` na VM de produção (passo 3a do dia) e a validação no jogo. A release do Carmine.Core é automática (abaixo): basta o `ModuleVersion` estar no `main` e a API dele em produção.
 
-### A release do Carmine.Core (maestro)
+### A release do Carmine.Core (automática)
 
-O plugin chega à VPS por **release do GitHub** (`infra/cs2/linux/README.md`). Antes do dia:
+O plugin chega à VPS por **release do GitHub** (`infra/cs2/linux/README.md`) e **ninguém precisa criar tag nem clicar em nada**:
 
-1. Com a API que o plugin exige já em produção, criar a tag `core-vX.Y.Z` (X.Y.Z = `ModuleVersion` em `plugins/src/Carmine.Core/CorePlugin.cs`): `git tag core-v0.11.0 && git push origin core-v0.11.0`. O workflow *Release do plugin* testa, publica e cria a release como **pré-lançamento**.
-2. Conferir os arquivos (`carmine-core-X.Y.Z.zip`, `manifest.json`, `SHA256SUMS`) e **promover**: *Releases > editar > desmarcar "Set as a pre-release" e marcar "Set as the latest release"*. Só a release promovida é "Latest" e só ela chega aos servidores. É a porta "plugin só depois da API em produção".
+1. **Subir o `ModuleVersion`** em `plugins/src/Carmine.Core/CorePlugin.cs` num PR é o gatilho. Quando o CI do `main` termina verde, o workflow *Release do plugin* vê que ainda não existe a tag `core-vX.Y.Z`, testa, publica e cria a release como **pré-lançamento** (`carmine-core-X.Y.Z.zip`, `manifest.json`, `SHA256SUMS`, atestação). Mexer no plugin **sem** subir o `ModuleVersion` não gera release. (À mão: *Actions > Release do plugin > Run workflow*.)
+2. **A promoção a *Latest* também é automática** e é a regra "plugin só depois da API em produção": o `manifest.json` traz o **commit** em que a release foi construída; quando esse commit já está em produção (igual ou ancestral do commit implantado), o `promote-plugin.sh` marca a release como *Latest*. Ele roda no fim do `deploy.yml`, **só depois do teste de fumaça verde** (um deploy que falha não promove), e no fim do próprio workflow de release (plugin que só muda o plugin, com a API já no ar). O deploy registra o commit no ar na tag móvel `prod-live`.
+3. A partir daí a VPS pega a *Latest* sozinha (`carmine-plugin-sync`, servidor vazio por vez, com volta). O log de cada passo está nas execuções dos workflows *Deploy* (job "promover o plugin do CS2") e *Release do plugin*.
+
+**Freio:** a variável do repositório `PLUGIN_PROMOTION_PAUSED=true` (*Settings > Secrets and variables > Actions > Variables*) suspende a promoção; as releases continuam saindo como pré-lançamento e dá para promover à mão (*Releases > editar > "Set as the latest release"*). **Se a API for desfeita** (deploy de volta) depois de uma promoção, a release já promovida continua *Latest* e os servidores que a pegaram a mantêm: despromova à mão (marque "pre-release") se o plugin não funciona com a API anterior.
 
 ## No dia, passo a passo
 

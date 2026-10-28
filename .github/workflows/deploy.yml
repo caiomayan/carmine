@@ -50,6 +50,9 @@ jobs:
     name: deploy
     runs-on: ubuntu-24.04
     timeout-minutes: 25
+    outputs:
+      run: ${{ steps.target.outputs.run }}
+      sha: ${{ steps.target.outputs.sha }}
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
@@ -178,3 +181,41 @@ jobs:
           prev="$(gh api "repos/$REPO/commits/$SHA" --jq '.parents[0].sha')"
           echo "::warning::teste de fumaça falhou em $SHA: implantando de novo $prev"
           gh workflow run deploy.yml --repo "$REPO" --ref main -f commit="$prev" -f sem_volta=true
+
+  # Só depois do teste de fumaça VERDE (o job `deploy` inteiro passou): registra o commit que está em produção e promove
+  # o plugin do CS2 cuja API já está no ar (infra/cs2/release/promote-plugin.sh; docs/operacao/lancamento-cs2.md).
+  # Job à parte para que só ele tenha `contents: write`; o job que implanta continua só com leitura.
+  promote-plugin:
+    name: promover o plugin do CS2
+    needs: deploy
+    if: needs.deploy.result == 'success' && needs.deploy.outputs.run == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.deploy.outputs.sha }}
+
+      # A tag móvel `prod-live` diz a quem precisar (a promoção do plugin, uma pessoa) qual commit está no ar.
+      - name: Registrar o commit em produção (tag prod-live)
+        env:
+          SHA: ${{ needs.deploy.outputs.sha }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/$REPO/git/ref/tags/prod-live" >/dev/null 2>&1; then
+            gh api -X PATCH "repos/$REPO/git/refs/tags/prod-live" -f sha="$SHA" -F force=true >/dev/null
+          else
+            gh api -X POST "repos/$REPO/git/refs" -f ref=refs/tags/prod-live -f sha="$SHA" >/dev/null
+          fi
+          echo "prod-live -> $SHA"
+
+      - name: Promover o plugin do CS2 (se a API dele já está no ar)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PLUGIN_PROMOTION_PAUSED: ${{ vars.PLUGIN_PROMOTION_PAUSED }}
+        run: bash infra/cs2/release/promote-plugin.sh --deployed "${{ needs.deploy.outputs.sha }}"

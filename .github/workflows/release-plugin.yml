@@ -1,18 +1,30 @@
 # Release do Carmine.Core para os servidores de CS2 (docs/operacao/lancamento-cs2.md).
 #
-# Quem dispara é uma tag `core-vX.Y.Z` (X.Y.Z = ModuleVersion em plugins/src/Carmine.Core/CorePlugin.cs; o job
-# recusa se não baterem). O job testa, publica o plugin (IL puro, vale em qualquer SO) e cria uma GitHub Release
-# como PRÉ-LANÇAMENTO com:
+# Quando roda:
+#   - AUTOMÁTICO: depois que o CI do main termina verde (como o deploy.yml), se o `ModuleVersion` em
+#     plugins/src/Carmine.Core/CorePlugin.cs mudou, ou seja, se ainda não existe a tag core-vX.Y.Z. Mexer no plugin sem
+#     subir o ModuleVersion não gera release (a versão é o contrato com os servidores).
+#   - À MÃO: "Run workflow" (cria a release da versão atual do main, se ainda não existir) ou empurrar a tag core-vX.Y.Z.
+#
+# O job testa, publica o plugin (IL puro, vale em qualquer SO) e cria uma GitHub Release como PRÉ-LANÇAMENTO com:
 #   - carmine-core-X.Y.Z.zip   a saída do `dotnet publish`, pronta para addons/counterstrikesharp/plugins/Carmine.Core/
 #   - manifest.json            versão, commit, SHA-256 do zip e dos terceiros fixados em versions.sh (make-manifest.sh)
 #   - SHA256SUMS               do zip e do manifesto
 #   - uma atestação de proveniência do GitHub (gh attestation verify)
 #
-# A porta da regra "o plugin só vai aos servidores depois da API em produção" é o botão do GitHub: os servidores só
-# enxergam a release marcada como *Latest*, e quem promove (o maestro) só faz isso depois do release da API.
+# A regra "o plugin só vai aos servidores depois da API em produção" é AUTOMÁTICA: os servidores só enxergam a release
+# *Latest* (não pré-lançamento), e quem a promove é infra/cs2/release/promote-plugin.sh, que confere se o commit em que
+# a release foi construída já está em produção (tag móvel `prod-live`). Roda no fim do deploy.yml (depois do teste de
+# fumaça verde) e aqui, no fim (plugin que só muda o plugin, com a API já no ar). Freio: variável do repositório
+# PLUGIN_PROMOTION_PAUSED=true.
 name: Release do plugin
 
 on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
   push:
     tags: ["core-v*"]
 
@@ -22,65 +34,105 @@ permissions:
   attestations: write
 
 concurrency:
-  group: release-plugin-${{ github.ref }}
+  group: release-plugin
   cancel-in-progress: false
 
 jobs:
   release:
     name: release
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Qual versão, e ela ainda não tem release?
+        id: version
+        env:
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          declared="$(sed -nE 's/.*ModuleVersion => "([^"]+)".*/\1/p' plugins/src/Carmine.Core/CorePlugin.cs)"
+          [[ "$declared" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::ModuleVersion inválido: '$declared'"; exit 1; }
+          if [ "$EVENT" = push ]; then
+            # Tag empurrada à mão: precisa bater com o ModuleVersion.
+            [[ "${GITHUB_REF_NAME}" =~ ^core-v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "::error::tag inválida: ${GITHUB_REF_NAME} (esperado core-vX.Y.Z)"; exit 1; }
+            if [ "${BASH_REMATCH[1]}" != "$declared" ]; then
+              echo "::error::A tag diz ${BASH_REMATCH[1]}, mas ModuleVersion em CorePlugin.cs é '$declared'."
+              exit 1
+            fi
+          fi
+          echo "version=$declared" >> "$GITHUB_OUTPUT"
+          # Já existe a release (ou a tag) desta versão? Então não há o que publicar.
+          if [ "$EVENT" != push ] && gh api "repos/$REPO/git/ref/tags/core-v$declared" >/dev/null 2>&1; then
+            echo "::notice::core-v$declared já existe: nada a publicar (suba o ModuleVersion para gerar uma release nova)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        if: steps.version.outputs.skip != 'true'
         with:
           global-json-file: plugins/global.json
 
-      - name: A tag bate com o ModuleVersion
-        id: version
-        run: |
-          tag="${GITHUB_REF_NAME}"
-          [[ "$tag" =~ ^core-v([0-9]+\.[0-9]+\.[0-9]+)$ ]] || { echo "tag inválida: $tag (esperado core-vX.Y.Z)"; exit 1; }
-          version="${BASH_REMATCH[1]}"
-          declared="$(sed -nE 's/.*ModuleVersion => "([^"]+)".*/\1/p' plugins/src/Carmine.Core/CorePlugin.cs)"
-          if [[ "$declared" != "$version" ]]; then
-            echo "A tag diz $version, mas ModuleVersion em CorePlugin.cs é '$declared'."
-            exit 1
-          fi
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-
       - name: Compilar e testar
+        if: steps.version.outputs.skip != 'true'
         working-directory: plugins
         run: |
           dotnet build Carmine.Plugins.slnx -c Release
           dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
 
       - name: Publicar o Carmine.Core
+        if: steps.version.outputs.skip != 'true'
         run: |
           dotnet publish plugins/src/Carmine.Core/Carmine.Core.csproj -c Release -o "$RUNNER_TEMP/core" --artifacts-path "$RUNNER_TEMP/artifacts"
           test -f "$RUNNER_TEMP/core/Carmine.Core.dll"
 
       - name: Empacotar (zip, manifesto e SHA256SUMS)
+        if: steps.version.outputs.skip != 'true'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           mkdir dist
           (cd "$RUNNER_TEMP/core" && zip -qr "$GITHUB_WORKSPACE/dist/carmine-core-$VERSION.zip" .)
-          bash infra/cs2/release/make-manifest.sh --version "$VERSION" --commit "$GITHUB_SHA" \
+          # O commit do manifesto é o commit construído (o do checkout), que é o que a promoção compara com a produção.
+          bash infra/cs2/release/make-manifest.sh --version "$VERSION" --commit "$(git rev-parse HEAD)" \
             --zip "dist/carmine-core-$VERSION.zip" --openapi apps/api/openapi.json --out dist/manifest.json
           (cd dist && sha256sum "carmine-core-$VERSION.zip" manifest.json > SHA256SUMS && cat SHA256SUMS)
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        if: steps.version.outputs.skip != 'true'
         with:
           subject-path: |
             dist/carmine-core-*.zip
             dist/manifest.json
 
       - name: Criar a release (pré-lançamento)
+        if: steps.version.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "$GITHUB_REF_NAME" dist/* --prerelease --verify-tag \
+          set -euo pipefail
+          tag="core-v$VERSION"
+          sha="$(git rev-parse HEAD)"
+          # Se a tag já existe (empurrada à mão) a release usa o commit dela; senão a própria release cria a tag no commit.
+          gh release create "$tag" dist/* --prerelease --target "$sha" \
             --title "Carmine.Core $VERSION" \
-            --notes "Carmine.Core $VERSION (commit $GITHUB_SHA). Pré-lançamento: os servidores só recebem a release marcada como *Latest*; promova-a depois do release da API que ela exige (docs/operacao/lancamento-cs2.md)."
+            --notes "Carmine.Core $VERSION (commit $sha). Pré-lançamento: os servidores só recebem a release *Latest*. Ela é promovida sozinha quando a API deste commit já está em produção (infra/cs2/release/promote-plugin.sh, ver docs/operacao/lancamento-cs2.md); para promover à mão, edite a release e marque *Set as the latest release*."
+
+      # Se a API deste commit já está no ar (plugin que só muda o plugin), promove já; senão, o deploy.yml promove depois.
+      - name: Promover, se a API já está em produção
+        if: steps.version.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PLUGIN_PROMOTION_PAUSED: ${{ vars.PLUGIN_PROMOTION_PAUSED }}
+        run: bash infra/cs2/release/promote-plugin.sh
