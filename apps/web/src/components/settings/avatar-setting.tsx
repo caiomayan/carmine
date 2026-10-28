@@ -10,7 +10,8 @@ import { Avatar } from '@/components/avatar';
 import { useSession } from '@/components/session/session-provider';
 import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
-import { AVATAR_PICK_TYPES, loadAvatarContracts, pickProblem } from '@/lib/avatar';
+import { parseAvatarState } from '@/lib/api-guards';
+import { AVATAR_PICK_TYPES, pickProblem } from '@/lib/avatar';
 
 /** O diálogo de recorte (e a biblioteca dele) só é baixado depois que a pessoa escolhe um arquivo. */
 const loadDialog = () => import('./avatar-crop-dialog');
@@ -48,8 +49,9 @@ export function AvatarSetting() {
       try {
         const response = await fetch('/api/me/avatar', { cache: 'no-store' });
         if (!response.ok) throw new Error(String(response.status));
-        const { avatarStateSchema } = await loadAvatarContracts();
-        const next = avatarStateSchema.parse(await response.json());
+        // Conferência leve (sem o Zod, que pesaria ~30 kB na primeira carga de Configurações).
+        const next = parseAvatarState(await response.json());
+        if (!next) throw new Error('shape');
         if (!cancelled) setState(next);
       } catch {
         // Sem a resposta, a linha não aparece (nunca uma foto que talvez não valha).
@@ -99,8 +101,9 @@ export function AvatarSetting() {
       const response = await mutate('/api/me/avatar', { method: 'DELETE' });
       if (response.status === 401) return;
       if (!response.ok) throw new Error(String(response.status));
-      const { avatarStateSchema } = await loadAvatarContracts();
-      apply(avatarStateSchema.parse(await response.json()));
+      const next = parseAvatarState(await response.json());
+      if (!next) throw new Error('shape');
+      apply(next);
       setNotice('reverted');
     } catch {
       setProblem(t('errors.generic'));
