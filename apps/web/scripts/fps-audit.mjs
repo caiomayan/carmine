@@ -1012,21 +1012,27 @@ async function runComponents(browser, ctx, { only, serverPath, profilePath }) {
     const tab = await context.newPage();
     const cdp = await context.newCDPSession(tab);
     if (ctx.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: ctx.cpu });
+    await browser.startTracing(tab, { categories: ['devtools.timeline', 'v8.execute'] });
     await tab.goto(ctx.base + target, { waitUntil: 'load', timeout: 120_000 });
     await tab.waitForTimeout(7000);
-    const marks = await tab.evaluate(() =>
-      performance
-        .getEntriesByType('measure')
-        .filter((m) => m.detail?.devtools)
-        .map((m) => ({
-          n: m.name,
-          t: m.startTime,
-          d: m.duration,
-          track: m.detail.devtools.track ?? '',
-          group: m.detail.devtools.trackGroup ?? '',
-        })),
-    );
+    const traceBuffer = await browser.stopTracing();
+    const marks = (JSON.parse(traceBuffer.toString('utf8')).traceEvents ?? [])
+      .filter((e) => e.name === 'TimeStamp' && e.args?.data && e.args.data.start !== undefined)
+      .map((e) => {
+        const d = e.args.data;
+        return {
+          n: String(d.name ?? d.message ?? ''),
+          t: Number(d.start),
+          d: Number(d.end) - Number(d.start),
+          track: String(d.track ?? ''),
+          group: String(d.trackGroup ?? ''),
+        };
+      });
     await context.close();
+    if (flag('--raw')) {
+      const raw = (JSON.parse(traceBuffer.toString('utf8')).traceEvents ?? []).filter((e) => e.name === 'TimeStamp' && /Components/.test(e.args?.data?.track ?? '')).slice(0, 8);
+      console.log('RAW ' + JSON.stringify(raw.map((e) => ({ ts: e.ts, data: e.args.data }))));
+    }
     const tracks = new Map();
     for (const m of marks)
       tracks.set(
