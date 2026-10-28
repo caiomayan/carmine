@@ -301,6 +301,10 @@
   transform: translateX(-100%);
   animation: vh-skel 1.5s linear infinite;
 }
+/* Esqueleto que espera chegar à vista: sem varredura (ver LoadoutsSkeleton). */
+[data-still] .vh-skel::after {
+  animation: none;
+}
 @keyframes vh-skel {
   to {
     transform: translateX(100%);
