@@ -31,7 +31,7 @@ export function LoadoutsSlot({ expectContent }: { expectContent: boolean }) {
       aria-hidden={open ? undefined : true}
     >
       <div className="min-h-0 [overflow-y:clip]">
-        <InView fallback={expectContent ? <LoadoutsSkeleton /> : null}>
+        <InView fallback={expectContent ? <LoadoutsSkeleton still /> : null}>
           <LoadoutsWeek expectContent={expectContent} onResolve={setOpen} />
         </InView>
       </div>
