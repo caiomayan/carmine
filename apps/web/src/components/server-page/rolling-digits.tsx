@@ -3,10 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-const STRIP = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-
 /**
- * Número de dígitos rolando: cada dígito é uma fita de 0 a 9 que sobe até o novo valor (como o odômetro de um
+ * Número de dígitos rolando: cada dígito é uma fita de 0 a 9 (texto de um pseudo-elemento: 1 elemento, não 11) que sobe até o novo valor (como o odômetro de um
  * placar). Um dígito que nasce depois (de 9 para 10) entra rolando do 0. O texto de verdade, para o leitor de tela,
  * é o valor inteiro; com movimento reduzido a fita só troca (a transição fica em 0 no CSS).
  */
@@ -43,11 +41,8 @@ function Column({ digit, rollIn }: { digit: number; rollIn: boolean }) {
 
   return (
     <span className="vs-col">
-      <span className="vs-strip" style={{ transform: `translateY(${shown * -10}%)` }}>
-        {STRIP.map((n) => (
-          <span key={n}>{n}</span>
-        ))}
-      </span>
+      {/* A fita 0..9 é o ::before do .vs-strip (server-page.css): sem 10 elementos por dígito. */}
+      <span className="vs-strip" style={{ transform: `translateY(${shown * -10}%)` }} />
     </span>
   );
 }
