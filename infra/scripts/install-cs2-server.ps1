@@ -344,6 +344,22 @@ function Disable-FollowGuidelines([string] $GameDir) {
     }
 }
 
+# Servidor em português (S16): idioma do CounterStrikeSharp para quem não escolheu outro; cada plugin
+# carrega o lang/pt-BR.json dele (os que não trazem, o perfil entrega).
+function Set-ServerLanguage([string] $GameDir) {
+    $cssCore = Join-Path $GameDir 'addons\counterstrikesharp\configs\core.json'
+    if (Test-Path $cssCore) {
+        $raw = Get-Content -Path $cssCore -Raw
+        $patched = $raw -replace '"ServerLanguage"\s*:\s*"[^"]*"', '"ServerLanguage": "pt-BR"'
+        if ($patched -ne $raw) {
+            Set-Content -Path $cssCore -Value $patched -NoNewline -Encoding utf8
+        }
+        Write-Host "    ServerLanguage pt-BR em $cssCore"
+    } else {
+        Write-Warning "Sem $cssCore (o CounterStrikeSharp cria no primeiro boot): suba o servidor uma vez e rode de novo esta etapa."
+    }
+}
+
 function Install-InventorySimulatorTo([string] $GameDir, [bool] $FallbackTeam) {
     $cssDir = Join-Path $GameDir 'addons\counterstrikesharp'
     if (-not (Test-Path $cssDir)) {
@@ -359,6 +375,7 @@ function Install-InventorySimulatorTo([string] $GameDir, [bool] $FallbackTeam) {
     Copy-Item -Path (Join-Path $extracted 'addons') -Destination $GameDir -Recurse -Force
     Write-Host "    InventorySimulator -> $target"
     Disable-FollowGuidelines $GameDir
+    Set-ServerLanguage $GameDir
 
     # Os convars do plugin só existem depois que ele carrega: o server.cfg (executado a cada mapa)
     # chama o nosso cfg. invsim_require_inventory 0: com a API fora, o connect segue com as Armas
