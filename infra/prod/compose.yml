@@ -96,6 +96,9 @@ services:
       SENTRY_DSN: ${WEB_SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: production
       SENTRY_RELEASE: ${IMAGE_TAG}
+      # Contagem de páginas (A1d, ADR 0021): a mesma chave pública do projeto do PostHog da API; vazio desliga (sem
+      # nada no navegador e sem mudar a CSP). Lida em tempo de execução, nunca no build.
+      POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
       # A origem pública das fotos de perfil (a mesma da API): libera as imagens dela no CSP e liga o convite do Perfil.
       MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
       # O recibo da compra (S14b) mostra quem vende; vazio, ele diz "a informar" (docs/operacao/pagamentos.md).

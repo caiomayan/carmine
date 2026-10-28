@@ -125,6 +125,8 @@ services:
       MEDIA_INTERNAL_URL: http://media:8080
       SENTRY_ENVIRONMENT: staging
       SENTRY_RELEASE: ${IMAGE_TAG}
+      # Análise de uso (A1): a homologação só usa o adaptador de log da API; o navegador não envia nada a ninguém.
+      ANALYTICS_DRIVER: log
     networks:
       edge:
         ipv4_address: 172.31.0.11
