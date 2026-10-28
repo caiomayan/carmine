@@ -43,6 +43,7 @@ export const ABLATIONS = {
   'sem-esqueleto':
     '.vh-skel,.pf-skel,.vh-shine,[class*="skel"],[class*="shimmer"]{animation:none!important}',
   'sem-cortina': '__curtain',
+  'sem-hover': 'html *{pointer-events:none!important}',
   'sem-animacao': '*,*::before,*::after{animation:none!important}',
   'sem-transicao': '*,*::before,*::after{transition:none!important}',
   'sem-holo-spot': '.v-holo::after,.v-spot::before{display:none!important}',
@@ -408,7 +409,8 @@ async function measurePage(browser, page, ctx, extraCss) {
   await tab.waitForTimeout(400);
 
   const result = { windows: {}, settled };
-  if (!extraCss) {
+  if (!extraCss && !page.censusDone) {
+    page.censusDone = true;
     result.census = await tab.evaluate(CENSUS);
     result.layers = await layerReport(cdp, ctx.viewport);
   }
@@ -708,13 +710,12 @@ async function idleProfile(browser, page, ctx) {
   };
 }
 
-/** Repete a medição e fica com a mediana de cada número de cada janela (o relógio da máquina oscila). */
-async function measureMedian(browser, page, ctx, css, repeat) {
-  const runs = [];
-  for (let i = 0; i < repeat; i++) runs.push(await measurePage(browser, page, ctx, css));
+/** A mediana, janela a janela, de várias execuções da mesma página; o censo e as camadas vêm da primeira que os tem. */
+function mergeRuns(runs) {
   if (runs.length === 1) return runs[0];
   const pick = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
-  const merged = { ...runs[0], windows: {} };
+  const withCensus = runs.find((r) => r.census) ?? runs[0];
+  const merged = { ...withCensus, windows: {} };
   for (const name of WINDOWS) {
     merged.windows[name] = Object.fromEntries(
       Object.keys(runs[0].windows[name]).map((key) => [
@@ -886,7 +887,7 @@ async function runHydration(browser, ctx, { only, serverPath, profilePath }) {
     const byScript = new Map();
     for (const frame of raw.loaf) {
       for (const sc of frame.scripts) {
-        const key = (sc.u || '(inline)').split('/').pop() + ' · ' + (sc.i || sc.f || '');
+        const key = `${(sc.u || '(inline)').split('/').pop()} · ${sc.i || sc.f || ''}`;
         byScript.set(key, (byScript.get(key) ?? 0) + sc.d);
       }
     }
@@ -900,7 +901,7 @@ async function runHydration(browser, ctx, { only, serverPath, profilePath }) {
       '- ' +
         d.page +
         ': ' +
-        (d.top.map(([k, ms]) => Math.round(ms) + ' ms ' + k).join(' | ') ||
+        (d.top.map(([k, ms]) => `${Math.round(ms)} ms ${k}`).join(' | ') ||
           '(nenhum quadro longo)'),
     );
   }
@@ -933,7 +934,7 @@ async function runHidden(browser, ctx, { only, serverPath, profilePath }) {
     let counting = false;
     tab.on('request', (r) => {
       if (!counting) return;
-      const key = r.method() + ' ' + r.url().replace(ctx.base, '').split('?')[0];
+      const key = `${r.method()} ${r.url().replace(ctx.base, '').split('?')[0]}`;
       requests.set(key, (requests.get(key) ?? 0) + 1);
     });
     await tab.goto(ctx.base + target, { waitUntil: 'load', timeout: 120_000 });
@@ -979,7 +980,7 @@ async function runHidden(browser, ctx, { only, serverPath, profilePath }) {
         ' |',
     );
     notes.push(
-      '- ' + page.name + ': ' + (reqs.map(([k, c]) => c + '× ' + k).join(' | ') || 'nenhum pedido'),
+      `- ${page.name}: ${reqs.map(([k, c]) => `${c}× ${k}`).join(' | ') || 'nenhum pedido'}`,
     );
   }
   console.log('\n#### Pedidos de rede feitos com a aba oculta (10 s)\n');
@@ -1108,6 +1109,8 @@ async function main() {
     return;
   }
   const baseline = [];
+  const ablated = [];
+  const conditions = [null, ...ablations];
   for (const page of PAGES) {
     if (only && !only.includes(page.name)) continue;
     const target =
@@ -1118,43 +1121,59 @@ async function main() {
     }
     const withTarget = { ...page, target };
     process.stderr.write(`medindo ${page.name}…\n`);
-    baseline.push({
+    // rodadas intercaladas: base, A, B, base, A, B… (a ordem não favorece ninguém)
+    const runs = new Map(conditions.map((name) => [name, []]));
+    for (let round = 0; round < ctx.repeat; round++) {
+      for (const name of conditions) {
+        runs
+          .get(name)
+          .push(
+            await measurePage(browser, withTarget, ctx, name === null ? null : ABLATIONS[name]),
+          );
+      }
+    }
+    baseline.push({ page: withTarget, result: mergeRuns(runs.get(null)) });
+    ablated.push({
       page: withTarget,
-      result: await measureMedian(browser, withTarget, ctx, null, ctx.repeat),
+      per: Object.fromEntries(ablations.map((name) => [name, mergeRuns(runs.get(name))])),
     });
   }
   printTable(baseline);
-  printCensus(baseline);
-  printLayers(baseline);
+  if (baseline.every((row) => row.result.census)) {
+    printCensus(baseline);
+    printLayers(baseline);
+  }
   for (const { page, result } of baseline) {
     if (!result.settled)
-      console.log(`
-ATENÇÃO: ${page.name} ainda mostrava esqueleto ao medir (dado não chegou em 20 s).`);
+      console.log(
+        `\nATENÇÃO: ${page.name} ainda mostrava esqueleto ao medir (dado não chegou em 20 s).`,
+      );
   }
-
-  const ablated = [];
   if (ablations.length) {
     console.log(
-      '\n#### O custo de cada efeito (fps médio da janela, antes → depois de neutralizá-lo)\n',
+      '\n#### O custo de cada efeito (fps médio da janela, antes → depois de neutralizá-lo; rodadas intercaladas)\n',
     );
     console.log(`| Página | Janela | base | ${ablations.join(' | ')} |`);
     console.log(`|---|---|---:|${ablations.map(() => '---:').join('|')}|`);
-    for (const row of baseline) {
-      const per = {};
-      for (const name of ablations) {
-        process.stderr.write(`medindo ${row.page.name} com ${name}…\n`);
-        per[name] = await measureMedian(browser, row.page, ctx, ABLATIONS[name], ctx.repeat);
-      }
-      ablated.push({ page: row.page, per });
+    for (const row of ablated) {
+      const base = baseline.find((b) => b.page.name === row.page.name).result;
       for (const w of WINDOWS) {
         const cells = ablations.map((name) => {
-          const value = per[name].windows[w].fps;
-          const baseValue = row.result.windows[w].fps;
+          const value = row.per[name].windows[w].fps;
+          const baseValue = base.windows[w].fps;
           const delta = baseValue ? ((value - baseValue) / baseValue) * 100 : 0;
           return `${f1(value)} (${delta >= 0 ? '+' : ''}${Math.round(delta)}%)`;
         });
         console.log(
-          `| ${row.page.name} | ${w} | ${f1(row.result.windows[w].fps)} | ${cells.join(' | ')} |`,
+          '| ' +
+            row.page.name +
+            ' | ' +
+            w +
+            ' | ' +
+            f1(base.windows[w].fps) +
+            ' | ' +
+            cells.join(' | ') +
+            ' |',
         );
       }
     }
