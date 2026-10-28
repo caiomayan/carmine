@@ -595,6 +595,39 @@ for (const size of [
   });
 }
 
+/**
+ * A barra de cima (TR | CT e as categorias) gruda sozinha: nenhuma faixa de fundo cheio atrás dela, que
+ * aparecia como um corte preto de ponta a ponta sobre o brilho colorido da página.
+ */
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`a barra de cima gruda sem faixa de fundo atrás (${size.width} × ${size.height})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await signIn(page);
+    await page.evaluate(() => window.scrollTo(0, 320));
+    await page.waitForTimeout(200);
+
+    const sticky = await page.getByTestId('side-t').evaluate((node) => {
+      const found: { background: string }[] = [];
+      for (let el = node.parentElement; el && el.tagName !== 'MAIN'; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.position === 'sticky') {
+          found.push({ background: style.backgroundColor });
+        }
+      }
+      return found;
+    });
+    expect(sticky.length).toBeGreaterThan(0);
+    for (const bar of sticky) {
+      expect(bar.background).toBe('rgba(0, 0, 0, 0)');
+    }
+  });
+}
+
 test.describe('mão de Presets', () => {
   test('em 390 px o nome da carta quebra em até 2 linhas, sem corte seco, e segue inteiro', async ({
     page,

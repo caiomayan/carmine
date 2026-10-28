@@ -113,6 +113,30 @@ test('no desktop o conteúdo sobe como uma cortina e revela o rodapé fixo atrá
   expect((box?.y ?? 0) + (box?.height ?? 0)).toBeCloseTo(900, 0);
 });
 
+// O notebook tem a janela baixa (a barra do navegador come a altura): o rodapé encolhe os respiros e a cortina vale.
+for (const { width, height, label } of [
+  { width: 1366, height: 657, label: '1366x768' },
+  { width: 1536, height: 730, label: '1536x864' },
+  { width: 1536, height: 760, label: '1920x1080 com zoom de 125 %' },
+]) {
+  test(`a cortina vale na tela de notebook (${label})`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.goto('/termos');
+    await settle(page);
+    await expect(page.locator('html')).toHaveAttribute('data-curtain', 'on');
+    const footer = page.locator('footer[data-site-footer]');
+    await expect(footer).toHaveCSS('position', 'fixed');
+    expect(await footer.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThanOrEqual(
+      height * 0.85,
+    );
+
+    await scrollToEnd(page);
+    await expect(footer.getByText('© ', { exact: false })).toBeInViewport();
+    const box = await footer.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0)).toBeCloseTo(height, 0);
+  });
+}
+
 test('no celular e com movimento reduzido o rodapé fica no fluxo, sem cortina', async ({
   page,
 }) => {

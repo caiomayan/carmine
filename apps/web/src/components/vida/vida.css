@@ -135,8 +135,28 @@ h1.text-display {
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  /* Onde o header rola com a página (celular) o brilho entra em fade logo abaixo dele, sem o corte seco. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 56px,
+    #000 40%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to bottom, transparent 0, #000 56px, #000 40%, transparent 100%);
+}
+/*
+ * A partir de 768 px o header é fixo e transparente em repouso: o brilho sobe por trás dele (até o topo da
+ * página) em vez de nascer cortado na borda de baixo do header, e o fundo e o header ficam uma coisa só,
+ * nos dois temas e também sob a pílula de vidro ao rolar.
+ */
+@media (min-width: 768px) {
+  .v-ambient {
+    top: calc(var(--hdr-h) * -1);
+    height: calc(1100px + var(--hdr-h));
+    -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 40%, transparent 100%);
+  }
 }
 .v-ambient i {
   position: absolute;

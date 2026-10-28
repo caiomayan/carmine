@@ -1,4 +1,14 @@
-import { axeViolations, BG, expect, ROUTES, saveTheme, settle, test, WIDTHS } from './fixtures';
+import {
+  axeViolations,
+  BG,
+  expect,
+  ROUTES,
+  saveTheme,
+  scrollToEnd,
+  settle,
+  test,
+  WIDTHS,
+} from './fixtures';
 
 const mainNav = (page: import('@playwright/test').Page) =>
   page.getByRole('navigation', { name: 'Principal' });
@@ -109,6 +119,8 @@ test('rota inexistente mostra a 404 própria', async ({ page }) => {
 for (const route of ['/regras', '/contato'] as const) {
   test(`a página ${route} existe e é alcançável pelo rodapé`, async ({ page }) => {
     await page.goto('/');
+    // Na cortina o rodapé fica fixo atrás do conteúdo: como a pessoa faz, rola até o fim para chegar nele.
+    await scrollToEnd(page);
     await page.getByRole('navigation', { name: 'Rodapé' }).locator(`a[href="${route}"]`).click();
     await expect(page).toHaveURL(route);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
