@@ -72,7 +72,7 @@ export function PurchaseStatus({
     return () => {
       stopped.current = true;
     };
-  }, [id, open, poll]);
+  }, []);
   const refresh = async () => {
     try {
       const response = await fetch(`/api/me/purchases/${id}`, { cache: 'no-store' });
