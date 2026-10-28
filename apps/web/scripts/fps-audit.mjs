@@ -587,7 +587,7 @@ async function animationRanking(browser, page, ctx, rounds) {
  * Rastro (tracing) do repouso: quanto cada tipo de trabalho da thread principal custou e, nas invalidações de estilo,
  * o que as provocou (classe, atributo, propriedade). É o que mostra por que uma página "parada" não para.
  */
-async function traceIdle(browser, tab, seconds) {
+async function traceIdle(browser, tab, seconds, action) {
   await browser.startTracing(tab, {
     categories: [
       'devtools.timeline',
@@ -596,7 +596,8 @@ async function traceIdle(browser, tab, seconds) {
       'disabled-by-default-devtools.timeline.stack',
     ],
   });
-  await tab.waitForTimeout(seconds * 1000);
+  if (action) await action();
+  else await tab.waitForTimeout(seconds * 1000);
   const buffer = await browser.stopTracing();
   const events = JSON.parse(buffer.toString('utf8')).traceEvents ?? [];
   const byName = new Map();
@@ -642,7 +643,7 @@ async function traceIdle(browser, tab, seconds) {
   const top = (map, pick, n) => [...map].sort((a, b) => pick(b[1]) - pick(a[1])).slice(0, n);
   return {
     work: top(byName, (v) => v.ms, 8).map(([name, v]) => ({ name, ms: v.ms, n: v.n })),
-    reasons: top(reasons, (v) => v, 8).map(([key, n]) => ({ key, n })),
+    reasons: top(reasons, (v) => v, 14).map(([key, n]) => ({ key, n })),
     callers: top(timers, (v) => v, 6).map(([key, ms]) => ({ key, ms })),
     stacks: top(stacks, (v) => v, 6).map(([key, n]) => ({ key, n })),
   };
@@ -987,6 +988,129 @@ async function runHidden(browser, ctx, { only, serverPath, profilePath }) {
   for (const n of notes) console.log(n);
 }
 
+/**
+ * O modo --components: o tempo de render de cada componente na carga fria. Precisa de um build com profiling
+ * (`next build --profile`): o React 19 desse build marca cada render na trilha "Components" do
+ * Performance (performance.measure com detail.devtools), e o script soma por nome. A duração de cada marca é a do
+ * componente com os filhos dentro dele; o "próprio" é o total menos o dos filhos mais fundos que a gente consegue ver
+ * (aninhamento por intervalo de tempo).
+ */
+async function runComponents(browser, ctx, { only, serverPath, profilePath }) {
+  console.log(
+    'Render por componente, carga fria, CPU ' + ctx.cpu + '× mais lenta (build com --profile)\n',
+  );
+  for (const page of PAGES) {
+    if (only && !only.includes(page.name)) continue;
+    const target =
+      page.path === '{profile}' ? profilePath : page.path === '{server}' ? serverPath : page.path;
+    if (!target || (page.auth && !ctx.storageState)) continue;
+    const context = await browser.newContext({
+      viewport: ctx.viewport,
+      deviceScaleFactor: ctx.dsf,
+      ...(ctx.storageState ? { storageState: ctx.storageState } : {}),
+    });
+    const tab = await context.newPage();
+    const cdp = await context.newCDPSession(tab);
+    if (ctx.cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: ctx.cpu });
+    await tab.goto(ctx.base + target, { waitUntil: 'load', timeout: 120_000 });
+    await tab.waitForTimeout(7000);
+    const marks = await tab.evaluate(() =>
+      performance
+        .getEntriesByType('measure')
+        .filter((m) => m.detail?.devtools)
+        .map((m) => ({
+          n: m.name,
+          t: m.startTime,
+          d: m.duration,
+          track: m.detail.devtools.track ?? '',
+          group: m.detail.devtools.trackGroup ?? '',
+        })),
+    );
+    await context.close();
+    const tracks = new Map();
+    for (const m of marks)
+      tracks.set(
+        m.track + (m.group ? ' / ' + m.group : ''),
+        (tracks.get(m.track + (m.group ? ' / ' + m.group : '')) ?? 0) + 1,
+      );
+    const components = marks.filter((m) => /component/i.test(m.track));
+    // próprio = duração - soma das marcas diretamente dentro (mesma trilha, contidas no intervalo)
+    const sorted = [...components].sort((a, b) => a.t - b.t || b.d - a.d);
+    const self = new Map();
+    const stack = [];
+    for (const m of sorted) {
+      while (stack.length && m.t >= stack[stack.length - 1].t + stack[stack.length - 1].d - 0.001)
+        stack.pop();
+      const parent = stack[stack.length - 1];
+      m.self = m.d;
+      if (parent) parent.self -= m.d;
+      stack.push(m);
+    }
+    for (const m of sorted) {
+      const entry = self.get(m.n) ?? { n: 0, total: 0, own: 0, max: 0 };
+      entry.n++;
+      entry.total += m.d;
+      entry.own += Math.max(0, m.self);
+      entry.max = Math.max(entry.max, m.d);
+      self.set(m.n, entry);
+    }
+    console.log(
+      '#### ' +
+        page.name +
+        ' (' +
+        components.length +
+        ' marcas de componente; trilhas: ' +
+        ([...tracks].map(([k, c]) => k + '=' + c).join(', ') || 'nenhuma') +
+        ')\n',
+    );
+    console.log('| Componente | renders | próprio ms | total ms | maior ms |');
+    console.log('|---|---:|---:|---:|---:|');
+    for (const [name, v] of [...self].sort((a, b) => b[1].own - a[1].own).slice(0, ctx.top)) {
+      console.log(
+        '| ' +
+          name +
+          ' | ' +
+          v.n +
+          ' | ' +
+          v.own.toFixed(1) +
+          ' | ' +
+          v.total.toFixed(1) +
+          ' | ' +
+          v.max.toFixed(1) +
+          ' |',
+      );
+    }
+    console.log('');
+  }
+}
+
+/** O modo --scroll-trace: o que invalida estilo e layout durante a rolagem e durante o ponteiro. */
+async function runScrollTrace(browser, ctx, { only, serverPath, profilePath }) {
+  for (const page of PAGES) {
+    if (only && !only.includes(page.name)) continue;
+    const target =
+      page.path === '{profile}' ? profilePath : page.path === '{server}' ? serverPath : page.path;
+    if (!target || (page.auth && !ctx.storageState)) continue;
+    for (const windowName of ['rolagem', 'ponteiro']) {
+      const { context, tab, cdp } = await openPage(browser, { ...page, target }, ctx);
+      const trace = await traceIdle(browser, tab, 0, () =>
+        measureWindow(tab, cdp, windowName, {
+          viewport: ctx.viewport,
+          seconds: ctx.seconds,
+          browserCdp: ctx.browserCdp,
+        }),
+      );
+      await context.close();
+      console.log('#### ' + page.name + ' · ' + windowName + '\n');
+      for (const w of trace.work) console.log('- ' + f1(w.ms) + ' ms em ' + w.n + '× ' + w.name);
+      for (const r of trace.reasons) console.log('- invalidação ' + r.n + '× ' + r.key);
+      for (const c of trace.callers) console.log('- ' + f1(c.ms) + ' ms · ' + c.key);
+      for (const st of trace.stacks) console.log('- pilha ' + st.n + '× ' + st.key);
+      console.log('');
+    }
+  }
+}
+
 /** O modo --animations: a lista das animações contínuas de cada página, ordenada pelo ganho de desligar cada uma. */
 async function runAnimations(browser, ctx, { only, serverPath, profilePath, jsonPath }) {
   const rounds = Math.max(ctx.repeat, 3);
@@ -1063,6 +1187,7 @@ async function main() {
     seconds: Number(option('--seconds') ?? 3),
     repeat: Number(option('--repeat') ?? 1),
     diagnostics: [],
+    top: Number(option('--top') ?? 25),
     pause: option('--pause'),
     viewport: { width, height },
     storageState: storagePath ? JSON.parse(await readFile(storagePath, 'utf8')) : undefined,
@@ -1083,6 +1208,16 @@ async function main() {
   );
 
   ctx.browserCdp = await browser.newBrowserCDPSession();
+  if (flag('--scroll-trace')) {
+    await runScrollTrace(browser, ctx, { only, serverPath, profilePath });
+    await browser.close();
+    return;
+  }
+  if (flag('--components')) {
+    await runComponents(browser, ctx, { only, serverPath, profilePath });
+    await browser.close();
+    return;
+  }
   if (flag('--hydration')) {
     await runHydration(browser, ctx, { only, serverPath, profilePath });
     await browser.close();

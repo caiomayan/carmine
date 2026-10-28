@@ -55,7 +55,11 @@ export function Ticker({
       const text = `${format.format(Number(v.toFixed(decimals)))}${suffix}`;
       if (shown.current === text) return;
       shown.current = text;
-      node.textContent = text;
+      // Atualiza o MESMO nó de texto: `textContent =` o troca por outro (remove e insere), e cada inserção invalida o
+      // `:root:has([data-vida])` e refaz o layout; mudar só o `nodeValue` redesenha o texto e nada mais.
+      const textNode = node.firstChild;
+      if (textNode?.nodeType === Node.TEXT_NODE) textNode.nodeValue = text;
+      else node.textContent = text;
     },
     [format, decimals, suffix],
   );
