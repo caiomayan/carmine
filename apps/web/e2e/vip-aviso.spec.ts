@@ -44,15 +44,22 @@ test.describe('faixa do fim do VIP', () => {
     await expect(band(page)).toHaveCount(0);
   });
 
-  test('não aparece sem VIP, com VIP longe do fim, nem depois de acabar', async ({ page }) => {
+  test('não aparece sem VIP', async ({ page }) => {
     await signInWithVip(page, null);
     await expect(band(page)).toHaveCount(0);
+  });
 
-    const far = await signInWithVip(page, 5);
+  test('não aparece com o fim do VIP longe (mais de 3 dias)', async ({ page }) => {
+    await signInWithVip(page, 5);
     await expect(band(page)).toHaveCount(0);
+  });
 
-    // Acabou hoje: o aviso fica só no Loadout.
-    revokeVip(far);
+  test('não aparece depois que o VIP acabou: o "acabou hoje" fica só no Loadout', async ({
+    page,
+  }) => {
+    const steamId = await signInWithVip(page, 1);
+    await expect(band(page)).toBeVisible();
+    revokeVip(steamId);
     await page.reload();
     await expect(band(page)).toHaveCount(0);
   });
