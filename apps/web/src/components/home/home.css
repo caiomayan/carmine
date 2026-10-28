@@ -259,6 +259,8 @@
 }
 
 /* ---------- texto com brilho (AO VIVO) ---------- */
+/* Brilha 2 vezes (2,6 s cada) ao aparecer e depois fica no texto normal: o brilho de texto (background-clip) repinta a cada
+   quadro, então não pode rodar em loop. A segunda animação, de 1 ms, troca para a cor cheia quando a primeira acaba. */
 .vh-shine {
   color: transparent;
   background-image: linear-gradient(
@@ -271,30 +273,45 @@
   background-position: 130% 0;
   -webkit-background-clip: text;
   background-clip: text;
-  animation: vh-shine 2.6s linear infinite;
+  animation:
+    vh-shine 2.6s linear 2,
+    vh-shine-rest 1ms linear 5.2s forwards;
 }
 @keyframes vh-shine {
   to {
     background-position: -130% 0;
   }
 }
+@keyframes vh-shine-rest {
+  to {
+    color: var(--text);
+    background-image: none;
+  }
+}
 
 /* ---------- esqueleto com brilho ---------- */
+/* A faixa anda por transform num pseudo-elemento (compositor), não por background-position (repintura por quadro). */
 .vh-skel {
-  background:
-    linear-gradient(
-      100deg,
-      transparent 20%,
-      color-mix(in srgb, var(--text) 16%, transparent) 50%,
-      transparent 80%
-    )
-    -120% 0 / 60% 100% no-repeat,
-    var(--surface-2);
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.vh-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--text) 16%, transparent) 50%,
+    transparent 80%
+  );
+  transform: translateX(-100%);
   animation: vh-skel 1.5s linear infinite;
 }
 @keyframes vh-skel {
   to {
-    background-position: 220% 0;
+    transform: translateX(100%);
   }
 }
 
@@ -383,7 +400,7 @@
     transition: none;
   }
   .vh-shine,
-  .vh-skel,
+  .vh-skel::after,
   .vh-spin {
     animation: none;
   }
