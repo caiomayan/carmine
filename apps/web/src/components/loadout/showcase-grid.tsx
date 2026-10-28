@@ -56,7 +56,7 @@ export function ShowcaseGrid({
                 : undefined
             }
             className={cn(
-              'v-tilt v-spot relative grid enter-stagger content-start gap-2 rounded-xl bg-surface p-3 pb-3.5',
+              'v-tilt v-spot relative grid overflow-hidden enter-stagger content-start gap-2 rounded-xl bg-surface p-3 pb-3.5',
               holo && 'v-holo',
             )}
             data-testid="showcase-item"
