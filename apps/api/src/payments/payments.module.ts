@@ -14,6 +14,8 @@ import { VipHoldModule } from '../vip/vip-hold.module.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { FakePaymentsGateway } from './fake-gateway.js';
 import type { PaymentsGateway } from './gateway.js';
+import { MercadoPagoClient } from './mercadopago/mercadopago-client.js';
+import { MercadoPagoGateway } from './mercadopago/mercadopago-gateway.js';
 import {
   DevPaymentsController,
   PurchasesController,
@@ -56,10 +58,20 @@ export class PaymentsModule {
               return new FakePaymentsGateway(valkey, { publicWebUrl: appConfig.publicWebUrl });
             }
             if (appConfig.payments.provider === 'mercadopago') {
-              // O adaptador do Mercado Pago entra na S14c; até lá a compra fica indisponível.
-              new Logger('Payments').warn(
-                'Adaptador do Mercado Pago ainda não existe: a compra fica indisponível',
-              );
+              const credentials = appConfig.payments.mercadopago;
+              if (credentials === null) {
+                // Sem o token e o segredo do webhook a compra fica indisponível (a configuração já recusa ligar assim).
+                new Logger('Payments').warn(
+                  'Mercado Pago sem MERCADOPAGO_ACCESS_TOKEN e MERCADOPAGO_WEBHOOK_SECRET: a compra fica indisponível',
+                );
+                return null;
+              }
+              return new MercadoPagoGateway({
+                client: new MercadoPagoClient({ accessToken: credentials.accessToken }),
+                webhookSecret: credentials.webhookSecret,
+                // O e-mail do pagador (que o Pix exige) usa o domínio do próprio site.
+                payerEmailDomain: new URL(appConfig.publicWebUrl).hostname,
+              });
             }
             return null;
           },

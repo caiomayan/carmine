@@ -9,7 +9,7 @@ Como operar a venda de Pacotes VIP (S14). Decisões: ADR 0023. A cobrança nasce
 | `PAYMENTS_ENABLED` | `true` abre a compra. Padrão `false`: a página do VIP mostra "Em breve" e a API responde 503 `payments_disabled`. **Só vira `true` depois** da decisão sobre a verificação de idade, da identificação do fornecedor e da tributação (lista do dono). |
 | `PAYMENTS_PROVIDER` | `mercadopago` ou `fake`. O `fake` só roda em `dev.stcarmine.com`/`localhost` (a API se recusa a subir em outro host). |
 | `PAYMENTS_DATA_KEY` | 32 bytes em base64 (`openssl rand -base64 32`): cifra o CPF do Pagador. Guarde uma cópia: sem ela os CPFs guardados não se leem. |
-| `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET` | Credenciais do app no Mercado Pago (S14c). Nunca no repositório ou no chat. |
+| `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET` | Credenciais do app no Mercado Pago (S14c, o adaptador está pronto e desligado: o passo a passo do dono e o que só o sandbox prova estão em [mercadopago.md](mercadopago.md)). Nunca no repositório ou no chat. |
 | `PAYMENTS_DATA_KEY_FILE` | Caminho de um arquivo com a chave, usado quando `PAYMENTS_DATA_KEY` está vazia (a homologação). |
 | `PAYMENTS_SWEEP_SECONDS` | Varredura de vencimento e conciliação (padrão 60; 0 desliga). |
 | `RECEIPT_SUPPLIER_NAME`, `RECEIPT_SUPPLIER_DOCUMENT`, `RECEIPT_SUPPLIER_ADDRESS` | **Do web**, não da API: quem vende o VIP no recibo (nome, CPF e endereço do escritório virtual). Os três juntos; faltando algum, o recibo mostra "a informar". Preencha antes de ligar a cobrança. |
