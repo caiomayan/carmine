@@ -14,8 +14,8 @@ const API_NODE = 'node --env-file=.env.example --env-file-if-exists=.env';
 
 export default defineConfig({
   testDir: './e2e',
-  // O orçamento de JS tem passo próprio na CI (playwright.budget.config.ts).
-  testIgnore: 'js-budget.spec.ts',
+  // O orçamento de JS e a auditoria de fps têm passo próprio (playwright.budget.config.ts, playwright.fps.config.ts).
+  testIgnore: ['js-budget.spec.ts', 'fps.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
