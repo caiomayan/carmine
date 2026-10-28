@@ -1,0 +1,24 @@
+# Carmine · guia para agentes
+
+Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turborepo: `apps/api` (NestJS, Fastify, Drizzle, Postgres, Valkey), `apps/web` (Next 16, Tailwind), `packages/contracts` (Zod, fonte única dos contratos), `plugins/` (C#, CounterStrikeSharp), `infra/` (Docker, perfis dos servidores de CS2, homologação, produção).
+
+## Antes de mexer
+- **O que fazer**: a fatia na spec viva, [`docs/specs/beta-aberto.md`](docs/specs/beta-aberto.md). [`docs/specs/mvp.md`](docs/specs/mvp.md) é o histórico das fatias S00 a S15, entregues; vale onde a beta-aberto não muda nada.
+- **Por que algo é assim**: [`docs/adr/`](docs/adr/). Mudar uma decisão registrada pede um ADR novo, que cita o antigo.
+- **Como chamar as coisas**: [`CONTEXT.md`](CONTEXT.md). Use os termos dele no código, na interface e nos commits. Termo novo entra lá no mesmo PR.
+- **Como operar**: [`docs/operacao/`](docs/operacao/) (deploy, homologação, CS2, pagamentos, foto, Discord).
+
+## Fluxo
+- Branch curto a partir do `dev`, PR para o `dev`. A **CI do PR é a verificação**: verify, integração, E2E em 3 partes e .NET, agregados no check `node`. Localmente, rode só o leve do pacote que você tocou (lint, typecheck, unit); build e E2E completos ficam para a CI.
+- O `main` é produção e só recebe PR de uma branch de release congelada (`release/<data><letra>`).
+- Commits em português, no formato `tipo(escopo): o que mudou` (`feat(web): ...`, `fix(api): ...`, `test(e2e): ...`, `docs(specs): ...`).
+
+## Regras que nenhuma config conta
+- **O repositório é público.** Nada de IP, hostname interno, nome de chave, token ou e-mail pessoal em código, docs ou commits.
+- **Contratos primeiro**: tipo ou rota nova nasce em `packages/contracts`. O cliente C# do plugin é gerado pelo NSwag na CI a partir do OpenAPI da API.
+- **Textos da interface** ficam em `apps/web/messages/pt-BR.json`. **Rotas e comandos do jogo em inglês** (S16b); comandos têm sinônimo em português.
+- **fps**: nada anima em loop sem o usuário pedir. Quando precisar: só `transform` e `opacity`, numa camada pequena, pausado fora da tela e com a aba oculta. O teste `apps/web/e2e/fps.spec.ts` mede o repouso.
+- **Orçamento de JS** por página (a CI mede): código pesado só carrega quando usado.
+- **Plugin**: o `ModuleVersion` em `plugins/src/Carmine.Core/CorePlugin.cs` só sobe ao cortar um release, porque ele dispara a release do plugin para os servidores.
+- **O plugin só relata; a API decide** o que conta nas Estatísticas (ADR 0018). Toda mensagem do Carmine no chat do jogo começa com `Carmine` em carmim (`ChatColors.DarkRed`).
+- **Sem dado inventado**: quando um número não existe (período antes da coleta, API fora), a tela diz isso.
