@@ -109,6 +109,13 @@ jobs:
       # resumo do job) e reprova o PR se alguma página estourar, mesmo se um teste do E2E falhou.
       - if: ${{ !cancelled() && matrix.shard == 1 }}
         run: pnpm --filter @carmine/web budget:js:ci
+      # A verificação de repouso (fps, apps/web/scripts/fps-audit.mjs --guard): parada, a página não pode
+      # ocupar a thread principal, refazer layout nem escrever texto sem parar, nem manter animação contínua fora do
+      # compositor. Nada disso depende do relógio, mas ainda não vimos como o runner se comporta: por enquanto
+      # só relatório (a tabela vai para o log e para o resumo do job, sem reprovar o PR).
+      - if: ${{ !cancelled() && matrix.shard == 2 }}
+        continue-on-error: true
+        run: pnpm --filter @carmine/web fps:audit
       # Os traces das falhas, para diagnosticar sem rodar de novo.
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

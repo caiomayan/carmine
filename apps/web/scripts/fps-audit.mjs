@@ -733,8 +733,8 @@ function mergeRuns(runs) {
  * laço (número que não para, animação de pintura) estoura isto em qualquer computador, com ou sem GPU.
  */
 export const GUARD_LIMITS = {
-  /** Recálculos de estilo por segundo, parada (60/s é um quadro de 60 Hz inteiro). */
-  styleRecalcsPerSecond: 20,
+  /** Fração de um núcleo que a thread principal gasta parada (0,15 = 15%), com a CPU sem estrangular. */
+  mainThreadBusy: 0.15,
   /** Layouts por segundo, parada. */
   layoutsPerSecond: 4,
   /** Escritas de texto por segundo, parada. */

@@ -19,7 +19,7 @@ const AWP_ASIIMOV = 306;
  * Ranking com gente, um servidor com placar e jogadores ao vivo), entra com ela e mede as páginas com a CPU 4× mais
  * lenta. Os argumentos extras do script vêm de `FPS_ARGS` (ex.: `--headed --ablate all --only Home,Perfil`).
  *
- * Sem `FPS_ARGS`, é a verificação da CI (`--guard`): parada, a página não pode recalcular estilo, refazer layout nem
+ * Sem `FPS_ARGS`, é a verificação da CI (`--guard`): parada, a página não pode ocupar a thread principal, refazer layout nem
  * escrever texto sem parar, nem manter animação contínua fora do compositor. Nada disso depende do relógio da
  * máquina, então vale num runner compartilhado e sem GPU; os fps em si ficam só no relatório da auditoria.
  */
