@@ -259,5 +259,149 @@ describe('Eventos de analytics: login e Inventário', () => {
 
       expect(sent).toEqual([]);
     });
+
+    describe('Loadout e Presets', () => {
+      it('equipar mede o slot, o lado e o Preset; repetir não mede; trocar diz "substituiu"; desequipar e desfazer medem', async () => {
+        const player = await signedInPlayer(t, next++);
+        const first = await player.add(item());
+        const second = await player.add(item({ seed: 12 }));
+
+        const equip = await player.call('POST', '/api/loadout/equip', { uid: first });
+        expect(equip.statusCode, equip.body).toBe(200);
+        const [equipped] = await events('item_equipado');
+        expect(equipped?.properties).toMatchObject({
+          distinct_id: player.account.id,
+          tipo: 'arma',
+          item_id: AK,
+          substituiu: false,
+          preset_ativo: true,
+          preset_principal: true,
+        });
+        expect(['ct', 'tr', 'ambos']).toContain(equipped?.properties.lados);
+        expect(typeof equipped?.properties.slot).toBe('string');
+
+        // O mesmo Item no mesmo slot: nada mudou, nada é medido.
+        await player.call('POST', '/api/loadout/equip', { uid: first });
+        await quiet();
+        expect(sent.filter((e) => e.event === 'item_equipado')).toHaveLength(1);
+
+        const swap = await player.call('POST', '/api/loadout/equip', { uid: second });
+        const swapped = await events('item_equipado', 2);
+        expect(swapped[1]?.properties.substituiu).toBe(true);
+
+        const undone = await player.call('POST', '/api/loadout/assign', {
+          assignments: (swap.json() as { previous: object[] }).previous,
+        });
+        expect(undone.statusCode, undone.body).toBe(200);
+        expect((await events('equipar_desfeito'))[0]?.properties).toMatchObject({
+          slots_afetados: 1,
+        });
+
+        const slot = String(equipped?.properties.slot);
+        const off = await player.call('POST', '/api/loadout/unequip', { slot });
+        expect(off.statusCode, off.body).toBe(200);
+        expect((await events('item_desequipado'))[0]?.properties).toMatchObject({
+          slot,
+          preset_ativo: true,
+        });
+      });
+
+      it('Presets (VIP): criar, ativar e apagar medem os totais e se era o ativo', async () => {
+        const player = await signedInPlayer(t, next++, { vipUntil: Date.now() + 86_400_000 });
+        await player.add(item());
+
+        const created = await player.call('POST', '/api/presets', {
+          name: 'Treino',
+          from: 'current',
+        });
+        expect(created.statusCode, created.body).toBe(201);
+        const { id } = created.json() as { id: string };
+        expect((await events('preset_criado'))[0]?.properties).toMatchObject({
+          copiado_do_atual: true,
+          total_presets_apos: 2,
+        });
+        expect(JSON.stringify(sent)).not.toContain('Treino');
+
+        expect((await player.call('POST', `/api/presets/${id}/activate`)).statusCode).toBe(200);
+        expect((await events('preset_ativado'))[0]?.properties).toMatchObject({ total_presets: 2 });
+
+        expect((await player.call('DELETE', `/api/presets/${id}`)).statusCode).toBe(200);
+        expect((await events('preset_apagado'))[0]?.properties).toMatchObject({
+          era_ativo: true,
+          total_presets_apos: 1,
+        });
+      });
+
+      it('sem VIP, criar Preset vira recurso_vip_bloqueado (preset_extra, loadout)', async () => {
+        const player = await signedInPlayer(t, next++);
+
+        const refused = await player.call('POST', '/api/presets', {
+          name: 'Treino',
+          from: 'empty',
+        });
+        expect(refused.statusCode).toBe(403);
+
+        expect((await events('recurso_vip_bloqueado'))[0]?.properties).toMatchObject({
+          recurso: 'preset_extra',
+          origem: 'loadout',
+        });
+      });
+    });
+
+    describe('Perfil', () => {
+      it('trocar o nome mede só se foi a primeira troca (o nome não sai); repetir o mesmo nome não mede', async () => {
+        const player = await signedInPlayer(t, next++);
+
+        const changed = await player.call('PUT', '/api/me/display-name', {
+          displayName: 'Lia Exe',
+        });
+        expect(changed.statusCode, changed.body).toBe(200);
+        expect((await events('nome_exibicao_alterado'))[0]?.properties).toMatchObject({
+          primeira_troca: true,
+        });
+        expect(JSON.stringify(sent)).not.toContain('Lia Exe');
+
+        await player.call('PUT', '/api/me/display-name', { displayName: 'Lia Exe' });
+        await quiet();
+        expect(sent.filter((e) => e.event === 'nome_exibicao_alterado')).toHaveLength(1);
+      });
+
+      it('as recusas medem só o motivo: nome curto, prazo de 7 dias', async () => {
+        const player = await signedInPlayer(t, next++);
+
+        await player.call('PUT', '/api/me/display-name', { displayName: 'a' });
+        await player.call('PUT', '/api/me/display-name', { displayName: 'Nome Bom' });
+        await player.call('PUT', '/api/me/display-name', { displayName: 'Outro Nome' });
+
+        const refused = await events('nome_exibicao_recusado', 2);
+        expect(refused.map((e) => e.properties.motivo)).toEqual(['too_short', 'too_soon']);
+        expect(JSON.stringify(refused)).not.toContain('Outro Nome');
+      });
+
+      it('voltar ao nome Steam mede uma vez; repetir não mede', async () => {
+        const player = await signedInPlayer(t, next++);
+        await player.call('PUT', '/api/me/display-name', { displayName: 'Nome Bom' });
+        sent.length = 0;
+
+        expect((await player.call('DELETE', '/api/me/display-name')).statusCode).toBe(200);
+        expect(await events('nome_exibicao_revertido')).toHaveLength(1);
+        await player.call('DELETE', '/api/me/display-name');
+        await quiet();
+        expect(sent.filter((e) => e.event === 'nome_exibicao_revertido')).toHaveLength(1);
+      });
+
+      it('o Perfil privado mede o estado novo', async () => {
+        const player = await signedInPlayer(t, next++);
+
+        expect((await player.call('PUT', '/api/me/privacy', { isPrivate: true })).statusCode).toBe(
+          204,
+        );
+
+        expect((await events('perfil_privado_alterado'))[0]?.properties).toMatchObject({
+          privado: true,
+          distinct_id: player.account.id,
+        });
+      });
+    });
   });
 });

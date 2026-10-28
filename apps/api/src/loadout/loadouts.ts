@@ -20,10 +20,12 @@ import {
 import { and, asc, count, desc, eq, inArray, isNull } from 'drizzle-orm';
 import type { ActivityRecorder } from '../activity/activity-feed.js';
 import { isNotableSkin } from '../activity/notable-skin.js';
+import type { Analytics } from '../analytics/analytics.js';
 import type { Catalog } from '../catalog/catalog.js';
 import type { Database } from '../database/database.js';
 import { accounts, inventoryItems, loadoutSlots, presets } from '../database/schema.js';
 import type { LoadoutChangeListener } from '../equipped/equipped-cache.js';
+import { itemKindOf } from '../inventory/item-rules.js';
 import type { VipPeriods } from '../vip/vip-periods.js';
 import { type AssignedItem, entriesOf, sidesToApply, slotKey } from './slot-rules.js';
 
@@ -43,6 +45,13 @@ type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 type Db = Database | Transaction;
 type PresetRow = typeof presets.$inferSelect;
 type DbSide = (typeof loadoutSlots.$inferSelect)['side'];
+
+/** Os lados de uma mudança como o plano de eventos os nomeia (`nenhum`: o music kit, sem lado). */
+function ladosOf(sides: readonly (LoadoutSide | null)[]): 'ct' | 'tr' | 'ambos' | 'nenhum' {
+  const ct = sides.includes('ct');
+  const t = sides.includes('t');
+  return ct && t ? 'ambos' : ct ? 'ct' : t ? 'tr' : 'nenhum';
+}
 
 const toDbSide = (side: LoadoutSide | null): DbSide => side ?? 'any';
 const fromDbSide = (side: DbSide): LoadoutSide | null => (side === 'any' ? null : side);
@@ -70,6 +79,8 @@ export class Loadouts {
     private readonly clock: () => Date = () => new Date(),
     /** A faixa de atividade ao vivo da home; sem ela, equipar não anuncia nada. */
     private readonly activity: ActivityRecorder | null = null,
+    /** Os eventos do plano de analytics (A1), sempre depois do commit. Sem ele, nada é emitido. */
+    private readonly analytics: Pick<Analytics, 'capture'> = { capture: () => undefined },
   ) {}
 
   /** O Loadout (o Preset ativo) ou outro Preset, com todos os slots. */
@@ -82,8 +93,12 @@ export class Loadouts {
 
   /** Equipa o Item no slot dele, nos lados pedidos; o que estava lá é substituído. */
   async equip(accountId: string, input: EquipInput): Promise<LoadoutChange> {
-    const equipped = { itemId: null as number | null };
-    const change = await this.change(accountId, input.presetId, async (tx) => {
+    const equipped = {
+      itemId: null as number | null,
+      slot: null as string | null,
+      sides: [] as (LoadoutSide | null)[],
+    };
+    const { change, preset } = await this.change(accountId, input.presetId, async (tx) => {
       const [item] = await this.activeItems(tx, accountId, [input.uid]);
       if (!item) throw new LoadoutRejection('item_not_found', 'Item não encontrado', 'uid');
       equipped.itemId = item.item.id;
@@ -93,8 +108,28 @@ export class Loadouts {
       if ('field' in sides) {
         throw new LoadoutRejection('side_not_allowed', 'O Item não existe nesse lado', sides.field);
       }
+      equipped.slot = target.slot;
+      equipped.sides = sides.sides;
       return sides.sides.map((side) => ({ slot: target.slot, side, itemId: item.id }));
     });
+    // Só se o slot mudou de fato (como o aviso ao cache do equipped/v5).
+    if (change.previous.length > 0 && equipped.itemId !== null && equipped.slot !== null) {
+      const kind = itemKindOf(this.catalog.find(equipped.itemId)?.type ?? '');
+      if (kind) {
+        this.analytics.capture('item_equipado', {
+          accountId,
+          props: {
+            tipo: kind,
+            item_id: equipped.itemId,
+            slot: equipped.slot,
+            lados: ladosOf(equipped.sides),
+            substituiu: change.previous.some((previous) => previous.uid !== null),
+            preset_ativo: preset.active,
+            preset_principal: preset.main,
+          },
+        });
+      }
+    }
     // Skin rara no Loadout que vai para o jogo (Preset ativo): vira destaque na faixa de atividade.
     try {
       const skin = equipped.itemId === null ? undefined : this.catalog.find(equipped.itemId);
@@ -109,19 +144,28 @@ export class Loadouts {
 
   /** O slot volta à Arma padrão nos lados pedidos (todos, sem pedido). */
   async unequip(accountId: string, input: UnequipInput): Promise<LoadoutChange> {
-    return this.change(accountId, input.presetId, async () => {
+    let applied: (LoadoutSide | null)[] = [];
+    const { change, preset } = await this.change(accountId, input.presetId, async () => {
       const slotSides = this.sidesOfSlot(input.slot, 'slot');
       const sides = sidesToApply(slotSides, input.sides);
       if ('field' in sides) {
         throw new LoadoutRejection('side_not_allowed', 'O slot não existe nesse lado', sides.field);
       }
+      applied = sides.sides;
       return sides.sides.map((side) => ({ slot: input.slot, side, itemId: null }));
     });
+    if (change.previous.length > 0) {
+      this.analytics.capture('item_desequipado', {
+        accountId,
+        props: { slot: input.slot, lados: ladosOf(applied), preset_ativo: preset.active },
+      });
+    }
+    return change;
   }
 
   /** Define exatamente estes slots (o "Desfazer" de equip e unequip). */
   async assign(accountId: string, input: AssignInput): Promise<LoadoutChange> {
-    return this.change(accountId, input.presetId, async (tx) => {
+    const { change } = await this.change(accountId, input.presetId, async (tx) => {
       const uids = input.assignments.flatMap(({ uid }) => (uid === null ? [] : [uid]));
       const items = new Map(
         (await this.activeItems(tx, accountId, uids)).map((item) => [item.id, item]),
@@ -153,6 +197,13 @@ export class Loadouts {
         return { slot, side, itemId: uid };
       });
     });
+    if (change.previous.length > 0) {
+      this.analytics.capture('equipar_desfeito', {
+        accountId,
+        props: { slots_afetados: change.previous.length },
+      });
+    }
+    return change;
   }
 
   /** O Preset ativo em vitrine no Perfil: só o que vai para o jogo, sem os atributos VIP. */
@@ -198,7 +249,7 @@ export class Loadouts {
   ): Promise<Preset> {
     const vip = await this.vipOf(accountId);
     if (!vip) throw new LoadoutRejection('vip_required', 'Criar Presets exige VIP');
-    return this.db.transaction(async (tx) => {
+    const { created, totalAfter } = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       await this.ensureMain(tx, accountId);
       const [total] = await tx
@@ -226,8 +277,13 @@ export class Loadouts {
             .values(slots.map((slot) => ({ ...slot, presetId: preset.id })));
         }
       }
-      return this.presetOf(tx, preset, vip);
+      return { created: await this.presetOf(tx, preset, vip), totalAfter: (total?.value ?? 0) + 1 };
     });
+    this.analytics.capture('preset_criado', {
+      accountId,
+      props: { copiado_do_atual: input.from === 'current', total_presets_apos: totalAfter },
+    });
+    return created;
   }
 
   async renamePreset(accountId: string, presetId: string, name: string): Promise<Preset> {
@@ -252,6 +308,10 @@ export class Loadouts {
       return this.presetListOf(tx, accountId, vip);
     });
     await this.listener.loadoutChanged(accountId);
+    this.analytics.capture('preset_ativado', {
+      accountId,
+      props: { total_presets: list.presets.length },
+    });
     return list;
   }
 
@@ -274,6 +334,10 @@ export class Loadouts {
       return { list: await this.presetListOf(tx, accountId, vip), wasActive: preset.active };
     });
     if (wasActive) await this.listener.loadoutChanged(accountId);
+    this.analytics.capture('preset_apagado', {
+      accountId,
+      props: { era_ativo: wasActive, total_presets_apos: list.presets.length },
+    });
     return list;
   }
 
@@ -285,7 +349,7 @@ export class Loadouts {
     accountId: string,
     presetId: string | undefined,
     plan: (tx: Transaction) => Promise<SlotChange[]>,
-  ): Promise<LoadoutChange> {
+  ): Promise<{ change: LoadoutChange; preset: PresetRow }> {
     const vip = await this.vipOf(accountId);
     const result = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
@@ -312,7 +376,10 @@ export class Loadouts {
     if (result.preset.active && result.previous.length > 0) {
       await this.listener.loadoutChanged(accountId);
     }
-    return { loadout: result.loadout, previous: result.previous };
+    return {
+      change: { loadout: result.loadout, previous: result.previous },
+      preset: result.preset,
+    };
   }
 
   private async write(tx: Transaction, presetId: string, change: SlotChange): Promise<void> {

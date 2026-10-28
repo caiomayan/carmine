@@ -1,4 +1,5 @@
 import { Logger, Module } from '@nestjs/common';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
@@ -18,7 +19,7 @@ import { ReservedPublicIds } from './reserved-public-ids.js';
 import { SteamWebApi } from './steam-profiles.js';
 
 @Module({
-  imports: [GameServersModule, LoadoutModule, ModerationModule, VipModule],
+  imports: [GameServersModule, LoadoutModule, ModerationModule, VipModule, AnalyticsModule],
   controllers: [
     AccountSettingsController,
     PlayerConnectsController,

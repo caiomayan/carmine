@@ -4,8 +4,10 @@ import {
   BadRequestException,
   Catch,
   type ExceptionFilter,
+  Inject,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import type { FastifyReply, FastifyRequest } from 'fastify';
+import { Analytics } from '../analytics/analytics.js';
 import { DisplayNameRejected } from './display-names.js';
 
 /**
@@ -14,8 +16,20 @@ import { DisplayNameRejected } from './display-names.js';
  */
 @Catch(DisplayNameRejected, BadRequestException)
 export class DisplayNameErrorsFilter implements ExceptionFilter {
+  constructor(@Inject(Analytics) private readonly analytics: Analytics) {}
+
   catch(exception: DisplayNameRejected | BadRequestException, host: ArgumentsHost): void {
     const reply = host.switchToHttp().getResponse<FastifyReply>();
+    if (exception instanceof DisplayNameRejected && exception.code !== 'invalid_body') {
+      // Só o motivo da recusa (nunca o nome tentado): o filtro de palavras recusa demais? o prazo atrapalha?
+      const accountId = host.switchToHttp().getRequest<FastifyRequest>().carmineSession?.accountId;
+      if (accountId) {
+        this.analytics.capture('nome_exibicao_recusado', {
+          accountId,
+          props: { motivo: exception.code },
+        });
+      }
+    }
     const body: DisplayNameError =
       exception instanceof DisplayNameRejected
         ? {

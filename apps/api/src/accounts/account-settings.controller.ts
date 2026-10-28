@@ -30,6 +30,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { Analytics } from '../analytics/analytics.js';
 import { AuthenticatedGuard, CurrentSession } from '../auth/session.guard.js';
 import type { Session } from '../auth/sessions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
@@ -54,6 +55,7 @@ export class AccountSettingsController {
   constructor(
     @Inject(DisplayNames) private readonly displayNames: DisplayNames,
     @Inject(AccountsService) private readonly accounts: AccountsService,
+    @Inject(Analytics) private readonly analytics: Analytics,
   ) {}
 
   @Put('display-name')
@@ -80,6 +82,13 @@ export class AccountSettingsController {
     @Body({ schema: changeDisplayNameInputSchema }) body: ChangeDisplayNameInput,
   ): Promise<DisplayNameChanged> {
     const changed = await this.displayNames.change(session.accountId, body.displayName);
+    // O nome não sai no evento, só se foi a primeira troca (e repetir o mesmo nome não é uma troca).
+    if (changed.changed) {
+      this.analytics.capture('nome_exibicao_alterado', {
+        accountId: session.accountId,
+        props: { primeira_troca: changed.firstChange },
+      });
+    }
     return {
       displayName: changed.displayName,
       nextChangeAt: changed.nextChangeAt.toISOString(),
@@ -101,6 +110,12 @@ export class AccountSettingsController {
   @errorResponse(403, 'Conta não reivindicada (not_claimed), ou CSRF inválido')
   async revertName(@CurrentSession() session: Session): Promise<DisplayNameReverted> {
     const reverted = await this.displayNames.revert(session.accountId);
+    if (reverted.reverted) {
+      this.analytics.capture('nome_exibicao_revertido', {
+        accountId: session.accountId,
+        props: {},
+      });
+    }
     return {
       displayName: reverted.displayName,
       nextChangeAt: reverted.nextChangeAt?.toISOString() ?? null,
@@ -123,5 +138,9 @@ export class AccountSettingsController {
     if (!(await this.accounts.setProfilePrivate(session.accountId, body.isPrivate))) {
       throw new NotFoundException('Conta não encontrada');
     }
+    this.analytics.capture('perfil_privado_alterado', {
+      accountId: session.accountId,
+      props: { privado: body.isPrivate },
+    });
   }
 }

@@ -51,7 +51,7 @@ export class DisplayNames {
     accountId: string,
     raw: string,
     now = new Date(),
-  ): Promise<{ displayName: string; nextChangeAt: Date }> {
+  ): Promise<{ displayName: string; nextChangeAt: Date; firstChange: boolean; changed: boolean }> {
     const normalized = normalizeDisplayName(raw);
     if (!normalized.ok) {
       throw new DisplayNameRejected(normalized.reason, REJECTION_MESSAGES[normalized.reason]);
@@ -71,7 +71,12 @@ export class DisplayNames {
       }
       const blockedUntil = nextDisplayNameChange(existing.displayNameChangedAt, now);
       if (existing.customDisplayName === name) {
-        return { displayName: existing.displayName, nextChangeAt: blockedUntil ?? now };
+        return {
+          displayName: existing.displayName,
+          nextChangeAt: blockedUntil ?? now,
+          firstChange: false,
+          changed: false,
+        };
       }
       if (blockedUntil) {
         throw new DisplayNameRejected(
@@ -90,7 +95,12 @@ export class DisplayNames {
         .update(accounts)
         .set({ customDisplayName: name, displayName, displayNameChangedAt: now })
         .where(eq(accounts.id, accountId));
-      return { displayName, nextChangeAt: displayNameCooldownEnd(now) };
+      return {
+        displayName,
+        nextChangeAt: displayNameCooldownEnd(now),
+        firstChange: existing.customDisplayName === null,
+        changed: true,
+      };
     });
   }
 
@@ -102,7 +112,7 @@ export class DisplayNames {
   async revert(
     accountId: string,
     now = new Date(),
-  ): Promise<{ displayName: string; nextChangeAt: Date | null }> {
+  ): Promise<{ displayName: string; nextChangeAt: Date | null; reverted: boolean }> {
     return this.db.transaction(async (tx) => {
       const [existing] = await tx
         .select()
@@ -117,7 +127,7 @@ export class DisplayNames {
       }
       const nextChangeAt = nextDisplayNameChange(existing.displayNameChangedAt, now);
       if (existing.customDisplayName === null) {
-        return { displayName: existing.displayName, nextChangeAt };
+        return { displayName: existing.displayName, nextChangeAt, reverted: false };
       }
       const displayName = displayNameFor(
         existing.steamName,
@@ -128,7 +138,7 @@ export class DisplayNames {
         .update(accounts)
         .set({ customDisplayName: null, displayName })
         .where(eq(accounts.id, accountId));
-      return { displayName, nextChangeAt };
+      return { displayName, nextChangeAt, reverted: true };
     });
   }
 
