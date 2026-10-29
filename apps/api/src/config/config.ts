@@ -168,6 +168,9 @@ const envSchema = z
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
     PUBLIC_WEB_URL: origin().default('http://localhost:3000'),
+    // Onde o painel da Staff é servido (S25, ADR 0015): outro host, que serve o próprio /api; é o realm do login Steam
+    // DO PAINEL (/api/auth/steam/staff/*). Vazio: o painel não tem login. Vem da configuração, nunca do cabeçalho Host.
+    PUBLIC_STAFF_URL: z.union([z.literal(''), origin()]).default(''),
     // Endpoint OpenID 2.0 da Steam; nos testes, a Steam falsa local.
     STEAM_OPENID_URL: urlWithProtocol(['https:', 'http:']).default(
       'https://steamcommunity.com/openid/login',
@@ -271,6 +274,8 @@ export interface AppConfig {
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
   publicWebUrl: string;
+  /** Origem pública do painel da Staff (S25), sem barra final; `null` sem painel. */
+  publicStaffUrl: string | null;
   steamOpenIdUrl: string;
   session: { idleTtlSeconds: number; absoluteTtlSeconds: number };
 }
@@ -414,6 +419,7 @@ export function loadConfig(rawEnv: Record<string, string | undefined>): AppConfi
       release: e.SENTRY_RELEASE === '' ? null : e.SENTRY_RELEASE,
     },
     publicWebUrl: e.PUBLIC_WEB_URL.replace(/\/+$/, ''),
+    publicStaffUrl: e.PUBLIC_STAFF_URL === '' ? null : e.PUBLIC_STAFF_URL.replace(/\/+$/, ''),
     steamOpenIdUrl: e.STEAM_OPENID_URL,
     session: {
       idleTtlSeconds: e.SESSION_IDLE_TTL_SECONDS,

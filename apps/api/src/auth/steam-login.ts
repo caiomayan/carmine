@@ -21,6 +21,9 @@ export type LoginCompletion =
  * login (sem login CSRF: ninguém loga a vítima na conta de outro) e guarda a página de origem
  * no servidor, fora do alcance de quem monta a URL.
  */
+/** O login Steam do painel da Staff (S25): `null` sem `PUBLIC_STAFF_URL`. */
+export const STAFF_STEAM_LOGIN = Symbol('STAFF_STEAM_LOGIN');
+
 export class SteamLogin {
   constructor(
     private readonly valkey: Redis,
