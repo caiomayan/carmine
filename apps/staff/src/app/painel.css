@@ -98,7 +98,6 @@
   overflow: hidden;
   border-radius: 36px;
   background: var(--stp-bg);
-  transition: grid-template-columns 200ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .stp[data-collapsed] .stp-frame {
   --stp-rail-w: 54px;
@@ -1363,11 +1362,6 @@ button.stp-row:hover {
     opacity: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .stp-frame {
-    transition: none;
-  }
-}
 
 /* ---------- larguras ---------- */
 @media (max-width: 1280px) {
@@ -1570,5 +1564,157 @@ button.stp-row:hover {
     right: auto;
     left: calc(50% + 4px);
     box-shadow: 0 0 0 2px var(--stp-card);
+  }
+}
+
+/* ---------- animação (S25, DIRECAO.md): bastante, fluida, em toda troca de estado; só transform e opacity, nunca em loop ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* entrada de tela e de cartão: a tela sobe um pouco e os cartões entram em sequência curta */
+  .stp-page {
+    animation: stp-screen 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-page > *,
+  .stp-grid > *,
+  .stp-split > *,
+  .stp-col > *,
+  .stp-photos > * {
+    animation: stp-rise 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-page > :nth-child(2),
+  .stp-grid > :nth-child(2),
+  .stp-split > :nth-child(2),
+  .stp-col > :nth-child(2) {
+    animation-delay: 45ms;
+  }
+  .stp-page > :nth-child(3),
+  .stp-grid > :nth-child(3),
+  .stp-col > :nth-child(3) {
+    animation-delay: 90ms;
+  }
+  .stp-page > :nth-child(4),
+  .stp-grid > :nth-child(4) {
+    animation-delay: 135ms;
+  }
+  .stp-page > :nth-child(n + 5) {
+    animation-delay: 180ms;
+  }
+  /* recolher o trilho: o conteúdo faz um empurrão curto no lugar de animar a largura (layout) */
+  .stp[data-collapsed] .stp-main,
+  .stp:not([data-collapsed]) .stp-main {
+    animation: stp-nudge 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  /* a barra do prazo esvazia desde cheia até o valor (transform, com origem na esquerda) */
+  .stp-meter i,
+  .stp-bar i {
+    transform-origin: left;
+    animation: stp-fill 700ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+  }
+  /* a paleta, o detalhe e o aviso entram e SAEM (o Radix espera o fim da animação para desmontar) */
+  .stp-palette {
+    animation: stp-pop 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .stp-palette[data-state="closed"],
+  .stp-drawer[data-state="closed"] {
+    animation-duration: 140ms;
+    animation-direction: reverse;
+    animation-fill-mode: forwards;
+  }
+  .stp-overlay[data-state="closed"] {
+    animation: stp-in 140ms ease reverse forwards;
+  }
+  .stp-table tbody tr {
+    animation: stp-row 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-table tbody tr:nth-child(2) {
+    animation-delay: 25ms;
+  }
+  .stp-table tbody tr:nth-child(3) {
+    animation-delay: 50ms;
+  }
+  .stp-table tbody tr:nth-child(4) {
+    animation-delay: 75ms;
+  }
+  .stp-table tbody tr:nth-child(n + 5) {
+    animation-delay: 100ms;
+  }
+  /* toque: o que o dedo ou o mouse apertam responde na hora */
+  .stp-btn,
+  .stp-round,
+  .stp-arrow,
+  .stp-chip,
+  .stp-pilltab,
+  .stp-mode,
+  .stp-item,
+  .stp-tab {
+    transition:
+      background-color 140ms ease,
+      color 140ms ease,
+      transform 140ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 140ms ease;
+  }
+  .stp-btn:active,
+  .stp-round:active,
+  .stp-chip:active,
+  .stp-pilltab:active,
+  .stp-mode:active {
+    transform: scale(0.96);
+  }
+  .stp-item:active,
+  .stp-tab:active {
+    transform: scale(0.9);
+  }
+  .stp-arrow:hover {
+    transform: translate(1px, -1px);
+  }
+  .stp-card[data-hl] {
+    animation:
+      stp-rise 380ms cubic-bezier(0.22, 1, 0.36, 1) both,
+      stp-nudge-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 380ms both;
+  }
+}
+@keyframes stp-screen {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes stp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+}
+@keyframes stp-nudge {
+  from {
+    opacity: 0.55;
+    transform: translateX(-6px);
+  }
+}
+@keyframes stp-nudge-in {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.012);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes stp-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes stp-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+@keyframes stp-row {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
   }
 }

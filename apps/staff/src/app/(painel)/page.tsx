@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { AutoRefresh } from '@/components/auto-refresh';
+import { Num } from '@/components/num';
 import { apiGet } from '@/lib/api';
 import { getPanelSession } from '@/lib/session';
 import {
@@ -94,7 +96,9 @@ function QueueCard({
         <div className="stp-card-sub">Sem dado: a API não respondeu.</div>
       ) : (
         <>
-          <div className="stp-big">{count}</div>
+          <div className="stp-big">
+            <Num value={count} />
+          </div>
           {oldest ? (
             <>
               <span
@@ -169,6 +173,7 @@ export default async function InicioPage() {
 
   return (
     <div className="stp-page" data-testid="stp-home">
+      <AutoRefresh />
       <section className="stp-hero" aria-labelledby="stp-hello">
         <div className="stp-hero-row">
           <div>
@@ -195,7 +200,7 @@ export default async function InicioPage() {
           </div>
           {live.ok ? (
             <div className="stp-big" data-testid="stp-online">
-              {live.data.summary.players}
+              <Num value={live.data.summary.players} />
             </div>
           ) : (
             <div className="stp-card-sub">Sem dado: a API não respondeu.</div>
@@ -217,7 +222,7 @@ export default async function InicioPage() {
           {live.ok ? (
             <>
               <div className="stp-big">
-                {live.data.summary.online}
+                <Num value={live.data.summary.online} />
                 <small> de {live.data.servers.length}</small>
               </div>
               <ul className="stp-servers" aria-label="Estado de cada servidor">
