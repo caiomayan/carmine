@@ -222,7 +222,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 }
                 if (_welcomes?.TakeOnSpawn(current.SteamID) == true)
                 {
-                    current.PrintToChat($" {WelcomeMessage}");
+                    current.SendChat(WelcomeMessage);
                 }
                 if (_awpQueue?.TakeOnSpawn(current.SteamID) == true)
                 {
@@ -230,15 +230,15 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 }
                 if (_loadoutNotices.TakeOnSpawn(current.SteamID))
                 {
-                    current.PrintToChat($" {LoadoutNotices.Message}");
+                    current.SendChat(LoadoutNotices.Message);
                 }
                 if (_chat?.TakeReminderOnSpawn(current.SteamID) == true)
                 {
-                    current.PrintToChat($" {ChatPreferences.ReminderMessage}");
+                    current.SendChat(ChatPreferences.ReminderMessage);
                 }
                 if (_vipInfo?.TakeOnSpawn(current.SteamID) is { } vipNotice)
                 {
-                    current.PrintToChat($" {vipNotice}");
+                    current.SendChat(vipNotice);
                 }
             });
         }
@@ -422,7 +422,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         ApplyName(player, result.DisplayName);
         if (sendNow)
         {
-            player.PrintToChat($" {WelcomeMessage}");
+            player.SendChat(WelcomeMessage);
         }
         if (awpNow)
         {
@@ -452,7 +452,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             return HookResult.Continue;
         }
-        player.PrintToChat($" {message}");
+        player.SendChat(message);
         return HookResult.Handled;
     }
 
@@ -465,7 +465,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         if (ChatPreferences.Parse(info.GetArg(1)) is not { } toggle)
         {
-            player.PrintToChat($" {ChatPreferences.UsageMessage}");
+            player.SendChat(ChatPreferences.UsageMessage);
             return;
         }
         var steamId = player.SteamID;
@@ -475,7 +475,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Server.NextFrame(() =>
             {
                 var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
-                current?.PrintToChat($" {result.Message}");
+                current?.SendChat(result.Message);
             });
         });
     }
@@ -494,7 +494,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Server.NextFrame(() =>
             {
                 var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
-                current?.PrintToChat($" {message}");
+                current?.SendChat(message);
             });
         });
     }
@@ -536,7 +536,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                     Kick(player, kick);
                     break;
                 case SanctionAction.Notify notify:
-                    player.PrintToChat($" {notify.Message}");
+                    player.SendChat(notify.Message);
                     break;
                 case SanctionAction.SetMuted mute:
                     player.VoiceFlags = mute.Muted ? VoiceFlags.Muted : VoiceFlags.Normal;
@@ -555,7 +555,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             return;
         }
-        player.PrintToChat($" {kick.Message}");
+        player.SendChat(kick.Message);
         player.PrintToCenter(kick.Message);
         player.PrintToConsole($"[Carmine] {kick.Message}");
         Log.SanctionKick(Logger, kick.SteamId, kick.Ban);
