@@ -11,6 +11,8 @@ export interface PlanGrant {
   id?: string;
   plan: Plan;
   days: number;
+  /** Duração exata em milissegundos; vale mais que `days` (os Períodos guardados têm a duração ao milissegundo). */
+  ms?: number;
   /** Quando foi concedida. */
   at: Date;
   /** Compra de teste do beta (ninguém paga de verdade): acaba na data em que a cobrança real ligar. */
@@ -89,7 +91,7 @@ export function planTimeline(
   const testsEnd = options.testsEndAt?.getTime() ?? null;
   const events: Event[] = [];
   for (const grant of grants) {
-    if (grant.days <= 0) continue;
+    if ((grant.ms ?? grant.days) <= 0) continue;
     // Um teste concedido depois do fim dos testes não vale.
     if (grant.test && testsEnd !== null && grant.at.getTime() >= testsEnd) continue;
     events.push({ at: grant.at.getTime(), kind: 'grant', grant });
@@ -135,9 +137,9 @@ export function planTimeline(
   for (const event of events) {
     advance(event.at);
     if (event.kind === 'grant' && event.grant) {
-      const { plan, days, test = false } = event.grant;
+      const { plan, days, ms, test = false } = event.grant;
       const key = bucketKey(plan, test);
-      balance.set(key, (balance.get(key) ?? 0) + days * DAY_MS);
+      balance.set(key, (balance.get(key) ?? 0) + (ms ?? days * DAY_MS));
     } else if (event.kind === 'testsEnd') {
       for (const { plan } of BUCKETS) balance.set(bucketKey(plan, true), 0);
     } else {
