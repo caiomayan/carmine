@@ -67,6 +67,7 @@ describe('POST /api/server/player-connects', () => {
       vipEndsAt: null,
       sanctions: [],
       chatHidden: false,
+      applyAwpDefault: true,
     });
   });
 
@@ -259,6 +260,33 @@ describe('POST /api/server/player-connects', () => {
       expect((await setChat(steamIdFor(1), 'sim')).statusCode).toBe(400);
       expect((await setChat('123', true)).statusCode).toBe(400);
       expect((await setChat(steamIdFor(1), true, null)).statusCode).toBe(401);
+    });
+  });
+
+  describe('AWP por padrão do Retake (S16)', () => {
+    function markAwp(steamId: string, key: string | null = t.serverKey) {
+      return t.app.inject({
+        method: 'POST',
+        url: `/api/server/players/${steamId}/awp-default`,
+        headers: key === null ? {} : { authorization: `Bearer ${key}` },
+      });
+    }
+
+    it('todo connect manda applyAwpDefault até a marca; depois dela, nunca mais, e marcar de novo não muda nada', async () => {
+      const steamId = steamIdFor(710);
+      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(true);
+      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(true);
+
+      expect((await markAwp(steamId)).statusCode).toBe(204);
+      expect((await markAwp(steamId)).statusCode).toBe(204);
+
+      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(false);
+    });
+
+    it('Conta que não existe: 404; SteamID inválido: 400; sem a chave do servidor: 401', async () => {
+      expect((await markAwp(steamIdFor(711))).statusCode).toBe(404);
+      expect((await markAwp('123')).statusCode).toBe(400);
+      expect((await markAwp(steamIdFor(1), null)).statusCode).toBe(401);
     });
   });
 });

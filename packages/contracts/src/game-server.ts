@@ -61,6 +61,12 @@ export const playerConnectResultSchema = z
      * ele as mensagens de chat dos outros. Padrão: chat visível (`false`).
      */
     chatHidden: z.boolean(),
+    /**
+     * A Conta ainda não passou pela AWP por padrão do Retake (S16): no primeiro spawn num Retake, o
+     * plugin põe o jogador na fila da AWP do alocador e avisa a API (`markPlayerAwpDefaultApplied`).
+     * `false` depois disso, para sempre: quem sair da fila fica fora.
+     */
+    applyAwpDefault: z.boolean(),
   })
   .meta({ id: 'PlayerConnectResult' });
 

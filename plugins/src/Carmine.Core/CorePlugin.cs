@@ -40,8 +40,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HttpClient? _http;
     private AccountSync? _sync;
     private PendingWelcomes? _welcomes;
-    /// <summary>Conta nova no Retake que ainda não entrou na fila da AWP do alocador (mesma mecânica das boas-vindas).</summary>
+    /// <summary>Contas que ainda não passaram pela AWP por padrão e esperam o primeiro spawn no Retake (mesma mecânica das boas-vindas).</summary>
     private PendingWelcomes? _awpQueue;
+    private AwpDefault? _awpDefault;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
     private bool _heartbeatScheduled;
@@ -57,9 +58,6 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 
     /// <summary>Tempo para ler a mensagem antes de sair do servidor.</summary>
     private const float KickDelaySeconds = 5.0f;
-
-    /// <summary>Comando do RetakesAllocator 3.0 que põe o jogador na fila da AWP.</summary>
-    public const string AwpQueueCommand = "css_awp";
 
     public override string ModuleName => "Carmine.Core";
     public override string ModuleVersion => "0.12.0";
@@ -112,6 +110,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (Config.ReservedSlotsMode == ReservedSlotsMode.Retake)
         {
             _awpQueue = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-awp.json")));
+            _awpDefault = new AwpDefault(client);
         }
         _heartbeat = new HeartbeatReporter(client);
         _chat = new ChatPreferences(client);
@@ -166,6 +165,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _sync = null;
         _welcomes = null;
         _awpQueue = null;
+        _awpDefault = null;
         _heartbeat = null;
         _chat = null;
         _vipInfo = null;
@@ -408,7 +408,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         var playing = player is not null && IsPlaying(player);
         var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: playing) == true;
-        var awpNow = _awpQueue?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: playing) == true;
+        var awpNow = _awpQueue?.OnConnectResult(steamId, result.ApplyAwpDefault, isAlive: playing) == true;
         if (player is null)
         {
             return;
@@ -588,13 +588,17 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private static bool IsPlaying(CCSPlayerController player) =>
         player.PawnIsAlive && player.Team is CsTeam.Terrorist or CsTeam.CounterTerrorist;
 
-    /// <summary>
-    /// A AWP do RetakesAllocator é opt-in por jogador (preferência vazia = fora do sorteio), mas a S02 quer
-    /// todos no sorteio. O alocador não tem preferência padrão em config nem API; o caminho limpo é o
-    /// comando dele, que grava a preferência da Conta nova (css_awp alterna, por isso só no primeiro connect).
-    /// </summary>
-    private static void JoinAwpQueue(CCSPlayerController player) =>
-        player.ExecuteClientCommandFromServer(AwpQueueCommand);
+    /// <summary>Liga a AWP no alocador (ver <see cref="AwpDefault"/>) e guarda a marca na API.</summary>
+    private void JoinAwpQueue(CCSPlayerController player)
+    {
+        player.ExecuteClientCommandFromServer(AwpDefault.Command);
+        var awp = _awpDefault;
+        var steamId = player.SteamID;
+        if (awp is not null)
+        {
+            RunInBackground(token => awp.MarkAppliedAsync(steamId, token));
+        }
+    }
 
     /// <summary>Placar, chat e kill feed leem o nome do controller (ADR 0008).</summary>
     private static void ApplyName(CCSPlayerController player, string name)

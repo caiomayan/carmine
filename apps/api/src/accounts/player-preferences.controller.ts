@@ -15,6 +15,7 @@ import {
   Inject,
   NotFoundException,
   Param,
+  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -64,6 +65,27 @@ export class PlayerPreferencesController {
       throw new NotFoundException('Conta não encontrada');
     const status = toVipStatus(await this.vip.statusOf(account.id));
     return { ...status, notice: vipNoticeAt(status, new Date()) };
+  }
+
+  @Post(':steamId/awp-default')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @RateLimit('server')
+  @ApiOperation({
+    operationId: 'markPlayerAwpDefaultApplied',
+    summary: 'Marca que a Conta já entrou na fila da AWP do Retake (vale uma vez por Conta)',
+  })
+  @ApiNoContentResponse({
+    description: 'Marcado; os próximos connects mandam applyAwpDefault falso',
+  })
+  @ApiBadRequestResponse({ description: 'SteamID64 inválido' })
+  @ApiNotFoundResponse({ description: 'Nenhuma Conta com esse SteamID64' })
+  @ApiUnauthorizedResponse({ description: 'Chave de Servidor Carmine ausente ou inválida' })
+  async markAwpDefault(
+    @Param('steamId', { schema: steamId64Schema }) steamId: string,
+  ): Promise<void> {
+    if (!(await this.accounts.markAwpDefaultApplied(steamId))) {
+      throw new NotFoundException('Conta não encontrada');
+    }
   }
 
   @Put(':steamId/chat-preference')

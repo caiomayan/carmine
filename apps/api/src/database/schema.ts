@@ -125,6 +125,12 @@ export const accounts = pgTable(
     lastConnectedAt: timestamptz(),
     /** `!chat off` no jogo: o jogador não vê o chat dos outros. Padrão: chat visível. */
     chatHidden: boolean().notNull().default(false),
+    /**
+     * Quando o Carmine.Core pôs a Conta na fila da AWP do Retake (S16): a AWP é para todos, mas o
+     * alocador só sorteia quem tem a preferência, que nasce vazia. Nulo: ainda não aplicada, e o
+     * connect manda `applyAwpDefault`. Vale uma vez por Conta, em todos os Servidores Carmine.
+     */
+    awpDefaultAppliedAt: timestamptz(),
     /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
     anonymizedAt: timestamptz(),
     /**

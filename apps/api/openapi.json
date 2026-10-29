@@ -436,6 +436,67 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/awp-default": {
+      "post": {
+        "operationId": "markPlayerAwpDefaultApplied",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Marcado; os próximos connects mandam applyAwpDefault falso"
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marca que a Conta já entrou na fila da AWP do Retake (vale uma vez por Conta)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/server/players/{steamId}/chat-preference": {
       "put": {
         "operationId": "setPlayerChatPreference",
@@ -7368,6 +7429,9 @@
           },
           "chatHidden": {
             "type": "boolean"
+          },
+          "applyAwpDefault": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -7378,7 +7442,8 @@
           "vipNotice",
           "vipEndsAt",
           "sanctions",
-          "chatHidden"
+          "chatHidden",
+          "applyAwpDefault"
         ],
         "additionalProperties": false
       },
