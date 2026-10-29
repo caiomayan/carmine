@@ -127,6 +127,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommandListener("say_team", OnSay, HookMode.Pre);
         AddCommand("css_chat", "!chat off oculta o chat dos outros jogadores; !chat on mostra de novo", OnChatCommand);
         AddCommand("css_vip", "!vip mostra até quando vai o seu VIP", OnVipCommand);
+        AddCommand("css_help", "!help lista os comandos deste servidor", OnHelpCommand);
+        AddCommand("css_ajuda", "!ajuda é o mesmo que !help", OnHelpCommand);
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);
@@ -481,6 +483,18 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     }
 
     /// <summary>O <c>!vip</c>: pergunta à API (o connect só sabe o VIP de quando o jogador entrou) e responde no chat.</summary>
+    private void OnHelpCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player is null || !IsHuman(player))
+        {
+            return;
+        }
+        foreach (var line in HelpMessages.Lines(Config.ReservedSlotsMode))
+        {
+            player.SendChat(line);
+        }
+    }
+
     private void OnVipCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player is null || !IsHuman(player) || _vipInfo is not { } vipInfo)
