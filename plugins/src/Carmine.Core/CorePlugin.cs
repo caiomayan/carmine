@@ -40,6 +40,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HttpClient? _http;
     private AccountSync? _sync;
     private PendingWelcomes? _welcomes;
+    /// <summary>Conta nova no Retake que ainda não entrou na fila da AWP do alocador (mesma mecânica das boas-vindas).</summary>
+    private PendingWelcomes? _awpQueue;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
     private bool _heartbeatScheduled;
@@ -55,6 +57,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 
     /// <summary>Tempo para ler a mensagem antes de sair do servidor.</summary>
     private const float KickDelaySeconds = 5.0f;
+
+    /// <summary>Comando do RetakesAllocator 3.0 que põe o jogador na fila da AWP.</summary>
+    public const string AwpQueueCommand = "css_awp";
 
     public override string ModuleName => "Carmine.Core";
     public override string ModuleVersion => "0.12.0";
@@ -104,6 +109,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         _sync = new AccountSync(client, pending, TimeProvider.System);
         _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
+        if (Config.ReservedSlotsMode == ReservedSlotsMode.Retake)
+        {
+            _awpQueue = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-awp.json")));
+        }
         _heartbeat = new HeartbeatReporter(client);
         _chat = new ChatPreferences(client);
         _vipInfo = new VipInfo(client, TimeProvider.System);
@@ -156,6 +165,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http = null;
         _sync = null;
         _welcomes = null;
+        _awpQueue = null;
         _heartbeat = null;
         _chat = null;
         _vipInfo = null;
@@ -213,6 +223,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 if (_welcomes?.TakeOnSpawn(current.SteamID) == true)
                 {
                     current.PrintToChat($" {WelcomeMessage}");
+                }
+                if (_awpQueue?.TakeOnSpawn(current.SteamID) == true)
+                {
+                    JoinAwpQueue(current);
                 }
                 if (_loadoutNotices.TakeOnSpawn(current.SteamID))
                 {
@@ -392,7 +406,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _chat?.OnConnectResult(steamId, result.ChatHidden);
             _vipInfo?.OnConnectResult(steamId, result.VipNotice, result.VipEndsAt);
         }
-        var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: player is not null && IsPlaying(player)) == true;
+        var playing = player is not null && IsPlaying(player);
+        var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: playing) == true;
+        var awpNow = _awpQueue?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: playing) == true;
         if (player is null)
         {
             return;
@@ -407,6 +423,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (sendNow)
         {
             player.PrintToChat($" {WelcomeMessage}");
+        }
+        if (awpNow)
+        {
+            JoinAwpQueue(player);
         }
     }
 
@@ -567,6 +587,14 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// <summary>Vivo num time: já saiu da escolha de time e vê o chat.</summary>
     private static bool IsPlaying(CCSPlayerController player) =>
         player.PawnIsAlive && player.Team is CsTeam.Terrorist or CsTeam.CounterTerrorist;
+
+    /// <summary>
+    /// A AWP do RetakesAllocator é opt-in por jogador (preferência vazia = fora do sorteio), mas a S02 quer
+    /// todos no sorteio. O alocador não tem preferência padrão em config nem API; o caminho limpo é o
+    /// comando dele, que grava a preferência da Conta nova (css_awp alterna, por isso só no primeiro connect).
+    /// </summary>
+    private static void JoinAwpQueue(CCSPlayerController player) =>
+        player.ExecuteClientCommandFromServer(AwpQueueCommand);
 
     /// <summary>Placar, chat e kill feed leem o nome do controller (ADR 0008).</summary>
     private static void ApplyName(CCSPlayerController player, string name)
