@@ -197,10 +197,40 @@ describe('S12b · Perfil', () => {
             endedAt: null,
             seconds: 3480,
             live: false,
+            server: null,
           },
         ],
       }).success,
     ).toBe(true);
+  });
+
+  it('a Sessão em andamento diz onde: o servidor, com o id da página dele', () => {
+    const session = {
+      id: UUID,
+      mode: 'retake',
+      map: 'de_mirage',
+      maps: ['de_mirage'],
+      day: '2026-10-26',
+      startedAt: null,
+      endedAt: null,
+      seconds: null,
+      live: true,
+    };
+    const parse = (server: unknown) =>
+      profileSessionsSchema.safeParse({
+        visible: true,
+        since: '2026-10-26',
+        sessions: [{ ...session, server }],
+      }).success;
+    expect(parse({ id: UUID, name: 'Retake · Rotação', code: 'SP·2' })).toBe(true);
+    expect(parse({ id: UUID, name: 'retake-1', code: null })).toBe(true);
+    expect(parse(null)).toBe(true);
+    expect(parse({ id: 'nao-e-uuid', name: 'x', code: null })).toBe(false);
+    expect(parse({ id: UUID, name: '', code: null })).toBe(false);
+    // O campo existe sempre (nulo fora da Sessão em andamento): sem ele, o contrato não vale.
+    expect(
+      profileSessionsSchema.safeParse({ visible: true, since: null, sessions: [session] }).success,
+    ).toBe(false);
   });
 
   it('as armas são uma lista fechada, sem repetição, que termina em `other`', () => {
