@@ -6,7 +6,7 @@ import { StaffAuditLog } from '../staff/audit-log.js';
 import { StaffRoles } from '../staff/staff-roles.js';
 import { Sanctions } from './sanctions.js';
 
-/** Onde recorrer, como aparece no jogo: o host do web e a página de regras (`stcarmine.com/regras#recurso`). */
+/** Onde recorrer, como aparece no jogo: o host do web e a página de regras (`stcarmine.com/rules#appeal`). */
 export function appealText(publicWebUrl: string): string {
   return `${new URL(publicWebUrl).host}${APPEAL_PATH}`;
 }

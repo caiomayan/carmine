@@ -42,8 +42,8 @@ describe('a rota nunca é o caminho cru', () => {
 
     expect(rota('/')).toBe('inicio');
     expect(rota('/ranking')).toBe('ranking');
-    expect(rota('/configuracoes/compras/0b9f8c1e')).toBe('minhas_compras');
-    expect(rota('/configuracoes/dados')).toBe('configuracoes');
+    expect(rota('/settings/purchases/0b9f8c1e')).toBe('minhas_compras');
+    expect(rota('/settings/data')).toBe('configuracoes');
     expect(rota('/nao-existe/ainda')).toBe('outra');
   });
 
@@ -81,7 +81,7 @@ describe('onde não conta', () => {
       expect(isCountedPath(path), path).toBe(false);
       expect(view({ pathname: path }), path).toBeNull();
     }
-    for (const path of ['/', '/ranking', '/10016', '/staffing', '/devs', '/configuracoes']) {
+    for (const path of ['/', '/ranking', '/10016', '/staffing', '/devs', '/settings']) {
       expect(isCountedPath(path), path).toBe(true);
     }
   });

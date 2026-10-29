@@ -249,7 +249,7 @@ export class Payments {
         method: row.method,
         description: `Saint Carmine · VIP ${row.days} dias`,
         expiresAt: row.expiresAt as Date,
-        backUrl: `${this.options.publicWebUrl}/vip/compra/${row.id}?retorno=cartao`,
+        backUrl: `${this.options.publicWebUrl}/plans/purchase/${row.id}?retorno=cartao`,
       });
       const [updated] = await this.db
         .update(payments)

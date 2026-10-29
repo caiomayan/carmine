@@ -120,7 +120,7 @@ describe('Eventos de analytics: login e Inventário', () => {
       await events('conta_criada');
       sent.length = 0;
 
-      await loginViaSteam(new Browser(t.app), openId, steamId, '/inventario');
+      await loginViaSteam(new Browser(t.app), openId, steamId, '/inventory');
       const [first] = await events('login_concluido');
 
       expect(first?.properties).toMatchObject({

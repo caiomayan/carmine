@@ -18,7 +18,7 @@ async function ownProfile(
 ) {
   const account = await createUnclaimedAccount(request, steamName);
   await signInByRequest(page, account.steamId);
-  await page.goto('/configuracoes/perfil');
+  await page.goto('/settings/profile');
   await expect(page.getByTestId('profile-settings')).toBeVisible();
   return account;
 }
@@ -56,7 +56,7 @@ test('trocar o nome: aparece no Perfil e no próximo connect; antes de 7 dias é
   // O Perfil público mostra o nome novo.
   await page.goto(`/${account.publicId}`);
   await expect(page.getByRole('heading', { level: 1, name: 'Fer Ninja' })).toBeVisible();
-  await page.goto('/configuracoes/perfil');
+  await page.goto('/settings/profile');
   // O jogo recebe o nome no próximo connect, mesmo com outro nome Steam.
   expect(await connectName(request, account.steamId, 'Outro Nome Steam')).toBe('Fer Ninja');
 
@@ -201,7 +201,7 @@ test('Perfil privado: uma frase no interruptor, o selo no Perfil e o visitante v
   await visitorContext.close();
 
   // Desligar volta ao normal.
-  await page.goto('/configuracoes/perfil');
+  await page.goto('/settings/profile');
   await page.getByTestId('privacy-switch').click();
   await expect(page.getByTestId('privacy-status')).toHaveText('Perfil privado desativado.');
   await page.goto(`/${account.publicId}`);
@@ -220,7 +220,7 @@ for (const theme of ['dark', 'light'] as const) {
     await signInByRequest(page, account.steamId);
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/configuracoes/perfil');
+      await page.goto('/settings/profile');
       await expect(page.getByTestId('profile-settings')).toBeVisible();
       await page.getByTestId('name-edit').click();
       await page.getByLabel('Novo nome').fill('A');
@@ -235,7 +235,7 @@ for (const theme of ['dark', 'light'] as const) {
 
     // Perfil privado ligado, com o aviso na tela.
     await page.setViewportSize({ width: 390, height: 900 });
-    await page.goto('/configuracoes/perfil');
+    await page.goto('/settings/profile');
     const toggle = page.getByTestId('privacy-switch');
     if (!(await toggle.isChecked())) await toggle.click();
     await expect(page.getByTestId('privacy-status')).toHaveText('Perfil privado ativado.');

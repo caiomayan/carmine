@@ -9,7 +9,7 @@ for (const { width, height } of [
   }) => {
     await page.setViewportSize({ width, height });
     // Fluxo natural: o rodapé começa onde o conteúdo termina, em página curta e em página longa.
-    for (const route of ['/', '/termos', '/nao-existe']) {
+    for (const route of ['/', '/terms', '/nao-existe']) {
       await page.goto(route);
       await settle(page);
       // Com a cortina (desktop) o rodapé fica fixo atrás e só se mostra no fim da rolagem: mede lá.
@@ -64,12 +64,12 @@ test('o rodapé leva marca, links, estado dos servidores e o aviso sobre a Valve
   const nav = footer.getByRole('navigation', { name: 'Rodapé' });
   for (const [name, href] of [
     ['Servidores', '/'],
-    ['Inventário', '/inventario'],
-    ['Regras de conduta', '/regras'],
-    ['Termos de uso', '/termos'],
-    ['Política de privacidade', '/privacidade'],
-    ['Política de reembolso', '/reembolso'],
-    ['Contato e exclusão de dados', '/contato'],
+    ['Inventário', '/inventory'],
+    ['Regras de conduta', '/rules'],
+    ['Termos de uso', '/terms'],
+    ['Política de privacidade', '/privacy'],
+    ['Política de reembolso', '/refunds'],
+    ['Contato e exclusão de dados', '/contact'],
   ] as const) {
     await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('href', href);
   }
@@ -92,7 +92,7 @@ test('no desktop o conteúdo sobe como uma cortina e revela o rodapé fixo atrá
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/termos');
+  await page.goto('/terms');
   await settle(page);
   const root = page.locator('html');
   await expect(root).toHaveAttribute('data-curtain', 'on');
@@ -121,7 +121,7 @@ for (const { width, height, label } of [
 ]) {
   test(`a cortina vale na tela de notebook (${label})`, async ({ page }) => {
     await page.setViewportSize({ width, height });
-    await page.goto('/termos');
+    await page.goto('/terms');
     await settle(page);
     await expect(page.locator('html')).toHaveAttribute('data-curtain', 'on');
     const footer = page.locator('footer[data-site-footer]');
@@ -141,7 +141,7 @@ test('no celular e com movimento reduzido o rodapé fica no fluxo, sem cortina',
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/termos');
+  await page.goto('/terms');
   await settle(page);
   await expect(page.locator('html')).not.toHaveAttribute('data-curtain', 'on');
   await expect(page.locator('footer[data-site-footer]')).not.toHaveCSS('position', 'fixed');
@@ -159,7 +159,7 @@ test('SAINT CARMINE ocupa a largura toda, com a arte do mapa em destaque dentro 
 }) => {
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto('/termos');
+    await page.goto('/terms');
     await settle(page);
     await scrollToEnd(page);
     const wordmark = page.getByTestId('footer-wordmark');
@@ -183,8 +183,8 @@ test('a faixa viva mostra o último acontecimento e troca quando chega outro', a
     ],
   });
   let current = event('ev-1', 'Primeira Pessoa');
-  await page.route('**/atividade/recentes', (route) => route.fulfill({ json: current }));
-  await page.goto('/termos');
+  await page.route('**/activity/recent', (route) => route.fulfill({ json: current }));
+  await page.goto('/terms');
   const last = page.getByTestId('footer-last-event');
   // Um acontecimento novo chega na próxima leitura (a aba voltando à vista também a dispara).
   current = event('ev-2', 'Segunda Pessoa');

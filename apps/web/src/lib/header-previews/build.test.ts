@@ -179,14 +179,14 @@ describe('Loadout', () => {
       equipped: true,
       title: 'Fade',
       caption: 'Karambit',
-      href: `/inventario/${UID_A}`,
+      href: `/inventory/${UID_A}`,
     });
     expect(rifle).toMatchObject({
       equipped: true,
       title: 'Linhas Vermelhas',
       caption: 'AK-47',
       statTrak: true,
-      href: `/inventario/${UID_B}`,
+      href: `/inventory/${UID_B}`,
     });
     // Slot sem Item: a arma padrão, que leva ao Loadout.
     expect(gloves).toMatchObject({
@@ -241,7 +241,7 @@ describe('Inventário', () => {
         title: 'Linhas Vermelhas',
         caption: 'AK-47',
         image: '/ak.png',
-        href: `/inventario/${UID_A}`,
+        href: `/inventory/${UID_A}`,
         statTrak: true,
       },
       {
@@ -249,7 +249,7 @@ describe('Inventário', () => {
         title: 'Fade',
         caption: 'Karambit',
         image: '/knife.png',
-        href: `/inventario/${UID_B}`,
+        href: `/inventory/${UID_B}`,
         statTrak: false,
       },
     ]);

@@ -64,4 +64,4 @@ export function buyState(data: Pick<VipPackages, 'enabled' | 'eligibility'>): Bu
 }
 
 /** O endereço da confirmação de compra de um Pacote. */
-export const purchaseHref = (id: VipPackage['id']) => `/vip/comprar?pacote=${id}`;
+export const purchaseHref = (id: VipPackage['id']) => `/plans/checkout?pacote=${id}`;

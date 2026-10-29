@@ -59,7 +59,7 @@ export async function SiteFooter() {
   // O mapa em destaque (o do servidor mais cheio agora) aparece dentro das letras do wordmark.
   const map = featuredMap(servers?.servers);
 
-  const community: FooterLink[] = [{ label: t('links.rules'), href: '/regras' }];
+  const community: FooterLink[] = [{ label: t('links.rules'), href: '/rules' }];
   if (discord) community.push({ label: t('links.discord'), href: discord.href, external: true });
 
   return (
@@ -120,7 +120,7 @@ export async function SiteFooter() {
               title={t('columns.play')}
               links={[
                 { label: t('links.servers'), href: '/' },
-                { label: t('links.inventory'), href: '/inventario' },
+                { label: t('links.inventory'), href: '/inventory' },
                 { label: t('links.ranking'), href: '/ranking' },
               ]}
             />
@@ -128,10 +128,10 @@ export async function SiteFooter() {
             <FooterColumn
               title={t('columns.legal')}
               links={[
-                { label: t('links.terms'), href: '/termos' },
-                { label: t('links.privacy'), href: '/privacidade' },
-                { label: t('links.refund'), href: '/reembolso' },
-                { label: t('links.contact'), href: '/contato' },
+                { label: t('links.terms'), href: '/terms' },
+                { label: t('links.privacy'), href: '/privacy' },
+                { label: t('links.refund'), href: '/refunds' },
+                { label: t('links.contact'), href: '/contact' },
               ]}
             />
           </nav>

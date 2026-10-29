@@ -74,7 +74,7 @@ export function InventoryGrid({
             data-uid={card.uid}
           >
             <ItemTile
-              href={`/inventario/${card.uid}`}
+              href={`/inventory/${card.uid}`}
               title={card.title}
               subtitle={card.subtitle}
               skinFirst={hasSkinName(card.type)}
@@ -140,7 +140,7 @@ export function InventoryGrid({
                     ) : null}
                   </>
                 )}
-                <DropdownMenuItem onSelect={() => router.push(`/inventario/${card.uid}`)}>
+                <DropdownMenuItem onSelect={() => router.push(`/inventory/${card.uid}`)}>
                   {t('edit')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setRemoving(card)} data-testid="menu-remove">

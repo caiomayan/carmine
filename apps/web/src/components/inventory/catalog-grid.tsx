@@ -30,7 +30,7 @@ export function CatalogGrid({
       {entries.map((entry, index) => (
         <li key={entry.id} className="grid content-start gap-1.5">
           <ItemTile
-            href={`/inventario/adicionar/${entry.id}`}
+            href={`/inventory/add/${entry.id}`}
             testId={`catalog-item-${entry.id}`}
             title={entry.title}
             subtitle={entry.subtitle}

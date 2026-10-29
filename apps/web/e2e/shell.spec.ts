@@ -33,11 +33,11 @@ for (const theme of ['dark', 'light'] as const) {
     const footer = page.getByRole('navigation', { name: 'Rodapé' });
     await expect(footer.getByRole('link', { name: 'Termos de uso' })).toHaveAttribute(
       'href',
-      '/termos',
+      '/terms',
     );
     await expect(footer.getByRole('link', { name: 'Política de privacidade' })).toHaveAttribute(
       'href',
-      '/privacidade',
+      '/privacy',
     );
   });
 }
@@ -85,7 +85,7 @@ test('o skip link leva o foco ao conteúdo', async ({ page }) => {
 test('navega para o Inventário pela barra superior', async ({ page }) => {
   await page.goto('/');
   await mainNav(page).getByRole('link', { name: 'Inventário' }).click();
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
   await expect(page.getByRole('heading', { level: 1, name: 'Inventário' })).toBeVisible();
   await expect(mainNav(page).getByRole('link', { name: 'Inventário' })).toHaveAttribute(
     'aria-current',
@@ -94,7 +94,7 @@ test('navega para o Inventário pela barra superior', async ({ page }) => {
 });
 
 test('o destaque da navegação acompanha a página atual', async ({ page }) => {
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   const current = mainNav(page).locator('[data-slot="motion-highlight"]');
   await expect(current).toHaveCount(1);
   const link = mainNav(page).getByRole('link', { name: 'Inventário' });
@@ -116,7 +116,7 @@ test('rota inexistente mostra a 404 própria', async ({ page }) => {
   await expect(page).toHaveURL('/');
 });
 
-for (const route of ['/regras', '/contato'] as const) {
+for (const route of ['/rules', '/contact'] as const) {
   test(`a página ${route} existe e é alcançável pelo rodapé`, async ({ page }) => {
     await page.goto('/');
     // Na cortina o rodapé fica fixo atrás do conteúdo: como a pessoa faz, rola até o fim para chegar nele.

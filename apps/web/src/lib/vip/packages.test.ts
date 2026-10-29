@@ -73,6 +73,6 @@ describe('buyState', () => {
 
 describe('purchaseHref', () => {
   it('é a confirmação do Pacote', () => {
-    expect(purchaseHref('vip-3m')).toBe('/vip/comprar?pacote=vip-3m');
+    expect(purchaseHref('vip-3m')).toBe('/plans/checkout?pacote=vip-3m');
   });
 });

@@ -96,7 +96,7 @@ test('o fps de cada página', async ({ page, request, baseURL }) => {
       '--profile',
       `/${player.publicId}`,
       '--server',
-      `/servidores/${serverId}`,
+      `/servers/${serverId}`,
       '--json',
       json,
       ...(audit.length ? audit : ['--guard']),

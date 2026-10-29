@@ -28,7 +28,7 @@ type Status = 'loading' | 'ready' | 'failed';
 
 /**
  * Escolher um sticker ou um charm para aplicar. A busca roda no servidor do web
- * (`/inventario/aplicaveis`), sobre o catálogo da cs2-lib; os resultados chegam aos poucos.
+ * (`/inventory/applicable`), sobre o catálogo da cs2-lib; os resultados chegam aos poucos.
  */
 export function AttachmentPicker({
   type,
@@ -70,7 +70,7 @@ export function AttachmentPicker({
     if (debounced) params.set('q', debounced);
     if (category) params.set('categoria', category);
     setStatus('loading');
-    fetch(`/inventario/aplicaveis?${params}`, { signal: controller.signal })
+    fetch(`/inventory/applicable?${params}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(String(response.status));
         setPage((await response.json()) as AttachmentPage);

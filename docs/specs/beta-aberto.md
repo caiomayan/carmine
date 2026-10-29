@@ -162,6 +162,13 @@ As mensagens continuam em português até a internacionalização.
 - O teste de fumaça do deploy passa com as rotas novas.
 - Cada comando e cada sinônimo da tabela funciona no jogo.
 
+**Como ficou (parte das rotas)**
+- A tabela de redirecionamentos está em `apps/web/src/lib/legacy-routes.ts`, aplicada pelo `next.config.ts` com `statusCode: 301` (o `permanent` do Next responderia 308). As sub-rotas que a tabela não citava também passaram para o inglês: `/inventory/add`, `/inventory/add/<id>` e `/inventory/applicable`.
+- A âncora é a única parte que o servidor não vê: `/regras#recurso` chega em `/rules#recurso` e a página troca para `#appeal` (componente `LegacyAnchors`). No texto legal, o título fixa a âncora com `## Recurso {#appeal}`.
+- Os nomes das rotas no plano de eventos (`inventario`, `entrar`, `vip`...) não mudam, para o histórico do PostHog continuar contínuo; só o caminho que cada um reconhece mudou.
+- Ficam como estão: `/staff/*` (o painel será refeito na S25), `/dev/*` (vitrines internas) e os caminhos `/api/*`.
+- No plugin, `!vip` segue funcionando e ganhou `!plan` e `!plano`; os outros comandos da tabela são das fatias de jogo.
+
 ---
 
 ### S17 · Coleta por round

@@ -111,7 +111,7 @@ async function readAccount<T>(
 }
 
 /**
- * A preferência de análise de uso da Conta da sessão (A1d): `participate` (a chave de /configuracoes) e `enabled`
+ * A preferência de análise de uso da Conta da sessão (A1d): `participate` (a chave de /settings) e `enabled`
  * (há análise ligada neste ambiente; desligada, a chave nem aparece). Sem sessão, `anonymous`.
  */
 export const getAnalyticsPreference = cache(

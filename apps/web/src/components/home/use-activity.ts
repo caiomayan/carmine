@@ -9,7 +9,7 @@ const POLL_MS = 15_000;
 const signature = (items: ActivityItemView[]) => items.map((item) => item.id).join();
 
 /**
- * A atividade ao vivo da Home (a faixa do #71): começa com a leitura do servidor e pergunta a `/atividade/recentes`
+ * A atividade ao vivo da Home (a faixa do #71): começa com a leitura do servidor e pergunta a `/activity/recent`
  * a cada {@link POLL_MS} (e ao voltar para a aba). `fresh` são os acontecimentos que chegaram depois da primeira
  * leitura, para entrarem com animação. Falha de leitura nunca vira aviso: fica o que já havia.
  */
@@ -27,7 +27,7 @@ export function useActivity(initial: ActivityView | null): {
     const poll = async () => {
       if (document.hidden) return;
       try {
-        const response = await fetch('/atividade/recentes', {
+        const response = await fetch('/activity/recent', {
           headers: { accept: 'application/json' },
         });
         if (!response.ok || stopped) return;

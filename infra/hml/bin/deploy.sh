@@ -128,7 +128,7 @@ probe() { # probe <serviço> <porta> <caminho> <status esperado>
 }
 smoke() {
   local failed=0 path
-  for path in / /healthz /ranking /entrar /loadout /inventario; do
+  for path in / /healthz /ranking /login /loadout /inventory; do
     probe web 3000 "$path" 200 || failed=1
   done
   for path in /api/health /api/stats/week /api/activity/recent /api/servers; do

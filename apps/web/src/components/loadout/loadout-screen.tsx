@@ -453,5 +453,5 @@ function catalogHref(slot: SlotView): string {
       ? { tipo: type[slot.slot] as string }
       : { tipo: 'weapon', ...(slot.defaultName ? { arma: slot.defaultName } : {}) },
   );
-  return `/inventario/adicionar?${params}`;
+  return `/inventory/add?${params}`;
 }

@@ -4,7 +4,7 @@ import type { Route } from 'next';
 /**
  * O que a faixa de atividade da home (Marquee) mostra, já pronto para desenhar: nomes de skin
  * resolvidos pelo catálogo, o destino de cada acontecimento montado e nenhum SteamID. É o que a
- * rota `/atividade/recentes` do web devolve ao navegador (a API só manda ids; o catálogo da
+ * rota `/activity/recent` do web devolve ao navegador (a API só manda ids; o catálogo da
  * cs2-lib só roda no servidor do web).
  */
 

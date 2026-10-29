@@ -43,7 +43,7 @@ A homologação (`dev.stcarmine.com`) vende com o **provedor falso**: a página 
 
 ## "Minhas compras" e o recibo (S14b)
 
-- **Onde:** Configurações > **Compras** (`/configuracoes/compras`) e o recibo (`/configuracoes/compras/<id>`). A tela lê a lista da Conta e, para cada compra em aberto, o detalhe (que pergunta ao provedor), e se atualiza sozinha até o pagamento resolver; o Pix pendente volta com o QR e o código.
+- **Onde:** Configurações > **Compras** (`/settings/purchases`) e o recibo (`/settings/purchases/<id>`). A tela lê a lista da Conta e, para cada compra em aberto, o detalhe (que pergunta ao provedor), e se atualiza sozinha até o pagamento resolver; o Pix pendente volta com o QR e o código.
 - **"Processando":** a API só diz o estado e as datas. A regra é da tela: passados `PURCHASE_PROCESSING_MINUTES` (10) da criação sem a compra mudar, aparece o suporte com o identificador (o `id` inteiro, para copiar).
 - **Recibo:** o número é o identificador da compra, sem nota fiscal (pessoa física). Só existe para compra aprovada (mesmo devolvida depois). Imprime em papel/PDF só com o recibo. O fornecedor vem das variáveis `RECEIPT_SUPPLIER_*` do web.
 - **E2E:** `apps/web/e2e/compras.spec.ts`, com o provedor falso ligado em `playwright.config.ts`.
