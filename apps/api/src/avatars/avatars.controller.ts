@@ -18,6 +18,7 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
+  Param,
   Post,
   UseFilters,
   UseGuards,
@@ -28,6 +29,7 @@ import {
   ApiCookieAuth,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -55,12 +57,20 @@ export class AvatarErrorsFilter implements ExceptionFilter {
   }
 }
 
+/** Um ID que não é UUID não pode estar no histórico: a mesma resposta de uma foto que não existe. */
+function historyId(value: string): string {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)) {
+    throw new AvatarRejection('not_in_history', 'Essa foto não está mais no histórico');
+  }
+  return value.toLowerCase();
+}
+
 const errorResponse = (status: number, description: string) =>
   ApiResponse({ status, description, standardSchema: avatarErrorSchema });
 
 /**
- * A foto de perfil própria da Conta da sessão (ADR 0022): o estado, enviar (publica na hora) e voltar
- * à foto da Steam. Exige sessão e `x-csrf-token` nas mutações, que contam no rate limit `mutations`.
+ * A foto de perfil própria da Conta da sessão (ADR 0022 e 0025): o estado (com o histórico das últimas fotos),
+ * enviar (publica na hora), escolher ou apagar uma foto do histórico e voltar à foto da Steam. Exige sessão e `x-csrf-token` nas mutações, que contam no rate limit `mutations`.
  */
 @ApiTags('me')
 @ApiCookieAuth()
@@ -76,7 +86,7 @@ export class AvatarsController {
   @ApiOperation({
     operationId: 'getAvatar',
     summary:
-      'Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria (no ar ou suspensa), se pode enviar e por que não',
+      'Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria, o histórico das últimas 5 fotos, se pode enviar e por que não',
   })
   @ApiOkResponse({ description: 'O estado', standardSchema: avatarStateSchema })
   get(@CurrentSession() session: Session): Promise<AvatarState> {
@@ -100,7 +110,7 @@ export class AvatarsController {
   @ApiOkResponse({ description: 'Publicada', standardSchema: avatarStateSchema })
   @errorResponse(
     403,
-    'Conta com menos de 24 horas, com Punição ativa ou com o envio bloqueado (account_too_new, punished, upload_blocked), ou CSRF inválido',
+    'Conta com Punição ativa ou com o envio bloqueado pela Staff (punished, upload_blocked), ou CSRF inválido',
   )
   @errorResponse(413, 'Maior que 1 MiB (too_large)')
   @errorResponse(
@@ -111,7 +121,10 @@ export class AvatarsController {
     422,
     'Não abre como imagem, é animada ou não é quadrada de 256 a 1024 px (invalid_image, bad_dimensions)',
   )
-  @errorResponse(429, '3 envios em 24 horas (daily_limit); `retryAfter` diz quando libera')
+  @errorResponse(
+    429,
+    'Passou do limite de envios (upload_limit) ou outro envio há poucos segundos (upload_too_soon); `retryAfter` diz quando libera',
+  )
   @errorResponse(503, 'Funcionalidade desligada neste ambiente (disabled)')
   async upload(
     @CurrentSession() session: Session,
@@ -128,13 +141,54 @@ export class AvatarsController {
     return this.avatars.upload(session.accountId, body, type);
   }
 
+  @Post('history/:id')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit('mutations')
+  @ApiOperation({
+    operationId: 'chooseAvatarFromHistory',
+    summary:
+      'Escolhe uma foto do histórico: ela volta ao ar na hora e não conta nos limites de envio. Quem tem Punição ativa ou o envio bloqueado não escolhe',
+  })
+  @ApiParam({ name: 'id', description: 'ID da foto, como vem em `history` do estado' })
+  @ApiOkResponse({ description: 'Com a foto escolhida no ar', standardSchema: avatarStateSchema })
+  @errorResponse(
+    403,
+    'Punição ativa ou envio bloqueado (punished, upload_blocked), ou CSRF inválido',
+  )
+  @errorResponse(404, 'A foto não está no histórico desta Conta (not_in_history)')
+  @errorResponse(503, 'Funcionalidade desligada neste ambiente (disabled)')
+  chooseFromHistory(
+    @CurrentSession() session: Session,
+    @Param('id') id: string,
+  ): Promise<AvatarState> {
+    return this.avatars.chooseFromHistory(session.accountId, historyId(id));
+  }
+
+  @Delete('history/:id')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit('mutations')
+  @ApiOperation({
+    operationId: 'deleteAvatarFromHistory',
+    summary:
+      'Apaga uma foto do histórico e do armazenamento. Se era a que estava no ar, volta a foto da Steam',
+  })
+  @ApiParam({ name: 'id', description: 'ID da foto, como vem em `history` do estado' })
+  @ApiOkResponse({ description: 'Sem a foto', standardSchema: avatarStateSchema })
+  @errorResponse(404, 'A foto não está no histórico desta Conta (not_in_history)')
+  deleteFromHistory(
+    @CurrentSession() session: Session,
+    @Param('id') id: string,
+  ): Promise<AvatarState> {
+    return this.avatars.deleteFromHistory(session.accountId, historyId(id));
+  }
+
   @Delete()
   @HttpCode(HttpStatus.OK)
   @RateLimit('mutations')
   @ApiOperation({
     operationId: 'revertAvatar',
     summary:
-      'Volta à foto da Steam na hora, sem moderação; a foto própria é apagada. Sem foto própria, não muda nada',
+      'Volta à foto da Steam na hora, sem moderação; a foto própria segue no histórico. Sem foto própria, não muda nada',
   })
   @ApiOkResponse({ description: 'Com a foto da Steam', standardSchema: avatarStateSchema })
   revert(@CurrentSession() session: Session): Promise<AvatarState> {

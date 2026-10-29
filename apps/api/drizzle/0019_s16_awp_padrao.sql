@@ -1,1 +1,0 @@
-ALTER TABLE "accounts" ADD COLUMN "awp_default_applied_at" timestamp with time zone;

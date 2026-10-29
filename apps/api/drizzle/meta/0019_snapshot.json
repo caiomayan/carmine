@@ -1,5 +1,5 @@
 {
-  "id": "0dacb93f-35ae-4946-986d-07b5438fcb3e",
+  "id": "4cbd89da-2412-4e3e-a269-47e8caaaefe5",
   "prevId": "09f0a391-a4f4-46ff-a3fe-367cc22bd075",
   "version": "7",
   "dialect": "postgresql",
@@ -689,12 +689,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": false
-        },
-        "awp_default_applied_at": {
-          "name": "awp_default_applied_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
         },
         "anonymized_at": {
           "name": "anonymized_at",
@@ -1525,6 +1519,271 @@
           ]
         }
       },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.map_play_players": {
+      "name": "map_play_players",
+      "schema": "",
+      "columns": {
+        "map_play_id": {
+          "name": "map_play_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rounds": {
+          "name": "rounds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kills": {
+          "name": "kills",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "headshots": {
+          "name": "headshots",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deaths": {
+          "name": "deaths",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assists": {
+          "name": "assists",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flash_assists": {
+          "name": "flash_assists",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "damage": {
+          "name": "damage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kast_rounds": {
+          "name": "kast_rounds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "survived_rounds": {
+          "name": "survived_rounds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opening_kills": {
+          "name": "opening_kills",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opening_deaths": {
+          "name": "opening_deaths",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clutches": {
+          "name": "clutches",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "clutches_won": {
+          "name": "clutches_won",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "map_play_players_account_idx": {
+          "name": "map_play_players_account_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "map_play_players_map_play_id_map_plays_id_fk": {
+          "name": "map_play_players_map_play_id_map_plays_id_fk",
+          "tableFrom": "map_play_players",
+          "tableTo": "map_plays",
+          "columnsFrom": [
+            "map_play_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "map_play_players_account_id_accounts_id_fk": {
+          "name": "map_play_players_account_id_accounts_id_fk",
+          "tableFrom": "map_play_players",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "map_play_players_map_play_id_account_id_pk": {
+          "name": "map_play_players_map_play_id_account_id_pk",
+          "columns": [
+            "map_play_id",
+            "account_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.map_plays": {
+      "name": "map_plays",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "server_id": {
+          "name": "server_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "game_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "map": {
+          "name": "map",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rounds": {
+          "name": "rounds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score_ct": {
+          "name": "score_ct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "score_t": {
+          "name": "score_t",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "map_plays_server_idx": {
+          "name": "map_plays_server_idx",
+          "columns": [
+            {
+              "expression": "server_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "started_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "map_plays_server_id_game_servers_id_fk": {
+          "name": "map_plays_server_id_game_servers_id_fk",
+          "tableFrom": "map_plays",
+          "tableTo": "game_servers",
+          "columnsFrom": [
+            "server_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -2625,6 +2884,470 @@
       },
       "isRLSEnabled": false
     },
+    "public.round_events": {
+      "name": "round_events",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "seq": {
+          "name": "seq",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "server_id": {
+          "name": "server_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "map_play_id": {
+          "name": "map_play_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "round_number": {
+          "name": "round_number",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "round_event_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "at_ms": {
+          "name": "at_ms",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "actor_account_id": {
+          "name": "actor_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_account_id": {
+          "name": "target_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "assist_account_id": {
+          "name": "assist_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        }
+      },
+      "indexes": {
+        "round_events_round_idx": {
+          "name": "round_events_round_idx",
+          "columns": [
+            {
+              "expression": "map_play_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "round_number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "occurred_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "round_events_actor_idx": {
+          "name": "round_events_actor_idx",
+          "columns": [
+            {
+              "expression": "actor_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"round_events\".\"actor_account_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "round_events_target_idx": {
+          "name": "round_events_target_idx",
+          "columns": [
+            {
+              "expression": "target_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"round_events\".\"target_account_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "round_events_assist_idx": {
+          "name": "round_events_assist_idx",
+          "columns": [
+            {
+              "expression": "assist_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"round_events\".\"assist_account_id\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "round_events_id_seq_occurred_at_pk": {
+          "name": "round_events_id_seq_occurred_at_pk",
+          "columns": [
+            "id",
+            "seq",
+            "occurred_at"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.round_player_summaries": {
+      "name": "round_player_summaries",
+      "schema": "",
+      "columns": {
+        "map_play_id": {
+          "name": "map_play_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "round_number": {
+          "name": "round_number",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "side": {
+          "name": "side",
+          "type": "game_team",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "equipment_value": {
+          "name": "equipment_value",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kills": {
+          "name": "kills",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "headshots": {
+          "name": "headshots",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deaths": {
+          "name": "deaths",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "assists": {
+          "name": "assists",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "flash_assists": {
+          "name": "flash_assists",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "damage": {
+          "name": "damage",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "survived": {
+          "name": "survived",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "traded": {
+          "name": "traded",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opening_kill": {
+          "name": "opening_kill",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opening_death": {
+          "name": "opening_death",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "multi_kill": {
+          "name": "multi_kill",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clutch_against": {
+          "name": "clutch_against",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "clutch_won": {
+          "name": "clutch_won",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "kast": {
+          "name": "kast",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "round_player_summaries_account_idx": {
+          "name": "round_player_summaries_account_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "round_player_summaries_account_id_accounts_id_fk": {
+          "name": "round_player_summaries_account_id_accounts_id_fk",
+          "tableFrom": "round_player_summaries",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "round_player_summaries_map_play_id_round_number_round_summaries_map_play_id_round_number_fk": {
+          "name": "round_player_summaries_map_play_id_round_number_round_summaries_map_play_id_round_number_fk",
+          "tableFrom": "round_player_summaries",
+          "tableTo": "round_summaries",
+          "columnsFrom": [
+            "map_play_id",
+            "round_number"
+          ],
+          "columnsTo": [
+            "map_play_id",
+            "round_number"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "round_player_summaries_map_play_id_round_number_account_id_pk": {
+          "name": "round_player_summaries_map_play_id_round_number_account_id_pk",
+          "columns": [
+            "map_play_id",
+            "round_number",
+            "account_id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "round_player_summaries_clutch_complete": {
+          "name": "round_player_summaries_clutch_complete",
+          "value": "(\"round_player_summaries\".\"clutch_against\" is null) = (\"round_player_summaries\".\"clutch_won\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.round_summaries": {
+      "name": "round_summaries",
+      "schema": "",
+      "columns": {
+        "map_play_id": {
+          "name": "map_play_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "round_number": {
+          "name": "round_number",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winner": {
+          "name": "winner",
+          "type": "round_winner",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "round_end_reason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "started_at": {
+          "name": "started_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ended_at": {
+          "name": "ended_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "score_ct": {
+          "name": "score_ct",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "score_t": {
+          "name": "score_t",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "map": {
+          "name": "map",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "round_summaries_map_play_id_map_plays_id_fk": {
+          "name": "round_summaries_map_play_id_map_plays_id_fk",
+          "tableFrom": "round_summaries",
+          "tableTo": "map_plays",
+          "columnsFrom": [
+            "map_play_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "round_summaries_map_play_id_round_number_pk": {
+          "name": "round_summaries_map_play_id_round_number_pk",
+          "columns": [
+            "map_play_id",
+            "round_number"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.sanctions": {
       "name": "sanctions",
       "schema": "",
@@ -3663,6 +4386,39 @@
         "open",
         "archived",
         "sanctioned"
+      ]
+    },
+    "public.round_end_reason": {
+      "name": "round_end_reason",
+      "schema": "public",
+      "values": [
+        "bomb_exploded",
+        "bomb_defused",
+        "elimination",
+        "time",
+        "other"
+      ]
+    },
+    "public.round_event_kind": {
+      "name": "round_event_kind",
+      "schema": "public",
+      "values": [
+        "round_start",
+        "round_player",
+        "kill",
+        "damage",
+        "bomb",
+        "round_end",
+        "round_alive"
+      ]
+    },
+    "public.round_winner": {
+      "name": "round_winner",
+      "schema": "public",
+      "values": [
+        "ct",
+        "t",
+        "none"
       ]
     },
     "public.sanction_category": {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AVATAR_ERROR_CODES,
   AVATAR_ERROR_STATUS,
+  AVATAR_HISTORY_SIZE,
   AVATAR_INELIGIBLE_REASONS,
   AVATAR_REASON_LABELS,
   AVATAR_REASONS,
@@ -43,6 +44,8 @@ describe('avatarStateSchema', () => {
     source: 'steam',
     steamAvatarUrl: null,
     custom: null,
+    history: [],
+    canUseHistory: true,
     canUpload: true,
     cannotUploadReason: null,
     retryAfter: null,
@@ -57,6 +60,31 @@ describe('avatarStateSchema', () => {
       custom: { url: URL_512, status: 'suspended', uploadedAt: '2026-10-26T12:00:00.000Z' },
     };
     expect(avatarStateSchema.parse(suspended)).toEqual(suspended);
+  });
+
+  it(`o histórico traz no máximo ${AVATAR_HISTORY_SIZE} fotos`, () => {
+    const item = (n: number) => ({
+      id: ID.replace('3f', n.toString(16).padStart(2, '0')),
+      url: URL_512,
+      uploadedAt: '2026-10-26T12:00:00.000Z',
+      current: n === 0,
+    });
+    const history = Array.from({ length: AVATAR_HISTORY_SIZE }, (_, n) => item(n));
+
+    expect(avatarStateSchema.safeParse({ ...state, history }).success).toBe(true);
+    expect(
+      avatarStateSchema.safeParse({ ...state, history: [...history, item(AVATAR_HISTORY_SIZE)] })
+        .success,
+    ).toBe(false);
+  });
+
+  it('os limites de envio não têm código de idade da Conta nem de limite diário', () => {
+    expect(AVATAR_INELIGIBLE_REASONS).toEqual([
+      'punished',
+      'upload_blocked',
+      'upload_limit',
+      'upload_too_soon',
+    ]);
   });
 
   it('rejeita um motivo de bloqueio que não existe', () => {

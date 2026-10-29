@@ -1,7 +1,6 @@
 'use client';
 
 import type { AvatarState } from '@carmine/contracts/avatar';
-import { AVATAR_UPLOADS_PER_DAY } from '@carmine/contracts/avatar-rules';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -16,6 +15,9 @@ import { AVATAR_PICK_TYPES, pickProblem } from '@/lib/avatar';
 /** O diálogo de recorte (e a biblioteca dele) só é baixado depois que a pessoa escolhe um arquivo. */
 const loadDialog = () => import('./avatar-crop-dialog');
 const CropDialog = dynamic(() => loadDialog(), { ssr: false });
+/** O diálogo "Trocar foto" (envio, histórico e voltar à Steam) também só vem ao abrir. */
+const loadPhotosDialog = () => import('./avatar-photos-dialog');
+const PhotosDialog = dynamic(() => loadPhotosDialog(), { ssr: false });
 
 /** O avatar que todos veem agora: a foto própria no ar ou, senão, a da Steam. */
 export function effectiveAvatarUrl(state: AvatarState): string | null {
@@ -25,21 +27,24 @@ export function effectiveAvatarUrl(state: AvatarState): string | null {
 }
 
 /**
- * A foto de perfil própria (ADR 0022), em Configurações > Perfil: a atual, "Trocar foto" (escolhe o arquivo, recorta
- * num diálogo e envia; publica na hora) e "Usar a foto da Steam" (volta na hora). Some inteira quando a funcionalidade
- * está desligada neste ambiente. Os schemas Zod só vêm quando a resposta da API precisa ser lida.
+ * A foto de perfil própria (ADR 0022 e 0025), em Configurações > Perfil: a atual e "Trocar foto". Sem nenhuma foto
+ * ainda, "Enviar foto" vai direto à escolha do arquivo (recorta num diálogo e envia; publica na hora); com foto ou
+ * histórico, abre o diálogo com o envio, as últimas fotos e "Voltar à foto da Steam". Some inteira quando a
+ * funcionalidade está desligada neste ambiente. Os schemas Zod só vêm quando a resposta da API precisa ser lida.
  */
 export function AvatarSetting() {
   const t = useTranslations('settings.avatar');
   const format = useFormatter();
   const router = useRouter();
-  const { account, mutate, updateAccount } = useSession();
+  const { account, updateAccount } = useSession();
   const [state, setState] = useState<AvatarState | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [picked, setPicked] = useState<File | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [notice, setNotice] = useState<'saved' | 'reverted' | null>(null);
-  const [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState<'saved' | 'reverted' | 'chosen' | 'deleted' | null>(null);
+  const [photosOpen, setPhotosOpen] = useState(false);
+  /** O arquivo foi escolhido de dentro do diálogo de fotos: cancelar o recorte volta para ele. */
+  const fromPhotos = useRef(false);
   const input = useRef<HTMLInputElement>(null);
   const pickButton = useRef<HTMLButtonElement>(null);
 
@@ -91,38 +96,18 @@ export function AvatarSetting() {
     }
     setProblem(null);
     setNotice(null);
+    fromPhotos.current = photosOpen;
+    setPhotosOpen(false);
     setPicked(file);
-  }
-
-  async function useSteam() {
-    setBusy(true);
-    setProblem(null);
-    try {
-      const response = await mutate('/api/me/avatar', { method: 'DELETE' });
-      if (response.status === 401) return;
-      if (!response.ok) throw new Error(String(response.status));
-      const next = parseAvatarState(await response.json());
-      if (!next) throw new Error('shape');
-      apply(next);
-      setNotice('reverted');
-    } catch {
-      setProblem(t('errors.generic'));
-    } finally {
-      setBusy(false);
-    }
   }
 
   const suspended = state.custom?.status === 'suspended';
   const hasCustom = state.custom !== null;
-  const canUndo = hasCustom;
+  /** Há o que mostrar no diálogo (uma foto no ar ou fotos no histórico); senão "Enviar foto" abre o arquivo direto. */
+  const hasPhotos = hasCustom || state.history.length > 0;
   const hint = suspended ? t('suspended') : hasCustom ? t('customHint') : t('steamHint');
   const blocked =
-    !state.canUpload && state.cannotUploadReason
-      ? t(`errors.${state.cannotUploadReason}`, {
-          limit: AVATAR_UPLOADS_PER_DAY,
-          when: state.retryAfter ? when(state.retryAfter) : '',
-        })
-      : null;
+    !state.canUpload && state.cannotUploadReason ? t(`errors.${state.cannotUploadReason}`) : null;
 
   return (
     <div className="grid gap-3 rounded-lg px-4 py-3 max-md:px-3" data-testid="avatar-setting">
@@ -137,28 +122,17 @@ export function AvatarSetting() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-1">
-          {canUndo ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={useSteam}
-              disabled={busy}
-              data-testid="avatar-revert"
-            >
-              {t('useSteam')}
-            </Button>
-          ) : null}
           <Button
             ref={pickButton}
             variant="ghost"
             size="sm"
-            onClick={() => input.current?.click()}
-            onPointerEnter={() => void loadDialog()}
-            onFocus={() => void loadDialog()}
-            disabled={busy || !state.canUpload}
+            onClick={() => (hasPhotos ? setPhotosOpen(true) : input.current?.click())}
+            onPointerEnter={() => void (hasPhotos ? loadPhotosDialog() : loadDialog())}
+            onFocus={() => void (hasPhotos ? loadPhotosDialog() : loadDialog())}
+            disabled={!hasPhotos && !state.canUpload}
             data-testid="avatar-pick"
           >
-            {hasCustom ? t('change') : t('send')}
+            {hasPhotos ? t('change') : t('send')}
           </Button>
           <input
             ref={input}
@@ -201,15 +175,38 @@ export function AvatarSetting() {
       </div>
       {problem ? <FieldError>{problem}</FieldError> : null}
 
+      {photosOpen ? (
+        <PhotosDialog
+          state={state}
+          name={account.displayName}
+          onClose={() => {
+            setPhotosOpen(false);
+            requestAnimationFrame(() => pickButton.current?.focus());
+          }}
+          onChooseFile={() => input.current?.click()}
+          onChanged={(next, change) => {
+            apply(next);
+            setNotice(change);
+            // Escolher ou voltar à Steam resolve; apagar uma foto deixa o diálogo aberto para a próxima.
+            if (change !== 'deleted') {
+              setPhotosOpen(false);
+              requestAnimationFrame(() => pickButton.current?.focus());
+            }
+          }}
+        />
+      ) : null}
+
       {picked ? (
         <CropDialog
           file={picked}
           onClose={() => {
             setPicked(null);
-            requestAnimationFrame(() => pickButton.current?.focus());
+            if (fromPhotos.current) setPhotosOpen(true);
+            else requestAnimationFrame(() => pickButton.current?.focus());
           }}
           onSaved={(next) => {
             setPicked(null);
+            fromPhotos.current = false;
             apply(next);
             setNotice('saved');
             requestAnimationFrame(() => pickButton.current?.focus());

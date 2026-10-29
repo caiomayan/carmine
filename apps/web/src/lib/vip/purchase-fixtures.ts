@@ -87,7 +87,7 @@ export function purchaseFixture(
     approvedAt: iso(now - MINUTE),
     expiresAt: null,
     pix: null,
-    payerDocumentMasked: '***.***.123-**',
+    payerDocumentMasked: '***.***.**1-23',
     payerName: 'Maria Souza',
     periodEndsAt: iso(now + 90 * DAY),
     refundableUntil: iso(now + 7 * DAY),

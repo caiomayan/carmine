@@ -1,5 +1,5 @@
 import { Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
-import { and, count, inArray, lt, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull, lt, or, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accountAvatars, avatarReports } from '../database/schema.js';
 
@@ -7,9 +7,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Quanto tempo o registro de uma foto que deixou de ser a da Conta (trocada, devolvida à Steam ou removida pela
- * Staff) e as denúncias contra ela ficam no banco. O histórico serve à Staff (a reincidência olha 90 dias); depois
- * disso a linha some. Os arquivos não dependem disto: saem pela fila de remoção (na hora, ou aos 30 dias para as
- * removidas).
+ * Staff) e as denúncias contra ela ficam no banco. O histórico serve à Staff e aos limites de envio; depois
+ * disso a linha some. Os arquivos não dependem disto: saem pela fila de remoção (quando a foto sai do histórico das
+ * últimas 5 ou é apagada, ou aos 30 dias para as removidas). A foto que ainda está no histórico, com arquivos,
+ * nunca é tocada.
  */
 export const AVATAR_RECORD_RETENTION_DAYS = 90;
 
@@ -19,9 +20,10 @@ export interface AvatarRetentionResult {
 }
 
 /**
- * A limpeza de retenção das fotos (ADR 0022): apaga os registros de fotos trocadas, devolvidas ou removidas com mais
- * de {@link AVATAR_RECORD_RETENTION_DAYS} dias e, em cascata, as denúncias contra elas. A foto no ar ou suspensa
- * nunca é tocada. Apagar duas vezes não faz mal, então várias instâncias não se atrapalham.
+ * A limpeza de retenção das fotos (ADR 0022 e 0025): apaga os registros de fotos removidas, ou trocadas e devolvidas
+ * que já saíram do histórico (`deletedAt`), com mais de {@link AVATAR_RECORD_RETENTION_DAYS} dias e, em cascata, as
+ * denúncias contra elas. A foto no ar, suspensa ou no histórico nunca é tocada. Apagar duas vezes não faz mal, então
+ * várias instâncias não se atrapalham.
  */
 export class AvatarRetention {
   private readonly logger = new Logger(AvatarRetention.name);
@@ -38,7 +40,13 @@ export class AvatarRetention {
         .from(accountAvatars)
         .where(
           and(
-            inArray(accountAvatars.status, ['replaced', 'reverted', 'removed']),
+            or(
+              eq(accountAvatars.status, 'removed'),
+              and(
+                inArray(accountAvatars.status, ['replaced', 'reverted']),
+                isNotNull(accountAvatars.deletedAt),
+              ),
+            ),
             lt(retiredAt, cutoff),
           ),
         );

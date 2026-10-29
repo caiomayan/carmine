@@ -35,7 +35,7 @@ Número curto e único que identifica a Conta na plataforma; números menores pe
 _Evitar_: username, apelido, handle
 
 **ID reservado**:
-ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável).
+ID público de 1 a 9.999, atribuído manualmente pela Staff (fundador, beta, Staff, números bonitos), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável). Não há ID reservado de 10.000 para cima: os números bonitos acima de 10.000 ficam numa lista de bloqueio e o sorteio automático os pula (ADR 0013).
 
 **Nome de exibição** (`displayName`):
 O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único. É o nome Steam, ou o **nome próprio** (`customDisplayName`) que a Conta reivindicada escolhe no site (2 a 24 caracteres, filtro de palavras, uma troca a cada 7 dias). O reset da Staff apaga o nome próprio e recomeça o prazo.
@@ -135,7 +135,7 @@ _Evitar_: banir do Ranking, punir (a Remoção não é uma Punição)
 ## VIP e pagamento
 
 **VIP**:
-O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis.
+O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis. Na S20 vira o **Plano** (Capo ou Padrinho); "VIP" fica só como **nome legado interno** (tabela `vip_periods`, IDs de pacote `vip-1m`, `vip-3m`, `vip-6m`) e nunca aparece para o usuário.
 _Evitar_: premium, gold
 
 **Período VIP** (`VipPeriod`):
@@ -185,6 +185,18 @@ Termos já decididos para as fatias de [`docs/specs/beta-aberto.md`](docs/specs/
 **Plano** (`Plan`), S20:
 O que a Conta assina para ter benefícios. Há dois: **Capo** (`capo`) e **Padrinho** (`padrinho`). Substitui o VIP, que some da interface.
 _Evitar_: VIP, premium, assinatura (a assinatura é só uma forma de pagar)
+
+**Concessão do plano** (`PlanGrant`), S20:
+Uma compra de pacote, concessão da Staff ou compra de teste: plano, dias e o instante em que foi feita. Não muda depois de gravada. O plano da Conta num instante é **calculado** das concessões (`apps/api/src/plans/plan-timeline.ts`): Padrinho gasta primeiro e o Capo que sobra fica guardado; Capo sobre Padrinho espera na fila. Ver ADR 0026.
+
+**Período do plano** (`PlanPeriod`), S20:
+Um trecho de tempo em que a Conta tem um plano ativo, calculado da agenda (substitui o Período VIP).
+
+**Pacote** (`PlanPackage`), S20:
+O que se compra: 1, 3 ou 6 meses de Capo ou de Padrinho. A duração é forma de pagamento, não plano.
+
+**Plano de teste** (`test`), S20:
+O plano das compras de teste do beta, em que ninguém paga de verdade. Acaba no dia em que a cobrança real ligar, com aviso 7 dias antes.
 
 **Mapa jogado** (`MapPlay`), S17:
 Um mapa do começo ao fim (ou até um reinício) num Servidor Carmine, que agrupa os rounds da coleta por round. Interno: não aparece para o jogador.

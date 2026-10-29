@@ -44,7 +44,10 @@ export function last3Of(document: string): string | null {
   return digits.length === 11 ? digits.slice(-3) : null;
 }
 
-/** `***.***.123-**`: o recibo e "Minhas compras" mostram só isto. */
+/**
+ * `***.***.**1-23`: o recibo e "Minhas compras" mostram só isto. Os 3 últimos dígitos do CPF ficam na posição de
+ * origem: o 9º fecha o terceiro grupo e os dois verificadores vêm depois do hífen (ADR 0023).
+ */
 export function maskDocument(last3: string | null): string | null {
-  return last3 === null ? null : `***.***.${last3}-**`;
+  return last3 === null ? null : `***.***.**${last3.slice(0, 1)}-${last3.slice(1)}`;
 }

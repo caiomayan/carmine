@@ -206,7 +206,7 @@ describe('Pagamentos no painel da Staff (S14)', () => {
         provider: 'fake',
         account: { publicId: buyer.account.publicId, purchasesBlocked: false },
         payerName: 'Pagador de Mentira',
-        payerDocumentMasked: '***.***.909-**',
+        payerDocumentMasked: '***.***.**9-09',
       });
       expect(JSON.stringify(page)).not.toContain('12345678909');
     });

@@ -1,15 +1,16 @@
 import './zod-jitless.js';
 import { z } from 'zod';
+import { AVATAR_BLOCK_DAYS_MAX, AVATAR_HISTORY_SIZE } from './avatar-rules.js';
 import { staffReasonSchema } from './staff.js';
 import { steamId64Schema } from './steam.js';
 
 /**
- * Foto de perfil própria (ADR 0022). A Conta envia um recorte quadrado; a API refaz a imagem em
- * 4 tamanhos WebP sem metadados e a **publica na hora**. A moderação vem depois: denúncia (duas
- * Contas diferentes tiram a foto do ar até a Staff decidir), remoção em um clique pela Staff e
- * bloqueio de reincidentes só no histórico da Staff. Sem foto própria (ou depois de "usar a foto
- * da Steam"), vale o avatar da Steam. `Profile.avatarUrl` é sempre o avatar efetivo: quem lê o
- * avatar não muda nada.
+ * Foto de perfil própria (ADR 0022, com a moderação do ADR 0025). A Conta envia um recorte quadrado; a API
+ * refaz a imagem em 4 tamanhos WebP sem metadados e a **publica na hora**. A moderação vem depois: a denúncia
+ * só entra na fila da Staff (não tira nada do ar), e a Staff remove em um clique, escolhendo se bloqueia novos
+ * envios e por quantos dias. As últimas `AVATAR_HISTORY_SIZE` fotos ficam no histórico e voltam na hora. Sem
+ * foto própria (ou depois de "usar a foto da Steam"), vale o avatar da Steam. `Profile.avatarUrl` é sempre o
+ * avatar efetivo: quem lê o avatar não muda nada.
  */
 
 export * from './avatar-rules.js';
@@ -47,18 +48,18 @@ export const AVATAR_REASON_LABELS: Record<AvatarReason, string> = {
 };
 
 /**
- * Por que a Conta não pode enviar foto agora. O bloqueio de reincidente aparece só como
- * `upload_blocked`, sem o motivo nem a data (fica no histórico da Staff).
+ * Por que a Conta não pode enviar foto agora. O bloqueio depois de uma remoção aparece só como
+ * `upload_blocked`, sem o motivo nem a data (fica no histórico da Staff). Os limites de envio não mostram números.
  */
 export const AVATAR_INELIGIBLE_REASONS = [
-  /** Conta com menos de `AVATAR_MIN_ACCOUNT_AGE_HOURS` horas. */
-  'account_too_new',
   /** Punição ativa (ban, mute ou gag). */
   'punished',
   /** Envio bloqueado depois de uma remoção pela Staff. */
   'upload_blocked',
-  /** `AVATAR_UPLOADS_PER_DAY` envios em 24 h; `retryAfter` diz quando libera. */
-  'daily_limit',
+  /** Passou do limite de envios na janela deslizante; `retryAfter` diz quando libera. */
+  'upload_limit',
+  /** Outro envio há poucos segundos; `retryAfter` diz quando libera. Só aparece ao tentar enviar, não no estado. */
+  'upload_too_soon',
 ] as const;
 
 export const avatarIneligibleReasonSchema = z
@@ -68,10 +69,28 @@ export const avatarIneligibleReasonSchema = z
 export type AvatarIneligibleReason = z.infer<typeof avatarIneligibleReasonSchema>;
 
 /**
- * `GET /api/me/avatar` (e a resposta de enviar e de voltar à Steam): o que a Conta da sessão tem.
- * `enabled` falso: a funcionalidade está desligada neste ambiente (sem as variáveis do R2) e o web
- * não mostra nada. `custom` é a foto própria: `suspended` quer dizer que duas Contas a denunciaram
- * e ela está fora do ar até a Staff decidir (todos veem a da Steam; o dono é avisado). `removal`
+ * Uma foto do histórico: as últimas `AVATAR_HISTORY_SIZE` que ficaram no ar, da mais nova para a mais velha.
+ * `current` marca a que vale agora (nenhuma, depois de voltar à Steam). Nunca traz uma foto removida pela
+ * moderação.
+ */
+export const avatarHistoryItemSchema = z
+  .object({
+    id: z.uuid(),
+    /** Maior tamanho; os outros saem por `avatarVariantUrl`. */
+    url: z.url(),
+    uploadedAt: z.iso.datetime({ offset: true }),
+    current: z.boolean(),
+  })
+  .meta({ id: 'AvatarHistoryItem' });
+
+export type AvatarHistoryItem = z.infer<typeof avatarHistoryItemSchema>;
+
+/**
+ * `GET /api/me/avatar` (e a resposta de enviar, de voltar à Steam e do histórico): o que a Conta da sessão
+ * tem. `enabled` falso: a funcionalidade está desligada neste ambiente (sem as variáveis do R2) e o web não
+ * mostra nada. `custom` é a foto própria que vale agora (`suspended` é o estado antigo, de antes de a denúncia
+ * deixar de tirar a foto do ar: ela está fora do ar até a Staff decidir). `history` são as últimas fotos, e
+ * `canUseHistory` diz se dá para escolher uma (não dá com Punição ativa nem com o envio bloqueado). `removal`
  * é a última remoção pela Staff nos últimos 30 dias, para o aviso.
  */
 export const avatarStateSchema = z
@@ -88,9 +107,11 @@ export const avatarStateSchema = z
         uploadedAt: z.iso.datetime({ offset: true }),
       })
       .nullable(),
+    history: z.array(avatarHistoryItemSchema).max(AVATAR_HISTORY_SIZE),
+    canUseHistory: z.boolean(),
     canUpload: z.boolean(),
     cannotUploadReason: avatarIneligibleReasonSchema.nullable(),
-    /** Só em `daily_limit`: quando o próximo envio libera. */
+    /** Só em `upload_limit`: quando o próximo envio libera. */
     retryAfter: z.iso.datetime({ offset: true }).nullable(),
     removal: z
       .object({ at: z.iso.datetime({ offset: true }), reason: avatarReasonSchema })
@@ -117,11 +138,14 @@ export const AVATAR_ERROR_CODES = [
   'invalid_image',
   /** Lado fora de `AVATAR_MIN_PX`..`AVATAR_MAX_PX`, ou fora do quadrado. */
   'bad_dimensions',
-  'account_too_new',
   'punished',
   'upload_blocked',
-  /** `retryAfter` diz quando libera. */
-  'daily_limit',
+  /** Passou do limite de envios na janela; `retryAfter` diz quando libera. */
+  'upload_limit',
+  /** Outro envio há poucos segundos; `retryAfter` diz quando libera. */
+  'upload_too_soon',
+  /** A foto não está no histórico da Conta (já saiu dele, foi apagada ou foi removida pela moderação). */
+  'not_in_history',
   /** Denunciar o Perfil de quem não tem foto própria no ar. */
   'no_custom_avatar',
   /** Denunciar a própria foto. */
@@ -141,10 +165,11 @@ export const AVATAR_ERROR_STATUS: Record<AvatarErrorCode, number> = {
   too_large: 413,
   invalid_image: 422,
   bad_dimensions: 422,
-  account_too_new: 403,
   punished: 403,
   upload_blocked: 403,
-  daily_limit: 429,
+  upload_limit: 429,
+  upload_too_soon: 429,
+  not_in_history: 404,
   no_custom_avatar: 404,
   own_avatar: 422,
   already_reported: 409,
@@ -156,7 +181,7 @@ export const avatarErrorSchema = z
     statusCode: z.int(),
     code: z.enum(AVATAR_ERROR_CODES),
     message: z.string(),
-    /** Só em `daily_limit` e `report_limit`: quando tentar de novo. */
+    /** Só em `upload_limit`, `upload_too_soon` e `report_limit`: quando tentar de novo. */
     retryAfter: z.iso.datetime({ offset: true }).optional(),
   })
   .meta({ id: 'AvatarError' });
@@ -170,7 +195,7 @@ export const avatarReportInputSchema = z
 
 export type AvatarReportInput = z.infer<typeof avatarReportInputSchema>;
 
-/** A denúncia entrou na fila. Não diz se a foto saiu do ar (não ensina a denunciar em dupla). */
+/** A denúncia entrou na fila da Staff (ou foi descartada, se a Staff já aprovou a imagem: a resposta é a mesma). */
 export const avatarReportReceivedSchema = z
   .object({ received: z.literal(true) })
   .meta({ id: 'AvatarReportReceived' });
@@ -180,9 +205,10 @@ export type AvatarReportReceived = z.infer<typeof avatarReportReceivedSchema>;
 /* ------------------------------ painel da Staff ------------------------------ */
 
 /**
- * O estado de uma foto própria: `active` no ar; `suspended` fora do ar por denúncias até a Staff
- * decidir; `removed` pela Staff (guardada em privado por `AVATAR_REMOVED_RETENTION_DAYS` dias);
- * `replaced` e `reverted` quando a pessoa trocou ou voltou à Steam (arquivos apagados).
+ * O estado de uma foto própria: `active` no ar; `removed` pela Staff (guardada em privado por
+ * `AVATAR_REMOVED_RETENTION_DAYS` dias); `replaced` e `reverted` quando a pessoa trocou ou voltou à Steam (a foto
+ * segue no histórico, com os arquivos, até sair dele ou ser apagada). `suspended` é o estado antigo, de quando duas
+ * denúncias tiravam a foto do ar: não é mais criado, e as que ainda estiverem assim a Staff decide.
  */
 export const avatarStatusSchema = z
   .enum(['active', 'suspended', 'removed', 'replaced', 'reverted'])
@@ -238,7 +264,7 @@ export const staffAvatarCaseSchema = z
       firstAt: z.iso.datetime({ offset: true }),
       lastAt: z.iso.datetime({ offset: true }),
     }),
-    /** Remoções anteriores desta Conta (a reincidência pesa no bloqueio). */
+    /** Remoções anteriores desta Conta (contexto para a Staff escolher o bloqueio). */
     previousRemovals: z.int().nonnegative(),
     /** Nulo enquanto a Staff não decidiu. */
     decision: staffAvatarDecisionSchema.nullable(),
@@ -265,10 +291,11 @@ export type StaffAvatarCasePage = z.infer<typeof staffAvatarCasePageSchema>;
 /**
  * `POST /api/staff/avatars/{id}/decision` e `POST /api/staff/accounts/{publicId}/avatar/remove`
  * (remoção sem denúncia, direto da ficha da Conta; aqui `decision` só vale `remove`).
- * - `keep`: a foto volta ao ar (se estava suspensa) e as denúncias contra ela são arquivadas;
- * - `remove`: a foto sai, a Conta volta à Steam e a imagem fica guardada em privado. `reason` é
- *   obrigatório. O bloqueio de novos envios segue a regra (primeira: 7 dias; reincidência em 90
- *   dias: 30); `blockDays` a substitui (0 não bloqueia).
+ * - `keep`: a Staff aprova a imagem: as denúncias abertas são arquivadas e as novas contra a mesma imagem são
+ *   descartadas (a foto volta ao ar, se estava no estado antigo de suspensa);
+ * - `remove`: a foto sai (do ar e do histórico, para sempre), a Conta volta à Steam se era a foto atual e a imagem
+ *   fica guardada em privado. `reason` é obrigatório. `blockDays` é quantos dias bloquear novos envios; sem ele,
+ *   ou com 0, não bloqueia (a tela sugere `AVATAR_BLOCK_DAYS_SUGGESTED`).
  * `note` vai para o log de auditoria.
  */
 export const avatarDecisionInputSchema = z
@@ -276,7 +303,7 @@ export const avatarDecisionInputSchema = z
     decision: z.enum(['keep', 'remove']),
     reason: avatarReasonSchema.optional(),
     note: staffReasonSchema,
-    blockDays: z.int().min(0).max(365).optional(),
+    blockDays: z.int().min(0).max(AVATAR_BLOCK_DAYS_MAX).optional(),
   })
   .refine((body) => body.decision === 'keep' || body.reason !== undefined, {
     path: ['reason'],
@@ -288,7 +315,7 @@ export type AvatarDecisionInput = z.infer<typeof avatarDecisionInputSchema>;
 
 /**
  * `GET /api/staff/accounts/{publicId}/avatar`: a foto na ficha da Conta. `uploadBlockedUntil`
- * é o bloqueio de reincidente (só a Staff o vê).
+ * é o bloqueio de novos envios depois de uma remoção (só a Staff o vê).
  */
 export const staffAccountAvatarSchema = z
   .object({

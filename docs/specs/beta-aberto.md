@@ -193,7 +193,7 @@ A base do Rating Carmine (S21), das Salas (S23), do Consigliere (S27) e do match
 - Quando o `round_end` chega, calcula o **resumo do round por jogador** e o guarda **para sempre**:
   - kills, mortes, assistências (com 40 de dano ou mais, como a HLTV 3.0) e flash assists;
   - dano limitado pela vida;
-  - **sobreviveu** e **foi trocado** (o matador dele morreu até 5 s depois);
+  - **sobreviveu** e **foi trocado**. Trocado vale **só quando o matador dele morre, até 5 s depois (inclusive), numa kill de um companheiro de time da vítima**. Não troca: o matador morrer por queda, bomba ou suicídio (não há companheiro que o tenha matado), por kill de um aliado dele, antes de matar a vítima, ou qualquer lado ser bot (um bot não conta kill, e a morte pelas mãos de um bot não é trocada porque não se sabe qual bot foi);
   - **abertura** (primeira kill ou primeira morte do round);
   - **multi-kill** (2k a 5k);
   - **clutch** (último vivo do time contra N, e se venceu);
@@ -255,6 +255,14 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
 - Apagar uma foto do histórico a tira do bucket.
 - A Staff remove uma foto escolhendo ou não um bloqueio, e o bloqueio dura os dias escolhidos.
 - Na homologação, tudo funciona com o R2 de mentira que já existe.
+
+**Como ficou** (decisões da implementação; o registro completo está no [ADR 0025](../adr/0025-foto-de-perfil-no-beta-historico-e-moderacao-por-fila.md), que substitui o 0022 nos pontos acima)
+- O histórico tem **5 fotos no total, contando a que está no ar** (marcada). Os arquivos delas ficam no bucket público; escolher é só trocar o estado. "Apagar" e a 6ª foto mandam os arquivos para a fila de remoção, e a linha fica (sem arquivos) até os 90 dias, para apagar não zerar os limites de envio.
+- Quem tem Punição ativa ou o envio bloqueado depois de uma remoção não escolhe do histórico (voltar à Steam vale sempre).
+- O limite de 30 min é checado antes do intervalo de 10 s; o estado da foto (`GET /api/me/avatar`) não inclui o intervalo, que passa sozinho.
+- Quem denuncia muito o que a Staff mantém perde peso com **3** denúncias mantidas em **90 dias** e mais mantidas do que confirmadas (números nossos; a spec não os fixa). Só vão para o fim da fila as fotos cujas denúncias abertas são todas de Contas assim.
+- A Staff também remove e decide fotos que estão só no histórico. `blockDays` ausente na API não bloqueia; a tela sugere 7.
+- Migração `0020` (`account_avatars.deleted_at`). O estado `suspended` deixa de ser criado.
 
 ---
 
@@ -322,8 +330,9 @@ O "VIP" genérico vira **dois planos com nome próprio**, na linha da família i
 - Até o lançamento, **ninguém paga de verdade**. A compra de mentira, que hoje só existe na homologação, fica liberada em `stcarmine.com` para todos testarem os dois planos.
 - Toda a tela de compra mostra com destaque: `Beta: compra de teste. Nada é cobrado.`
 - O Mercado Pago real continua desligado até o advogado e o contador.
+- **No dia em que a cobrança real ligar, os planos de teste ativos acabam**, com **aviso ao jogador 7 dias antes**. A data e o aviso entram junto com a cobrança real; a agenda dos planos já aceita encerrar os períodos de teste numa data dada (ADR 0026). Os dias pagos nunca são tocados. **No mesmo plano, o teste é gasto antes do pago**: se o pago corresse primeiro, os dias de teste ficariam parados e morreriam na data, e o jogador perderia dias que pagou. Depois da data não existe compra de teste.
 
-**O que muda no código:** os termos do domínio (`VIP`, `VipPeriod`, `VipPackage` → Plano, Período do plano, Pacote; CONTEXT.md e ADR), as rotas (`/vip` → `/plans`, com redirecionamento), os textos do plugin (`!vip` → `!plan`, com `!plano` e `!vip` como sinônimos), os cargos do Discord e o selo do card. As compras de mentira já feitas viram Capo.
+**O que muda no código:** os termos do domínio (`VIP`, `VipPeriod`, `VipPackage` → Plano, Período do plano, Pacote; CONTEXT.md e ADR), as rotas (`/vip` → `/plans`, com redirecionamento), os textos do plugin (`!vip` → `!plan`, com `!plano` e `!vip` como sinônimos), os cargos do Discord e o selo do card. As compras de mentira já feitas viram Capo. A tabela `vip_periods` e os IDs de pacote `vip-1m`, `vip-3m` e `vip-6m` ficam como **nomes legados internos** (por causa do rollback de imagem) e nunca aparecem para o usuário: tela, recibo, e-mail, título do item no Mercado Pago ou cargo (ADR 0026).
 
 **Aceite**
 - Nenhuma tela, mensagem do jogo ou cargo do Discord mostra "VIP".
@@ -563,18 +572,19 @@ Um servidor **5v5 público**, aberto como o Retake e o DM: entra quem quiser, se
 
 ### S25 · Painel da Staff
 
-O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**: um dashboard administrativo **moderno, bonito e completo**, fora da identidade P&B da plataforma. Pode andar **em paralelo** às fatias de jogo, porque é só frontend sobre a API de hoje.
+O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**: um dashboard administrativo **moderno, bonito e completo**, com a identidade do Carmine. Pode andar **em paralelo** às fatias de jogo, porque é só frontend sobre a API de hoje.
 
 **Onde fica**
 - Um app próprio no monorepo (`apps/staff`, Next) em **`staff.stcarmine.com`**. Na homologação, **`staff-dev.stcarmine.com`**. Fala com a mesma API.
 - **Login com duas travas:** a mesma sessão da Steam (o cookie vale nos dois subdomínios) e, na frente, o **Cloudflare Access** com código por e-mail, só para os e-mails da Staff.
 - As 7 telas de hoje (`/staff`, `/staff/denuncias`, `/staff/fotos`, `/staff/contas/...`, `/staff/pagamentos`, `/staff/servidores`, `/staff/auditoria`) são **migradas** e **removidas do site**. `stcarmine.com/staff` redireciona para o painel. O site deixa de carregar qualquer código da Staff.
 
-**Visual** (a direção é do maestro, e o dono valida na homologação)
-- Linha de Linear, Vercel e Supabase: neutro, preciso e denso, em claro e escuro.
-- Barra lateral recolhível, busca e comandos por `Ctrl+K`, números grandes no topo de cada tela, tabelas com filtro, ordenação e paginação, e gráficos onde ajudam.
-- O Carmine aparece só como uma marca pequena no canto.
-- Antes de migrar as telas, o protótipo da direção vai numa rota de galeria da homologação.
+**Visual** (a direção é do maestro e do dono; o dono valida na homologação)
+- A **estrutura e os gráficos** vêm das referências do dono: o painel dentro de uma moldura arredondada; trilho de ícones em cápsulas flutuantes, recolhível (no celular vira uma barra embaixo); cartões de canto grande, cada um com um botão redondo ↗ que leva à tela; hero no topo do Início (arte de mapa escurecida e dessaturada, saudação e chips por Modo); números grandes com a parte decimal apagada; sparklines; linha fina sobre hastes verticais finas ou área em degradê; tabela densa com abas em cápsula e o detalhe ao lado com a linha do tempo.
+- A **identidade é a do Carmine**, a mesma do site: tokens e tipografia de `apps/web`, marca P&B (o ativo e o destaque são o preenchido invertido, preto sobre branco e o contrário), fundos em vez de bordas, transições sutis, claro e escuro. Cor só de contexto (status em pontos, CT e TR, mapas); nenhuma cor de acento de marca; carmim só em detalhe mínimo.
+- Busca e comandos por `Ctrl+K`, números grandes no topo de cada tela, tabelas com filtro, ordenação e paginação.
+- O Carmine aparece só como uma marca pequena no canto do trilho.
+- Antes de migrar as telas, o protótipo da direção vai numa rota de galeria da homologação (`/dev/staff`).
 
 **Início**
 - Cartões com:
@@ -853,7 +863,7 @@ O ECA Digital (art. 21) pede que jogos com chat limitem a interação por padrã
 Quem vê uma skin ou um Loadout de que gosta leva para si. As skins são simuladas e o Perfil é público, então **ninguém pode impedir que o copiem**.
 
 **O que se copia**
-- **Um Item:** a skin exata, com o desgaste, o padrão (seed), os stickers nas mesmas posições e o chaveiro. Ele vai para o **Inventário** de quem copiou, respeitando o limite de 300 Itens.
+- **Um Item:** a skin exata, com o desgaste, o padrão (seed), os stickers nas mesmas posições e o Charm. Ele vai para o **Inventário** de quem copiou, respeitando o limite de 300 Itens.
 - **O Loadout inteiro**, dos dois lados, que vira um **Preset** de quem copiou.
 - **A nametag não se copia**: o nome gravado é pessoal, e a arma copiada vem sem nome. O resto vem igual.
 

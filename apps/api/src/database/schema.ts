@@ -5,6 +5,7 @@ import {
   boolean,
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -12,6 +13,7 @@ import {
   pgSequence,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -698,6 +700,200 @@ export const serverHours = pgTable(
   ],
 );
 
+/** Quem venceu um round (S17). */
+export const roundWinner = pgEnum('round_winner', ['ct', 't', 'none']);
+
+/** Como um round acabou (S17). */
+export const roundEndReason = pgEnum('round_end_reason', [
+  'bomb_exploded',
+  'bomb_defused',
+  'elimination',
+  'time',
+  'other',
+]);
+
+/** O tipo de uma linha de `round_events` (S17). */
+export const roundEventKind = pgEnum('round_event_kind', [
+  'round_start',
+  'round_player',
+  'kill',
+  'damage',
+  'bomb',
+  'round_end',
+  'round_alive',
+]);
+
+/**
+ * Os eventos brutos de um round (S17, ADR 0024). **Tabela particionada por mês de `occurred_at`**
+ * (a migração 0019 declara o `PARTITION BY RANGE`, que o Drizzle não sabe descrever; a
+ * `RoundEventPartitions` cria os meses e solta os que passam de 12 meses). Só entra evento com
+ * `mapPlayId` e número do round, e nunca o de aquecimento.
+ *
+ * Nenhuma linha guarda SteamID: o jogador é uma Conta (`*_account_id`), e a anonimização da Conta
+ * (S08) zera esses campos. Quem não tem Conta fica sem referência e, para a calculadora, age como
+ * um bot (`payload.killerUnknown` e afins). O resto do evento vai em `payload`, sem identidade.
+ * `seq` é 0 no evento e 1..n nas linhas derivadas dele (o elenco do `round_start` e os vivos do
+ * `round_end`). Sem chaves estrangeiras, para a escrita ser barata e a partição poder cair.
+ */
+export const roundEvents = pgTable(
+  'round_events',
+  {
+    /** O ID do evento no plugin (UUID v7). */
+    id: uuid().notNull(),
+    seq: smallint().notNull().default(0),
+    occurredAt: timestamptz().notNull(),
+    serverId: uuid().notNull(),
+    mapPlayId: uuid().notNull(),
+    roundNumber: smallint().notNull(),
+    kind: roundEventKind().notNull(),
+    /** O horário do servidor em milissegundos, quando o plugin mandou. */
+    atMs: bigint({ mode: 'number' }),
+    /** Quem fez: assassino, atacante, quem plantou ou desarmou, o jogador do elenco ou o vivo. */
+    actorAccountId: uuid(),
+    /** Quem sofreu: a vítima da kill ou do dano. */
+    targetAccountId: uuid(),
+    /** Quem assistiu (flash assist) na kill. */
+    assistAccountId: uuid(),
+    payload: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (table) => [
+    primaryKey({ columns: [table.id, table.seq, table.occurredAt] }),
+    index('round_events_round_idx').on(table.mapPlayId, table.roundNumber, table.occurredAt),
+    index('round_events_actor_idx')
+      .on(table.actorAccountId)
+      .where(sql`${table.actorAccountId} is not null`),
+    index('round_events_target_idx')
+      .on(table.targetAccountId)
+      .where(sql`${table.targetAccountId} is not null`),
+    index('round_events_assist_idx')
+      .on(table.assistAccountId)
+      .where(sql`${table.assistAccountId} is not null`),
+  ],
+);
+
+/**
+ * O Mapa jogado (S17): um mapa do começo ao fim (ou até um reinício) num Servidor Carmine. O `id` é
+ * o `mapPlayId` do plugin. Recalculado dos `round_summaries` a cada round; guardado para sempre.
+ */
+export const mapPlays = pgTable(
+  'map_plays',
+  {
+    id: uuid().primaryKey(),
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    /** O Modo do servidor (da chave), não do evento. */
+    mode: gameMode().notNull(),
+    map: text(),
+    startedAt: timestamptz().notNull(),
+    endedAt: timestamptz().notNull(),
+    /** Quantos rounds com resumo. */
+    rounds: integer().notNull(),
+    /** O placar depois do último round que veio com ele. */
+    scoreCt: integer(),
+    scoreT: integer(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [index('map_plays_server_idx').on(table.serverId, table.startedAt)],
+);
+
+/** O resumo de um round (S17), sem os jogadores: o vencedor, o motivo e a duração. Para sempre. */
+export const roundSummaries = pgTable(
+  'round_summaries',
+  {
+    mapPlayId: uuid()
+      .notNull()
+      .references(() => mapPlays.id, { onDelete: 'cascade' }),
+    roundNumber: smallint().notNull(),
+    winner: roundWinner().notNull(),
+    reason: roundEndReason(),
+    durationMs: integer(),
+    startedAt: timestamptz().notNull(),
+    endedAt: timestamptz().notNull(),
+    scoreCt: integer(),
+    scoreT: integer(),
+    map: text(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.mapPlayId, table.roundNumber] })],
+);
+
+/**
+ * O resumo do round por jogador (S17): o que a calculadora (`stats/round-summary.ts`) devolve, base
+ * do Rating Carmine. Para sempre; a anonimização da Conta apaga as linhas dela.
+ */
+export const roundPlayerSummaries = pgTable(
+  'round_player_summaries',
+  {
+    mapPlayId: uuid().notNull(),
+    roundNumber: smallint().notNull(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    side: gameTeam().notNull(),
+    equipmentValue: integer(),
+    kills: smallint().notNull(),
+    headshots: smallint().notNull(),
+    deaths: smallint().notNull(),
+    assists: smallint().notNull(),
+    flashAssists: smallint().notNull(),
+    /** Dano em inimigos humanos, limitado pela vida que a vítima tinha. */
+    damage: integer().notNull(),
+    survived: boolean().notNull(),
+    traded: boolean().notNull(),
+    openingKill: boolean().notNull(),
+    openingDeath: boolean().notNull(),
+    /** 2 a 5 kills no round; nulo com menos de 2. */
+    multiKill: smallint(),
+    /** Contra quantos inimigos vivos ficou como último do time; nulo sem clutch. */
+    clutchAgainst: smallint(),
+    clutchWon: boolean(),
+    kast: boolean().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.mapPlayId, table.roundNumber, table.accountId] }),
+    foreignKey({
+      columns: [table.mapPlayId, table.roundNumber],
+      foreignColumns: [roundSummaries.mapPlayId, roundSummaries.roundNumber],
+    }).onDelete('cascade'),
+    index('round_player_summaries_account_idx').on(table.accountId),
+    check(
+      'round_player_summaries_clutch_complete',
+      sql`(${table.clutchAgainst} is null) = (${table.clutchWon} is null)`,
+    ),
+  ],
+);
+
+/** Os jogadores de um Mapa jogado (S17), somados dos resumos de round; recalculado a cada round. */
+export const mapPlayPlayers = pgTable(
+  'map_play_players',
+  {
+    mapPlayId: uuid()
+      .notNull()
+      .references(() => mapPlays.id, { onDelete: 'cascade' }),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    rounds: integer().notNull(),
+    kills: integer().notNull(),
+    headshots: integer().notNull(),
+    deaths: integer().notNull(),
+    assists: integer().notNull(),
+    flashAssists: integer().notNull(),
+    damage: integer().notNull(),
+    kastRounds: integer().notNull(),
+    survivedRounds: integer().notNull(),
+    openingKills: integer().notNull(),
+    openingDeaths: integer().notNull(),
+    clutches: integer().notNull(),
+    clutchesWon: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.mapPlayId, table.accountId] }),
+    index('map_play_players_account_idx').on(table.accountId),
+  ],
+);
+
 /**
  * Entradas que a Staff removeu do Ranking semanal (S12): Conta × Modo × semana, com o motivo. A
  * remoção não apaga as Estatísticas (`account_stats_weekly` continua igual); só tira a Conta
@@ -884,11 +1080,12 @@ export const avatarReason = pgEnum('avatar_reason', [
 ]);
 
 /**
- * Foto de perfil própria (ADR 0022): publica na hora e a moderação vem depois. Os arquivos
- * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`; `suspended` (duas
- * Contas denunciaram) e `removed` (Staff) os tiram de lá e guardam o de 512 px no bucket
- * privado (`removed/<id>/512.webp`) até a limpeza; `replaced` e `reverted` os apagam. Uma Conta
- * tem no máximo uma foto `active` ou `suspended`.
+ * Foto de perfil própria (ADR 0022 e 0025): publica na hora e a moderação vem depois. Os arquivos
+ * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`, e também em `replaced` e
+ * `reverted` (a foto trocada ou devolvida à Steam segue no histórico das últimas 5, até `deletedAt`); `removed`
+ * (Staff) os tira de lá e guarda os tamanhos no bucket privado (`removed/<id>/<tamanho>.webp`) até a limpeza.
+ * `suspended` é o estado antigo (duas denúncias tiravam a foto do ar): não é mais criado. Uma Conta tem no
+ * máximo uma foto `active` ou `suspended`.
  */
 export const accountAvatars = pgTable(
   'account_avatars',
@@ -903,6 +1100,11 @@ export const accountAvatars = pgTable(
     takenDownAt: timestamptz(),
     /** Quando deixou de ser a foto da Conta (removida, trocada ou devolvida à Steam). */
     retiredAt: timestamptz(),
+    /**
+     * Quando os arquivos saíram do histórico (a pessoa usou "Apagar" ou entrou a 6ª foto). A linha fica, sem
+     * arquivos, para contar nos limites de envio, até a retenção de 90 dias.
+     */
+    deletedAt: timestamptz(),
     /** A decisão da Staff (manter ou remover): a última. Nula sem decisão. */
     decision: text().$type<'keep' | 'remove'>(),
     decidedAt: timestamptz(),

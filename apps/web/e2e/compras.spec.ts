@@ -135,7 +135,7 @@ test('o recibo: número, pagador com o CPF mascarado, valor, fornecedor por info
   await expect(receipt.getByTestId('receipt-number')).toContainText(purchase.id);
   await expect(receipt.getByTestId('receipt-amount')).toHaveText('R$ 49,90');
   await expect(receipt.getByTestId('receipt-payer')).toHaveText('Pagador de Mentira');
-  await expect(receipt.getByTestId('receipt-payer-document')).toHaveText('***.***.909-**');
+  await expect(receipt.getByTestId('receipt-payer-document')).toHaveText('***.***.**9-09');
   await expect(receipt.getByTestId('receipt-status')).toHaveText('Pago');
   await expect(receipt.getByTestId('receipt-buyer')).toContainText('Compras Recibo');
   // O dono ainda vai informar o fornecedor: sem dado inventado.

@@ -82,7 +82,7 @@ describe('purchaseSchema', () => {
         status: 'approved',
         approvedAt: '2026-10-27T18:01:00-03:00',
         pix: null,
-        payerDocumentMasked: '***.***.909-**',
+        payerDocumentMasked: '***.***.**9-09',
       }).success,
     ).toBe(true);
   });

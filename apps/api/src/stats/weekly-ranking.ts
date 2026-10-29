@@ -108,6 +108,7 @@ export class WeeklyRanking {
       .select({
         accountId: accountStatsWeekly.accountId,
         publicId: accounts.publicId,
+        createdAt: accounts.createdAt,
         ...statColumns,
       })
       .from(accountStatsWeekly)

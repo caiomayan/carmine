@@ -387,7 +387,7 @@ test('a seleção do 3D segue o foco: outra linha, o chaveiro e fora do bloco', 
   await expect(page.getByTestId('sticker-0')).not.toHaveAttribute('data-selected');
 
   // O chaveiro só é selecionado enquanto a linha dele tem o foco.
-  await page.getByTestId('charm').getByLabel('Padrão do chaveiro').focus();
+  await page.getByTestId('charm').getByLabel('Padrão do charm').focus();
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
   await expect(page.getByTestId('on-viewer-charm')).toBeVisible();
 
@@ -456,7 +456,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
 
   // Arrastar o chaveiro no 3D é só atalho: o resultado também é "Personalizada".
   await chooseOption(page, placement, '1');
-  await charm.getByLabel('Padrão do chaveiro').focus();
+  await charm.getByLabel('Padrão do charm').focus();
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
   expect(await dragSelectedInViewer(page)).toBe(true);
   await expect(placement).toContainText('Personalizada');

@@ -86,6 +86,7 @@ export default async function LoadoutPage() {
 
   const items = inventory.inventory.items;
   const vip = session.status === 'authenticated' ? session.session.vip : null;
+  const holdDays = session.status === 'authenticated' ? session.session.vipHoldDays : null;
   const rarityLabels = Object.fromEntries(RARITIES.map((r) => [r, tc(`rarities.${r}`)]));
 
   return (
@@ -98,7 +99,7 @@ export default async function LoadoutPage() {
         notices={
           vip || items.length === 0 ? (
             <div className="mb-1 grid gap-2">
-              {vip ? <VipNotice vip={vip} renewHref="/plans" /> : null}
+              {vip ? <VipNotice vip={vip} holdDays={holdDays} renewHref="/plans" /> : null}
               {items.length === 0 ? (
                 <p
                   className="flex max-w-[80ch] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface px-3 py-2 text-body-sm"

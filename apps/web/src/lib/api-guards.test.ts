@@ -231,12 +231,20 @@ describe('parseAvatarState concorda com avatarStateSchema', () => {
     source: 'steam',
     steamAvatarUrl: 'https://avatars.steamstatic.com/abc_full.jpg',
     custom: null,
+    history: [],
+    canUseHistory: true,
     canUpload: true,
     cannotUploadReason: null,
     retryAfter: null,
     removal: null,
     ...over,
   });
+  const item = {
+    id: ID,
+    url: 'https://img.stcarmine.com/avatars/x/512.webp',
+    uploadedAt: AT,
+    current: true,
+  };
   const custom = {
     url: 'https://img.stcarmine.com/avatars/x/512.webp',
     status: 'active',
@@ -249,7 +257,13 @@ describe('parseAvatarState concorda com avatarStateSchema', () => {
       state({ source: 'custom', custom }),
       state({ custom: { ...custom, status: 'suspended' } }),
       state({ steamAvatarUrl: null }),
-      state({ canUpload: false, cannotUploadReason: 'daily_limit', retryAfter: AT }),
+      state({ canUpload: false, cannotUploadReason: 'upload_limit', retryAfter: AT }),
+      state({
+        source: 'custom',
+        custom,
+        history: [item, { ...item, id: ID.replace('5a', '6b'), current: false }],
+      }),
+      state({ canUseHistory: false, cannotUploadReason: 'punished', canUpload: false }),
       state({ removal: { at: AT, reason: 'staff_removed' } }),
       state({ enabled: false }),
     ]) {
@@ -272,6 +286,10 @@ describe('parseAvatarState concorda com avatarStateSchema', () => {
       state({ custom: { url: 1, status: 'active', uploadedAt: AT } }),
       state({ custom: { ...custom, status: 'removida' } }),
       state({ canUpload: undefined }),
+      state({ history: undefined }),
+      state({ history: [{ ...item, current: 'sim' }] }),
+      state({ history: [{ ...item, url: 3 }] }),
+      state({ canUseHistory: 'sim' }),
       state({ steamAvatarUrl: 5 }),
       state({ removal: { at: AT } }),
     ]) {
