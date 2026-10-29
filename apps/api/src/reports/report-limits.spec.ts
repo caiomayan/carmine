@@ -101,7 +101,7 @@ describe('o teto por dia (regra única de denúncia)', () => {
     expect(checkReportLimits([], 'alvo', NOW, 10)).toEqual({
       allowed: false,
       refusal: 'daily_limit',
-      retryAfterSeconds: 15 * 3600,
+      retryAfterSeconds: 12 * 3600,
     });
   });
 
