@@ -13,8 +13,8 @@ namespace Carmine.Core;
 
 /// <summary>
 /// Plugin próprio dos Servidores Carmine. Na S01: no connect, avisa a API (que cria a Conta no
-/// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e dá as boas-vindas no primeiro
-/// connect. Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois; na
+/// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e mostra a linha do connect (S16: as
+/// boas-vindas da Conta nova ou uma curiosidade, escolhida pela API). Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois; na
 /// S05, ele também é avisado de que o Loadout não carregou (o cs2-css-inventory-simulator, sem
 /// modificação, aplica o Loadout e não tem esse aviso). Na S06, manda o batimento (mapa, jogadores
 /// e vagas públicas) a cada HeartbeatIntervalSeconds e logo depois de cada connect e disconnect,
@@ -24,22 +24,19 @@ namespace Carmine.Core;
 /// receber o chat dos outros (a escolha fica na Conta, na API). Na S02/S14, a Vaga reservada (em
 /// CorePlugin.ReservedSlots.cs). Na S12, manda os eventos do jogo para as Estatísticas (em
 /// CorePlugin.Events.cs).
-/// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
-/// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
+/// A linha do connect sai no primeiro spawn (no connect o jogador ainda está na escolha de time e
+/// não vê o chat) e fica guardada até o spawn.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
 /// </summary>
 [MinimumApiVersion(376)]
 public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 {
-    public const string WelcomeMessage =
-        "Bem-vindo ao Carmine. Ao jogar você concorda com os termos: stcarmine.com/termos";
-
     private readonly CancellationTokenSource _unloading = new();
     /// <summary>Nome de exibição aplicado por slot (só na thread do jogo).</summary>
     private readonly Dictionary<int, (ulong SteamId, string Name)> _displayNames = [];
     private HttpClient? _http;
     private AccountSync? _sync;
-    private PendingWelcomes? _welcomes;
+    private PendingGreetings? _greetings;
     /// <summary>Contas que ainda não passaram pela AWP por padrão e esperam o primeiro spawn no Retake (mesma mecânica das boas-vindas).</summary>
     private PendingWelcomes? _awpQueue;
     private AwpDefault? _awpDefault;
@@ -107,7 +104,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Log.PendingLoaded(Logger, pending.Count);
         }
         _sync = new AccountSync(client, pending, TimeProvider.System);
-        _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
+        _greetings = new PendingGreetings();
         if (Config.ReservedSlotsMode == ReservedSlotsMode.Retake)
         {
             _awpQueue = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-awp.json")));
@@ -169,7 +166,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http?.Dispose();
         _http = null;
         _sync = null;
-        _welcomes = null;
+        _greetings = null;
         _awpQueue = null;
         _awpDefault = null;
         _gameStats = null;
@@ -227,9 +224,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     return;
                 }
-                if (_welcomes?.TakeOnSpawn(current.SteamID) == true)
+                if (_greetings?.TakeOnSpawn(current.SteamID) is { } greeting)
                 {
-                    current.SendChat(WelcomeMessage);
+                    current.SendChat(greeting);
                 }
                 if (_awpQueue?.TakeOnSpawn(current.SteamID) == true)
                 {
@@ -258,6 +255,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
+            _greetings?.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
             _vipInfo?.OnDisconnect(player.SteamID);
@@ -415,7 +413,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 planNotice: Config.ReservedSlotsMode != ReservedSlotsMode.Off, isVip: result.IsVip);
         }
         var playing = player is not null && IsPlaying(player);
-        var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: playing) == true;
+        var greetingNow = _greetings?.OnConnectResult(steamId, result.Greeting, isAlive: playing);
         var awpNow = _awpQueue?.OnConnectResult(steamId, result.ApplyAwpDefault, isAlive: playing) == true;
         if (player is null)
         {
@@ -428,9 +426,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         _displayNames[player.Slot] = (steamId, result.DisplayName);
         ApplyName(player, result.DisplayName);
-        if (sendNow)
+        if (greetingNow is not null)
         {
-            player.SendChat(WelcomeMessage);
+            player.SendChat(greetingNow);
         }
         if (awpNow)
         {

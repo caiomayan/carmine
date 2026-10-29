@@ -141,6 +141,13 @@
       "when": 1793239459661,
       "tag": "0019_s16_awp_padrao",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793241001931,
+      "tag": "0020_s16_curiosidade",
+      "breakpoints": true
     }
   ]
 }

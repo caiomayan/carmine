@@ -131,6 +131,8 @@ export const accounts = pgTable(
      * connect manda `applyAwpDefault`. Vale uma vez por Conta, em todos os Servidores Carmine.
      */
     awpDefaultAppliedAt: timestamptz(),
+    /** A última curiosidade mostrada no connect (S16), para dois connects seguidos não repetirem. */
+    lastCuriosity: text(),
     /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
     anonymizedAt: timestamptz(),
     /**

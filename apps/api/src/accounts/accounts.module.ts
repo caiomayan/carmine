@@ -1,10 +1,15 @@
 import { Logger, Module } from '@nestjs/common';
+import type { Redis } from 'ioredis';
 import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
 import { LoadoutModule } from '../loadout/loadout.module.js';
 import { ModerationModule } from '../moderation/moderation.module.js';
+import { Greetings } from '../stats/greeting.js';
+import { RankingCache } from '../stats/ranking-cache.js';
+import { WeeklyRanking } from '../stats/weekly-ranking.js';
+import { VALKEY } from '../valkey/valkey.module.js';
 import { VipModule } from '../vip/vip.module.js';
 import { AccountSettingsController } from './account-settings.controller.js';
 import { AccountsService } from './accounts.service.js';
@@ -48,6 +53,17 @@ import { SteamWebApi } from './steam-profiles.js';
       provide: AccountsService,
       inject: [DATABASE, AvatarRefresher],
       useFactory: (db: Database, avatars: AvatarRefresher) => new AccountsService(db, avatars),
+    },
+    {
+      // A linha do connect (S16). O StatsModule importa este módulo, então a leitura do Ranking é montada
+      // aqui mesmo, sobre o mesmo cache (a chave é a mesma).
+      provide: Greetings,
+      inject: [DATABASE, VALKEY, APP_CONFIG],
+      useFactory: (db: Database, valkey: Redis, config: AppConfig) =>
+        new Greetings(
+          db,
+          new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
+        ),
     },
     {
       provide: PlayerSearcher,

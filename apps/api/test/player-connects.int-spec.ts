@@ -68,6 +68,7 @@ describe('POST /api/server/player-connects', () => {
       sanctions: [],
       chatHidden: false,
       applyAwpDefault: true,
+      greeting: 'Bem-vindo, FalleN.',
     });
   });
 

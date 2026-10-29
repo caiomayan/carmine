@@ -39,6 +39,8 @@ export interface Account {
   chatHidden: boolean;
   /** Quando a Conta entrou na fila da AWP do Retake (S16); nulo: ainda não. */
   awpDefaultAppliedAt: Date | null;
+  /** A última curiosidade mostrada no connect (S16). */
+  lastCuriosity: string | null;
   /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
   anonymizedAt: Date | null;
   createdAt: Date;

@@ -67,6 +67,12 @@ export const playerConnectResultSchema = z
      * `false` depois disso, para sempre: quem sair da fila fica fora.
      */
     applyAwpDefault: z.boolean(),
+    /**
+     * A linha única do connect nos servidores abertos (S16), já em português e sem o prefixo: as
+     * boas-vindas da Conta nova no Modo ou uma curiosidade da semana. O plugin a mostra no primeiro
+     * spawn de cada conexão. Nulo: nada a mostrar.
+     */
+    greeting: z.string().nullable(),
   })
   .meta({ id: 'PlayerConnectResult' });
 
