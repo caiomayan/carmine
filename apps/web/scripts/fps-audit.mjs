@@ -771,6 +771,25 @@ export const GUARD_LIMITS = {
   offCompositorAnimations: 0,
 };
 
+/**
+ * Quarentena da guarda: a página é medida e aparece na tabela, mas não reprova a CI. Só vale até `until` (inclusive);
+ * depois dessa data volta a reprovar sozinha, sem ninguém precisar lembrar. Dono: Verniz.
+ *
+ * Editor, até 2026-11-11 (14 dias, a partir de 2026-10-28): o fps de repouso dele ainda oscila na CI mesmo com o viewer 3D de
+ * terceiro trocado por um parado (#194): 30% e 41% no #191, 80% e 159% no #193, contra 0% em outras execuções, sem que a
+ * nossa página tenha mudado. Em investigação (a causa não é o viewer, ou não é só ele); o dono aprovou a quarentena para
+ * não travar os PRs dos outros. As demais páginas continuam reprovando.
+ */
+export const QUARANTINE = {
+  Editor: { until: '2026-11-11', owner: 'Verniz' },
+};
+
+/** A quarentena vigente de uma página (undefined se não há ou se o prazo acabou). */
+function quarantineOf(name, today = new Date().toISOString().slice(0, 10)) {
+  const entry = QUARANTINE[name];
+  return entry && today <= entry.until ? entry : undefined;
+}
+
 /** Uma página parada, 8 s depois de pronta (os pulsos decorativos já terminaram), medida por 3 s. */
 async function idleGuard(browser, page, ctx) {
   const { context, tab, cdp } = await openPage(browser, page, { ...ctx, cpu: 1 });
@@ -833,7 +852,8 @@ async function runGuard(browser, ctx, { only, serverPath, profilePath }) {
     const broken = Object.entries(GUARD_LIMITS)
       .filter(([key, limit]) => r[key] > limit)
       .map(([key, limit]) => `${key} ${f1(r[key])} > ${limit}`);
-    if (broken.length) {
+    const quarantine = broken.length ? quarantineOf(page.name) : undefined;
+    if (broken.length && !quarantine) {
       failures.push(
         `${page.name}: ${broken.join('; ')}${r.offCompositorNames.length ? ` [${r.offCompositorNames.join(', ')}]` : ''}${r.textWritesPerSecond > GUARD_LIMITS.textWritesPerSecond ? ` [texto: ${r.topText}]` : ''}`,
       );
@@ -848,7 +868,7 @@ async function runGuard(browser, ctx, { only, serverPath, profilePath }) {
       for (const x of r.trace.callers) console.log(`  · ${page.name}: ${f1(x.ms)} ms ${x.key}`);
     }
     console.log(
-      `| ${page.name} | ${f1(r.styleRecalcsPerSecond)} | ${f1(r.layoutsPerSecond)} | ${f1(r.textWritesPerSecond)} | ${pct(r.mainThreadBusy)} | ${r.offCompositorAnimations} | ${broken.length ? 'ACIMA' : 'ok'} |`,
+      `| ${page.name} | ${f1(r.styleRecalcsPerSecond)} | ${f1(r.layoutsPerSecond)} | ${f1(r.textWritesPerSecond)} | ${pct(r.mainThreadBusy)} | ${r.offCompositorAnimations} | ${broken.length ? (quarantine ? `ACIMA (quarentena até ${quarantine.until}, só relatório)` : 'ACIMA') : 'ok'} |`,
     );
   }
   if (failures.length) {
