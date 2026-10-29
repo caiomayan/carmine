@@ -163,8 +163,8 @@ export const PROFILE_SESSIONS_LIMIT_MAX = 30;
 /**
  * Uma Sessão de jogo. Quem vê de fora (D1) só recebe Modo, mapa, dia e duração: nada de servidor nem
  * hora do relógio, que revelariam o hábito da pessoa. `startedAt` e `endedAt` só vêm para a própria
- * Conta (nulos para os outros). `live` (em andamento agora) só para a própria Conta e os amigos
- * Steam; para os outros é sempre falso.
+ * Conta (nulos para os outros). `live` (em andamento agora) qualquer pessoa que vê as Sessões
+ * vê: a Conta está jogando agora, no Modo e mapa da Sessão.
  */
 export const profileSessionSchema = z
   .object({

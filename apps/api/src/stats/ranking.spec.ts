@@ -12,6 +12,7 @@ let seq = 0;
 const row = (over: Partial<RankingRow> = {}): RankingRow => ({
   accountId: `conta-${++seq}`,
   publicId: 10_000 + seq,
+  createdAt: new Date(Date.UTC(2026, 0, 1) + seq * 60_000),
   kills: 0,
   deaths: 0,
   assists: 0,
@@ -47,13 +48,65 @@ describe('Ranking do Retake', () => {
 
   it('o K/D que empata na tela (2 casas) cai para mais kills, depois para a Conta mais antiga', () => {
     const ranked = rankWeek('retake', [
-      row({ accountId: 'novo', publicId: 20_000, roundsWon: 30, kills: 20, deaths: 10 }),
-      row({ accountId: 'antigo', publicId: 10_500, roundsWon: 30, kills: 20, deaths: 10 }),
-      row({ accountId: 'mais-kills', publicId: 30_000, roundsWon: 30, kills: 40, deaths: 20 }),
+      row({
+        accountId: 'novo',
+        createdAt: new Date('2026-03-01Z'),
+        roundsWon: 30,
+        kills: 20,
+        deaths: 10,
+      }),
+      row({
+        accountId: 'antigo',
+        createdAt: new Date('2026-01-10Z'),
+        roundsWon: 30,
+        kills: 20,
+        deaths: 10,
+      }),
+      row({
+        accountId: 'mais-kills',
+        createdAt: new Date('2026-05-01Z'),
+        roundsWon: 30,
+        kills: 40,
+        deaths: 20,
+      }),
     ]);
 
     expect(ranked.map((entry) => entry.accountId)).toEqual(['mais-kills', 'antigo', 'novo']);
     expect(ranked.map((entry) => entry.position)).toEqual([1, 2, 3]);
+  });
+
+  it('a Conta mais antiga é a de data de criação menor, não a de ID público menor (ID reservado vem depois)', () => {
+    // O ID reservado (1 a 9.999) é dado pela Staff a uma Conta que pode ter nascido depois.
+    const ranked = rankWeek('retake', [
+      row({
+        accountId: 'reservado-novo',
+        publicId: 7,
+        createdAt: new Date('2026-06-01Z'),
+        roundsWon: 30,
+      }),
+      row({
+        accountId: 'comum-antiga',
+        publicId: 15_000,
+        createdAt: new Date('2026-01-01Z'),
+        roundsWon: 30,
+      }),
+    ]);
+
+    expect(ranked.map((entry) => entry.accountId)).toEqual(['comum-antiga', 'reservado-novo']);
+  });
+
+  it('na mesma data de criação, o menor ID público fecha a ordem, em qualquer ordem de entrada', () => {
+    const createdAt = new Date('2026-02-02T10:00:00Z');
+    const rows = [
+      row({ accountId: 'b', publicId: 12_000, createdAt, roundsWon: 30 }),
+      row({ accountId: 'a', publicId: 11_000, createdAt, roundsWon: 30 }),
+    ];
+
+    expect(rankWeek('retake', rows).map((entry) => entry.accountId)).toEqual(['a', 'b']);
+    expect(rankWeek('retake', [...rows].reverse()).map((entry) => entry.accountId)).toEqual([
+      'a',
+      'b',
+    ]);
   });
 
   it('exige o mínimo de rounds jogados na semana', () => {

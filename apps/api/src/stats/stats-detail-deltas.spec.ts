@@ -1,7 +1,7 @@
 import type { EventBatch, KillEvent, RoundEndEvent } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
-import { collectServerHours } from './server-hours.js';
-import { collectStats } from './stats-deltas.js';
+import { collectServerHours as collectHours } from './server-hours.js';
+import { collectStats as collectForMode } from './stats-deltas.js';
 
 const A = '76561198000000001';
 const B = '76561198000000002';
@@ -32,9 +32,18 @@ const round = (over: Partial<RoundEndEvent> = {}): RoundEndEvent => ({
   at: AT,
   warmup: false,
   winner: 'ct',
-  players: [],
+  players: [
+    { steamId: A, team: 'ct' },
+    { steamId: B, team: 't' },
+  ],
   ...over,
 });
+
+// Estes testes são do Retake, o Modo dos rounds com placar de times.
+const collectStats = (events: EventBatch, known: ReadonlySet<string>) =>
+  collectForMode(events, known, 'retake');
+const collectServerHours = (rounds: Parameters<typeof collectHours>[0]) =>
+  collectHours(rounds, 'retake');
 
 const batch = (events: Partial<EventBatch>): EventBatch => ({
   kills: [],
@@ -210,6 +219,12 @@ describe('collectServerHours', () => {
     ]);
     expect(hours).toHaveLength(1);
     expect(hours[0]).toMatchObject({ lastRoundNumber: 2, scoreCt: 1, scoreT: 1 });
+  });
+
+  it('o round sintético do cs2-retakes (humanos de um lado só) não entra no Retake, mas entra no Deathmatch', () => {
+    const lonely = round({ map: 'de_nuke', winner: 't', players: [{ steamId: A, team: 't' }] });
+    expect(collectServerHours([lonely])).toEqual([]);
+    expect(collectHours([lonely], 'deathmatch')).toHaveLength(1);
   });
 
   it('um lote sem rounds não gera nada', () => {

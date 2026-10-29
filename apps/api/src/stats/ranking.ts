@@ -14,7 +14,9 @@ export const DEATHMATCH_MIN_SECONDS = DEATHMATCH_MIN_MINUTES * 60;
 /** A semana de uma Conta num Modo, como o Ranking lê (S12). */
 export interface RankingRow extends StatsTotals {
   accountId: string;
-  /** Desempate final: a Conta mais antiga (menor ID público) fica na frente. */
+  /** Desempate final: a Conta mais antiga (menor data de criação) fica na frente. */
+  createdAt: Date;
+  /** Fecha a ordem quando duas Contas têm o mesmo instante de criação (é único por Conta). */
   publicId: number;
 }
 
@@ -56,9 +58,10 @@ export function progressToMinimum(mode: GameMode, row: StatsTotals | null): Rank
  *
  * - Retake: rounds vencidos, depois K/D.
  * - Deathmatch: KPM, depois HS%.
- * - Se ainda empatar: mais kills, e por fim a Conta mais antiga (menor ID público). O último
- *   critério é único por Conta, então a ordem é total e o mesmo conjunto dá sempre o mesmo
- *   Ranking, em qualquer ordem de entrada.
+ * - Se ainda empatar: mais kills, e por fim a Conta mais antiga (menor data de criação, e o menor
+ *   ID público se o instante for o mesmo). O ID público sozinho não serve: o reservado (1 a 9.999)
+ *   é dado pela Staff a uma Conta que pode ter nascido depois. O último critério é único por Conta,
+ *   então a ordem é total e o mesmo conjunto dá sempre o mesmo Ranking, em qualquer ordem de entrada.
  *
  * Os números comparados são os mesmos que o Ranking mostra (K/D e KPM com 2 casas, HS% com 1):
  * quem aparece empatado na tela é desempatado pelo critério seguinte, nunca por uma casa oculta.
@@ -72,6 +75,7 @@ export function rankWeek(mode: GameMode, rows: readonly RankingRow[]): RankedRow
       return {
         accountId: row.accountId,
         publicId: row.publicId,
+        createdAt: row.createdAt,
         kills: row.kills,
         score: mode === 'retake' ? row.roundsWon : (stats.kpm ?? 0),
         kd: stats.kd,
@@ -85,7 +89,11 @@ export function rankWeek(mode: GameMode, rows: readonly RankingRow[]): RankedRow
       b.score - a.score ||
       (mode === 'retake' ? b.kd - a.kd : (b.headshotPercent ?? 0) - (a.headshotPercent ?? 0)) ||
       b.kills - a.kills ||
+      a.createdAt.getTime() - b.createdAt.getTime() ||
       a.publicId - b.publicId,
   );
-  return rated.map(({ kills: _kills, ...rest }, index) => ({ position: index + 1, ...rest }));
+  return rated.map(({ kills: _kills, createdAt: _createdAt, ...rest }, index) => ({
+    position: index + 1,
+    ...rest,
+  }));
 }

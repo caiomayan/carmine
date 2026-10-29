@@ -1,6 +1,7 @@
 import type {
   DamageEvent,
   EventBatch,
+  GameMode,
   KillEvent,
   RoundEndEvent,
   SessionEndEvent,
@@ -66,10 +67,15 @@ const sessionEnd = (over: Partial<SessionEndEvent> = {}): SessionEndEvent => ({
   ...over,
 });
 
-function collect(events: Partial<EventBatch>, knownIds: ReadonlySet<string> = known) {
+function collect(
+  events: Partial<EventBatch>,
+  knownIds: ReadonlySet<string> = known,
+  mode: GameMode = 'retake',
+) {
   return collectStats(
     { kills: [], damages: [], roundEnds: [], sessionStarts: [], sessionEnds: [], ...events },
     knownIds,
+    mode,
   );
 }
 
@@ -239,11 +245,43 @@ describe('fim de round', () => {
           players: [
             { steamId: A, team: 'ct' },
             { steamId: A, team: 'ct' },
+            { steamId: B, team: 't' },
           ],
         }),
       ],
     });
 
+    expect(deltas).toEqual(
+      expect.arrayContaining([
+        of(A, { roundsPlayed: 1, roundsWon: 1 }),
+        of(B, { roundsPlayed: 1 }),
+      ]),
+    );
+    expect(deltas).toHaveLength(2);
+  });
+
+  it('round sintético do cs2-retakes (humanos de um lado só) não é jogado nem vencido por ninguém', () => {
+    // O jogo encerra o round sozinho quando um lado fica sem humanos e dá a vitória aos TR.
+    for (const players of [
+      [{ steamId: A, team: 't' as const }],
+      [{ steamId: B, team: 'ct' as const }],
+      [
+        { steamId: A, team: 't' as const },
+        { steamId: B, team: 't' as const },
+      ],
+    ]) {
+      const { deltas, ignored } = collect({ roundEnds: [roundEnd({ winner: 't', players })] });
+      expect(deltas).toEqual([]);
+      expect(ignored).toBe(1);
+    }
+  });
+
+  it('no Deathmatch, que não tem placar de times, o round segue contando como sempre', () => {
+    const { deltas } = collect(
+      { roundEnds: [roundEnd({ players: [{ steamId: A, team: 'ct' }] })] },
+      known,
+      'deathmatch',
+    );
     expect(deltas).toEqual([of(A, { roundsPlayed: 1, roundsWon: 1 })]);
   });
 

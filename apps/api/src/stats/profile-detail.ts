@@ -30,7 +30,7 @@ type ViewedAccount = { id: string; profilePrivate: boolean; steamId: string };
 export class ProfileDetailReader {
   constructor(
     private readonly db: Database,
-    /** Para o "em andamento" da própria Conta; sem ele, nenhuma Sessão é `live`. */
+    /** Para o "em andamento" de qualquer Conta; sem ele, nenhuma Sessão é `live`. */
     private readonly live: Pick<LiveServers, 'whereArePlaying'> | null = null,
   ) {}
 
@@ -99,8 +99,8 @@ export class ProfileDetailReader {
 
   /**
    * As Sessões mais recentes, da mais nova para a mais antiga. De fora (D1) só Modo, mapa, dia e
-   * duração; o horário exato e o "em andamento" são da própria Conta. Uma Sessão aberta há mais
-   * de 24 h (queda do servidor) não aparece.
+   * duração; o horário exato é da própria Conta. O "em andamento" (`live`) qualquer pessoa que vê
+   * as Sessões vê. Uma Sessão aberta há mais de 24 h (queda do servidor) não aparece.
    */
   async sessions(
     account: ViewedAccount,
@@ -130,7 +130,7 @@ export class ProfileDetailReader {
 
     // Em andamento: a Sessão aberta mais nova, se a presença ainda tem a pessoa nesse servidor.
     let liveId: string | null = null;
-    if (own && this.live && rows.some((row) => row.endedAt === null)) {
+    if (this.live && rows.some((row) => row.endedAt === null)) {
       const steamId = account.steamId;
       const serverId = (await this.live.whereArePlaying([steamId]).catch(() => null))?.get(steamId);
       liveId = rows.find((row) => row.endedAt === null && row.serverId === serverId)?.id ?? null;

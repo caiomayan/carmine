@@ -3,6 +3,12 @@ import { type APIRequestContext, expect } from '@playwright/test';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * O adversário dos rounds semeados: o Retake só conta o round jogado por humanos dos dois lados (o sintético do
+ * cs2-retakes não conta), então toda lista de round leva ao menos um humano do time T.
+ */
+export const OPPONENT = '76561198099999001';
+
 /** Uma semana (ou várias) antes de agora: os eventos caem nas semanas anteriores do agregado. */
 export const daysAgo = (days: number) => new Date(Date.now() - days * DAY_MS).toISOString();
 
@@ -47,7 +53,10 @@ export async function playWeek(request: APIRequestContext, week: PlayedWeek) {
         at,
         warmup: false,
         winner: 'ct',
-        players: week.rounds.steamIds.map((steamId) => ({ steamId, team: 'ct' })),
+        players: [
+          ...week.rounds.steamIds.map((steamId) => ({ steamId, team: 'ct' })),
+          { steamId: OPPONENT, team: 't' },
+        ],
       })),
       sessionStarts: [],
       sessionEnds: sessions.map(({ steamId, seconds }) => ({

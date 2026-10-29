@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { chooseSteamAccount, newSteamId, reconnectPlayer } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { OPPONENT } from './game-events';
 import { fakeServer, routeLiveServers } from './live-servers';
 
 /**
@@ -55,7 +56,10 @@ async function playRounds(request: APIRequestContext, name: string, rounds = 120
         at,
         warmup: false,
         winner: 'ct',
-        players: [{ steamId, team: 'ct' }],
+        players: [
+          { steamId, team: 'ct' },
+          { steamId: OPPONENT, team: 't' },
+        ],
       })),
       sessionStarts: [],
       sessionEnds: [],
