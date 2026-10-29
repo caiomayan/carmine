@@ -50,6 +50,6 @@ public class VipPlanNoticeTests
 
         vip.OnConnectResult(Player, Carmine.Api.Client.VipNotice.Ending_today, Ends, planNotice: true, isVip: true);
 
-        Assert.Equal("Seu VIP acaba hoje. Para renovar: stcarmine.com/vip", vip.TakeOnSpawn(Player));
+        Assert.Equal("Seu VIP acaba hoje. Para renovar: stcarmine.com/plans", vip.TakeOnSpawn(Player));
     }
 }
