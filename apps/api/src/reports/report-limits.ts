@@ -1,9 +1,12 @@
 import {
   formatRetryAfter,
+  REPORT_DAILY_LIMIT,
+  REPORT_DAILY_LIMIT_GAME_MESSAGE,
   REPORT_HOURLY_LIMIT,
   REPORT_SAME_TARGET_COOLDOWN_MINUTES,
   type ReportRefusal,
 } from '@carmine/contracts';
+import { nextDayStartOf } from '../stats/stats-week.js';
 
 /** Uma Denúncia que o denunciante já fez (só o que os limites precisam). */
 export interface PastReport {
@@ -15,7 +18,7 @@ export type LimitVerdict =
   | { allowed: true }
   | {
       allowed: false;
-      refusal: 'same_target_cooldown' | 'hourly_limit';
+      refusal: 'same_target_cooldown' | 'hourly_limit' | 'daily_limit';
       retryAfterSeconds: number;
     };
 
@@ -23,17 +26,30 @@ const COOLDOWN_MS = REPORT_SAME_TARGET_COOLDOWN_MINUTES * 60_000;
 const HOUR_MS = 60 * 60_000;
 
 /**
- * Os limites da Denúncia (S13): 1 por alvo a cada 10 minutos e 5 por hora, por denunciante.
- * `past` são as Denúncias do denunciante na última hora (as mais antigas são ignoradas). Quando
- * dois limites valem, a recusa é a do prazo mais longo, para a mensagem nunca prometer um horário
- * em que a próxima tentativa ainda seria recusada.
+ * Os limites da Denúncia: 1 por alvo a cada 10 minutos e 5 por hora, por denunciante (S13), e
+ * `REPORT_DAILY_LIMIT` por dia de Brasília, somando todos os tipos (regra única de denúncia, ADR 0026).
+ * `past` são as Denúncias de jogo do denunciante na última hora (as mais antigas são ignoradas);
+ * `sentToday` é quantas Denúncias ele já fez hoje, de qualquer tipo. Quando dois limites valem, a
+ * recusa é a do prazo mais longo, para a mensagem nunca prometer um horário em que a próxima
+ * tentativa ainda seria recusada.
  */
 export function checkReportLimits(
   past: readonly PastReport[],
   targetAccountId: string,
   now: Date,
+  sentToday = 0,
 ): LimitVerdict {
-  const refusals: { refusal: 'same_target_cooldown' | 'hourly_limit'; waitMs: number }[] = [];
+  const refusals: {
+    refusal: 'same_target_cooldown' | 'hourly_limit' | 'daily_limit';
+    waitMs: number;
+  }[] = [];
+
+  if (sentToday >= REPORT_DAILY_LIMIT) {
+    refusals.push({
+      refusal: 'daily_limit',
+      waitMs: nextDayStartOf(now).getTime() - now.getTime(),
+    });
+  }
 
   const lastAtTarget = Math.max(
     ...past.filter((r) => r.targetAccountId === targetAccountId).map((r) => r.createdAt.getTime()),
@@ -77,5 +93,7 @@ export function refusalMessage(refusal: ReportRefusal, retryAfterSeconds: number
       return `Você já denunciou este jogador há pouco.${when}`;
     case 'hourly_limit':
       return `Você chegou ao limite de ${REPORT_HOURLY_LIMIT} denúncias por hora.${when}`;
+    case 'daily_limit':
+      return REPORT_DAILY_LIMIT_GAME_MESSAGE;
   }
 }

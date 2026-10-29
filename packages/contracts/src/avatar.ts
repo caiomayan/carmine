@@ -154,6 +154,8 @@ export const AVATAR_ERROR_CODES = [
   'already_reported',
   /** Mais de `AVATAR_REPORTS_PER_HOUR` denúncias de foto na última hora. */
   'report_limit',
+  /** Mais de `REPORT_DAILY_LIMIT` denúncias hoje, somando todos os tipos (regra única de denúncia). */
+  'report_daily_limit',
 ] as const;
 
 export type AvatarErrorCode = (typeof AVATAR_ERROR_CODES)[number];
@@ -174,6 +176,7 @@ export const AVATAR_ERROR_STATUS: Record<AvatarErrorCode, number> = {
   own_avatar: 422,
   already_reported: 409,
   report_limit: 429,
+  report_daily_limit: 429,
 };
 
 export const avatarErrorSchema = z
@@ -181,7 +184,7 @@ export const avatarErrorSchema = z
     statusCode: z.int(),
     code: z.enum(AVATAR_ERROR_CODES),
     message: z.string(),
-    /** Só em `upload_limit`, `upload_too_soon` e `report_limit`: quando tentar de novo. */
+    /** Só em `upload_limit`, `upload_too_soon`, `report_limit` e `report_daily_limit`: quando tentar de novo. */
     retryAfter: z.iso.datetime({ offset: true }).optional(),
   })
   .meta({ id: 'AvatarError' });
@@ -252,7 +255,16 @@ export type StaffAvatarDecision = z.infer<typeof staffAvatarDecisionSchema>;
 /** Um caso da fila de denúncias de foto: a foto, quem a tem, o que dizem e o histórico da Conta. */
 export const staffAvatarCaseSchema = z
   .object({
+    kind: z.literal('avatar'),
     avatar: staffAvatarSchema,
+    /**
+     * Quando vence o prazo da Staff (`AVATAR_REVIEW_DEADLINE_HOURS` h), contado da denúncia mais antiga de quem tem
+     * peso normal. Nulo quando o caso já foi decidido ou quando todas as denúncias abertas são de quem perdeu peso
+     * (sem prazo correndo).
+     */
+    deadlineAt: z.iso.datetime({ offset: true }).nullable(),
+    /** Todas as denúncias abertas são de quem perdeu peso (ver `REPORTER_ARCHIVED_MIN`): o caso vai para o fim da fila. */
+    lowWeight: z.boolean(),
     account: z.object({
       publicId: z.int().positive(),
       displayName: z.string(),

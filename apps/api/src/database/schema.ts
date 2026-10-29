@@ -1003,6 +1003,8 @@ export const reports = pgTable(
     serverId: uuid().references(() => gameServers.id),
     map: text(),
     round: integer(),
+    /** O Mapa jogado em andamento (S17), quando o plugin o manda; agrupa os casos da fila. Sem FK: o resumo pode não existir. */
+    mapPlayId: uuid(),
     reason: reportReason().notNull(),
     chatContext: jsonb().$type<ReportChatLineRow[]>().notNull(),
     status: reportStatus().notNull().default('open'),
