@@ -135,7 +135,7 @@ _Evitar_: banir do Ranking, punir (a Remoção não é uma Punição)
 ## VIP e pagamento
 
 **VIP**:
-O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis.
+O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis. Na S20 vira o **Plano** (Capo ou Padrinho); "VIP" fica só como **nome legado interno** (tabela `vip_periods`, IDs de pacote `vip-1m`, `vip-3m`, `vip-6m`) e nunca aparece para o usuário.
 _Evitar_: premium, gold
 
 **Período VIP** (`VipPeriod`):
@@ -185,6 +185,18 @@ Termos já decididos para as fatias de [`docs/specs/beta-aberto.md`](docs/specs/
 **Plano** (`Plan`), S20:
 O que a Conta assina para ter benefícios. Há dois: **Capo** (`capo`) e **Padrinho** (`padrinho`). Substitui o VIP, que some da interface.
 _Evitar_: VIP, premium, assinatura (a assinatura é só uma forma de pagar)
+
+**Concessão do plano** (`PlanGrant`), S20:
+Uma compra de pacote, concessão da Staff ou compra de teste: plano, dias e o instante em que foi feita. Não muda depois de gravada. O plano da Conta num instante é **calculado** das concessões (`apps/api/src/plans/plan-timeline.ts`): Padrinho gasta primeiro e o Capo que sobra fica guardado; Capo sobre Padrinho espera na fila. Ver ADR 0026.
+
+**Período do plano** (`PlanPeriod`), S20:
+Um trecho de tempo em que a Conta tem um plano ativo, calculado da agenda (substitui o Período VIP).
+
+**Pacote** (`PlanPackage`), S20:
+O que se compra: 1, 3 ou 6 meses de Capo ou de Padrinho. A duração é forma de pagamento, não plano.
+
+**Plano de teste** (`test`), S20:
+O plano das compras de teste do beta, em que ninguém paga de verdade. Acaba no dia em que a cobrança real ligar, com aviso 7 dias antes.
 
 **Mapa jogado** (`MapPlay`), S17:
 Um mapa do começo ao fim (ou até um reinício) num Servidor Carmine, que agrupa os rounds da coleta por round. Interno: não aparece para o jogador.

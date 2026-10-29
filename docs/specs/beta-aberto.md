@@ -327,8 +327,9 @@ O "VIP" genérico vira **dois planos com nome próprio**, na linha da família i
 - Até o lançamento, **ninguém paga de verdade**. A compra de mentira, que hoje só existe na homologação, fica liberada em `stcarmine.com` para todos testarem os dois planos.
 - Toda a tela de compra mostra com destaque: `Beta: compra de teste. Nada é cobrado.`
 - O Mercado Pago real continua desligado até o advogado e o contador.
+- **No dia em que a cobrança real ligar, os planos de teste ativos acabam**, com **aviso ao jogador 7 dias antes**. A data e o aviso entram junto com a cobrança real; a agenda dos planos já aceita encerrar os períodos de teste numa data dada (ADR 0026). Os dias pagos nunca são tocados: dentro de um plano o teste é gasto antes.
 
-**O que muda no código:** os termos do domínio (`VIP`, `VipPeriod`, `VipPackage` → Plano, Período do plano, Pacote; CONTEXT.md e ADR), as rotas (`/vip` → `/plans`, com redirecionamento), os textos do plugin (`!vip` → `!plan`, com `!plano` e `!vip` como sinônimos), os cargos do Discord e o selo do card. As compras de mentira já feitas viram Capo.
+**O que muda no código:** os termos do domínio (`VIP`, `VipPeriod`, `VipPackage` → Plano, Período do plano, Pacote; CONTEXT.md e ADR), as rotas (`/vip` → `/plans`, com redirecionamento), os textos do plugin (`!vip` → `!plan`, com `!plano` e `!vip` como sinônimos), os cargos do Discord e o selo do card. As compras de mentira já feitas viram Capo. A tabela `vip_periods` e os IDs de pacote `vip-1m`, `vip-3m` e `vip-6m` ficam como **nomes legados internos** (por causa do rollback de imagem) e nunca aparecem para o usuário: tela, recibo, e-mail, título do item no Mercado Pago ou cargo (ADR 0026).
 
 **Aceite**
 - Nenhuma tela, mensagem do jogo ou cargo do Discord mostra "VIP".
