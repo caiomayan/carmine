@@ -139,7 +139,7 @@ const LASTING_TEXT = {
 
 /**
  * O texto que o jogador vê no jogo: a Categoria (nunca o motivo livre), a duração em horário de
- * Brasília e onde recorrer (`appeal`, ex.: `stcarmine.com/regras#recurso`).
+ * Brasília e onde recorrer (`appeal`, ex.: `stcarmine.com/rules#appeal`).
  */
 export function gameSanctionMessage(
   sanction: { type: SanctionType; category: SanctionCategory; endsAt: Date | null },

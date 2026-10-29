@@ -374,7 +374,7 @@ function shapePaths(value: unknown, path = '', into = new Set<string>()): string
   return [...into].sort();
 }
 
-describe('formato da resposta de /inventario/aplicaveis', () => {
+describe('formato da resposta de /inventory/applicable', () => {
   // A resposta fica em cache no navegador e na borda, e a versão vai na URL do pedido. Mudou o
   // formato (AttachmentPage)? Suba ATTACHMENTS_PAYLOAD_VERSION e atualize este registro: sem isso,
   // o cache antigo chegaria ao código novo no formato velho.

@@ -88,7 +88,7 @@ export interface RevokedSanction {
  */
 export class Sanctions {
   /**
-   * @param appeal onde recorrer, como aparece no jogo (ex.: `stcarmine.com/regras#recurso`).
+   * @param appeal onde recorrer, como aparece no jogo (ex.: `stcarmine.com/rules#appeal`).
    */
   constructor(
     private readonly db: Database,

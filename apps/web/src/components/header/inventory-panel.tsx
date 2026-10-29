@@ -63,11 +63,11 @@ function InventoryContent({ inventory }: { inventory: InventoryView }) {
 
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2">
         <Button asChild size="sm">
-          <Link href="/inventario/adicionar" data-testid="preview-add">
+          <Link href="/inventory/add" data-testid="preview-add">
             {t('add')}
           </Link>
         </Button>
-        <PanelFooterLink href="/inventario">{t('open')}</PanelFooterLink>
+        <PanelFooterLink href="/inventory">{t('open')}</PanelFooterLink>
       </div>
     </div>
   );
@@ -83,11 +83,11 @@ function SignedOut() {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2">
         <Button asChild size="sm">
-          <a href={steamLoginHref('/inventario')} data-testid="preview-sign-in">
+          <a href={steamLoginHref('/inventory')} data-testid="preview-sign-in">
             {t('signIn')}
           </a>
         </Button>
-        <PanelFooterLink href="/inventario/adicionar">{t('browse')}</PanelFooterLink>
+        <PanelFooterLink href="/inventory/add">{t('browse')}</PanelFooterLink>
       </div>
     </div>
   );

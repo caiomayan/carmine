@@ -5,25 +5,25 @@ import { clickHydrated, fillHydrated, openAccountMenu } from './hydration';
 const accountMenu = (page: import('@playwright/test').Page) => page.getByTestId('account-menu');
 
 test('login completo: entra, volta à página de origem, avatar na barra e sai', async ({ page }) => {
-  await page.goto('/regras');
+  await page.goto('/rules');
   await expect(page.getByTestId('sign-in')).toHaveText('Entrar');
   await expect(accountMenu(page)).toHaveCount(0);
 
   await chooseSteamAccount(page.context(), newSteamId());
   await page.getByTestId('sign-in').click();
-  await expect(page).toHaveURL('/entrar?voltar=%2Fregras');
+  await expect(page).toHaveURL('/login?voltar=%2Frules');
   await expect(page.getByRole('heading', { level: 1, name: 'Entrar na Carmine' })).toBeVisible();
   // Na própria página de entrar a barra não repete o "Entrar".
   await expect(page.getByTestId('sign-in')).toHaveCount(0);
 
   await page.getByRole('link', { name: 'Entrar com a Steam' }).click();
-  await expect(page).toHaveURL('/regras');
+  await expect(page).toHaveURL('/rules');
   await expect(accountMenu(page)).toBeVisible();
   await expect(accountMenu(page).locator('img, [aria-hidden]').first()).toBeVisible();
   await expect(page.getByTestId('sign-in')).toHaveCount(0);
 
   // Recarregada, a página já chega do servidor com a Conta: nunca pisca "Entrar".
-  const html = await (await page.request.get('/regras')).text();
+  const html = await (await page.request.get('/rules')).text();
   expect(html).toContain('data-testid="account-menu"');
   expect(html).not.toContain('data-testid="sign-in"');
 
@@ -48,7 +48,7 @@ test('cada carga de página confirma a sessão em /api/me (renovação deslizant
   await expect(accountMenu(page)).toBeVisible();
 
   const me = page.waitForResponse((r) => r.url().endsWith('/api/me'));
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   expect((await me).status()).toBe(200);
 });
 
@@ -66,30 +66,30 @@ test('quem desiste na Steam volta para entrar com o aviso e a página de origem'
   page,
 }) => {
   await chooseSteamAccount(page.context(), newSteamId(), { cancel: true });
-  await page.goto('/entrar?voltar=%2Finventario');
+  await page.goto('/login?voltar=%2Finventory');
   await page.getByRole('link', { name: 'Entrar com a Steam' }).click();
-  await expect(page).toHaveURL('/entrar?erro=cancelado&voltar=%2Finventario');
+  await expect(page).toHaveURL('/login?erro=cancelado&voltar=%2Finventory');
   await expect(page.getByText('Você cancelou o login na Steam')).toBeVisible();
 
   // Tentando de novo (agora sem desistir), volta para a página de origem.
   await chooseSteamAccount(page.context(), newSteamId());
   await page.getByRole('link', { name: 'Entrar com a Steam' }).click();
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
 });
 
 for (const [error, message] of [
   ['invalido', 'Não conseguimos confirmar o login com a Steam'],
   ['indisponivel', 'A Steam não respondeu agora'],
 ] as const) {
-  test(`/entrar?erro=${error} explica o que houve`, async ({ page }) => {
-    await page.goto(`/entrar?erro=${error}`);
+  test(`/login?erro=${error} explica o que houve`, async ({ page }) => {
+    await page.goto(`/login?erro=${error}`);
     await expect(page.getByRole('alert').filter({ hasText: message })).toBeVisible();
   });
 }
 
 test('?voltar= só aceita caminhos internos', async ({ page }) => {
   for (const unsafe of ['https%3A%2F%2Fevil.example', '%2F%2Fevil.example', '%2Fapi%2Fme']) {
-    await page.goto(`/entrar?voltar=${unsafe}`);
+    await page.goto(`/login?voltar=${unsafe}`);
     await expect(page.getByRole('link', { name: 'Entrar com a Steam' })).toHaveAttribute(
       'href',
       '/api/auth/steam/login?returnTo=%2F',
@@ -101,12 +101,12 @@ test('?voltar= só aceita caminhos internos', async ({ page }) => {
   }
 });
 
-test('quem já entrou e abre /entrar segue para a página de origem', async ({ page }) => {
+test('quem já entrou e abre /login segue para a página de origem', async ({ page }) => {
   await page.goto('/');
   await signInFromHeader(page, newSteamId());
   await expect(accountMenu(page)).toBeVisible();
-  await page.goto('/entrar?voltar=%2Finventario');
-  await expect(page).toHaveURL('/inventario');
+  await page.goto('/login?voltar=%2Finventory');
+  await expect(page).toHaveURL('/inventory');
 });
 
 test('primeiros passos: a faixa aparece depois do login, abre o Dialog, dispensa e não volta', async ({
@@ -224,7 +224,7 @@ test('sessão expirada durante a edição: o rascunho volta depois do novo login
   await page.context().clearCookies({ name: '__Host-carmine_session' });
   await page.getByRole('button', { name: 'Salvar' }).click();
 
-  await expect(page).toHaveURL('/entrar?voltar=%2Fdev%2Frascunho&motivo=sessao-expirada');
+  await expect(page).toHaveURL('/login?voltar=%2Fdev%2Frascunho&motivo=sessao-expirada');
   await expect(page.getByRole('status').filter({ hasText: 'A sua sessão expirou' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Entrar com a Steam' }).click();

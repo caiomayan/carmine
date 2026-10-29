@@ -99,5 +99,8 @@ if [[ ! -f "$core_json" ]]; then
   cp "$CSS_DIR/configs/core.example.json" "$core_json"
 fi
 sed -i -E 's/"FollowCS2ServerGuidelines"[[:space:]]*:[[:space:]]*true/"FollowCS2ServerGuidelines": false/' "$core_json"
+# Servidor em português (S16): é o idioma que o CounterStrikeSharp usa para quem não escolheu outro, e
+# cada plugin carrega o lang/pt-BR.json dele (os que não trazem, o perfil entrega).
+sed -i -E 's/"ServerLanguage"[[:space:]]*:[[:space:]]*"[^"]*"/"ServerLanguage": "pt-BR"/' "$core_json"
 
 echo "carmine-cs2@$PROFILE: configs gravadas (API $CARMINE_API_BASE_URL)"

@@ -14,7 +14,7 @@ import { PageHead } from '@/components/page-head';
 import { formatBrl } from '@/lib/vip/packages';
 import { exceedsHorizon, projectedVipEnd } from '@/lib/vip/purchase';
 import { PurchaseForm } from './purchase-form';
-import '@/app/vip/purchase.css';
+import '@/app/plans/purchase.css';
 
 export type ConfirmAccount = { displayName: string; avatarUrl: string | null; publicId: number };
 
@@ -24,7 +24,7 @@ export type ConfirmBlock = Exclude<PurchaseEligibility, 'ok'> | 'soon';
 /**
  * A confirmação da compra (S14b): antes do pagamento, a Conta que recebe o VIP (avatar, nome, ID), o valor, a duração,
  * o novo fim do VIP, "pagamento único, sem renovação", o aviso do ban permanente sem reembolso (em destaque, como os
- * Termos de Uso pedem na seção 8) e a declaração de maioridade. Só apresenta: o `/vip/comprar` lê a sessão e a API; a
+ * Termos de Uso pedem na seção 8) e a declaração de maioridade. Só apresenta: o `/plans/checkout` lê a sessão e a API; a
  * vitrine `/dev/vip/comprar` entrega dados de exemplo.
  *
  * O texto do aviso do ban e o da declaração seguem o rascunho dos Termos (docs/legal/termos-de-uso.md, seções 8 e 10) e
@@ -61,7 +61,7 @@ export async function ConfirmView({
     <div className="container-page pb-24" data-testid="vip-confirm">
       <PageHead title={t('title')} subtitle={t('subtitle')} />
       <p className="vc-back">
-        <Link href={'/vip' as Route}>{t('back')}</Link>
+        <Link href={'/plans' as Route}>{t('back')}</Link>
       </p>
 
       <div className="vc">
@@ -135,7 +135,7 @@ export async function ConfirmView({
             <p>{t('ban.body')}</p>
             <p className="vc-ban-refund">
               {t('ban.refund', { days: REFUND_WINDOW_DAYS })}{' '}
-              <Link href={'/termos' as Route}>{t('ban.terms')}</Link>
+              <Link href={'/terms' as Route}>{t('ban.terms')}</Link>
             </p>
           </aside>
 
@@ -150,7 +150,7 @@ export async function ConfirmView({
               <p>{t(`blocked.${block}`)}</p>
               {block === 'purchase_in_progress' || block === 'daily_limit' ? (
                 <p>
-                  <Link href={'/configuracoes/compras' as Route} prefetch={false}>
+                  <Link href={'/settings/purchases' as Route} prefetch={false}>
                     {t('blocked.myPurchases')}
                   </Link>
                 </p>
@@ -161,7 +161,7 @@ export async function ConfirmView({
               <h2 className="vc-stop-title">{t('horizon.title')}</h2>
               <p>{t('horizon.body', { days: VIP_MAX_HORIZON_DAYS })}</p>
               <p>
-                <Link href={'/vip' as Route}>{t('horizon.back')}</Link>
+                <Link href={'/plans' as Route}>{t('horizon.back')}</Link>
               </p>
             </section>
           ) : (

@@ -180,7 +180,7 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
             <AnimatedIcon icon={UserIcon} size={16} className="text-muted-foreground" />
             {labels.profile}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={go('/inventario')} className={ITEM}>
+          <DropdownMenuItem onSelect={go('/inventory')} className={ITEM}>
             <AnimatedIcon icon={BoxIcon} size={16} className="text-muted-foreground" />
             {labels.inventory}
           </DropdownMenuItem>

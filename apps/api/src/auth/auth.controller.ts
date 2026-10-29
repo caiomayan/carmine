@@ -68,7 +68,7 @@ const LOGIN_ERRORS: Record<OpenIdFailure['reason'], LoginError> = {
 /**
  * Login Steam (OpenID 2.0), sessão e logout (S03, ADR 0007). As rotas de login são navegações
  * do navegador, então respondem com redirecionamentos, nunca com JSON: o sucesso volta à página
- * de origem e a falha vai para `/entrar?erro=<motivo>`.
+ * de origem e a falha vai para `/login?erro=<motivo>`.
  */
 @ApiTags('auth')
 @Controller()
@@ -100,7 +100,7 @@ export class AuthController {
     description: 'Caminho interno do web para onde voltar depois do login (padrão: /)',
   })
   @ApiFoundResponse({
-    description: 'Para a Steam (ou para /entrar?erro=indisponivel, ou erro=limite acima do limite)',
+    description: 'Para a Steam (ou para /login?erro=indisponivel, ou erro=limite acima do limite)',
   })
   async start(
     @Query('returnTo') returnTo: string | undefined,
@@ -135,7 +135,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: HttpStatus.SEE_OTHER,
-    description: 'Para a página de origem (sessão aberta) ou para /entrar?erro=<motivo>',
+    description: 'Para a página de origem (sessão aberta) ou para /login?erro=<motivo>',
   })
   async complete(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     reply.clearCookie(LOGIN_STATE_COOKIE, { path: LOGIN_STATE_PATH });

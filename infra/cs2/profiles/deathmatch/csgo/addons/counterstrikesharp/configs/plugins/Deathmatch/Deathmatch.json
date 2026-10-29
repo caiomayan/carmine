@@ -95,7 +95,7 @@
     "Headshot Kill Sound": {
       "Enabled": true,
       "Sound path": "sounds/buttons/bell1.vsnd_c",
-      "Default value": false,
+      "Default value": true,
       "Only for VIP": false,
       "Command Shortcuts": []
     },
@@ -109,7 +109,7 @@
     "Hit Sound": {
       "Enabled": true,
       "Sound path": "sounds/ui/csgo_ui_contract_type2.vsnd_c",
-      "Default value": false,
+      "Default value": true,
       "Only for VIP": false,
       "Command Shortcuts": []
     },

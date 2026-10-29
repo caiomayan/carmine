@@ -4,7 +4,7 @@ updatedAt: 2026-10-21
 version: 0.3.1
 ---
 
-Estes Termos explicam como funciona o Carmine, o que você pode esperar de nós e o que esperamos de você. Escrevemos em linguagem direta de propósito: se algo não ficar claro, fale com a gente pela página de [contato](/contato).
+Estes Termos explicam como funciona o Carmine, o que você pode esperar de nós e o que esperamos de você. Escrevemos em linguagem direta de propósito: se algo não ficar claro, fale com a gente pela página de [contato](/contact).
 
 ## 1. Quem somos
 
@@ -13,7 +13,7 @@ O Carmine (stcarmine.com) é uma plataforma brasileira de servidores comunitári
 - **Responsável:** [DONO: nome completo, antes de ligar a cobrança]
 - **CPF:** [DONO: número do CPF, antes de ligar a cobrança]
 - **Endereço:** [DONO: endereço do escritório virtual, antes de ligar a cobrança]
-- **Contato eletrônico:** página de [contato](/contato)
+- **Contato eletrônico:** página de [contato](/contact)
 
 A lei de comércio eletrônico exige que essas informações fiquem visíveis no site onde algo é vendido (Decreto 7.962/2013, art. 2º). Elas aparecem aqui a partir do início das vendas do VIP. O endereço informado é de escritório virtual, que recebe correspondência em nome do responsável. [VALIDAR COM ADVOGADO]
 
@@ -21,9 +21,9 @@ Nestes Termos, "Carmine", "nós" e "a Staff" se referem ao operador e às pessoa
 
 ## 2. Como você aceita estes Termos
 
-- **No jogo:** ao conectar num Servidor Carmine, você aceita estes Termos e as [Regras de conduta](/regras). Na primeira vez, avisamos isso no chat com o link desta página.
+- **No jogo:** ao conectar num Servidor Carmine, você aceita estes Termos e as [Regras de conduta](/rules). Na primeira vez, avisamos isso no chat com o link desta página.
 - **No site:** ao entrar com a Steam, você aceita de novo, agora já com a sua Conta reivindicada.
-- **No VIP:** ao pagar um Pacote VIP, o Pagador aceita também as regras de compra da seção 8 e a [Política de Reembolso](/reembolso).
+- **No VIP:** ao pagar um Pacote VIP, o Pagador aceita também as regras de compra da seção 8 e a [Política de Reembolso](/refunds).
 
 Se não concordar, não use o Carmine. Você pode pedir a exclusão dos seus dados a qualquer momento (seção 13).
 
@@ -31,7 +31,7 @@ Se não concordar, não use o Carmine. Você pode pedir a exclusão dos seus dad
 
 - **Classificação indicativa:** o Counter-Strike 2 é classificado pelo Ministério da Justiça (ClassInd) como **não recomendado para menores de 16 anos**, por violência. O Carmine roda o mesmo jogo e acrescenta chat de texto e de voz entre jogadores. [VALIDAR COM ADVOGADO]
 - **O Carmine não bloqueia ninguém por idade para jogar.** Para jogar é preciso ter uma conta Steam, que tem as próprias regras de idade (13 anos ou mais, pelo Steam Subscriber Agreement).
-- **O papel dos responsáveis:** a classificação indicativa é uma orientação, e a lei diz que cabe aos pais e responsáveis acompanhar o uso da internet por crianças e adolescentes (Lei 15.211/2025, art. 3º, parágrafo único). Se você tem menos de 18 anos, leia estes Termos e as [Regras de conduta](/regras) com seus pais ou responsáveis. Eles podem falar com a gente pela página de [contato](/contato) para tirar dúvidas, pedir os seus dados ou pedir a exclusão da sua Conta.
+- **O papel dos responsáveis:** a classificação indicativa é uma orientação, e a lei diz que cabe aos pais e responsáveis acompanhar o uso da internet por crianças e adolescentes (Lei 15.211/2025, art. 3º, parágrafo único). Se você tem menos de 18 anos, leia estes Termos e as [Regras de conduta](/rules) com seus pais ou responsáveis. Eles podem falar com a gente pela página de [contato](/contact) para tirar dúvidas, pedir os seus dados ou pedir a exclusão da sua Conta.
 - **Só maiores de 18 anos podem pagar o VIP** (seção 8). Jogar e montar o Loadout são grátis e não exigem pagamento.
 
 ## 4. O que é o Carmine
@@ -50,7 +50,7 @@ O Carmine é um projeto comunitário pequeno. Fazemos o possível para mantê-lo
 - **A Steam é a única forma de entrar no site.** Não temos e-mail nem senha. Quando você entra com a Steam pela primeira vez, a Conta que nasceu no jogo passa a ser sua no site (Conta reivindicada). Se você nunca jogou, a Conta é criada já reivindicada.
 - **A segurança da sua conta Steam é responsabilidade sua.** Quem controla a sua conta Steam controla a sua Conta no Carmine. Ative o Steam Guard.
 - **Uma Conta por conta Steam.** A Conta, o ID público e o VIP não podem ser vendidos, trocados nem transferidos. IDs reservados (abaixo de 10.000) são dados pela Staff e também não podem ser negociados.
-- **Nome de exibição.** No site e nos servidores, aparece o seu Nome de exibição, não o nome Steam. A Staff pode resetá-lo se ele violar as [Regras de conduta](/regras).
+- **Nome de exibição.** No site e nos servidores, aparece o seu Nome de exibição, não o nome Steam. A Staff pode resetá-lo se ele violar as [Regras de conduta](/rules).
 
 ## 6. Skins simuladas
 
@@ -102,7 +102,7 @@ Podemos melhorar ou ajustar os benefícios. Se um benefício importante for reti
 
 ### Reembolso
 
-Você pode desistir de qualquer Pacote VIP em até 7 dias depois do pagamento e recebe o valor de volta, como manda o Código de Defesa do Consumidor (art. 49). Os detalhes estão na [Política de Reembolso](/reembolso).
+Você pode desistir de qualquer Pacote VIP em até 7 dias depois do pagamento e recebe o valor de volta, como manda o Código de Defesa do Consumidor (art. 49). Os detalhes estão na [Política de Reembolso](/refunds).
 
 ## 9. Indisponibilidade
 
@@ -123,7 +123,7 @@ Se o Carmine encerrar de vez, avisamos com antecedência sempre que possível e 
 
 ## 10. Regras de conduta e punições
 
-As [Regras de conduta](/regras) fazem parte destes Termos. Quem as descumpre pode receber aviso, gag, mute, kick ou ban, temporário ou permanente, sempre aplicado por uma pessoa da Staff e com direito a recurso. Punições ativas e o histórico dos últimos 12 meses aparecem no Perfil, como explicado nas regras e na [Política de Privacidade](/privacidade).
+As [Regras de conduta](/rules) fazem parte destes Termos. Quem as descumpre pode receber aviso, gag, mute, kick ou ban, temporário ou permanente, sempre aplicado por uma pessoa da Staff e com direito a recurso. Punições ativas e o histórico dos últimos 12 meses aparecem no Perfil, como explicado nas regras e na [Política de Privacidade](/privacy).
 
 ### Punições e VIP
 
@@ -134,7 +134,7 @@ As [Regras de conduta](/regras) fazem parte destes Termos. Quem as descumpre pod
 
 ## 11. O que você não pode fazer
 
-Além das [Regras de conduta](/regras), não é permitido:
+Além das [Regras de conduta](/rules), não é permitido:
 
 - atacar ou sobrecarregar o site, a API ou os servidores (DDoS, flood, varredura de falhas);
 - explorar falhas de segurança em vez de nos avisar;
@@ -151,9 +151,9 @@ Além das [Regras de conduta](/regras), não é permitido:
 
 ## 13. Exclusão da Conta
 
-- **Você pode pedir a exclusão a qualquer momento**, pela página de [contato](/contato). A sua Conta é anonimizada: o nome, o avatar, o vínculo com a Steam e o Perfil público deixam de existir.
-- Alguns dados ficam guardados pelo tempo que a lei exige ou para nos defender em caso de disputa, como os registros de pagamento. A [Política de Privacidade](/privacidade) explica o quê e por quanto tempo.
-- Se você tiver VIP ativo, ele acaba com a exclusão. Se o pedido vier dentro dos 7 dias do pagamento, vale o reembolso integral da [Política de Reembolso](/reembolso).
+- **Você pode pedir a exclusão a qualquer momento**, pela página de [contato](/contact). A sua Conta é anonimizada: o nome, o avatar, o vínculo com a Steam e o Perfil público deixam de existir.
+- Alguns dados ficam guardados pelo tempo que a lei exige ou para nos defender em caso de disputa, como os registros de pagamento. A [Política de Privacidade](/privacy) explica o quê e por quanto tempo.
+- Se você tiver VIP ativo, ele acaba com a exclusão. Se o pedido vier dentro dos 7 dias do pagamento, vale o reembolso integral da [Política de Reembolso](/refunds).
 - Excluir a Conta não apaga um ban permanente ativo: se você voltar a jogar com a mesma conta Steam, o ban continua valendo. [VALIDAR COM ADVOGADO]
 
 ## 14. Responsabilidade
@@ -168,7 +168,7 @@ Podemos atualizar estes Termos. A data e a versão no topo mostram a última mud
 
 ## 16. Lei e foro
 
-Estes Termos seguem a lei brasileira. Se houver disputa, você pode entrar com a ação no foro do seu domicílio, como garante o Código de Defesa do Consumidor (art. 101, I). Antes disso, fale com a gente: a maioria dos problemas se resolve pelo [contato](/contato). Você também pode usar o consumidor.gov.br ou o Procon da sua cidade.
+Estes Termos seguem a lei brasileira. Se houver disputa, você pode entrar com a ação no foro do seu domicílio, como garante o Código de Defesa do Consumidor (art. 101, I). Antes disso, fale com a gente: a maioria dos problemas se resolve pelo [contato](/contact). Você também pode usar o consumidor.gov.br ou o Procon da sua cidade.
 
 ## Base legal e fontes
 

@@ -745,7 +745,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Para a Steam (ou para /entrar?erro=indisponivel, ou erro=limite acima do limite)"
+            "description": "Para a Steam (ou para /login?erro=indisponivel, ou erro=limite acima do limite)"
           },
           "429": {
             "description": "Limite de requisições por IP excedido (política \"login\")",
@@ -786,7 +786,7 @@
         "parameters": [],
         "responses": {
           "303": {
-            "description": "Para a página de origem (sessão aberta) ou para /entrar?erro=<motivo>"
+            "description": "Para a página de origem (sessão aberta) ou para /login?erro=<motivo>"
           },
           "429": {
             "description": "Limite de requisições por IP excedido (política \"login\")",

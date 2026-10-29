@@ -135,7 +135,7 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 
 ### 12. "O que é seu e o que é nosso": acrescentar um parágrafo  **[ENTRA COM A FOTO] [VALIDAR COM ADVOGADO]**
 
-> **O que você envia.** A foto de perfil continua sendo sua. Ao enviá-la, você nos autoriza, de graça e sem exclusividade, a **mostrá-la no Carmine e nas prévias de link do seu Perfil** enquanto ela estiver no ar, e a guardá-la em privado pelo tempo que as [Regras de conduta](/regras) e a [Política de Privacidade](/privacidade) dizem. Você declara que **tem o direito de usar a imagem** e que ela não mostra outra pessoa sem a autorização dela. Podemos tirar do ar a foto que desrespeitar as Regras.
+> **O que você envia.** A foto de perfil continua sendo sua. Ao enviá-la, você nos autoriza, de graça e sem exclusividade, a **mostrá-la no Carmine e nas prévias de link do seu Perfil** enquanto ela estiver no ar, e a guardá-la em privado pelo tempo que as [Regras de conduta](/rules) e a [Política de Privacidade](/privacy) dizem. Você declara que **tem o direito de usar a imagem** e que ela não mostra outra pessoa sem a autorização dela. Podemos tirar do ar a foto que desrespeitar as Regras.
 
 ---
 

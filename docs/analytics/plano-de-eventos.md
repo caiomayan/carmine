@@ -92,7 +92,7 @@ Os caminhos abaixo são relativos a `apps/api/src`, salvo `Web`.
 
 #### 2. `login_iniciado` · A1 · API · anônimo
 
-- **Dispara:** `auth/auth.controller.ts` → `AuthController.start` (`GET /api/auth/steam/login`), depois de `login.start` devolver o redirecionamento para a Steam. Não dispara quando cai em `/entrar?erro=indisponivel`.
+- **Dispara:** `auth/auth.controller.ts` → `AuthController.start` (`GET /api/auth/steam/login`), depois de `login.start` devolver o redirecionamento para a Steam. Não dispara quando cai em `/login?erro=indisponivel`.
 - **Propriedades:** `destino` (a mesma lista de `rota` acima, a partir do `returnTo`, `outra` se não reconhecido).
 - **Responde:** quantas pessoas clicam em "Entrar com a Steam" e quantas terminam (`login_concluido` ÷ `login_iniciado`, por dia). Em que página a pessoa estava quando decidiu entrar.
 

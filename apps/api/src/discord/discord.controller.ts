@@ -227,7 +227,7 @@ export class DiscordController {
   }
 
   private signInUrl(returnTo: string): string {
-    const url = new URL('/entrar', this.config.publicWebUrl);
+    const url = new URL('/login', this.config.publicWebUrl);
     if (returnTo !== '/') url.searchParams.set('voltar', returnTo);
     return url.toString();
   }

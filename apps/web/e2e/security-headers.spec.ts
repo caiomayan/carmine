@@ -49,8 +49,8 @@ test('cada resposta tem um nonce novo e todo <script> do HTML o carrega', async 
   const nonceOf = (response: { headers(): Record<string, string> }) =>
     /'nonce-([^']+)'/.exec(response.headers()['content-security-policy'] ?? '')?.[1];
 
-  const first = await request.get('/termos');
-  const second = await request.get('/termos');
+  const first = await request.get('/terms');
+  const second = await request.get('/terms');
   expect(nonceOf(first)).toBeTruthy();
   expect(nonceOf(first)).not.toBe(nonceOf(second));
 
@@ -76,7 +76,7 @@ test('home, entrar e login completo não violam a CSP', async ({ page }) => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(await cspViolations(page)).toEqual([]);
 
-  await page.goto('/entrar');
+  await page.goto('/login');
   await expect(page.getByRole('heading', { level: 1, name: 'Entrar na Carmine' })).toBeVisible();
   expect(await cspViolations(page)).toEqual([]);
 
@@ -90,11 +90,11 @@ test('home, entrar e login completo não violam a CSP', async ({ page }) => {
 
 test('o editor com o viewer 3D abre o iframe do cstrike.app sem violar a CSP', async ({ page }) => {
   await trackCspViolations(page);
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   await signInFromHeader(page, newSteamId());
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
 
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
   await expect(page.getByTestId('viewer-iframe')).toHaveAttribute(
     'src',

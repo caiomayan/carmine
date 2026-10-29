@@ -54,7 +54,7 @@ async function goes(
 test.describe('abrir, trocar e fechar', () => {
   test.beforeEach(async ({ page }) => {
     await routePreviews(page);
-    await page.goto('/inventario/adicionar');
+    await page.goto('/inventory/add');
     await hydrated(page);
   });
 
@@ -105,7 +105,7 @@ test.describe('abrir, trocar e fechar', () => {
     page.on('response', (response) => {
       if (response.url().endsWith('.js')) scripts.push(response.url());
     });
-    await page.goto('/inventario/adicionar');
+    await page.goto('/inventory/add');
     await hydrated(page);
     await settle(page);
     const before = scripts.length;
@@ -121,7 +121,7 @@ test.describe('abrir, trocar e fechar', () => {
   test('usa o último lado do Loadout que o navegador guarda', async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('carmine:loadout-side', 't'));
     const calls = await routePreviews(page);
-    await page.goto('/inventario/adicionar');
+    await page.goto('/inventory/add');
     await hydrated(page);
 
     await open(page, 'Loadout');
@@ -134,9 +134,9 @@ test.describe('quem entrou: tudo dentro do painel é clicável', () => {
   test.beforeEach(async ({ page }) => {
     await routePreviews(page, SIGNED_IN);
     // Só as prévias são de mentira; a sessão não. O editor de Item manda quem não entrou para
-    // /entrar, e o `toHaveURL` só via /inventario/<uid> se pegasse a URL antes desse redirect (uma
+    // /login, e o `toHaveURL` só via /inventory/<uid> se pegasse a URL antes desse redirect (uma
     // corrida contra a navegação). O destino aqui só precisa existir.
-    await page.route(/\/inventario\/[0-9a-f-]{36}(\?.*)?$/, (route) =>
+    await page.route(/\/inventory\/[0-9a-f-]{36}(\?.*)?$/, (route) =>
       route.fulfill({
         status: 200,
         contentType: 'text/html',
@@ -183,13 +183,13 @@ test.describe('quem entrou: tudo dentro do painel é clicável', () => {
       page,
       'Loadout',
       (p) => p.locator('[data-slot-name="knife"]'),
-      new RegExp(`/inventario/${UID_KNIFE}$`),
+      new RegExp(`/inventory/${UID_KNIFE}$`),
     );
     await goes(
       page,
       'Loadout',
       (p) => p.locator('[data-slot-name="weapon_m4a1_silencer"]'),
-      new RegExp(`/inventario/${UID_RIFLE}$`),
+      new RegExp(`/inventory/${UID_RIFLE}$`),
     );
     await goes(page, 'Loadout', (p) => p.locator('[data-slot-name="gloves"]'), /\/loadout$/);
 
@@ -208,9 +208,9 @@ test.describe('quem entrou: tudo dentro do painel é clicável', () => {
       page,
       'Inventário',
       (p) => p.getByTestId('preview-item').first(),
-      new RegExp(`/inventario/${UID_RIFLE}$`),
+      new RegExp(`/inventory/${UID_RIFLE}$`),
     );
-    await goes(page, 'Inventário', (p) => p.getByTestId('preview-add'), /\/inventario\/adicionar$/);
+    await goes(page, 'Inventário', (p) => p.getByTestId('preview-add'), /\/inventory\/add$/);
 
     await page.goto('/ranking');
     await hydrated(page);
@@ -320,7 +320,7 @@ test.describe('teclado', () => {
   /** Põe o foco no item (com a navegação rica já no lugar) sem passar pelo mouse. */
   async function focusItem(page: Page, name: keyof typeof PANELS) {
     await routePreviews(page);
-    await page.goto('/inventario/adicionar');
+    await page.goto('/inventory/add');
     await hydrated(page);
     await link(page, name).focus();
     await expect(page.getByTestId('header-nav')).toBeVisible();

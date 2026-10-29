@@ -30,7 +30,7 @@ export async function SiteHeader() {
             items={[
               { href: '/', label: t('nav.servers') },
               { href: '/loadout', label: t('nav.loadout') },
-              { href: '/inventario', label: t('nav.inventory') },
+              { href: '/inventory', label: t('nav.inventory') },
               { href: '/ranking', label: t('nav.ranking') },
             ]}
             className="md:justify-self-center max-md:order-last max-md:-mx-3 max-md:w-[calc(100%+1.5rem)] max-md:pb-1"
