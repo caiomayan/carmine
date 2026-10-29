@@ -7568,6 +7568,10 @@
           },
           "applyAwpDefault": {
             "type": "boolean"
+          },
+          "greeting": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
@@ -7579,7 +7583,8 @@
           "vipEndsAt",
           "sanctions",
           "chatHidden",
-          "applyAwpDefault"
+          "applyAwpDefault",
+          "greeting"
         ],
         "additionalProperties": false
       },
