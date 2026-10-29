@@ -135,6 +135,9 @@ smoke() {
     probe api 3333 "$path" 200 || failed=1
   done
   probe web 3000 /pagina-que-nao-existe-smoke 404 || failed=1
+  # O painel da Staff: a checagem de saúde e a tela de entrada (pública, antes do login).
+  probe staff 3100 /healthz 200 || failed=1
+  probe staff 3100 /entrar 200 || failed=1
   # O armazenamento de mídia de mentira (fotos de perfil), pela porta pública.
   probe media 8080 /healthz 200 || failed=1
   # E o caminho de ponta a ponta: o web repassa /avatars/ ao media (foto que não existe -> 404 do media).
@@ -142,7 +145,7 @@ smoke() {
   return "$failed"
 }
 
-log "subindo $TAG (migração, API, web, túnel${COMPOSE_PROFILES:+, demonstração})"
+log "subindo $TAG (migração, API, web, painel da Staff, túnel${COMPOSE_PROFILES:+, demonstração})"
 if dc "$TAG" up -d --remove-orphans --wait --wait-timeout "$WAIT_TIMEOUT" && smoke; then
   echo "$TAG" >"$ROOT/state/current.tag"
   [[ -n "$PREVIOUS" && "$PREVIOUS" != "$TAG" ]] && echo "$PREVIOUS" >"$ROOT/state/previous.tag"
@@ -173,7 +176,7 @@ mapfile -t pulled < <(awk '!seen[$0]++' "$ROOT/state/pulled.tags")
 keep=2
 if (( ${#pulled[@]} > keep )); then
   for old in "${pulled[@]:0:${#pulled[@]}-keep}"; do
-    for image in carmine-api carmine-web; do
+    for image in carmine-api carmine-web carmine-staff; do
       docker rmi "ghcr.io/caiomayan/$image:$old" >/dev/null 2>&1 || true
     done
   done

@@ -171,6 +171,9 @@ jobs:
           - name: web
             dockerfile: infra/docker/web.Dockerfile
             scope: web
+          - name: staff
+            dockerfile: infra/docker/staff.Dockerfile
+            scope: staff
           - name: ops
             dockerfile: infra/docker/ops.Dockerfile
             scope: ops
