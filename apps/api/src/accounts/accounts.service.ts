@@ -321,6 +321,36 @@ async function insertAccount(
   return created ? toAccount(created) : null;
 }
 
+/**
+ * Garante a Conta de cada SteamID64 humano que chegou em eventos do jogo sem Conta (o connect não
+ * foi registrado, a API estava fora...): quem joga num Servidor Carmine já é uma Conta, não
+ * reivindicada, e tudo dele conta como o de qualquer outra. Cria pelo mesmo caminho do connect
+ * (`insertAccount`, com o ID público novo e o nome fictício, porque o evento não traz nome Steam) e
+ * na transação de quem chamou. Devolve só as Contas criadas agora (SteamID64 → ID da Conta); as que
+ * outra transação criou no meio do caminho são relidas, e esta não as devolve como criadas.
+ */
+export async function createUnclaimedAccounts(
+  tx: Transaction,
+  steamIds: readonly string[],
+): Promise<{ created: Map<string, string>; existing: Map<string, string> }> {
+  const created = new Map<string, string>();
+  const existing = new Map<string, string>();
+  // Ordem fixa, para dois lotes com os mesmos jogadores novos não se travarem um no outro.
+  for (const steamId of [...steamIds].sort()) {
+    const account = await insertAccount(tx, BigInt(steamId), '', {});
+    if (account) {
+      created.set(steamId, account.id);
+      continue;
+    }
+    const [found] = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.steamId, BigInt(steamId)));
+    if (found) existing.set(steamId, found.id);
+  }
+  return { created, existing };
+}
+
 /** Próximo `n` da sequência do Postgres: único mesmo entre transações simultâneas. */
 async function nextCounter(tx: Transaction): Promise<number> {
   const result = await tx.execute<{ n: string }>(

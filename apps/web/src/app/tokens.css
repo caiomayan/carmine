@@ -187,6 +187,8 @@
   --page-max: 1280px;
   --mx: 36px;
   --hdr-h: 60px;
+  /* a arte de borda a borda sob o header nasce em fade nesta altura, sem corte seco com o header (Home, Perfil, Servidor) */
+  --hdr-fade: 88px;
   --wm-h: 22px;
   --tap: 36px;
 

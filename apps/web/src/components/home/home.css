@@ -17,8 +17,21 @@
   transform: translateX(-50%);
   z-index: -1;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 62%, transparent 100%);
+  /* nasce em fade logo abaixo do header (sem corte seco) e some para baixo */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--hdr-fade),
+    #000 62%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--hdr-fade),
+    #000 62%,
+    transparent 100%
+  );
 }
 .vh-hero-art img {
   width: 100%;
