@@ -1,5 +1,6 @@
 'use client';
 
+import { CSRF_COOKIE, CSRF_HEADER } from '@carmine/contracts';
 import type { StaffRole } from '@carmine/contracts/staff';
 import { Command } from 'cmdk';
 import {
@@ -9,6 +10,7 @@ import {
   FlagIcon,
   ImageIcon,
   LayoutDashboardIcon,
+  LogOutIcon,
   MoonIcon,
   PanelLeftIcon,
   SearchIcon,
@@ -37,6 +39,12 @@ const ROLE_LABEL: Record<StaffRole, string> = {
   admin: 'Admin',
   moderator: 'Moderador',
 };
+
+const readCookie = (name: string) =>
+  document.cookie
+    .split('; ')
+    .find((part) => part.startsWith(`${name}=`))
+    ?.slice(name.length + 1);
 
 const COOKIE = (name: string, value: string) => {
   // Preferência de interface, lida no servidor para a primeira pintura já vir certa; um ano.
@@ -92,6 +100,22 @@ export function Shell({
     document.documentElement.dataset.theme = next;
     COOKIE('stp-theme', next);
   }, [theme]);
+
+  /** Sair: encerra a sessão deste host (com o token CSRF, como no site) e volta à tela de entrada. */
+  const signOut = useCallback(async () => {
+    const token = readCookie(CSRF_COOKIE);
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: token ? { [CSRF_HEADER]: token } : {},
+      });
+      if (!response.ok) return;
+    } catch {
+      return;
+    }
+    router.replace('/entrar');
+    router.refresh();
+  }, [router]);
 
   const toggleCollapsed = useCallback(() => {
     setCollapsed((value) => {
@@ -214,6 +238,15 @@ export function Shell({
               ) : (
                 <MoonIcon size={17} aria-hidden="true" />
               )}
+            </button>
+            <button
+              type="button"
+              className="stp-round"
+              onClick={signOut}
+              aria-label="Sair do painel"
+              data-testid="stp-signout"
+            >
+              <LogOutIcon size={17} aria-hidden="true" />
             </button>
             <span
               className="stp-avatar"
