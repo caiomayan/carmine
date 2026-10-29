@@ -96,8 +96,8 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 - A S20 troca "VIP" pelo nome do plano.
 
 **8. Deathmatch: mapas e sons**
-- O pool passa de 3 para 5 mapas, com `de_ancient` e `de_anubis` (os dois já estão no pool do Retake), mais os pontos de spawn de cada um. A votação mostra 3, e 1 fica em cooldown.
-- Os sons de hit e de headshot ficam **ligados por padrão** (`Deathmatch.json`). Cada jogador desliga pelo `!hud`, como hoje.
+- O pool passa de 3 para 5 mapas, com `de_ancient` e `de_anubis` (os dois já estão no pool do Retake). O plugin não traz arquivo de spawns desses dois e usa os pontos nativos de deathmatch da Valve (`info_deathmatch_spawn`), sem coordenada nossa; se faltar espalhamento no jogo, gravamos com o editor do plugin (`css_dm_spawns`). A votação mostra 3, e 1 fica em cooldown.
+- Os sons de hit e de headshot ficam **ligados por padrão** (`Deathmatch.json`). Cada jogador desliga em `!dm` → Menu de sons (os sons não têm atalho de comando; o `!hud` só liga e desliga as mensagens na tela).
 
 **9. Retake: 50 rounds por mapa**
 - `mp_maxrounds` vai de 30 para **50**, uns 35 a 40 min por mapa. A votação de fim de mapa continua 2 rounds antes do fim.
