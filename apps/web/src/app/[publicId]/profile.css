@@ -12,8 +12,20 @@
   overflow: hidden;
   isolation: isolate;
   /* a cor some para baixo, em vez de parar numa borda: o brilho ambiente da página segue por trás */
-  -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--hdr-fade),
+    #000 max(var(--hdr-fade), 30%),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--hdr-fade),
+    #000 max(var(--hdr-fade), 30%),
+    transparent 100%
+  );
 }
 .pf-banner::before {
   content: "";
