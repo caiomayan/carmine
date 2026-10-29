@@ -5848,7 +5848,7 @@
             }
           },
           "429": {
-            "description": "5 denúncias de foto na última hora (report_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "description": "5 denúncias de foto na última hora (report_limit) ou 10 no dia, de todos os tipos (report_daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
             "headers": {
               "Retry-After": {
                 "description": "Segundos até a próxima requisição ser aceita",

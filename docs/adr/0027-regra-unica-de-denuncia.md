@@ -1,6 +1,6 @@
 # Regra única de denúncia: prazo por tipo, peso de quem denuncia, teto por dia e casos agrupados
 
-O [ADR 0019](0019-denuncias-na-api-e-chat-dos-servidores-no-mesmo-lote-de-eventos.md) criou a Denúncia de jogo (`!report`) com os seus limites, e o [ADR 0025](0025-foto-de-perfil-no-beta-historico-e-moderacao-por-fila.md) criou, só para a foto de perfil, o peso de quem denuncia. A decisão do dono de 2026-10-29 (S18 da [spec do beta aberto](../specs/beta-aberto.md), "Regra única de denúncia"), pensando numa Staff de uma pessoa só no começo, estende isso a **toda** Denúncia: de jogo, de chat, de foto e de logo. Este ADR registra o que muda no 0019 e no 0025. O resto de cada um segue valendo.
+O [ADR 0019](0019-denuncias-e-log-de-chat.md) criou a Denúncia de jogo (`!report`) com os seus limites, e o [ADR 0025](0025-foto-de-perfil-no-beta-historico-e-moderacao-por-fila.md) criou, só para a foto de perfil, o peso de quem denuncia. A decisão do dono de 2026-10-29 (S18 da [spec do beta aberto](../specs/beta-aberto.md), "Regra única de denúncia"), pensando numa Staff de uma pessoa só no começo, estende isso a **toda** Denúncia: de jogo, de chat, de foto e de logo. Este ADR registra o que muda no 0019 e no 0025. O resto de cada um segue valendo.
 
 ## O que muda
 
