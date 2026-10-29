@@ -12,5 +12,6 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function VipPage() {
   const [packages, session] = await Promise.all([getVipPackages(), getServerSession()]);
   const vip = session.status === 'authenticated' ? session.session.vip : null;
-  return <VipView packages={packages} vip={vip} />;
+  const holdDays = session.status === 'authenticated' ? session.session.vipHoldDays : null;
+  return <VipView packages={packages} vip={vip} holdDays={holdDays} />;
 }

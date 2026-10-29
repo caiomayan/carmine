@@ -20,9 +20,12 @@ import '@/app/plans/vip.css';
 export async function VipView({
   packages,
   vip,
+  holdDays = null,
 }: {
   packages: VipPackages | null;
   vip: VipStatus | null;
+  /** `vipHoldDays` da sessão: nulo com a guarda dos Itens VIP desligada. */
+  holdDays?: number | null;
 }) {
   const t = await getTranslations('vip');
   const format = await getFormatter();
@@ -64,12 +67,16 @@ export async function VipView({
         <div className="vp-yours" data-testid="vip-yours">
           <p className="vp-yours-title">{t('yours.active', { date: day(vip.endsAt) })}</p>
           <p>{t('yours.activeBody')}</p>
-          <VipNotice vip={vip} className="mt-1" />
+          <VipNotice vip={vip} holdDays={holdDays} className="mt-1" />
         </div>
       ) : vip?.endedAt ? (
         <div className="vp-yours" data-testid="vip-yours">
           <p className="vp-yours-title">{t('yours.ended', { date: day(vip.endedAt) })}</p>
-          <p>{t('yours.endedBody')}</p>
+          <p>
+            {holdDays === null
+              ? t('yours.endedBody')
+              : t('yours.endedBodyHeld', { days: holdDays })}
+          </p>
         </div>
       ) : null}
 

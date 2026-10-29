@@ -198,6 +198,12 @@ describe('Login Steam (OpenID 2.0)', () => {
   });
 
   describe('sessão', () => {
+    it('com a guarda dos Itens VIP desligada (padrão), vipHoldDays é nulo', async () => {
+      await loginViaSteam(steamIdFor(12));
+
+      expect((await me()).vipHoldDays).toBeNull();
+    });
+
     it('vai num cookie httpOnly, Secure e SameSite=Lax; o token CSRF num cookie legível', async () => {
       const steamUrl = await startLogin();
       openId.steamId = steamIdFor(10);

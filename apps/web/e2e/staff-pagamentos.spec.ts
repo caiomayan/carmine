@@ -97,7 +97,7 @@ test.describe('Pagamentos da Staff', () => {
     const sheet = staff.page.getByTestId('payment-sheet');
     await expect(sheet.getByTestId('payment-status')).toContainText('Aprovado');
     await expect(sheet).toContainText('R$ 26,90');
-    await expect(sheet).toContainText('***.***.909-**');
+    await expect(sheet).toContainText('***.***.**9-09');
     await expect(sheet.getByTestId('payment-account')).toHaveText('Pagamentos Lista');
     // O webhook da aprovação chegou com a assinatura válida e foi aplicado.
     await expect(sheet.getByTestId('payment-events')).toContainText('Aplicado');

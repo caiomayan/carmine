@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import {
   CSRF_HEADER,
   type Cs2Item,
+  currentSessionSchema,
   fakePaymentSchema,
   inventorySchema,
   type Purchase,
@@ -269,7 +270,7 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
 
       expect(paid.status).toBe('approved');
       expect(paid.approvedAt).not.toBeNull();
-      expect(paid.payerDocumentMasked).toBe('***.***.909-**');
+      expect(paid.payerDocumentMasked).toBe('***.***.**9-09');
       expect(paid.payerName).toBe('Pagador de Mentira');
       // O recibo diz até quando o VIP vai por causa desta compra, e até quando dá para pedir reembolso.
       expect(Date.parse(paid.periodEndsAt as string)).toBe((await vipEnd(who))?.getTime());
@@ -656,6 +657,14 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
   describe('os Itens VIP guardados por 30 dias (D3)', () => {
     const inventoryOf = async (who: Player) =>
       inventorySchema.parse((await who.call('GET', '/api/inventory')).json()).items;
+
+    it('a sessão diz ao web que a guarda está ligada e por quantos dias (o aviso do fim do VIP)', async () => {
+      const who = await player();
+
+      const session = currentSessionSchema.parse((await who.call('GET', '/api/me')).json());
+
+      expect(session.vipHoldDays).toBe(30);
+    });
 
     it('sem VIP o agente e o StatTrak saem; com VIP voltam inteiros, nos mesmos slots', async () => {
       const who = await player({ vipUntil: Date.now() + 10 * DAY_MS });
