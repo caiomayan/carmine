@@ -253,7 +253,7 @@ export function StaffProto({ nowMs }: { nowMs: number }) {
             data-testid="stp-search"
           >
             <SearchIcon size={14} aria-hidden="true" />
-            <span>Buscar ou executar um comando</span>
+            <span>Buscar ou executar…</span>
             <kbd className="stp-kbd">Ctrl K</kbd>
           </button>
           <button

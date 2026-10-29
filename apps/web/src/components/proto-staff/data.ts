@@ -95,7 +95,7 @@ const NOTES: Record<ReportCategory, string> = {
 
 /** Idade, em minutos, de cada denúncia: algumas a poucas horas de vencer, uma já vencida. */
 const AGES = [
-  1305, 1190, 1440, 1020, 880, 760, 640, 560, 470, 400, 340, 300, 255, 210, 180, 150, 125, 100, 85,
+  1305, 1190, 1475, 1020, 880, 760, 640, 560, 470, 400, 340, 300, 255, 210, 180, 150, 125, 100, 85,
   70, 58, 47, 39, 31, 26, 20, 16, 12, 9, 6, 4, 3, 2, 1, 1700, 2100, 2600,
 ];
 

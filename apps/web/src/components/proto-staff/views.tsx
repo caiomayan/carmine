@@ -14,7 +14,16 @@ import {
   XIcon,
 } from 'lucide-react';
 import { useMemo } from 'react';
-import { ALERTS, brl, deadlineOf, ONLINE_24H, type Photo, PURCHASES, type Report } from './data';
+import {
+  ALERTS,
+  brl,
+  type Deadline,
+  deadlineOf,
+  ONLINE_24H,
+  type Photo,
+  PURCHASES,
+  type Report,
+} from './data';
 import { Eta } from './reports';
 
 export type ViewId =
@@ -25,6 +34,10 @@ export type ViewId =
   | 'pagamentos'
   | 'servidores'
   | 'auditoria';
+
+/** O menor prazo da fila, em uma frase curta. */
+const soonLabel = (d: Deadline) =>
+  d.leftMin < 0 ? d.label : `vence em ${d.label.replace(' restantes', '')}`;
 
 export function Inicio({
   reports,
@@ -106,7 +119,7 @@ export function Inicio({
               className="stp-stat-note"
               data-tone={soonestReport.tone === 'ok' ? undefined : soonestReport.tone}
             >
-              a primeira vence: {soonestReport.label.replace(' restantes', '')}
+              {soonLabel(soonestReport)}
             </span>
           ) : null}
         </button>
@@ -120,7 +133,7 @@ export function Inicio({
               className="stp-stat-note"
               data-tone={soonestPhoto.tone === 'ok' ? undefined : soonestPhoto.tone}
             >
-              a primeira vence: {soonestPhoto.label.replace(' restantes', '')}
+              {soonLabel(soonestPhoto)}
             </span>
           ) : (
             <span className="stp-stat-note">fila vazia</span>
@@ -146,7 +159,7 @@ export function Inicio({
         <section className="stp-card" aria-labelledby="stp-wait">
           <div className="stp-card-head">
             <h2 id="stp-wait">Esperando revisão</h2>
-            <small>prazo de 24 h, o mais perto de vencer primeiro</small>
+            <small>prazo de 24 h</small>
           </div>
           <ul className="stp-list" data-testid="stp-pending">
             {pending.slice(0, 7).map((item) => (

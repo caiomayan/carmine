@@ -179,7 +179,7 @@ export function Reports({
         </div>
       </div>
 
-      <div className="stp-stats" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+      <div className="stp-stats" data-cols="4">
         <div className="stp-stat">
           <span className="stp-stat-label">Abertas</span>
           <span className="stp-stat-value">{counts.open}</span>
