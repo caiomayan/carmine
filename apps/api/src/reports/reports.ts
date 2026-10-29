@@ -8,10 +8,12 @@ import {
   type ReportRefusal,
   type ReportResult,
 } from '@carmine/contracts';
-import { and, desc, eq, gt, gte, isNull, lte, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, gte, isNull, lte } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accounts, chatMessages, type ReportChatLineRow, reports } from '../database/schema.js';
+import { dayStartOf } from '../stats/stats-week.js';
 import { checkReportLimits, refusalMessage } from './report-limits.js';
+import { countReportsSince, lockReporter } from './report-tally.js';
 
 /** O Servidor Carmine que mandou a Denúncia (autenticado pela chave). */
 export interface ReportServer {
@@ -58,9 +60,9 @@ function refused(
 
 /**
  * Recebe a Denúncia do jogo (S13): confere denunciante e alvo, aplica os limites (1 por alvo a
- * cada 10 minutos, 5 por hora) e guarda a Denúncia com uma cópia das últimas linhas do chat do
- * servidor. Os limites valem dentro de uma transação que trava o denunciante, então duas
- * Denúncias ao mesmo tempo não passam juntas.
+ * cada 10 minutos, 5 por hora e 10 por dia somando todos os tipos de Denúncia) e guarda a Denúncia
+ * com uma cópia das últimas linhas do chat do servidor. Os limites valem dentro de uma transação
+ * que trava o denunciante, então duas Denúncias ao mesmo tempo não passam juntas.
  */
 export class Reports {
   constructor(private readonly db: Database) {}
@@ -89,7 +91,7 @@ export class Reports {
       if (!reporter || !target) return refused('unknown_account');
 
       // Um denunciante por vez: sem isto, duas Denúncias simultâneas leriam o mesmo histórico.
-      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${reporter.id}, 13))`);
+      await lockReporter(tx, reporter.id);
 
       const past = await tx
         .select({ targetAccountId: reports.targetAccountId, createdAt: reports.createdAt })
@@ -100,7 +102,8 @@ export class Reports {
             gt(reports.createdAt, new Date(now.getTime() - 60 * 60_000)),
           ),
         );
-      const verdict = checkReportLimits(past, target.id, now);
+      const sentToday = await countReportsSince(tx, reporter.id, dayStartOf(now));
+      const verdict = checkReportLimits(past, target.id, now, sentToday);
       if (!verdict.allowed) {
         return refused(verdict.refusal, verdict.retryAfterSeconds, reporter.id);
       }
@@ -144,6 +147,7 @@ export class Reports {
           serverId: server.id,
           map: input.map,
           round: input.round,
+          mapPlayId: input.mapPlayId,
           reason: input.reason,
           chatContext,
           createdAt: now,
