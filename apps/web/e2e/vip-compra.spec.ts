@@ -5,7 +5,7 @@ import { axeViolations, expect, saveTheme, test } from './fixtures';
 /**
  * A confirmação da compra (/plans/checkout) e a página da compra (/plans/purchase/{id}), S14b parte (b). O E2E roda com o provedor
  * FALSO: o fluxo de verdade (Conta, confirmação, Pix, recuperação pelo id) vai pela API; os estados raros (limite à
- * frente, bloqueios, cada status final, QR ausente) vêm das vitrines `/dev/plans/checkout` e `/dev/vip/compra`.
+ * frente, bloqueios, cada status final, QR ausente) vêm das vitrines `/dev/vip/comprar` e `/dev/vip/compra`.
  */
 
 const noHorizontalScroll = (page: Page) =>
@@ -19,7 +19,7 @@ async function hydrated(control: Locator) {
 }
 
 const confirm = (state: string, pack = 'vip-3m') =>
-  `/dev/plans/checkout?estado=${state}&pacote=${pack}`;
+  `/dev/vip/comprar?estado=${state}&pacote=${pack}`;
 const purchase = (state: string) => `/dev/vip/compra?estado=${state}`;
 
 test.describe('confirmação (vitrine)', () => {
