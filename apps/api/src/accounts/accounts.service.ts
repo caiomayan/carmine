@@ -37,6 +37,10 @@ export interface Account {
   lastConnectedAt: Date | null;
   /** `!chat off`: não vê o chat dos outros no jogo. */
   chatHidden: boolean;
+  /** Quando a Conta entrou na fila da AWP do Retake (S16); nulo: ainda não. */
+  awpDefaultAppliedAt: Date | null;
+  /** A última curiosidade mostrada no connect (S16). */
+  lastCuriosity: string | null;
   /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
   anonymizedAt: Date | null;
   createdAt: Date;
@@ -45,7 +49,7 @@ export interface Account {
 /** O connect registrado: a Conta e o que o plugin aplica (sem Punições e VIP, que o controller junta). */
 export type ConnectedAccount = Pick<
   PlayerConnectResult,
-  'publicId' | 'displayName' | 'isFirstConnect' | 'chatHidden'
+  'publicId' | 'displayName' | 'isFirstConnect' | 'chatHidden' | 'applyAwpDefault'
 > & {
   accountId: string;
   /** A Conta nasceu neste connect (o analytics mede `conta_criada`). */
@@ -95,6 +99,7 @@ export class AccountsService {
           displayName: account.displayName,
           isFirstConnect,
           chatHidden: account.chatHidden,
+          applyAwpDefault: account.awpDefaultAppliedAt === null,
           created,
           claimed: account.claimedAt !== null,
           connectedAt,
@@ -138,6 +143,19 @@ export class AccountsService {
     const updated = await this.db
       .update(accounts)
       .set({ chatHidden: hidden })
+      .where(and(eq(accounts.steamId, BigInt(steamId)), isNull(accounts.anonymizedAt)))
+      .returning({ id: accounts.id });
+    return updated.length > 0;
+  }
+
+  /**
+   * Marca que a Conta passou pela AWP por padrão do Retake (S16). Idempotente: a primeira marca fica.
+   * `false` se a Conta não existe (ou foi anonimizada).
+   */
+  async markAwpDefaultApplied(steamId: string): Promise<boolean> {
+    const updated = await this.db
+      .update(accounts)
+      .set({ awpDefaultAppliedAt: sql`coalesce(${accounts.awpDefaultAppliedAt}, now())` })
       .where(and(eq(accounts.steamId, BigInt(steamId)), isNull(accounts.anonymizedAt)))
       .returning({ id: accounts.id });
     return updated.length > 0;

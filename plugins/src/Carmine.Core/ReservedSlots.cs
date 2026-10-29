@@ -47,6 +47,9 @@ public sealed class ReservedSlots(ReservedSlotsMode mode, int publicSlots, TimeP
     /// <summary>Uma amostra que chega muito depois da anterior (pausa, troca de mapa) conta no máximo isto.</summary>
     private static readonly TimeSpan MaxSampleGap = TimeSpan.FromSeconds(10);
 
+    /// <summary>Quem tem VIP e espera na fila do Retake lotado (a vaga abre no fim do round).</summary>
+    public const string QueuedVipMessage = "Servidor lotado: sua Vaga reservada de VIP abre no fim do round.";
+
     private const string VipPitch = "Com o VIP, sua vaga é garantida.";
 
     private readonly Dictionary<ulong, DateTimeOffset> _joinedAt = [];
