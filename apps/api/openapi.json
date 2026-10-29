@@ -7907,6 +7907,13 @@
           "vip": {
             "$ref": "#/components/schemas/VipStatus"
           },
+          "vipHoldDays": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
           "staffRole": {
             "nullable": true,
             "allOf": [
@@ -7930,6 +7937,7 @@
           "csrfToken",
           "firstLogin",
           "vip",
+          "vipHoldDays",
           "staffRole",
           "sanctions",
           "displayNameChange"
