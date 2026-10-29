@@ -5213,7 +5213,7 @@
             "cookie": []
           }
         ],
-        "summary": "Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria (no ar ou suspensa), se pode enviar e por que não",
+        "summary": "Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria, o histórico das últimas 5 fotos, se pode enviar e por que não",
         "tags": [
           "me"
         ]
@@ -5260,7 +5260,7 @@
             "description": "Sem sessão, ou ela expirou"
           },
           "403": {
-            "description": "Conta com menos de 24 horas, com Punição ativa ou com o envio bloqueado (account_too_new, punished, upload_blocked), ou CSRF inválido",
+            "description": "Conta com Punição ativa ou com o envio bloqueado pela Staff (punished, upload_blocked), ou CSRF inválido",
             "content": {
               "application/json": {
                 "schema": {
@@ -5300,7 +5300,7 @@
             }
           },
           "429": {
-            "description": "3 envios em 24 horas (daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "description": "Passou do limite de envios (upload_limit) ou outro envio há poucos segundos (upload_too_soon); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
             "headers": {
               "Retry-After": {
                 "description": "Segundos até a próxima requisição ser aceita",
@@ -5399,7 +5399,174 @@
             "cookie": []
           }
         ],
-        "summary": "Volta à foto da Steam na hora, sem moderação; a foto própria é apagada. Sem foto própria, não muda nada",
+        "summary": "Volta à foto da Steam na hora, sem moderação; a foto própria segue no histórico. Sem foto própria, não muda nada",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/me/avatar/history/{id}": {
+      "post": {
+        "operationId": "chooseAvatarFromHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da foto, como vem em `history` do estado",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Com a foto escolhida no ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Punição ativa ou envio bloqueado (punished, upload_blocked), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A foto não está no histórico desta Conta (not_in_history)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Funcionalidade desligada neste ambiente (disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Escolhe uma foto do histórico: ela volta ao ar na hora e não conta nos limites de envio. Quem tem Punição ativa ou o envio bloqueado não escolhe",
+        "tags": [
+          "me"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteAvatarFromHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da foto, como vem em `history` do estado",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sem a foto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "A foto não está no histórico desta Conta (not_in_history)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Apaga uma foto do histórico e do armazenamento. Se era a que estava no ar, volta a foto da Steam",
         "tags": [
           "me"
         ]
@@ -13185,6 +13352,16 @@
             ],
             "additionalProperties": false
           },
+          "history": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvatarHistoryItem"
+            }
+          },
+          "canUseHistory": {
+            "type": "boolean"
+          },
           "canUpload": {
             "type": "boolean"
           },
@@ -13227,6 +13404,8 @@
           "source",
           "steamAvatarUrl",
           "custom",
+          "history",
+          "canUseHistory",
           "canUpload",
           "cannotUploadReason",
           "retryAfter",
@@ -13241,13 +13420,42 @@
           "custom"
         ]
       },
+      "AvatarHistoryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "uploadedAt",
+          "current"
+        ],
+        "additionalProperties": false
+      },
       "AvatarIneligibleReason": {
         "type": "string",
         "enum": [
-          "account_too_new",
           "punished",
           "upload_blocked",
-          "daily_limit"
+          "upload_limit",
+          "upload_too_soon"
         ]
       },
       "AvatarReason": {
@@ -13278,10 +13486,11 @@
               "too_large",
               "invalid_image",
               "bad_dimensions",
-              "account_too_new",
               "punished",
               "upload_blocked",
-              "daily_limit",
+              "upload_limit",
+              "upload_too_soon",
+              "not_in_history",
               "no_custom_avatar",
               "own_avatar",
               "already_reported",

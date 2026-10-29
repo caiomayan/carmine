@@ -164,13 +164,18 @@ export function parseAnalyticsPreference(value: unknown): AnalyticsPreference | 
 }
 
 /**
- * `GET`/`DELETE /api/me/avatar` (o estado da foto de perfil própria em Configurações); `null` se o formato não é o do
+ * `GET`/`DELETE /api/me/avatar` e as rotas do histórico (o estado da foto de perfil própria em Configurações); `null` se o formato não é o do
  * contrato. Só o formato: os motivos (`cannotUploadReason`, `removal.reason`) são textos que a tela procura nas
  * mensagens, e um motivo novo cai no texto genérico.
  */
 export function parseAvatarState(value: unknown): AvatarState | null {
   if (!isRecord(value)) return null;
   if (typeof value.enabled !== 'boolean' || typeof value.canUpload !== 'boolean') return null;
+  if (typeof value.canUseHistory !== 'boolean' || !Array.isArray(value.history)) return null;
+  for (const item of value.history) {
+    if (!isRecord(item) || !isString(item.id) || !isString(item.url)) return null;
+    if (!isString(item.uploadedAt) || typeof item.current !== 'boolean') return null;
+  }
   if (value.source !== 'steam' && value.source !== 'custom') return null;
   if (!isNullableString(value.steamAvatarUrl) || !isNullableString(value.retryAfter)) return null;
   if (!isNullableString(value.cannotUploadReason)) return null;

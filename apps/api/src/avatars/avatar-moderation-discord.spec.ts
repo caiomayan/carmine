@@ -6,7 +6,7 @@ const PANEL = 'https://stcarmine.com/staff/fotos';
 describe('avatarReportDiscordMessage', () => {
   it('diz o motivo, o Perfil e o link, sem quem denunciou', () => {
     const text = avatarReportDiscordMessage(
-      { reason: 'sexual', targetName: 'Lia', targetPublicId: 42, reporters: 1, suspended: false },
+      { reason: 'sexual', targetName: 'Lia', targetPublicId: 42, reporters: 1 },
       PANEL,
     );
     expect(text).toContain('Nudez ou conteúdo sexual');
@@ -15,12 +15,14 @@ describe('avatarReportDiscordMessage', () => {
     expect(text).toContain(PANEL);
   });
 
-  it('avisa que a foto saiu do ar', () => {
+  it('a denúncia não tira a foto do ar: o aviso só pede a decisão da Staff', () => {
     const text = avatarReportDiscordMessage(
-      { reason: 'hate', targetName: 'Ana', targetPublicId: 7, reporters: 2, suspended: true },
+      { reason: 'hate', targetName: 'Ana', targetPublicId: 7, reporters: 2 },
       PANEL,
     );
-    expect(text).toContain('Saiu do ar com 2 denúncias');
+    expect(text).toContain('2 denúncias');
+    expect(text).toContain('a Staff decide em até 24 h');
+    expect(text).not.toContain('Saiu do ar');
   });
 
   it('limpa o nome: uma linha, sem Markdown e curto', () => {
@@ -30,7 +32,6 @@ describe('avatarReportDiscordMessage', () => {
         targetName: `**@everyone**\n${'x'.repeat(100)}`,
         targetPublicId: 1,
         reporters: 3,
-        suspended: false,
       },
       PANEL,
     );

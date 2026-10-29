@@ -2,6 +2,7 @@
 
 import {
   AVATAR_BLOCK_DAYS_MAX,
+  AVATAR_BLOCK_DAYS_SUGGESTED,
   AVATAR_REASON_LABELS,
   AVATAR_REASONS,
   type AvatarReason,
@@ -17,7 +18,7 @@ import { ActionForm } from './action-form';
 import { Field, TextInput } from './fields';
 import { useStaffRequest } from './use-staff-request';
 
-/** Manter a foto: ela volta ao ar se estava suspensa e as denúncias são arquivadas. */
+/** Manter a foto: as denúncias são arquivadas e a imagem fica imune a novas denúncias (a suspensa, do estado antigo, volta ao ar). */
 export function KeepAvatarForm({
   avatarId,
   onDone,
@@ -49,9 +50,9 @@ export function KeepAvatarForm({
 }
 
 /**
- * Remover a foto (pela denúncia ou direto da ficha da Conta): o motivo, o bloqueio de novos envios (em branco, a regra:
- * 7 dias na primeira remoção e 30 na reincidência em 90 dias; 0 não bloqueia) e a nota para o log de auditoria. Pede
- * confirmação: a Conta volta à foto da Steam na hora.
+ * Remover a foto (pela denúncia ou direto da ficha da Conta): o motivo, o bloqueio de novos envios (a Staff escolhe os
+ * dias; vem com o sugerido, 7, e 0 não bloqueia) e a nota para o log de auditoria. Pede confirmação: se era a foto
+ * atual, a Conta volta à foto da Steam na hora.
  */
 export function RemoveAvatarForm(
   props:
@@ -62,15 +63,13 @@ export function RemoveAvatarForm(
   const { request } = useStaffRequest();
   const id = useId();
   const [reason, setReason] = useState<AvatarReason | ''>('');
-  const [blockDays, setBlockDays] = useState('');
+  const [blockDays, setBlockDays] = useState(String(AVATAR_BLOCK_DAYS_SUGGESTED));
 
-  const days = blockDays.trim() === '' ? undefined : Number(blockDays);
+  // Em branco é 0: sem bloqueio.
+  const days = blockDays.trim() === '' ? 0 : Number(blockDays);
   const validate = () => {
     if (!reason) return t('reasonRequired');
-    if (
-      days !== undefined &&
-      !(Number.isInteger(days) && days >= 0 && days <= AVATAR_BLOCK_DAYS_MAX)
-    ) {
+    if (!(Number.isInteger(days) && days >= 0 && days <= AVATAR_BLOCK_DAYS_MAX)) {
       return t('blockInvalid', { max: AVATAR_BLOCK_DAYS_MAX });
     }
     return null;
@@ -94,7 +93,7 @@ export function RemoveAvatarForm(
           decision: 'remove',
           reason,
           note,
-          ...(days !== undefined && { blockDays: days }),
+          blockDays: days,
         };
         if ('avatarId' in props) {
           const result = await request(
