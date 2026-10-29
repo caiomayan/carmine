@@ -926,6 +926,96 @@
         ]
       }
     },
+    "/api/auth/steam/staff/login": {
+      "get": {
+        "operationId": "startStaffSteamLogin",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "description": "Caminho interno do painel para onde voltar depois do login (padrão: /)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Para a Steam (ou para /entrar?erro=indisponivel no painel)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "summary": "Começa o login Steam do painel da Staff: redireciona para a Steam",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/steam/staff/callback": {
+      "get": {
+        "operationId": "completeStaffSteamLogin",
+        "parameters": [],
+        "responses": {
+          "303": {
+            "description": "Para a página de origem no painel (sessão aberta) ou para /entrar?erro=<motivo>"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "summary": "Volta da Steam no painel: verifica a asserção e abre a sessão só para quem tem papel de Staff",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/equipped/v5/{steamId}.json": {
       "get": {
         "operationId": "getEquippedV5",
