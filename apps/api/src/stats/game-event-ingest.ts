@@ -126,7 +126,7 @@ export class GameEventIngest {
           weapons,
           teamKills: teamKillEvents,
           ignored,
-        } = collectStats(news, new Set(accountBySteamId.keys()));
+        } = collectStats(news, new Set(accountBySteamId.keys()), server.mode);
 
         // Ordem fixa das linhas, para dois lotes ao mesmo tempo não se travarem um no outro.
         const values = deltas
@@ -309,7 +309,7 @@ export class GameEventIngest {
 
     await this.writeSessions(tx, server, news, accountBySteamId);
 
-    const hours = collectServerHours(news.roundEnds);
+    const hours = collectServerHours(news.roundEnds, server.mode);
     if (hours.length > 0) {
       const t = serverHours;
       // O placar é o do round mais recente: só troca se o do lote não é mais antigo que o guardado.

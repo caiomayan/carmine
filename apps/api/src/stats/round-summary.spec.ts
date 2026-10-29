@@ -318,7 +318,7 @@ describe('summarizeRound · trocado em até 5 s', () => {
     expect(player(summary, A).traded).toBe(false);
   });
 
-  it('o matador morrer por queda ou por um aliado dele não é troca', () => {
+  it('o matador morrer por queda ou bomba (sem assassino) ou por um aliado dele não é troca', () => {
     const fall = run({ kills: [kill(D, A, 10_000), kill(null, D, 11_000)] });
     expect(player(fall, A).traded).toBe(false);
     const friendly = run({
@@ -329,6 +329,30 @@ describe('summarizeRound · trocado em até 5 s', () => {
 
   it('morte por suicídio não é trocada', () => {
     expect(player(run({ kills: [kill(A, A, 1000)] }), A).traded).toBe(false);
+  });
+
+  it('o matador que se suicida depois não deixou a morte trocada: o aliado não o matou', () => {
+    const summary = run({ kills: [kill(D, A, 10_000), kill(D, D, 12_000, { victimTeam: 't' })] });
+    expect(player(summary, A).traded).toBe(false);
+  });
+
+  it('bot nunca troca: nem como matador (não há quem vingar) nem como quem vinga', () => {
+    // O matador é um bot: a morte de A não pode ser trocada, mesmo que um aliado mate um bot depois.
+    const botKiller = run({
+      kills: [
+        kill(null, A, 10_000, { killerIsBot: true, killerTeam: 't', victimTeam: 'ct' }),
+        kill(B, null, 12_000, { victimIsBot: true, victimTeam: 't' }),
+      ],
+    });
+    expect(player(botKiller, A).traded).toBe(false);
+    // Quem mata o matador é um bot aliado: a kill de um bot não conta (ADR 0018), então não troca.
+    const botAvenger = run({
+      kills: [
+        kill(D, A, 10_000),
+        kill(null, D, 12_000, { killerIsBot: true, killerTeam: 'ct', victimTeam: 't' }),
+      ],
+    });
+    expect(player(botAvenger, A).traded).toBe(false);
   });
 });
 

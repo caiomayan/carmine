@@ -3,6 +3,7 @@ import type { APIRequestContext } from '@playwright/test';
 import { createUnclaimedAccount, newSteamId, signInByRequest } from './accounts';
 import { runApiCli } from './api-cli';
 import { axeViolations, expect, saveTheme, test, WIDTHS } from './fixtures';
+import { OPPONENT } from './game-events';
 import { clickHydrated } from './hydration';
 
 const AT = () => new Date().toISOString();
@@ -63,7 +64,10 @@ async function play(
         at: AT(),
         warmup: false,
         winner: 'ct',
-        players: rounds.steamIds.map((steamId) => ({ steamId, team: 'ct' })),
+        players: [
+          ...rounds.steamIds.map((steamId) => ({ steamId, team: 'ct' })),
+          { steamId: OPPONENT, team: 't' },
+        ],
       })),
       sessionStarts: [],
       sessionEnds: [],

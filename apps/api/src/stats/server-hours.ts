@@ -1,4 +1,5 @@
-import type { RoundEndEvent } from '@carmine/contracts';
+import type { GameMode, RoundEndEvent } from '@carmine/contracts';
+import { roundCounts } from './stats-deltas.js';
 import { hourStartOf } from './stats-week.js';
 
 /** O que um lote soma no histórico de rounds de um servidor, por hora cheia e mapa (S12b). */
@@ -20,12 +21,16 @@ export interface ServerHourDelta {
  * Agrupa os fins de round novos por hora cheia e mapa. Só round de verdade (sem aquecimento) que
  * veio com o mapa: plugin velho não manda o mapa, e então o round não entra (a página do servidor
  * mostra "coletando desde"). Não depende de haver Conta: o servidor jogou o round do mesmo jeito.
- * `none` (empate) conta o round, mas nenhum lado.
+ * `none` (empate) conta o round, mas nenhum lado. No Retake, o round sintético do `cs2-retakes` (humanos de
+ * um lado só) não conta, como no placar do plugin.
  */
-export function collectServerHours(roundEnds: readonly RoundEndEvent[]): ServerHourDelta[] {
+export function collectServerHours(
+  roundEnds: readonly RoundEndEvent[],
+  mode: GameMode,
+): ServerHourDelta[] {
   const groups = new Map<string, ServerHourDelta>();
   for (const round of roundEnds) {
-    if (round.warmup || !round.map) continue;
+    if (round.warmup || !round.map || !roundCounts(round, mode)) continue;
     const at = new Date(round.at);
     const hourStart = hourStartOf(at);
     const key = `${hourStart.getTime()}|${round.map}`;

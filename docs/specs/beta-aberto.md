@@ -190,7 +190,7 @@ A base do Rating Carmine (S21), das Salas (S23), do Consigliere (S27) e do match
 - Quando o `round_end` chega, calcula o **resumo do round por jogador** e o guarda **para sempre**:
   - kills, mortes, assistências (com 40 de dano ou mais, como a HLTV 3.0) e flash assists;
   - dano limitado pela vida;
-  - **sobreviveu** e **foi trocado** (o matador dele morreu até 5 s depois);
+  - **sobreviveu** e **foi trocado**. Trocado vale **só quando o matador dele morre, até 5 s depois (inclusive), numa kill de um companheiro de time da vítima**. Não troca: o matador morrer por queda, bomba ou suicídio (não há companheiro que o tenha matado), por kill de um aliado dele, antes de matar a vítima, ou qualquer lado ser bot (um bot não conta kill, e a morte pelas mãos de um bot não é trocada porque não se sabe qual bot foi);
   - **abertura** (primeira kill ou primeira morte do round);
   - **multi-kill** (2k a 5k);
   - **clutch** (último vivo do time contra N, e se venceu);
