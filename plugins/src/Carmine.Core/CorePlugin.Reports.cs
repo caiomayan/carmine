@@ -53,7 +53,7 @@ public sealed partial class CorePlugin
                 }
                 break;
             case ReportStep.Submit submit:
-                var round = GameRules()?.TotalRoundsPlayed;
+                var round = ReportRound.InProgress(GameRules()?.TotalRoundsPlayed, IsWarmup());
                 var map = Server.MapName;
                 RunInBackground(async token =>
                 {
