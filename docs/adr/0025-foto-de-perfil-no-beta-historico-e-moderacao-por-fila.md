@@ -35,7 +35,7 @@ Vale para a foto de perfil e vale também, quando existirem, para a logo de Time
 
 - A janela entre o envio e a decisão da Staff cresce: uma foto imprópria fica no ar até a Staff agir (a fila é de até 24 h) ou a Cloudflare bloquear. É o custo de a denúncia não derrubar nada; a mitigação é a fila ordenada e o peso de quem denuncia.
 - A fila de remoção de arquivos passa a receber trabalho em outros momentos (6ª foto, "Apagar"), não só na troca.
-- Migração `0019`: coluna `account_avatars.deleted_at`.
+- Migração `0020`: coluna `account_avatars.deleted_at`.
 - Para ligar em produção, o roteiro do dono está em [foto-de-perfil.md](../operacao/foto-de-perfil.md).
 
 ## Considered Options

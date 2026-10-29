@@ -259,7 +259,7 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
 - O limite de 30 min é checado antes do intervalo de 10 s; o estado da foto (`GET /api/me/avatar`) não inclui o intervalo, que passa sozinho.
 - Quem denuncia muito o que a Staff mantém perde peso com **3** denúncias mantidas em **90 dias** e mais mantidas do que confirmadas (números nossos; a spec não os fixa). Só vão para o fim da fila as fotos cujas denúncias abertas são todas de Contas assim.
 - A Staff também remove e decide fotos que estão só no histórico. `blockDays` ausente na API não bloqueia; a tela sugere 7.
-- Migração `0019` (`account_avatars.deleted_at`). O estado `suspended` deixa de ser criado.
+- Migração `0020` (`account_avatars.deleted_at`). O estado `suspended` deixa de ser criado.
 
 ---
 
