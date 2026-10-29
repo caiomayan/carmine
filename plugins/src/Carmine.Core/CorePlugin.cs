@@ -406,7 +406,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (player is not null)
         {
             _chat?.OnConnectResult(steamId, result.ChatHidden);
-            _vipInfo?.OnConnectResult(steamId, result.VipNotice, result.VipEndsAt);
+            _vipInfo?.OnConnectResult(steamId, result.VipNotice, result.VipEndsAt,
+                planNotice: Config.ReservedSlotsMode != ReservedSlotsMode.Off, isVip: result.IsVip);
         }
         var playing = player is not null && IsPlaying(player);
         var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: playing) == true;
