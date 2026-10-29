@@ -52,12 +52,18 @@ describe('currentSessionSchema', () => {
       csrfToken: 'token',
       firstLogin: true,
       vip,
+      vipHoldDays: null,
       staffRole: null,
       sanctions: [],
       displayNameChange: { custom: false, nextChangeAt: null },
     };
 
     expect(currentSessionSchema.parse(session)).toEqual(session);
+    expect(currentSessionSchema.parse({ ...session, vipHoldDays: 30 }).vipHoldDays).toBe(30);
+    expect(currentSessionSchema.safeParse({ ...session, vipHoldDays: 0 }).success).toBe(false);
+    expect(currentSessionSchema.safeParse({ ...session, vipHoldDays: undefined }).success).toBe(
+      false,
+    );
     expect(
       currentSessionSchema.safeParse({ account: profile, csrfToken: 'token', vip }).success,
     ).toBe(false);
@@ -68,6 +74,7 @@ describe('currentSessionSchema', () => {
       account: profile,
       csrfToken: 'token',
       firstLogin: false,
+      vipHoldDays: null,
       staffRole: null,
       sanctions: [],
       displayNameChange: { custom: false, nextChangeAt: null },

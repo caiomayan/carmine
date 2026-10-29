@@ -18,6 +18,7 @@ export const VIP_STATES = [
   'vip-ativo',
   'vip-acabando',
   'vip-acabou',
+  'vip-acabou-sem-guarda',
   'sandbox',
   'indisponivel',
 ] as const;
@@ -34,7 +35,8 @@ export const VIP_STATE_LABEL: Record<VipState, string> = {
   limite: 'Limite do dia',
   'vip-ativo': 'VIP ativo',
   'vip-acabando': 'VIP acabando',
-  'vip-acabou': 'VIP acabou',
+  'vip-acabou': 'VIP acabou (Itens guardados)',
+  'vip-acabou-sem-guarda': 'VIP acabou (guarda desligada)',
   sandbox: 'Ambiente de teste',
   indisponivel: 'API fora',
 };
@@ -60,10 +62,19 @@ const active = (endsInDays: number): VipStatus => ({
   endedAt: null,
 });
 
+/** Dias de guarda dos Itens VIP nos exemplos (a guarda ligada, como na homologação). */
+const HOLD_DAYS = 30;
+
 export function vipFixture(state: VipState): {
   packages: VipPackages | null;
   vip: VipStatus | null;
+  /** `vipHoldDays` da sessão: nulo só no estado de guarda desligada. */
+  holdDays: number | null;
 } {
+  return { ...vipState(state), holdDays: state === 'vip-acabou-sem-guarda' ? null : HOLD_DAYS };
+}
+
+function vipState(state: VipState): { packages: VipPackages | null; vip: VipStatus | null } {
   switch (state) {
     case 'aberta':
       return { packages: packages(), vip: null };
@@ -84,6 +95,7 @@ export function vipFixture(state: VipState): {
     case 'vip-acabando':
       return { packages: packages(), vip: active(2) };
     case 'vip-acabou':
+    case 'vip-acabou-sem-guarda':
       return {
         packages: packages(),
         vip: { active: false, endsAt: null, endedAt: iso(-3) },

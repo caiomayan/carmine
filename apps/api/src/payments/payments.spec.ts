@@ -112,7 +112,7 @@ describe('o CPF do Pagador', () => {
     expect(digitsOf('123.456.789-09')).toBe('12345678909');
     expect(last3Of('123.456.789-09')).toBe('909');
     expect(last3Of('1234')).toBeNull();
-    expect(maskDocument('909')).toBe('***.***.909-**');
+    expect(maskDocument('909')).toBe('***.***.**9-09');
     expect(maskDocument(null)).toBeNull();
   });
 });

@@ -163,7 +163,7 @@ export const purchaseSchema = z
     pix: purchasePixSchema.nullable(),
     redirectUrl: z.string().nullable(),
     simulationUrl: z.string().nullable(),
-    /** `***.***.123-**`: só o fim do CPF do Pagador, depois de aprovado. */
+    /** `***.***.**1-23`: só o fim do CPF do Pagador (os 3 últimos dígitos), depois de aprovado. */
     payerDocumentMasked: z.string().nullable(),
     /** O nome do Pagador, como o provedor o informa (depois de aprovado). */
     payerName: z.string().nullable(),

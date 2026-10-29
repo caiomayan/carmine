@@ -44,6 +44,7 @@ import { Loadouts } from '../loadout/loadouts.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { StaffRoles } from '../staff/staff-roles.js';
+import { VIP_HOLD_DAYS } from '../vip/vip-hold.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { toVipStatus } from '../vip/vip-status.js';
 import { LoginRateLimitFilter, loginErrorUrl } from './login-errors.js';
@@ -256,6 +257,8 @@ export class AuthController {
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
       vip: toVipStatus(vip),
+      // Só diz que os Itens VIP ficam guardados com a guarda ligada; o web não lê a variável de ambiente.
+      vipHoldDays: this.config.vipHold.enabled ? VIP_HOLD_DAYS : null,
       staffRole,
       sanctions: own,
       displayNameChange: {

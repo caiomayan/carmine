@@ -116,6 +116,12 @@ export const currentSessionSchema = z
     firstLogin: z.boolean(),
     /** Período VIP da Conta: decide o cadeado dos Itens VIP no editor (S04). */
     vip: vipStatusSchema,
+    /**
+     * Quantos dias os Itens VIP ficam guardados depois do fim do VIP (S14a, `VIP_HOLD_ENABLED`). Nulo com a guarda
+     * desligada: aí os Itens seguem no Inventário (só deixam de ir para o jogo). O aviso do fim do VIP no site
+     * diz uma coisa ou a outra conforme este campo; o web nunca lê a variável de ambiente.
+     */
+    vipHoldDays: z.int().positive().nullable(),
     /** Papel de Staff da Conta (S07); nulo para quem não é da Staff. */
     staffRole: staffRoleSchema.nullable(),
     /**

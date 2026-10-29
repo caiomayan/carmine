@@ -35,7 +35,7 @@ Número curto e único que identifica a Conta na plataforma; números menores pe
 _Evitar_: username, apelido, handle
 
 **ID reservado**:
-ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável).
+ID público de 1 a 9.999, atribuído manualmente pela Staff (fundador, beta, Staff, números bonitos), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável). Não há ID reservado de 10.000 para cima: os números bonitos acima de 10.000 ficam numa lista de bloqueio e o sorteio automático os pula (ADR 0013).
 
 **Nome de exibição** (`displayName`):
 O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único. É o nome Steam, ou o **nome próprio** (`customDisplayName`) que a Conta reivindicada escolhe no site (2 a 24 caracteres, filtro de palavras, uma troca a cada 7 dias). O reset da Staff apaga o nome próprio e recomeça o prazo.

@@ -97,6 +97,13 @@ test.describe('/plans, estados (vitrine)', () => {
 
     await page.goto(state('vip-acabou'));
     await expect(page.getByTestId('vip-yours')).toContainText('Seu VIP acabou em');
+    // Com a guarda dos Itens VIP ligada (S14a), eles saem do Inventário e ficam guardados 30 dias.
+    await expect(page.getByTestId('vip-yours')).toContainText('guardados por 30 dias');
+    await expect(page.getByTestId('vip-yours')).not.toContainText('continuam no seu Inventário');
+
+    // Com ela desligada, seguem no Inventário (só deixam de ir para o jogo).
+    await page.goto(state('vip-acabou-sem-guarda'));
+    await expect(page.getByTestId('vip-yours')).toContainText('continuam no seu Inventário');
   });
 
   test('ambiente de teste avisa que o pagamento é de mentira; API fora não mostra Pacote nenhum', async ({

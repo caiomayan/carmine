@@ -859,7 +859,7 @@ O ECA Digital (art. 21) pede que jogos com chat limitem a interação por padrã
 Quem vê uma skin ou um Loadout de que gosta leva para si. As skins são simuladas e o Perfil é público, então **ninguém pode impedir que o copiem**.
 
 **O que se copia**
-- **Um Item:** a skin exata, com o desgaste, o padrão (seed), os stickers nas mesmas posições e o chaveiro. Ele vai para o **Inventário** de quem copiou, respeitando o limite de 300 Itens.
+- **Um Item:** a skin exata, com o desgaste, o padrão (seed), os stickers nas mesmas posições e o Charm. Ele vai para o **Inventário** de quem copiou, respeitando o limite de 300 Itens.
 - **O Loadout inteiro**, dos dois lados, que vira um **Preset** de quem copiou.
 - **A nametag não se copia**: o nome gravado é pessoal, e a arma copiada vem sem nome. O resto vem igual.
 

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = { title: 'VIP (vitrine)', robots: { index: false } };
 
-/** `/dev/vip?estado=aberta|visitante|em-breve|banido|bloqueado|em-analise|limite|vip-ativo|vip-acabando|vip-acabou|sandbox|indisponivel`. */
+/** `/dev/vip?estado=aberta|visitante|em-breve|banido|bloqueado|em-analise|limite|vip-ativo|vip-acabando|vip-acabou|vip-acabou-sem-guarda|sandbox|indisponivel`. */
 export default async function VipGalleryPage({
   searchParams,
 }: {
@@ -18,7 +18,7 @@ export default async function VipGalleryPage({
   if (process.env.CARMINE_UI_GALLERY !== '1') notFound();
   const { estado } = await searchParams;
   const state = isVipState(estado) ? estado : 'aberta';
-  const { packages, vip } = vipFixture(state);
+  const { packages, vip, holdDays } = vipFixture(state);
   return (
     <>
       <nav
@@ -37,7 +37,7 @@ export default async function VipGalleryPage({
           </Link>
         ))}
       </nav>
-      <VipView packages={packages} vip={vip} />
+      <VipView packages={packages} vip={vip} holdDays={holdDays} />
     </>
   );
 }
