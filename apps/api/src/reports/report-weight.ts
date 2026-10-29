@@ -17,7 +17,7 @@ export function weightWindowStart(now: Date): Date {
 /**
  * Em SQL: a Conta `reporter` perdeu peso como denunciante? Perde quem tem pelo menos `REPORTER_ARCHIVED_MIN`
  * Denúncias arquivadas pela Staff, sem Punição, desde `since`, e mais arquivadas do que confirmadas. Vale para todos
- * os tipos de uma vez (regra única de denúncia, ADR 0026): na Denúncia de jogo, arquivada é `archived` e confirmada é
+ * os tipos de uma vez (regra única de denúncia, ADR 0027): na Denúncia de jogo, arquivada é `archived` e confirmada é
  * `sanctioned`; na de foto, arquivada é a mantida (`dismissed_at`) e confirmada é a foto removida.
  *
  * `reporter` é a expressão da Conta de fora (uma coluna da consulta de quem chama), escrita por extenso, com o nome da

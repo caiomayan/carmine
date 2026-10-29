@@ -78,7 +78,7 @@ const firstOpen = (since: Date) => sql`coalesce(
 
 /**
  * O grupo da foto na fila aberta: 0 se ela tem alguma denúncia aberta de quem tem peso normal, 1 se só tem de quem
- * perdeu peso (essas vão para o fim da fila). O peso é o da regra única de denúncia (ADR 0026), de todos os tipos.
+ * perdeu peso (essas vão para o fim da fila). O peso é o da regra única de denúncia (ADR 0027), de todos os tipos.
  */
 const queueGroup = (since: Date) => sql<number>`(case when exists (
   select 1 from avatar_reports r
@@ -137,7 +137,7 @@ export class AvatarModeration {
     if (!avatar) throw new AvatarRejection('no_custom_avatar', 'Este Perfil não tem foto própria');
     const verdict = await this.db.transaction(async (tx) => {
       await lockReporter(tx, reporterId);
-      // O teto por dia soma todos os tipos de Denúncia (regra única de denúncia, ADR 0026).
+      // O teto por dia soma todos os tipos de Denúncia (regra única de denúncia, ADR 0027).
       const sentToday = await countReportsSince(tx, reporterId, dayStartOf(now));
       if (sentToday >= REPORT_DAILY_LIMIT) {
         throw new AvatarRejection(

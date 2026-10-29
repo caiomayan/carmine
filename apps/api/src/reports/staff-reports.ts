@@ -55,7 +55,7 @@ interface CaseRow extends Record<string, unknown> {
  * arquivamento com motivo, sempre no log de auditoria. Virar Punição passa por `Sanctions.apply`
  * (com `reportId`), o mesmo fluxo de qualquer Punição.
  *
- * A fila é de casos (regra única de denúncia, ADR 0026): as Denúncias contra a mesma Conta, pelo mesmo motivo, no
+ * A fila é de casos (regra única de denúncia, ADR 0027): as Denúncias contra a mesma Conta, pelo mesmo motivo, no
  * mesmo Mapa jogado viram um item, com a contagem e as provas juntas, e arquivar ou punir resolve todas. A fila aberta
  * anda das mais antigas (o prazo corre) e deixa no fim os casos só de quem perdeu peso como denunciante.
  */

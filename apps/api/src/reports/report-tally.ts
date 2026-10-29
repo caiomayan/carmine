@@ -14,7 +14,7 @@ export async function lockReporter(tx: Executor, reporterId: string): Promise<vo
 }
 
 /**
- * Quantas Denúncias aceitas a Conta fez desde `since`, somando todos os tipos (regra única de denúncia, ADR 0026):
+ * Quantas Denúncias aceitas a Conta fez desde `since`, somando todos os tipos (regra única de denúncia, ADR 0027):
  * é a conta do teto por dia. A Denúncia descartada porque a imagem já foi aprovada não grava nada, então não conta.
  */
 export async function countReportsSince(

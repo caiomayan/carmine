@@ -27,7 +27,7 @@ const HOUR_MS = 60 * 60_000;
 
 /**
  * Os limites da Denúncia: 1 por alvo a cada 10 minutos e 5 por hora, por denunciante (S13), e
- * `REPORT_DAILY_LIMIT` por dia de Brasília, somando todos os tipos (regra única de denúncia, ADR 0026).
+ * `REPORT_DAILY_LIMIT` por dia de Brasília, somando todos os tipos (regra única de denúncia, ADR 0027).
  * `past` são as Denúncias de jogo do denunciante na última hora (as mais antigas são ignoradas);
  * `sentToday` é quantas Denúncias ele já fez hoje, de qualquer tipo. Quando dois limites valem, a
  * recusa é a do prazo mais longo, para a mensagem nunca prometer um horário em que a próxima

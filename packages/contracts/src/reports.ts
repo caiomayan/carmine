@@ -37,7 +37,7 @@ export const REPORT_SAME_TARGET_COOLDOWN_MINUTES = 10;
 export const REPORT_HOURLY_LIMIT = 5;
 /**
  * Teto por dia (dia de Brasília, ADR 0018) por Conta, somando todos os tipos de Denúncia (regra única de denúncia,
- * ADR 0026). O texto é o mesmo no site; no jogo leva o prefixo da marca.
+ * ADR 0027). O texto é o mesmo no site; no jogo leva o prefixo da marca.
  */
 export const REPORT_DAILY_LIMIT = 10;
 export const REPORT_DAILY_LIMIT_MESSAGE = `Você já enviou ${REPORT_DAILY_LIMIT} denúncias hoje. Tente amanhã.`;
@@ -215,7 +215,7 @@ export type StaffReportMember = z.infer<typeof staffReportMemberSchema>;
 
 /**
  * Um caso da fila da Staff (`GET /api/staff/reports`, permissão `reports.handle`): as Denúncias contra a mesma
- * Conta, pelo mesmo motivo, no mesmo Mapa jogado viram um item só (regra única de denúncia, ADR 0026). `id` é o da
+ * Conta, pelo mesmo motivo, no mesmo Mapa jogado viram um item só (regra única de denúncia, ADR 0027). `id` é o da
  * mais antiga e serve para arquivar ou punir; a decisão vale para todas as do caso.
  */
 export const staffReportSchema = z

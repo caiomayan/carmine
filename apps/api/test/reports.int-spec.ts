@@ -223,7 +223,7 @@ describe('Denúncias e log de chat (S13)', () => {
       expect(
         reportResultSchema.parse((await report(b.steamId, target.steamId)).json()).accepted,
       ).toBe(true);
-      // Mesma Conta, mesmo motivo, mesmo mapa: um caso só, com as duas Denúncias (ADR 0026).
+      // Mesma Conta, mesmo motivo, mesmo mapa: um caso só, com as duas Denúncias (ADR 0027).
       const { reports: open } = await queue(moderator, '?limit=100');
       const mine = open.filter((r) => r.target.publicId === target.publicId);
       expect(mine).toHaveLength(1);
@@ -533,7 +533,7 @@ describe('Denúncias e log de chat (S13)', () => {
     });
   });
 
-  /** A regra única de denúncia (ADR 0026): prazo, peso de quem denuncia, teto por dia e casos agrupados. */
+  /** A regra única de denúncia (ADR 0027): prazo, peso de quem denuncia, teto por dia e casos agrupados. */
   describe('a regra única de denúncia', () => {
     const reportWith = (
       reporter: string,

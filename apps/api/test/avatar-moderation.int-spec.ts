@@ -860,7 +860,7 @@ describe('Moderação da foto de perfil (F2 e S18)', () => {
     });
   });
 
-  /** A regra única de denúncia (ADR 0026) vista pela foto: prazo, peso de todos os tipos e teto por dia. */
+  /** A regra única de denúncia (ADR 0027) vista pela foto: prazo, peso de todos os tipos e teto por dia. */
   describe('a regra única de denúncia', () => {
     it('a foto tem prazo de 24 h, contado da denúncia mais antiga de peso normal', async () => {
       const { player, avatarId } = await withPhoto();

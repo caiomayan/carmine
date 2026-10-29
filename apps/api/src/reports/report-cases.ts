@@ -6,7 +6,7 @@ import { reports } from '../database/schema.js';
 type Executor = Pick<Database, 'update'>;
 
 /**
- * Em SQL: o Mapa jogado de uma Denúncia, para agrupar (regra única de denúncia, ADR 0026). É o `map_play_id` quando o
+ * Em SQL: o Mapa jogado de uma Denúncia, para agrupar (regra única de denúncia, ADR 0027). É o `map_play_id` quando o
  * plugin o mandou; sem ele, o servidor e o nome do mapa. `alias` é o nome da tabela `reports` na consulta de quem chama.
  */
 export const reportMapPlay = (alias: string) =>
