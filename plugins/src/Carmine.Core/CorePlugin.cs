@@ -13,8 +13,8 @@ namespace Carmine.Core;
 
 /// <summary>
 /// Plugin próprio dos Servidores Carmine. Na S01: no connect, avisa a API (que cria a Conta no
-/// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e dá as boas-vindas no primeiro
-/// connect. Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois; na
+/// primeiro), aplica o Nome de exibição no jogo (ADR 0008) e mostra a linha do connect (S16: as
+/// boas-vindas da Conta nova ou uma curiosidade, escolhida pela API). Com a API fora, o jogador joga com o nome Steam e o connect é reenviado depois; na
 /// S05, ele também é avisado de que o Loadout não carregou (o cs2-css-inventory-simulator, sem
 /// modificação, aplica o Loadout e não tem esse aviso). Na S06, manda o batimento (mapa, jogadores
 /// e vagas públicas) a cada HeartbeatIntervalSeconds e logo depois de cada connect e disconnect,
@@ -24,22 +24,23 @@ namespace Carmine.Core;
 /// receber o chat dos outros (a escolha fica na Conta, na API). Na S02/S14, a Vaga reservada (em
 /// CorePlugin.ReservedSlots.cs). Na S12, manda os eventos do jogo para as Estatísticas (em
 /// CorePlugin.Events.cs).
-/// As boas-vindas saem no primeiro spawn (no connect o jogador ainda está na escolha de time e
-/// não vê o chat) e ficam guardadas até um spawn se ele sair antes.
+/// A linha do connect sai no primeiro spawn (no connect o jogador ainda está na escolha de time e
+/// não vê o chat) e fica guardada até o spawn.
 /// Toda chamada HTTP roda fora da thread do jogo; o que mexe no jogo volta por Server.NextFrame.
 /// </summary>
 [MinimumApiVersion(376)]
 public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 {
-    public const string WelcomeMessage =
-        "Bem-vindo ao Carmine. Ao jogar você concorda com os termos: stcarmine.com/terms";
-
     private readonly CancellationTokenSource _unloading = new();
     /// <summary>Nome de exibição aplicado por slot (só na thread do jogo).</summary>
     private readonly Dictionary<int, (ulong SteamId, string Name)> _displayNames = [];
     private HttpClient? _http;
     private AccountSync? _sync;
-    private PendingWelcomes? _welcomes;
+    private PendingGreetings? _greetings;
+    /// <summary>Contas que ainda não passaram pela AWP por padrão e esperam o primeiro spawn no Retake (mesma mecânica das boas-vindas).</summary>
+    private PendingWelcomes? _awpQueue;
+    private AwpDefault? _awpDefault;
+    private GameStatsLines? _gameStats;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
     private bool _heartbeatScheduled;
@@ -103,8 +104,14 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Log.PendingLoaded(Logger, pending.Count);
         }
         _sync = new AccountSync(client, pending, TimeProvider.System);
-        _welcomes = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-welcomes.json")));
+        _greetings = new PendingGreetings();
+        if (Config.ReservedSlotsMode == ReservedSlotsMode.Retake)
+        {
+            _awpQueue = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-awp.json")));
+            _awpDefault = new AwpDefault(client);
+        }
         _heartbeat = new HeartbeatReporter(client);
+        _gameStats = new GameStatsLines(client);
         _chat = new ChatPreferences(client);
         _vipInfo = new VipInfo(client, TimeProvider.System);
         LoadReservedSlots(client, hotReload);
@@ -119,6 +126,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommandListener("say_team", OnSay, HookMode.Pre);
         AddCommand("css_chat", "!chat off oculta o chat dos outros jogadores; !chat on mostra de novo", OnChatCommand);
         AddCommand("css_vip", "!vip mostra até quando vai o seu VIP", OnVipCommand);
+        AddCommand("css_rank", "!rank mostra a sua posição na semana neste Modo", (p, i) => OnStatsCommand(p, rank: true));
+        AddCommand("css_stats", "!stats mostra os seus números da semana neste Modo", (p, i) => OnStatsCommand(p, rank: false));
+        AddCommand("css_help", "!help lista os comandos deste servidor", OnHelpCommand);
+        AddCommand("css_ajuda", "!ajuda é o mesmo que !help", OnHelpCommand);
         AddCommand("css_plan", "!plan é o mesmo que !vip", OnVipCommand);
         AddCommand("css_plano", "!plano é o mesmo que !vip", OnVipCommand);
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
@@ -157,7 +168,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http?.Dispose();
         _http = null;
         _sync = null;
-        _welcomes = null;
+        _greetings = null;
+        _awpQueue = null;
+        _awpDefault = null;
+        _gameStats = null;
         _heartbeat = null;
         _chat = null;
         _vipInfo = null;
@@ -212,21 +226,25 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     return;
                 }
-                if (_welcomes?.TakeOnSpawn(current.SteamID) == true)
+                if (_greetings?.TakeOnSpawn(current.SteamID) is { } greeting)
                 {
-                    current.PrintToChat($" {WelcomeMessage}");
+                    current.SendChat(greeting);
+                }
+                if (_awpQueue?.TakeOnSpawn(current.SteamID) == true)
+                {
+                    JoinAwpQueue(current);
                 }
                 if (_loadoutNotices.TakeOnSpawn(current.SteamID))
                 {
-                    current.PrintToChat($" {LoadoutNotices.Message}");
+                    current.SendChat(LoadoutNotices.Message);
                 }
                 if (_chat?.TakeReminderOnSpawn(current.SteamID) == true)
                 {
-                    current.PrintToChat($" {ChatPreferences.ReminderMessage}");
+                    current.SendChat(ChatPreferences.ReminderMessage);
                 }
                 if (_vipInfo?.TakeOnSpawn(current.SteamID) is { } vipNotice)
                 {
-                    current.PrintToChat($" {vipNotice}");
+                    current.SendChat(vipNotice);
                 }
             });
         }
@@ -239,6 +257,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
+            _greetings?.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
             _vipInfo?.OnDisconnect(player.SteamID);
@@ -392,9 +411,12 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (player is not null)
         {
             _chat?.OnConnectResult(steamId, result.ChatHidden);
-            _vipInfo?.OnConnectResult(steamId, result.VipNotice, result.VipEndsAt);
+            _vipInfo?.OnConnectResult(steamId, result.VipNotice, result.VipEndsAt,
+                planNotice: Config.ReservedSlotsMode != ReservedSlotsMode.Off, isVip: result.IsVip);
         }
-        var sendNow = _welcomes?.OnConnectResult(steamId, result.IsFirstConnect, isAlive: player is not null && IsPlaying(player)) == true;
+        var playing = player is not null && IsPlaying(player);
+        var greetingNow = _greetings?.OnConnectResult(steamId, result.Greeting, isAlive: playing);
+        var awpNow = _awpQueue?.OnConnectResult(steamId, result.ApplyAwpDefault, isAlive: playing) == true;
         if (player is null)
         {
             return;
@@ -406,9 +428,13 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         _displayNames[player.Slot] = (steamId, result.DisplayName);
         ApplyName(player, result.DisplayName);
-        if (sendNow)
+        if (greetingNow is not null)
         {
-            player.PrintToChat($" {WelcomeMessage}");
+            player.SendChat(greetingNow);
+        }
+        if (awpNow)
+        {
+            JoinAwpQueue(player);
         }
     }
 
@@ -434,7 +460,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             return HookResult.Continue;
         }
-        player.PrintToChat($" {message}");
+        player.SendChat(message);
         return HookResult.Handled;
     }
 
@@ -447,7 +473,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         if (ChatPreferences.Parse(info.GetArg(1)) is not { } toggle)
         {
-            player.PrintToChat($" {ChatPreferences.UsageMessage}");
+            player.SendChat(ChatPreferences.UsageMessage);
             return;
         }
         var steamId = player.SteamID;
@@ -457,12 +483,43 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Server.NextFrame(() =>
             {
                 var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
-                current?.PrintToChat($" {result.Message}");
+                current?.SendChat(result.Message);
             });
         });
     }
 
     /// <summary>O <c>!vip</c>: pergunta à API (o connect só sabe o VIP de quando o jogador entrou) e responde no chat.</summary>
+    /// <summary>A resposta vem pronta da API e vai só para quem pediu.</summary>
+    private void OnStatsCommand(CCSPlayerController? player, bool rank)
+    {
+        if (player is null || !IsHuman(player) || _gameStats is not { } stats)
+        {
+            return;
+        }
+        var steamId = player.SteamID;
+        RunInBackground(async token =>
+        {
+            var message = rank ? await stats.RankAsync(steamId, token) : await stats.StatsAsync(steamId, token);
+            Server.NextFrame(() =>
+            {
+                var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
+                current?.SendChat(message);
+            });
+        });
+    }
+
+    private void OnHelpCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player is null || !IsHuman(player))
+        {
+            return;
+        }
+        foreach (var line in HelpMessages.Lines(Config.ReservedSlotsMode))
+        {
+            player.SendChat(line);
+        }
+    }
+
     private void OnVipCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player is null || !IsHuman(player) || _vipInfo is not { } vipInfo)
@@ -476,7 +533,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             Server.NextFrame(() =>
             {
                 var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
-                current?.PrintToChat($" {message}");
+                current?.SendChat(message);
             });
         });
     }
@@ -518,7 +575,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                     Kick(player, kick);
                     break;
                 case SanctionAction.Notify notify:
-                    player.PrintToChat($" {notify.Message}");
+                    player.SendChat(notify.Message);
                     break;
                 case SanctionAction.SetMuted mute:
                     player.VoiceFlags = mute.Muted ? VoiceFlags.Muted : VoiceFlags.Normal;
@@ -537,7 +594,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             return;
         }
-        player.PrintToChat($" {kick.Message}");
+        player.SendChat(kick.Message);
         player.PrintToCenter(kick.Message);
         player.PrintToConsole($"[Carmine] {kick.Message}");
         Log.SanctionKick(Logger, kick.SteamId, kick.Ban);
@@ -569,6 +626,18 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// <summary>Vivo num time: já saiu da escolha de time e vê o chat.</summary>
     private static bool IsPlaying(CCSPlayerController player) =>
         player.PawnIsAlive && player.Team is CsTeam.Terrorist or CsTeam.CounterTerrorist;
+
+    /// <summary>Liga a AWP no alocador (ver <see cref="AwpDefault"/>) e guarda a marca na API.</summary>
+    private void JoinAwpQueue(CCSPlayerController player)
+    {
+        player.ExecuteClientCommandFromServer(AwpDefault.Command);
+        var awp = _awpDefault;
+        var steamId = player.SteamID;
+        if (awp is not null)
+        {
+            RunInBackground(token => awp.MarkAppliedAsync(steamId, token));
+        }
+    }
 
     /// <summary>Placar, chat e kill feed leem o nome do controller (ADR 0008).</summary>
     private static void ApplyName(CCSPlayerController player, string name)

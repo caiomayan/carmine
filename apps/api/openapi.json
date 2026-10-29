@@ -436,6 +436,67 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/awp-default": {
+      "post": {
+        "operationId": "markPlayerAwpDefaultApplied",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Marcado; os próximos connects mandam applyAwpDefault falso"
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Marca que a Conta já entrou na fila da AWP do Retake (vale uma vez por Conta)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/server/players/{steamId}/chat-preference": {
       "put": {
         "operationId": "setPlayerChatPreference",
@@ -4542,6 +4603,142 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/rank": {
+      "get": {
+        "operationId": "getPlayerRankLine",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A linha pronta em português",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerGameLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A posição da semana no Modo do servidor (o !rank do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/server/players/{steamId}/stats": {
+      "get": {
+        "operationId": "getPlayerStatsLine",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A linha pronta em português",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerGameLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Os números da semana no Modo do servidor (o !stats do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/profiles/{publicId}/stats": {
       "get": {
         "operationId": "getProfileStats",
@@ -7535,6 +7732,13 @@
           },
           "chatHidden": {
             "type": "boolean"
+          },
+          "applyAwpDefault": {
+            "type": "boolean"
+          },
+          "greeting": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
@@ -7545,7 +7749,9 @@
           "vipNotice",
           "vipEndsAt",
           "sanctions",
-          "chatHidden"
+          "chatHidden",
+          "applyAwpDefault",
+          "greeting"
         ],
         "additionalProperties": false
       },
@@ -11883,6 +12089,19 @@
           "accepted",
           "duplicates",
           "ignored"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerGameLine": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "message"
         ],
         "additionalProperties": false
       },

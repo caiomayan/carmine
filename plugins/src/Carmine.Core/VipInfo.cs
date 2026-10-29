@@ -18,10 +18,15 @@ public sealed class VipInfo(ICarmineApiClient api, TimeProvider time)
     private readonly Lock _lock = new();
     private readonly Dictionary<ulong, string> _pending = [];
 
-    /// <summary>A API respondeu ao connect: guarda o aviso (se houver) para o primeiro spawn.</summary>
-    public void OnConnectResult(ulong steamId, VipNotice? notice, DateTimeOffset? endsAt)
+    /// <summary>
+    /// A API respondeu ao connect: guarda o aviso para o primeiro spawn. O do fim do VIP (3 dias ou menos) vale
+    /// sempre e substitui o aviso do plano; com <paramref name="planNotice"/> (servidor aberto) e VIP ativo, sem
+    /// aviso de fim, sai o <see cref="ActiveMessage"/>.
+    /// </summary>
+    public void OnConnectResult(ulong steamId, VipNotice? notice, DateTimeOffset? endsAt, bool planNotice = false, bool isVip = false)
     {
-        var message = NoticeMessage(notice, endsAt, time.GetUtcNow());
+        var message = NoticeMessage(notice, endsAt, time.GetUtcNow())
+            ?? (planNotice && isVip ? ActiveMessage(endsAt) : null);
         lock (_lock)
         {
             if (message is null)
@@ -61,6 +66,11 @@ public sealed class VipInfo(ICarmineApiClient api, TimeProvider time)
         VipNotice.Ended_today => $"Seu VIP acabou hoje. Para voltar a ter VIP: {BuyUrl}",
         _ => null,
     };
+
+    /// <summary>O aviso do plano ativo no primeiro spawn (S16); sem a data se a API não mandou o fim.</summary>
+    public static string ActiveMessage(DateTimeOffset? endsAt) => endsAt is { } ends
+        ? $"VIP ativo até {ends.ToOffset(Brasilia).ToString("dd/MM", CultureInfo.InvariantCulture)} · sua vaga está garantida."
+        : "VIP ativo · sua vaga está garantida.";
 
     /// <summary>A resposta ao <c>!vip</c>, a partir do que a API diz agora.</summary>
     public static string StatusMessage(PlayerVip vip, DateTimeOffset now)

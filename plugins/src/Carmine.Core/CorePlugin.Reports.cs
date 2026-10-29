@@ -49,11 +49,11 @@ public sealed partial class CorePlugin
             case ReportStep.Say say:
                 foreach (var line in say.Lines)
                 {
-                    player.PrintToChat($" {line}");
+                    player.SendChat(line);
                 }
                 break;
             case ReportStep.Submit submit:
-                var round = GameRules()?.TotalRoundsPlayed;
+                var round = ReportRound.InProgress(GameRules()?.TotalRoundsPlayed, IsWarmup());
                 var map = Server.MapName;
                 RunInBackground(async token =>
                 {
@@ -62,7 +62,7 @@ public sealed partial class CorePlugin
                     Server.NextFrame(() =>
                     {
                         var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == reporter);
-                        current?.PrintToChat($" {outcome.Message}");
+                        current?.SendChat(outcome.Message);
                     });
                 });
                 break;

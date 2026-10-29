@@ -43,10 +43,11 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 
 Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saídas do levantamento do plugin de 2026-10-28. Não muda nada no site, a não ser a API que fornece a curiosidade, o `!rank` e o `!stats`.
 
-**1. AWP do Retake (provável bug)**
-- Hoje o `RetakesAllocator` só entrega a AWP a quem tem a permissão `@css/vip` (`AwpPermission`, `infra/cs2/profiles/retake/.../RetakesAllocator/config.json`), e nada no Carmine concede essa permissão a ninguém. Então provavelmente ninguém recebe AWP, contra a S02 ("1 AWP por time com chance").
-- **Decisão:** a AWP é **para todos**, como diz a S02 (não é benefício de plano). Tirar a exigência de permissão, conferindo no código do allocator qual valor significa "sem permissão". O mesmo vale para `SsgPermission` e `EnemyStuffPermission`, que continuam desligados.
-- Confirmar com um teste no servidor da AWS: num round de compra cheia com 2 ou mais por time, a AWP aparece para um jogador de cada lado em cerca de metade dos rounds.
+**1. AWP do Retake**
+- A suspeita original (a permissão `@css/vip` bloqueando a AWP) estava errada. No `RetakesAllocator` 3.0, `EnableAwp: 1` já significa "todos" e a `AwpPermission` nem é consultada (`AccessMode`, `WeaponHelpers.SelectPreferredPlayersCore`); a PR do perfil (#190) só esvaziou as três permissões (AWP, SSG e Enemy Stuff, os dois últimos desligados).
+- O que segura a AWP é outra coisa: o alocador só sorteia quem tem preferência de AWP (ou de sniper aleatória), e a preferência nasce vazia. Sem `!awp`, ninguém entra. O alocador não tem preferência padrão em config nem API pública.
+- **Decisão:** todo mundo entra no sorteio por padrão, como diz a S02 (não é benefício de plano). Vale **uma vez por Conta**, inclusive para quem já joga hoje (a API guarda a marca `awp_default_applied_at` e o connect manda `applyAwpDefault` até ela existir): no primeiro spawn num Retake, o Carmine.Core roda o `css_gun awp` do alocador (só liga; o `css_awp` alterna e tiraria a AWP de quem já a ligou) e grava a marca. Quem sair da fila com `!awp` depois disso fica fora, e quem tinha saído antes do deploy volta uma vez. O `!help` do Retake cita `!awp`.
+- Confirmar com um teste no servidor da AWS: uma Conta nova entra, e num round de compra cheia com 2 ou mais por time a AWP aparece para um jogador de cada lado em cerca de metade dos rounds. Se o `css_awp` disparado pelo servidor não tiver efeito, o plano de reserva é só o `!help`.
 
 **2. Servidor em português**
 - Todos os textos que o jogador vê ficam em português do Brasil: Carmine.Core, `cs2-retakes`, `RetakesAllocator`, `RockTheVote` e `Deathmatch`.
@@ -60,7 +61,8 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 
 **4. Boas-vindas com curiosidade**
 - Sai a mensagem atual de primeiro connect. Em **todo connect** num servidor aberto, uma única linha curta:
-  - **Conta nova** (sem Estatísticas no Modo): `Carmine · Bem-vindo, <nome>.`
+  - **Primeiro connect da Conta:** `Carmine · Bem-vindo, <nome>. Ao jogar você concorda com os termos: stcarmine.com/terms`. É o aviso do primeiro connect que o ADR 0007 pede (legítimo interesse, com o link dos termos); decisão do dono em 2026-10-29.
+  - **Do segundo connect em diante**, só a curiosidade, sem o link. Conta que já conectou mas ainda não tem Estatísticas no Modo vê `Carmine · Bem-vindo, <nome>.` (sem o link).
   - **Conta com dados:** `Carmine · <curiosidade>`. Uma curiosidade por connect, sorteada entre as que se aplicam à pessoa e diferente da última mostrada a ela.
 - **Curiosidades da v1** (todas do Modo do servidor e da semana atual, salvo indicado):
   - `Faltam 12 rounds para você entrar no Ranking desta semana.` (Retake; em minutos no DM)
@@ -70,7 +72,8 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
   - `Seu melhor dia da semana foi terça, com 132 rounds vencidos.` (só com 2 dias ou mais de atividade)
   - `Você já jogou 37 horas no Carmine.` (total, todos os Modos)
 - **Quem escolhe a frase é a API**, que devolve a linha pronta em português no endpoint que o plugin já chama no connect. O plugin só imprime. Assim, uma curiosidade nova não exige release do plugin.
-- **Os termos** continuam aceitos ao jogar. O link `stcarmine.com/termos` sai da mensagem e fica no `!help`.
+- **Os termos** continuam aceitos ao jogar (ADR 0007). O link vai na linha do primeiro connect e fica também no `!help` (`stcarmine.com/rules`). A API monta a linha (`greeting`); o plugin só imprime.
+- **Fora da v1 implementada:** a curiosidade da arma com mais abates da semana, porque o banco guarda as armas só de sempre (CONTEXT, Estatísticas, "coletando desde"). Entra quando houver a contagem por semana.
 - Com a API fora, a linha não aparece. O aviso de Loadout fora do ar continua como hoje.
 
 **5. `!help`**
@@ -78,7 +81,7 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
   - **Os dois Modos:** `!ws` (aplicar suas skins), `!rank`, `!stats`, `!rtv` e `!nominate`, `!report`, `!chat off/on`, `!vip`.
   - **Retake:** `!guns`.
   - **Deathmatch:** `!guns`, `!hs` (só headshot), `!dmg` (dano causado), `!hud`, `!noprimary`.
-- A última linha leva aos termos: `Carmine · Regras e termos: stcarmine.com/regras`.
+- A última linha leva aos termos: `Carmine · Regras e termos: stcarmine.com/rules`.
 - `!ajuda` é sinônimo.
 
 **6. `!rank` e `!stats`**
@@ -96,8 +99,8 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 - A S20 troca "VIP" pelo nome do plano.
 
 **8. Deathmatch: mapas e sons**
-- O pool passa de 3 para 5 mapas, com `de_ancient` e `de_anubis` (os dois já estão no pool do Retake), mais os pontos de spawn de cada um. A votação mostra 3, e 1 fica em cooldown.
-- Os sons de hit e de headshot ficam **ligados por padrão** (`Deathmatch.json`). Cada jogador desliga pelo `!hud`, como hoje.
+- O pool passa de 3 para 5 mapas, com `de_ancient` e `de_anubis` (os dois já estão no pool do Retake). O plugin não traz arquivo de spawns desses dois e usa os pontos nativos de deathmatch da Valve (`info_deathmatch_spawn`), sem coordenada nossa; se faltar espalhamento no jogo, gravamos com o editor do plugin (`css_dm_spawns`). A votação mostra 3, e 1 fica em cooldown.
+- Os sons de hit e de headshot ficam **ligados por padrão** (`Deathmatch.json`). Cada jogador desliga por `!hitsound` (acerto) e `!hssound` (headshot), ou em `!dm` → Menu de sons. O `!hud` não cobre os sons: ele só liga e desliga as mensagens na tela, e cada preferência do plugin tem o seu atalho (v1.3.6, `Menus.cs`), sem um comando que ligue várias.
 
 **9. Retake: 50 rounds por mapa**
 - `mp_maxrounds` vai de 30 para **50**, uns 35 a 40 min por mapa. A votação de fim de mapa continua 2 rounds antes do fim.
@@ -106,7 +109,7 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 - Num round de compra cheia com 2 ou mais por time, a AWP aparece para um jogador de cada lado em parte dos rounds, sem precisar de plano.
 - Nenhum texto em inglês aparece para o jogador no Retake e no DM, de nenhum plugin.
 - Toda mensagem do Carmine.Core começa com `Carmine` em carmim.
-- Uma Conta nova vê `Carmine · Bem-vindo, <nome>.`. Uma Conta com dados vê uma curiosidade da lista, e dois connects seguidos não mostram a mesma.
+- No primeiro connect a Conta vê `Carmine · Bem-vindo, <nome>. Ao jogar você concorda com os termos: stcarmine.com/terms`, uma vez só. Uma Conta com dados vê uma curiosidade da lista, e dois connects seguidos não mostram a mesma.
 - `!help` e `!ajuda` listam os comandos do Modo atual.
 - `!rank` e `!stats` batem com o que o site mostra no Ranking e no Perfil da mesma semana.
 - Quem tem VIP vê o aviso do plano no primeiro spawn; quem não tem, não vê.

@@ -20,6 +20,7 @@ import { CurrentGameServer, ServerKeyGuard } from '../game-servers/server-key.gu
 import { Loadouts } from '../loadout/loadouts.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
+import { Greetings } from '../stats/greeting.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { toVipStatus } from '../vip/vip-status.js';
 import { AccountsService } from './accounts.service.js';
@@ -35,6 +36,7 @@ export class PlayerConnectsController {
     @Inject(VipPeriods) private readonly vip: VipPeriods,
     @Inject(Analytics) private readonly analytics: Analytics,
     @Inject(Loadouts) private readonly loadouts: Loadouts,
+    @Inject(Greetings) private readonly greetings: Greetings,
   ) {}
 
   @Post()
@@ -56,9 +58,15 @@ export class PlayerConnectsController {
   ): Promise<PlayerConnectResult> {
     const { accountId, created, claimed, connectedAt, ...account } =
       await this.accounts.registerConnect(connect);
-    const [vip, sanctions] = await Promise.all([
+    const [vip, sanctions, greeting] = await Promise.all([
       this.vip.statusOf(accountId),
       this.sanctions.forGame([connect.steamId]),
+      this.greetings.forConnect(
+        accountId,
+        account.displayName,
+        server.mode,
+        account.isFirstConnect,
+      ),
     ]);
     void this.measure(server, { accountId, created, claimed, connectedAt }, account, vip.active);
     return {
@@ -67,6 +75,7 @@ export class PlayerConnectsController {
       vipNotice: vipNoticeAt(toVipStatus(vip), new Date()),
       vipEndsAt: vip.endsAt?.toISOString() ?? null,
       sanctions,
+      greeting,
     };
   }
 
