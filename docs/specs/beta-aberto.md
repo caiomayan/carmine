@@ -231,6 +231,13 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
 - **Só a ferramenta de abuso infantil da Cloudflare** (CSAM Scanning Tool) tira uma imagem do ar na hora.
 - **Quem denuncia muito o que a Staff aprova perde peso:** as denúncias dessa Conta vão para o fim da fila.
 
+**Regra única de denúncia** (vale para **toda** Denúncia: de jogo, de chat, de foto e de logo; decisão do dono de 2026-10-29, pensando na Staff de uma pessoa só no começo; muda o ADR 0019 e estende o peso acima)
+- **Prazo da Staff:** foto e logo denunciadas, **24 h**; Denúncia de jogo ou de chat, **72 h** (ADR 0019). Cada fila mostra o seu prazo.
+- **Peso de quem denuncia:** com **3** Denúncias arquivadas sem punição em **90 dias**, e mais arquivadas do que confirmadas, as Denúncias da Conta vão para o **fim da fila** e **não têm prazo correndo** (não ficam vermelhas no painel nem contam como atrasadas).
+- **Teto por dia:** além dos limites de hoje (1 por alvo a cada 10 min e 5 por hora), no máximo **10 Denúncias por dia** por Conta, somando todos os tipos. Passou disso: `Carmine · Você já enviou 10 denúncias hoje. Tente amanhã.` (no site, o mesmo texto sem o prefixo).
+- **Agrupar na fila:** Denúncias contra **a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado** (ou contra a mesma imagem) viram **um item só** na fila, com a contagem (`4 denúncias`) e todas as provas juntas. A Staff decide uma vez, e a decisão vale para todas.
+- **Aceite:** a 11ª Denúncia do dia é recusada com o texto acima; uma Conta com 3 arquivadas em 90 dias (e mais arquivadas que confirmadas) tem as novas no fim da fila e sem prazo; 4 Denúncias pelo mesmo motivo no mesmo Mapa jogado aparecem como um item com `4 denúncias`, e arquivar ou punir resolve as 4.
+
 **Histórico das últimas 5 fotos**
 - No diálogo de trocar a foto, abaixo do envio, aparecem as **últimas 5 fotos que ficaram no ar**, da mais nova para a mais velha, junto com "Voltar à foto da Steam".
 - **Escolher uma do histórico** volta com ela na hora e **não conta** nos limites de envio.
@@ -586,7 +593,7 @@ O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**:
 - Cartões com:
   - jogadores online agora;
   - servidores no ar;
-  - **denúncias e fotos esperando revisão**, com o prazo de 24 h correndo;
+  - **denúncias e fotos esperando revisão**, cada fila com o seu prazo correndo (foto 24 h, Denúncia 72 h; regra única de denúncia na S18), e as Denúncias agrupadas por caso;
   - compras e reembolsos do dia;
   - Salas e partidas ao vivo (quando a S23 existir);
   - alertas (servidor caído, fila de eventos travada).
@@ -767,7 +774,7 @@ O ECA Digital (art. 21) pede que jogos com chat limitem a interação por padrã
 **Sinais:** contador de não lidas no ícone do chat e no sininho, e **"digitando..."**. **Sem "visto".**
 
 **Moderação**
-- Cada mensagem tem **Denunciar**. A denúncia entra na fila da Staff, com o prazo de hoje.
+- Cada mensagem tem **Denunciar**. A denúncia entra na fila da Staff, com o prazo das Denúncias (72 h) e a regra única de denúncia da S18.
 - **A Staff vê só o trecho denunciado** (as 20 mensagens em volta) e **nunca lê conversas** que ninguém denunciou.
 - **Bloquear** (S28) encerra a conversa dos dois lados.
 - **Filtro de palavrão** opcional e por pessoa, desligado por padrão.
