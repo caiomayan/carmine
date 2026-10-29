@@ -301,10 +301,7 @@ function encodeCursor(group: number, key: string, id: string): string {
   return Buffer.from(`${group}|${key}|${id}`).toString('base64url');
 }
 
-function decodeCursor(
-  cursor: string,
-  open: boolean,
-): { group: number; key: string; id: string } {
+function decodeCursor(cursor: string, open: boolean): { group: number; key: string; id: string } {
   const [group = '', key = '', id = ''] = Buffer.from(cursor, 'base64url').toString().split('|');
   if (
     !(open ? /^[01]$/ : /^0$/).test(group) ||

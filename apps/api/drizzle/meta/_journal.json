@@ -155,6 +155,13 @@
       "when": 1793312263129,
       "tag": "0021_s16_jogo_pacote1",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793313835975,
+      "tag": "0022_s18_regra_unica_de_denuncia",
+      "breakpoints": true
     }
   ]
 }

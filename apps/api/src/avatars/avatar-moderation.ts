@@ -360,7 +360,9 @@ export class AvatarModeration {
         .select({
           avatarId: avatarReports.avatarId,
           open: count(),
-          firstNormalAt: sql<Date | string | null>`min(${avatarReports.createdAt}) filter (where not ${reporterLowWeight(sql.raw('"avatar_reports"."reporter_account_id"'), since)})`,
+          firstNormalAt: sql<
+            Date | string | null
+          >`min(${avatarReports.createdAt}) filter (where not ${reporterLowWeight(sql.raw('"avatar_reports"."reporter_account_id"'), since)})`,
         })
         .from(avatarReports)
         .where(and(inArray(avatarReports.avatarId, ids), isNull(avatarReports.dismissedAt)))

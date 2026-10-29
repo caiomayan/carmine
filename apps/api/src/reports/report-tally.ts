@@ -29,6 +29,8 @@ export async function countReportsSince(
   const [avatar] = await tx
     .select({ total: count() })
     .from(avatarReports)
-    .where(and(eq(avatarReports.reporterAccountId, reporterId), gte(avatarReports.createdAt, since)));
+    .where(
+      and(eq(avatarReports.reporterAccountId, reporterId), gte(avatarReports.createdAt, since)),
+    );
   return (game?.total ?? 0) + (avatar?.total ?? 0);
 }

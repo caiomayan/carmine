@@ -1,10 +1,17 @@
-import { profileSchema, STAFF_ERROR_STATUS, staffErrorSchema } from '@carmine/contracts';
+import {
+  profileSchema,
+  REPORT_DAILY_LIMIT,
+  REPORTER_ARCHIVED_MIN,
+  reportResultSchema,
+  STAFF_ERROR_STATUS,
+  staffErrorSchema,
+  staffReportPageSchema,
+} from '@carmine/contracts';
 import {
   AVATAR_BLOCK_DAYS_MAX,
   AVATAR_BLOCK_DAYS_SUGGESTED,
   AVATAR_ERROR_STATUS,
   AVATAR_HISTORY_SIZE,
-  AVATAR_REPORTER_KEPT_MIN,
   AVATAR_REPORTS_PER_HOUR,
   AVATAR_SIZES,
   type AvatarReason,
@@ -26,6 +33,7 @@ import {
   accounts,
   avatarReports,
   mediaDeletions,
+  reports,
   staffAuditLog,
 } from '../src/database/schema.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
@@ -675,9 +683,9 @@ describe('Moderação da foto de perfil (F2 e S18)', () => {
       return who;
     }
 
-    it(`com ${AVATAR_REPORTER_KEPT_MIN} denúncias mantidas e mais mantidas que confirmadas, as denúncias da Conta vão para o fim da fila`, async () => {
+    it(`com ${REPORTER_ARCHIVED_MIN} denúncias mantidas e mais mantidas que confirmadas, as denúncias da Conta vão para o fim da fila`, async () => {
       const moderator = await staff('admin');
-      const noisy = await reporterWith(moderator, AVATAR_REPORTER_KEPT_MIN, 0);
+      const noisy = await reporterWith(moderator, REPORTER_ARCHIVED_MIN, 0);
       // Denunciada primeiro, mas só por quem perdeu peso.
       const onlyNoisy = await withPhoto();
       await report(noisy, onlyNoisy.player);
@@ -697,13 +705,9 @@ describe('Moderação da foto de perfil (F2 e S18)', () => {
 
     it('quem acerta tanto quanto erra, ou denuncia poucas mantidas, mantém o peso', async () => {
       const moderator = await staff('admin');
-      const noisy = await reporterWith(moderator, AVATAR_REPORTER_KEPT_MIN, 0);
-      const mixed = await reporterWith(
-        moderator,
-        AVATAR_REPORTER_KEPT_MIN,
-        AVATAR_REPORTER_KEPT_MIN,
-      );
-      const few = await reporterWith(moderator, AVATAR_REPORTER_KEPT_MIN - 1, 0);
+      const noisy = await reporterWith(moderator, REPORTER_ARCHIVED_MIN, 0);
+      const mixed = await reporterWith(moderator, REPORTER_ARCHIVED_MIN, REPORTER_ARCHIVED_MIN);
+      const few = await reporterWith(moderator, REPORTER_ARCHIVED_MIN - 1, 0);
       const older = await withPhoto();
       await report(noisy, older.player);
       const byMixed = await withPhoto();
@@ -853,6 +857,121 @@ describe('Moderação da foto de perfil (F2 e S18)', () => {
       expect((await row(old.avatarId))?.status).toBe('suspended');
       expect(await row(inHistory.avatarId)).toMatchObject({ status: 'replaced', deletedAt: null });
       expect(await reportsOf(inHistory.avatarId)).toHaveLength(1);
+    });
+  });
+
+  /** A regra única de denúncia (ADR 0026) vista pela foto: prazo, peso de todos os tipos e teto por dia. */
+  describe('a regra única de denúncia', () => {
+    it('a foto tem prazo de 24 h, contado da denúncia mais antiga de peso normal', async () => {
+      const { player, avatarId } = await withPhoto();
+      const before = Date.now();
+      await report(await reporter(), player);
+      const moderator = await staff();
+
+      const found = (await openCases(moderator)).find((c) => c.avatar.id === avatarId);
+
+      expect(found).toMatchObject({ kind: 'avatar', lowWeight: false });
+      const wait = Date.parse(found?.deadlineAt as string) - before;
+      expect(wait).toBeGreaterThanOrEqual(24 * 3_600_000 - 1000);
+      expect(wait).toBeLessThan(24 * 3_600_000 + 60_000);
+    });
+
+    it('o peso soma os tipos: 2 fotos mantidas e 1 Denúncia de jogo arquivada tiram o peso nas duas filas', async () => {
+      const moderator = await staff('admin');
+      const noisy = await reporter();
+      for (let i = 0; i < REPORTER_ARCHIVED_MIN - 1; i += 1) {
+        const kept = await withPhoto();
+        await report(noisy, kept.player);
+        await decide(moderator, kept.avatarId, { decision: 'keep', note: 'Pode ficar' });
+      }
+      const someone = await withPhoto();
+      await t.postgres.db.insert(reports).values({
+        reporterAccountId: noisy.account.id,
+        targetAccountId: someone.player.account.id,
+        reason: 'other',
+        chatContext: [],
+        status: 'archived',
+        resolvedAt: new Date(),
+        resolvedBySteamId: 1n,
+        resolutionReason: 'Sem prova',
+      });
+      const gameTarget = await withPhoto();
+      await t.postgres.db.insert(reports).values({
+        reporterAccountId: noisy.account.id,
+        targetAccountId: gameTarget.player.account.id,
+        reason: 'other',
+        chatContext: [],
+      });
+      const photoTarget = await withPhoto();
+      await report(noisy, photoTarget.player);
+
+      const photo = (await openCases(moderator)).find((c) => c.avatar.id === photoTarget.avatarId);
+      const gameQueue = staffReportPageSchema.parse(
+        (await moderator.call('GET', '/api/staff/reports?limit=100')).json(),
+      );
+      const game = gameQueue.reports.find(
+        (r) => r.target.publicId === gameTarget.player.account.publicId,
+      );
+
+      expect(photo).toMatchObject({ lowWeight: true, deadlineAt: null });
+      expect(game).toMatchObject({ lowWeight: true, deadlineAt: null });
+    });
+
+    it('o teto de 10 por dia soma fotos e jogo; a 11ª é recusada, no site sem o prefixo', async () => {
+      const who = await reporter();
+      for (let i = 0; i < AVATAR_REPORTS_PER_HOUR; i += 1) {
+        const { player } = await withPhoto();
+        expect((await report(who, player)).statusCode).toBe(200);
+      }
+      const server = (target: Owner) =>
+        t.app.inject({
+          method: 'POST',
+          url: '/api/server/reports',
+          headers: { authorization: `Bearer ${t.serverKey}` },
+          payload: {
+            reporterSteamId: who.steamId,
+            targetSteamId: target.steamId,
+            reason: 'other',
+            round: null,
+            map: null,
+          },
+        });
+      for (let i = 0; i < REPORT_DAILY_LIMIT - AVATAR_REPORTS_PER_HOUR; i += 1) {
+        const { player } = await withPhoto();
+        const outcome = reportResultSchema.parse((await server(player)).json());
+        expect(outcome.accepted, `denúncia de jogo ${i + 1}`).toBe(true);
+      }
+      const { player } = await withPhoto();
+
+      const blocked = await report(who, player);
+
+      expect(blocked.statusCode).toBe(429);
+      const error = avatarErrorSchema.parse(blocked.json());
+      expect(error).toMatchObject({
+        code: 'report_daily_limit',
+        message: 'Você já enviou 10 denúncias hoje. Tente amanhã.',
+      });
+      expect(error.retryAfter).toBeTruthy();
+      // E a de jogo, da mesma Conta, também (a mensagem tem o prefixo da marca).
+      expect(reportResultSchema.parse((await server(player)).json()).accepted).toBe(false);
+    });
+
+    it('a denúncia contra imagem aprovada também passa pelos limites, para a resposta ser sempre a mesma', async () => {
+      const moderator = await staff();
+      const { player, avatarId } = await withPhoto();
+      await report(await reporter(), player);
+      expect(
+        (await decide(moderator, avatarId, { decision: 'keep', note: 'Pode ficar' })).statusCode,
+      ).toBe(200);
+      const who = await reporter();
+      for (let i = 0; i < AVATAR_REPORTS_PER_HOUR; i += 1) {
+        const other = await withPhoto();
+        expect((await report(who, other.player)).statusCode).toBe(200);
+      }
+
+      const blocked = await report(who, player);
+
+      expect(avatarErrorSchema.parse(blocked.json()).code).toBe('report_limit');
     });
   });
 });
