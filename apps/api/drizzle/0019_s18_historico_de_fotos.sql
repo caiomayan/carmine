@@ -1,1 +1,0 @@
-ALTER TABLE "account_avatars" ADD COLUMN "deleted_at" timestamp with time zone;
