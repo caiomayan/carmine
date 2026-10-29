@@ -168,9 +168,15 @@ export class GameEventIngest {
               .onConflictDoNothing()
               .returning({ id: chatMessages.id });
 
-      const accepted = inserted.length + savedChat.length + unknownChat;
+      // S17 (PR A): o início do round e a bomba são aceitos e ainda não guardados (o PR B grava).
+      const unstored = (batch.roundStarts?.length ?? 0) + (batch.bombs?.length ?? 0);
+      const accepted = inserted.length + savedChat.length + unknownChat + unstored;
       return {
-        result: { accepted, duplicates: total - accepted, ignored: ignored + unknownChat },
+        result: {
+          accepted,
+          duplicates: total - accepted,
+          ignored: ignored + unknownChat + unstored,
+        },
         news,
         accountBySteamId,
         sessions,
