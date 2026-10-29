@@ -10,9 +10,12 @@ import {
   chatMessages,
   discordLinks,
   inventoryItems,
+  mapPlayPlayers,
   playSessions,
   presets,
   reports,
+  roundEvents,
+  roundPlayerSummaries,
   sanctions,
   staffMembers,
   vipHeldItems,
@@ -141,6 +144,22 @@ export class AccountErasure {
           .delete(playSessions)
           .where(eq(playSessions.accountId, accountId))
           .returning({ id: playSessions.id });
+        // S17 (ADR 0024): o resumo dos rounds e do mapa some; nos eventos brutos a Conta vira nula (anonimizada)
+        // e o resto do round, que é dos outros jogadores também, fica.
+        await tx.delete(roundPlayerSummaries).where(eq(roundPlayerSummaries.accountId, accountId));
+        await tx.delete(mapPlayPlayers).where(eq(mapPlayPlayers.accountId, accountId));
+        await tx
+          .update(roundEvents)
+          .set({ actorAccountId: null })
+          .where(eq(roundEvents.actorAccountId, accountId));
+        await tx
+          .update(roundEvents)
+          .set({ targetAccountId: null })
+          .where(eq(roundEvents.targetAccountId, accountId));
+        await tx
+          .update(roundEvents)
+          .set({ assistAccountId: null })
+          .where(eq(roundEvents.assistAccountId, accountId));
         const removedHeld = await tx
           .delete(vipHeldItems)
           .where(eq(vipHeldItems.accountId, accountId))

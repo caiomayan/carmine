@@ -22,6 +22,9 @@ import {
   serverHours,
   teamKills,
 } from '../database/schema.js';
+import { RoundEventPartitions } from './round-event-partitions.js';
+import { affectedRounds, roundEventMonths, toRoundEventRows } from './round-events.js';
+import { insertRoundEvents, recomputeRounds } from './round-summary-writer.js';
 import { collectServerHours } from './server-hours.js';
 import { type CollectedStats, collectStats } from './stats-deltas.js';
 
@@ -33,7 +36,16 @@ export interface EventSource {
   mode: GameMode;
 }
 
-const EVENT_KEYS = ['kills', 'damages', 'roundEnds', 'sessionStarts', 'sessionEnds'] as const;
+const EVENT_KEYS = [
+  'kills',
+  'damages',
+  'roundEnds',
+  'sessionStarts',
+  'sessionEnds',
+  // S17: o início do round e a bomba (opcionais no lote, ainda ausentes no plugin atual).
+  'roundStarts',
+  'bombs',
+] as const;
 
 /**
  * Recebe os lotes de eventos do jogo (S12, ADR 0018): descarta o que já viu (pelo ID do evento),
@@ -43,22 +55,30 @@ const EVENT_KEYS = ['kills', 'damages', 'roundEnds', 'sessionStarts', 'sessionEn
  * dela (`chat_messages`), e mensagem de Conta desconhecida não entra.
  */
 export class GameEventIngest {
+  private readonly partitions: RoundEventPartitions;
+
   /** `activity`: a faixa de atividade ao vivo da home, alimentada depois que o lote é gravado. */
   constructor(
     private readonly db: Database,
     private readonly activity: ActivityRecorder | null = null,
     /** Os eventos do plano de analytics (A1), depois do commit do lote. Sem ele, nada é emitido. */
     private readonly analytics: Pick<Analytics, 'capture'> = { capture: () => undefined },
-  ) {}
+  ) {
+    this.partitions = new RoundEventPartitions(db);
+  }
 
   async ingest(server: EventSource, batch: EventBatch): Promise<EventBatchResult> {
     const total = countEvents(batch);
     if (total === 0) return { accepted: 0, duplicates: 0, ignored: 0 };
 
+    // S17: a partição do mês de cada evento de round existe antes da transação (DDL fora dela).
+    const now = new Date();
+    await this.partitions.ensureFor(roundEventMonths(batch, now));
+
     const { result, news, accountBySteamId, sessions } = await this.db.transaction(async (tx) => {
       // `on conflict do nothing` também resolve o ID repetido dentro do próprio lote.
       const eventIds = EVENT_KEYS.flatMap((key) =>
-        batch[key].map(({ id }) => ({ id, serverId: server.id })),
+        (batch[key] ?? []).map(({ id }) => ({ id, serverId: server.id })),
       );
       const inserted =
         eventIds.length === 0
@@ -72,7 +92,7 @@ export class GameEventIngest {
 
       // Um ID repetido dentro do lote conta uma vez só: `delete` só diz sim na primeira vez.
       const news = Object.fromEntries(
-        EVENT_KEYS.map((key) => [key, batch[key].filter(({ id }) => fresh.delete(id))]),
+        EVENT_KEYS.map((key) => [key, (batch[key] ?? []).filter(({ id }) => fresh.delete(id))]),
       ) as unknown as EventBatch;
 
       const chat = batch.chatMessages ?? [];
@@ -130,6 +150,11 @@ export class GameEventIngest {
       // transação e só com o que é novo: reenviar um lote não muda nenhuma destas tabelas.
       await this.writeDetails(tx, server, news, accountBySteamId, { dailyDeltas, weapons });
 
+      // S17 (ADR 0024): os eventos brutos de round e, onde o round já acabou, o resumo dele.
+      const roundRows = toRoundEventRows(news, { serverId: server.id, accountBySteamId, now });
+      await insertRoundEvents(tx, roundRows);
+      await recomputeRounds(tx, server, affectedRounds(roundRows));
+
       if (teamKillEvents.length > 0) {
         await tx
           .insert(teamKills)
@@ -168,15 +193,9 @@ export class GameEventIngest {
               .onConflictDoNothing()
               .returning({ id: chatMessages.id });
 
-      // S17 (PR A): o início do round e a bomba são aceitos e ainda não guardados (o PR B grava).
-      const unstored = (batch.roundStarts?.length ?? 0) + (batch.bombs?.length ?? 0);
-      const accepted = inserted.length + savedChat.length + unknownChat + unstored;
+      const accepted = inserted.length + savedChat.length + unknownChat;
       return {
-        result: {
-          accepted,
-          duplicates: total - accepted,
-          ignored: ignored + unknownChat + unstored,
-        },
+        result: { accepted, duplicates: total - accepted, ignored: ignored + unknownChat },
         news,
         accountBySteamId,
         sessions,
@@ -407,9 +426,19 @@ function steamIdsOf(batch: EventBatch, chat: ChatMessageEvent[]): string[] {
       if (id !== null) ids.add(id);
     }
   }
-  for (const hit of batch.damages) ids.add(hit.attackerSteamId);
+  for (const hit of batch.damages) {
+    ids.add(hit.attackerSteamId);
+    if (hit.victimSteamId) ids.add(hit.victimSteamId);
+  }
+  for (const start of batch.roundStarts ?? []) {
+    for (const player of start.players) ids.add(player.steamId);
+  }
+  for (const bomb of batch.bombs ?? []) {
+    if (bomb.steamId) ids.add(bomb.steamId);
+  }
   for (const round of batch.roundEnds) {
     for (const player of round.players) ids.add(player.steamId);
+    for (const steamId of round.alive ?? []) ids.add(steamId);
   }
   for (const start of batch.sessionStarts) ids.add(start.steamId);
   for (const end of batch.sessionEnds) ids.add(end.steamId);
