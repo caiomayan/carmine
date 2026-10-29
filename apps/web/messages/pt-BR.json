@@ -1284,7 +1284,7 @@
       "activeBody": "Comprar outro Pacote soma os dias ao fim atual.",
       "ended": "Seu VIP acabou em {date}.",
       "endedBody": "Os Itens VIP continuam no seu Inventário e voltam ao jogo quando você comprar um Pacote.",
-      "endedBodyHeld": "Os Itens VIP ficam guardados por {days} dias depois do fim do VIP e voltam como estavam, e ao jogo, se você comprar um Pacote nesse prazo."
+      "endedBodyHeld": "Os Itens VIP ficam guardados por {days} dias depois do fim do VIP. Se você comprar um Pacote nesse prazo, eles voltam como estavam e vão para o jogo."
     },
     "packages": {
       "title": "Escolha um Pacote",
