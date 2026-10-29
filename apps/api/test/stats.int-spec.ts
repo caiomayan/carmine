@@ -8,7 +8,7 @@ import {
 } from '@carmine/contracts';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { accountStatsWeekly, gameEvents, teamKills } from '../src/database/schema.js';
+import { accountStatsWeekly, accounts, gameEvents, teamKills } from '../src/database/schema.js';
 import { seriesWeeks } from '../src/stats/stats-series.js';
 import { weekStartOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
@@ -248,20 +248,23 @@ describe('Eventos do jogo e Estatísticas (S12)', () => {
     ]);
   });
 
-  it('Conta desconhecida é ignorada e não derruba o lote', async () => {
+  it('um SteamID humano sem Conta ganha a dele (não reivindicada) e conta a kill e a morte', async () => {
     const known = await player();
+    const stranger = steamIdFor(9_999);
 
-    const response = await send(
-      batch({
-        kills: [kill(steamIdFor(9_999), known.steamId), kill(steamIdFor(9_998), steamIdFor(9_997))],
-      }),
-    );
+    const response = await send(batch({ kills: [kill(stranger, known.steamId)] }));
 
     expect(response.statusCode).toBe(200);
     expect(eventBatchResultSchema.parse(response.json())).toMatchObject({
-      accepted: 2,
-      ignored: 1,
+      accepted: 1,
+      ignored: 0,
     });
+    const created = await t.postgres.db.query.accounts.findFirst({
+      where: eq(accounts.steamId, BigInt(stranger)),
+    });
+    expect(created).toMatchObject({ claimedAt: null, firstConnectedAt: null });
+    expect(created?.displayName).not.toBe('');
+    expect((await statsOf(created?.publicId as number)).total).toMatchObject({ kills: 1 });
     expect((await statsOf(known.account.publicId)).total).toMatchObject({ deaths: 1 });
   });
 

@@ -134,24 +134,25 @@ describe('toRoundEventRows · o que vira linha bruta', () => {
     expect(JSON.stringify(row)).not.toMatch(/7656119/);
   });
 
-  it('quem não tem Conta fica sem referência e marcado como desconhecido', () => {
+  it('um SteamID fora do mapa de Contas fica sem referência, sem virar bot', () => {
+    // A ingestão cria a Conta de todo humano antes; isto só garante que a linha não inventa nada.
     const [row] = toRoundEventRows(
       batch({ kills: [kill(STEAM_STRANGER, STEAM_D, 1000)] }),
       context,
     );
     expect(row).toMatchObject({ actorAccountId: null, targetAccountId: ACCOUNT_D });
-    expect(row?.payload).toMatchObject({ killerUnknown: true });
-    expect(row?.payload).not.toHaveProperty('victimUnknown');
+    expect(row?.payload).not.toHaveProperty('killerUnknown');
+    expect(row?.payload).toMatchObject({ killerIsBot: false });
   });
 
-  it('o início do round vira o evento e uma linha por jogador com Conta; os sem Conta viram bot', () => {
+  it('o início do round vira o evento e uma linha por jogador com Conta', () => {
     const rows = toRoundEventRows(
       batch({
         roundStarts: [
           start(
             [
               { steamId: STEAM_A, team: 'ct' },
-              { steamId: STEAM_STRANGER, team: 'ct' },
+              { steamId: STEAM_B, team: 'ct' },
               { steamId: STEAM_D, team: 't' },
             ],
             { botsCt: 1 },
@@ -163,9 +164,10 @@ describe('toRoundEventRows · o que vira linha bruta', () => {
     expect(rows.map((r) => [r.kind, r.seq])).toEqual([
       ['round_start', 0],
       ['round_player', 1],
+      ['round_player', 2],
       ['round_player', 3],
     ]);
-    expect(rows[0]?.payload).toMatchObject({ map: 'de_mirage', botsCt: 2, botsT: 0 });
+    expect(rows[0]?.payload).toMatchObject({ map: 'de_mirage', botsCt: 1, botsT: 0 });
     expect(rows[1]).toMatchObject({ actorAccountId: ACCOUNT_A });
     expect(rows[1]?.payload).toEqual({ team: 'ct', equipmentValue: 4000 });
   });
@@ -294,28 +296,5 @@ describe('rebuildRound · a ida e a volta até a calculadora', () => {
       survived: false,
     });
     expect(rebuilt?.meta).toMatchObject({ map: 'de_mirage', scoreCt: 4, scoreT: 2 });
-  });
-
-  it('o desconhecido age como bot: a kill dele não conta, mas ele ocupa um lugar de vivo', () => {
-    const rows = toRoundEventRows(
-      batch({
-        roundStarts: [
-          start([
-            { steamId: STEAM_A, team: 'ct' },
-            { steamId: STEAM_D, team: 't' },
-            { steamId: STEAM_STRANGER, team: 't' },
-          ]),
-        ],
-        kills: [kill(STEAM_STRANGER, STEAM_A, 1000, { killerTeam: 't', victimTeam: 'ct' })],
-        roundEnds: [end({ winner: 't' })],
-      }),
-      context,
-    );
-    const rebuilt = rebuildRound(rows);
-    const summary = rebuilt && summarizeRound(rebuilt.input);
-    const byAccount = Object.fromEntries((summary?.players ?? []).map((p) => [p.steamId, p]));
-    // Bot como assassino anula a morte (ADR 0018), mas A não sobreviveu.
-    expect(byAccount[ACCOUNT_A]).toMatchObject({ deaths: 0, survived: false });
-    expect(Object.keys(byAccount).sort()).toEqual([ACCOUNT_A, ACCOUNT_D].sort());
   });
 });

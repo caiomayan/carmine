@@ -79,16 +79,13 @@ export interface RowContext {
  * - traz o `mapPlayId` e o número do round (o plugin atual não manda, então não entra nada);
  * - tem horário dentro da janela da retenção (nem mais velho que 12 meses, nem do futuro).
  *
- * Quem não tem Conta não vira referência nenhuma: a calculadora o trata como um bot (o evento dele
- * não conta, mas ele ocupa um lugar de vivo), e `*Unknown` no payload guarda só essa informação.
- * No `round_start` isso entra em `botsCt` / `botsT`.
+ * Todo humano de um evento tem Conta (a ingestão cria a não reivindicada de quem chega sem uma), então
+ * as colunas de Conta bastam. Um SteamID que mesmo assim não esteja no mapa fica sem referência.
  */
 export function toRoundEventRows(batch: EventBatch, context: RowContext): RoundEventRow[] {
   const rows: RoundEventRow[] = [];
   const account = (steamId: string | null | undefined) =>
     steamId ? (context.accountBySteamId.get(steamId) ?? null) : null;
-  const unknown = (steamId: string | null | undefined) =>
-    steamId !== null && steamId !== undefined && !context.accountBySteamId.has(steamId);
 
   const base = (
     event: { id: string; at: string; atMs?: number | undefined; warmup: boolean },
@@ -133,12 +130,7 @@ export function toRoundEventRows(batch: EventBatch, context: RowContext): RoundE
     row.actorAccountId = account(killerSteamId);
     row.targetAccountId = account(victimSteamId);
     row.assistAccountId = account(assisterSteamId);
-    row.payload = {
-      ...rest,
-      ...(unknown(killerSteamId) && { killerUnknown: true }),
-      ...(unknown(victimSteamId) && { victimUnknown: true }),
-      ...(unknown(assisterSteamId) && { assisterUnknown: true }),
-    };
+    row.payload = rest;
     rows.push(row);
   }
 
@@ -158,11 +150,7 @@ export function toRoundEventRows(batch: EventBatch, context: RowContext): RoundE
     } = hit;
     row.actorAccountId = account(attackerSteamId);
     row.targetAccountId = account(victimSteamId);
-    row.payload = {
-      ...rest,
-      ...(unknown(attackerSteamId) && { attackerUnknown: true }),
-      ...(unknown(victimSteamId) && { victimUnknown: true }),
-    };
+    row.payload = rest;
     rows.push(row);
   }
 
@@ -173,7 +161,6 @@ export function toRoundEventRows(batch: EventBatch, context: RowContext): RoundE
     row.payload = {
       kind: bomb.kind,
       ...(bomb.site !== undefined && { site: bomb.site }),
-      ...(unknown(bomb.steamId) && { actorUnknown: true }),
     };
     rows.push(row);
   }
@@ -186,12 +173,10 @@ export function toRoundEventRows(batch: EventBatch, context: RowContext): RoundE
       accountId: account(player.steamId),
       seq: index + 1,
     }));
-    const strangers = (team: 'ct' | 't') =>
-      roster.filter(({ player, accountId }) => accountId === null && player.team === team).length;
     row.payload = {
       ...(start.map !== undefined && { map: start.map }),
-      botsCt: start.botsCt + strangers('ct'),
-      botsT: start.botsT + strangers('t'),
+      botsCt: start.botsCt,
+      botsT: start.botsT,
     };
     rows.push(row);
     for (const { player, accountId, seq } of roster) {
@@ -361,9 +346,9 @@ export function rebuildRound(
         killerSteamId: r.actorAccountId,
         victimSteamId: r.targetAccountId,
         assisterSteamId: r.assistAccountId,
-        killerIsBot: p.killerIsBot === true || p.killerUnknown === true,
-        victimIsBot: p.victimIsBot === true || p.victimUnknown === true,
-        assisterIsBot: p.assisterIsBot === true || p.assisterUnknown === true,
+        killerIsBot: p.killerIsBot === true,
+        victimIsBot: p.victimIsBot === true,
+        assisterIsBot: p.assisterIsBot === true,
       } as unknown as KillEvent;
     });
 
@@ -379,7 +364,7 @@ export function rebuildRound(
         warmup: false,
         attackerSteamId: r.actorAccountId,
         victimSteamId: r.targetAccountId,
-        victimIsBot: p.victimIsBot === true || p.victimUnknown === true,
+        victimIsBot: p.victimIsBot === true,
       } as unknown as DamageEvent;
     });
 

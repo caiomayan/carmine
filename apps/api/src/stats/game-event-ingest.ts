@@ -7,6 +7,7 @@ import {
   PLAY_SESSION_MAX_SECONDS,
 } from '@carmine/contracts';
 import { inArray, sql } from 'drizzle-orm';
+import { createUnclaimedAccounts } from '../accounts/accounts.service.js';
 import type { ActivityRecorder } from '../activity/activity-feed.js';
 import { detectMultiKills } from '../activity/multi-kills.js';
 import type { Analytics } from '../analytics/analytics.js';
@@ -75,133 +76,156 @@ export class GameEventIngest {
     const now = new Date();
     await this.partitions.ensureFor(roundEventMonths(batch, now));
 
-    const { result, news, accountBySteamId, sessions } = await this.db.transaction(async (tx) => {
-      // `on conflict do nothing` também resolve o ID repetido dentro do próprio lote.
-      const eventIds = EVENT_KEYS.flatMap((key) =>
-        (batch[key] ?? []).map(({ id }) => ({ id, serverId: server.id })),
-      );
-      const inserted =
-        eventIds.length === 0
-          ? []
-          : await tx
-              .insert(gameEvents)
-              .values(eventIds)
-              .onConflictDoNothing()
-              .returning({ id: gameEvents.id });
-      const fresh = new Set(inserted.map((row) => row.id));
-
-      // Um ID repetido dentro do lote conta uma vez só: `delete` só diz sim na primeira vez.
-      const news = Object.fromEntries(
-        EVENT_KEYS.map((key) => [key, (batch[key] ?? []).filter(({ id }) => fresh.delete(id))]),
-      ) as unknown as EventBatch;
-
-      const chat = batch.chatMessages ?? [];
-      const steamIds = steamIdsOf(news, chat);
-      const rows =
-        steamIds.length === 0
-          ? []
-          : await tx
-              .select({ id: accounts.id, steamId: accounts.steamId })
-              .from(accounts)
-              .where(inArray(accounts.steamId, steamIds.map(BigInt)));
-      const accountBySteamId = new Map(rows.map((row) => [row.steamId.toString(), row.id]));
-
-      const {
-        sessions,
-        deltas,
-        dailyDeltas,
-        weapons,
-        teamKills: teamKillEvents,
-        ignored,
-      } = collectStats(news, new Set(accountBySteamId.keys()));
-
-      // Ordem fixa das linhas, para dois lotes ao mesmo tempo não se travarem um no outro.
-      const values = deltas
-        .map(({ steamId, ...counters }) => ({
-          accountId: accountBySteamId.get(steamId) as string,
-          mode: server.mode,
-          ...counters,
-        }))
-        .sort((a, b) =>
-          `${a.accountId}${a.weekStart}`.localeCompare(`${b.accountId}${b.weekStart}`),
+    const { result, news, accountBySteamId, sessions, createdAccounts } = await this.db.transaction(
+      async (tx) => {
+        // `on conflict do nothing` também resolve o ID repetido dentro do próprio lote.
+        const eventIds = EVENT_KEYS.flatMap((key) =>
+          (batch[key] ?? []).map(({ id }) => ({ id, serverId: server.id })),
         );
-      if (values.length > 0) {
-        const t = accountStatsWeekly;
-        await tx
-          .insert(accountStatsWeekly)
-          .values(values)
-          .onConflictDoUpdate({
-            target: [t.accountId, t.mode, t.weekStart],
-            set: {
-              kills: sql`${t.kills} + excluded.kills`,
-              deaths: sql`${t.deaths} + excluded.deaths`,
-              assists: sql`${t.assists} + excluded.assists`,
-              headshots: sql`${t.headshots} + excluded.headshots`,
-              damage: sql`${t.damage} + excluded.damage`,
-              roundsPlayed: sql`${t.roundsPlayed} + excluded.rounds_played`,
-              roundsWon: sql`${t.roundsWon} + excluded.rounds_won`,
-              secondsPlayed: sql`${t.secondsPlayed} + excluded.seconds_played`,
-              updatedAt: sql`now()`,
-            },
-          });
-      }
+        const inserted =
+          eventIds.length === 0
+            ? []
+            : await tx
+                .insert(gameEvents)
+                .values(eventIds)
+                .onConflictDoNothing()
+                .returning({ id: gameEvents.id });
+        const fresh = new Set(inserted.map((row) => row.id));
 
-      // S12b: o detalhe das mesmas somas (dia, arma e lado, Sessões, horas do servidor), na mesma
-      // transação e só com o que é novo: reenviar um lote não muda nenhuma destas tabelas.
-      await this.writeDetails(tx, server, news, accountBySteamId, { dailyDeltas, weapons });
+        // Um ID repetido dentro do lote conta uma vez só: `delete` só diz sim na primeira vez.
+        const news = Object.fromEntries(
+          EVENT_KEYS.map((key) => [key, (batch[key] ?? []).filter(({ id }) => fresh.delete(id))]),
+        ) as unknown as EventBatch;
 
-      // S17 (ADR 0024): os eventos brutos de round e, onde o round já acabou, o resumo dele.
-      const roundRows = toRoundEventRows(news, { serverId: server.id, accountBySteamId, now });
-      await insertRoundEvents(tx, roundRows);
-      await recomputeRounds(tx, server, affectedRounds(roundRows));
+        const chat = batch.chatMessages ?? [];
+        const steamIds = steamIdsOf(news, chat);
+        const rows =
+          steamIds.length === 0
+            ? []
+            : await tx
+                .select({ id: accounts.id, steamId: accounts.steamId })
+                .from(accounts)
+                .where(inArray(accounts.steamId, steamIds.map(BigInt)));
+        const accountBySteamId = new Map(rows.map((row) => [row.steamId.toString(), row.id]));
 
-      if (teamKillEvents.length > 0) {
-        await tx
-          .insert(teamKills)
-          .values(
-            teamKillEvents.map((kill) => ({
-              id: kill.id,
-              serverId: server.id,
-              killerAccountId: accountBySteamId.get(kill.killerSteamId) as string,
-              victimAccountId: accountBySteamId.get(kill.victimSteamId) as string,
-              weapon: kill.weapon,
-              killedAt: kill.at,
-            })),
-          )
-          .onConflictDoNothing();
-      }
+        // Quem joga num Servidor Carmine já é uma Conta (não reivindicada), mesmo que o connect não tenha
+        // chegado: o humano de um evento sem Conta ganha a dele aqui, na mesma transação, e conta como
+        // qualquer outro (nas Estatísticas e no resumo do round). Bot de verdade fica de fora (ADR 0018).
+        const missing = humanSteamIdsOf(news).filter((steamId) => !accountBySteamId.has(steamId));
+        const createdAccounts = new Map<string, string>();
+        if (missing.length > 0) {
+          const { created, existing } = await createUnclaimedAccounts(tx, missing);
+          for (const [steamId, id] of [...created, ...existing]) accountBySteamId.set(steamId, id);
+          for (const [steamId, id] of created) createdAccounts.set(steamId, id);
+        }
 
-      // Chat de Conta que não existe (ou já foi anonimizada) é aceito e não guardado.
-      const knownChat = chat.filter(({ steamId }) => accountBySteamId.has(steamId));
-      const unknownChat = chat.length - knownChat.length;
-      const savedChat =
-        knownChat.length === 0
-          ? []
-          : await tx
-              .insert(chatMessages)
-              .values(
-                knownChat.map((line) => ({
-                  id: line.id,
-                  serverId: server.id,
-                  accountId: accountBySteamId.get(line.steamId) as string,
-                  team: line.team,
-                  teamChat: line.teamChat,
-                  text: line.text,
-                  at: new Date(line.at),
-                })),
-              )
-              .onConflictDoNothing()
-              .returning({ id: chatMessages.id });
+        const {
+          sessions,
+          deltas,
+          dailyDeltas,
+          weapons,
+          teamKills: teamKillEvents,
+          ignored,
+        } = collectStats(news, new Set(accountBySteamId.keys()));
 
-      const accepted = inserted.length + savedChat.length + unknownChat;
-      return {
-        result: { accepted, duplicates: total - accepted, ignored: ignored + unknownChat },
-        news,
-        accountBySteamId,
-        sessions,
-      };
-    });
+        // Ordem fixa das linhas, para dois lotes ao mesmo tempo não se travarem um no outro.
+        const values = deltas
+          .map(({ steamId, ...counters }) => ({
+            accountId: accountBySteamId.get(steamId) as string,
+            mode: server.mode,
+            ...counters,
+          }))
+          .sort((a, b) =>
+            `${a.accountId}${a.weekStart}`.localeCompare(`${b.accountId}${b.weekStart}`),
+          );
+        if (values.length > 0) {
+          const t = accountStatsWeekly;
+          await tx
+            .insert(accountStatsWeekly)
+            .values(values)
+            .onConflictDoUpdate({
+              target: [t.accountId, t.mode, t.weekStart],
+              set: {
+                kills: sql`${t.kills} + excluded.kills`,
+                deaths: sql`${t.deaths} + excluded.deaths`,
+                assists: sql`${t.assists} + excluded.assists`,
+                headshots: sql`${t.headshots} + excluded.headshots`,
+                damage: sql`${t.damage} + excluded.damage`,
+                roundsPlayed: sql`${t.roundsPlayed} + excluded.rounds_played`,
+                roundsWon: sql`${t.roundsWon} + excluded.rounds_won`,
+                secondsPlayed: sql`${t.secondsPlayed} + excluded.seconds_played`,
+                updatedAt: sql`now()`,
+              },
+            });
+        }
+
+        // S12b: o detalhe das mesmas somas (dia, arma e lado, Sessões, horas do servidor), na mesma
+        // transação e só com o que é novo: reenviar um lote não muda nenhuma destas tabelas.
+        await this.writeDetails(tx, server, news, accountBySteamId, { dailyDeltas, weapons });
+
+        // S17 (ADR 0024): os eventos brutos de round e, onde o round já acabou, o resumo dele.
+        const roundRows = toRoundEventRows(news, { serverId: server.id, accountBySteamId, now });
+        await insertRoundEvents(tx, roundRows);
+        await recomputeRounds(tx, server, affectedRounds(roundRows));
+
+        if (teamKillEvents.length > 0) {
+          await tx
+            .insert(teamKills)
+            .values(
+              teamKillEvents.map((kill) => ({
+                id: kill.id,
+                serverId: server.id,
+                killerAccountId: accountBySteamId.get(kill.killerSteamId) as string,
+                victimAccountId: accountBySteamId.get(kill.victimSteamId) as string,
+                weapon: kill.weapon,
+                killedAt: kill.at,
+              })),
+            )
+            .onConflictDoNothing();
+        }
+
+        // Chat de Conta que não existe (ou já foi anonimizada) é aceito e não guardado.
+        const knownChat = chat.filter(({ steamId }) => accountBySteamId.has(steamId));
+        const unknownChat = chat.length - knownChat.length;
+        const savedChat =
+          knownChat.length === 0
+            ? []
+            : await tx
+                .insert(chatMessages)
+                .values(
+                  knownChat.map((line) => ({
+                    id: line.id,
+                    serverId: server.id,
+                    accountId: accountBySteamId.get(line.steamId) as string,
+                    team: line.team,
+                    teamChat: line.teamChat,
+                    text: line.text,
+                    at: new Date(line.at),
+                  })),
+                )
+                .onConflictDoNothing()
+                .returning({ id: chatMessages.id });
+
+        const accepted = inserted.length + savedChat.length + unknownChat;
+        return {
+          result: { accepted, duplicates: total - accepted, ignored: ignored + unknownChat },
+          news,
+          accountBySteamId,
+          sessions,
+          createdAccounts,
+        };
+      },
+    );
     await this.announce(server, news, accountBySteamId);
+    // A Conta que o jogo criou: o mesmo evento do connect (`conta_criada`), no horário do evento.
+    for (const accountId of createdAccounts.values()) {
+      this.analytics.capture('conta_criada', {
+        accountId,
+        props: { origem: 'jogo', modo: server.mode },
+        at: now,
+        naturalId: accountId,
+      });
+    }
     // Depois do commit: o fim de cada Sessão de jogo aceita, no horário do fim e com o ID do evento do plugin.
     for (const session of sessions) {
       const accountId = accountBySteamId.get(session.steamId);
@@ -417,6 +441,36 @@ export class GameEventIngest {
     // tempo de um comando ao Valkey (o gravador nunca lança).
     await Promise.allSettled(announcements);
   }
+}
+
+/**
+ * Os SteamID64 de humanos nos eventos (sem o chat): quem tem de ter Conta para o evento contar. Um
+ * lado marcado como bot nunca entra, mesmo que traga SteamID.
+ */
+function humanSteamIdsOf(batch: EventBatch): string[] {
+  const ids = new Set<string>();
+  for (const kill of batch.kills) {
+    if (kill.killerSteamId !== null && !kill.killerIsBot) ids.add(kill.killerSteamId);
+    if (kill.victimSteamId !== null && !kill.victimIsBot) ids.add(kill.victimSteamId);
+    if (kill.assisterSteamId !== null && !kill.assisterIsBot) ids.add(kill.assisterSteamId);
+  }
+  for (const hit of batch.damages) {
+    ids.add(hit.attackerSteamId);
+    if (hit.victimSteamId && !hit.victimIsBot) ids.add(hit.victimSteamId);
+  }
+  for (const round of batch.roundEnds) {
+    for (const player of round.players) ids.add(player.steamId);
+    for (const steamId of round.alive ?? []) ids.add(steamId);
+  }
+  for (const start of batch.roundStarts ?? []) {
+    for (const player of start.players) ids.add(player.steamId);
+  }
+  for (const bomb of batch.bombs ?? []) {
+    if (bomb.steamId) ids.add(bomb.steamId);
+  }
+  for (const start of batch.sessionStarts) ids.add(start.steamId);
+  for (const end of batch.sessionEnds) ids.add(end.steamId);
+  return [...ids];
 }
 
 function steamIdsOf(batch: EventBatch, chat: ChatMessageEvent[]): string[] {

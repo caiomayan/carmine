@@ -4,6 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountErasure } from '../src/accounts/account-erasure.js';
 import {
   accountStatsWeekly,
+  accounts,
   mapPlayPlayers,
   mapPlays,
   roundEvents,
@@ -232,6 +233,52 @@ describe('Coleta por round (S17): ingestão, resumo e retenção', () => {
     );
     expect(raw).not.toContain(a.steamId);
     expect(raw).not.toContain(b.steamId);
+  });
+
+  it('um humano que chega sem Conta ganha a dela (não reivindicada) e entra no resumo como qualquer outro', async () => {
+    const a = await player();
+    const stranger = { steamId: steamIdFor(8_001) };
+    const id = playId();
+    const r = roundOf(a, stranger, id);
+    await send(
+      batch({ roundStarts: [r.start], damages: [r.hit], kills: [r.kill], roundEnds: [r.end] }),
+    );
+
+    const created = await db().query.accounts.findFirst({
+      where: eq(accounts.steamId, BigInt(stranger.steamId)),
+    });
+    expect(created).toMatchObject({ claimedAt: null });
+    const players = await db()
+      .select()
+      .from(roundPlayerSummaries)
+      .where(eq(roundPlayerSummaries.mapPlayId, id));
+    expect(players.find((p) => p.accountId === created?.id)).toMatchObject({
+      side: 't',
+      deaths: 1,
+      survived: false,
+      openingDeath: true,
+    });
+    expect(players.find((p) => p.accountId === a.account.id)).toMatchObject({ kills: 1 });
+    // As Estatísticas de hoje contam a mesma kill e a mesma morte.
+    const [mine] = await db()
+      .select()
+      .from(accountStatsWeekly)
+      .where(eq(accountStatsWeekly.accountId, a.account.id));
+    const [theirs] = await db()
+      .select()
+      .from(accountStatsWeekly)
+      .where(eq(accountStatsWeekly.accountId, created?.id as string));
+    expect(mine).toMatchObject({ kills: 1 });
+    expect(theirs).toMatchObject({ deaths: 1 });
+
+    // Reenviar não cria outra Conta nem repete nada.
+    await send(batch({ roundStarts: [r.start], kills: [r.kill], roundEnds: [r.end] }));
+    expect(
+      await db()
+        .select()
+        .from(accounts)
+        .where(eq(accounts.steamId, BigInt(stranger.steamId))),
+    ).toHaveLength(1);
   });
 
   it('as somas da semana seguem iguais: o lote conta como sempre nas Estatísticas', async () => {
