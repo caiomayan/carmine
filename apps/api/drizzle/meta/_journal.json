@@ -148,6 +148,13 @@
       "when": 1793305886908,
       "tag": "0020_s18_historico_de_fotos",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793311129730,
+      "tag": "0021_s20_planos",
+      "breakpoints": true
     }
   ]
 }
