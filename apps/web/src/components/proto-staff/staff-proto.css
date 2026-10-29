@@ -1033,8 +1033,9 @@ button.stp-row:hover {
 .stp-table tbody tr:hover {
   background: var(--stp-card-2);
 }
+/* o fundo da linha selecionada é o degrau mais suave da escala do site: o vermelho de vencida precisa de 4,5:1 sobre ele */
 .stp-table tbody tr[aria-selected="true"] {
-  background: var(--stp-accent-soft);
+  background: var(--fill-rest);
 }
 .stp-cell-link {
   display: block;
