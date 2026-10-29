@@ -47,6 +47,8 @@ export const REPORT_RETENTION_DAYS = 90;
 export const STATS_DAILY_RETENTION_DAYS = 400;
 export const SERVER_HOURS_RETENTION_DAYS = 400;
 export const PLAY_SESSION_RETENTION_DAYS = 90;
+/** S17 (ADR 0024): os eventos brutos de round ficam 12 meses (uma partição por mês); os resumos, para sempre. */
+export const ROUND_EVENT_RETENTION_MONTHS = 12;
 /** S14: os webhooks de pagamento recebidos ficam 12 meses (o pagamento em si, 5 anos, por lei). */
 export const PAYMENT_EVENT_RETENTION_DAYS = 365;
 

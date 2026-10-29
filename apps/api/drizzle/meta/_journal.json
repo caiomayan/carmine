@@ -134,6 +134,13 @@
       "when": 1793067214364,
       "tag": "0018_a1_presenca",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793303346340,
+      "tag": "0019_s17_coleta_por_round",
+      "breakpoints": true
     }
   ]
 }

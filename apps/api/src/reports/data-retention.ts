@@ -20,6 +20,7 @@ import {
   reports,
   serverHours,
 } from '../database/schema.js';
+import { RoundEventPartitions, retentionCutoff } from '../stats/round-event-partitions.js';
 import { dayOf } from '../stats/stats-week.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -37,6 +38,9 @@ export interface RetentionResult {
   serverHours: number;
   /** S14: os webhooks de pagamento recebidos (12 meses). */
   paymentEvents: number;
+  /** S17: as partições mensais de `round_events` soltas (mais de 12 meses) e as linhas apagadas do mês do corte. */
+  roundEventPartitions: number;
+  roundEvents: number;
 }
 
 /**
@@ -52,17 +56,24 @@ export interface RetentionResult {
  * S12b: também o detalhe das Estatísticas, em lotes. O dado diário (mapa de calor) e as horas dos
  * servidores duram 400 dias; as Sessões de jogo, que revelam horários de uma pessoa, 90. Os
  * agregados semanais e o radar de armas não expiram (as somas de sempre).
+ *
+ * S17 (ADR 0024): os eventos brutos de round (`round_events`) ficam 12 meses. A tabela é particionada
+ * por mês, então o job mantém os próximos meses criados, solta as partições inteiras mais velhas que
+ * o corte e apaga, em lotes, as linhas do mês do corte que já passaram dele. Os resumos de round não
+ * expiram.
  */
 export class DataRetention {
   private readonly logger = new Logger(DataRetention.name);
 
   private readonly batchSize: number;
+  private readonly partitions: RoundEventPartitions;
 
   constructor(
     private readonly db: Database,
     options: { batchSize?: number } = {},
   ) {
     this.batchSize = options.batchSize ?? GAME_EVENT_BATCH_SIZE;
+    this.partitions = new RoundEventPartitions(db);
   }
 
   async sweep(now = new Date()): Promise<RetentionResult> {
@@ -94,7 +105,21 @@ export class DataRetention {
       paymentEvents,
       lt(paymentEvents.receivedAt, daysAgo(PAYMENT_EVENT_RETENTION_DAYS)),
     );
-    if (chat.length + old.length + events + statsDaily + sessions + hours + paymentLog > 0) {
+    await this.partitions.ensureAhead(now);
+    const roundEventPartitions = await this.partitions.dropExpired(now);
+    const roundEventRows = await this.sweepRoundEvents(retentionCutoff(now));
+    if (
+      chat.length +
+        old.length +
+        events +
+        statsDaily +
+        sessions +
+        hours +
+        paymentLog +
+        roundEventPartitions +
+        roundEventRows >
+      0
+    ) {
       this.logger.log(
         `Limpeza de retenção: ${chat.length} mensagem(ns) de chat, ${old.length} Denúncia(s), ${events} ID(s) de evento, ${statsDaily} dia(s) de atividade, ${sessions} Sessão(ões) de jogo e ${hours} hora(s) de servidor apagados`,
       );
@@ -107,7 +132,25 @@ export class DataRetention {
       playSessions: sessions,
       serverHours: hours,
       paymentEvents: paymentLog,
+      roundEventPartitions,
+      roundEvents: roundEventRows,
     };
+  }
+
+  /**
+   * Apaga as linhas de `round_events` mais velhas que `cutoff`, `batchSize` por vez, pela chave
+   * (o `ctid` não serve numa tabela particionada). Depois de soltar as partições velhas, só o mês do
+   * corte ainda tem linhas assim.
+   */
+  private async sweepRoundEvents(cutoff: Date): Promise<number> {
+    let total = 0;
+    for (;;) {
+      const { rowCount } = await this.db.execute(
+        sql`delete from round_events where (id, seq, occurred_at) in (select id, seq, occurred_at from round_events where occurred_at < ${cutoff.toISOString()}::timestamptz limit ${this.batchSize})`,
+      );
+      total += rowCount ?? 0;
+      if ((rowCount ?? 0) < this.batchSize) return total;
+    }
   }
 
   /**
