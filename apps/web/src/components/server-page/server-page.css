@@ -1,5 +1,5 @@
 /*
- * A página do servidor (/servidores/[id]), na linguagem Vida. Prefixo `vs-`. A base (tipografia, painéis, cor
+ * A página do servidor (/servers/[id]), na linguagem Vida. Prefixo `vs-`. A base (tipografia, painéis, cor
  * ambiente) é a de components/vida/vida.css; a cor do mapa chega por variável (--v-map, --v-map-deep, --v-map-ink)
  * como nos cartões da Home. CT e TR são cores de contexto (--side-ct, --side-t): só em pontinhos, barras e legendas.
  */

@@ -130,6 +130,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommand("css_stats", "!stats mostra os seus números da semana neste Modo", (p, i) => OnStatsCommand(p, rank: false));
         AddCommand("css_help", "!help lista os comandos deste servidor", OnHelpCommand);
         AddCommand("css_ajuda", "!ajuda é o mesmo que !help", OnHelpCommand);
+        AddCommand("css_plan", "!plan é o mesmo que !vip", OnVipCommand);
+        AddCommand("css_plano", "!plano é o mesmo que !vip", OnVipCommand);
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);

@@ -6,10 +6,10 @@ const AK_REDLINE = 222;
 
 /** Entra com uma Conta nova, abre o editor da AK-47 | Redline e põe um sticker: o slot é um LabelSelect. */
 async function openStickerEditor(page: Page) {
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   await signInFromHeader(page, newSteamId());
-  await expect(page).toHaveURL('/inventario');
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await expect(page).toHaveURL('/inventory');
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await page.getByTestId('add-sticker').click();
   const picker = page.getByTestId('picker-sticker');
   await picker.getByTestId('picker-search').fill('vitalty');

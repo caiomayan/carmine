@@ -54,8 +54,8 @@ export const formatCents = (cents: number) => brl.format(cents / 100);
 /** O endereço da compra no site, para onde a página manda de volta (o cartão volta com `?retorno=cartao`, como o checkout). */
 export const backToPurchase = (externalReference: string, method: 'pix' | 'card') =>
   method === 'card'
-    ? `/vip/compra/${externalReference}?retorno=cartao`
-    : `/vip/compra/${externalReference}`;
+    ? `/plans/purchase/${externalReference}?retorno=cartao`
+    : `/plans/purchase/${externalReference}`;
 
 /** O id do provedor que a URL aceita: letras, números, hífen e sublinhado, sem passar disso (vai para o caminho da API). */
 export const PROVIDER_ID = /^[A-Za-z0-9_-]{1,80}$/;

@@ -236,7 +236,7 @@ function CardWaiting({
 }
 
 /** As compras ficam em Minhas compras (de outra frente): sem prefetch, só abre quando a pessoa clica. */
-const prefetchOf = (href: string) => (href.startsWith('/configuracoes') ? false : undefined);
+const prefetchOf = (href: string) => (href.startsWith('/settings') ? false : undefined);
 
 function Outcome({
   view,
@@ -248,14 +248,14 @@ function Outcome({
   day: (iso: string) => string;
 }) {
   const t = useTranslations('vip.purchase');
-  const retryHref = view === 'refunded' ? '/vip' : `/vip/comprar?pacote=${purchase.package}`;
+  const retryHref = view === 'refunded' ? '/plans' : `/plans/checkout?pacote=${purchase.package}`;
   const links: { href: string; text: string; primary?: boolean }[] = [];
 
   if (view === 'approved') {
     links.push({ href: '/loadout', text: t('approved.loadout'), primary: true });
-    links.push({ href: '/configuracoes/compras', text: t('approved.receipt') });
+    links.push({ href: '/settings/purchases', text: t('approved.receipt') });
   } else if (view === 'processing' || view === 'in_review' || view === 'partially_refunded') {
-    links.push({ href: '/configuracoes/compras', text: t('processing.myPurchases') });
+    links.push({ href: '/settings/purchases', text: t('processing.myPurchases') });
   } else if (
     view === 'rejected' ||
     view === 'expired' ||

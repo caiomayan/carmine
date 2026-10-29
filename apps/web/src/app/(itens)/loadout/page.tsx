@@ -98,7 +98,7 @@ export default async function LoadoutPage() {
         notices={
           vip || items.length === 0 ? (
             <div className="mb-1 grid gap-2">
-              {vip ? <VipNotice vip={vip} renewHref="/vip" /> : null}
+              {vip ? <VipNotice vip={vip} renewHref="/plans" /> : null}
               {items.length === 0 ? (
                 <p
                   className="flex max-w-[80ch] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface px-3 py-2 text-body-sm"
@@ -106,7 +106,7 @@ export default async function LoadoutPage() {
                 >
                   <span>{t('emptyInventory.body')}</span>
                   <Link
-                    href="/inventario"
+                    href="/inventory"
                     className="font-semibold underline decoration-line-strong underline-offset-4 transition-colors hover:decoration-foreground"
                   >
                     {t('emptyInventory.action')}

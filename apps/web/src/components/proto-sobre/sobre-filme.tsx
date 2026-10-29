@@ -343,7 +343,7 @@ export function SobreFilme({ art, retakeSkins, deathmatchSkins, discordUrl }: So
           </h2>
           <div className="sb-actions">
             <Button asChild>
-              <Link href="/entrar">Entrar com a Steam</Link>
+              <Link href="/login">Entrar com a Steam</Link>
             </Button>
             <Button asChild variant="quiet">
               <Link href="/">Ver os servidores</Link>

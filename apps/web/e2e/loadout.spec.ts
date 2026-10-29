@@ -179,7 +179,7 @@ test('substituir avisa com "Desfazer", que devolve o Item anterior; desequipar v
 test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com o !ws', async ({
   page,
 }) => {
-  await signIn(page, { start: '/inventario' });
+  await signIn(page, { start: '/inventory' });
   const quick = page.getByRole('button', { name: 'Adicionar e equipar AK-47 | Linhas Vermelhas' });
   await hydrated(quick);
   await quick.click();
@@ -192,7 +192,7 @@ test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com
   await expect(slot(page, 'weapon_ak47', 't')).toHaveAttribute('data-equipped', /.+/);
 
   // Do catálogo, pelo editor: a AWP vai para os dois lados.
-  await page.goto(`/inventario/adicionar/${AWP_ASIIMOV}`);
+  await page.goto(`/inventory/add/${AWP_ASIIMOV}`);
   const addAndEquip = page.getByTestId('add-and-equip');
   await hydrated(addAndEquip);
   await addAndEquip.click();
@@ -207,7 +207,7 @@ test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com
 });
 
 test('equipar pelo menu do cartão no Inventário oferece só os lados do Item', async ({ page }) => {
-  await signIn(page, { start: '/inventario' });
+  await signIn(page, { start: '/inventory' });
   const usp = await addItem(page, { id: USP_KILL_CONFIRMED });
   await page.reload();
   const card = page.locator(`[data-uid="${usp}"]`);
@@ -235,7 +235,7 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await boardReady(page);
   await expect(page.getByTestId('vip-notice')).toBeVisible();
   // O aviso do fim leva aos Pacotes (S14b): renovar a um clique.
-  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/vip');
+  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/plans');
   await expect(page.getByTestId('preset-count')).toHaveText('1 de 20');
   await page.getByTestId('preset-new').click();
   await page.getByTestId('preset-name').fill('Retake de sexta');
@@ -253,7 +253,7 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await page.reload();
   await boardReady(page);
   await expect(page.getByTestId('vip-notice')).toHaveAttribute('data-notice', 'ended_today');
-  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/vip');
+  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/plans');
   await expect(page.getByTestId('preset-active-read-only')).toContainText(
     'ficou somente leitura sem VIP',
   );

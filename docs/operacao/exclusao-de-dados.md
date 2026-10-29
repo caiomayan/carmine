@@ -4,7 +4,7 @@ Como atender um pedido de exclusão de dados (LGPD, art. 18), do jeito que a [Po
 
 ## 1. Receber o pedido
 
-O pedido chega pelo e-mail do encarregado ou pela página de [contato](/contato), assunto "Privacidade", com o ID público da Conta. Pais e responsáveis podem pedir em nome de menores.
+O pedido chega pelo e-mail do encarregado ou pela página de [contato](/contact), assunto "Privacidade", com o ID público da Conta. Pais e responsáveis podem pedir em nome de menores.
 
 1. **Confirme que quem pede é dono da Conta.** Peça para a pessoa entrar com a Steam no site e mandar um print do menu da Conta com o ID público, ou para mandar a mensagem de um perfil Steam com o mesmo SteamID64 da Conta. Sem confirmação, não execute.
 2. **Registre o pedido** (data, canal e um número de protocolo). O número vai no motivo da ação e fica no log de auditoria.

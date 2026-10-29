@@ -7,7 +7,7 @@ namespace Carmine.Core;
 /// </summary>
 public static class HelpMessages
 {
-    public const string RulesLine = "Regras e termos: stcarmine.com/regras";
+    public const string RulesLine = "Regras e termos: stcarmine.com/rules";
 
     private static readonly string[] Common =
     [

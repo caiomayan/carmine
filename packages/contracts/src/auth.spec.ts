@@ -5,7 +5,7 @@ describe('safeReturnPath', () => {
   it.each([
     ['/', '/'],
     ['/10016', '/10016'],
-    ['/inventario?arma=ak47#ct', '/inventario?arma=ak47#ct'],
+    ['/inventory?arma=ak47#ct', '/inventory?arma=ak47#ct'],
     ['/perfil/editar', '/perfil/editar'],
   ])('mantém o caminho interno %s', (input, expected) => {
     expect(safeReturnPath(input)).toBe(expected);
@@ -24,7 +24,7 @@ describe('safeReturnPath', () => {
     ['javascript:alert(1)', 'esquema javascript'],
     ['inventario', 'sem barra inicial'],
     ['/\tevil', 'caractere de controle'],
-    [' /inventario', 'espaço antes'],
+    [' /inventory', 'espaço antes'],
     ['/api/auth/logout', 'rota da API'],
     [`/${'a'.repeat(600)}`, 'longo demais'],
     ['', 'vazio'],

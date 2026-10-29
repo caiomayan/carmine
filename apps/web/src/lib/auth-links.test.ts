@@ -7,8 +7,8 @@ describe('steamLoginHref', () => {
   });
 
   it('mantém a busca da página de origem', () => {
-    expect(steamLoginHref('/inventario?aba=facas')).toBe(
-      '/api/auth/steam/login?returnTo=%2Finventario%3Faba%3Dfacas',
+    expect(steamLoginHref('/inventory?aba=facas')).toBe(
+      '/api/auth/steam/login?returnTo=%2Finventory%3Faba%3Dfacas',
     );
   });
 
@@ -19,24 +19,24 @@ describe('steamLoginHref', () => {
   });
 
   it('nunca volta para a própria página de entrar', () => {
-    expect(steamLoginHref('/entrar?erro=cancelado')).toBe('/api/auth/steam/login?returnTo=%2F');
+    expect(steamLoginHref('/login?erro=cancelado')).toBe('/api/auth/steam/login?returnTo=%2F');
   });
 });
 
 describe('signInHref', () => {
   it('leva a página atual em ?voltar=', () => {
-    expect(signInHref('/10016')).toBe('/entrar?voltar=%2F10016');
+    expect(signInHref('/10016')).toBe('/login?voltar=%2F10016');
   });
 
   it('sem ?voltar= quando a origem é a home ou a própria página de entrar', () => {
-    expect(signInHref('/')).toBe('/entrar');
-    expect(signInHref('/entrar')).toBe('/entrar');
-    expect(signInHref('/entrar?voltar=%2Fx')).toBe('/entrar');
+    expect(signInHref('/')).toBe('/login');
+    expect(signInHref('/login')).toBe('/login');
+    expect(signInHref('/login?voltar=%2Fx')).toBe('/login');
   });
 
   it('acrescenta o motivo quando a sessão expirou', () => {
-    expect(signInHref('/inventario', 'sessao-expirada')).toBe(
-      '/entrar?voltar=%2Finventario&motivo=sessao-expirada',
+    expect(signInHref('/inventory', 'sessao-expirada')).toBe(
+      '/login?voltar=%2Finventory&motivo=sessao-expirada',
     );
   });
 });

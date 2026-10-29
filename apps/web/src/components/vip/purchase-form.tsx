@@ -25,7 +25,7 @@ function checkoutUrl(value: unknown): string | null {
 /**
  * A escolha de Pix ou cartão, a declaração de maioridade e o botão de pagar. Cria a compra em `POST /api/me/purchases`
  * (com `Idempotency-Key`: o duplo clique devolve a mesma compra) e leva à página dela; o cartão vai ao checkout do
- * provedor, que volta para `/vip/compra/{id}?retorno=cartao`. A declaração enviada leva a versão do texto que a tela
+ * provedor, que volta para `/plans/purchase/{id}?retorno=cartao`. A declaração enviada leva a versão do texto que a tela
  * mostrou ({@link ADULT_DECLARATION_VERSION}).
  */
 export function PurchaseForm({
@@ -83,7 +83,7 @@ export function PurchaseForm({
       const purchase = body as { id: string; redirectUrl?: unknown };
       const checkout = method === 'card' ? checkoutUrl(purchase.redirectUrl) : null;
       if (checkout) window.location.assign(checkout);
-      else router.push(`/vip/compra/${purchase.id}` as Route);
+      else router.push(`/plans/purchase/${purchase.id}` as Route);
       // Segue "enviando" até a página trocar: nada de segundo clique no meio da navegação.
     } catch {
       key.current = null;

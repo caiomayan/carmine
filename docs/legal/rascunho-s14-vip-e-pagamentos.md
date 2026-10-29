@@ -48,7 +48,7 @@ O VIP é o único plano pago do Carmine. Ele é vendido em **Pacotes VIP** de 1,
 
 ### Seção 8 · "Reembolso" (troca o texto)
 
-Você pode desistir de qualquer Pacote VIP em até 7 dias depois do pagamento e recebe o valor de volta, como manda o Código de Defesa do Consumidor (art. 49). **Pelo site é imediato:** em "Minhas compras", use **Pedir reembolso**. Os detalhes estão na [Política de Reembolso](/reembolso).
+Você pode desistir de qualquer Pacote VIP em até 7 dias depois do pagamento e recebe o valor de volta, como manda o Código de Defesa do Consumidor (art. 49). **Pelo site é imediato:** em "Minhas compras", use **Pedir reembolso**. Os detalhes estão na [Política de Reembolso](/refunds).
 
 ### Seção 9 · "Indisponibilidade" (troca a lista)
 
@@ -91,7 +91,7 @@ Depois dos 7 dias, ou se o botão não aparecer, os outros caminhos continuam va
 
 ### Seção 4 · "O que acontece com o VIP" (troca o terceiro marcador)
 
-- Os **Itens VIP** (agentes, music kits, StatTrak e nametag) saem do Inventário e do Loadout quando o VIP acaba, e ficam guardados por 30 dias (veja os [Termos](/termos), seção 8). As skins comuns continuam com você.
+- Os **Itens VIP** (agentes, music kits, StatTrak e nametag) saem do Inventário e do Loadout quando o VIP acaba, e ficam guardados por 30 dias (veja os [Termos](/terms), seção 8). As skins comuns continuam com você.
 
 ### Seção 5 · "Indisponibilidade" (troca os dois primeiros marcadores)
 
@@ -100,7 +100,7 @@ Depois dos 7 dias, ou se o botão não aparecer, os outros caminhos continuam va
 
 ### Seção 7 · "Contestação no banco" (acrescenta ao fim)
 
-Enquanto a Staff revisa uma contestação, a Conta fica sem poder fazer novas compras. Se o pagamento era legítimo e foi contestado para ficar com o VIP sem pagar, vale a seção 10 dos [Termos](/termos).
+Enquanto a Staff revisa uma contestação, a Conta fica sem poder fazer novas compras. Se o pagamento era legítimo e foi contestado para ficar com o VIP sem pagar, vale a seção 10 dos [Termos](/terms).
 
 ---
 

@@ -55,7 +55,7 @@ export function buildStatusMessage(list: LiveServerList, siteUrl: string): Disco
           },
           {
             name: 'Links',
-            value: `[Site](${siteUrl}) · [Ranking](${siteUrl}/ranking) · [Regras](${siteUrl}/regras)`,
+            value: `[Site](${siteUrl}) · [Ranking](${siteUrl}/ranking) · [Regras](${siteUrl}/rules)`,
           },
         ],
         timestamp: list.generatedAt,

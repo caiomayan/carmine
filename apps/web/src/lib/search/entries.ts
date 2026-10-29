@@ -30,7 +30,7 @@ export type EntryContext = { account: { publicId: number } | null; staff: boolea
 export function staticEntries({ account, staff }: EntryContext): StaticEntry[] {
   const entries: StaticEntry[] = [
     { id: 'servers', group: 'pages', kind: 'link', href: '/' },
-    { id: 'inventory', group: 'pages', kind: 'link', href: '/inventario' },
+    { id: 'inventory', group: 'pages', kind: 'link', href: '/inventory' },
     { id: 'loadout', group: 'pages', kind: 'link', href: '/loadout' },
     { id: 'ranking', group: 'pages', kind: 'link', href: '/ranking' },
   ];
@@ -47,7 +47,7 @@ export function staticEntries({ account, staff }: EntryContext): StaticEntry[] {
     );
   } else {
     // O destino leva a página de origem; quem monta o link (com o pathname atual) é o componente.
-    entries.push({ id: 'signIn', group: 'actions', kind: 'link', href: '/entrar' });
+    entries.push({ id: 'signIn', group: 'actions', kind: 'link', href: '/login' });
   }
   return entries;
 }

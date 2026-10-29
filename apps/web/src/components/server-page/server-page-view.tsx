@@ -26,7 +26,7 @@ import '@/components/home/home.css';
 import './server-page.css';
 
 /**
- * A página do servidor (/servidores/[id]), na linguagem Vida: o mapa de borda a borda com a cor dele, o nome e as
+ * A página do servidor (/servers/[id]), na linguagem Vida: o mapa de borda a borda com a cor dele, o nome e as
  * ações, o placar ao vivo CT × TR (Retake) ou o líder (Deathmatch), os jogadores e o histórico do dia. Só apresenta:
  * o `LiveServer` (estado, mapa, vagas, endereço) vem da lista ao vivo e os blocos da S12b chegam em `extras`, cada um
  * "coletando" ou pronto. Quem liga os dados é o `ServerPageLive`.

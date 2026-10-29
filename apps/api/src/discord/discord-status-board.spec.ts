@@ -69,7 +69,7 @@ describe('buildStatusMessage', () => {
     const fields = embeds[0]?.fields as { name: string; value: string }[];
 
     expect(fields.find((f) => f.name === 'Links')?.value).toBe(
-      '[Site](https://stcarmine.com) · [Ranking](https://stcarmine.com/ranking) · [Regras](https://stcarmine.com/regras)',
+      '[Site](https://stcarmine.com) · [Ranking](https://stcarmine.com/ranking) · [Regras](https://stcarmine.com/rules)',
     );
     expect(fields.find((f) => f.name === 'Agora')?.value).toBe('1 servidor no ar · 5 jogadores');
     expect(embeds[0]?.timestamp).toBe('2026-10-19T12:00:05.000Z');

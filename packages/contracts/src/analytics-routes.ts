@@ -26,24 +26,27 @@ export type AnalyticsRoute = (typeof ANALYTICS_ROUTES)[number];
 /** Um segmento só, com dígitos: o endereço de um Perfil (ID público ou SteamID64). */
 const PROFILE = /^\/\d+$/;
 
-/** Primeiro segmento -> rota (os que valem também com subcaminhos). */
+/**
+ * Primeiro segmento do endereço (em inglês) -> rota do plano de eventos, cujos nomes não mudam (o histórico do
+ * PostHog continua). Valem também com subcaminhos.
+ */
 const BY_SEGMENT: Record<string, AnalyticsRoute> = {
   ranking: 'ranking',
-  inventario: 'inventario',
+  inventory: 'inventario',
   loadout: 'loadout',
-  entrar: 'entrar',
-  configuracoes: 'configuracoes',
-  vip: 'vip',
-  regras: 'regras',
-  termos: 'termos',
-  privacidade: 'privacidade',
-  reembolso: 'reembolso',
-  contato: 'contato',
+  login: 'entrar',
+  settings: 'configuracoes',
+  plans: 'vip',
+  rules: 'regras',
+  terms: 'termos',
+  privacy: 'privacidade',
+  refunds: 'reembolso',
+  contact: 'contato',
 };
 
 /**
  * A rota do plano para um caminho do site (sem origem, com ou sem `?consulta` e `#âncora`). Nunca devolve o caminho:
- * `/10016` vira `perfil`, e o que não é reconhecido vira `outra`. As compras (`/configuracoes/compras...`) são
+ * `/10016` vira `perfil`, e o que não é reconhecido vira `outra`. As compras (`/settings/purchases...`) são
  * `minhas_compras`, antes de `configuracoes`.
  */
 export function analyticsRouteOf(path: string): AnalyticsRoute {
@@ -52,6 +55,6 @@ export function analyticsRouteOf(path: string): AnalyticsRoute {
   if (normalized === '' || normalized === '/') return 'inicio';
   if (PROFILE.test(normalized)) return 'perfil';
   const [, first = '', second = ''] = normalized.split('/');
-  if (first === 'configuracoes' && second === 'compras') return 'minhas_compras';
+  if (first === 'settings' && second === 'purchases') return 'minhas_compras';
   return BY_SEGMENT[first] ?? 'outra';
 }

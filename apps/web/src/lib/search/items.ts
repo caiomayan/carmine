@@ -1,14 +1,14 @@
 import type { Rarity } from '../catalog/types';
 
 /**
- * O que `GET /busca/itens` devolve à paleta de comandos (U3d): Itens do catálogo e do Inventário
+ * O que `GET /search/items` devolve à paleta de comandos (U3d): Itens do catálogo e do Inventário
  * da Conta da sessão, já com a relevância (a mesma escala do resto da paleta). Fica fora do
  * `catalog.ts` porque o navegador usa o tipo e a cs2-lib só roda no servidor.
  */
 export type ItemHit = {
   /** Id do Item no catálogo (leva à página de adicionar). */
   id: number;
-  /** Só nos do Inventário: leva ao editor do Item (`/inventario/<uid>`). */
+  /** Só nos do Inventário: leva ao editor do Item (`/inventory/<uid>`). */
   uid?: string;
   /** Skin em destaque (ou o nome do agente e do music kit); a arma é a linha de apoio. */
   title: string;

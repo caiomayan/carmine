@@ -132,7 +132,7 @@ export function FooterLastEvent({ initial }: { initial: ActivityView | null }) {
     const poll = async () => {
       if (document.hidden) return;
       try {
-        const response = await fetch('/atividade/recentes', {
+        const response = await fetch('/activity/recent', {
           headers: { accept: 'application/json' },
         });
         if (!response.ok || stopped) return;

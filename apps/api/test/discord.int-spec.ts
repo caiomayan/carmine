@@ -107,7 +107,7 @@ describe('Discord integrado (S15)', () => {
 
       expect(response.statusCode).toBe(302);
       const to = new URL(String(response.headers.location));
-      expect(to.pathname).toBe('/entrar');
+      expect(to.pathname).toBe('/login');
       expect(to.searchParams.get('voltar')).toBe('/10001');
     });
 
@@ -253,7 +253,7 @@ describe('Discord integrado (S15)', () => {
       const response = await new Browser(t.app).get('/api/auth/discord/callback?code=x&state=y');
 
       expect(response.statusCode).toBe(303);
-      expect(new URL(String(response.headers.location)).pathname).toBe('/entrar');
+      expect(new URL(String(response.headers.location)).pathname).toBe('/login');
     });
   });
 

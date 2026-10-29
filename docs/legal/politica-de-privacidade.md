@@ -15,7 +15,7 @@ O controlador dos dados é o operador do Carmine, pessoa física:
 - **Controlador:** [DONO: nome completo], CPF [DONO: número]
 - **Encarregado (pessoa de contato para privacidade):** o próprio responsável pelo Carmine, [DONO: nome completo]
 - **E-mail do encarregado:** [DONO: e-mail de contato, por exemplo privacidade@stcarmine.com]
-- **Outro canal para pedidos de privacidade:** página de [contato](/contato), assunto "Privacidade"
+- **Outro canal para pedidos de privacidade:** página de [contato](/contact), assunto "Privacidade"
 
 ## 2. Que dados usamos
 
@@ -31,7 +31,7 @@ Mesmo que você nunca entre no site, ao conectar num Servidor Carmine nós receb
 | **ID público** e **Nome de exibição** | Identificar você no site e no jogo |
 | **Presença**: em qual servidor você está agora, quando conectou e desconectou (Sessões de jogo) | A lista de servidores ao vivo, o bloco "amigos jogando" e as Estatísticas |
 | **Estatísticas**: kills, mortes, assistências, dano, headshots, rounds e tempo jogado, e o detalhe: atividade por dia, armas mais usadas por lado e Sessões de jogo recentes | O seu Perfil e o Ranking semanal |
-| **Chat de texto dos servidores**: cada mensagem com a hora, o servidor, o seu time e se foi chat de time | Moderação: analisar denúncias e aplicar as [Regras de conduta](/regras). Registramos o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off` |
+| **Chat de texto dos servidores**: cada mensagem com a hora, o servidor, o seu time e se foi chat de time | Moderação: analisar denúncias e aplicar as [Regras de conduta](/rules). Registramos o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off` |
 | **Denúncias** que você faz (com `!report`) ou recebe: motivo, servidor, mapa, round, horário e uma cópia das últimas linhas do chat do servidor | Moderação: a fila da Staff |
 | **Punições** (tipo, categoria, data, duração, motivo e quem aplicou) | Moderação, reincidência e o selo e histórico no Perfil |
 | **Endereço IP** da conexão | Conectar você ao servidor, segurança e combate a abuso |
@@ -163,7 +163,7 @@ Pela LGPD (art. 18), você pode pedir, a qualquer momento:
 - **oposição** a um uso baseado em legítimo interesse, se você achar que ele não respeita os seus direitos;
 - **revisão por uma pessoa** de decisões automáticas, como o bloqueio do seu nome Steam pelo filtro de palavras ofensivas (art. 20). Punições nunca são automáticas: sempre são aplicadas por uma pessoa da Staff.
 
-**Como pedir:** pelo e-mail do encarregado (seção 1) ou pela página de [contato](/contato), com o assunto "Privacidade" e o seu ID público. Para confirmar que você é o dono da Conta, podemos pedir que você entre com a Steam no site. Respondemos em até 15 dias. Pais e responsáveis podem fazer os pedidos em nome de menores de idade.
+**Como pedir:** pelo e-mail do encarregado (seção 1) ou pela página de [contato](/contact), com o assunto "Privacidade" e o seu ID público. Para confirmar que você é o dono da Conta, podemos pedir que você entre com a Steam no site. Respondemos em até 15 dias. Pais e responsáveis podem fazer os pedidos em nome de menores de idade.
 
 **Exclusão da Conta:** a sua Conta é anonimizada. O nome, o avatar, o vínculo com a Steam, o Perfil público, o Inventário, as Estatísticas e o chat que você escreveu e o vínculo com o Discord deixam de estar ligados a você; as Denúncias que você fez perdem o vínculo com você, e as suas linhas no chat copiado em Denúncias de outras pessoas são apagadas. Ficam guardados só os registros de pagamento pelo prazo legal, as Denúncias feitas contra você (registro de moderação, até completar os 90 dias, como as punições) e, se houver um ban permanente ativo, um registro mínimo do SteamID64 punido, para que o ban continue valendo. [VALIDAR COM ADVOGADO]
 
@@ -179,7 +179,7 @@ Usamos conexão criptografada (HTTPS), login só pela Steam (não guardamos senh
 - Adolescentes podem jogar e montar o Loadout. Só maiores de 18 anos podem pagar o VIP.
 - Não pedimos dados extras de menores: jogar exige só a conta Steam.
 - Não usamos dados de crianças e adolescentes para publicidade nem para perfis de comportamento.
-- Pais e responsáveis podem pedir acesso, correção ou exclusão da Conta pela página de [contato](/contato).
+- Pais e responsáveis podem pedir acesso, correção ou exclusão da Conta pela página de [contato](/contact).
 
 ## 11. Mudanças nesta política
 

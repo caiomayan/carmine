@@ -11,7 +11,7 @@ namespace Carmine.Core;
 /// </summary>
 public sealed class VipInfo(ICarmineApiClient api, TimeProvider time)
 {
-    public const string BuyUrl = "stcarmine.com/vip";
+    public const string BuyUrl = "stcarmine.com/plans";
     public const string NoStatusMessage = "Não deu para consultar seu VIP agora. Veja em " + BuyUrl;
 
     private static readonly TimeSpan Brasilia = TimeSpan.FromHours(-3);

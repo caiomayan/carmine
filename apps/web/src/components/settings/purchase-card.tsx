@@ -128,7 +128,7 @@ export async function PurchaseCard({ purchase, now }: { purchase: Purchase; now:
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm">
-                <Link href={'/contato' as Route}>{t('processing.contact')}</Link>
+                <Link href={'/contact' as Route}>{t('processing.contact')}</Link>
               </Button>
               <CopyButton
                 text={purchase.id}
@@ -166,7 +166,7 @@ export async function PurchaseCard({ purchase, now }: { purchase: Purchase; now:
         {hasReceipt(purchase) ? (
           <Button asChild variant="ghost" size="sm">
             <Link
-              href={`/configuracoes/compras/${purchase.id}` as Route}
+              href={`/settings/purchases/${purchase.id}` as Route}
               data-testid="purchase-receipt"
             >
               {t('receipt.link')}

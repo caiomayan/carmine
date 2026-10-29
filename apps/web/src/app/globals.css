@@ -416,7 +416,7 @@
   }
 }
 
-/* ---------- /entrar: o traço do vínculo com a Steam se desenha na chegada ---------- */
+/* ---------- /login: o traço do vínculo com a Steam se desenha na chegada ---------- */
 @keyframes link-draw {
   from {
     clip-path: inset(0 100% 0 0);

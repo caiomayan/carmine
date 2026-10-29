@@ -196,7 +196,7 @@ export function ItemEditor(props: EditorProps) {
         mode === 'edit' ? ti('saved', { name: entry.name }) : ti('added', { name: entry.name }),
         saved.uid,
       );
-      router.push('/inventario');
+      router.push('/inventory');
       router.refresh();
     } catch {
       setFailure('network');
@@ -508,7 +508,7 @@ export function ItemEditor(props: EditorProps) {
           onOpenChange={setRemoving}
           onRemoved={() => {
             draft.commit();
-            router.push('/inventario' as Route);
+            router.push('/inventory' as Route);
             router.refresh();
           }}
         />

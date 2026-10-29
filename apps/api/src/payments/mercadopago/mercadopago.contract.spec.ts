@@ -29,7 +29,7 @@ describe.skipIf(!token)('contrato com o sandbox do Mercado Pago', () => {
     method,
     description: 'Saint Carmine · teste de contrato',
     expiresAt: new Date(Date.now() + 35 * 60 * 1000),
-    backUrl: `https://stcarmine.com/vip/compra/${paymentId}?retorno=cartao`,
+    backUrl: `https://stcarmine.com/plans/purchase/${paymentId}?retorno=cartao`,
   });
 
   it('Pix: cria a cobrança, devolve o QR e o copia e cola, e a consulta a vê pendente com a nossa referência', async () => {

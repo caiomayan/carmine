@@ -169,7 +169,7 @@ test.describe('virada da semana, no painel de Ranking do header', () => {
   }
 
   async function openRanking(page: Page) {
-    await page.goto('/regras');
+    await page.goto('/rules');
     await hydrated(page);
     await page
       .getByRole('navigation', { name: 'Principal' })

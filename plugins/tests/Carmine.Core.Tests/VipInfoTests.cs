@@ -37,7 +37,7 @@ public class VipInfoTests
 
         var message = VipInfo.NoticeMessage(VipNotice.Ending_soon, ends, Now);
 
-        Assert.Equal("Seu VIP acaba em 3 dias (30/10). Para renovar: stcarmine.com/vip", message);
+        Assert.Equal("Seu VIP acaba em 3 dias (30/10). Para renovar: stcarmine.com/plans", message);
     }
 
     [Fact]
@@ -47,15 +47,15 @@ public class VipInfoTests
         var tomorrow = new DateTimeOffset(2026, 10, 28, 12, 0, 0, TimeSpan.Zero);
         var sameBrasiliaDay = new DateTimeOffset(2026, 10, 28, 1, 0, 0, TimeSpan.Zero);
 
-        Assert.Equal("Seu VIP acaba amanhã (28/10). Para renovar: stcarmine.com/vip", VipInfo.NoticeMessage(VipNotice.Ending_soon, tomorrow, Now));
+        Assert.Equal("Seu VIP acaba amanhã (28/10). Para renovar: stcarmine.com/plans", VipInfo.NoticeMessage(VipNotice.Ending_soon, tomorrow, Now));
         Assert.Contains("(27/10)", VipInfo.NoticeMessage(VipNotice.Ending_soon, sameBrasiliaDay, Now));
     }
 
     [Fact]
     public void No_dia_do_fim_e_no_dia_em_que_acabou()
     {
-        Assert.Equal("Seu VIP acaba hoje. Para renovar: stcarmine.com/vip", VipInfo.NoticeMessage(VipNotice.Ending_today, null, Now));
-        Assert.Equal("Seu VIP acabou hoje. Para voltar a ter VIP: stcarmine.com/vip", VipInfo.NoticeMessage(VipNotice.Ended_today, null, Now));
+        Assert.Equal("Seu VIP acaba hoje. Para renovar: stcarmine.com/plans", VipInfo.NoticeMessage(VipNotice.Ending_today, null, Now));
+        Assert.Equal("Seu VIP acabou hoje. Para voltar a ter VIP: stcarmine.com/plans", VipInfo.NoticeMessage(VipNotice.Ended_today, null, Now));
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public class VipInfoTests
         var message = await f.Vip.StatusAsync(Player, TestContext.Current.CancellationToken);
 
         // 02:30 UTC de 12/11 ainda é 11/11 em Brasília.
-        Assert.Equal("Seu VIP vai até 11/11/2026. Para somar mais dias: stcarmine.com/vip", message);
+        Assert.Equal("Seu VIP vai até 11/11/2026. Para somar mais dias: stcarmine.com/plans", message);
         var sent = Assert.Single(f.Api.Requests);
         Assert.Equal(HttpMethod.Get, sent.Method);
         Assert.Equal($"/api/server/players/{Player}/vip", sent.Uri?.AbsolutePath);
@@ -108,7 +108,7 @@ public class VipInfoTests
 
         var message = await f.Vip.StatusAsync(Player, TestContext.Current.CancellationToken);
 
-        Assert.Equal("Você não tem VIP agora. Veja como ter: stcarmine.com/vip", message);
+        Assert.Equal("Você não tem VIP agora. Veja como ter: stcarmine.com/plans", message);
     }
 
     [Fact]
