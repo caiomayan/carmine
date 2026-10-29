@@ -460,6 +460,7 @@ describe('Estatísticas detalhadas (S12b)', () => {
           endedAt: null,
           seconds: 900,
           live: false,
+          server: null,
         },
       ]);
       // A própria Conta vê o horário.
@@ -498,9 +499,13 @@ describe('Estatísticas detalhadas (S12b)', () => {
       // Sem login nenhum: o "em andamento" aparece, sem hora do relógio nem duração.
       const [now] = (await sessionsOf(playing)).sessions;
       expect(now).toMatchObject({ live: true, startedAt: null, endedAt: null, seconds: null });
+      // E onde: o servidor, com o id da página dele.
+      expect(now?.server).toMatchObject({ id: await serverId() });
+      expect(now?.server?.name).toBeTruthy();
       // A Sessão ainda aberta de quem já saiu do servidor não é "em andamento".
       const [gone] = (await sessionsOf(left)).sessions;
       expect(gone?.live).toBe(false);
+      expect(gone?.server).toBeNull();
     });
 
     it('uma Conta sem nada detalhado volta vazia, com since nulo', async () => {

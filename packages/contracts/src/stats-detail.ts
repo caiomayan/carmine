@@ -161,10 +161,26 @@ export const PROFILE_SESSIONS_LIMIT_DEFAULT = 10;
 export const PROFILE_SESSIONS_LIMIT_MAX = 30;
 
 /**
+ * O servidor onde a Conta está jogando agora (só na Sessão `live`): o nome para mostrar e o `id` da página
+ * dele (`/servers/{id}`). A presença em servidor já é pública, então qualquer pessoa vê.
+ */
+export const profileLiveServerSchema = z
+  .object({
+    id: z.uuid(),
+    /** O nome de vitrine (S07) ou, sem ele, o identificador curto da Staff. */
+    name: z.string().min(1),
+    /** Código do servidor (S07), região·número, ex.: "SP·2"; nulo se a Staff não definiu. */
+    code: z.string().min(1).nullable(),
+  })
+  .meta({ id: 'ProfileLiveServer' });
+
+export type ProfileLiveServer = z.infer<typeof profileLiveServerSchema>;
+
+/**
  * Uma Sessão de jogo. Quem vê de fora (D1) só recebe Modo, mapa, dia e duração: nada de servidor nem
  * hora do relógio, que revelariam o hábito da pessoa. `startedAt` e `endedAt` só vêm para a própria
  * Conta (nulos para os outros). `live` (em andamento agora) qualquer pessoa que vê as Sessões
- * vê: a Conta está jogando agora, no Modo e mapa da Sessão.
+ * vê: a Conta está jogando agora, no Modo e mapa da Sessão e no `server` dela (nulo em toda Sessão que não é `live`).
  */
 export const profileSessionSchema = z
   .object({
@@ -181,6 +197,7 @@ export const profileSessionSchema = z
     /** Fim − início; nulo enquanto `live` ou numa Sessão sem fim (queda do servidor). */
     seconds: z.int().nonnegative().nullable(),
     live: z.boolean(),
+    server: profileLiveServerSchema.nullable(),
   })
   .meta({ id: 'ProfileSession' });
 

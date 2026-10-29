@@ -2,6 +2,7 @@ import {
   type CalendarDay,
   PLAY_SESSION_RETENTION_DAYS,
   type ProfileActivity,
+  type ProfileLiveServer,
   type ProfileSessions,
   type ProfileWeapons,
   STAT_WEAPONS,
@@ -12,7 +13,12 @@ import { and, desc, eq, gte, isNotNull, or, sql } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { canSeeStats } from '../accounts/profile-privacy.js';
 import type { Database } from '../database/database.js';
-import { accountStatsDaily, accountWeaponStats, playSessions } from '../database/schema.js';
+import {
+  accountStatsDaily,
+  accountWeaponStats,
+  gameServers,
+  playSessions,
+} from '../database/schema.js';
 import type { LiveServers } from '../live-servers/live-servers.js';
 import { dayOf, weekStartOf } from './stats-week.js';
 
@@ -130,10 +136,12 @@ export class ProfileDetailReader {
 
     // Em andamento: a Sessão aberta mais nova, se a presença ainda tem a pessoa nesse servidor.
     let liveId: string | null = null;
+    let liveServer: ProfileLiveServer | null = null;
     if (this.live && rows.some((row) => row.endedAt === null)) {
       const steamId = account.steamId;
       const serverId = (await this.live.whereArePlaying([steamId]).catch(() => null))?.get(steamId);
       liveId = rows.find((row) => row.endedAt === null && row.serverId === serverId)?.id ?? null;
+      if (liveId !== null && serverId) liveServer = await this.liveServer(serverId);
     }
 
     return {
@@ -149,8 +157,25 @@ export class ProfileDetailReader {
         endedAt: own && row.endedAt ? row.endedAt.toISOString() : null,
         seconds: row.seconds,
         live: row.id === liveId,
+        server: row.id === liveId ? liveServer : null,
       })),
     };
+  }
+
+  /** O servidor da Sessão em andamento: o nome de vitrine (ou o curto), o código e o `id` da página. */
+  private async liveServer(serverId: string): Promise<ProfileLiveServer | null> {
+    const [server] = await this.db
+      .select({
+        id: gameServers.id,
+        name: gameServers.name,
+        showcaseName: gameServers.showcaseName,
+        code: gameServers.code,
+      })
+      .from(gameServers)
+      .where(eq(gameServers.id, serverId));
+    return server
+      ? { id: server.id, name: server.showcaseName ?? server.name, code: server.code }
+      : null;
   }
 
   /** O primeiro dia com atividade detalhada da Conta: o "coletando desde" das telas. */
