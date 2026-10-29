@@ -876,11 +876,12 @@ export const avatarReason = pgEnum('avatar_reason', [
 ]);
 
 /**
- * Foto de perfil própria (ADR 0022): publica na hora e a moderação vem depois. Os arquivos
- * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`; `suspended` (duas
- * Contas denunciaram) e `removed` (Staff) os tiram de lá e guardam o de 512 px no bucket
- * privado (`removed/<id>/512.webp`) até a limpeza; `replaced` e `reverted` os apagam. Uma Conta
- * tem no máximo uma foto `active` ou `suspended`.
+ * Foto de perfil própria (ADR 0022 e 0025): publica na hora e a moderação vem depois. Os arquivos
+ * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`, e também em `replaced` e
+ * `reverted` (a foto trocada ou devolvida à Steam segue no histórico das últimas 5, até `deletedAt`); `removed`
+ * (Staff) os tira de lá e guarda os tamanhos no bucket privado (`removed/<id>/<tamanho>.webp`) até a limpeza.
+ * `suspended` é o estado antigo (duas denúncias tiravam a foto do ar): não é mais criado. Uma Conta tem no
+ * máximo uma foto `active` ou `suspended`.
  */
 export const accountAvatars = pgTable(
   'account_avatars',
@@ -895,6 +896,11 @@ export const accountAvatars = pgTable(
     takenDownAt: timestamptz(),
     /** Quando deixou de ser a foto da Conta (removida, trocada ou devolvida à Steam). */
     retiredAt: timestamptz(),
+    /**
+     * Quando os arquivos saíram do histórico (a pessoa usou "Apagar" ou entrou a 6ª foto). A linha fica, sem
+     * arquivos, para contar nos limites de envio, até a retenção de 90 dias.
+     */
+    deletedAt: timestamptz(),
     /** A decisão da Staff (manter ou remover): a última. Nula sem decisão. */
     decision: text().$type<'keep' | 'remove'>(),
     decidedAt: timestamptz(),

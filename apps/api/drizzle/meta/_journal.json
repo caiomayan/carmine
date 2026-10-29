@@ -134,6 +134,13 @@
       "when": 1793067214364,
       "tag": "0018_a1_presenca",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793303261513,
+      "tag": "0019_s18_historico_de_fotos",
+      "breakpoints": true
     }
   ]
 }

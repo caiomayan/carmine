@@ -9,8 +9,6 @@ export interface AvatarReportNotice {
   targetPublicId: number;
   /** Contas diferentes que denunciaram esta foto (sem arquivadas). */
   reporters: number;
-  /** A foto saiu do ar com esta denúncia (chegou ao limite). */
-  suspended: boolean;
 }
 
 /** Nome de jogador num aviso: uma linha só e sem Markdown que bagunce a mensagem. */
@@ -26,9 +24,7 @@ export function avatarReportDiscordMessage(notice: AvatarReportNotice, panelUrl:
   return [
     `🖼️ **Denúncia de foto de perfil: ${AVATAR_REASON_LABELS[notice.reason]}**`,
     `Perfil: ${plain(notice.targetName)} (#${notice.targetPublicId})`,
-    notice.suspended
-      ? `Saiu do ar com ${notice.reporters} denúncias; a Staff decide em até 24 h`
-      : `${notice.reporters} ${notice.reporters === 1 ? 'denúncia' : 'denúncias'}`,
+    `${notice.reporters} ${notice.reporters === 1 ? 'denúncia' : 'denúncias'}; a Staff decide em até 24 h`,
     `Fila: ${panelUrl}`,
   ].join('\n');
 }
