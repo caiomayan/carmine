@@ -97,3 +97,14 @@ export const playerChatPreferenceSchema = z
   .meta({ id: 'PlayerChatPreference' });
 
 export type PlayerChatPreference = z.infer<typeof playerChatPreferenceSchema>;
+
+/**
+ * `GET /api/server/players/{steamId}/rank` e `/stats` (S16): a linha pronta, em português, que o
+ * `!rank` e o `!stats` mostram só a quem pediu. O Modo é o do Servidor Carmine que pergunta. 404 se a
+ * Conta não existe.
+ */
+export const playerGameLineSchema = z
+  .strictObject({ message: z.string().min(1) })
+  .meta({ id: 'PlayerGameLine' });
+
+export type PlayerGameLine = z.infer<typeof playerGameLineSchema>;

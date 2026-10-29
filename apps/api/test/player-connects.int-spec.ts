@@ -289,4 +289,36 @@ describe('POST /api/server/player-connects', () => {
       expect((await markAwp(steamIdFor(1), null)).statusCode).toBe(401);
     });
   });
+
+  describe('!rank e !stats do jogo (S16)', () => {
+    function line(kind: 'rank' | 'stats', steamId: string, key: string | null = t.serverKey) {
+      return t.app.inject({
+        url: `/api/server/players/${steamId}/${kind}`,
+        headers: key === null ? {} : { authorization: `Bearer ${key}` },
+      });
+    }
+
+    it('Conta sem jogo na semana: o rank diz quanto falta e o stats diz que ainda não jogou', async () => {
+      const steamId = steamIdFor(720);
+      await connectOk({ steamId, steamName: 'novato' });
+
+      const rank = await line('rank', steamId);
+      const stats = await line('stats', steamId);
+
+      expect(rank.statusCode, rank.body).toBe(200);
+      expect(rank.json().message).toMatch(
+        /^Falt(a|am) d+ (round|rounds|minuto|minutos) para você entrar no Ranking desta semana.$/,
+      );
+      expect(stats.json().message).toMatch(
+        /^Você ainda não jogou (Retake|Deathmatch) esta semana.$/,
+      );
+    });
+
+    it('Conta que não existe: 404; SteamID inválido: 400; sem a chave do servidor: 401', async () => {
+      expect((await line('rank', steamIdFor(721))).statusCode).toBe(404);
+      expect((await line('stats', steamIdFor(721))).statusCode).toBe(404);
+      expect((await line('rank', '123')).statusCode).toBe(400);
+      expect((await line('stats', steamIdFor(1), null)).statusCode).toBe(401);
+    });
+  });
 });

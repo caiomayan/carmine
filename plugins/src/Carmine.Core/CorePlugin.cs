@@ -43,6 +43,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// <summary>Contas que ainda não passaram pela AWP por padrão e esperam o primeiro spawn no Retake (mesma mecânica das boas-vindas).</summary>
     private PendingWelcomes? _awpQueue;
     private AwpDefault? _awpDefault;
+    private GameStatsLines? _gameStats;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
     private bool _heartbeatScheduled;
@@ -113,6 +114,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _awpDefault = new AwpDefault(client);
         }
         _heartbeat = new HeartbeatReporter(client);
+        _gameStats = new GameStatsLines(client);
         _chat = new ChatPreferences(client);
         _vipInfo = new VipInfo(client, TimeProvider.System);
         LoadReservedSlots(client, hotReload);
@@ -127,6 +129,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommandListener("say_team", OnSay, HookMode.Pre);
         AddCommand("css_chat", "!chat off oculta o chat dos outros jogadores; !chat on mostra de novo", OnChatCommand);
         AddCommand("css_vip", "!vip mostra até quando vai o seu VIP", OnVipCommand);
+        AddCommand("css_rank", "!rank mostra a sua posição na semana neste Modo", (p, i) => OnStatsCommand(p, rank: true));
+        AddCommand("css_stats", "!stats mostra os seus números da semana neste Modo", (p, i) => OnStatsCommand(p, rank: false));
         AddCommand("css_help", "!help lista os comandos deste servidor", OnHelpCommand);
         AddCommand("css_ajuda", "!ajuda é o mesmo que !help", OnHelpCommand);
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
@@ -168,6 +172,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _welcomes = null;
         _awpQueue = null;
         _awpDefault = null;
+        _gameStats = null;
         _heartbeat = null;
         _chat = null;
         _vipInfo = null;
@@ -484,6 +489,25 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     }
 
     /// <summary>O <c>!vip</c>: pergunta à API (o connect só sabe o VIP de quando o jogador entrou) e responde no chat.</summary>
+    /// <summary>A resposta vem pronta da API e vai só para quem pediu.</summary>
+    private void OnStatsCommand(CCSPlayerController? player, bool rank)
+    {
+        if (player is null || !IsHuman(player) || _gameStats is not { } stats)
+        {
+            return;
+        }
+        var steamId = player.SteamID;
+        RunInBackground(async token =>
+        {
+            var message = rank ? await stats.RankAsync(steamId, token) : await stats.StatsAsync(steamId, token);
+            Server.NextFrame(() =>
+            {
+                var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == steamId);
+                current?.SendChat(message);
+            });
+        });
+    }
+
     private void OnHelpCommand(CCSPlayerController? player, CommandInfo info)
     {
         if (player is null || !IsHuman(player))
