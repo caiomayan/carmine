@@ -308,7 +308,7 @@ describe('POST /api/server/player-connects', () => {
 
       expect(rank.statusCode, rank.body).toBe(200);
       expect(rank.json().message).toMatch(
-        /^Falt(a|am) d+ (round|rounds|minuto|minutos) para você entrar no Ranking desta semana.$/,
+        /^Falt(a|am) \d+ (round|rounds|minuto|minutos) para você entrar no Ranking desta semana.$/,
       );
       expect(stats.json().message).toMatch(
         /^Você ainda não jogou (Retake|Deathmatch) esta semana.$/,
