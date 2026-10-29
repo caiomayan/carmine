@@ -84,6 +84,14 @@ export function curiosities(facts: GreetingFacts): Curiosity[] {
 }
 
 /**
+ * A linha do primeiro connect de uma Conta: as boas-vindas com o aviso dos termos que o ADR 0007 pede
+ * (base legal de legítimo interesse). Só esse connect leva o link; os seguintes mostram a curiosidade.
+ */
+export function firstConnectGreeting(displayName: string): string {
+  return `Bem-vindo, ${displayName}. Ao jogar você concorda com os termos: stcarmine.com/terms`;
+}
+
+/**
  * A linha do connect: Conta nova no Modo recebe as boas-vindas; Conta com dados, uma curiosidade
  * sorteada entre as que se aplicam e diferente da última mostrada. Sem curiosidade nova, as
  * boas-vindas (nunca a mesma curiosidade duas vezes seguidas).

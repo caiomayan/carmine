@@ -61,7 +61,12 @@ export class PlayerConnectsController {
     const [vip, sanctions, greeting] = await Promise.all([
       this.vip.statusOf(accountId),
       this.sanctions.forGame([connect.steamId]),
-      this.greetings.forConnect(accountId, account.displayName, server.mode),
+      this.greetings.forConnect(
+        accountId,
+        account.displayName,
+        server.mode,
+        account.isFirstConnect,
+      ),
     ]);
     void this.measure(server, { accountId, created, claimed, connectedAt }, account, vip.active);
     return {

@@ -2,7 +2,7 @@ import type { GameMode } from '@carmine/contracts';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accountStatsDaily, accountStatsWeekly, accounts } from '../database/schema.js';
-import { type GreetingFacts, pickGreeting } from './curiosities.js';
+import { firstConnectGreeting, type GreetingFacts, pickGreeting } from './curiosities.js';
 import { weekEndOf, weekStartOf } from './stats-week.js';
 import type { WeeklyRanking } from './weekly-ranking.js';
 
@@ -20,7 +20,13 @@ export class Greetings {
     private readonly random: () => number = Math.random,
   ) {}
 
-  async forConnect(accountId: string, displayName: string, mode: GameMode): Promise<string> {
+  async forConnect(
+    accountId: string,
+    displayName: string,
+    mode: GameMode,
+    isFirstConnect: boolean,
+  ): Promise<string> {
+    if (isFirstConnect) return firstConnectGreeting(displayName);
     const weekStart = weekStartOf(this.now());
     const [anyRow, week, days, total, last, ranking] = await Promise.all([
       this.db

@@ -61,7 +61,8 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 
 **4. Boas-vindas com curiosidade**
 - Sai a mensagem atual de primeiro connect. Em **todo connect** num servidor aberto, uma única linha curta:
-  - **Conta nova** (sem Estatísticas no Modo): `Carmine · Bem-vindo, <nome>.`
+  - **Primeiro connect da Conta:** `Carmine · Bem-vindo, <nome>. Ao jogar você concorda com os termos: stcarmine.com/terms`. É o aviso do primeiro connect que o ADR 0007 pede (legítimo interesse, com o link dos termos); decisão do dono em 2026-10-29.
+  - **Do segundo connect em diante**, só a curiosidade, sem o link. Conta que já conectou mas ainda não tem Estatísticas no Modo vê `Carmine · Bem-vindo, <nome>.` (sem o link).
   - **Conta com dados:** `Carmine · <curiosidade>`. Uma curiosidade por connect, sorteada entre as que se aplicam à pessoa e diferente da última mostrada a ela.
 - **Curiosidades da v1** (todas do Modo do servidor e da semana atual, salvo indicado):
   - `Faltam 12 rounds para você entrar no Ranking desta semana.` (Retake; em minutos no DM)
@@ -71,7 +72,8 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
   - `Seu melhor dia da semana foi terça, com 132 rounds vencidos.` (só com 2 dias ou mais de atividade)
   - `Você já jogou 37 horas no Carmine.` (total, todos os Modos)
 - **Quem escolhe a frase é a API**, que devolve a linha pronta em português no endpoint que o plugin já chama no connect. O plugin só imprime. Assim, uma curiosidade nova não exige release do plugin.
-- **Os termos** continuam aceitos ao jogar. O link `stcarmine.com/termos` sai da mensagem e fica no `!help`.
+- **Os termos** continuam aceitos ao jogar (ADR 0007). O link vai na linha do primeiro connect e fica também no `!help` (`stcarmine.com/rules`). A API monta a linha (`greeting`); o plugin só imprime.
+- **Fora da v1 implementada:** a curiosidade da arma com mais abates da semana, porque o banco guarda as armas só de sempre (CONTEXT, Estatísticas, "coletando desde"). Entra quando houver a contagem por semana.
 - Com a API fora, a linha não aparece. O aviso de Loadout fora do ar continua como hoje.
 
 **5. `!help`**
@@ -107,7 +109,7 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 - Num round de compra cheia com 2 ou mais por time, a AWP aparece para um jogador de cada lado em parte dos rounds, sem precisar de plano.
 - Nenhum texto em inglês aparece para o jogador no Retake e no DM, de nenhum plugin.
 - Toda mensagem do Carmine.Core começa com `Carmine` em carmim.
-- Uma Conta nova vê `Carmine · Bem-vindo, <nome>.`. Uma Conta com dados vê uma curiosidade da lista, e dois connects seguidos não mostram a mesma.
+- No primeiro connect a Conta vê `Carmine · Bem-vindo, <nome>. Ao jogar você concorda com os termos: stcarmine.com/terms`, uma vez só. Uma Conta com dados vê uma curiosidade da lista, e dois connects seguidos não mostram a mesma.
 - `!help` e `!ajuda` listam os comandos do Modo atual.
 - `!rank` e `!stats` batem com o que o site mostra no Ranking e no Perfil da mesma semana.
 - Quem tem VIP vê o aviso do plano no primeiro spawn; quem não tem, não vê.

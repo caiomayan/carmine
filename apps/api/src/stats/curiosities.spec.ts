@@ -1,6 +1,11 @@
 import type { RankingViewer } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
-import { curiosities, type GreetingFacts, pickGreeting } from './curiosities.js';
+import {
+  curiosities,
+  firstConnectGreeting,
+  type GreetingFacts,
+  pickGreeting,
+} from './curiosities.js';
 
 const totals = {
   kills: 100,
@@ -87,6 +92,12 @@ describe('curiosidades', () => {
 });
 
 describe('linha do connect', () => {
+  it('primeiro connect da Conta: boas-vindas com o aviso dos termos (ADR 0007)', () => {
+    expect(firstConnectGreeting('Gabriel')).toBe(
+      'Bem-vindo, Gabriel. Ao jogar você concorda com os termos: stcarmine.com/terms',
+    );
+  });
+
   it('Conta nova no Modo: boas-vindas com o nome', () => {
     expect(pickGreeting(facts({ hasStatsInMode: false }), null)).toEqual({
       line: 'Bem-vindo, Gabriel.',

@@ -42,7 +42,11 @@ describe('POST /api/server/player-connects', () => {
     const result = await connectOk({ steamId, steamName: 'coldzera' });
 
     expect(performance.now() - startedAt).toBeLessThan(2000);
-    expect(result).toMatchObject({ displayName: 'coldzera', isFirstConnect: true });
+    expect(result).toMatchObject({
+      displayName: 'coldzera',
+      isFirstConnect: true,
+      greeting: 'Bem-vindo, coldzera. Ao jogar você concorda com os termos: stcarmine.com/terms',
+    });
     expect(result.publicId).toBeGreaterThanOrEqual(10_000);
     expect(await t.accounts.findBySteamId(steamId)).toMatchObject({
       steamId,
