@@ -43,10 +43,11 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 
 Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saídas do levantamento do plugin de 2026-10-28. Não muda nada no site, a não ser a API que fornece a curiosidade, o `!rank` e o `!stats`.
 
-**1. AWP do Retake (provável bug)**
-- Hoje o `RetakesAllocator` só entrega a AWP a quem tem a permissão `@css/vip` (`AwpPermission`, `infra/cs2/profiles/retake/.../RetakesAllocator/config.json`), e nada no Carmine concede essa permissão a ninguém. Então provavelmente ninguém recebe AWP, contra a S02 ("1 AWP por time com chance").
-- **Decisão:** a AWP é **para todos**, como diz a S02 (não é benefício de plano). Tirar a exigência de permissão, conferindo no código do allocator qual valor significa "sem permissão". O mesmo vale para `SsgPermission` e `EnemyStuffPermission`, que continuam desligados.
-- Confirmar com um teste no servidor da AWS: num round de compra cheia com 2 ou mais por time, a AWP aparece para um jogador de cada lado em cerca de metade dos rounds.
+**1. AWP do Retake**
+- A suspeita original (a permissão `@css/vip` bloqueando a AWP) estava errada. No `RetakesAllocator` 3.0, `EnableAwp: 1` já significa "todos" e a `AwpPermission` nem é consultada (`AccessMode`, `WeaponHelpers.SelectPreferredPlayersCore`); a PR do perfil (#190) só esvaziou as três permissões (AWP, SSG e Enemy Stuff, os dois últimos desligados).
+- O que segura a AWP é outra coisa: o alocador só sorteia quem tem preferência de AWP (ou de sniper aleatória), e a preferência nasce vazia. Sem `!awp`, ninguém entra. O alocador não tem preferência padrão em config nem API pública.
+- **Decisão:** todo mundo entra no sorteio por padrão, como diz a S02 (não é benefício de plano). O Carmine.Core roda o `css_awp` do alocador no primeiro spawn de uma Conta nova, só no Retake (o comando alterna, por isso só no primeiro connect). O `!help` do Retake também cita `!awp` para quem quiser sair ou voltar.
+- Confirmar com um teste no servidor da AWS: uma Conta nova entra, e num round de compra cheia com 2 ou mais por time a AWP aparece para um jogador de cada lado em cerca de metade dos rounds. Se o `css_awp` disparado pelo servidor não tiver efeito, o plano de reserva é só o `!help`.
 
 **2. Servidor em português**
 - Todos os textos que o jogador vê ficam em português do Brasil: Carmine.Core, `cs2-retakes`, `RetakesAllocator`, `RockTheVote` e `Deathmatch`.
