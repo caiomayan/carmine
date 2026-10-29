@@ -2,6 +2,7 @@
 
 import {
   ActivityIcon,
+  ArrowUpRightIcon,
   CheckIcon,
   ClockIcon,
   CreditCardIcon,
@@ -14,15 +15,22 @@ import {
   XIcon,
 } from 'lucide-react';
 import { useMemo } from 'react';
+import type { ArtPair } from '@/components/vida/map-art';
+import { MapPicture } from '@/components/vida/map-picture';
+import { HairChart, Sparkline } from './charts';
 import {
   ALERTS,
   brl,
   type Deadline,
   deadlineOf,
-  ONLINE_24H,
+  greeting,
+  MODES,
+  type ModeId,
+  onlineFor,
   type Photo,
   PURCHASES,
   type Report,
+  SERVER_LIST,
 } from './data';
 import { Eta } from './reports';
 
@@ -35,20 +43,58 @@ export type ViewId =
   | 'servidores'
   | 'auditoria';
 
-/** O menor prazo da fila, em uma frase curta. */
+const DATE = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
+
+/** Uma frase curta com o menor prazo da fila. */
 const soonLabel = (d: Deadline) =>
   d.leftMin < 0 ? d.label : `vence em ${d.label.replace(' restantes', '')}`;
+
+/** O valor com a parte decimal apagada: R$ 187,10 vira "R$ 187" + ",10" apagado. */
+function Money({ cents }: { cents: number }) {
+  const [whole, fraction] = brl(cents).split(',');
+  return (
+    <>
+      {whole}
+      <small>,{fraction}</small>
+    </>
+  );
+}
+
+/** O botão redondo ↗ de cada cartão: leva à tela do assunto. */
+function Arrow({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" className="stp-arrow" aria-label={label} onClick={onClick}>
+      <ArrowUpRightIcon size={16} aria-hidden="true" />
+    </button>
+  );
+}
+
+/** Quanto do prazo de 24 h ainda resta (0 a 1): a barra esvazia com o tempo. */
+const remaining = (d: Deadline) => Math.max(0.03, Math.min(1, d.leftMin / 1440));
 
 export function Inicio({
   reports,
   photos,
   nowMs,
   go,
+  mode,
+  onMode,
+  heroMap,
+  heroArt,
 }: {
   reports: Report[];
   photos: Photo[];
   nowMs: number;
   go: (view: ViewId) => void;
+  mode: ModeId;
+  onMode: (mode: ModeId) => void;
+  heroMap: string | null;
+  heroArt: ArtPair | null;
 }) {
   const pending = useMemo(() => {
     const items = [
@@ -57,7 +103,7 @@ export function Inicio({
         .map((r) => ({
           key: r.id,
           view: 'denuncias' as const,
-          title: `${r.reported}`,
+          title: r.reported,
           sub: `${r.id} · ${r.server}`,
           deadline: deadlineOf(r.createdAt, nowMs),
         })),
@@ -65,7 +111,7 @@ export function Inicio({
         key: p.id,
         view: 'fotos' as const,
         title: p.account,
-        sub: `${p.id} · foto de perfil`,
+        sub: `${p.id} · foto denunciada`,
         deadline: deadlineOf(p.sentAt, nowMs),
       })),
     ];
@@ -79,109 +125,256 @@ export function Inicio({
   const soonestPhoto = photos
     .map((p) => deadlineOf(p.sentAt, nowMs))
     .sort((a, b) => a.leftMin - b.leftMin)[0];
-  const peak = Math.max(...ONLINE_24H);
+  // Passou de 20 h (menos de 4 h de prazo): o cartão vira destaque cheio.
+  const hot = (d: Deadline | undefined) => (d && d.leftMin < 240 ? '' : undefined);
+
+  const online = onlineFor(mode);
+  const servers = SERVER_LIST.filter((s) => mode === 'all' || s.mode === mode);
+  const up = servers.filter((s) => s.up).length;
 
   return (
     <div className="stp-page" data-testid="stp-home">
-      <div className="stp-head">
-        <div>
-          <h1>Início</h1>
-          <p>O que pede a Staff agora. Dados de exemplo.</p>
+      <section className="stp-hero" aria-labelledby="stp-hello">
+        {heroMap && heroArt ? (
+          <div className="stp-hero-art" aria-hidden="true">
+            <MapPicture map={heroMap} art={heroArt} sizes="100vw" />
+          </div>
+        ) : null}
+        <div className="stp-hero-row">
+          <div>
+            <h1 id="stp-hello">
+              {greeting(nowMs)}, <em>Mara</em>
+            </h1>
+            <p>
+              {DATE.format(nowMs)} · {reportsOpen.length + photos.length} itens esperando revisão
+            </p>
+          </div>
         </div>
+        <fieldset className="stp-modes">
+          <legend className="stp-sr">Filtrar por Modo</legend>
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className="stp-mode"
+              aria-pressed={mode === m.id}
+              onClick={() => onMode(m.id)}
+              data-testid={`stp-mode-${m.id}`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </fieldset>
+      </section>
+
+      <div className="stp-grid">
+        <section className="stp-card" aria-labelledby="stp-c-online">
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <ActivityIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-c-online">Jogadores online</h2>
+            </div>
+            <Arrow label="Abrir Servidores" onClick={() => go('servidores')} />
+          </div>
+          {online ? (
+            <>
+              <div className="stp-big" data-testid="stp-online">
+                {online.now}
+              </div>
+              <Sparkline
+                values={online.series}
+                label={`Jogadores online nas últimas 24 horas, agora ${online.now}.`}
+              />
+            </>
+          ) : (
+            <>
+              <div className="stp-big">-</div>
+              <div className="stp-card-sub">As Salas chegam com a S23.</div>
+            </>
+          )}
+        </section>
+
+        <section className="stp-card" aria-labelledby="stp-c-servers">
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <ServerIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-c-servers">Servidores no ar</h2>
+            </div>
+            <Arrow label="Abrir Servidores" onClick={() => go('servidores')} />
+          </div>
+          <div className="stp-big">
+            {mode === 'rooms' ? '-' : up}
+            {mode === 'rooms' ? null : <small> de {servers.length}</small>}
+          </div>
+          <ul className="stp-servers" aria-label="Estado de cada servidor">
+            {servers.map((s) => (
+              <li key={s.name}>
+                <span>{s.name}</span>
+                <span className="stp-dot" data-tone={s.up ? 'ok' : 'danger'}>
+                  <span className="stp-sr">{s.up ? 'no ar' : 'caído'}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section
+          className="stp-card"
+          aria-labelledby="stp-c-reports"
+          data-hl={hot(soonestReport)}
+          data-testid="stp-card-reports"
+        >
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <FlagIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-c-reports">Denúncias esperando</h2>
+            </div>
+            <Arrow label="Abrir Denúncias" onClick={() => go('denuncias')} />
+          </div>
+          <div className="stp-big">{reportsOpen.length}</div>
+          {soonestReport ? (
+            <>
+              <span
+                className="stp-meter"
+                data-tone={soonestReport.tone === 'ok' ? undefined : soonestReport.tone}
+                aria-hidden="true"
+              >
+                <i style={{ width: `${Math.round(remaining(soonestReport) * 100)}%` }} />
+              </span>
+              <div className="stp-card-sub">{soonLabel(soonestReport)}</div>
+            </>
+          ) : null}
+        </section>
+
+        <section
+          className="stp-card"
+          aria-labelledby="stp-c-photos"
+          data-hl={hot(soonestPhoto)}
+          data-testid="stp-card-photos"
+        >
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <ImageIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-c-photos">Fotos denunciadas</h2>
+            </div>
+            <Arrow label="Abrir Fotos" onClick={() => go('fotos')} />
+          </div>
+          <div className="stp-big">{photos.length}</div>
+          {soonestPhoto ? (
+            <>
+              <span
+                className="stp-meter"
+                data-tone={soonestPhoto.tone === 'ok' ? undefined : soonestPhoto.tone}
+                aria-hidden="true"
+              >
+                <i style={{ width: `${Math.round(remaining(soonestPhoto) * 100)}%` }} />
+              </span>
+              <div className="stp-card-sub">{soonLabel(soonestPhoto)}</div>
+            </>
+          ) : (
+            <div className="stp-card-sub">fila vazia</div>
+          )}
+        </section>
       </div>
 
-      <div className="stp-stats">
-        <div className="stp-stat">
-          <span className="stp-stat-label">
-            <ActivityIcon size={13} aria-hidden="true" /> Online agora
-          </span>
-          <span className="stp-stat-value">142</span>
-          <span className="stp-stat-note">pico de hoje: {peak}</span>
-        </div>
-        <div className="stp-stat">
-          <span className="stp-stat-label">
-            <ServerIcon size={13} aria-hidden="true" /> Servidores no ar
-          </span>
-          <span className="stp-stat-value">
-            5<small> de 6</small>
-          </span>
-          <span className="stp-stat-note" data-tone="danger">
-            Retake #3 caído
-          </span>
-        </div>
-        <button type="button" className="stp-stat" onClick={() => go('denuncias')}>
-          <span className="stp-stat-label">
-            <FlagIcon size={13} aria-hidden="true" /> Denúncias esperando
-          </span>
-          <span className="stp-stat-value">{reportsOpen.length}</span>
-          {soonestReport ? (
-            <span
-              className="stp-stat-note"
-              data-tone={soonestReport.tone === 'ok' ? undefined : soonestReport.tone}
-            >
-              {soonLabel(soonestReport)}
-            </span>
-          ) : null}
-        </button>
-        <button type="button" className="stp-stat" onClick={() => go('fotos')}>
-          <span className="stp-stat-label">
-            <ImageIcon size={13} aria-hidden="true" /> Fotos esperando
-          </span>
-          <span className="stp-stat-value">{photos.length}</span>
-          {soonestPhoto ? (
-            <span
-              className="stp-stat-note"
-              data-tone={soonestPhoto.tone === 'ok' ? undefined : soonestPhoto.tone}
-            >
-              {soonLabel(soonestPhoto)}
-            </span>
+      <div className="stp-split">
+        <section className="stp-card" aria-labelledby="stp-c-chart">
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <ActivityIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-c-chart">Jogadores online por hora</h2>
+            </div>
+          </div>
+          {online ? (
+            <>
+              <HairChart
+                values={online.series}
+                label={`Jogadores online por hora nas últimas 24 horas: de ${Math.min(...online.series)} a ${Math.max(...online.series)}, agora ${online.now}.`}
+              />
+              <div className="stp-axis" aria-hidden="true">
+                <span>-24 h</span>
+                <span>-12 h</span>
+                <span>agora</span>
+              </div>
+            </>
           ) : (
-            <span className="stp-stat-note">fila vazia</span>
+            <div className="stp-empty">
+              <b>As Salas ainda não existem</b>
+              <span>O gráfico delas aparece quando a S23 chegar.</span>
+            </div>
           )}
-        </button>
-        <button type="button" className="stp-stat" onClick={() => go('pagamentos')}>
-          <span className="stp-stat-label">
-            <ShoppingBagIcon size={13} aria-hidden="true" /> Compras hoje
-          </span>
-          <span className="stp-stat-value">9</span>
-          <span className="stp-stat-note">{brl(18710)} · 1 reembolso</span>
-        </button>
-        <div className="stp-stat" data-soon>
-          <span className="stp-stat-label">
-            <RadioIcon size={13} aria-hidden="true" /> Salas ao vivo
-          </span>
-          <span className="stp-stat-value">-</span>
-          <span className="stp-stat-note">chega com as Salas (S23)</span>
-        </div>
+        </section>
+
+        <section className="stp-card" aria-labelledby="stp-c-sales">
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <ShoppingBagIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-c-sales">Compras hoje</h2>
+            </div>
+            <Arrow label="Abrir Pagamentos" onClick={() => go('pagamentos')} />
+          </div>
+          <div className="stp-big" data-testid="stp-sales">
+            <Money cents={18710} />
+          </div>
+          <div className="stp-card-sub">9 compras · 1 reembolso de {brl(4990)}</div>
+          <ul className="stp-list">
+            {PURCHASES.slice(0, 3).map((p) => (
+              <li key={p.id} className="stp-purchase">
+                <span>
+                  <span className="stp-row-title">{p.who}</span>
+                  <span className="stp-row-sub">
+                    {p.what} · {p.at}
+                  </span>
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {p.state === 'refund' ? (
+                    <span className="stp-dot" data-tone="warn">
+                      Reembolso
+                    </span>
+                  ) : null}
+                  <b>{brl(p.value)}</b>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
 
       <div className="stp-split">
         <section className="stp-card" aria-labelledby="stp-wait">
-          <div className="stp-card-head">
-            <h2 id="stp-wait">Esperando revisão</h2>
-            <small>prazo de 24 h</small>
+          <div className="stp-card-top">
+            <div className="stp-card-title">
+              <span className="stp-card-ico">
+                <ClockIcon size={16} aria-hidden="true" />
+              </span>
+              <h2 id="stp-wait">Esperando revisão</h2>
+            </div>
+            <span className="stp-card-sub" style={{ margin: 0 }}>
+              prazo de 24 h
+            </span>
           </div>
           <ul className="stp-list" data-testid="stp-pending">
-            {pending.slice(0, 7).map((item) => (
+            {pending.slice(0, 6).map((item) => (
               <li key={item.key}>
                 <button type="button" className="stp-row" onClick={() => go(item.view)}>
-                  <span
-                    className="stp-ico"
-                    data-tone={item.deadline.tone === 'ok' ? undefined : item.deadline.tone}
-                  >
-                    {item.view === 'denuncias' ? (
-                      <FlagIcon size={14} aria-hidden="true" />
-                    ) : (
-                      <ImageIcon size={14} aria-hidden="true" />
-                    )}
+                  <span className="stp-ini" aria-hidden="true">
+                    {item.title.slice(0, 2).toUpperCase()}
                   </span>
-                  <span className="stp-row-main">
-                    <span className="stp-row-title" style={{ display: 'block' }}>
-                      {item.title}
-                    </span>
-                    <span className="stp-row-sub" style={{ display: 'block' }}>
-                      {item.sub}
-                    </span>
+                  <span>
+                    <span className="stp-row-title">{item.title}</span>
+                    <span className="stp-row-sub">{item.sub}</span>
                   </span>
                   <Eta deadline={item.deadline} />
                 </button>
@@ -191,85 +384,43 @@ export function Inicio({
         </section>
 
         <div className="stp-col">
-          <section className="stp-card" aria-labelledby="stp-alerts">
-            <div className="stp-card-head">
-              <h2 id="stp-alerts">Alertas</h2>
-              <span className="stp-tag" data-tone="danger">
-                {ALERTS.length}
-              </span>
+          <section className="stp-card" aria-labelledby="stp-c-alerts">
+            <div className="stp-card-top">
+              <div className="stp-card-title">
+                <span className="stp-card-ico">
+                  <TriangleAlertIcon size={16} aria-hidden="true" />
+                </span>
+                <h2 id="stp-c-alerts">Alertas</h2>
+              </div>
+              <Arrow label="Abrir Servidores" onClick={() => go('servidores')} />
             </div>
             <ul className="stp-list">
               {ALERTS.map((alert) => (
-                <li key={alert.id}>
-                  <button type="button" className="stp-row" onClick={() => go('servidores')}>
-                    <span className="stp-ico" data-tone={alert.severity}>
-                      <TriangleAlertIcon size={14} aria-hidden="true" />
+                <li key={alert.id} className="stp-purchase">
+                  <span>
+                    <span className="stp-row-title">{alert.title}</span>
+                    <span className="stp-row-sub">{alert.detail}</span>
+                  </span>
+                  <span className="stp-dot" data-tone={alert.severity}>
+                    <span className="stp-sr">
+                      {alert.severity === 'danger' ? 'urgente' : 'atenção'}
                     </span>
-                    <span className="stp-row-main">
-                      <span className="stp-row-title" style={{ display: 'block' }}>
-                        {alert.title}
-                      </span>
-                      <span className="stp-row-sub" style={{ display: 'block' }}>
-                        {alert.detail}
-                      </span>
-                    </span>
-                  </button>
+                  </span>
                 </li>
               ))}
             </ul>
           </section>
 
-          <section className="stp-card" aria-labelledby="stp-online">
-            <div className="stp-card-head">
-              <h2 id="stp-online">Jogadores online</h2>
-              <small>últimas 24 h</small>
+          <section className="stp-card" data-soon aria-labelledby="stp-c-rooms">
+            <div className="stp-card-top">
+              <div className="stp-card-title">
+                <span className="stp-card-ico">
+                  <RadioIcon size={16} aria-hidden="true" />
+                </span>
+                <h2 id="stp-c-rooms">Salas ao vivo</h2>
+              </div>
             </div>
-            <div
-              className="stp-chart"
-              role="img"
-              aria-label={`Jogadores online por hora nas últimas 24 horas: de ${Math.min(...ONLINE_24H)} a ${peak}, agora 142.`}
-            >
-              {ONLINE_24H.map((value, index) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: série de 24 horas, a posição é a chave.
-                <i key={index} style={{ height: `${Math.max(4, (value / peak) * 100)}%` }} />
-              ))}
-            </div>
-            <div className="stp-chart-axis" aria-hidden="true">
-              <span>-24 h</span>
-              <span>-12 h</span>
-              <span>agora</span>
-            </div>
-          </section>
-
-          <section className="stp-card" aria-labelledby="stp-sales">
-            <div className="stp-card-head">
-              <h2 id="stp-sales">Compras de hoje</h2>
-              <button type="button" className="stp-btn" onClick={() => go('pagamentos')}>
-                Ver todas
-              </button>
-            </div>
-            <ul className="stp-list">
-              {PURCHASES.map((p) => (
-                <li key={p.id} className="stp-purchase">
-                  <span className="stp-row-main">
-                    <span className="stp-row-title" style={{ display: 'block' }}>
-                      {p.who}
-                    </span>
-                    <span className="stp-row-sub" style={{ display: 'block' }}>
-                      {p.what} · {p.at}
-                    </span>
-                  </span>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {p.state === 'refund' ? (
-                      <span className="stp-tag" data-tone="warn">
-                        Reembolso
-                      </span>
-                    ) : null}
-                    <span className="num">{brl(p.value)}</span>
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <div className="stp-card-sub">Chega com as Salas (S23).</div>
           </section>
         </div>
       </div>
@@ -291,20 +442,20 @@ export function Photos({
     <div className="stp-page" data-testid="stp-photos">
       <div className="stp-head">
         <div>
-          <h1>Fotos de perfil</h1>
+          <h1>Fotos denunciadas</h1>
           <p>
             {photos.length
-              ? `${photos.length} esperando revisão, as mais antigas primeiro.`
-              : 'Nenhuma foto esperando revisão.'}
+              ? `${photos.length} esperando decisão, as mais antigas primeiro. A foto denunciada por 2 Contas sai do ar até a Staff decidir.`
+              : 'Nenhuma foto denunciada esperando decisão.'}
           </p>
         </div>
       </div>
       {photos.length === 0 ? (
         <div className="stp-card">
           <div className="stp-empty" data-testid="stp-photos-empty">
-            <ClockIcon size={20} aria-hidden="true" />
+            <ClockIcon size={22} aria-hidden="true" />
             <b>Fila de fotos em dia</b>
-            <span>As fotos novas aparecem aqui, com 24 h de prazo cada.</span>
+            <span>As fotos denunciadas aparecem aqui, com até 24 h de prazo cada.</span>
           </div>
         </div>
       ) : (
@@ -313,22 +464,14 @@ export function Photos({
             const deadline = deadlineOf(photo.sentAt, nowMs);
             return (
               <article className="stp-card stp-photo" key={photo.id} data-testid="stp-photo">
-                <div
-                  className="stp-photo-art"
-                  aria-hidden="true"
-                  style={{
-                    background: `linear-gradient(135deg, oklch(0.55 0.13 ${photo.hue}), oklch(0.38 0.1 ${(photo.hue + 40) % 360}))`,
-                  }}
-                >
+                <div className="stp-photo-art" aria-hidden="true">
                   {photo.account.slice(0, 1).toUpperCase()}
                 </div>
                 <div className="stp-photo-meta">
-                  <span className="stp-row-main">
-                    <span className="stp-row-title" style={{ display: 'block' }}>
-                      {photo.account}
-                    </span>
-                    <span className="stp-row-sub stp-mono" style={{ display: 'block' }}>
-                      {photo.id}
+                  <span>
+                    <span className="stp-row-title">{photo.account}</span>
+                    <span className="stp-row-sub">
+                      <span className="stp-mono">{photo.id}</span> · denunciada por 2 Contas
                     </span>
                   </span>
                   <Eta deadline={deadline} />
@@ -340,7 +483,7 @@ export function Photos({
                     data-kind="danger"
                     onClick={() => onDecide(photo, false)}
                   >
-                    <XIcon size={14} aria-hidden="true" /> Recusar
+                    <XIcon size={14} aria-hidden="true" /> Remover
                   </button>
                   <button
                     type="button"
@@ -348,7 +491,7 @@ export function Photos({
                     data-kind="primary"
                     onClick={() => onDecide(photo, true)}
                   >
-                    <CheckIcon size={14} aria-hidden="true" /> Aprovar
+                    <CheckIcon size={14} aria-hidden="true" /> Manter
                   </button>
                 </div>
               </article>
@@ -382,7 +525,7 @@ const STUBS: Record<
   auditoria: {
     title: 'Auditoria',
     icon: ClockIcon,
-    text: 'Quem fez o quê no painel, com filtro por pessoa e por ação.',
+    text: 'Quem fez o quê no painel, numa linha do tempo com filtro por pessoa e por ação.',
   },
 };
 
@@ -398,7 +541,7 @@ export function Stub({ view }: { view: keyof typeof STUBS }) {
       </div>
       <div className="stp-card">
         <div className="stp-empty">
-          <Icon size={20} aria-hidden="true" />
+          <Icon size={22} aria-hidden="true" />
           <b>Esta tela migra depois da direção aprovada</b>
           <span>{stub.text}</span>
         </div>

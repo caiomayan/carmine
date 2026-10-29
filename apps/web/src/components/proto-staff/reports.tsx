@@ -11,7 +11,7 @@ import {
   XIcon,
 } from 'lucide-react';
 import { Dialog } from 'radix-ui';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import {
   CATEGORY_LABEL,
   type Deadline,
@@ -20,6 +20,8 @@ import {
   type ReportCategory,
   type ReportStatus,
   STATUS_LABEL,
+  stamp,
+  timelineOf,
 } from './data';
 
 const PAGE_SIZE = 8;
@@ -27,9 +29,9 @@ const PAGE_SIZE = 8;
 type SortKey = 'id' | 'reported' | 'category' | 'server' | 'status' | 'deadline';
 type StatusFilter = ReportStatus | 'all';
 
-const STATUS_TONE: Record<ReportStatus, 'danger' | 'accent' | 'ok'> = {
+const STATUS_TONE: Record<ReportStatus, 'danger' | 'warn' | 'ok'> = {
   open: 'danger',
-  review: 'accent',
+  review: 'warn',
   done: 'ok',
 };
 const STATUS_ORDER: Record<ReportStatus, number> = { open: 0, review: 1, done: 2 };
@@ -39,9 +41,23 @@ function liveDeadline(report: Report, nowMs: number): Deadline | null {
   return report.status === 'done' ? null : deadlineOf(report.createdAt, nowMs);
 }
 
+/** O detalhe fica ao lado da tabela em tela larga e sobe como folha nas outras. */
+const WIDE = '(min-width: 1281px)';
+const subscribeWide = (callback: () => void) => {
+  const query = window.matchMedia(WIDE);
+  query.addEventListener('change', callback);
+  return () => query.removeEventListener('change', callback);
+};
+const useWide = () =>
+  useSyncExternalStore(
+    subscribeWide,
+    () => window.matchMedia(WIDE).matches,
+    () => false,
+  );
+
 export function StatusTag({ status }: { status: ReportStatus }) {
   return (
-    <span className="stp-tag" data-tone={STATUS_TONE[status]}>
+    <span className="stp-dot" data-tone={STATUS_TONE[status]}>
       {STATUS_LABEL[status]}
     </span>
   );
@@ -58,9 +74,101 @@ export function Eta({ deadline }: { deadline: Deadline | null }) {
     <span className="stp-eta" data-tone={deadline.tone}>
       {deadline.label}
       <span className="stp-bar" aria-hidden="true">
-        <i style={{ width: `${Math.round(deadline.spent * 100)}%` }} />
+        <i style={{ width: `${Math.round((1 - deadline.spent) * 100)}%` }} />
       </span>
     </span>
+  );
+}
+
+function Detail({
+  report,
+  nowMs,
+  onStatus,
+  onClose,
+  as: Title,
+}: {
+  report: Report;
+  nowMs: number;
+  onStatus: (id: string, status: ReportStatus, message: string) => void;
+  onClose: () => void;
+  as: typeof Dialog.Title | 'h2';
+}) {
+  return (
+    <>
+      <div className="stp-detail-top">
+        <Title className="stp-detail-title" style={{ margin: 0, fontSize: 16, fontWeight: 700 }}>
+          <span className="stp-mono">{report.id}</span> · {report.reported}
+        </Title>
+        <button type="button" className="stp-round" aria-label="Fechar o detalhe" onClick={onClose}>
+          <XIcon size={16} aria-hidden="true" />
+        </button>
+      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+        <StatusTag status={report.status} />
+        <span className="stp-dot">{CATEGORY_LABEL[report.category]}</span>
+      </div>
+      <dl className="stp-dl">
+        <dt>SteamID</dt>
+        <dd className="stp-mono">{report.steamId}</dd>
+        <dt>Denunciante</dt>
+        <dd>{report.reporter}</dd>
+        <dt>Servidor</dt>
+        <dd>{report.server}</dd>
+        <dt>Prazo</dt>
+        <dd>
+          <Eta deadline={liveDeadline(report, nowMs)} />
+        </dd>
+      </dl>
+      <p className="stp-quote">{report.note}</p>
+      <ol className="stp-timeline" aria-label="Linha do tempo da denúncia">
+        {timelineOf(report).map((event) => (
+          <li className="stp-tl" key={event.title} data-pending={event.done ? undefined : ''}>
+            <time>{event.at ? stamp(event.at) : ''}</time>
+            <div>
+              <b>{event.title}</b>
+              <span>{event.sub}</span>
+            </div>
+          </li>
+        ))}
+      </ol>
+      <div className="stp-detail-foot">
+        {report.status === 'open' ? (
+          <button
+            type="button"
+            className="stp-btn"
+            onClick={() => onStatus(report.id, 'review', `${report.id} em análise`)}
+          >
+            Assumir
+          </button>
+        ) : null}
+        {report.status !== 'done' ? (
+          <>
+            <button
+              type="button"
+              className="stp-btn"
+              data-kind="primary"
+              onClick={() => {
+                onStatus(report.id, 'done', `${report.id} resolvida`);
+                onClose();
+              }}
+            >
+              Resolver
+            </button>
+            <button type="button" className="stp-btn" data-kind="danger" disabled>
+              <GavelIcon size={14} aria-hidden="true" /> Punir
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className="stp-btn"
+            onClick={() => onStatus(report.id, 'open', `${report.id} reaberta`)}
+          >
+            Reabrir
+          </button>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -80,6 +188,7 @@ export function Reports({
   /** O painel (`.stp`): os diálogos montam dentro dele para herdar o tema. */
   portal: HTMLElement | null;
 }) {
+  const wide = useWide();
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [category, setCategory] = useState<ReportCategory | 'all'>('all');
@@ -145,7 +254,25 @@ export function Reports({
     reset();
   };
   const selected = reports.find((r) => r.id === openId) ?? null;
-  const filtering = query !== '' || status !== 'all' || category !== 'all' || urgentOnly;
+  const filtering = query !== '' || category !== 'all' || urgentOnly;
+  const close = () => setOpenId(null);
+
+  const tab = (value: StatusFilter, label: string, count: number) => (
+    <button
+      key={value}
+      type="button"
+      className="stp-pilltab"
+      aria-pressed={status === value}
+      data-testid={`stp-tab-${value}`}
+      onClick={() => {
+        setStatus(value);
+        reset();
+      }}
+    >
+      {label}
+      <small>{count}</small>
+    </button>
+  );
 
   const column = (key: SortKey, label: string) => {
     const active = sort.key === key;
@@ -179,31 +306,41 @@ export function Reports({
         </div>
       </div>
 
-      <div className="stp-stats" data-cols="4">
-        <div className="stp-stat">
-          <span className="stp-stat-label">Abertas</span>
-          <span className="stp-stat-value">{counts.open}</span>
-        </div>
-        <div className="stp-stat">
-          <span className="stp-stat-label">Em análise</span>
-          <span className="stp-stat-value">{counts.review}</span>
-        </div>
-        <div className="stp-stat">
-          <span className="stp-stat-label">Vencem em menos de 3 h</span>
-          <span className="stp-stat-value">{counts.soon}</span>
-          <span className="stp-stat-note" data-tone={counts.soon ? 'danger' : undefined}>
-            {counts.soon ? 'fila prioritária' : 'tudo no prazo'}
-          </span>
-        </div>
-        <div className="stp-stat">
-          <span className="stp-stat-label">Resolvidas</span>
-          <span className="stp-stat-value">{counts.done}</span>
-        </div>
+      <div className="stp-grid" data-cols="3">
+        <section className="stp-card" aria-label="Esperando">
+          <div className="stp-card-sub" style={{ margin: 0 }}>
+            Esperando revisão
+          </div>
+          <div className="stp-big">{counts.open + counts.review}</div>
+        </section>
+        <section
+          className="stp-card"
+          aria-label="Vencem em menos de 3 horas"
+          data-hl={counts.soon ? '' : undefined}
+        >
+          <div className="stp-card-sub" style={{ margin: 0 }}>
+            Vencem em menos de 3 h
+          </div>
+          <div className="stp-big">{counts.soon}</div>
+        </section>
+        <section className="stp-card" aria-label="Resolvidas">
+          <div className="stp-card-sub" style={{ margin: 0 }}>
+            Resolvidas
+          </div>
+          <div className="stp-big">{counts.done}</div>
+        </section>
       </div>
 
       <search className="stp-toolbar" aria-label="Filtrar denúncias">
+        <fieldset className="stp-tabs-pill">
+          <legend className="stp-sr">Status</legend>
+          {tab('all', 'Todas', reports.length)}
+          {tab('open', 'Abertas', counts.open)}
+          {tab('review', 'Em análise', counts.review)}
+          {tab('done', 'Resolvidas', counts.done)}
+        </fieldset>
         <label className="stp-field" data-grow>
-          <SearchIcon size={14} aria-hidden="true" />
+          <SearchIcon size={15} aria-hidden="true" />
           <span className="stp-sr">Buscar denúncia, jogador ou servidor</span>
           <input
             type="search"
@@ -215,22 +352,6 @@ export function Reports({
             }}
             data-testid="stp-query"
           />
-        </label>
-        <label className="stp-field">
-          <span className="stp-sr">Status</span>
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value as StatusFilter);
-              reset();
-            }}
-            data-testid="stp-status"
-          >
-            <option value="all">Todos os status</option>
-            <option value="open">Abertas</option>
-            <option value="review">Em análise</option>
-            <option value="done">Resolvidas</option>
-          </select>
         </label>
         <label className="stp-field">
           <span className="stp-sr">Categoria</span>
@@ -283,70 +404,68 @@ export function Reports({
             className="stp-chip"
             onClick={() => {
               setQuery('');
-              setStatus('all');
               setCategory('all');
               onUrgentOnly(false);
               reset();
             }}
           >
-            <XIcon size={13} aria-hidden="true" /> Limpar
+            <XIcon size={14} aria-hidden="true" /> Limpar
           </button>
         ) : null}
       </search>
 
-      <div className="stp-card">
-        <div className="stp-table-wrap">
-          <table className="stp-table" data-testid="stp-table">
-            <caption className="stp-sr">Denúncias, ordenáveis pelo cabeçalho</caption>
-            <thead>
-              <tr>
-                {column('id', 'Denúncia')}
-                {column('reported', 'Denunciado')}
-                {column('category', 'Categoria')}
-                {column('server', 'Servidor')}
-                {column('status', 'Status')}
-                {column('deadline', 'Prazo')}
-              </tr>
-            </thead>
-            <tbody>
-              {slice.map((r) => (
-                <tr
-                  key={r.id}
-                  aria-selected={openId === r.id}
-                  onClick={() => setOpenId(r.id)}
-                  data-testid="stp-row"
-                >
-                  <td className="stp-mono">
-                    <button
-                      type="button"
-                      className="stp-cell-link stp-mono"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenId(r.id);
-                      }}
-                    >
-                      {r.id}
-                    </button>
-                  </td>
-                  <td>{r.reported}</td>
-                  <td>{CATEGORY_LABEL[r.category]}</td>
-                  <td>{r.server}</td>
-                  <td>
-                    <StatusTag status={r.status} />
-                  </td>
-                  <td>
-                    <Eta deadline={liveDeadline(r, nowMs)} />
-                  </td>
+      <div className="stp-layout" data-detail={wide && selected ? '' : undefined}>
+        <div className="stp-card stp-table-card">
+          <div className="stp-table-wrap">
+            <table className="stp-table" data-testid="stp-table">
+              <caption className="stp-sr">Denúncias, ordenáveis pelo cabeçalho</caption>
+              <thead>
+                <tr>
+                  {column('id', 'Denúncia')}
+                  {column('reported', 'Denunciado')}
+                  {column('category', 'Categoria')}
+                  {column('server', 'Servidor')}
+                  {column('status', 'Status')}
+                  {column('deadline', 'Prazo')}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {slice.map((r) => (
+                  <tr
+                    key={r.id}
+                    aria-selected={openId === r.id}
+                    onClick={() => setOpenId(r.id)}
+                    data-testid="stp-row"
+                  >
+                    <td>
+                      <button
+                        type="button"
+                        className="stp-cell-link stp-mono"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenId(r.id);
+                        }}
+                      >
+                        {r.id}
+                      </button>
+                    </td>
+                    <td>{r.reported}</td>
+                    <td>{CATEGORY_LABEL[r.category]}</td>
+                    <td>{r.server}</td>
+                    <td>
+                      <StatusTag status={r.status} />
+                    </td>
+                    <td>
+                      <Eta deadline={liveDeadline(r, nowMs)} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        <ul className="stp-cards stp-list" data-testid="stp-cards">
-          {slice.map((r) => {
-            const d = liveDeadline(r, nowMs);
-            return (
+          <ul className="stp-cards stp-list" data-testid="stp-cards" style={{ margin: 0 }}>
+            {slice.map((r) => (
               <li key={r.id}>
                 <button type="button" className="stp-card-row" onClick={() => setOpenId(r.id)}>
                   <span className="stp-card-row-top">
@@ -358,128 +477,82 @@ export function Reports({
                     <span>{CATEGORY_LABEL[r.category]}</span>
                     <span>{r.server}</span>
                   </span>
-                  <Eta deadline={d} />
+                  <Eta deadline={liveDeadline(r, nowMs)} />
                 </button>
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
 
-        {rows.length === 0 ? (
-          <div className="stp-empty" data-testid="stp-empty">
-            <b>Nenhuma denúncia com esses filtros</b>
-            <span>Tire um filtro ou limpe a busca para ver a fila inteira.</span>
-          </div>
-        ) : null}
+          {rows.length === 0 ? (
+            <div className="stp-empty" data-testid="stp-empty">
+              <b>Nenhuma denúncia com esses filtros</b>
+              <span>Tire um filtro ou limpe a busca para ver a fila inteira.</span>
+            </div>
+          ) : null}
 
-        <div className="stp-pager">
-          <span data-testid="stp-range">
-            {from}–{to} de {rows.length}
-          </span>
-          <div>
-            <button
-              type="button"
-              className="stp-btn"
-              disabled={current === 0}
-              onClick={() => setPage(current - 1)}
-              aria-label="Página anterior"
-            >
-              <ChevronLeftIcon size={14} aria-hidden="true" />
-            </button>
-            <span style={{ alignSelf: 'center' }} className="num">
-              {current + 1} / {pages}
+          <div className="stp-pager">
+            <span data-testid="stp-range">
+              {from}–{to} de {rows.length}
             </span>
-            <button
-              type="button"
-              className="stp-btn"
-              disabled={current >= pages - 1}
-              onClick={() => setPage(current + 1)}
-              aria-label="Próxima página"
-            >
-              <ChevronRightIcon size={14} aria-hidden="true" />
-            </button>
+            <div>
+              <button
+                type="button"
+                className="stp-round"
+                disabled={current === 0}
+                onClick={() => setPage(current - 1)}
+                aria-label="Página anterior"
+              >
+                <ChevronLeftIcon size={15} aria-hidden="true" />
+              </button>
+              <span>
+                {current + 1} / {pages}
+              </span>
+              <button
+                type="button"
+                className="stp-round"
+                disabled={current >= pages - 1}
+                onClick={() => setPage(current + 1)}
+                aria-label="Próxima página"
+              >
+                <ChevronRightIcon size={15} aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
+
+        {wide && selected ? (
+          <aside
+            className="stp-card stp-detail"
+            data-testid="stp-detail"
+            aria-label="Detalhe da denúncia"
+          >
+            <Detail report={selected} nowMs={nowMs} onStatus={onStatus} onClose={close} as="h2" />
+          </aside>
+        ) : null}
       </div>
 
-      <Dialog.Root open={selected !== null} onOpenChange={(open) => !open && setOpenId(null)}>
-        <Dialog.Portal container={portal}>
-          <Dialog.Overlay className="stp-overlay" />
-          {selected ? (
-            <Dialog.Content className="stp-drawer" data-testid="stp-detail">
-              <div className="stp-card-head" style={{ minHeight: 48 }}>
-                <Dialog.Title style={{ margin: 0, fontSize: 14, fontWeight: 600 }}>
-                  <span className="stp-mono">{selected.id}</span> · {selected.reported}
-                </Dialog.Title>
-                <Dialog.Close className="stp-icon-btn" aria-label="Fechar">
-                  <XIcon size={16} aria-hidden="true" />
-                </Dialog.Close>
-              </div>
-              <Dialog.Description className="stp-sr">
-                Detalhes da denúncia e ações da Staff.
-              </Dialog.Description>
-              <div className="stp-drawer-body">
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  <StatusTag status={selected.status} />
-                  <span className="stp-tag">{CATEGORY_LABEL[selected.category]}</span>
-                </div>
-                <dl className="stp-dl">
-                  <dt>Denunciado</dt>
-                  <dd>{selected.reported}</dd>
-                  <dt>SteamID</dt>
-                  <dd className="stp-mono">{selected.steamId}</dd>
-                  <dt>Denunciante</dt>
-                  <dd>{selected.reporter}</dd>
-                  <dt>Servidor</dt>
-                  <dd>{selected.server}</dd>
-                  <dt>Prazo</dt>
-                  <dd>
-                    <Eta deadline={liveDeadline(selected, nowMs)} />
-                  </dd>
-                </dl>
-                <p className="stp-quote">{selected.note}</p>
-              </div>
-              <div className="stp-drawer-foot">
-                {selected.status === 'open' ? (
-                  <button
-                    type="button"
-                    className="stp-btn"
-                    onClick={() => onStatus(selected.id, 'review', `${selected.id} em análise`)}
-                  >
-                    Assumir
-                  </button>
-                ) : null}
-                {selected.status !== 'done' ? (
-                  <>
-                    <button
-                      type="button"
-                      className="stp-btn"
-                      data-kind="primary"
-                      onClick={() => {
-                        onStatus(selected.id, 'done', `${selected.id} resolvida`);
-                        setOpenId(null);
-                      }}
-                    >
-                      Resolver
-                    </button>
-                    <button type="button" className="stp-btn" data-kind="danger" disabled>
-                      <GavelIcon size={14} aria-hidden="true" /> Punir
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    className="stp-btn"
-                    onClick={() => onStatus(selected.id, 'open', `${selected.id} reaberta`)}
-                  >
-                    Reabrir
-                  </button>
-                )}
-              </div>
-            </Dialog.Content>
-          ) : null}
-        </Dialog.Portal>
-      </Dialog.Root>
+      {!wide ? (
+        <Dialog.Root open={selected !== null} onOpenChange={(open) => !open && close()}>
+          <Dialog.Portal container={portal}>
+            <Dialog.Overlay className="stp-overlay" />
+            {selected ? (
+              <Dialog.Content
+                className="stp-drawer stp-detail"
+                data-testid="stp-detail"
+                aria-describedby={undefined}
+              >
+                <Detail
+                  report={selected}
+                  nowMs={nowMs}
+                  onStatus={onStatus}
+                  onClose={close}
+                  as={Dialog.Title}
+                />
+              </Dialog.Content>
+            ) : null}
+          </Dialog.Portal>
+        </Dialog.Root>
+      ) : null}
     </div>
   );
 }

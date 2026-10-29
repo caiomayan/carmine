@@ -560,18 +560,19 @@ Um servidor **5v5 público**, aberto como o Retake e o DM: entra quem quiser, se
 
 ### S25 · Painel da Staff
 
-O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**: um dashboard administrativo **moderno, bonito e completo**, fora da identidade P&B da plataforma. Pode andar **em paralelo** às fatias de jogo, porque é só frontend sobre a API de hoje.
+O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**: um dashboard administrativo **moderno, bonito e completo**, com a identidade do Carmine. Pode andar **em paralelo** às fatias de jogo, porque é só frontend sobre a API de hoje.
 
 **Onde fica**
 - Um app próprio no monorepo (`apps/staff`, Next) em **`staff.stcarmine.com`**. Na homologação, **`staff-dev.stcarmine.com`**. Fala com a mesma API.
 - **Login com duas travas:** a mesma sessão da Steam (o cookie vale nos dois subdomínios) e, na frente, o **Cloudflare Access** com código por e-mail, só para os e-mails da Staff.
 - As 7 telas de hoje (`/staff`, `/staff/denuncias`, `/staff/fotos`, `/staff/contas/...`, `/staff/pagamentos`, `/staff/servidores`, `/staff/auditoria`) são **migradas** e **removidas do site**. `stcarmine.com/staff` redireciona para o painel. O site deixa de carregar qualquer código da Staff.
 
-**Visual** (a direção é do maestro, e o dono valida na homologação)
-- Linha de Linear, Vercel e Supabase: neutro, preciso e denso, em claro e escuro.
-- Barra lateral recolhível, busca e comandos por `Ctrl+K`, números grandes no topo de cada tela, tabelas com filtro, ordenação e paginação, e gráficos onde ajudam.
-- O Carmine aparece só como uma marca pequena no canto.
-- Antes de migrar as telas, o protótipo da direção vai numa rota de galeria da homologação.
+**Visual** (a direção é do maestro e do dono; o dono valida na homologação)
+- A **estrutura e os gráficos** vêm das referências do dono: o painel dentro de uma moldura arredondada; trilho de ícones em cápsulas flutuantes, recolhível (no celular vira uma barra embaixo); cartões de canto grande, cada um com um botão redondo ↗ que leva à tela; hero no topo do Início (arte de mapa escurecida e dessaturada, saudação e chips por Modo); números grandes com a parte decimal apagada; sparklines; linha fina sobre hastes verticais finas ou área em degradê; tabela densa com abas em cápsula e o detalhe ao lado com a linha do tempo.
+- A **identidade é a do Carmine**, a mesma do site: tokens e tipografia de `apps/web`, marca P&B (o ativo e o destaque são o preenchido invertido, preto sobre branco e o contrário), fundos em vez de bordas, transições sutis, claro e escuro. Cor só de contexto (status em pontos, CT e TR, mapas); nenhuma cor de acento de marca; carmim só em detalhe mínimo.
+- Busca e comandos por `Ctrl+K`, números grandes no topo de cada tela, tabelas com filtro, ordenação e paginação.
+- O Carmine aparece só como uma marca pequena no canto do trilho.
+- Antes de migrar as telas, o protótipo da direção vai numa rota de galeria da homologação (`/dev/staff`).
 
 **Início**
 - Cartões com:

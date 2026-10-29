@@ -8,13 +8,13 @@ export const DAY_MS = 24 * 60 * 60 * 1000;
 export const MIN_MS = 60 * 1000;
 
 export type ReportStatus = 'open' | 'review' | 'done';
-export type ReportCategory = 'cheat' | 'chat' | 'grief' | 'profile' | 'other';
+export type ReportCategory = 'cheat' | 'voice' | 'chat' | 'grief' | 'other';
 
 export const CATEGORY_LABEL: Record<ReportCategory, string> = {
-  cheat: 'Trapaça',
-  chat: 'Ofensa no chat',
-  grief: 'Griefing',
-  profile: 'Nome ou foto',
+  cheat: 'Cheat',
+  voice: 'Voz ofensiva',
+  chat: 'Chat ofensivo',
+  grief: 'Antijogo',
   other: 'Outro',
 };
 
@@ -35,6 +35,9 @@ export type Report = {
   createdAt: number;
   note: string;
   steamId: string;
+  /** Quando a Staff assumiu e quando resolveu (ms), se já aconteceu. */
+  assumedAt?: number;
+  resolvedAt?: number;
 };
 
 export type Photo = {
@@ -73,15 +76,7 @@ const NAMES = [
 ];
 
 const SERVERS = ['Retake #1', 'Retake #2', 'Retake #3', 'Deathmatch #1'];
-const CATEGORIES: ReportCategory[] = [
-  'cheat',
-  'chat',
-  'grief',
-  'profile',
-  'other',
-  'chat',
-  'cheat',
-];
+const CATEGORIES: ReportCategory[] = ['cheat', 'chat', 'grief', 'voice', 'other', 'chat', 'cheat'];
 
 const NOTES: Record<ReportCategory, string> = {
   cheat:
@@ -89,7 +84,7 @@ const NOTES: Record<ReportCategory, string> = {
   chat: 'Xingamentos e ofensas dirigidas a um jogador do time por vários minutos no chat de texto.',
   grief:
     'Atirou nos próprios colegas e bloqueou a entrada do bomb site de propósito, round após round.',
-  profile: 'O nome de jogador contém um insulto e a foto de perfil tem conteúdo impróprio.',
+  voice: 'Ofensas dirigidas a um jogador do time pelo chat de voz por vários minutos.',
   other: 'O jogador diz que foi expulso sem motivo e pede a revisão da Punição.',
 };
 
@@ -118,6 +113,7 @@ export function makeReports(nowMs: number): Report[] {
     const category = CATEGORIES[index % CATEGORIES.length] as ReportCategory;
     const done = age > 1500;
     const status: ReportStatus = done ? 'done' : rand() < 0.28 ? 'review' : 'open';
+    const createdAt = nowMs - age * MIN_MS;
     return {
       id: `R-${2041 + index}`,
       reported: NAMES[Math.floor(rand() * NAMES.length)] as string,
@@ -125,15 +121,17 @@ export function makeReports(nowMs: number): Report[] {
       category,
       server: SERVERS[index % SERVERS.length] as string,
       status,
-      createdAt: nowMs - age * MIN_MS,
+      createdAt,
       note: NOTES[category],
       steamId: fakeSteamId(index + 3),
+      ...(status !== 'open' ? { assumedAt: createdAt + Math.min(age * 0.4, 360) * MIN_MS } : {}),
+      ...(status === 'done' ? { resolvedAt: createdAt + age * 0.8 * MIN_MS } : {}),
     };
   });
 }
 
 export function makePhotos(nowMs: number): Photo[] {
-  const ages = [1260, 760, 410, 190, 65, 22];
+  const ages = [1140, 760, 410, 190, 65, 22];
   const accounts = ['Fe.Rocha', 'ju_tr', 'Samu', 'BiaSmoke', 'davi', 'Carlinhos'];
   return ages.map((age, index) => ({
     id: `F-${512 + index}`,
@@ -212,3 +210,92 @@ export function deadlineOf(createdAt: number, nowMs: number): Deadline {
 
 export const brl = (cents: number) =>
   (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+export type TimelineEvent = { at: number | null; title: string; sub: string; done: boolean };
+
+/** Os marcos de uma denúncia: o que já aconteceu (bolinha cheia) e o prazo que falta (bolinha vazada). */
+export function timelineOf(report: Report): TimelineEvent[] {
+  const events: TimelineEvent[] = [
+    {
+      at: report.createdAt,
+      title: 'Denúncia recebida',
+      sub: `Enviada por ${report.reporter} · ${report.server}`,
+      done: true,
+    },
+    {
+      at: report.createdAt + MIN_MS,
+      title: 'Entrou na fila de revisão',
+      sub: 'O prazo de 24 h começa a correr',
+      done: true,
+    },
+  ];
+  if (report.assumedAt) {
+    events.push({
+      at: report.assumedAt,
+      title: 'Assumida pela Staff',
+      sub: 'Mara Lopes · Moderadora',
+      done: true,
+    });
+  }
+  if (report.resolvedAt) {
+    events.push({
+      at: report.resolvedAt,
+      title: 'Resolvida',
+      sub: 'Sem Punição pendente',
+      done: true,
+    });
+  } else {
+    events.push({
+      at: report.createdAt + DAY_MS,
+      title: 'Fim do prazo de revisão',
+      sub: '24 h depois de recebida',
+      done: false,
+    });
+  }
+  return events;
+}
+
+const STAMP = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  day: '2-digit',
+  month: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+export const stamp = (ms: number) => STAMP.format(ms).replace(',', '');
+
+const HOUR = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: 'America/Sao_Paulo',
+  hour: '2-digit',
+  hourCycle: 'h23',
+});
+/** "Bom dia", "Boa tarde" ou "Boa noite" no horário de Brasília. */
+export function greeting(ms: number): string {
+  const hour = Number(HOUR.format(ms));
+  return hour < 5 ? 'Boa noite' : hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+}
+
+export type ModeId = 'all' | 'retake' | 'dm' | 'rooms';
+export const MODES: { id: ModeId; label: string }[] = [
+  { id: 'all', label: 'Todos' },
+  { id: 'retake', label: 'Retake' },
+  { id: 'dm', label: 'Deathmatch' },
+  { id: 'rooms', label: 'Salas' },
+];
+
+export const SERVER_LIST = [
+  { name: 'Retake #1', mode: 'retake', up: true },
+  { name: 'Retake #2', mode: 'retake', up: true },
+  { name: 'Retake #3', mode: 'retake', up: false },
+  { name: 'Retake #4', mode: 'retake', up: true },
+  { name: 'Deathmatch #1', mode: 'dm', up: true },
+  { name: 'Deathmatch #2', mode: 'dm', up: true },
+] as const;
+
+/** Jogadores online por Modo: a série das 24 h do Modo e o número de agora (as Salas só existem com a S23). */
+export function onlineFor(mode: ModeId): { now: number; series: number[] } | null {
+  if (mode === 'rooms') return null;
+  const factor = mode === 'all' ? 1 : mode === 'retake' ? 0.64 : 0.36;
+  const series = ONLINE_24H.map((value) => Math.round(value * factor));
+  return { now: series[series.length - 1] as number, series };
+}
