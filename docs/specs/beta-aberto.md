@@ -253,6 +253,14 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
 - A Staff remove uma foto escolhendo ou não um bloqueio, e o bloqueio dura os dias escolhidos.
 - Na homologação, tudo funciona com o R2 de mentira que já existe.
 
+**Como ficou** (decisões da implementação; o registro completo está no [ADR 0025](../adr/0025-foto-de-perfil-no-beta-historico-e-moderacao-por-fila.md), que substitui o 0022 nos pontos acima)
+- O histórico tem **5 fotos no total, contando a que está no ar** (marcada). Os arquivos delas ficam no bucket público; escolher é só trocar o estado. "Apagar" e a 6ª foto mandam os arquivos para a fila de remoção, e a linha fica (sem arquivos) até os 90 dias, para apagar não zerar os limites de envio.
+- Quem tem Punição ativa ou o envio bloqueado depois de uma remoção não escolhe do histórico (voltar à Steam vale sempre).
+- O limite de 30 min é checado antes do intervalo de 10 s; o estado da foto (`GET /api/me/avatar`) não inclui o intervalo, que passa sozinho.
+- Quem denuncia muito o que a Staff mantém perde peso com **3** denúncias mantidas em **90 dias** e mais mantidas do que confirmadas (números nossos; a spec não os fixa). Só vão para o fim da fila as fotos cujas denúncias abertas são todas de Contas assim.
+- A Staff também remove e decide fotos que estão só no histórico. `blockDays` ausente na API não bloqueia; a tela sugere 7.
+- Migração `0019` (`account_avatars.deleted_at`). O estado `suspended` deixa de ser criado.
+
 ---
 
 ### S19 · Addon dos servidores abertos
