@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountsService } from '../src/accounts/accounts.service.js';
 import { AvatarRefresher } from '../src/accounts/avatar-refresher.js';
-import { accounts } from '../src/database/schema.js';
+import { accounts, planRevocations, vipPeriods } from '../src/database/schema.js';
 import { runVipCli } from '../src/vip/vip.cli-commands.js';
 import { NoVipToRevoke, VipPeriods } from '../src/vip/vip-periods.js';
 import { steamIdFor } from './support/app.js';
@@ -61,6 +61,100 @@ describe('Períodos VIP', () => {
     expect((await vip.statusOf(id, now)).endsAt).toEqual(new Date(now.getTime() + 60 * DAY_MS));
   });
 
+  describe('planos Capo e Padrinho (S20)', () => {
+    const staff = { actorSteamId: steamIdFor(901), reason: 'conferência' };
+    const now = new Date('2026-10-11T12:00:00Z');
+    const at = (days: number) => new Date(now.getTime() + days * DAY_MS);
+
+    const periodsOf = async (accountId: string) =>
+      (await postgres.db.select().from(vipPeriods).where(eq(vipPeriods.accountId, accountId)))
+        .map((p) => [p.plan, p.test, p.startsAt.getTime(), p.endsAt.getTime(), p.paymentId])
+        .sort((a, b) => Number(a[2]) - Number(b[2]));
+
+    it('as linhas de antes da S20 são Capo, e uma Conta sem nada não tem plano', async () => {
+      const { id } = await newAccount();
+      expect(await vip.planStatusOf(id, now)).toMatchObject({ active: false, plan: null });
+      await vip.grant(id, 30, now);
+      expect(await vip.planStatusOf(id, now)).toMatchObject({
+        active: true,
+        plan: 'capo',
+        test: false,
+      });
+    });
+
+    it('Padrinho sobre Capo: o Padrinho começa na hora e os dias do Capo voltam depois', async () => {
+      const { id } = await newAccount();
+      await vip.grant(id, 30, now);
+      await vip.grant(id, 30, at(10), undefined, { plan: 'padrinho' });
+
+      const status = await vip.planStatusOf(id, at(15));
+      expect(status).toMatchObject({ plan: 'padrinho', planEndsAt: at(40), endsAt: at(60) });
+      expect(status.next).toMatchObject({ plan: 'capo', startsAt: at(40), endsAt: at(60) });
+      expect((await vip.planStatusOf(id, at(45))).plan).toBe('capo');
+      expect(await periodsOf(id)).toEqual([
+        ['capo', false, now.getTime(), at(10).getTime(), null],
+        ['padrinho', false, at(10).getTime(), at(40).getTime(), null],
+        ['capo', false, at(40).getTime(), at(60).getTime(), null],
+      ]);
+    });
+
+    it('Capo sobre Padrinho entra na fila e soma aos dias de Capo que esperam', async () => {
+      const { id } = await newAccount();
+      await vip.grant(id, 30, now, undefined, { plan: 'padrinho' });
+      await vip.grant(id, 30, at(5));
+      await vip.grant(id, 30, at(8));
+
+      expect((await vip.planStatusOf(id, at(10))).next).toMatchObject({
+        plan: 'capo',
+        endsAt: at(90),
+      });
+      expect((await vip.planStatusOf(id, at(10))).endsAt).toEqual(at(90));
+    });
+
+    it('a compra de teste leva a marca de teste, e o jogo de antes (statusOf) não vê diferença', async () => {
+      const { id } = await newAccount();
+      await vip.grant(id, 30, now, undefined, { plan: 'padrinho', test: true });
+
+      expect(await vip.planStatusOf(id, now)).toMatchObject({ plan: 'padrinho', test: true });
+      expect(await vip.statusOf(id, now)).toEqual({ active: true, endsAt: at(30), endedAt: null });
+    });
+
+    it('revogar zera o plano e a fila, registra a revogação e o log, e o resultado vale sem a tabela nova', async () => {
+      const { id, steamId } = await newAccount();
+      await vip.grant(id, 30, now);
+      await vip.grant(id, 30, at(10), undefined, { plan: 'padrinho' });
+
+      await vip.revoke(id, staff, at(15));
+
+      expect(await vip.planStatusOf(id, at(16))).toMatchObject({
+        active: false,
+        plan: null,
+        endedAt: at(15),
+      });
+      const recorded = await postgres.db
+        .select()
+        .from(planRevocations)
+        .where(eq(planRevocations.accountId, id));
+      expect(recorded).toEqual([
+        expect.objectContaining({
+          revokedAt: at(15),
+          revokedBySteamId: BigInt(staff.actorSteamId),
+          reason: staff.reason,
+        }),
+      ]);
+      const [logged] = await vip.auditOf(id);
+      expect(logged).toMatchObject({
+        action: 'vip_revoke',
+        targetSteamId: steamId,
+        reason: staff.reason,
+        createdAt: at(15),
+      });
+      // Os Períodos também foram encurtados: quem lê só as linhas (a imagem antiga) vê o mesmo.
+      const remaining = await periodsOf(id);
+      expect(remaining.every(([, , , end]) => Number(end) <= at(15).getTime())).toBe(true);
+    });
+  });
+
   describe('pela Staff, com auditoria', () => {
     const staff = { actorSteamId: steamIdFor(900), reason: 'beta fechado' };
 
@@ -78,6 +172,7 @@ describe('Períodos VIP', () => {
           reason: 'beta fechado',
           details: {
             days: 30,
+            plan: 'capo',
             endsAtBefore: null,
             endsAtAfter: new Date(now.getTime() + 30 * DAY_MS).toISOString(),
           },
