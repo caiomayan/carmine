@@ -32,6 +32,7 @@ public static class HelpMessages
         "!hs: só headshot",
         "!dmg: dano causado",
         "!hud: mensagens na tela",
+        "!hitsound e !hssound: som de acerto e de headshot",
         "!noprimary: sem arma primária",
     ];
 

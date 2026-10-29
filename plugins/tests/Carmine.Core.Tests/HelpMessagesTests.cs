@@ -16,11 +16,11 @@ public class HelpMessagesTests
     }
 
     [Fact]
-    public void O_Deathmatch_lista_hs_dmg_hud_e_noprimary()
+    public void O_Deathmatch_lista_hs_dmg_hud_sons_e_noprimary()
     {
         var lines = HelpMessages.Lines(ReservedSlotsMode.Deathmatch);
 
-        foreach (var command in new[] { "!guns", "!hs", "!dmg", "!hud", "!noprimary" })
+        foreach (var command in new[] { "!guns", "!hs", "!dmg", "!hud", "!hitsound", "!noprimary" })
         {
             Assert.Contains(lines, l => l.StartsWith(command, StringComparison.Ordinal));
         }

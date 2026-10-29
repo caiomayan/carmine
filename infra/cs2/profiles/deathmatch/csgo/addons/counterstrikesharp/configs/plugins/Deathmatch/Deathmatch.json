@@ -97,7 +97,10 @@
       "Sound path": "sounds/buttons/bell1.vsnd_c",
       "Default value": true,
       "Only for VIP": false,
-      "Command Shortcuts": []
+      "Command Shortcuts": [
+        "hssound",
+        "somhs"
+      ]
     },
     "Knife Kill Sound": {
       "Enabled": true,
@@ -111,7 +114,10 @@
       "Sound path": "sounds/ui/csgo_ui_contract_type2.vsnd_c",
       "Default value": true,
       "Only for VIP": false,
-      "Command Shortcuts": []
+      "Command Shortcuts": [
+        "hitsound",
+        "somhit"
+      ]
     },
     "New Mode Sound": {
       "Enabled": true,
