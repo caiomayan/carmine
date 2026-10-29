@@ -53,8 +53,8 @@ describe('rótulos', () => {
 describe('backToPurchase', () => {
   const id = '3b1f5e1c-8d0a-4a39-9a55-0f3a7a1c2b10';
   it('o Pix volta à compra; o cartão volta com o retorno do checkout', () => {
-    expect(backToPurchase(id, 'pix')).toBe(`/vip/compra/${id}`);
-    expect(backToPurchase(id, 'card')).toBe(`/vip/compra/${id}?retorno=cartao`);
+    expect(backToPurchase(id, 'pix')).toBe(`/plans/purchase/${id}`);
+    expect(backToPurchase(id, 'card')).toBe(`/plans/purchase/${id}?retorno=cartao`);
   });
 });
 

@@ -162,7 +162,7 @@ jobs:
             echo "::error::$1 respondeu $code (esperado $2)"; return 1
           }
           ok=0
-          for p in / /healthz /api/health /ranking /entrar /loadout /inventario /api/stats/week /api/activity/recent; do
+          for p in / /healthz /api/health /ranking /login /loadout /inventory /api/stats/week /api/activity/recent; do
             check "$p" 200 || ok=1
           done
           check /pagina-que-nao-existe-smoke 404 || ok=1

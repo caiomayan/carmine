@@ -21,7 +21,7 @@ export const DEFAULT_RETURN_PATH = '/';
  * `indisponivel` (a Steam ou a nossa infraestrutura falhou) e `limite` (tentativas demais em pouco
  * tempo: o rate limit do login redireciona em vez de responder 429, porque é navegação).
  */
-export const LOGIN_ERROR_PATH = '/entrar';
+export const LOGIN_ERROR_PATH = '/login';
 
 export type LoginError = 'cancelado' | 'invalido' | 'indisponivel' | 'limite';
 

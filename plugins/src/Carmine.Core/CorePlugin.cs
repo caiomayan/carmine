@@ -32,7 +32,7 @@ namespace Carmine.Core;
 public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
 {
     public const string WelcomeMessage =
-        "Bem-vindo ao Carmine. Ao jogar você concorda com os termos: stcarmine.com/termos";
+        "Bem-vindo ao Carmine. Ao jogar você concorda com os termos: stcarmine.com/terms";
 
     private readonly CancellationTokenSource _unloading = new();
     /// <summary>Nome de exibição aplicado por slot (só na thread do jogo).</summary>
@@ -119,6 +119,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommandListener("say_team", OnSay, HookMode.Pre);
         AddCommand("css_chat", "!chat off oculta o chat dos outros jogadores; !chat on mostra de novo", OnChatCommand);
         AddCommand("css_vip", "!vip mostra até quando vai o seu VIP", OnVipCommand);
+        AddCommand("css_plan", "!plan é o mesmo que !vip", OnVipCommand);
+        AddCommand("css_plano", "!plano é o mesmo que !vip", OnVipCommand);
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);

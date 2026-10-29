@@ -68,7 +68,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Fade',
         caption: 'Karambit',
         image: IMAGE,
-        href: route(`/inventario/${UID_KNIFE}`),
+        href: route(`/inventory/${UID_KNIFE}`),
         statTrak: false,
       },
       {
@@ -86,7 +86,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Cadeia de Caracteres',
         caption: 'M4A1-S',
         image: IMAGE,
-        href: route(`/inventario/${UID_RIFLE}`),
+        href: route(`/inventory/${UID_RIFLE}`),
         statTrak: true,
       },
       {
@@ -110,7 +110,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Cadeia de Caracteres',
         caption: 'M4A1-S',
         image: IMAGE,
-        href: route(`/inventario/${UID_RIFLE}`),
+        href: route(`/inventory/${UID_RIFLE}`),
         statTrak: true,
       },
       {
@@ -118,7 +118,7 @@ export const SIGNED_IN: HeaderView = {
         title: 'Fade',
         caption: 'Karambit',
         image: IMAGE,
-        href: route(`/inventario/${UID_KNIFE}`),
+        href: route(`/inventory/${UID_KNIFE}`),
         statTrak: false,
       },
     ],

@@ -35,6 +35,7 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 | **S29 · Chat** | Conversa 1 a 1 entre amigos e chat da Sala, num dock | S28 |
 | **S30 · Times** | Times com página, desafios que viram Sala, histórico e confronto direto | S23, S28 |
 | **S31 · Jogo, pacote 2, e servidores no site** | Resumo de fim de mapa, gag e mute curtos, fila com posição, `!profile`; fase do mapa e sugestão de servidor no site | S16 |
+| **S32 · Copiar skins e Loadouts** | Copiar um Item ou o Loadout de outro jogador; crédito para quem é copiado; `!copy` no jogo (v2) | S20 (o sininho, S28) |
 
 ---
 
@@ -160,6 +161,13 @@ As mensagens continuam em português até a internacionalização.
 - Nenhum link interno do site aponta para uma rota antiga.
 - O teste de fumaça do deploy passa com as rotas novas.
 - Cada comando e cada sinônimo da tabela funciona no jogo.
+
+**Como ficou (parte das rotas)**
+- A tabela de redirecionamentos está em `apps/web/src/lib/legacy-routes.ts`, aplicada pelo `next.config.ts` com `statusCode: 301` (o `permanent` do Next responderia 308). As sub-rotas que a tabela não citava também passaram para o inglês: `/inventory/add`, `/inventory/add/<id>` e `/inventory/applicable`.
+- A âncora é a única parte que o servidor não vê: `/regras#recurso` chega em `/rules#recurso` e a página troca para `#appeal` (componente `LegacyAnchors`). No texto legal, o título fixa a âncora com `## Recurso {#appeal}`.
+- Os nomes das rotas no plano de eventos (`inventario`, `entrar`, `vip`...) não mudam, para o histórico do PostHog continuar contínuo; só o caminho que cada um reconhece mudou.
+- Ficam como estão: `/staff/*` (o painel será refeito na S25), `/dev/*` (vitrines internas) e os caminhos `/api/*`.
+- No plugin, `!vip` segue funcionando e ganhou `!plan` e `!plano`; os outros comandos da tabela são das fatias de jogo.
 
 ---
 
@@ -834,6 +842,48 @@ O ECA Digital (art. 21) pede que jogos com chat limitem a interação por padrã
 - Na fila do Retake, a posição atualiza a cada mudança.
 - O cartão de um Retake no round 45/50 diz "Perto de trocar".
 - Um Retake lotado sugere outro com vaga, preferindo o mesmo mapa.
+
+---
+
+### S32 · Copiar skins e Loadouts de outros jogadores
+
+Quem vê uma skin ou um Loadout de que gosta leva para si. As skins são simuladas e o Perfil é público, então **ninguém pode impedir que o copiem**.
+
+**O que se copia**
+- **Um Item:** a skin exata, com o desgaste, o padrão (seed), os stickers nas mesmas posições e o chaveiro. Ele vai para o **Inventário** de quem copiou, respeitando o limite de 300 Itens.
+- **O Loadout inteiro**, dos dois lados, que vira um **Preset** de quem copiou.
+- **A nametag não se copia**: o nome gravado é pessoal, e a arma copiada vem sem nome. O resto vem igual.
+
+**Onde fica o botão Copiar**
+- na vitrine do Loadout no **Perfil** de qualquer um;
+- nos **Loadouts da semana** da Home;
+- no **Inventário** de outra pessoa, quando ele aparece no Perfil.
+
+A página da Partida não mostra Loadouts.
+
+**Limites do plano**
+- **Itens exclusivos** (agentes, music kits, StatTrak): quem é grátis copia, mas eles chegam com o **cadeado**, como no catálogo. Aparecem, mas só equipam com Capo ou Padrinho. O resto do Loadout funciona.
+- **Copiar um Loadout no grátis**, que tem só 1 Preset, **substitui o Loadout** depois de uma confirmação: `Seu Loadout atual vai ser trocado.`
+- **Com plano**, nasce um **Preset novo** chamado `Loadout de <nome>`. Com o limite de Presets cheio, a pessoa escolhe qual trocar.
+
+**Crédito para quem é copiado**
+- O Perfil mostra `Loadout copiado 12 vezes`.
+- O dono recebe no sininho (S28) `Fulano copiou o seu Loadout`, **no máximo uma vez por dia**.
+- No futuro, isso pode virar um Ranking dos Loadouts mais copiados.
+
+**v2: `!copy <nome>` no jogo**
+- Copia o **Loadout que o jogador está usando agora**, de alguém no mesmo servidor, como um **Preset novo**.
+- **Não equipa.** Quem copiou escolhe equipar depois, no site. A resposta no chat: `Carmine · Loadout de <nome> salvo como Preset. Equipe em stcarmine.com/loadout.`
+- **Só funciona com plano e com espaço para um Preset novo.** Sem plano: `Carmine · Copiar no jogo é dos planos Capo e Padrinho.` Sem espaço: `Carmine · Seus Presets estão cheios. Libere um no site.`
+- O nome casa com quem está no servidor, como no `!profile`. Se mais de um casar, o plugin lista os candidatos.
+
+**Aceite**
+- Copiar um Item de outro Perfil o coloca no Inventário com os mesmos stickers e o mesmo padrão, sem a nametag.
+- Com o Inventário em 300 Itens, copiar mostra o aviso de limite.
+- Uma Conta grátis copia um Loadout com agente, troca o Loadout depois da confirmação, e o agente fica com o cadeado.
+- Uma Conta Capo copia um Loadout e ganha um Preset novo, `Loadout de <nome>`, sem equipar.
+- O Perfil de quem foi copiado mostra a contagem, e o sininho avisa no máximo uma vez por dia.
+- `!copy` no jogo cria o Preset sem equipar, e é recusado sem plano ou com os Presets cheios.
 
 ---
 

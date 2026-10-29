@@ -228,7 +228,7 @@ describe('Moderação (S07)', () => {
       const [ban] = (await heartbeat([target.steamId])).sanctions;
       expect(ban).toMatchObject({ steamId: target.steamId, type: 'ban', category: 'griefing' });
       expect(ban?.message).toMatch(
-        /^Você está banido dos Servidores Carmine até \d{2}\/\d{2} às \d{2}:\d{2} \(Brasília\)\. Motivo: Griefing\. Para recorrer: localhost:3000\/regras#recurso$/,
+        /^Você está banido dos Servidores Carmine até \d{2}\/\d{2} às \d{2}:\d{2} \(Brasília\)\. Motivo: Griefing\. Para recorrer: localhost:3000\/rules#appeal$/,
       );
       expect(ban?.message).not.toContain('TK proposital');
       const reconnect = await connect(target.steamId);

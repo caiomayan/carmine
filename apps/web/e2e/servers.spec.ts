@@ -32,7 +32,7 @@ async function openOfflineGroup(page: Page) {
 /** Entra pela Steam falsa e volta para a home. */
 async function signIn(page: Page, steamId: string) {
   await chooseSteamAccount(page.context(), steamId);
-  await page.goto('/entrar');
+  await page.goto('/login');
   await page.getByTestId('steam-login').click();
   await page.waitForURL('/');
 }

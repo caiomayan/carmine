@@ -33,7 +33,7 @@ const PAGES = [
   { name: 'a home', path: '/', control: '[data-testid="top3"] button', signedIn: false },
   {
     name: 'o editor',
-    path: '/inventario/adicionar/222',
+    path: '/inventory/add/222',
     control: '[data-testid="field-seed"]',
     signedIn: false,
   },

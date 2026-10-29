@@ -6,7 +6,7 @@ import { axeViolations, expect, saveTheme, settle, test } from './fixtures';
 async function openNameField(page: Page, request: import('@playwright/test').APIRequestContext) {
   const account = await createUnclaimedAccount(request, 'Campo Flutuante');
   await signInByRequest(page, account.steamId);
-  await page.goto('/configuracoes/perfil');
+  await page.goto('/settings/profile');
   await expect(page.getByTestId('profile-settings')).toBeVisible();
   await page.getByTestId('name-edit').click();
   const input = page.getByLabel('Novo nome');

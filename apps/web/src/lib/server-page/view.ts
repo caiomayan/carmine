@@ -94,4 +94,4 @@ export function firstActiveHour(hours: readonly number[]): number | null {
 }
 
 /** O caminho da página de um servidor. */
-export const serverHref = (id: string) => `/servidores/${id}`;
+export const serverHref = (id: string) => `/servers/${id}`;

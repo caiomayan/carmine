@@ -5,7 +5,7 @@ export type PanelId = (typeof PANELS)[number];
 const PANEL_BY_HREF: Record<string, PanelId> = {
   '/': 'play',
   '/loadout': 'loadout',
-  '/inventario': 'inventory',
+  '/inventory': 'inventory',
   '/ranking': 'ranking',
 };
 

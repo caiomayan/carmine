@@ -1,6 +1,11 @@
-// Deathmatch · Livre: rotação curta de mapas de ação rápida do pool Active Duty (S02). O
-// CS2-Deathmatch 1.3.6 traz spawns de FFA para estes três; outros mapas usariam os spawns de
-// deathmatch da Valve (game_mode 2), não testados.
+// Deathmatch · Livre: rotação de mapas de ação rápida do pool Active Duty (S02, ampliada na S16).
+// Cinco mapas: a votação mostra 3 e 1 fica em cooldown (RockTheVote.json). O CS2-Deathmatch 1.3.6
+// traz spawns de FFA para dust2, mirage e inferno; para de_ancient e de_anubis não há arquivo em
+// plugins/Deathmatch/spawns/, e o plugin usa os spawns de deathmatch da própria Valve
+// (info_deathmatch_spawn, game_mode 2). Validar no jogo; se faltar espalhamento, gravar os spawns
+// com o editor do plugin (css_dm_spawns).
 de_dust2
 de_mirage
 de_inferno
+de_ancient
+de_anubis

@@ -63,7 +63,7 @@ export function VipEndingBand({
           <p className="min-w-0 flex-1">
             {text}{' '}
             <Link
-              href={'/vip' as Route}
+              href={'/plans' as Route}
               prefetch={false}
               data-testid="vip-ending-link"
               className="font-semibold whitespace-nowrap underline underline-offset-4"

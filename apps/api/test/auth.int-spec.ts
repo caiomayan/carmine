@@ -87,7 +87,7 @@ describe('Login Steam (OpenID 2.0)', () => {
   function expectLoginError(response: Awaited<ReturnType<typeof callback>>, error: string) {
     expect(response.statusCode).toBe(303);
     const location = new URL(String(response.headers.location));
-    expect(`${location.origin}${location.pathname}`).toBe(`${WEB}/entrar`);
+    expect(`${location.origin}${location.pathname}`).toBe(`${WEB}/login`);
     expect(location.searchParams.get('erro')).toBe(error);
     expect(browser.cookie(SESSION_COOKIE)).toBeUndefined();
   }
@@ -97,10 +97,10 @@ describe('Login Steam (OpenID 2.0)', () => {
       const steamId = steamIdFor(1);
       const { publicId } = await connect(steamId);
 
-      const response = await loginViaSteam(steamId, '/inventario');
+      const response = await loginViaSteam(steamId, '/inventory');
 
       expect(response.statusCode).toBe(303);
-      expect(response.headers.location).toBe(`${WEB}/inventario`);
+      expect(response.headers.location).toBe(`${WEB}/inventory`);
       expect((await me()).account).toMatchObject({
         publicId,
         steamId,
@@ -319,7 +319,7 @@ describe('Login Steam (OpenID 2.0)', () => {
     });
 
     it('a página de origem fica no servidor: mexer no state do return_to não a troca', async () => {
-      const steamUrl = await startLogin('/inventario');
+      const steamUrl = await startLogin('/inventory');
 
       // O state é o que amarra a volta ao navegador; um state de outro fluxo não é aceito.
       const forged = new URL(returnToOf(steamUrl));
@@ -463,7 +463,7 @@ describe('Login Steam (OpenID 2.0)', () => {
 
   describe('falhas', () => {
     it('a pessoa desistiu na Steam: volta com erro "cancelado" e a página de origem', async () => {
-      const steamUrl = await startLogin('/inventario');
+      const steamUrl = await startLogin('/inventory');
       const back = new URL(returnToOf(steamUrl));
       back.searchParams.set('openid.ns', 'http://specs.openid.net/auth/2.0');
       back.searchParams.set('openid.mode', 'cancel');
@@ -472,7 +472,7 @@ describe('Login Steam (OpenID 2.0)', () => {
 
       expectLoginError(response, 'cancelado');
       expect(new URL(String(response.headers.location)).searchParams.get('voltar')).toBe(
-        '/inventario',
+        '/inventory',
       );
     });
 

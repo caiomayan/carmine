@@ -25,7 +25,7 @@ test('sem compras: estado vazio, a seção no menu e o aviso do ambiente de test
   request,
 }) => {
   await signedIn(page, request, 'Compras Vazio');
-  await page.goto('/configuracoes/compras');
+  await page.goto('/settings/purchases');
 
   await expect(page.getByTestId('settings-compras')).toBeVisible();
   await expect(page.getByTestId('purchases-empty')).toContainText('Nenhuma compra ainda');
@@ -45,7 +45,7 @@ test('Pix pendente: o QR e o código voltam ao reabrir a página, e a tela perce
   await signedIn(page, request, 'Compras Pix');
   const purchase = await createPurchase(page, { package: 'vip-1m', method: 'pix' });
 
-  await page.goto('/configuracoes/compras');
+  await page.goto('/settings/purchases');
   const card = purchaseCard(page);
   await expect(card).toHaveCount(1);
   await expect(card.getByTestId('purchase-status')).toHaveText('Aguardando o pagamento');
@@ -58,7 +58,7 @@ test('Pix pendente: o QR e o código voltam ao reabrir a página, e a tela perce
 
   // "Fechar a página e voltar em Minhas compras recupera o QR" (aceite da S14).
   await page.goto('/');
-  await page.goto('/configuracoes/compras');
+  await page.goto('/settings/purchases');
   await expect(purchaseCard(page).getByTestId('pix-code')).toHaveText(
     purchase.pix?.copyPaste ?? '',
   );
@@ -81,7 +81,7 @@ test.describe('copiar o código do Pix', () => {
     await signedIn(page, request, 'Compras Copiar');
     const purchase = await createPurchase(page);
 
-    await page.goto('/configuracoes/compras');
+    await page.goto('/settings/purchases');
     await page.getByTestId('pix-copy').click();
 
     await expect(page.getByTestId('pix-copy')).toContainText('Código copiado');
@@ -96,7 +96,7 @@ test('QR vencido e pagamento recusado terminam sem cobrança, em palavras', asyn
   await signedIn(page, request, 'Compras Fim');
   const expired = await createPurchase(page, { method: 'pix' });
   await simulate(page, expired, 'expire');
-  await page.goto('/configuracoes/compras');
+  await page.goto('/settings/purchases');
   await expect(purchaseCard(page).getByTestId('purchase-status')).toHaveText('Expirado');
   await expect(purchaseCard(page).getByTestId('purchase-note')).toContainText('nada foi cobrado');
   await expect(purchaseCard(page).getByTestId('pix-code')).toHaveCount(0);
@@ -123,14 +123,14 @@ test('o recibo: número, pagador com o CPF mascarado, valor, fornecedor por info
   await signedIn(page, request, 'Compras Recibo');
   const purchase = await createPurchase(page, { package: 'vip-6m' });
   await simulate(page, purchase, 'pay');
-  await page.goto('/configuracoes/compras');
+  await page.goto('/settings/purchases');
   await expect(purchaseCard(page).getByTestId('purchase-status')).toHaveText('Pago', {
     timeout: 20_000,
   });
 
   await purchaseCard(page).getByTestId('purchase-receipt').click();
 
-  await expect(page).toHaveURL(new RegExp(`/configuracoes/compras/${purchase.id}$`));
+  await expect(page).toHaveURL(new RegExp(`/settings/purchases/${purchase.id}$`));
   const receipt = page.getByTestId('receipt');
   await expect(receipt.getByTestId('receipt-number')).toContainText(purchase.id);
   await expect(receipt.getByTestId('receipt-amount')).toHaveText('R$ 49,90');
@@ -157,7 +157,7 @@ test('o recibo de uma compra pendente ainda não existe, e o de outra Conta resp
 }) => {
   await signedIn(page, request, 'Compras Dono');
   const pending = await createPurchase(page);
-  await page.goto(`/configuracoes/compras/${pending.id}`);
+  await page.goto(`/settings/purchases/${pending.id}`);
   await expect(page.getByTestId('receipt-not-available')).toContainText(
     'O recibo ainda não está disponível',
   );
@@ -171,7 +171,7 @@ test('o recibo de uma compra pendente ainda não existe, e o de outra Conta resp
   const stranger = await other.newPage();
   const strangerAccount = await createUnclaimedAccount(request, 'Compras Intruso');
   await signInByRequest(stranger, strangerAccount.steamId);
-  const response = await stranger.goto(`/configuracoes/compras/${paid.id}`);
+  const response = await stranger.goto(`/settings/purchases/${paid.id}`);
   expect(response?.status()).toBe(404);
   await other.close();
 });
@@ -183,7 +183,7 @@ test('reembolso dentro dos 7 dias: pergunta, devolve e a compra fica como reembo
   await signedIn(page, request, 'Compras Reembolso');
   const purchase = await createPurchase(page);
   await simulate(page, purchase, 'pay');
-  await page.goto('/configuracoes/compras');
+  await page.goto('/settings/purchases');
   await expect(purchaseCard(page).getByTestId('purchase-status')).toHaveText('Pago', {
     timeout: 20_000,
   });
@@ -221,7 +221,7 @@ for (const theme of ['dark', 'light'] as const) {
 
     for (const width of WIDTHS) {
       await page.setViewportSize({ width, height: 900 });
-      await page.goto('/configuracoes/compras');
+      await page.goto('/settings/purchases');
       await expect(purchaseCard(page)).toHaveCount(3);
       await expect(page.getByTestId('pix-qr')).toBeVisible();
       expect(await axeViolations(page), `${width}px, lista`).toEqual([]);
@@ -232,7 +232,7 @@ for (const theme of ['dark', 'light'] as const) {
         `${width}px, lista`,
       ).toBe(0);
 
-      await page.goto(`/configuracoes/compras/${paid.id}`);
+      await page.goto(`/settings/purchases/${paid.id}`);
       await expect(page.getByTestId('receipt')).toBeVisible();
       expect(await axeViolations(page), `${width}px, recibo`).toEqual([]);
       expect(

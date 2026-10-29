@@ -26,7 +26,7 @@ export function isLastingSanction(type: SanctionType): type is LastingSanctionTy
  * Caminho do web com as regras de conduta e como recorrer (ticket no Discord, resposta em até
  * 72 h). As mensagens do jogo mostram `stcarmine.com` + este caminho.
  */
-export const APPEAL_PATH = '/regras#recurso';
+export const APPEAL_PATH = '/rules#appeal';
 
 /** Prazo de resposta de um recurso. */
 export const APPEAL_RESPONSE_HOURS = 72;

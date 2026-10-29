@@ -42,9 +42,9 @@ async function seedActivity(request: APIRequestContext, count = 8) {
   return names;
 }
 
-/** Os acontecimentos que o navegador recebe na próxima volta do `/atividade/recentes`. */
+/** Os acontecimentos que o navegador recebe na próxima volta do `/activity/recent`. */
 async function routeActivity(page: Page, body: unknown, status = 200) {
-  await page.route('**/atividade/recentes', (route) =>
+  await page.route('**/activity/recent', (route) =>
     route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) }),
   );
 }
@@ -54,7 +54,7 @@ async function routeActivity(page: Page, body: unknown, status = 200) {
  * Repete o pedido até a página responder: um aviso antes da hidratação ainda não tem quem o escute.
  */
 async function poll(page: Page) {
-  const answered = page.waitForResponse((r) => r.url().includes('/atividade/recentes'));
+  const answered = page.waitForResponse((r) => r.url().includes('/activity/recent'));
   const timer = setInterval(() => {
     page.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))).catch(() => {});
   }, 300);
@@ -320,13 +320,13 @@ test.describe('a atividade da home', () => {
       await poll(page);
       await expect(feed(page).getByRole('link').first()).toContainText('Ana entrou em Retake Novo');
 
-      await page.unroute('**/atividade/recentes');
+      await page.unroute('**/activity/recent');
       await routeActivity(page, { error: 'unavailable' }, 503);
       await poll(page);
       await page.waitForTimeout(400);
       await expect(feed(page).getByRole('link').first()).toContainText('Retake Novo');
 
-      await page.unroute('**/atividade/recentes');
+      await page.unroute('**/activity/recent');
       await routeActivity(page, { items: [] });
       await poll(page);
       await expect(feed(page).getByTestId('activity-empty')).toBeVisible();

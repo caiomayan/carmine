@@ -93,7 +93,7 @@ sudo /opt/carmine/bin/dc up -d api
 
 ## 9. Conferir
 
-1. Abra Configurações logado (`https://stcarmine.com/configuracoes/conexoes`): a linha **Discord** deve ter o botão **Vincular Discord** (sem o selo "Em breve").
+1. Abra Configurações logado (`https://stcarmine.com/settings/connections`): a linha **Discord** deve ter o botão **Vincular Discord** (sem o selo "Em breve").
 2. Clique, autorize no Discord e volte: o aviso "Discord ligado" aparece e o seu usuário fica na linha. Você ganha o cargo **Jogador** na hora (e, se não estava no servidor, entra nele).
 3. Dê um VIP de teste (painel da Staff ou `vip grant --steam-id ... --days 1 --by ... --reason ...`, ver o README) ou um papel de Staff pelo painel: o cargo muda em até 1 minuto.
 4. O canal de status mostra os servidores e o horário da última atualização (o carimbo "Hoje às ..." do embed muda a cada minuto).

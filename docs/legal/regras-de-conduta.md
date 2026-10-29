@@ -4,7 +4,7 @@ updatedAt: 2026-10-19
 version: 0.4.0
 ---
 
-Estas regras valem em todos os Servidores Carmine, no site stcarmine.com e no Discord do Carmine. Elas fazem parte dos [Termos de Uso](/termos): ao jogar num Servidor Carmine, você concorda com elas.
+Estas regras valem em todos os Servidores Carmine, no site stcarmine.com e no Discord do Carmine. Elas fazem parte dos [Termos de Uso](/terms): ao jogar num Servidor Carmine, você concorda com elas.
 
 A ideia é simples: competir pesado e zoar faz parte do CS. Atacar uma pessoa, não.
 
@@ -115,7 +115,7 @@ Quem aplica a punição é uma pessoa da Staff. O sistema mostra o seu históric
 ### Punições e VIP
 
 - Ban temporário **não** pausa o seu Período VIP: os dias continuam correndo.
-- **Ban permanente encerra o VIP**, sem reembolso dos dias restantes, qualquer que seja o motivo. Os detalhes estão nos [Termos de Uso](/termos). [VALIDAR COM ADVOGADO]
+- **Ban permanente encerra o VIP**, sem reembolso dos dias restantes, qualquer que seja o motivo. Os detalhes estão nos [Termos de Uso](/terms). [VALIDAR COM ADVOGADO]
 
 ## Como a Staff analisa
 
@@ -141,11 +141,11 @@ A Staff analisa em até 72 h e conta a quem denunciou se houve punição (sem ex
 
 Cada Conta é presa a uma conta Steam. Para pegar quem volta com outra conta, a Staff compara contas novas com as punidas (por exemplo, pelo histórico de jogo e pelos amigos Steam em comum) antes de aplicar a linha de conta alternativa. [VALIDAR COM ADVOGADO]
 
-## Recurso
+## Recurso {#appeal}
 
 Achou a punição injusta? Você pode recorrer de qualquer punição:
 
-1. Abra um ticket no Discord do Carmine (o link fica no rodapé do site). Sem Discord, use a página de [contato](/contato).
+1. Abra um ticket no Discord do Carmine (o link fica no rodapé do site). Sem Discord, use a página de [contato](/contact).
 2. Informe o link do seu Perfil, a punição e a data, e conte o que aconteceu. Se tiver clipe ou print, mande junto.
 3. A Staff responde em até 72 h.
 
@@ -167,14 +167,14 @@ O Carmine não tem lista pública de banidos. A informação aparece só no Perf
 - **O Perfil privado não esconde punições.** Ele esconde as Estatísticas e a sua identidade no Ranking, não o histórico de conduta.
 - Recurso aceito retira a punição do Perfil.
 
-Fazemos isso para que a comunidade saiba com quem está jogando, e para que uma punição injusta possa ser contestada às claras. Os detalhes de como tratamos esses dados estão na [Política de Privacidade](/privacidade). [VALIDAR COM ADVOGADO]
+Fazemos isso para que a comunidade saiba com quem está jogando, e para que uma punição injusta possa ser contestada às claras. Os detalhes de como tratamos esses dados estão na [Política de Privacidade](/privacy). [VALIDAR COM ADVOGADO]
 
 ## Se você é menor de idade
 
 - Nunca passe seu nome completo, endereço, escola, telefone ou fotos para quem você conheceu no jogo.
 - Se alguém insistir, ameaçar ou deixar você desconfortável, saia do servidor, denuncie com `!report` e conte para um adulto de confiança.
 - Você pode silenciar qualquer jogador pelo placar do CS2 (Tab) e desligar o chat de voz ou de texto nas configurações do jogo. Nos Servidores Carmine, `!chat off` esconde o chat de texto só para você, e `!chat on` traz de volta.
-- Para casos graves, você ou seus pais também podem falar direto com a Staff pela página de [contato](/contato). Esse canal pede identificação de quem denuncia; denúncias anônimas não são aceitas para esse tipo de pedido.
+- Para casos graves, você ou seus pais também podem falar direto com a Staff pela página de [contato](/contact). Esse canal pede identificação de quem denuncia; denúncias anônimas não são aceitas para esse tipo de pedido.
 
 ## Discord
 

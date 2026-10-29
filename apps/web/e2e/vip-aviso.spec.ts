@@ -28,7 +28,7 @@ test.describe('faixa do fim do VIP', () => {
     await expect(band(page)).toBeVisible();
     await expect(band(page)).toHaveAttribute('data-notice', 'ending_soon');
     await expect(band(page)).toContainText('Seu VIP acaba em');
-    await expect(page.getByTestId('vip-ending-link')).toHaveAttribute('href', '/vip');
+    await expect(page.getByTestId('vip-ending-link')).toHaveAttribute('href', '/plans');
 
     // Sem layout shift: a faixa está no HTML que o servidor mandou, não nasce depois da hidratação.
     const html = await (await page.request.get('/ranking')).text();
@@ -39,8 +39,8 @@ test.describe('faixa do fim do VIP', () => {
   test('o link leva à página dos Pacotes', async ({ page }) => {
     await signInWithVip(page, 1);
     await page.getByTestId('vip-ending-link').click();
-    await expect(page).toHaveURL(/\/vip$/);
-    // No /vip, que já fala do VIP, a faixa não repete.
+    await expect(page).toHaveURL(/\/plans$/);
+    // No /plans, que já fala do VIP, a faixa não repete.
     await expect(band(page)).toHaveCount(0);
   });
 

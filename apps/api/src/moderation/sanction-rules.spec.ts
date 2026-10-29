@@ -148,7 +148,7 @@ describe('toProfileSanctions (Perfil público)', () => {
 });
 
 describe('gameSanctionMessage', () => {
-  const appeal = 'stcarmine.com/regras#recurso';
+  const appeal = 'stcarmine.com/rules#appeal';
 
   it('ban temporário: Categoria, até quando (Brasília) e como recorrer', () => {
     const message = gameSanctionMessage(
@@ -157,13 +157,13 @@ describe('gameSanctionMessage', () => {
     );
 
     expect(message).toBe(
-      'Você está banido dos Servidores Carmine até 20/10 às 14:00 (Brasília). Motivo: Griefing. Para recorrer: stcarmine.com/regras#recurso',
+      'Você está banido dos Servidores Carmine até 20/10 às 14:00 (Brasília). Motivo: Griefing. Para recorrer: stcarmine.com/rules#appeal',
     );
   });
 
   it('ban permanente, mute, gag, kick e aviso', () => {
     expect(gameSanctionMessage({ type: 'ban', category: 'cheat', endsAt: null }, appeal)).toBe(
-      'Você está banido permanentemente dos Servidores Carmine. Motivo: Cheat. Para recorrer: stcarmine.com/regras#recurso',
+      'Você está banido permanentemente dos Servidores Carmine. Motivo: Cheat. Para recorrer: stcarmine.com/rules#appeal',
     );
     expect(
       gameSanctionMessage(
@@ -171,20 +171,20 @@ describe('gameSanctionMessage', () => {
         appeal,
       ),
     ).toBe(
-      'Você está sem voz até 12/10 às 13:30 (Brasília). Motivo: Conduta na voz. Para recorrer: stcarmine.com/regras#recurso',
+      'Você está sem voz até 12/10 às 13:30 (Brasília). Motivo: Conduta na voz. Para recorrer: stcarmine.com/rules#appeal',
     );
     expect(
       gameSanctionMessage({ type: 'gag', category: 'offensive_chat', endsAt: null }, appeal),
     ).toBe(
-      'Você está sem chat permanentemente. Motivo: Conduta no chat. Para recorrer: stcarmine.com/regras#recurso',
+      'Você está sem chat permanentemente. Motivo: Conduta no chat. Para recorrer: stcarmine.com/rules#appeal',
     );
     expect(gameSanctionMessage({ type: 'kick', category: 'griefing', endsAt: null }, appeal)).toBe(
-      'Você foi expulso do servidor pela Staff. Motivo: Griefing. Regras: stcarmine.com/regras#recurso',
+      'Você foi expulso do servidor pela Staff. Motivo: Griefing. Regras: stcarmine.com/rules#appeal',
     );
     expect(
       gameSanctionMessage({ type: 'warning', category: 'offensive_chat', endsAt: null }, appeal),
     ).toBe(
-      'Aviso da Staff: Conduta no chat. Reincidir leva a punições maiores. Regras: stcarmine.com/regras#recurso',
+      'Aviso da Staff: Conduta no chat. Reincidir leva a punições maiores. Regras: stcarmine.com/rules#appeal',
     );
   });
 });
