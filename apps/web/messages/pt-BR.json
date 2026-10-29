@@ -921,7 +921,8 @@
         "no_custom_avatar": "Esta pessoa não tem foto própria no ar.",
         "own_avatar": "Você não denuncia a sua própria foto.",
         "already_reported": "Você já denunciou esta foto.",
-        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde."
+        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde.",
+        "report_daily_limit": "Você já enviou 10 denúncias hoje. Tente amanhã."
       },
       "reasons": {
         "sexual": "Nudez ou conteúdo sexual",
@@ -1107,7 +1108,8 @@
         "no_custom_avatar": "Esta pessoa não tem foto própria no ar.",
         "own_avatar": "Você não denuncia a sua própria foto.",
         "already_reported": "Você já denunciou esta foto.",
-        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde."
+        "report_limit": "Você fez denúncias demais na última hora. Tente de novo mais tarde.",
+        "report_daily_limit": "Você já enviou 10 denúncias hoje. Tente amanhã."
       },
       "dialog": {
         "title": "Recortar a foto",
@@ -2297,7 +2299,8 @@
     },
     "reports": {
       "title": "Denúncias",
-      "subtitle": "{count, plural, =0 {Nenhuma Denúncia aberta} one {# Denúncia aberta} other {# Denúncias abertas}}. A Staff analisa em até 72 h; as mais antigas vêm primeiro.",
+      "subtitle": "{count, plural, =0 {Nenhum caso aberto} one {# caso aberto} other {# casos abertos}}. A Staff analisa em até 72 h; os mais antigos vêm primeiro.",
+      "caseCount": "{count, plural, one {# denúncia} other {# denúncias}}",
       "subtitleBare": "Denúncias feitas no jogo com o !report.",
       "tabs": {
         "label": "Estado das Denúncias",
