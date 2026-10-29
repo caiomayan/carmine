@@ -16,7 +16,10 @@ const nav = (page: Page, view: 'inicio' | 'denuncias' | 'fotos') =>
 
 /** No celular o trilho vira as abas de baixo. */
 const tab = (page: Page, label: 'Início' | 'Denúncias' | 'Fotos') =>
-  page.getByRole('navigation', { name: 'Atalhos' }).getByText(label, { exact: true }).click();
+  page
+    .getByRole('navigation', { name: 'Atalhos' })
+    .getByRole('button', { name: new RegExp(`^${label}`) })
+    .click();
 
 test.describe('Painel da Staff (protótipo)', () => {
   test.beforeEach(async ({ page }) => {
@@ -42,7 +45,7 @@ test.describe('Painel da Staff (protótipo)', () => {
       'Compras hoje',
       'Salas ao vivo',
     ]) {
-      await expect(home.getByRole('heading', { name: label })).toBeVisible();
+      await expect(home.getByRole('heading', { name: label, exact: true })).toBeVisible();
     }
     await expect(page.getByRole('heading', { name: 'Alertas' })).toBeVisible();
     await expect(page.getByTestId('stp-pending').getByRole('button').first()).toContainText(
