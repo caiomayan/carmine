@@ -15,12 +15,11 @@ public class ChatMessageTests
     [Fact]
     public void Um_texto_de_duas_linhas_vira_duas_mensagens_do_Carmine()
     {
-        var lines = ChatMessage.FormatLines("Primeira."+"
-"+"Segunda.").ToList();
+        var lines = ChatMessage.FormatLines("Primeira.\nSegunda.").ToList();
 
         Assert.Equal(2, lines.Count);
         Assert.EndsWith(" · Primeira.", lines[0]);
-        Assert.StartsWith(" Carmine · Segunda.", lines[1]);
+        Assert.StartsWith(" \u0002Carmine\u0001 · Segunda.", lines[1]);
     }
 
     [Fact]
