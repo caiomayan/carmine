@@ -76,10 +76,10 @@ test.describe('Denúncias no painel', () => {
     await expect(page.getByTestId('stp-case-count')).toHaveText('2 denúncias');
     await expect(detail.getByTestId('stp-member')).toHaveCount(2);
     await expect(detail.getByText('Fim do prazo da Staff')).toBeVisible();
-    // A Punição é aplicada na ficha da Conta, no site, até a tela de Contas migrar para o painel.
+    // A Punição é aplicada na ficha da Conta, dentro do painel; vindo do caso, ela o fecha como punido.
     await expect(page.getByTestId('report-punish')).toHaveAttribute(
       'href',
-      /\/staff\/contas\/\d+\?denuncia=[0-9a-f-]{36}&evidencia=0#aplicar$/,
+      /^\/contas\/\d+\?denuncia=[0-9a-f-]{36}&evidencia=0#aplicar$/,
     );
   });
 

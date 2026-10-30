@@ -11,7 +11,7 @@ import {
   type StaffAvatarCasePage,
   staffAvatarCasePageSchema,
 } from '@carmine/contracts/avatar';
-import { ExternalLinkIcon, XIcon } from 'lucide-react';
+import { XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useId, useState } from 'react';
 import { ActionForm } from '@/components/queue/action-form';
@@ -55,12 +55,10 @@ export function PhotosScreen({
   initial,
   status,
   serverNowMs,
-  siteUrl,
 }: {
   initial: StaffAvatarCasePage;
   status: Tab;
   serverNowMs: number;
-  siteUrl: string;
 }) {
   const now = useNow(serverNowMs);
   const wide = useWide();
@@ -281,7 +279,6 @@ export function PhotosScreen({
               key={selected.avatar.id}
               item={selected}
               nowMs={now}
-              siteUrl={siteUrl}
               onClose={() => setSelected(null)}
               onDecided={decided}
             />
@@ -295,13 +292,11 @@ export function PhotosScreen({
 function PhotoDetail({
   item,
   nowMs,
-  siteUrl,
   onClose,
   onDecided,
 }: {
   item: StaffAvatarCase;
   nowMs: number;
-  siteUrl: string;
   onClose: () => void;
   onDecided: (avatarId: string) => void;
 }) {
@@ -420,17 +415,9 @@ function PhotoDetail({
 
       {openCase ? (
         <div className="stp-detail-foot">
-          {siteUrl ? (
-            <a
-              className="stp-btn"
-              href={`${siteUrl}/staff/contas/${item.account.publicId}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Abrir a Conta
-              <ExternalLinkIcon size={13} aria-hidden="true" />
-            </a>
-          ) : null}
+          <Link className="stp-btn" href={`/contas/${item.account.publicId}`} prefetch={false}>
+            Abrir a Conta
+          </Link>
           <ActionForm
             label="Manter a foto"
             submitLabel="Manter a foto"

@@ -9,9 +9,6 @@ import { getPanelSession } from '@/lib/session';
 export const metadata: Metadata = { title: 'Fotos denunciadas' };
 export const dynamic = 'force-dynamic';
 
-/** Onde fica o site (a ficha da Conta, até a tela de Contas migrar para o painel). */
-const SITE_URL = (process.env.SITE_URL ?? '').replace(/\/+$/, '');
-
 /** A fila de fotos denunciadas (S25): a primeira página do estado pedido (`?status=open|decided`, padrão `open`). */
 export default async function FotosPage({
   searchParams,
@@ -42,13 +39,5 @@ export default async function FotosPage({
     );
   }
 
-  return (
-    <PhotosScreen
-      key={status}
-      initial={page.data}
-      status={status}
-      serverNowMs={Date.now()}
-      siteUrl={SITE_URL}
-    />
-  );
+  return <PhotosScreen key={status} initial={page.data} status={status} serverNowMs={Date.now()} />;
 }
