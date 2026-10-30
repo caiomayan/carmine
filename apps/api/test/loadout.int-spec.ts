@@ -8,7 +8,9 @@ import {
   loadoutChangeSchema,
   loadoutErrorSchema,
   loadoutSchema,
-  PRESETS_VIP_LIMIT,
+  type Plan,
+  PRESETS_CAPO_LIMIT,
+  PRESETS_PADRINHO_LIMIT,
   presetListSchema,
   presetSchema,
   profileSchema,
@@ -47,10 +49,10 @@ describe('Loadout e Presets', () => {
   });
 
   /** Uma Conta reivindicada nova, com sessão aberta, e as chamadas dela à API. */
-  async function player(options: { vip?: boolean } = {}) {
+  async function player(options: { vip?: boolean; plan?: Plan } = {}) {
     const steamId = steamIdFor(nextSteamId++);
     const { account } = await t.accounts.claimOnLogin(steamId);
-    if (options.vip) await grantVip(account.id);
+    if (options.vip || options.plan) await grantVip(account.id, undefined, options.plan);
     const session = await sessions.create(account.id);
     const call = (
       method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
@@ -95,10 +97,17 @@ describe('Loadout e Presets', () => {
 
   type Player = Awaited<ReturnType<typeof player>>;
 
-  async function grantVip(accountId: string, endsAt = Date.now() + 30 * DAY_MS) {
-    await t.postgres.db
-      .insert(vipPeriods)
-      .values({ accountId, startsAt: new Date(Date.now() - DAY_MS), endsAt: new Date(endsAt) });
+  async function grantVip(
+    accountId: string,
+    endsAt = Date.now() + 30 * DAY_MS,
+    plan: Plan = 'capo',
+  ) {
+    await t.postgres.db.insert(vipPeriods).values({
+      accountId,
+      plan,
+      startsAt: new Date(Date.now() - DAY_MS),
+      endsAt: new Date(endsAt),
+    });
   }
 
   /** O VIP acaba agora (como a revogação pela Staff). */
@@ -351,7 +360,7 @@ describe('Loadout e Presets', () => {
       expect(copy).toMatchObject({ main: false, active: false, equippedCount: 1 });
       expect(empty.equippedCount).toBe(0);
       expect(renamed.name).toBe('Retake B');
-      expect(afterActivate.limit).toBe(PRESETS_VIP_LIMIT);
+      expect(afterActivate.limit).toBe(PRESETS_CAPO_LIMIT);
       expect(afterActivate.presets.map((x) => [x.name, x.active])).toEqual([
         ['Principal', false],
         ['Retake B', true],
@@ -432,9 +441,9 @@ describe('Loadout e Presets', () => {
       expect(statuses).toEqual([201, 201, 400, 400]);
     });
 
-    it(`com VIP, até ${PRESETS_VIP_LIMIT} Presets contando o principal`, async () => {
-      const p = await player({ vip: true });
-      for (let i = 1; i < PRESETS_VIP_LIMIT; i++) {
+    it(`o Capo tem até ${PRESETS_CAPO_LIMIT} Presets contando o principal`, async () => {
+      const p = await player({ plan: 'capo' });
+      for (let i = 1; i < PRESETS_CAPO_LIMIT; i++) {
         expect((await p.createPreset({ name: `P${i}` })).statusCode).toBe(201);
       }
 
@@ -442,6 +451,58 @@ describe('Loadout e Presets', () => {
 
       expect(response.statusCode).toBe(409);
       expect(errorOf(response).code).toBe('preset_limit');
+    });
+
+    it(`o Padrinho tem até ${PRESETS_PADRINHO_LIMIT} Presets contando o principal`, async () => {
+      const p = await player({ plan: 'padrinho' });
+      for (let i = 1; i < PRESETS_PADRINHO_LIMIT; i++) {
+        expect((await p.createPreset({ name: `P${i}` })).statusCode).toBe(201);
+      }
+      expect((await presetsOf(p)).limit).toBe(PRESETS_PADRINHO_LIMIT);
+
+      const response = await p.createPreset({ name: 'demais' });
+
+      expect(response.statusCode).toBe(409);
+      expect(errorOf(response).code).toBe('preset_limit');
+    });
+
+    it('ao cair de Padrinho para Capo, o que passa do limite fica só leitura até voltar a caber', async () => {
+      const p = await player({ plan: 'padrinho' });
+      const created = [];
+      for (let i = 1; i <= 9; i++) {
+        created.push(ok(await p.createPreset({ name: `P${i}` }), presetSchema.parse, 201));
+      }
+      const accountPeriods = () => t.postgres.db.update(vipPeriods).set({ plan: 'capo' });
+
+      await accountPeriods().where(eq(vipPeriods.accountId, p.account.id));
+
+      const list = await presetsOf(p);
+      expect(list.limit).toBe(PRESETS_CAPO_LIMIT);
+      // O principal e os 5 mais antigos seguem editáveis; o resto fica guardado.
+      expect(list.presets.map((x) => x.readOnly)).toEqual([
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true,
+        true,
+      ]);
+      const held = created[7] as { id: string };
+      const attempt = await p.renamePreset(held.id, 'não pode');
+      expect(attempt.statusCode).toBe(403);
+      expect(errorOf(attempt).code).toBe('preset_read_only');
+      const kept = created[2] as { id: string };
+      expect((await p.renamePreset(kept.id, 'pode')).statusCode).toBe(200);
+
+      await t.postgres.db
+        .update(vipPeriods)
+        .set({ plan: 'padrinho' })
+        .where(eq(vipPeriods.accountId, p.account.id));
+      expect((await presetsOf(p)).presets.every((x) => !x.readOnly)).toBe(true);
     });
 
     it('apagar o ativo devolve o principal ao Loadout; o principal não é apagado', async () => {

@@ -10,7 +10,6 @@ import {
   loadoutChangeSchema,
   loadoutErrorSchema,
   loadoutSchema,
-  PRESETS_VIP_LIMIT,
   type Preset,
   type PresetList,
   presetListSchema,
@@ -158,7 +157,7 @@ export class LoadoutController {
 
 /**
  * Os Presets da Conta da sessão (S05). O principal sempre existe; com VIP, até
- * {@link PRESETS_VIP_LIMIT}; sem VIP, os extras são somente leitura.
+ * o limite do plano (Capo 6, Padrinho 25); o que passa do limite é somente leitura.
  */
 @ApiTags('presets')
 @ApiCookieAuth()
@@ -185,8 +184,8 @@ export class PresetsController {
   })
   @ApiCreatedResponse({ description: 'O Preset criado', standardSchema: presetSchema })
   @errorResponse(400, 'Corpo fora do formato (invalid_body)')
-  @errorResponse(403, 'Exige VIP (vip_required), ou CSRF inválido')
-  @errorResponse(409, `Já há ${PRESETS_VIP_LIMIT} Presets (preset_limit)`)
+  @errorResponse(403, 'Exige um plano (vip_required, nome legado), ou CSRF inválido')
+  @errorResponse(409, 'Já há tantos Presets quanto o plano permite (preset_limit)')
   create(
     @CurrentSession() session: Session,
     @Body({ schema: createPresetInputSchema }) body: CreatePresetInput,
