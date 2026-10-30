@@ -14205,6 +14205,12 @@
               "$ref": "#/components/schemas/VipPackage"
             }
           },
+          "planPackages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanPackage"
+            }
+          },
           "eligibility": {
             "nullable": true,
             "allOf": [
@@ -14263,6 +14269,54 @@
           "vip-6m"
         ]
       },
+      "PlanPackage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PlanPackageId"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/Plan"
+          },
+          "months": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "priceCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "plan",
+          "months",
+          "days",
+          "priceCents"
+        ],
+        "additionalProperties": false
+      },
+      "PlanPackageId": {
+        "type": "string",
+        "enum": [
+          "vip-1m",
+          "vip-3m",
+          "vip-6m",
+          "padrinho-1m",
+          "padrinho-3m",
+          "padrinho-6m"
+        ]
+      },
       "PurchaseEligibility": {
         "type": "string",
         "enum": [
@@ -14300,7 +14354,7 @@
             "$ref": "#/components/schemas/PaymentStatus"
           },
           "package": {
-            "$ref": "#/components/schemas/VipPackageId"
+            "$ref": "#/components/schemas/PlanPackageId"
           },
           "days": {
             "type": "integer",
@@ -14469,7 +14523,7 @@
         "type": "object",
         "properties": {
           "package": {
-            "$ref": "#/components/schemas/VipPackageId"
+            "$ref": "#/components/schemas/PlanPackageId"
           },
           "method": {
             "$ref": "#/components/schemas/PaymentMethod"
