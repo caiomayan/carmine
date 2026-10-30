@@ -144,6 +144,10 @@
 .stp-rail-foot {
   margin-top: auto;
 }
+.stp-item,
+.stp-tab {
+  text-decoration: none;
+}
 .stp-item {
   position: relative;
   display: grid;
@@ -211,7 +215,7 @@
   line-height: 17px;
   text-align: center;
 }
-.stp[data-collapsed] .stp-badge {
+.stp[data-collapsed] .stp-rail .stp-badge {
   top: 3px;
   right: 3px;
   min-width: 8px;
@@ -932,6 +936,15 @@ button.stp-row:hover {
   color: var(--stp-muted);
   font-size: 12.5px;
 }
+.stp-servers li > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stp-servers .stp-dot {
+  flex: none;
+}
 .stp-servers li {
   display: flex;
   min-width: 0;
@@ -1499,6 +1512,9 @@ button.stp-row:hover {
     gap: 10px;
   }
   .stp-photos {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .stp-servers {
     grid-template-columns: minmax(0, 1fr);
   }
   .stp-photo-art {
