@@ -22,6 +22,8 @@ check() { # check <descrição> <comando...>
   fi
 }
 
+has() { [[ "$1" == *"$2"* ]]; }
+
 # 1. O patch aplica na tag pinada, e o fonte resultante tem a API nova.
 check "o patch aplica na tag pinada com o commit conferido" bash "$BUILD" --no-build --work "$TMP/work"
 src="$TMP/work/src/source"
@@ -45,7 +47,8 @@ EOF
 rc=0
 out="$(DM_PATCH_DIR="$TMP/quebrado" bash "$BUILD" --no-build --work "$TMP/work2" 2>&1)" || rc=$?
 check "um patch que não aplica quebra o build (código 1)" test "$rc" -eq 1
-check "a mensagem diz que o patch não aplica e como refazê-lo" bash -c '[[ "$1" == *"não aplica na tag"* && "$1" == *"README.md"* ]]' _ "$out"
+check "a mensagem diz que o patch não aplica na tag" has "$out" "não aplica na tag"
+check "a mensagem diz onde está o passo a passo para refazê-lo" has "$out" "README.md"
 
 # 3. A versão do zip e a do fonte patchado andam juntas: trocar uma sem a outra quebra.
 cp -r "$REPO/infra/cs2/linux" "$TMP/linux-copy"
