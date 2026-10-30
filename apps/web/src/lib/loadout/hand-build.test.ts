@@ -34,7 +34,7 @@ const preset = (over: Partial<Preset> = {}): Preset => ({
   updatedAt: stamp,
   ...over,
 });
-const list = (...presets: Preset[]): PresetList => ({ presets, limit: 20 });
+const list = (...presets: Preset[]): PresetList => ({ presets, limit: 25 });
 
 describe('buildHand', () => {
   it('uma carta por Preset, na ordem da lista, com o que o Preset tem de nome e estado', () => {

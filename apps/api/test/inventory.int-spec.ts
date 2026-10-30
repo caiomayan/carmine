@@ -270,15 +270,20 @@ describe('Inventário', () => {
 
       const [freeMe, vipMe] = [await free.me(), await vip.me()];
 
+      // Desde a S20 a resposta também diz o plano (as concessões de antes são Capo) e se é de teste.
       expect(currentSessionSchema.parse(freeMe.json()).vip).toEqual({
         active: false,
         endsAt: null,
         endedAt: null,
+        plan: null,
+        test: false,
       });
       expect(currentSessionSchema.parse(vipMe.json()).vip).toEqual({
         active: true,
         endsAt: new Date(endsAt).toISOString(),
         endedAt: null,
+        plan: 'capo',
+        test: false,
       });
     });
   });
