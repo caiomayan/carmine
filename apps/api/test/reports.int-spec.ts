@@ -3,6 +3,7 @@ import type { AddressInfo } from 'node:net';
 import {
   type ChatMessageEvent,
   eventBatchResultSchema,
+  REPORT_REVIEW_DEADLINE_HOURS,
   reportResultSchema,
   type StaffRole,
   staffAuditPageSchema,
@@ -11,9 +12,17 @@ import {
 } from '@carmine/contracts';
 import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { chatMessages, gameEvents, reports } from '../src/database/schema.js';
+import {
+  accounts,
+  chatMessages,
+  gameEvents,
+  gameServers,
+  reports,
+} from '../src/database/schema.js';
 import { DataRetention } from '../src/reports/data-retention.js';
+import { Reports } from '../src/reports/reports.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
+import { dayStartOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
 
@@ -214,9 +223,11 @@ describe('Denúncias e log de chat (S13)', () => {
       expect(
         reportResultSchema.parse((await report(b.steamId, target.steamId)).json()).accepted,
       ).toBe(true);
+      // Mesma Conta, mesmo motivo, mesmo mapa: um caso só, com as duas Denúncias (ADR 0027).
       const { reports: open } = await queue(moderator, '?limit=100');
-      const mine = open.find((r) => r.target.publicId === target.publicId);
-      expect(mine?.otherOpenAgainstTarget).toBe(1);
+      const mine = open.filter((r) => r.target.publicId === target.publicId);
+      expect(mine).toHaveLength(1);
+      expect(mine[0]).toMatchObject({ count: 2, otherOpenAgainstTarget: 0 });
     });
 
     it('5 por hora: a sexta Denúncia é recusada', async () => {
@@ -519,6 +530,228 @@ describe('Denúncias e log de chat (S13)', () => {
       // A Denúncia contra ela fica como registro de moderação até o prazo.
       const againstLeaving = open.find((r) => r.target.publicId === leaving.publicId);
       expect(againstLeaving?.chat.map((line) => line.text)).toContain('meu chat');
+    });
+  });
+
+  /** A regra única de denúncia (ADR 0027): prazo, peso de quem denuncia, teto por dia e casos agrupados. */
+  describe('a regra única de denúncia', () => {
+    const reportWith = (
+      reporter: string,
+      target: string,
+      extra: { reason?: string; map?: string; mapPlayId?: string | null } = {},
+    ) =>
+      t.app.inject({
+        method: 'POST',
+        url: '/api/server/reports',
+        headers: { authorization: `Bearer ${t.serverKey}` },
+        payload: {
+          reporterSteamId: reporter,
+          targetSteamId: target,
+          reason: extra.reason ?? 'griefing',
+          round: 3,
+          map: extra.map ?? 'de_nuke',
+          mapPlayId: extra.mapPlayId ?? null,
+        },
+      });
+
+    const cases = async (publicId: number) =>
+      (await queue(moderator, '?limit=100')).reports.filter((r) => r.target.publicId === publicId);
+
+    const PLAY_A = '0199f2a0-7b1c-7000-8000-00000000a001';
+    const PLAY_B = '0199f2a0-7b1c-7000-8000-00000000a002';
+
+    it('a Denúncia de jogo tem prazo de 72 h, contado da mais antiga', async () => {
+      const reporter = await player();
+      const target = await player();
+      expect((await report(reporter.steamId, target.steamId)).statusCode).toBe(200);
+
+      const [found] = await cases(target.publicId);
+
+      expect(found).toMatchObject({ kind: 'game', lowWeight: false, count: 1 });
+      expect(Date.parse(found?.deadlineAt as string)).toBe(
+        Date.parse(found?.createdAt as string) + REPORT_REVIEW_DEADLINE_HOURS.game * 3_600_000,
+      );
+    });
+
+    it('4 Denúncias pelo mesmo motivo no mesmo Mapa jogado viram um item com a contagem, e arquivar resolve as 4', async () => {
+      const target = await player();
+      const before = (await queue(moderator, '?limit=100')).openCount;
+      for (let i = 0; i < 4; i++) {
+        const reporter = await player();
+        expect(
+          reportResultSchema.parse(
+            (await reportWith(reporter.steamId, target.steamId, { mapPlayId: PLAY_A })).json(),
+          ).accepted,
+        ).toBe(true);
+      }
+
+      const open = await queue(moderator, '?limit=100');
+      const found = open.reports.filter((r) => r.target.publicId === target.publicId);
+      expect(found).toHaveLength(1);
+      expect(found[0]).toMatchObject({ count: 4, reason: 'griefing' });
+      expect(found[0]?.members).toHaveLength(4);
+      // O selo conta casos, não Denúncias.
+      expect(open.openCount).toBe(before + 1);
+
+      const done = await moderator.call('POST', `/api/staff/reports/${found[0]?.id}/archive`, {
+        reason: 'Não vi antijogo nas gravações',
+      });
+      expect(done.statusCode, done.body).toBe(204);
+
+      expect(await cases(target.publicId)).toHaveLength(0);
+      const archived = (await queue(moderator, '?status=archived&limit=100')).reports.filter(
+        (r) => r.target.publicId === target.publicId,
+      );
+      expect(archived).toHaveLength(1);
+      expect(archived[0]).toMatchObject({ status: 'archived', count: 4, deadlineAt: null });
+      const rows = await t.postgres.db
+        .select({ status: reports.status })
+        .from(reports)
+        .innerJoin(accounts, eq(accounts.id, reports.targetAccountId))
+        .where(eq(accounts.publicId, target.publicId));
+      expect(rows.map((row) => row.status)).toEqual([
+        'archived',
+        'archived',
+        'archived',
+        'archived',
+      ]);
+      const audit = staffAuditPageSchema.parse(
+        (await owner.call('GET', '/api/staff/audit?action=report_archive')).json(),
+      );
+      expect(
+        audit.entries.filter((e) => e.targetAccount?.publicId === target.publicId),
+      ).toHaveLength(1);
+    });
+
+    it('punir resolve o caso inteiro', async () => {
+      const target = await player();
+      for (let i = 0; i < 3; i++) {
+        const reporter = await player();
+        await reportWith(reporter.steamId, target.steamId, {
+          reason: 'offensive_chat',
+          mapPlayId: PLAY_A,
+        });
+      }
+      const [found] = await cases(target.publicId);
+      expect(found?.count).toBe(3);
+
+      const response = await moderator.call(
+        'POST',
+        `/api/staff/accounts/${target.publicId}/sanctions`,
+        {
+          category: 'offensive_chat',
+          reason: 'Ofensas repetidas',
+          measures: [{ type: 'warning', durationMinutes: null }],
+          reportId: found?.id,
+        },
+      );
+      expect(response.statusCode, response.body).toBe(201);
+
+      expect(await cases(target.publicId)).toHaveLength(0);
+      const sanctioned = (await queue(moderator, '?status=sanctioned&limit=100')).reports.filter(
+        (r) => r.target.publicId === target.publicId,
+      );
+      expect(sanctioned).toHaveLength(1);
+      expect(sanctioned[0]).toMatchObject({ status: 'sanctioned', count: 3 });
+    });
+
+    it('outro motivo, outro Mapa jogado ou outro mapa são casos separados', async () => {
+      const target = await player();
+      const send = async (extra: Parameters<typeof reportWith>[2]) =>
+        reportWith((await player()).steamId, target.steamId, extra);
+      await send({ mapPlayId: PLAY_A });
+      await send({ mapPlayId: PLAY_A });
+      await send({ mapPlayId: PLAY_B });
+      await send({ mapPlayId: PLAY_A, reason: 'cheat' });
+      // Sem o Mapa jogado (plugin antigo), vale o servidor e o nome do mapa.
+      await send({ map: 'de_mirage' });
+      await send({ map: 'de_mirage' });
+
+      const found = await cases(target.publicId);
+
+      expect(found.map((c) => [c.reason, c.count]).sort()).toEqual([
+        ['cheat', 1],
+        ['griefing', 1],
+        ['griefing', 2],
+        ['griefing', 2],
+      ]);
+    });
+
+    it('quem tem 3 arquivadas em 90 dias e mais arquivadas que confirmadas vai para o fim da fila, sem prazo', async () => {
+      const noisy = await player('barulhento');
+      for (let i = 0; i < 3; i++) {
+        const target = await player();
+        await report(noisy.steamId, target.steamId);
+        const [found] = await cases(target.publicId);
+        const done = await moderator.call('POST', `/api/staff/reports/${found?.id}/archive`, {
+          reason: 'Sem prova',
+        });
+        expect(done.statusCode, done.body).toBe(204);
+      }
+      const onlyNoisy = await player();
+      await report(noisy.steamId, onlyNoisy.steamId);
+      const normal = await player();
+      await report((await player()).steamId, normal.steamId);
+      // Denunciado por quem perdeu peso e depois por alguém de peso normal: fica no grupo normal.
+      const both = await player();
+      await report(noisy.steamId, both.steamId);
+      await report((await player()).steamId, both.steamId);
+
+      const open = (await queue(moderator, '?limit=100')).reports;
+      const index = (publicId: number) => open.findIndex((r) => r.target.publicId === publicId);
+
+      const low = open[index(onlyNoisy.publicId)];
+      expect(low).toMatchObject({ lowWeight: true, deadlineAt: null });
+      expect(low?.members[0]?.lowWeight).toBe(true);
+      expect(open[index(normal.publicId)]?.deadlineAt).not.toBeNull();
+      // Denunciada antes, mas depois das de peso normal.
+      expect(index(normal.publicId)).toBeLessThan(index(onlyNoisy.publicId));
+      expect(index(both.publicId)).toBeLessThan(index(onlyNoisy.publicId));
+      const mixed = open[index(both.publicId)];
+      expect(mixed).toMatchObject({ lowWeight: false, count: 2 });
+      // O prazo corre da Denúncia de peso normal, não da primeira (de quem perdeu peso).
+      expect(Date.parse(mixed?.deadlineAt as string)).toBe(
+        Date.parse(mixed?.members[1]?.createdAt as string) + 72 * 3_600_000,
+      );
+    });
+
+    it('a 11ª Denúncia do dia é recusada com o texto da regra, e a décima passa', async () => {
+      const reporter = await player('metralhadora');
+      const [server] = await t.postgres.db.select().from(gameServers).limit(1);
+      const reports_ = t.app.get(Reports);
+      const serverInfo = {
+        id: server?.id as string,
+        name: server?.name as string,
+        code: server?.code ?? null,
+        mode: server?.mode as 'retake',
+      };
+      // 13 min entre uma e outra: nunca 5 na mesma hora, então só o teto do dia pode recusar.
+      const start = new Date(dayStartOf(new Date()).getTime() + 2 * 3_600_000);
+      const send = async (n: number) =>
+        reports_.create(
+          serverInfo,
+          {
+            reporterSteamId: reporter.steamId,
+            targetSteamId: (await player()).steamId,
+            reason: 'other',
+            round: null,
+            map: null,
+            mapPlayId: null,
+          },
+          new Date(start.getTime() + n * 13 * 60_000),
+        );
+
+      for (let n = 0; n < 10; n++) {
+        const outcome = await send(n);
+        expect(outcome.result.accepted, `denúncia ${n + 1}`).toBe(true);
+      }
+      const eleventh = await send(10);
+
+      expect(eleventh.result).toMatchObject({
+        accepted: false,
+        refusal: 'daily_limit',
+        message: 'Você já enviou 10 denúncias hoje. Tente amanhã.',
+      });
     });
   });
 });

@@ -1,5 +1,5 @@
 {
-  "id": "8747b368-72f4-4fd5-9bd9-9afea903fc6f",
+  "id": "8c9d942d-20bd-42b9-971c-1244dba51349",
   "prevId": "c2b79bc2-8213-41ec-8cce-d22b026b7a0e",
   "version": "7",
   "dialect": "postgresql",
@@ -163,74 +163,6 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.account_game_preferences": {
-      "name": "account_game_preferences",
-      "schema": "",
-      "columns": {
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "mode": {
-          "name": "mode",
-          "type": "game_mode",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "key": {
-          "name": "key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "value": {
-          "name": "value",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "account_game_preferences_account_id_accounts_id_fk": {
-          "name": "account_game_preferences_account_id_accounts_id_fk",
-          "tableFrom": "account_game_preferences",
-          "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {
-        "account_game_preferences_account_id_mode_key_pk": {
-          "name": "account_game_preferences_account_id_mode_key_pk",
-          "columns": [
-            "account_id",
-            "mode",
-            "key"
-          ]
-        }
-      },
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
@@ -2803,6 +2735,12 @@
         "round": {
           "name": "round",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "map_play_id": {
+          "name": "map_play_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },

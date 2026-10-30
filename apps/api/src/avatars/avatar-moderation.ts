@@ -1,8 +1,10 @@
-import { STAFF_REPORTS_PAGE_DEFAULT } from '@carmine/contracts';
+import {
+  REPORT_DAILY_LIMIT,
+  REPORT_DAILY_LIMIT_MESSAGE,
+  STAFF_REPORTS_PAGE_DEFAULT,
+} from '@carmine/contracts';
 import {
   AVATAR_REMOVED_RETENTION_DAYS,
-  AVATAR_REPORTER_KEPT_MIN,
-  AVATAR_REPORTER_WINDOW_DAYS,
   AVATAR_REPORTS_PER_HOUR,
   type AvatarDecisionInput,
   type AvatarReason,
@@ -29,9 +31,12 @@ import {
 } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accountAvatars, accounts, avatarReports } from '../database/schema.js';
+import { countReportsSince, lockReporter } from '../reports/report-tally.js';
+import { reporterLowWeight, reviewDeadline, weightWindowStart } from '../reports/report-weight.js';
 import { recordStaffAudit } from '../staff/audit-log.js';
 import type { StaffActor } from '../staff/staff.guard.js';
 import { StaffRejection } from '../staff/staff-errors.js';
+import { dayStartOf, nextDayStartOf } from '../stats/stats-week.js';
 import type { AvatarFiles } from './avatar-files.js';
 import type { AvatarReportNotifier } from './avatar-moderation-discord.js';
 import { AvatarRejection } from './avatar-processor.js';
@@ -56,33 +61,29 @@ const REVIEWABLE: AvatarRow['status'][] = ['active', 'suspended', 'replaced', 'r
 const asDate = (value: Date | string): Date => (value instanceof Date ? value : new Date(value));
 
 /**
- * O instante da primeira denúncia ainda aberta da foto (a ordem da fila aberta). Colunas por extenso: ver
- * o comentário em `page`.
+ * O instante que ordena a foto na fila aberta: o da denúncia aberta mais antiga de quem tem peso normal (a do prazo) e,
+ * se todas são de quem perdeu peso, o da mais antiga. Colunas por extenso: ver o comentário em `page`.
  */
-const FIRST_OPEN = sql`(
-  select min(r.created_at) from avatar_reports r
-  where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+const firstOpen = (since: Date) => sql`coalesce(
+  (
+    select min(r.created_at) from avatar_reports r
+    where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+      and not ${reporterLowWeight(sql.raw('r.reporter_account_id'), since)}
+  ),
+  (
+    select min(r.created_at) from avatar_reports r
+    where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+  )
 )`;
 
 /**
- * Em SQL: a denúncia `r` é de uma Conta que perdeu peso? Perde quem tem pelo menos `AVATAR_REPORTER_KEPT_MIN`
- * denúncias mantidas pela Staff (arquivadas) desde `since` e mais mantidas do que confirmadas (foto removida).
- * Colunas e apelidos por extenso, como em `FIRST_OPEN`.
- */
-const lowWeightReport = (since: Date) => sql`coalesce((
-  select count(*) filter (where x.dismissed_at is not null) >= ${AVATAR_REPORTER_KEPT_MIN}
-    and count(*) filter (where x.dismissed_at is not null) > count(*) filter (where p.status = 'removed')
-  from avatar_reports x join account_avatars p on p.id = x.avatar_id
-  where x.reporter_account_id = r.reporter_account_id and x.created_at > ${since.toISOString()}::timestamptz
-), false)`;
-
-/**
  * O grupo da foto na fila aberta: 0 se ela tem alguma denúncia aberta de quem tem peso normal, 1 se só tem de quem
- * perdeu peso (essas vão para o fim da fila).
+ * perdeu peso (essas vão para o fim da fila). O peso é o da regra única de denúncia (ADR 0027), de todos os tipos.
  */
 const queueGroup = (since: Date) => sql<number>`(case when exists (
   select 1 from avatar_reports r
-  where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null and not ${lowWeightReport(since)}
+  where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+    and not ${reporterLowWeight(sql.raw('r.reporter_account_id'), since)}
 ) then 0 else 1 end)`;
 
 /**
@@ -134,35 +135,49 @@ export class AvatarModeration {
       .from(accountAvatars)
       .where(and(eq(accountAvatars.accountId, target.id), eq(accountAvatars.status, 'active')));
     if (!avatar) throw new AvatarRejection('no_custom_avatar', 'Este Perfil não tem foto própria');
-    if (avatar.decision === 'keep') return { received: true };
-
-    const recent = await this.db
-      .select({ createdAt: avatarReports.createdAt })
-      .from(avatarReports)
-      .where(
-        and(
-          eq(avatarReports.reporterAccountId, reporterId),
-          gt(avatarReports.createdAt, new Date(now.getTime() - HOUR_MS)),
-        ),
-      )
-      .orderBy(avatarReports.createdAt);
-    if (recent.length >= AVATAR_REPORTS_PER_HOUR) {
-      const counting = recent[recent.length - AVATAR_REPORTS_PER_HOUR];
-      throw new AvatarRejection(
-        'report_limit',
-        'Muitas denúncias de foto na última hora',
-        counting && new Date(counting.createdAt.getTime() + HOUR_MS),
-      );
-    }
-
-    const inserted = await this.db
-      .insert(avatarReports)
-      .values({ avatarId: avatar.id, reporterAccountId: reporterId, reason, createdAt: now })
-      .onConflictDoNothing()
-      .returning({ id: avatarReports.id });
-    if (inserted.length === 0) {
-      throw new AvatarRejection('already_reported', 'Você já denunciou esta foto');
-    }
+    const verdict = await this.db.transaction(async (tx) => {
+      await lockReporter(tx, reporterId);
+      // O teto por dia soma todos os tipos de Denúncia (regra única de denúncia, ADR 0027).
+      const sentToday = await countReportsSince(tx, reporterId, dayStartOf(now));
+      if (sentToday >= REPORT_DAILY_LIMIT) {
+        throw new AvatarRejection(
+          'report_daily_limit',
+          REPORT_DAILY_LIMIT_MESSAGE,
+          nextDayStartOf(now),
+        );
+      }
+      const recent = await tx
+        .select({ createdAt: avatarReports.createdAt })
+        .from(avatarReports)
+        .where(
+          and(
+            eq(avatarReports.reporterAccountId, reporterId),
+            gt(avatarReports.createdAt, new Date(now.getTime() - HOUR_MS)),
+          ),
+        )
+        .orderBy(avatarReports.createdAt);
+      if (recent.length >= AVATAR_REPORTS_PER_HOUR) {
+        const counting = recent[recent.length - AVATAR_REPORTS_PER_HOUR];
+        throw new AvatarRejection(
+          'report_limit',
+          'Muitas denúncias de foto na última hora',
+          counting && new Date(counting.createdAt.getTime() + HOUR_MS),
+        );
+      }
+      // Imagem já aprovada: descarta, sem gravar nada. Fica depois dos limites para a resposta ser a mesma de uma
+      // denúncia aceita em qualquer caso (quem denuncia não aprende se a imagem está aprovada).
+      if (avatar.decision === 'keep') return 'discarded' as const;
+      const inserted = await tx
+        .insert(avatarReports)
+        .values({ avatarId: avatar.id, reporterAccountId: reporterId, reason, createdAt: now })
+        .onConflictDoNothing()
+        .returning({ id: avatarReports.id });
+      if (inserted.length === 0) {
+        throw new AvatarRejection('already_reported', 'Você já denunciou esta foto');
+      }
+      return 'recorded' as const;
+    });
+    if (verdict === 'discarded') return { received: true };
 
     // Avisa a Staff na primeira denúncia aberta da foto.
     const [open] = await this.db
@@ -196,9 +211,9 @@ export class AvatarModeration {
     const open = status === 'open';
     // Colunas escritas por extenso de propósito: numa seleção de uma tabela só, o drizzle tira o prefixo das
     // colunas dentro de `sql`, e a subconsulta passaria a comparar com as colunas dela mesma.
-    const sortAt = open ? FIRST_OPEN : sql`"account_avatars"."decided_at"`;
+    const since = weightWindowStart(this.now());
+    const sortAt = open ? firstOpen(since) : sql`"account_avatars"."decided_at"`;
     const sortKey = sql<string>`to_char(${sortAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
-    const since = new Date(this.now().getTime() - AVATAR_REPORTER_WINDOW_DAYS * DAY_MS);
     const group = open ? queueGroup(since) : sql<number>`0`;
     const conditions: SQL[] = open
       ? [
@@ -246,7 +261,10 @@ export class AvatarModeration {
       )
       .limit(limit + 1);
     const pageRows = rows.slice(0, limit);
-    const cases = await this.casesOf(pageRows.map((row) => row.avatar));
+    const cases = await this.casesOf(
+      pageRows.map((row) => row.avatar),
+      since,
+    );
     const last = rows.length > limit ? pageRows[pageRows.length - 1] : undefined;
 
     const [counted] = await this.db
@@ -282,16 +300,16 @@ export class AvatarModeration {
       .select()
       .from(accountAvatars)
       .where(eq(accountAvatars.id, avatarId));
-    const [one] = avatar ? await this.casesOf([avatar]) : [];
+    const [one] = avatar ? await this.casesOf([avatar], weightWindowStart(this.now())) : [];
     if (!one) throw new StaffRejection('avatar_not_found', 'Foto não encontrada');
     return one;
   }
 
   /** Monta os casos de uma lista de fotos, na mesma ordem. */
-  private async casesOf(avatars: AvatarRow[]): Promise<StaffAvatarCase[]> {
+  private async casesOf(avatars: AvatarRow[], since: Date): Promise<StaffAvatarCase[]> {
     if (avatars.length === 0) return [];
     const ids = avatars.map((avatar) => avatar.id);
-    const [people, totals, reasons, previous] = await Promise.all([
+    const [people, totals, reasons, previous, waiting] = await Promise.all([
       this.db
         .select({
           avatarId: accountAvatars.id,
@@ -337,12 +355,29 @@ export class AvatarModeration {
             ),
           ),
         ),
+      // As denúncias ainda abertas de cada foto: quantas e a mais antiga de quem tem peso normal (a do prazo).
+      this.db
+        .select({
+          avatarId: avatarReports.avatarId,
+          open: count(),
+          firstNormalAt: sql<
+            Date | string | null
+          >`min(${avatarReports.createdAt}) filter (where not ${reporterLowWeight(sql.raw('"avatar_reports"."reporter_account_id"'), since)})`,
+        })
+        .from(avatarReports)
+        .where(and(inArray(avatarReports.avatarId, ids), isNull(avatarReports.dismissedAt)))
+        .groupBy(avatarReports.avatarId),
     ]);
     return avatars.map((avatar): StaffAvatarCase => {
       const who = people.find((row) => row.avatarId === avatar.id);
       const total = totals.find((row) => row.avatarId === avatar.id);
+      const pending = waiting.find((row) => row.avatarId === avatar.id);
+      const firstNormal = pending?.firstNormalAt ? asDate(pending.firstNormalAt) : null;
       return {
+        kind: 'avatar',
         avatar: this.staffAvatar(avatar),
+        deadlineAt: reviewDeadline('avatar', firstNormal)?.toISOString() ?? null,
+        lowWeight: pending !== undefined && pending.open > 0 && firstNormal === null,
         account: { publicId: who?.publicId ?? 0, displayName: who?.displayName ?? '' },
         reports: {
           reporters: total?.reporters ?? 0,

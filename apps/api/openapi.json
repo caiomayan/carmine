@@ -5949,7 +5949,7 @@
             }
           },
           "429": {
-            "description": "5 denúncias de foto na última hora (report_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "description": "5 denúncias de foto na última hora (report_limit) ou 10 no dia, de todos os tipos (report_daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
             "headers": {
               "Retry-After": {
                 "description": "Segundos até a próxima requisição ser aceita",
@@ -11200,6 +11200,9 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
+          "kind": {
+            "$ref": "#/components/schemas/ReportKind"
+          },
           "status": {
             "$ref": "#/components/schemas/ReportStatus"
           },
@@ -11210,6 +11213,28 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "members": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffReportMember"
+            }
+          },
+          "deadlineAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "lowWeight": {
+            "type": "boolean"
           },
           "target": {
             "$ref": "#/components/schemas/ReportPerson"
@@ -11265,9 +11290,14 @@
         },
         "required": [
           "id",
+          "kind",
           "status",
           "reason",
           "createdAt",
+          "count",
+          "members",
+          "deadlineAt",
+          "lowWeight",
           "target",
           "reporter",
           "server",
@@ -11279,6 +11309,15 @@
           "resolution"
         ],
         "additionalProperties": false
+      },
+      "ReportKind": {
+        "type": "string",
+        "enum": [
+          "game",
+          "chat",
+          "avatar",
+          "logo"
+        ]
       },
       "ReportStatus": {
         "type": "string",
@@ -11297,6 +11336,46 @@
           "griefing",
           "other"
         ]
+      },
+      "StaffReportMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "reporter": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportPerson"
+              }
+            ]
+          },
+          "round": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lowWeight": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "reporter",
+          "round",
+          "lowWeight"
+        ],
+        "additionalProperties": false
       },
       "ReportPerson": {
         "type": "object",
@@ -13667,6 +13746,13 @@
             "nullable": true,
             "type": "string",
             "maxLength": 64
+          },
+          "mapPlayId": {
+            "default": null,
+            "nullable": true,
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
         "required": [
@@ -13715,7 +13801,8 @@
           "self",
           "unknown_account",
           "same_target_cooldown",
-          "hourly_limit"
+          "hourly_limit",
+          "daily_limit"
         ]
       },
       "AvatarState": {
@@ -13902,7 +13989,8 @@
               "no_custom_avatar",
               "own_avatar",
               "already_reported",
-              "report_limit"
+              "report_limit",
+              "report_daily_limit"
             ]
           },
           "message": {
@@ -13976,8 +14064,23 @@
       "StaffAvatarCase": {
         "type": "object",
         "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar"
+            ]
+          },
           "avatar": {
             "$ref": "#/components/schemas/StaffAvatar"
+          },
+          "deadlineAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "lowWeight": {
+            "type": "boolean"
           },
           "account": {
             "type": "object",
@@ -14062,7 +14165,10 @@
           }
         },
         "required": [
+          "kind",
           "avatar",
+          "deadlineAt",
+          "lowWeight",
           "account",
           "reports",
           "previousRemovals",
