@@ -45,6 +45,14 @@
     -->
     <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="System.Runtime.Serialization.EnumMember(Value =" Replacement="System.Text.Json.Serialization.JsonStringEnumMemberName(" />
     <!--
+      O mesmo vale para um enum em parâmetro de rota ou de query: o ConvertToString do NSwag lê o EnumMember
+      para achar o texto do valor e, sem ele, mandava o número (preferences/0/toggle em vez de
+      preferences/awp_raffle/toggle).
+    -->
+    <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="typeof(System.Runtime.Serialization.EnumMemberAttribute)" Replacement="typeof(System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute)" />
+    <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="as System.Runtime.Serialization.EnumMemberAttribute;" Replacement="as System.Text.Json.Serialization.JsonStringEnumMemberNameAttribute;" />
+    <ReplaceInFile FilePath="$(GeneratedClientFile)" Find="attribute.Value != null ? attribute.Value : name" Replacement="attribute.Name != null ? attribute.Name : name" />
+    <!--
       Um oneOf sem discriminador (ActivityEvent, da faixa de atividade da home) vira uma lista de
       um tipo "Events" que o NJsonSchema nunca gera. O plugin não lê a atividade: ela fica como JSON cru.
     -->

@@ -10,6 +10,10 @@ Termos em **PT-BR** são os da interface; o nome entre parênteses é o usado no
 O registro de uma pessoa na plataforma, identificado pelo SteamID64. Nasce automaticamente no primeiro connect a um Servidor Carmine.
 _Evitar_: usuário, perfil, cadastro
 
+**Preferência de jogo** (`GamePreference`):
+Uma escolha do jogador que um plugin de jogo guardaria por servidor (estar no sorteio da AWP, as armas do `!guns`, os sons e o HUD do Deathmatch). Fica na Conta, guardada pela API, vale em todo servidor do Modo e o Carmine.Core a aplica no plugin (ADR 0028). Sem linha guardada vale o padrão da chave. Não é uma configuração do site: o jogador a muda dentro do jogo, por comando.
+_Evitar_: configuração do servidor, settings, preferências do plugin
+
 **Conta não reivindicada** (`unclaimed`):
 Conta que só existe porque a pessoa jogou; ela nunca fez login no site.
 _Evitar_: conta fantasma, conta temporária

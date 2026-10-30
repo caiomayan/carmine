@@ -128,9 +128,10 @@ export const accounts = pgTable(
     /** `!chat off` no jogo: o jogador não vê o chat dos outros. Padrão: chat visível. */
     chatHidden: boolean().notNull().default(false),
     /**
-     * Quando o Carmine.Core pôs a Conta na fila da AWP do Retake (S16): a AWP é para todos, mas o
-     * alocador só sorteia quem tem a preferência, que nasce vazia. Nulo: ainda não aplicada, e o
-     * connect manda `applyAwpDefault`. Vale uma vez por Conta, em todos os Servidores Carmine.
+     * Sem uso desde a decisão de 2026-10-29 (a AWP passou a ser uma Preferência de jogo, tabela
+     * `account_game_preferences`). A coluna nunca foi para a produção; sai numa migração própria,
+     * depois que nenhuma instância antiga a ler.
+     * @deprecated
      */
     awpDefaultAppliedAt: timestamptz(),
     /** A última curiosidade mostrada no connect (S16), para dois connects seguidos não repetirem. */
@@ -581,6 +582,26 @@ export const accountStatsWeekly = pgTable(
     primaryKey({ columns: [table.accountId, table.mode, table.weekStart] }),
     index('account_stats_weekly_ranking_idx').on(table.mode, table.weekStart),
   ],
+);
+
+/**
+ * Preferências de jogo da Conta (ADR 0028): o que um plugin de jogo guardaria por servidor, guardado
+ * na Conta para valer em todo servidor do Modo. Uma linha por preferência que a Conta mudou; sem linha,
+ * vale o padrão do contrato (`GAME_PREFERENCE_DEFAULTS`). O valor é JSON para caber os não booleanos
+ * que virão (por exemplo, as armas do Retake). Some com a Conta (cascade e anonimização).
+ */
+export const accountGamePreferences = pgTable(
+  'account_game_preferences',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    mode: gameMode().notNull(),
+    key: text().notNull(),
+    value: jsonb().notNull(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.mode, table.key] })],
 );
 
 /** Lado de um jogador num round (S12b). */
