@@ -116,9 +116,9 @@ test.describe('Painel da Staff', () => {
     await page.keyboard.press('Control+k');
     const palette = page.getByTestId('stp-palette');
     await expect(palette).toBeVisible();
-    await page.keyboard.type('denún');
+    await page.keyboard.type('pagam');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(`${STAFF}/denuncias`);
+    await expect(page).toHaveURL(`${STAFF}/pagamentos`);
     await expect(page.getByTestId('stp-coming')).toBeVisible();
 
     // O tema e o trilho vão para cookies lidos no servidor: a escolha vale depois de recarregar.
