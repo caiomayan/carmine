@@ -59,7 +59,7 @@ const COUNT_COLUMNS = [
 
 const sumColumns = sql.join(
   COUNT_COLUMNS.map(
-    ([key, column]) => sql`coalesce(sum(${sql.raw(column)}), 0)::int as ${sql.raw(key)}`,
+    ([key, column]) => sql`coalesce(sum(${sql.raw(column)}), 0)::int as "${sql.raw(key)}"`,
   ),
   sql`, `,
 );
