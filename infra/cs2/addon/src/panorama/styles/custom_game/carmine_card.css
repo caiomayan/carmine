@@ -1,0 +1,147 @@
+/*
+ * Card de boas-vindas do Carmine (S19). P&B da marca (#0a0a0a / #f5f5f5); sem carmim, a identidade atual é preto e branco.
+ * Regras do projeto: nada anima em loop; a única animação é a transição de entrada/saída, só de transform e opacity,
+ * disparada pelo plugin ao remover/colocar a classe CarmineCardHidden. Sem o combinador de irmãos (til).
+ * Larguras em px fixos (o HUD do CS2 escala pela altura da tela).
+ */
+
+.carmine-root
+{
+	width: 100%;
+	height: 100%;
+}
+
+/* Canto: esquerda, abaixo do radar (que ocupa o topo à esquerda). Longe da mira (centro), do kill feed (topo
+   direito), do dinheiro/munição (embaixo) e do chat (embaixo à esquerda). Ajustar no teste em jogo: margin-top. */
+.carmine-card
+{
+	width: 260px;
+	height: fit-children;
+	horizontal-align: left;
+	vertical-align: top;
+	margin-left: 20px;
+	margin-top: 360px;
+	padding: 12px 14px 12px 14px;
+	flow-children: down;
+	background-color: rgba(10, 10, 10, 0.88);
+	border: 1px solid rgba(245, 245, 245, 0.14);
+	border-radius: 4px;
+	opacity: 1;
+	transform: translateX(0px);
+	/* Entrada: desliza da esquerda para o lugar e aparece. */
+	transition-property: transform, opacity;
+	transition-duration: 0.45s;
+	transition-timing-function: ease-out;
+}
+
+/* Estado inicial e de saída. O plugin REMOVE esta classe para mostrar e COLOCA de volta para sair (uns 6 s depois).
+   Sem visibility: collapse de propósito: com ele o painel some na hora e a saída deslizando não apareceria.
+   Todos os painéis têm hittest="false", então o card invisível não captura nada. */
+.CarmineCardHidden
+{
+	opacity: 0;
+	transform: translateX(-32px);
+	transition-duration: 0.3s;
+	transition-timing-function: ease-in;
+}
+
+.carmine-head
+{
+	width: 100%;
+	height: 26px;
+	flow-children: right;
+}
+
+.carmine-logo
+{
+	width: 24px;
+	height: 24px;
+	vertical-align: center;
+	background-image: url("s2r://panorama/images/carmine/logo.vtex");
+	background-size: 24px 24px;
+	background-repeat: no-repeat;
+}
+
+.carmine-name
+{
+	width: 130px;
+	margin-left: 8px;
+	vertical-align: center;
+	font-family: 'Arial Unicode MS';
+	font-size: 17px;
+	font-weight: bold;
+	color: #f5f5f5;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* Selo do plano: pílula branca com texto preto. Vazio: o plugin liga CarmineRowHidden em #carmine_row_plan. */
+.carmine-plan
+{
+	width: fit-children;
+	height: 16px;
+	horizontal-align: right;
+	vertical-align: center;
+	padding: 0px 6px 0px 6px;
+	background-color: #f5f5f5;
+	border-radius: 2px;
+}
+
+.carmine-plan-text
+{
+	vertical-align: center;
+	font-family: 'Arial Unicode MS';
+	font-size: 9px;
+	font-weight: bold;
+	letter-spacing: 1px;
+	color: #0a0a0a;
+	white-space: nowrap;
+}
+
+.carmine-rule
+{
+	width: 100%;
+	height: 1px;
+	margin-top: 8px;
+	margin-bottom: 8px;
+	background-color: rgba(245, 245, 245, 0.14);
+}
+
+.carmine-row
+{
+	width: 100%;
+	height: 18px;
+	flow-children: right;
+}
+
+.carmine-key
+{
+	width: 116px;
+	vertical-align: center;
+	font-family: 'Arial Unicode MS';
+	font-size: 11px;
+	color: rgba(245, 245, 245, 0.55);
+	white-space: nowrap;
+}
+
+.carmine-val
+{
+	width: 116px;
+	vertical-align: center;
+	text-align: right;
+	font-family: 'Arial Unicode MS';
+	font-size: 12px;
+	font-weight: bold;
+	color: #f5f5f5;
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+/* O Panorama não tem :empty para Label. Linha sem valor: o plugin liga esta classe no painel da linha
+   (carmine_row_plan, carmine_row_rank, carmine_row_friends, carmine_row_rating) e a linha sai do layout,
+   sem deixar buraco. Sem transição: a linha já nasce decidida, antes de o card aparecer. */
+.CarmineRowHidden
+{
+	visibility: collapse;
+	opacity: 0;
+}

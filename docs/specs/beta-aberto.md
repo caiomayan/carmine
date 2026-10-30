@@ -311,6 +311,13 @@ Um addon do Workshop, **único e pequeno** (poucos MB), obrigatório nos servido
 - Mudar o layout exige publicar uma versão nova do addon. Quem já está no jogo vê o layout antigo até reiniciar o CS2 (cache do Panorama).
 - Imagens do layout como `background-image` .vtex (BGRA8888), porque `<Image>` quebra o layout (pegadinhas do cs2-hud-panel). Recriar as entidades quando o jogador entra.
 
+**Como foi feito (PR da S19)**
+- **Texto por jogador:** o plugin pede à API `GET /api/server/players/{steamId}/card` no primeiro spawn de cada conexão (fora do connect, para o connect seguir leve) e a API devolve os textos prontos (`name`, `plan`, `rank`, `friends`, `rating`; vazio = a linha some). Sem resposta, o card mostra só o nome. Rating vazio até a S21.
+- **Servidor:** o MultiAddonManager (pinado em `infra/cs2/linux/versions.sh`) só entra nos perfis com `"addon": true`; o `prestart.sh` grava o ID do item (`CARMINE_ADDON_WORKSHOP_ID`) e a chave de emergência (`CARMINE_ADDON_ENABLED=0`). Sem ID publicado, nada muda. Operação: [`docs/operacao/addon-workshop.md`](../operacao/addon-workshop.md).
+- **Addon:** fonte, validador sem o jogo e roteiro do dono em `infra/cs2/addon/`. O contrato de nomes (painel, classe, variáveis) é conferido por teste entre o addon e o plugin.
+- **Logo nas paredes:** `env_decal` com o material do addon, nos pontos de `cfg/carmine/wall-logos.json` do perfil (vazio até alguém marcá-los no jogo com `css_carmine_logo_here`, que só `@css/root` usa).
+- **Fora desta entrega:** a mensagem de quem recusa o download (ver o README do addon: o jogador recusado nem chega ao chat); o que mais depende do teste no jogo está na tabela "O que o teste no jogo decide" do mesmo README.
+
 **Aceite**
 - No servidor da AWS, um jogador novo baixa o addon, entra e vê o card com os próprios dados por cerca de 6 s.
 - Quem recusa o download não entra e não fica preso em loop eterno.

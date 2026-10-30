@@ -54,6 +54,22 @@ public sealed class CoreConfig : BasePluginConfig
     [JsonPropertyName("ReservedSlots")]
     public string ReservedSlots { get; set; } = "";
 
+    /// <summary>
+    /// Addon do Workshop (S19): liga o card de boas-vindas e o logo nas paredes. O <c>prestart.sh</c> só o liga nos
+    /// perfis abertos, com o item publicado e a chave de emergência (<c>CARMINE_ADDON_ENABLED</c>) ligada. Padrão
+    /// desligado: Salas privadas e servidores sem o item nunca mostram o card.
+    /// </summary>
+    [JsonPropertyName("AddonEnabled")]
+    public bool AddonEnabled { get; set; }
+
+    /// <summary>Quanto tempo o card de boas-vindas fica na tela, em segundos.</summary>
+    [JsonPropertyName("CardSeconds")]
+    public float CardSeconds { get; set; } = AddonCard.DefaultSeconds;
+
+    /// <summary>O material do logo nas paredes, dentro do addon.</summary>
+    [JsonPropertyName("WallLogoMaterial")]
+    public string WallLogoMaterial { get; set; } = AddonCard.WallLogoMaterial;
+
     /// <summary>O modo da Vaga reservada; lança se o texto não é um dos aceitos.</summary>
     [JsonIgnore]
     public ReservedSlotsMode ReservedSlotsMode => Core.ReservedSlots.ParseMode(ReservedSlots);

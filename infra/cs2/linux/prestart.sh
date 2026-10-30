@@ -43,6 +43,22 @@ require_match INVSIM_FALLBACK_TEAM '^[01]$'
 RESERVED_SLOTS="${RESERVED_SLOTS:-}"
 [[ "$RESERVED_SLOTS" =~ ^[A-Za-z0-9,_-]*$ ]] || fail "RESERVED_SLOTS tem caracteres inválidos"
 
+# Addon do Workshop (S19). ADDON vem do profile.env (profile.json "addon": true): só os servidores abertos o
+# têm, as Salas privadas nunca. O item é o ID do Workshop em CARMINE_ADDON_WORKSHOP_ID (vazio: o addon ainda não
+# foi publicado, nada muda). CARMINE_ADDON_ENABLED=0 é a chave de emergência: desliga a exigência do download e
+# o card sem novo release (o MultiAddonManager costuma quebrar a cada update do CS2); basta editar o arquivo de
+# ambiente e reiniciar (docs/operacao/addon-workshop.md).
+ADDON="${ADDON:-0}"
+CARMINE_ADDON_WORKSHOP_ID="${CARMINE_ADDON_WORKSHOP_ID:-}"
+CARMINE_ADDON_ENABLED="${CARMINE_ADDON_ENABLED:-1}"
+[[ "$ADDON" =~ ^[01]$ ]] || fail "ADDON deve ser 0 ou 1"
+[[ "$CARMINE_ADDON_ENABLED" =~ ^[01]$ ]] || fail "CARMINE_ADDON_ENABLED deve ser 0 ou 1"
+[[ "$CARMINE_ADDON_WORKSHOP_ID" =~ ^[0-9]*$ ]] || fail "CARMINE_ADDON_WORKSHOP_ID deve ter só dígitos (o ID do item do Workshop)"
+ADDON_ON=false
+if [[ "$ADDON" == 1 && "$CARMINE_ADDON_ENABLED" == 1 && -n "$CARMINE_ADDON_WORKSHOP_ID" ]]; then
+  ADDON_ON=true
+fi
+
 umask 077
 
 # Escreve num temporário e renomeia: um crash no meio nunca deixa a config pela metade.
@@ -65,9 +81,32 @@ write_atomic "$core_dir/Carmine.Core.json" <<EOF
   "HeartbeatIntervalSeconds": 10,
   "PublicSlots": $PUBLIC_SLOTS,
   "ReservedSlots": "$RESERVED_SLOTS",
+  "AddonEnabled": $ADDON_ON,
   "ConfigVersion": 1
 }
 EOF
+
+# MultiAddonManager: o cfg é executado uma vez, quando o plugin carrega. Com a chave de emergência ou sem ID,
+# a lista de addons fica vazia e o servidor aceita quem não tem o addon.
+if [[ "$ADDON" == 1 ]]; then
+  mm_dir="$GAME_DIR/cfg/multiaddonmanager"
+  mkdir -p "$mm_dir"
+  mm_addons=""
+  [[ "$ADDON_ON" == true ]] && mm_addons="$CARMINE_ADDON_WORKSHOP_ID"
+  write_atomic "$mm_dir/multiaddonmanager.cfg" <<EOF
+// Gerado a cada início por prestart.sh a partir de /etc/carmine-cs2/$PROFILE.env. Não edite.
+mm_extra_addons "$mm_addons"
+mm_extra_addons_timeout 10
+// Quem recusa o download não fica preso em loop: o cliente é solto depois de 30 s.
+mm_addon_connection_timeout 30
+mm_addon_mount_download 0
+// Só a primeira entrada demora: o Steam do jogador guarda o addon em cache.
+mm_cache_clients_with_addons 1
+mm_cache_clients_duration 0
+mm_block_disconnect_messages 1
+mm_addon_debug 0
+EOF
+fi
 
 # InventorySimulator: o server.cfg (executado a cada mapa) chama este cfg. A chave grava o StatTrak.
 cfg_dir="$GAME_DIR/cfg/carmine"
@@ -103,4 +142,8 @@ sed -i -E 's/"FollowCS2ServerGuidelines"[[:space:]]*:[[:space:]]*true/"FollowCS2
 # cada plugin carrega o lang/pt-BR.json dele (os que não trazem, o perfil entrega).
 sed -i -E 's/"ServerLanguage"[[:space:]]*:[[:space:]]*"[^"]*"/"ServerLanguage": "pt-BR"/' "$core_json"
 
-echo "carmine-cs2@$PROFILE: configs gravadas (API $CARMINE_API_BASE_URL)"
+addon_state=desligado
+if [[ "$ADDON_ON" == true ]]; then
+  addon_state=ligado
+fi
+echo "carmine-cs2@$PROFILE: configs gravadas (API $CARMINE_API_BASE_URL, addon $addon_state)"

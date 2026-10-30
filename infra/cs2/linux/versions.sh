@@ -55,3 +55,17 @@ GP_ONLY[CS2MenuManager]='shared'
 # ele baixa as mais novas a cada início).
 ALLOCATOR_GAMEDATA_URL='https://raw.githubusercontent.com/Micka2302/cs2-retakes-allocator-2.0/41da2cd41e6238ce62e1d455839e46f61a9d14ee/Resources/RetakesAllocator_gamedata.json'
 ALLOCATOR_GAMEDATA_SHA256='24090acd7fcaa6f7812b1adc22a770bb9c4c7ab06e66f103067bf0850ccb2d12'
+
+# MultiAddonManager (Source2ZE, Metamod): faz os clientes baixarem o addon do Workshop do Carmine (S19).
+# Só entra nos perfis com "addon": true no profile.json (os servidores abertos); as Salas privadas nunca
+# usam addon. O pacote vem em duas compilações, uma por runtime da Steam: o CS2 em Linux ficou com as duas
+# (steamrt3 e steamrt4). O padrão é a steamrt4; se o Metamod não carregar o plugin ("multiaddonmanager.so:
+# version GLIBC/GLIBCXX not found" no log), exporte CARMINE_MAM_RUNTIME=steamrt3 e rode de novo a etapa profiles.
+MAM_VERSION='1.7.3'
+MAM_RUNTIME="${CARMINE_MAM_RUNTIME:-steamrt4}"
+declare -A MAM_SHA256=(
+  [steamrt3]='437cbaf5537a47c5bfd341a42749271b4d659bc42c0405a785d2a5d86cda4e58'
+  [steamrt4]='d46bdb4fc442633fe1691e223ded3b513fd27a60c737258d47e676a6343d9d29'
+)
+MAM_FILE="MultiAddonManager-v${MAM_VERSION}-${MAM_RUNTIME}.tar.gz"
+MAM_URL="https://github.com/Source2ZE/MultiAddonManager/releases/download/v${MAM_VERSION}/${MAM_FILE}"

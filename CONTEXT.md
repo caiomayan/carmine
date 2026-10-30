@@ -10,6 +10,14 @@ Termos em **PT-BR** são os da interface; o nome entre parênteses é o usado no
 O registro de uma pessoa na plataforma, identificado pelo SteamID64. Nasce automaticamente no primeiro connect a um Servidor Carmine.
 _Evitar_: usuário, perfil, cadastro
 
+**Addon do Carmine** (S19):
+O conteúdo do Workshop que os servidores abertos exigem do jogador (card de boas-vindas em Panorama e logo nas paredes). Um item só, neutro, publicado pela conta Steam do dono; as Salas privadas nunca o usam. A chave de emergência (`CARMINE_ADDON_ENABLED=0`) o desliga sem novo release.
+_Evitar_: mod, pacote de skins
+
+**Card de boas-vindas** (S19):
+O painel que entra deslizando por cerca de 6 s quando o jogador nasce num servidor aberto, com nome, plano, posição no Ranking, amigos online e (a partir da S21) o Rating. Os textos vêm da API; o addon só os desenha.
+_Evitar_: popup, toast
+
 **Preferência de jogo** (`GamePreference`):
 Uma escolha do jogador que um plugin de jogo guardaria por servidor (estar no sorteio da AWP, as armas do `!guns`, os sons e o HUD do Deathmatch). Fica na Conta, guardada pela API, vale em todo servidor do Modo e o Carmine.Core a aplica no plugin (ADR 0028). Sem linha guardada vale o padrão da chave. Não é uma configuração do site: o jogador a muda dentro do jogo, por comando.
 _Evitar_: configuração do servidor, settings, preferências do plugin

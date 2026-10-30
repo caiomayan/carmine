@@ -145,6 +145,24 @@ export const playerChatPreferenceSchema = z
 export type PlayerChatPreference = z.infer<typeof playerChatPreferenceSchema>;
 
 /**
+ * `GET /api/server/players/{steamId}/card` (S19): os textos do card de boas-vindas em Panorama, já em
+ * português, só para quem entrou. O Modo é o do Servidor Carmine que pergunta. Texto vazio: a linha não
+ * aparece no card (sem plano, fora do Ranking, sem amigos online, Rating só a partir da S21). O plugin
+ * só os entrega ao addon; quem decide o que dizer é a API. 404 se a Conta não existe.
+ */
+export const playerCardSchema = z
+  .strictObject({
+    name: z.string(),
+    plan: z.string(),
+    rank: z.string(),
+    friends: z.string(),
+    rating: z.string(),
+  })
+  .meta({ id: 'PlayerCard' });
+
+export type PlayerCard = z.infer<typeof playerCardSchema>;
+
+/**
  * `GET /api/server/players/{steamId}/rank` e `/stats` (S16): a linha pronta, em português, que o
  * `!rank` e o `!stats` mostram só a quem pediu. O Modo é o do Servidor Carmine que pergunta. 404 se a
  * Conta não existe.

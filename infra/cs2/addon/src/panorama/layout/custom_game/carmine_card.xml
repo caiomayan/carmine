@@ -1,0 +1,40 @@
+<root>
+	<!--
+		Card de boas-vindas do Carmine (S19). Layout do custom_hud_layout, sem script e sem clique.
+		Contrato com o plugin: addon.contract.json (painel, classes, variáveis); o validador confere os dois lados.
+		As regras do Panorama no CS2 usadas aqui (sem scripts, sem Image, sem o combinador "til" no CSS, imagem como
+		background-image .vtex) vêm do projeto de referência MIT CustomHudProbeSW2 (SwiftlyS2, teste do
+		custom_hud_layout); o visual é nosso.
+
+		Variáveis de diálogo (o servidor define por jogador no painel carmine_card): name, plan, rank, friends, rating.
+		Linha sem valor: o plugin liga a classe CarmineRowHidden no painel da linha (ver carmine_card.css).
+		Os rótulos fixos ("Ranking da semana" etc.) fazem parte do addon: mudar o texto exige publicar versão nova.
+	-->
+	<styles>
+		<include src="s2r://panorama/styles/custom_game/carmine_card.vcss_c" />
+	</styles>
+	<Panel class="carmine-root" hittest="false">
+		<Panel id="carmine_card" class="carmine-card CarmineCardHidden" hittest="false">
+			<Panel class="carmine-head" hittest="false">
+				<Panel class="carmine-logo" hittest="false" />
+				<Label class="carmine-name" text="{s:name}" hittest="false" />
+				<Panel id="carmine_row_plan" class="carmine-plan" hittest="false">
+					<Label class="carmine-plan-text" text="{s:plan}" hittest="false" />
+				</Panel>
+			</Panel>
+			<Panel class="carmine-rule" hittest="false" />
+			<Panel id="carmine_row_rank" class="carmine-row" hittest="false">
+				<Label class="carmine-key" text="Ranking da semana" hittest="false" />
+				<Label class="carmine-val" text="{s:rank}" hittest="false" />
+			</Panel>
+			<Panel id="carmine_row_friends" class="carmine-row" hittest="false">
+				<Label class="carmine-key" text="Amigos online" hittest="false" />
+				<Label class="carmine-val" text="{s:friends}" hittest="false" />
+			</Panel>
+			<Panel id="carmine_row_rating" class="carmine-row" hittest="false">
+				<Label class="carmine-key" text="Rating" hittest="false" />
+				<Label class="carmine-val" text="{s:rating}" hittest="false" />
+			</Panel>
+		</Panel>
+	</Panel>
+</root>

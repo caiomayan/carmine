@@ -114,6 +114,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _vipInfo = new VipInfo(client, TimeProvider.System);
         LoadReservedSlots(client, hotReload);
         LoadEvents(client, hotReload);
+        LoadAddon(client, hotReload);
         LoadReports(client);
 
         RegisterEventHandler<EventPlayerConnectFull>(OnPlayerConnectFull);
@@ -174,6 +175,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http = null;
         _sync = null;
         _greetings = null;
+        UnloadAddon();
         _awp = null;
         _gameStats = null;
         _heartbeat = null;
@@ -234,6 +236,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     current.SendChat(greeting);
                 }
+                if (_welcome?.TakeOnSpawn(current.SteamID) == true)
+                {
+                    ShowWelcomeCard(current);
+                }
                 if (_awp?.TakeOnSpawn(current.SteamID) is { } awpEnabled)
                 {
                     ApplyAwp(current, awpEnabled);
@@ -262,6 +268,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
             _greetings?.OnDisconnect(player.SteamID);
+            _welcome?.OnDisconnect(player.SteamID);
             _awp?.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
@@ -421,6 +428,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         var playing = player is not null && IsPlaying(player);
         var greetingNow = _greetings?.OnConnectResult(steamId, result.Greeting, isAlive: playing);
+        var cardNow = _welcome?.OnConnectResult(steamId, isAlive: playing) == true;
         var awpNow = _awp?.OnConnectResult(steamId, result.Preferences.AwpRaffle, isAlive: playing);
         if (player is null)
         {
@@ -436,6 +444,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (greetingNow is not null)
         {
             player.SendChat(greetingNow);
+        }
+        if (cardNow)
+        {
+            ShowWelcomeCard(player);
         }
         if (awpNow is { } awpEnabled)
         {
