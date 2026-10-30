@@ -127,6 +127,14 @@ export const accounts = pgTable(
     lastConnectedAt: timestamptz(),
     /** `!chat off` no jogo: o jogador não vê o chat dos outros. Padrão: chat visível. */
     chatHidden: boolean().notNull().default(false),
+    /**
+     * Quando o Carmine.Core pôs a Conta na fila da AWP do Retake (S16): a AWP é para todos, mas o
+     * alocador só sorteia quem tem a preferência, que nasce vazia. Nulo: ainda não aplicada, e o
+     * connect manda `applyAwpDefault`. Vale uma vez por Conta, em todos os Servidores Carmine.
+     */
+    awpDefaultAppliedAt: timestamptz(),
+    /** A última curiosidade mostrada no connect (S16), para dois connects seguidos não repetirem. */
+    lastCuriosity: text(),
     /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
     anonymizedAt: timestamptz(),
     /**
@@ -1003,6 +1011,8 @@ export const reports = pgTable(
     serverId: uuid().references(() => gameServers.id),
     map: text(),
     round: integer(),
+    /** O Mapa jogado em andamento (S17), quando o plugin o manda; agrupa os casos da fila. Sem FK: o resumo pode não existir. */
+    mapPlayId: uuid(),
     reason: reportReason().notNull(),
     chatContext: jsonb().$type<ReportChatLineRow[]>().notNull(),
     status: reportStatus().notNull().default('open'),

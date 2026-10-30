@@ -42,7 +42,11 @@ describe('POST /api/server/player-connects', () => {
     const result = await connectOk({ steamId, steamName: 'coldzera' });
 
     expect(performance.now() - startedAt).toBeLessThan(2000);
-    expect(result).toMatchObject({ displayName: 'coldzera', isFirstConnect: true });
+    expect(result).toMatchObject({
+      displayName: 'coldzera',
+      isFirstConnect: true,
+      greeting: 'Bem-vindo, coldzera. Ao jogar você concorda com os termos: stcarmine.com/terms',
+    });
     expect(result.publicId).toBeGreaterThanOrEqual(10_000);
     expect(await t.accounts.findBySteamId(steamId)).toMatchObject({
       steamId,
@@ -67,6 +71,8 @@ describe('POST /api/server/player-connects', () => {
       vipEndsAt: null,
       sanctions: [],
       chatHidden: false,
+      applyAwpDefault: true,
+      greeting: 'Bem-vindo, FalleN.',
     });
   });
 
@@ -259,6 +265,65 @@ describe('POST /api/server/player-connects', () => {
       expect((await setChat(steamIdFor(1), 'sim')).statusCode).toBe(400);
       expect((await setChat('123', true)).statusCode).toBe(400);
       expect((await setChat(steamIdFor(1), true, null)).statusCode).toBe(401);
+    });
+  });
+
+  describe('AWP por padrão do Retake (S16)', () => {
+    function markAwp(steamId: string, key: string | null = t.serverKey) {
+      return t.app.inject({
+        method: 'POST',
+        url: `/api/server/players/${steamId}/awp-default`,
+        headers: key === null ? {} : { authorization: `Bearer ${key}` },
+      });
+    }
+
+    it('todo connect manda applyAwpDefault até a marca; depois dela, nunca mais, e marcar de novo não muda nada', async () => {
+      const steamId = steamIdFor(710);
+      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(true);
+      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(true);
+
+      expect((await markAwp(steamId)).statusCode).toBe(204);
+      expect((await markAwp(steamId)).statusCode).toBe(204);
+
+      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(false);
+    });
+
+    it('Conta que não existe: 404; SteamID inválido: 400; sem a chave do servidor: 401', async () => {
+      expect((await markAwp(steamIdFor(711))).statusCode).toBe(404);
+      expect((await markAwp('123')).statusCode).toBe(400);
+      expect((await markAwp(steamIdFor(1), null)).statusCode).toBe(401);
+    });
+  });
+
+  describe('!rank e !stats do jogo (S16)', () => {
+    function line(kind: 'rank' | 'stats', steamId: string, key: string | null = t.serverKey) {
+      return t.app.inject({
+        url: `/api/server/players/${steamId}/${kind}`,
+        headers: key === null ? {} : { authorization: `Bearer ${key}` },
+      });
+    }
+
+    it('Conta sem jogo na semana: o rank diz quanto falta e o stats diz que ainda não jogou', async () => {
+      const steamId = steamIdFor(720);
+      await connectOk({ steamId, steamName: 'novato' });
+
+      const rank = await line('rank', steamId);
+      const stats = await line('stats', steamId);
+
+      expect(rank.statusCode, rank.body).toBe(200);
+      expect(rank.json().message).toMatch(
+        /^Falt(a|am) \d+ (round|rounds|minuto|minutos) para você entrar no Ranking desta semana.$/,
+      );
+      expect(stats.json().message).toMatch(
+        /^Você ainda não jogou (Retake|Deathmatch) esta semana.$/,
+      );
+    });
+
+    it('Conta que não existe: 404; SteamID inválido: 400; sem a chave do servidor: 401', async () => {
+      expect((await line('rank', steamIdFor(721))).statusCode).toBe(404);
+      expect((await line('stats', steamIdFor(721))).statusCode).toBe(404);
+      expect((await line('rank', '123')).statusCode).toBe(400);
+      expect((await line('stats', steamIdFor(1), null)).statusCode).toBe(401);
     });
   });
 });

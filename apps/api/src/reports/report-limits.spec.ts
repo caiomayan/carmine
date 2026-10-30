@@ -1,3 +1,4 @@
+import { REPORT_DAILY_LIMIT_MESSAGE } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
 import { checkReportLimits, refusalMessage } from './report-limits.js';
 
@@ -90,5 +91,32 @@ describe('refusalMessage', () => {
   it('recusa clara para a própria pessoa e para quem não tem Conta', () => {
     expect(refusalMessage('self', null)).toBe('Você não pode denunciar a si mesmo.');
     expect(refusalMessage('unknown_account', null)).toMatch(/Não foi possível/);
+  });
+});
+
+describe('o teto por dia (regra única de denúncia)', () => {
+  // 15:00 UTC = 12:00 em Brasília; o dia fecha à meia-noite de Brasília = 03:00 UTC do dia seguinte.
+  it('libera até a décima Denúncia do dia e recusa a 11ª, dizendo para tentar amanhã', () => {
+    expect(checkReportLimits([], 'alvo', NOW, 9)).toEqual({ allowed: true });
+    expect(checkReportLimits([], 'alvo', NOW, 10)).toEqual({
+      allowed: false,
+      refusal: 'daily_limit',
+      retryAfterSeconds: 12 * 3600,
+    });
+  });
+
+  it('quando o limite da hora vale junto, a recusa é a do prazo mais longo (a do dia)', () => {
+    const past = [50, 40, 30, 20, 12].map((m, i) => ({
+      targetAccountId: `a${i}`,
+      createdAt: minutesAgo(m),
+    }));
+    expect(checkReportLimits(past, 'novo', NOW, 10)).toMatchObject({ refusal: 'daily_limit' });
+  });
+
+  it('a mensagem é a mesma do site e vai sem o prefixo da marca (o plugin põe o dele)', () => {
+    expect(refusalMessage('daily_limit', 3600)).toBe(
+      'Você já enviou 10 denúncias hoje. Tente amanhã.',
+    );
+    expect(refusalMessage('daily_limit', 3600)).toBe(REPORT_DAILY_LIMIT_MESSAGE);
   });
 });

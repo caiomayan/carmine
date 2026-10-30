@@ -14,6 +14,8 @@ import { LiveServersModule } from '../live-servers/live-servers.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { GameEventIngest } from './game-event-ingest.js';
 import { GameEventsController } from './game-events.controller.js';
+import { GameStatsReader } from './game-stats.js';
+import { PlayerGameStatsController } from './player-game-stats.controller.js';
 import { ProfileDetailReader } from './profile-detail.js';
 import { ProfileStatsController } from './profile-stats.controller.js';
 import { ProfileStatsReader } from './profile-stats.js';
@@ -28,6 +30,7 @@ import { WeeklyRanking } from './weekly-ranking.js';
   imports: [GameServersModule, AccountsModule, ActivityModule, LiveServersModule, AnalyticsModule],
   controllers: [
     GameEventsController,
+    PlayerGameStatsController,
     ProfileStatsController,
     RankingController,
     WeekSummaryController,
@@ -62,6 +65,12 @@ import { WeeklyRanking } from './weekly-ranking.js';
       inject: [DATABASE, VALKEY, APP_CONFIG],
       useFactory: (db: Database, valkey: Redis, config: AppConfig) =>
         new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
+    },
+    {
+      // O !rank e o !stats do jogo (S16).
+      provide: GameStatsReader,
+      inject: [DATABASE, WeeklyRanking],
+      useFactory: (db: Database, ranking: WeeklyRanking) => new GameStatsReader(db, ranking),
     },
     {
       // Percebe a troca do primeiro lugar da semana para a faixa de atividade.

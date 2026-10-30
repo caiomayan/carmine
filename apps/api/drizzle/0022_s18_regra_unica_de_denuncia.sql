@@ -1,0 +1,1 @@
+ALTER TABLE "reports" ADD COLUMN "map_play_id" uuid;

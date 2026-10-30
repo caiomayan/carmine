@@ -1,5 +1,7 @@
 # Denúncias na API e o chat dos servidores no mesmo lote de eventos
 
+> **Estendido pelo [ADR 0027](0027-regra-unica-de-denuncia.md) (regra única de denúncia, S18).** Ao limite de 1 por alvo a cada 10 minutos e 5 por hora soma-se o teto de 10 por dia, contando todos os tipos de Denúncia; a fila da Staff passa a ter um item por caso (mesma Conta, mesmo motivo, mesmo Mapa jogado), com o peso de quem denuncia e o prazo por tipo. O resto continua valendo.
+
 A S13 tem duas peças que se encontram: o log de chat dos servidores (30 dias) e a Denúncia (`!report`), que leva um recorte desse chat para a fila da Staff.
 
 **Chat no lote do ADR 0018.** Cada mensagem dita vira um evento `chatMessages` do lote `POST /api/server/events`, com ID próprio (UUID v7 do plugin), horário, SteamID64, lado (`ct`, `t` ou `spectator`) e se foi chat de time. O plugin enfileira na mesma fila em memória, com o mesmo recuo e a mesma idempotência (a chave é o ID da mensagem em `chat_messages`; reenviar não duplica). Mensagem de Conta que a API não conhece é aceita e ignorada. O lote antigo (sem o campo) continua válido. Fica de fora do log só o que ninguém lê: comandos silenciosos (`/algo`) e os comandos do próprio Carmine.Core (`!report`, `!chat`). Mensagem barrada pelo gag nunca chegou a ninguém e também não entra.

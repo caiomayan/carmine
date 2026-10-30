@@ -61,6 +61,18 @@ export const playerConnectResultSchema = z
      * ele as mensagens de chat dos outros. Padrão: chat visível (`false`).
      */
     chatHidden: z.boolean(),
+    /**
+     * A Conta ainda não passou pela AWP por padrão do Retake (S16): no primeiro spawn num Retake, o
+     * plugin põe o jogador na fila da AWP do alocador e avisa a API (`markPlayerAwpDefaultApplied`).
+     * `false` depois disso, para sempre: quem sair da fila fica fora.
+     */
+    applyAwpDefault: z.boolean(),
+    /**
+     * A linha única do connect nos servidores abertos (S16), já em português e sem o prefixo: as
+     * boas-vindas da Conta nova no Modo ou uma curiosidade da semana. O plugin a mostra no primeiro
+     * spawn de cada conexão. Nulo: nada a mostrar.
+     */
+    greeting: z.string().nullable(),
   })
   .meta({ id: 'PlayerConnectResult' });
 
@@ -91,3 +103,14 @@ export const playerChatPreferenceSchema = z
   .meta({ id: 'PlayerChatPreference' });
 
 export type PlayerChatPreference = z.infer<typeof playerChatPreferenceSchema>;
+
+/**
+ * `GET /api/server/players/{steamId}/rank` e `/stats` (S16): a linha pronta, em português, que o
+ * `!rank` e o `!stats` mostram só a quem pediu. O Modo é o do Servidor Carmine que pergunta. 404 se a
+ * Conta não existe.
+ */
+export const playerGameLineSchema = z
+  .strictObject({ message: z.string().min(1) })
+  .meta({ id: 'PlayerGameLine' });
+
+export type PlayerGameLine = z.infer<typeof playerGameLineSchema>;
