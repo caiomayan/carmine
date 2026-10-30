@@ -952,7 +952,7 @@ describe('Moderação da foto de perfil (F2 e S18)', () => {
         message: 'Você já enviou 10 denúncias hoje. Tente amanhã.',
       });
       expect(error.retryAfter).toBeTruthy();
-      // E a de jogo, da mesma Conta, também (a mensagem tem o prefixo da marca).
+      // E a de jogo, da mesma Conta, também.
       expect(reportResultSchema.parse((await server(player)).json()).accepted).toBe(false);
     });
 

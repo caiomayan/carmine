@@ -1,7 +1,7 @@
 import {
   formatRetryAfter,
   REPORT_DAILY_LIMIT,
-  REPORT_DAILY_LIMIT_GAME_MESSAGE,
+  REPORT_DAILY_LIMIT_MESSAGE,
   REPORT_HOURLY_LIMIT,
   REPORT_SAME_TARGET_COOLDOWN_MINUTES,
   type ReportRefusal,
@@ -94,6 +94,6 @@ export function refusalMessage(refusal: ReportRefusal, retryAfterSeconds: number
     case 'hourly_limit':
       return `Você chegou ao limite de ${REPORT_HOURLY_LIMIT} denúncias por hora.${when}`;
     case 'daily_limit':
-      return REPORT_DAILY_LIMIT_GAME_MESSAGE;
+      return REPORT_DAILY_LIMIT_MESSAGE;
   }
 }

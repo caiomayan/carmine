@@ -750,7 +750,7 @@ describe('Denúncias e log de chat (S13)', () => {
       expect(eleventh.result).toMatchObject({
         accepted: false,
         refusal: 'daily_limit',
-        message: 'Carmine · Você já enviou 10 denúncias hoje. Tente amanhã.',
+        message: 'Você já enviou 10 denúncias hoje. Tente amanhã.',
       });
     });
   });

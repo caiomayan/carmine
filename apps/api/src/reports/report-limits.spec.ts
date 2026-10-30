@@ -113,10 +113,10 @@ describe('o teto por dia (regra única de denúncia)', () => {
     expect(checkReportLimits(past, 'novo', NOW, 10)).toMatchObject({ refusal: 'daily_limit' });
   });
 
-  it('a mensagem do jogo leva o prefixo da marca e é a mesma do site, sem ele', () => {
+  it('a mensagem é a mesma do site e vai sem o prefixo da marca (o plugin põe o dele)', () => {
     expect(refusalMessage('daily_limit', 3600)).toBe(
-      'Carmine · Você já enviou 10 denúncias hoje. Tente amanhã.',
+      'Você já enviou 10 denúncias hoje. Tente amanhã.',
     );
-    expect(REPORT_DAILY_LIMIT_MESSAGE).toBe('Você já enviou 10 denúncias hoje. Tente amanhã.');
+    expect(refusalMessage('daily_limit', 3600)).toBe(REPORT_DAILY_LIMIT_MESSAGE);
   });
 });

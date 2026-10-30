@@ -37,11 +37,10 @@ export const REPORT_SAME_TARGET_COOLDOWN_MINUTES = 10;
 export const REPORT_HOURLY_LIMIT = 5;
 /**
  * Teto por dia (dia de Brasília, ADR 0018) por Conta, somando todos os tipos de Denúncia (regra única de denúncia,
- * ADR 0027). O texto é o mesmo no site; no jogo leva o prefixo da marca.
+ * ADR 0027). O texto é o mesmo no jogo e no site, sem prefixo: no jogo o plugin põe o `Carmine · ` (`ChatMessage.Format`).
  */
 export const REPORT_DAILY_LIMIT = 10;
 export const REPORT_DAILY_LIMIT_MESSAGE = `Você já enviou ${REPORT_DAILY_LIMIT} denúncias hoje. Tente amanhã.`;
-export const REPORT_DAILY_LIMIT_GAME_MESSAGE = `Carmine · ${REPORT_DAILY_LIMIT_MESSAGE}`;
 
 /**
  * Os tipos de Denúncia que a regra única cobre: de jogo (`!report`), de chat (cada mensagem das Salas), de foto de
