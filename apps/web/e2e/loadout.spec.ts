@@ -236,12 +236,12 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await expect(page.getByTestId('vip-notice')).toBeVisible();
   // O aviso do fim leva aos Pacotes (S14b): renovar a um clique.
   await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/plans');
-  await expect(page.getByTestId('preset-count')).toHaveText('1 de 20');
+  await expect(page.getByTestId('preset-count')).toHaveText('1 de 6');
   await page.getByTestId('preset-new').click();
   await page.getByTestId('preset-name').fill('Retake de sexta');
   await page.getByTestId('preset-submit').click();
   await expect(toast(page, 'Preset Retake de sexta criado')).toBeVisible();
-  await expect(page.getByTestId('preset-count')).toHaveText('2 de 20');
+  await expect(page.getByTestId('preset-count')).toHaveText('2 de 6');
 
   await page.getByRole('button', { name: 'Ativar Retake de sexta' }).click();
   await expect(toast(page, 'Retake de sexta é o seu Loadout')).toBeVisible();
