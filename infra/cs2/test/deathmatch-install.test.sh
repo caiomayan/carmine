@@ -35,7 +35,7 @@ new_game() { # new_game <nome>: um game/csgo com as DLLs do zip oficial
   echo "$g"
 }
 make_release() { # make_release <versão> <commit do fonte> [sem-deathmatch]
-  local v="$1" commit="$2" dir="$HOME_DIR/releases/core-$1"
+  local commit="$2" dir="$HOME_DIR/releases/core-$1"
   mkdir -p "$dir/plugin"
   jq -n --arg c "$commit" '{version: "x", deathmatch: {sourceTag: "v1.3.6", sourceCommit: $c}}' >"$dir/manifest.json"
   if [[ "${3:-}" != sem-deathmatch ]]; then
