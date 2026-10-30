@@ -368,6 +368,11 @@ export const modeStatsSchema = z
     adr: z.number().nonnegative().nullable(),
     /** Kills ÷ minutos jogados, 2 casas; só no Deathmatch e com tempo jogado. */
     kpm: z.number().nonnegative().nullable(),
+    /**
+     * Pontuação DM dos últimos 90 dias (S21, ADR 0030), 1 casa; só no Deathmatch. Nula enquanto a
+     * Conta não tem o mínimo de minutos do Ranking do DM na janela, ou a população é pequena demais.
+     */
+    dmScore: z.number().nonnegative().nullable().optional(),
   })
   .meta({ id: 'ModeStats' });
 

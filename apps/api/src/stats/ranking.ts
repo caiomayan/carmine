@@ -31,6 +31,8 @@ export interface RankedRow {
   headshotPercent: number | null;
   roundsPlayed: number;
   secondsPlayed: number;
+  /** Pontuação DM da semana (S21, ADR 0030); só no Deathmatch, e o chamador a põe (precisa da população). */
+  dmScore?: number | null;
 }
 
 /** Entrou no Ranking: cumpriu o mínimo da semana (rounds no Retake, tempo no Deathmatch). */

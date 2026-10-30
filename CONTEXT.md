@@ -214,7 +214,7 @@ A estatística principal de desempenho, com média 1,00, calculada por Modo (Ret
 _Evitar_: HLTV Rating (é marca de outra empresa), nota, skill
 
 **Pontuação DM** (`dmScore`), S21:
-O número de desempenho do Deathmatch, numa escala própria em torno de 100, porque o DM não tem round.
+O número de desempenho do Deathmatch, numa escala própria em torno de 100 (a média da população do DM), porque o DM não tem round. Compara abates por minuto, K/D, dano por minuto e HS% com a população dos últimos 90 dias, e só aparece depois dos mesmos 30 minutos do Ranking do DM (ADR 0030).
 
 **Rating escondido** (`skillRating`), S21:
 O rating de habilidade (Glicko-2) que ninguém vê, usado para equilibrar os times das Salas e, no futuro, no matchmaking.
