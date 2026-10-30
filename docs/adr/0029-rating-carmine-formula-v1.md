@@ -53,6 +53,8 @@ Por que estes números: a abertura é o que mais muda a chance de ganhar o round
 
 **Estados.** Quem consome devolve um destes e nunca um número inventado: `calibrando` (com os rounds feitos), `sem rounds na janela`, `sem população` e o Rating.
 
+**Parâmetros da v1** (aprovados pelo maestro em 2026-10-29, ajustáveis com dados reais; cada um é uma constante da versão): espalhamento 0,20; limite de ±3 desvios; mínimo de 20 Contas na população; 100 rounds por lado para entrar na população; `k = 50`; os pontos do impacto; os 100 rounds do Calibrando.
+
 **Versão.** `RATING_FORMULA_VERSION = 1`. Mudar uma peça (os pesos do impacto, `k`, 0,20, o limite de 3 desvios, o mínimo de 100 rounds ou de 20 Contas, a lista de partes) é **versão nova**: a população gravada guarda a versão, e o Rating é recalculado dos resumos, que ficam para sempre. A v2 (Round Swing, economia) vem do bruto de 12 meses, quando houver milhares de rounds de 5v5.
 
 ## A planilha de conferência
