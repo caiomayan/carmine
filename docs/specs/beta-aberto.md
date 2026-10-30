@@ -210,6 +210,15 @@ A base do Rating Carmine (S21), das Salas (S23), do Consigliere (S27) e do match
 - As somas da semana e do dia de hoje continuam iguais. Nenhuma tela muda nesta fatia.
 - O resumo do round fica ligado à Conta, então apagar a Conta (LGPD) anonimiza esses resumos como já faz com o resto.
 
+**Como o plugin captura (PR B da S17)**
+- **Só em round de coleta:** o contexto (`mapPlayId`, número do round, horário em ms) só existe nos rounds de Retake fora do aquecimento, com humanos nos dois lados e placar de times (o Deathmatch fica de fora). Eles abrem no `round_freeze_end` com o `round_start`; o número é o mesmo que o `round_end` leva (`MatchTracker`), então os eventos de um round e o fim dele se casam. Os rounds sintéticos do `cs2-retakes` e o aquecimento não levam contexto nem geram `round_start`.
+- **O plugin só relata (ADR 0018):** bot contra bot, kill em aliado, dano em bot e dano em aliado saem marcados; a API decide o que conta. **Exceção:** dano causado por bot não sai, porque o contrato leva o SteamID64 de quem atacou e a calculadora ignora esse dano (ver `round-summary.ts`).
+- **Mapa jogado:** o `MatchTracker` cria um UUID v7 novo a cada mapa, a cada partida que recomeça (`begin_new_match`, `mp_restartgame` detectado) e ao adotar uma partida em andamento (hot reload).
+- **Valor do equipamento** vem de `FreezetimeEndEquipmentValue` do pawn no fim do freeze; **o dano limitado à vida** usa o `dmg_health` do `player_hurt` (o jogo já o limita à vida que a vítima tinha); o valor bruto do hit só sairia do hook de dano, e fica para a S21 se o Rating pedir.
+- **Bomba:** `bomb_planted`, `bomb_defused` e `bomb_exploded`. O site (`a` ou `b`) é resolvido pelo índice da entidade `CBombTarget` que o evento traz; se não resolver, sai sem site (o contrato aceita).
+- **Fim do round:** o motivo vem do `reason` do jogo (`TargetBombed` → `bomb_exploded`, `BombDefused` → `bomb_defused`, `CTsWin`/`TerroristsWin` → `elimination`, `TargetSaved` → `time`, o resto `other`), a duração é do freeze ao fim e `alive` são os humanos vivos no fim.
+- O `ModuleVersion` não sobe neste PR: só ao cortar o release.
+
 **Novo ADR:** registra por que a decisão do ADR 0018 de não guardar evento a evento muda agora (rating, Consigliere e matchmaking), o volume esperado (na ordem de dezenas de milhares de linhas por dia com o Retake cheio) e as partições por mês.
 
 **Aceite**
