@@ -224,4 +224,75 @@ test.describe('Contas no painel', () => {
     await expect(page.getByTestId('stp-row')).toHaveCount(1);
     await expect(page.getByTestId('stp-row').first()).toContainText('Punida');
   });
+
+  test('VIP: o Dono concede e revoga dias, com motivo, e o resultado aparece na ficha e no log', async ({
+    page,
+  }) => {
+    const server = createServer();
+    const { steamId } = await seedPlayer(page, server);
+    await signInAsStaff(page, server, 'owner');
+    await openFile(page, steamId);
+
+    await page.getByTestId('vip-grant-open').click();
+    await page.getByTestId('vip-days').fill('0');
+    await page.getByTestId('vip-grant-reason').fill('Compensação combinada.');
+    await page.getByRole('button', { name: 'Conceder VIP' }).click();
+    await expect(page.getByText('Informe de 1 a 3650 dias.')).toBeVisible();
+    await page.getByTestId('vip-days').fill('5');
+    await page.getByRole('button', { name: 'Conceder VIP' }).click();
+    await expect(page.getByTestId('vip-grant-done')).toBeVisible();
+    await expect(page.getByTestId('file-status')).toContainText('VIP até');
+    await expect(page.getByTestId('audit-entries')).toContainText('Concedeu VIP');
+
+    await page.getByTestId('vip-revoke-open').click();
+    await page.getByTestId('vip-revoke-reason').fill('Concedido por engano.');
+    await page.getByRole('button', { name: 'Revogar VIP agora' }).click();
+    await expect(page.getByTestId('vip-revoke-done')).toBeVisible();
+    await expect(page.getByTestId('file-status')).toContainText('Sem VIP');
+  });
+
+  test('o Moderador vê VIP, papel e exclusão só para leitura', async ({ page }) => {
+    const server = createServer();
+    const { steamId } = await seedPlayer(page, server);
+    await signInAsStaff(page, server, 'moderator');
+    await openFile(page, steamId);
+
+    await expect(page.getByText('Só Admin e Dono mexem no VIP.')).toBeVisible();
+    await expect(page.getByTestId('vip-grant-open')).toHaveCount(0);
+    await expect(page.getByTestId('role-readonly')).toBeVisible();
+    await expect(page.getByText('Só o Dono executa pedidos de exclusão de dados.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Ver tudo no log' })).toHaveCount(0);
+  });
+
+  test('Auditoria: o Dono filtra pela ação e pelo alvo; o Moderador não vê a tela', async ({
+    browser,
+    page,
+  }) => {
+    const server = createServer();
+    const { steamId } = await seedPlayer(page, server);
+    await signInAsStaff(page, server, 'owner');
+    await openFile(page, steamId);
+    await page.getByTestId('name-reset-open').click();
+    await page.getByTestId('name-reset-reason').fill('Nome ofensivo.');
+    await page.getByRole('button', { name: 'Resetar nome' }).click();
+    await expect(page.getByTestId('name-reset-done')).toBeVisible();
+
+    await page.getByRole('link', { name: 'Ver tudo no log' }).click();
+    await expect(page).toHaveURL(new RegExp(`alvo=${steamId}`));
+    await expect(page.getByTestId('audit-entries')).toContainText('Resetou o nome');
+    await page.getByTestId('audit-action').selectOption('vip_grant');
+    await page.getByRole('button', { name: 'Filtrar', exact: true }).click();
+    await expect(page.getByTestId('audit-empty')).toBeVisible();
+
+    await page.getByTestId('audit-actor').fill('123');
+    await page.getByRole('button', { name: 'Filtrar', exact: true }).click();
+    await expect(page.getByText('Use um SteamID64')).toBeVisible();
+
+    const context = await browser.newContext({ baseURL: STAFF });
+    const other = await context.newPage();
+    await signInAsStaff(other, server, 'moderator');
+    await other.goto('/auditoria');
+    await expect(other.getByTestId('stp-not-found')).toBeVisible();
+    await context.close();
+  });
 });

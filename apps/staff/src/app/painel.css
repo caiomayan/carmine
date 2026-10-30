@@ -2373,3 +2373,23 @@ a.stp-btn {
 .stp-file-head .stp-inline {
   margin-top: 2px;
 }
+.stp-panel-body {
+  display: grid;
+  gap: 10px;
+}
+.stp-input-narrow {
+  max-width: 160px;
+}
+.stp-toolbar:has(.stp-measure-field) {
+  align-items: flex-end;
+}
+.stp-toolbar .stp-measure-field {
+  flex: 1 1 200px;
+  max-width: 280px;
+}
+.stp-card-h-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
