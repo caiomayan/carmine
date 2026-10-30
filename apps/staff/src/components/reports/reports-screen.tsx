@@ -8,7 +8,7 @@ import {
   type StaffReportPage,
   staffReportPageSchema,
 } from '@carmine/contracts/reports';
-import { ExternalLinkIcon, GavelIcon, XIcon } from 'lucide-react';
+import { GavelIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
 import { ActionForm } from '@/components/queue/action-form';
@@ -50,13 +50,11 @@ export function ReportsScreen({
   initial,
   status,
   serverNowMs,
-  siteUrl,
   canArchive,
 }: {
   initial: StaffReportPage;
   status: ReportStatus;
   serverNowMs: number;
-  siteUrl: string;
   canArchive: boolean;
 }) {
   const now = useNow(serverNowMs);
@@ -254,7 +252,6 @@ export function ReportsScreen({
               key={selected.id}
               report={selected}
               nowMs={now}
-              siteUrl={siteUrl}
               canArchive={canArchive}
               onClose={() => setSelected(null)}
               onArchived={archived}
@@ -269,20 +266,19 @@ export function ReportsScreen({
 function ReportDetail({
   report,
   nowMs,
-  siteUrl,
   canArchive,
   onClose,
   onArchived,
 }: {
   report: StaffReport;
   nowMs: number;
-  siteUrl: string;
   canArchive: boolean;
   onClose: () => void;
   onArchived: (id: string) => void;
 }) {
   const open = report.status === 'open';
-  const account = `${siteUrl}/staff/contas/${report.target.publicId}`;
+  // A Punição é aplicada na ficha da Conta, dentro do painel; vindo de um caso, ela o fecha como punido.
+  const account = `/contas/${report.target.publicId}`;
   const sanction = `${account}?denuncia=${report.id}&evidencia=${report.needsEvidence ? 1 : 0}#aplicar`;
 
   return (
@@ -430,25 +426,18 @@ function ReportDetail({
 
       {open ? (
         <div className="stp-detail-foot">
-          {siteUrl ? (
-            <>
-              <a
-                className="stp-btn"
-                href={sanction}
-                target="_blank"
-                rel="noreferrer"
-                data-kind="primary"
-                data-testid="report-punish"
-              >
-                <GavelIcon size={14} aria-hidden="true" /> Aplicar Punição
-                <ExternalLinkIcon size={13} aria-hidden="true" />
-              </a>
-              <a className="stp-btn" href={account} target="_blank" rel="noreferrer">
-                Abrir a Conta
-                <ExternalLinkIcon size={13} aria-hidden="true" />
-              </a>
-            </>
-          ) : null}
+          <Link
+            className="stp-btn"
+            href={sanction}
+            prefetch={false}
+            data-kind="primary"
+            data-testid="report-punish"
+          >
+            <GavelIcon size={14} aria-hidden="true" /> Aplicar Punição
+          </Link>
+          <Link className="stp-btn" href={account} prefetch={false} data-testid="report-account">
+            Abrir a Conta
+          </Link>
           {canArchive ? (
             <ActionForm
               label="Arquivar com motivo"

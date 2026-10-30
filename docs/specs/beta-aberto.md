@@ -641,6 +641,8 @@ O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**:
 
 **Para ligar (passos do dono, num roteiro na PR):** criar os hostnames no túnel da Cloudflare e as políticas do Access com os e-mails da Staff, nos dois ambientes.
 
+**Andamento das telas** (a ordem de migração é a das filas, que têm prazo): Início, **Denúncias** e **Fotos** estão no painel (PRs B e C). **Contas** (PR D) traz a busca, a ficha, o histórico, aplicar e revogar Punição (sugestão da tabela, prova do cheat, Denúncia de origem, mesmos papéis de hoje) e o reset do Nome de exibição; o "Aplicar Punição" da Denúncia leva à ficha **no painel**. Ficam para o PR E, antes de tirar `/staff` do site: VIP (conceder e revogar), remoção do Ranking, papel de Staff, exclusão de dados, foto de perfil na ficha, Pagamentos, Servidores e Auditoria.
+
 **Aceite**
 - `staff.stcarmine.com` pede o código do Access e depois a sessão da Steam. Uma Conta sem papel de Staff não entra, mesmo passando pelo Access.
 - As 7 telas funcionam no painel novo com o que funcionam hoje.

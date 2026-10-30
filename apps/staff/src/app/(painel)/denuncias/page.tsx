@@ -13,9 +13,6 @@ import { getPanelSession } from '@/lib/session';
 export const metadata: Metadata = { title: 'Denúncias' };
 export const dynamic = 'force-dynamic';
 
-/** Onde fica o site (a ficha da Conta, onde a Punição é aplicada até a tela de Contas migrar para o painel). */
-const SITE_URL = (process.env.SITE_URL ?? '').replace(/\/+$/, '');
-
 /**
  * A fila de Denúncias (S25): a primeira página de casos do estado pedido (`?status=`, padrão Abertas). O resto vem por
  * cursor, no navegador, quando a pessoa pede.
@@ -55,7 +52,6 @@ export default async function DenunciasPage({
       initial={page.data}
       status={status}
       serverNowMs={Date.now()}
-      siteUrl={SITE_URL}
       canArchive={staffCan(session.session.staffRole, 'reports.handle')}
     />
   );

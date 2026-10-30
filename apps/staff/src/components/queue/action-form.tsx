@@ -13,7 +13,7 @@ export const REASON_MAX = 500;
  * `children`. Confirma só com o motivo válido; o erro da API aparece sob o campo, em texto. Depois de feito, mostra
  * `doneLabel` e chama `onDone`.
  */
-export function ActionForm({
+export function ActionForm<T = unknown>({
   label,
   submitLabel,
   doneLabel,
@@ -23,6 +23,7 @@ export function ActionForm({
   validate,
   onSubmit,
   onDone,
+  onSuccess,
   children,
 }: {
   label: string;
@@ -33,8 +34,10 @@ export function ActionForm({
   reasonLabel?: string;
   /** Erro dos campos extras, ou `null` se está tudo certo. */
   validate?: () => string | null;
-  onSubmit: (reason: string) => Promise<StaffResult<unknown>>;
+  onSubmit: (reason: string) => Promise<StaffResult<T>>;
   onDone?: () => void;
+  /** Recebe o que a API devolveu (ex.: a ficha atualizada). */
+  onSuccess?: (data: T) => void;
   children?: ReactNode;
 }) {
   const id = useId();
@@ -65,6 +68,7 @@ export function ActionForm({
       return;
     }
     setDone(true);
+    onSuccess?.(result.data);
     onDone?.();
   };
 
