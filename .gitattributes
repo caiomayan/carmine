@@ -3,3 +3,6 @@
 *.jpg binary
 *.ico binary
 *.woff2 binary
+
+# O fonte do Deathmatch usa CRLF e o patch guarda os CR (o git não pode convertê-los)
+infra/cs2/deathmatch-patch/*.patch -text

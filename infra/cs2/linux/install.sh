@@ -304,6 +304,19 @@ find_dotnet() {
   return 1
 }
 
+# O caminho do dotnet com o SDK certo; instala o SDK em $DOTNET_DIR se não houver. O texto de progresso vai para o stderr.
+ensure_dotnet() {
+  local dotnet
+  if ! dotnet="$(find_dotnet)"; then
+    echo "    instalando o SDK $DOTNET_SDK_VERSION em $DOTNET_DIR" >&2
+    new_work_dir
+    curl -fsSL --retry 3 -o "$WORK/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh >&2
+    bash "$WORK/dotnet-install.sh" --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_DIR" --no-path >&2
+    dotnet="$DOTNET_DIR/dotnet"
+  fi
+  echo "$dotnet"
+}
+
 step_build() {
   step "Carmine.Core para Linux"
   if [[ -n "$CORE_RELEASE" ]]; then
@@ -329,13 +342,7 @@ step_build() {
     return
   fi
   local dotnet
-  if ! dotnet="$(find_dotnet)"; then
-    echo "    instalando o SDK $DOTNET_SDK_VERSION em $DOTNET_DIR"
-    new_work_dir
-    curl -fsSL --retry 3 -o "$WORK/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh
-    bash "$WORK/dotnet-install.sh" --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_DIR" --no-path
-    dotnet="$DOTNET_DIR/dotnet"
-  fi
+  dotnet="$(ensure_dotnet)"
   # O CounterStrikeSharp carrega as dependências da pasta do plugin: o publish copia todas. O
   # Carmine.Core é IL puro (net10.0), então a saída vale em qualquer SO; compilar aqui só garante
   # que o plugin é do mesmo commit dos perfis. A saída vai para fora da árvore do repositório.
@@ -426,12 +433,35 @@ install_gameplay_plugin() {
   done
   echo "    $name ($(basename "$zip"))"
 
+  if [[ "$name" == Deathmatch ]]; then
+    install_patched_deathmatch "$game_dir"
+  fi
+
   if [[ "$name" == RetakesAllocator ]]; then
     local gamedata_dir="$game_dir/addons/counterstrikesharp/plugins/RetakesAllocator/gamedata" gamedata
     mkdir -p "$gamedata_dir" "$game_dir/addons/counterstrikesharp/data/RetakesAllocator"
     gamedata="$(fetch_verified "$ALLOCATOR_GAMEDATA_URL" "$ALLOCATOR_GAMEDATA_SHA256" RetakesAllocator_gamedata.json)"
     cp -f "$gamedata" "$gamedata_dir/RetakesAllocator_gamedata.json"
   fi
+}
+
+# Deathmatch com o patch do Carmine (ADR 0028): compila o fonte da tag pinada com os patches de
+# infra/cs2/deathmatch-patch (uma vez por execução) e troca as duas DLLs do zip. O resto do zip (lang, configs,
+# dependências) fica como veio.
+install_patched_deathmatch() {
+  local game_dir="$1" patched="$BUILD_DIR/deathmatch-patched" dotnet
+  if [[ ! -f "$patched/Deathmatch.dll" || ! -f "$patched/DeathmatchAPI.dll" || "$(cat "$patched/.source" 2>/dev/null)" != "$DM_SRC_COMMIT" ]]; then
+    dotnet="$(ensure_dotnet)"
+    mkdir -p "$BUILD_DIR"
+    PATH="$(dirname "$dotnet"):$PATH" DOTNET_ROOT="$(dirname "$dotnet")" DOTNET="$dotnet" \
+      DOTNET_CLI_HOME="$BUILD_DIR/.dotnet" DOTNET_NOLOGO=1 DOTNET_CLI_TELEMETRY_OPTOUT=1 \
+      bash "$REPO_ROOT/infra/cs2/deathmatch-patch/build.sh" --out "$patched"
+    echo "$DM_SRC_COMMIT" >"$patched/.source"
+  fi
+  cp -f "$patched/Deathmatch.dll" "$game_dir/addons/counterstrikesharp/plugins/Deathmatch/Deathmatch.dll"
+  mkdir -p "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI"
+  cp -f "$patched/DeathmatchAPI.dll" "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI/DeathmatchAPI.dll"
+  echo "    Deathmatch patchado ($DM_SRC_TAG + patches do Carmine)"
 }
 
 install_invsim() {

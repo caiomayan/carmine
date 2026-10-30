@@ -57,6 +57,8 @@ jobs:
           bash infra/cs2/test/vps-tools.test.sh
           bash infra/cs2/test/promote-plugin.test.sh
           bash infra/cs2/test/addon-prestart.test.sh
+      - name: Deathmatch patchado (o patch aplica na tag pinada)
+        run: bash infra/cs2/test/deathmatch-patch.test.sh
       - name: Addon do Workshop (validação dos arquivos e testes do validador, sem o jogo)
         run: |
           node infra/cs2/addon/tools/validate-addon.mjs
@@ -144,6 +146,10 @@ jobs:
           global-json-file: plugins/global.json
       - run: dotnet build Carmine.Plugins.slnx -c Release
       - run: dotnet test --solution Carmine.Plugins.slnx -c Release --no-build
+      # O Deathmatch patchado (ADR 0028) compila: o patch aplica na tag pinada e o resultado tem a API nova.
+      - name: Deathmatch patchado compila
+        working-directory: .
+        run: bash infra/cs2/deathmatch-patch/build.sh --out "$RUNNER_TEMP/deathmatch-patched"
 
   # O check exigido pelo ruleset do main: verde só se todos os jobs acima ficaram verdes.
   node:
