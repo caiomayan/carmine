@@ -37,9 +37,8 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private HttpClient? _http;
     private AccountSync? _sync;
     private PendingGreetings? _greetings;
-    /// <summary>Contas que ainda não passaram pela AWP por padrão e esperam o primeiro spawn no Retake (mesma mecânica das boas-vindas).</summary>
-    private PendingWelcomes? _awpQueue;
-    private AwpDefault? _awpDefault;
+    /// <summary>O sorteio da AWP do Retake (Preferência de jogo, ADR 0028); nulo fora do Retake.</summary>
+    private AwpRaffle? _awp;
     private GameStatsLines? _gameStats;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
@@ -107,8 +106,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _greetings = new PendingGreetings();
         if (Config.ReservedSlotsMode == ReservedSlotsMode.Retake)
         {
-            _awpQueue = new PendingWelcomes(new JsonFilePendingWelcomesStore(Path.Combine(dataDir, "pending-awp.json")));
-            _awpDefault = new AwpDefault(client);
+            _awp = new AwpRaffle(client);
         }
         _heartbeat = new HeartbeatReporter(client);
         _gameStats = new GameStatsLines(client);
@@ -132,6 +130,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommand("css_ajuda", "!ajuda é o mesmo que !help", OnHelpCommand);
         AddCommand("css_plan", "!plan é o mesmo que !vip", OnVipCommand);
         AddCommand("css_plano", "!plano é o mesmo que !vip", OnVipCommand);
+        if (_awp is not null)
+        {
+            AddCommand("css_awp", "!awp entra ou sai do sorteio da AWP; a escolha fica na Conta e vale em todo Retake", OnAwpCommand);
+        }
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
         AddTimer(Config.HeartbeatIntervalSeconds, SendHeartbeat, TimerFlags.REPEAT);
@@ -169,8 +171,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _http = null;
         _sync = null;
         _greetings = null;
-        _awpQueue = null;
-        _awpDefault = null;
+        _awp = null;
         _gameStats = null;
         _heartbeat = null;
         _chat = null;
@@ -230,9 +231,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     current.SendChat(greeting);
                 }
-                if (_awpQueue?.TakeOnSpawn(current.SteamID) == true)
+                if (_awp?.TakeOnSpawn(current.SteamID) is { } awpEnabled)
                 {
-                    JoinAwpQueue(current);
+                    ApplyAwp(current, awpEnabled);
                 }
                 if (_loadoutNotices.TakeOnSpawn(current.SteamID))
                 {
@@ -258,6 +259,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _displayNames.Remove(player.Slot);
             _loadoutNotices.OnDisconnect(player.SteamID);
             _greetings?.OnDisconnect(player.SteamID);
+            _awp?.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
             _vipInfo?.OnDisconnect(player.SteamID);
@@ -416,7 +418,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
         var playing = player is not null && IsPlaying(player);
         var greetingNow = _greetings?.OnConnectResult(steamId, result.Greeting, isAlive: playing);
-        var awpNow = _awpQueue?.OnConnectResult(steamId, result.ApplyAwpDefault, isAlive: playing) == true;
+        var awpNow = _awp?.OnConnectResult(steamId, result.Preferences.AwpRaffle, isAlive: playing);
         if (player is null)
         {
             return;
@@ -432,9 +434,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             player.SendChat(greetingNow);
         }
-        if (awpNow)
+        if (awpNow is { } awpEnabled)
         {
-            JoinAwpQueue(player);
+            ApplyAwp(player, awpEnabled);
         }
     }
 
@@ -627,17 +629,43 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private static bool IsPlaying(CCSPlayerController player) =>
         player.PawnIsAlive && player.Team is CsTeam.Terrorist or CsTeam.CounterTerrorist;
 
-    /// <summary>Liga a AWP no alocador (ver <see cref="AwpDefault"/>) e guarda a marca na API.</summary>
-    private void JoinAwpQueue(CCSPlayerController player)
+    /// <summary>
+    /// <c>!awp</c> (e <c>css_awp</c>): a API inverte a preferência da Conta e o Core a aplica no alocador de
+    /// forma explícita. O <c>css_awp</c> do próprio alocador também roda neste comando e alterna a cópia local,
+    /// mas a aplicação explícita vem depois e deixa o alocador igual à Conta.
+    /// </summary>
+    private void OnAwpCommand(CCSPlayerController? player, CommandInfo info)
     {
-        player.ExecuteClientCommandFromServer(AwpDefault.Command);
-        var awp = _awpDefault;
-        var steamId = player.SteamID;
-        if (awp is not null)
+        if (player is null || !IsHuman(player) || _awp is not { } awp)
         {
-            RunInBackground(token => awp.MarkAppliedAsync(steamId, token));
+            return;
         }
+        var steamId = player.SteamID;
+        var slot = player.Slot;
+        RunInBackground(async token =>
+        {
+            var enabled = await awp.ToggleAsync(steamId, token);
+            Server.NextFrame(() =>
+            {
+                var current = Utilities.GetPlayerFromSlot(slot);
+                if (current is null || !IsHuman(current) || current.SteamID != steamId)
+                {
+                    return;
+                }
+                if (enabled is not { } now)
+                {
+                    current.SendChat(AwpRaffle.UnavailableMessage);
+                    return;
+                }
+                ApplyAwp(current, now);
+                current.SendChat(AwpRaffle.MessageFor(now));
+            });
+        });
     }
+
+    /// <summary>Deixa a preferência de AWP do alocador no estado da Conta (ver <see cref="AwpRaffle"/>).</summary>
+    private static void ApplyAwp(CCSPlayerController player, bool enabled) =>
+        player.ExecuteClientCommandFromServer(AwpRaffle.CommandFor(enabled));
 
     /// <summary>Placar, chat e kill feed leem o nome do controller (ADR 0008).</summary>
     private static void ApplyName(CCSPlayerController player, string name)

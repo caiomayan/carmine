@@ -18,7 +18,12 @@ export interface GreetingFacts {
   days: readonly { day: string; roundsWon: number; kills: number }[];
   /** Tempo de jogo de sempre, todos os Modos. */
   totalSeconds: number;
+  /** Servidor de Retake e a Conta está fora do sorteio da AWP: vale lembrar do `!awp`. */
+  awpHint: boolean;
 }
+
+/** O aviso do `!awp` para quem está fora do sorteio da AWP no Retake (S16, decisão do dono 2026-10-29). */
+export const AWP_HINT = '!awp coloca você no sorteio da AWP.';
 
 export interface Curiosity {
   key: string;
@@ -73,6 +78,7 @@ export function curiosities(facts: GreetingFacts): Curiosity[] {
       });
     }
   }
+  if (facts.awpHint) found.push({ key: 'awp-hint', line: AWP_HINT });
   const hours = Math.floor(facts.totalSeconds / 3600);
   if (hours >= 1) {
     found.push({
@@ -86,9 +92,11 @@ export function curiosities(facts: GreetingFacts): Curiosity[] {
 /**
  * A linha do primeiro connect de uma Conta: as boas-vindas com o aviso dos termos que o ADR 0007 pede
  * (base legal de legítimo interesse). Só esse connect leva o link; os seguintes mostram a curiosidade.
+ * Quem está fora do sorteio da AWP no Retake ganha uma segunda linha, com o aviso do `!awp`.
  */
-export function firstConnectGreeting(displayName: string): string {
-  return `Bem-vindo, ${displayName}. Ao jogar você concorda com os termos: stcarmine.com/terms`;
+export function firstConnectGreeting(displayName: string, awpHint = false): string {
+  const welcome = `Bem-vindo, ${displayName}. Ao jogar você concorda com os termos: stcarmine.com/terms`;
+  return awpHint ? `${welcome}\n${AWP_HINT}` : welcome;
 }
 
 /**

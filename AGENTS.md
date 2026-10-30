@@ -24,4 +24,5 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - **Plugin**: o `ModuleVersion` em `plugins/src/Carmine.Core/CorePlugin.cs` só sobe ao cortar um release, porque ele dispara a release do plugin para os servidores.
 - **O plugin só relata; a API decide** o que conta nas Estatísticas (ADR 0018). Toda mensagem do Carmine no chat do jogo começa com `Carmine` em carmim (`ChatColors.DarkRed`).
 - **Quem joga já é Conta** (não reivindicada até o login no site), e tudo dela conta como de qualquer Conta (ADR 0007). Só bot, aquecimento e kill em aliado ficam de fora. Um SteamID humano sem Conta ganha a Conta não reivindicada; nunca vira bot.
+- **Preferência de jogo na Conta, não no servidor**: nenhuma preferência de jogador nos plugins (AWP, `!guns`, sons, HUD) fica presa a um servidor. Ela mora na Conta, na API, vale em todo servidor do Modo, e o Carmine.Core a aplica no plugin (ADR 0028). Plugin novo com preferência por jogador entra nessa regra antes de ir para o ar.
 - **Sem dado inventado**: quando um número não existe (período antes da coleta, API fora), a tela diz isso.

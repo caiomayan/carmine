@@ -14,6 +14,7 @@ import { runAccountsCli } from '../src/accounts/accounts.cli-commands.js';
 import type { ReservedPublicIds } from '../src/accounts/reserved-public-ids.js';
 import { SessionStore } from '../src/auth/sessions.js';
 import {
+  accountGamePreferences,
   accountStatsWeekly,
   accounts,
   inventoryItems,
@@ -84,6 +85,11 @@ describe('Exclusão de dados (S08)', () => {
       headers: { authorization: `Bearer ${t.serverKey}` },
       payload: { hidden: true },
     });
+    await t.app.inject({
+      method: 'POST',
+      url: `/api/server/players/${target.steamId}/preferences/awp_raffle/toggle`,
+      headers: { authorization: `Bearer ${t.serverKey}` },
+    });
     const { publicId } = target.account;
     await t.postgres.db
       .insert(accountStatsWeekly)
@@ -116,7 +122,13 @@ describe('Exclusão de dados (S08)', () => {
     });
     expect(row?.anonymizedAt).toBeInstanceOf(Date);
     const accountId = target.account.id;
-    for (const table of [inventoryItems, presets, vipPeriods, accountStatsWeekly]) {
+    for (const table of [
+      inventoryItems,
+      presets,
+      vipPeriods,
+      accountStatsWeekly,
+      accountGamePreferences,
+    ]) {
       const rows = await t.postgres.db.select().from(table).where(eq(table.accountId, accountId));
       expect(rows).toEqual([]);
     }
