@@ -1734,3 +1734,210 @@ button.stp-row:hover {
     transform: translateX(-6px);
   }
 }
+
+/* ---------- filas de casos: Denúncias e Fotos (S25 PR C) ---------- */
+.stp-pilltab {
+  text-decoration: none;
+}
+.stp-pilltab[aria-current="page"] {
+  background: var(--stp-active);
+  color: var(--stp-on-active);
+}
+.stp-pilltab[aria-current="page"] small {
+  color: inherit;
+  opacity: 0.75;
+}
+.stp-board {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+}
+.stp-cell-main {
+  display: block;
+  font-weight: 600;
+}
+.stp-cell-sub {
+  display: block;
+  color: var(--stp-faint);
+  font-size: 12px;
+  font-weight: 500;
+}
+.stp-count-chip {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  border-radius: 999px;
+  background: var(--stp-card-2);
+  padding: 0 10px;
+  color: var(--stp-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stp-count-chip[data-many] {
+  background: var(--stp-active);
+  color: var(--stp-on-active);
+}
+.stp-eta[data-tone="none"] {
+  justify-items: start;
+  color: var(--stp-faint);
+  font-weight: 500;
+}
+.stp-photo-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.stp-thumb {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--stp-card-2);
+  object-fit: cover;
+}
+.stp-photo-large {
+  width: 100%;
+  max-width: 320px;
+  justify-self: center;
+  aspect-ratio: 1;
+  border-radius: 24px;
+  background: var(--stp-card-2);
+  object-fit: cover;
+}
+.stp-muted {
+  color: var(--stp-faint);
+  font-weight: 500;
+}
+.stp-more {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 6px;
+}
+.stp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+.stp-detail-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+.stp-section {
+  margin: 0 0 10px;
+  color: var(--stp-muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+.stp-chat {
+  display: grid;
+  max-height: 260px;
+  gap: 2px;
+  margin: 0;
+  overflow-y: auto;
+  border-radius: 18px;
+  background: var(--stp-card-2);
+  padding: 10px 12px;
+  list-style: none;
+}
+.stp-chat li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0 10px;
+}
+.stp-chat li[data-from-target] {
+  font-weight: 600;
+}
+.stp-chat time {
+  color: var(--stp-faint);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+.stp-chat span {
+  overflow-wrap: anywhere;
+}
+.stp-form {
+  display: grid;
+  flex: 1 1 100%;
+  gap: 8px;
+  border-radius: 20px;
+  background: var(--stp-card-2);
+  padding: 14px;
+}
+.stp-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.stp-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--stp-muted);
+  font-weight: 600;
+}
+.stp-label-count {
+  color: var(--stp-faint);
+  font-size: 12px;
+  font-weight: 500;
+}
+.stp-textarea,
+.stp-select,
+.stp-input {
+  width: 100%;
+  border: 0;
+  border-radius: 16px;
+  background: var(--stp-card);
+  padding: 10px 14px;
+  color: var(--stp-text);
+  font: inherit;
+}
+.stp-textarea {
+  resize: vertical;
+}
+.stp-field-error {
+  margin: 0;
+  color: var(--stp-danger);
+  font-weight: 500;
+}
+.stp-done {
+  display: flex;
+  flex: 1 1 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--stp-ok);
+  font-weight: 600;
+}
+.stp-btn[data-kind="danger-fill"] {
+  background: var(--stp-danger);
+  color: var(--stp-bg);
+}
+.stp-btn[data-kind="danger-fill"]:hover {
+  filter: brightness(1.08);
+}
+a.stp-btn {
+  text-decoration: none;
+}
+.stp-table tbody tr,
+.stp-cards > li {
+  transition:
+    opacity 200ms ease,
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.stp-table tbody tr[data-leaving],
+.stp-cards > li[data-leaving] {
+  opacity: 0;
+  transform: translateX(14px);
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stp-table tbody tr,
+  .stp-cards > li {
+    transition: none;
+  }
+}
