@@ -10,6 +10,10 @@ Termos em **PT-BR** são os da interface; o nome entre parênteses é o usado no
 O registro de uma pessoa na plataforma, identificado pelo SteamID64. Nasce automaticamente no primeiro connect a um Servidor Carmine.
 _Evitar_: usuário, perfil, cadastro
 
+**Preferência de jogo** (`GamePreference`):
+Uma escolha do jogador que um plugin de jogo guardaria por servidor (estar no sorteio da AWP, as armas do `!guns`, os sons e o HUD do Deathmatch). Fica na Conta, guardada pela API, vale em todo servidor do Modo e o Carmine.Core a aplica no plugin (ADR 0028). Sem linha guardada vale o padrão da chave. Não é uma configuração do site: o jogador a muda dentro do jogo, por comando.
+_Evitar_: configuração do servidor, settings, preferências do plugin
+
 **Conta não reivindicada** (`unclaimed`):
 Conta que só existe porque a pessoa jogou; ela nunca fez login no site.
 _Evitar_: conta fantasma, conta temporária
@@ -171,7 +175,7 @@ O pedido do jogador para rever uma Punição, feito por ticket no Discord, com r
 _Evitar_: apelação, contestação
 
 **Denúncia** (`Report`):
-Um aviso de um jogador sobre outro, feito dentro do jogo com o `!report` e enviado à fila da Staff, com o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro), o servidor, o mapa, o round, o horário e uma cópia das últimas linhas do chat. Vale 1 por alvo a cada 10 minutos e 5 por hora, por denunciante (a API recusa o excedente e diz quando tentar de novo). Fica na fila até a Staff arquivá-la com motivo ou aplicar uma Punição a partir dela; some 90 dias depois de criada. Denúncia de cheat ou voz sozinha não gera Punição: só com evidência adicional.
+Um aviso de um jogador sobre outro, feito dentro do jogo com o `!report` e enviado à fila da Staff, com o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro), o servidor, o mapa, o round, o horário e uma cópia das últimas linhas do chat. Vale 1 por alvo a cada 10 minutos e 5 por hora, por denunciante, e no máximo 10 por dia (de Brasília) por Conta, somando todos os tipos de Denúncia, inclusive a de foto (a API recusa o excedente e diz quando tentar de novo). Na fila da Staff, as Denúncias contra a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado viram um caso só, com a contagem e as provas juntas; arquivar ou punir resolve todas. O prazo da Staff é de 72 h para o jogo e o chat, e de 24 h para a foto e a logo. Quem tem 3 Denúncias arquivadas em 90 dias e mais arquivadas do que confirmadas perde peso: as Denúncias dela vão para o fim da fila e não têm prazo correndo (ADR 0027). Fica na fila até a Staff arquivá-la com motivo ou aplicar uma Punição a partir dela; some 90 dias depois de criada. Denúncia de cheat ou voz sozinha não gera Punição: só com evidência adicional.
 _Evitar_: report, reclamação
 
 **Log de chat** (`chat_messages`):

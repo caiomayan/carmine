@@ -19,6 +19,14 @@ public static class ChatMessage
     /// <summary>Espaço inicial: o CS2 só pinta o chat quando a linha começa com um caractere de cor.</summary>
     public static string Format(string text) => $" {DarkRed}{Brand}{Default} · {text}";
 
-    public static void SendChat(this CCSPlayerController player, string text) =>
-        player.PrintToChat(Format(text));
+    /// <summary>Um texto de várias linhas (separadas por <c>\n</c>) sai como uma mensagem do Carmine por linha.</summary>
+    public static IEnumerable<string> FormatLines(string text) => text.Split('\n').Select(Format);
+
+    public static void SendChat(this CCSPlayerController player, string text)
+    {
+        foreach (var line in FormatLines(text))
+        {
+            player.PrintToChat(line);
+        }
+    }
 }

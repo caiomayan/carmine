@@ -1,4 +1,5 @@
 import {
+  GAME_PREFERENCE_MODES,
   type PlayerConnect,
   type PlayerConnectResult,
   playerConnectResultSchema,
@@ -24,6 +25,7 @@ import { Greetings } from '../stats/greeting.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { toVipStatus } from '../vip/vip-status.js';
 import { AccountsService } from './accounts.service.js';
+import { GamePreferencesStore } from './game-preferences.js';
 
 @ApiTags('server')
 @ApiBearerAuth()
@@ -37,6 +39,7 @@ export class PlayerConnectsController {
     @Inject(Analytics) private readonly analytics: Analytics,
     @Inject(Loadouts) private readonly loadouts: Loadouts,
     @Inject(Greetings) private readonly greetings: Greetings,
+    @Inject(GamePreferencesStore) private readonly preferencesStore: GamePreferencesStore,
   ) {}
 
   @Post()
@@ -58,16 +61,21 @@ export class PlayerConnectsController {
   ): Promise<PlayerConnectResult> {
     const { accountId, created, claimed, connectedAt, ...account } =
       await this.accounts.registerConnect(connect);
-    const [vip, sanctions, greeting] = await Promise.all([
+    const [vip, sanctions, preferences] = await Promise.all([
       this.vip.planStatusOf(accountId),
       this.sanctions.forGame([connect.steamId]),
-      this.greetings.forConnect(
-        accountId,
-        account.displayName,
-        server.mode,
-        account.isFirstConnect,
-      ),
+      this.preferencesStore.read(accountId, server.mode),
     ]);
+    // Fora do sorteio da AWP num Retake: a linha do connect lembra do !awp.
+    const awpHint =
+      GAME_PREFERENCE_MODES.awp_raffle.includes(server.mode) && !preferences.awpRaffle;
+    const greeting = await this.greetings.forConnect(
+      accountId,
+      account.displayName,
+      server.mode,
+      account.isFirstConnect,
+      awpHint,
+    );
     void this.measure(server, { accountId, created, claimed, connectedAt }, account, vip.active);
     return {
       ...account,
@@ -76,6 +84,7 @@ export class PlayerConnectsController {
       vipNotice: vipNoticeAt(toVipStatus(vip), new Date()),
       vipEndsAt: vip.endsAt?.toISOString() ?? null,
       sanctions,
+      preferences,
       greeting,
     };
   }

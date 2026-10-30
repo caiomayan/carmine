@@ -1,5 +1,5 @@
 {
-  "id": "309f4005-4232-44bb-9aea-f77546daad96",
+  "id": "8c9d942d-20bd-42b9-971c-1244dba51349",
   "prevId": "c2b79bc2-8213-41ec-8cce-d22b026b7a0e",
   "version": "7",
   "dialect": "postgresql",
@@ -2319,86 +2319,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.plan_revocations": {
-      "name": "plan_revocations",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revoked_at": {
-          "name": "revoked_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "revoked_by_steam_id": {
-          "name": "revoked_by_steam_id",
-          "type": "bigint",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        }
-      },
-      "indexes": {
-        "plan_revocations_account_idx": {
-          "name": "plan_revocations_account_idx",
-          "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "revoked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "plan_revocations_account_id_accounts_id_fk": {
-          "name": "plan_revocations_account_id_accounts_id_fk",
-          "tableFrom": "plan_revocations",
-          "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.play_sessions": {
       "name": "play_sessions",
       "schema": "",
@@ -2815,6 +2735,12 @@
         "round": {
           "name": "round",
           "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "map_play_id": {
+          "name": "map_play_id",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -4288,21 +4214,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "plan": {
-          "name": "plan",
-          "type": "plan",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'capo'"
-        },
-        "test": {
-          "name": "test",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         }
       },
       "indexes": {
@@ -4479,14 +4390,6 @@
         "refunded",
         "partially_refunded",
         "charged_back"
-      ]
-    },
-    "public.plan": {
-      "name": "plan",
-      "schema": "public",
-      "values": [
-        "capo",
-        "padrinho"
       ]
     },
     "public.report_reason": {
