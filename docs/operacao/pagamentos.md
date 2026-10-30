@@ -1,13 +1,14 @@
-# Pagamentos e VIP (operação)
+# Pagamentos e planos (operação)
 
-Como operar a venda de Pacotes VIP (S14). Decisões: ADR 0023. A cobrança nasce **desligada**.
+Como operar a venda de Pacotes dos planos Capo e Padrinho (S14, S20). Decisões: ADR 0023 e ADR 0026. A cobrança nasce **desligada**.
 
 ## Chaves de configuração (`.env` da VM)
 
 | Variável | O que faz |
 | --- | --- |
 | `PAYMENTS_ENABLED` | `true` abre a compra. Padrão `false`: a página do VIP mostra "Em breve" e a API responde 503 `payments_disabled`. **Só vira `true` depois** da decisão sobre a verificação de idade, da identificação do fornecedor e da tributação (lista do dono). |
-| `PAYMENTS_PROVIDER` | `mercadopago` ou `fake`. O `fake` só roda em `dev.stcarmine.com`/`localhost` (a API se recusa a subir em outro host). |
+| `PAYMENTS_PROVIDER` | `mercadopago` ou `fake`. O `fake` só roda em `dev.stcarmine.com`/`localhost` (a API se recusa a subir em outro host), **a não ser** no beta da compra de teste (`PAYMENTS_BETA_TEST`, abaixo). |
+| `PAYMENTS_BETA_TEST` | Beta da S20: `true` abre a **compra de teste em produção** (veja a seção abaixo). Padrão `false`. Só vale com `PAYMENTS_PROVIDER=fake`; a API se recusa a subir com ele junto do Mercado Pago ou sem provedor. |
 | `PAYMENTS_DATA_KEY` | 32 bytes em base64 (`openssl rand -base64 32`): cifra o CPF do Pagador. Guarde uma cópia: sem ela os CPFs guardados não se leem. |
 | `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET` | Credenciais do app no Mercado Pago (S14c, o adaptador está pronto e desligado: o passo a passo do dono e o que só o sandbox prova estão em [mercadopago.md](mercadopago.md)). Nunca no repositório ou no chat. |
 | `PAYMENTS_DATA_KEY_FILE` | Caminho de um arquivo com a chave, usado quando `PAYMENTS_DATA_KEY` está vazia (a homologação). |
@@ -15,7 +16,28 @@ Como operar a venda de Pacotes VIP (S14). Decisões: ADR 0023. A cobrança nasce
 | `RECEIPT_SUPPLIER_NAME`, `RECEIPT_SUPPLIER_DOCUMENT`, `RECEIPT_SUPPLIER_ADDRESS` | **Do web**, não da API: quem vende o VIP no recibo (nome, CPF e endereço do escritório virtual). Os três juntos; faltando algum, o recibo mostra "a informar". Preencha antes de ligar a cobrança. |
 | `VIP_HOLD_ENABLED` | Liga a guarda de 30 dias dos Itens VIP (padrão `false`; liga junto com os Termos novos). `VIP_HOLD_SWEEP_SECONDS` (60) é a varredura. |
 
-Produção não tem `PAYMENTS_PROVIDER=fake` e a API não sobe com ele em `stcarmine.com`.
+Produção não tem `PAYMENTS_PROVIDER=fake` e a API não sobe com ele em `stcarmine.com`, **exceto** com `PAYMENTS_BETA_TEST=true` (beta da compra de teste, abaixo).
+
+## Beta: compra de teste em produção (S20)
+
+Até o lançamento **ninguém paga de verdade**. Para todos testarem os dois planos em `stcarmine.com`, a compra de mentira (o provedor falso da homologação) fica liberada em produção, e o Mercado Pago real continua desligado até o advogado e o contador.
+
+**Ligar (no `.env` da VM, depois de subir esta versão):**
+
+```
+PAYMENTS_ENABLED=true
+PAYMENTS_PROVIDER=fake
+PAYMENTS_BETA_TEST=true
+PAYMENTS_DATA_KEY=<openssl rand -base64 32>
+```
+
+A API sobe com o provedor falso e abre `/plans`: toda a tela de compra mostra o aviso fixo `Beta: compra de teste. Nada é cobrado.`, a compra leva à página de simulação (`/dev/pagamento/<id>`), e a aprovação concede o plano **marcado como de teste** (`vip_periods.test = true`). Nada sai para nenhum provedor, e nenhum cartão nem Pix real existe.
+
+**O que não muda:** o webhook do Mercado Pago, os recibos e o CPF do Pagador funcionam como na homologação (o CPF é cifrado pela `PAYMENTS_DATA_KEY`; guarde uma cópia). O 'Minhas compras' lista essas compras como as de qualquer outra.
+
+**Desligar, no dia em que a cobrança real ligar** (decisão do dono, ADR 0026): troque para `PAYMENTS_PROVIDER=mercadopago` (com o token e o segredo do webhook), `PAYMENTS_BETA_TEST=false` e `PAYMENTS_ENABLED=true`. Os **planos de teste ativos acabam nesse dia**, com aviso ao jogador 7 dias antes; os dias pagos nunca são tocados (dentro de um plano o teste é gasto antes). A data e o aviso entram junto com a cobrança real (a agenda dos planos já aceita encerrar os testes numa data dada).
+
+**Antes de ligar a cobrança real**, corrija o reembolso de um pacote de Capo que foi dividido por um Padrinho (item do Backlog): hoje ele recua só a parte com pagamento.
 
 ## Comandos (Staff)
 

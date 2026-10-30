@@ -1,4 +1,4 @@
-import type { VipPackage } from '@carmine/contracts/payments';
+import type { PlanPackageItem } from '@carmine/contracts/plans';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -24,13 +24,14 @@ export function PackageCard({
   state,
   index,
 }: {
-  pack: VipPackage;
-  packages: readonly VipPackage[];
+  pack: PlanPackageItem;
+  packages: readonly PlanPackageItem[];
   best: boolean;
   state: BuyState;
   index: number;
 }) {
   const t = useTranslations('vip.packages');
+  const tp = useTranslations('vip.plans');
   const saving = savingsPercent(pack, packages);
   const price = formatBrl(pack.priceCents);
 
@@ -38,6 +39,7 @@ export function PackageCard({
     <li
       data-testid="vip-package"
       data-package={pack.id}
+      data-plan={pack.plan}
       data-best={best || undefined}
       style={{ '--i': index } as React.CSSProperties}
       className={cn('vp-card enter-stagger', best && 'vp-card-best')}
@@ -61,12 +63,22 @@ export function PackageCard({
         <span className="tabular-nums">{t('days', { days: pack.days })}</span>
       </p>
 
-      <BuyButton pack={pack} state={state} price={price} />
+      <BuyButton pack={pack} state={state} price={price} planName={tp(pack.plan)} />
     </li>
   );
 }
 
-function BuyButton({ pack, state, price }: { pack: VipPackage; state: BuyState; price: string }) {
+function BuyButton({
+  pack,
+  state,
+  price,
+  planName,
+}: {
+  pack: PlanPackageItem;
+  state: BuyState;
+  price: string;
+  planName: string;
+}) {
   const t = useTranslations('vip.packages');
   if (state.kind === 'buy') {
     return (
@@ -74,7 +86,7 @@ function BuyButton({ pack, state, price }: { pack: VipPackage; state: BuyState; 
         <Link
           href={purchaseHref(pack.id) as never}
           prefetch={false}
-          aria-label={t('buyAria', { months: pack.months, price })}
+          aria-label={t('buyAria', { plan: planName, months: pack.months, price })}
         >
           {t('buy')}
         </Link>

@@ -36,6 +36,7 @@ describe('loadConfig', () => {
       payments: {
         enabled: false,
         provider: null,
+        betaTest: false,
         dataKey: null,
         mercadopago: null,
         sweepMs: 60_000,
@@ -430,6 +431,56 @@ describe('loadConfig', () => {
     it('recusa um driver ou um ambiente desconhecido', () => {
       expect(() => loadConfig({ ...validEnv, ANALYTICS_DRIVER: 'sentry' })).toThrow();
       expect(() => loadConfig({ ...validEnv, ANALYTICS_ENVIRONMENT: 'dev' })).toThrow();
+    });
+  });
+
+  describe('o provedor de pagamento falso e o beta da compra de teste (S20)', () => {
+    const production = {
+      ...validEnv,
+      NODE_ENV: 'production',
+      PUBLIC_WEB_URL: 'https://stcarmine.com',
+    };
+
+    it('o provedor falso segue só no host de homologação e nunca com SENTRY_ENVIRONMENT=production', () => {
+      expect(() => loadConfig({ ...production, PAYMENTS_PROVIDER: 'fake' })).toThrow(
+        /PAYMENTS_PROVIDER.*só em host de homologação/,
+      );
+      const hml = {
+        ...validEnv,
+        PAYMENTS_PROVIDER: 'fake',
+        PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
+        SENTRY_ENVIRONMENT: 'staging',
+      };
+      expect(loadConfig(hml).payments).toMatchObject({ provider: 'fake', betaTest: false });
+      expect(() => loadConfig({ ...hml, SENTRY_ENVIRONMENT: 'production' })).toThrow(
+        /PAYMENTS_PROVIDER/,
+      );
+    });
+
+    it('com PAYMENTS_BETA_TEST=true o provedor falso roda em produção, e a compra de teste fica aberta', () => {
+      const config = loadConfig({
+        ...production,
+        PAYMENTS_PROVIDER: 'fake',
+        PAYMENTS_BETA_TEST: 'true',
+        PAYMENTS_ENABLED: 'true',
+        PAYMENTS_DATA_KEY: Buffer.alloc(32, 1).toString('base64'),
+        SENTRY_ENVIRONMENT: 'production',
+      });
+      expect(config.payments).toMatchObject({ enabled: true, provider: 'fake', betaTest: true });
+    });
+
+    it('o beta exige o provedor falso: nunca junto do Mercado Pago, nem sem provedor', () => {
+      for (const provider of ['mercadopago', '']) {
+        expect(() =>
+          loadConfig({
+            ...production,
+            PAYMENTS_PROVIDER: provider,
+            PAYMENTS_BETA_TEST: 'true',
+            MERCADOPAGO_ACCESS_TOKEN: 'token',
+            MERCADOPAGO_WEBHOOK_SECRET: 'segredo',
+          }),
+        ).toThrow(/PAYMENTS_BETA_TEST.*PAYMENTS_PROVIDER=fake/);
+      }
     });
   });
 });

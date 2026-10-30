@@ -277,6 +277,7 @@ describe('Inventário', () => {
         endedAt: null,
         plan: null,
         test: false,
+        planEndsAt: null,
       });
       expect(currentSessionSchema.parse(vipMe.json()).vip).toEqual({
         active: true,
@@ -284,6 +285,7 @@ describe('Inventário', () => {
         endedAt: null,
         plan: 'capo',
         test: false,
+        planEndsAt: new Date(endsAt).toISOString(),
       });
     });
   });
