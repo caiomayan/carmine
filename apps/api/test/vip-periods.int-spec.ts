@@ -251,8 +251,52 @@ describe('Períodos VIP', () => {
       expect((await vip.statusOf(id)).active).toBe(true);
       expect(invalidated).toContain(steamId);
       const status = await run('status', '--steam-id', steamId);
-      expect(status.out).toMatch(new RegExp(`^${steamId}: VIP até \\d{4}-`));
+      expect(status.out).toMatch(new RegExp(`^${steamId}: Capo até \\d{4}-`));
       expect(status.out).toContain(`vip_grant por ${steamIdFor(900)}: teste`);
+    });
+
+    it('grant com --plan padrinho e --test concede o plano de teste, e status diz qual e o que vem depois', async () => {
+      const { steamId, id } = await newAccount();
+      await run('grant', '--steam-id', steamId, '--days', '30', ...by, '--reason', 'beta');
+
+      const granted = await run(
+        'grant',
+        '--steam-id',
+        steamId,
+        '--days',
+        '5',
+        '--plan',
+        'padrinho',
+        '--test',
+        ...by,
+        '--reason',
+        'beta',
+      );
+
+      expect(granted.code, granted.err).toBe(0);
+      expect(granted.out).toContain('Padrinho (teste) até');
+      expect(await vip.planStatusOf(id)).toMatchObject({ plan: 'padrinho', test: true });
+      expect((await run('status', '--steam-id', steamId)).out).toContain('Padrinho (teste) até');
+    });
+
+    it('um plano que não existe é recusado', async () => {
+      const { steamId } = await newAccount();
+
+      const result = await run(
+        'grant',
+        '--steam-id',
+        steamId,
+        '--days',
+        '1',
+        '--plan',
+        'vip',
+        ...by,
+        '--reason',
+        'x',
+      );
+
+      expect(result.code).toBe(1);
+      expect(result.err).toContain('--plan precisa ser capo ou padrinho');
     });
 
     it('revoke tira o VIP e registra', async () => {
@@ -291,7 +335,7 @@ describe('Períodos VIP', () => {
       const result = await run('revoke', '--steam-id', steamId, ...by, '--reason', 'x');
 
       expect(result.code).toBe(1);
-      expect(result.err).toContain('não tem VIP ativo');
+      expect(result.err).toContain('não tem plano ativo');
     });
   });
 });

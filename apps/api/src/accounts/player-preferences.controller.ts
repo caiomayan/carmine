@@ -63,7 +63,7 @@ export class PlayerPreferencesController {
     const account = await this.accounts.findBySteamId(steamId);
     if (!account || account.anonymizedAt !== null)
       throw new NotFoundException('Conta não encontrada');
-    const status = toVipStatus(await this.vip.statusOf(account.id));
+    const status = toVipStatus(await this.vip.planStatusOf(account.id));
     return { ...status, notice: vipNoticeAt(status, new Date()) };
   }
 

@@ -67,6 +67,7 @@ describe('POST /api/server/player-connects', () => {
       displayName: 'FalleN',
       isFirstConnect: false,
       isVip: false,
+      plan: null,
       vipNotice: null,
       vipEndsAt: null,
       sanctions: [],
@@ -156,6 +157,9 @@ describe('POST /api/server/player-connects', () => {
 
     expect(before.isVip).toBe(false);
     expect(after.isVip).toBe(true);
+    // O plugin antigo lê `isVip`; o novo lê o plano (as concessões de antes da S20 são Capo).
+    expect(before.plan).toBeNull();
+    expect(after.plan).toBe('capo');
   });
 
   it('não conta um Período VIP já encerrado', async () => {

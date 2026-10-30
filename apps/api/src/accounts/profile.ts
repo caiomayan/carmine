@@ -1,4 +1,5 @@
 import {
+  type Plan,
   type Profile,
   type ProfileSanctions,
   type ShowcaseItem,
@@ -16,6 +17,7 @@ export function toProfile(
   showcase: ShowcaseItem[],
   sanctions: ProfileSanctions,
   vipActive: boolean,
+  plan: Plan | null = null,
 ): Profile {
   return {
     publicId: account.publicId,
@@ -26,6 +28,7 @@ export function toProfile(
     claimed: account.claimedAt !== null,
     memberSince: account.createdAt.toISOString(),
     isVip: vipActive,
+    plan,
     loadoutShowcase: { items: showcase },
     sanctions,
     isPrivate: account.profilePrivate,

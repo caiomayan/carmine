@@ -2169,7 +2169,7 @@
             "description": "Sem sessão, ou ela expirou"
           },
           "403": {
-            "description": "Exige VIP (vip_required), ou CSRF inválido",
+            "description": "Exige um plano (vip_required, nome legado), ou CSRF inválido",
             "content": {
               "application/json": {
                 "schema": {
@@ -2179,7 +2179,7 @@
             }
           },
           "409": {
-            "description": "Já há 20 Presets (preset_limit)",
+            "description": "Já há tantos Presets quanto o plano permite (preset_limit)",
             "content": {
               "application/json": {
                 "schema": {
@@ -7710,6 +7710,14 @@
           "isVip": {
             "type": "boolean"
           },
+          "plan": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
           "vipNotice": {
             "nullable": true,
             "allOf": [
@@ -7754,6 +7762,13 @@
           "greeting"
         ],
         "additionalProperties": false
+      },
+      "Plan": {
+        "type": "string",
+        "enum": [
+          "capo",
+          "padrinho"
+        ]
       },
       "VipNotice": {
         "type": "string",
@@ -7998,6 +8013,14 @@
           },
           "isVip": {
             "type": "boolean"
+          },
+          "plan": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
           },
           "loadoutShowcase": {
             "$ref": "#/components/schemas/LoadoutShowcase"
@@ -8334,6 +8357,17 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "plan": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "test": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -9269,7 +9303,7 @@
         "properties": {
           "presets": {
             "minItems": 1,
-            "maxItems": 20,
+            "maxItems": 25,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Preset"
@@ -9286,7 +9320,13 @@
               {
                 "type": "number",
                 "enum": [
-                  20
+                  6
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  25
                 ]
               }
             ]

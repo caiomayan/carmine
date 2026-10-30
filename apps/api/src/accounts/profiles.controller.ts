@@ -87,9 +87,9 @@ export class ProfilesController {
       this.loadouts.showcase(owner.id),
       // A sessão vem do SessionGuard global; o web a repassa na leitura do servidor.
       this.sanctions.profileOf(owner.id, { withHistory: request.carmineSession !== undefined }),
-      this.vipPeriods.statusOf(owner.id),
+      this.vipPeriods.planStatusOf(owner.id),
     ]);
-    return toProfile(owner, showcase, sanctions, vip.active);
+    return toProfile(owner, showcase, sanctions, vip.active, vip.plan);
   }
 }
 

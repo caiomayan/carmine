@@ -59,7 +59,7 @@ export class PlayerConnectsController {
     const { accountId, created, claimed, connectedAt, ...account } =
       await this.accounts.registerConnect(connect);
     const [vip, sanctions, greeting] = await Promise.all([
-      this.vip.statusOf(accountId),
+      this.vip.planStatusOf(accountId),
       this.sanctions.forGame([connect.steamId]),
       this.greetings.forConnect(
         accountId,
@@ -72,6 +72,7 @@ export class PlayerConnectsController {
     return {
       ...account,
       isVip: vip.active,
+      plan: vip.plan,
       vipNotice: vipNoticeAt(toVipStatus(vip), new Date()),
       vipEndsAt: vip.endsAt?.toISOString() ?? null,
       sanctions,

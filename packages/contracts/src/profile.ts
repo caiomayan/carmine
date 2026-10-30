@@ -4,6 +4,7 @@ import { cs2ItemSchema } from './inventory.js';
 import { liveServerSchema } from './live-servers.js';
 import { loadoutSlotSchema, loadoutSlotSideSchema } from './loadout.js';
 import { ownSanctionSchema, profileSanctionsSchema } from './moderation.js';
+import { planSchema } from './plans.js';
 import { staffRoleSchema } from './staff.js';
 import { steamId64Schema } from './steam.js';
 import { vipStatusSchema } from './vip.js';
@@ -50,6 +51,8 @@ export const profileSchema = z
      * (`vip` em `/api/me`), nunca do Perfil público.
      */
     isVip: z.boolean(),
+    /** O plano ativo agora (S20), só o selo: Capo ou Padrinho; nulo sem plano. */
+    plan: planSchema.nullable().optional(),
     loadoutShowcase: z
       .object({
         items: z.array(showcaseItemSchema),

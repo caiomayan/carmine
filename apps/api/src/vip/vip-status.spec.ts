@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { vipStatusAt } from './vip-status.js';
+import { toVipStatus, vipStatusAt } from './vip-status.js';
 
 const at = (iso: string) => new Date(iso);
 const period = (startsAt: string, endsAt: string) => ({
@@ -64,6 +64,29 @@ describe('vipStatusAt', () => {
       active: true,
       endsAt: at('2026-12-10T00:00:00Z'),
       endedAt: null,
+    });
+  });
+});
+
+describe('toVipStatus', () => {
+  const active = { active: true, endsAt: at('2026-11-01T00:00:00Z'), endedAt: null };
+
+  it('sem o plano (como antes da S20), o formato é o de sempre', () => {
+    expect(toVipStatus(active)).toEqual({
+      active: true,
+      endsAt: '2026-11-01T00:00:00.000Z',
+      endedAt: null,
+    });
+  });
+
+  it('com o plano, leva o plano e se é de teste; sem plano, plan é nulo', () => {
+    expect(toVipStatus({ ...active, plan: 'padrinho', test: true })).toMatchObject({
+      plan: 'padrinho',
+      test: true,
+    });
+    expect(toVipStatus({ active: false, endsAt: null, endedAt: null, plan: null })).toMatchObject({
+      active: false,
+      plan: null,
     });
   });
 });

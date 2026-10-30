@@ -48,10 +48,10 @@ export interface StaffAuditEntry {
   createdAt: Date;
 }
 
-/** Revogar uma Conta sem VIP ativo. */
+/** Revogar uma Conta sem plano ativo. */
 export class NoVipToRevoke extends Error {
   constructor() {
-    super('a Conta não tem VIP ativo');
+    super('a Conta não tem plano ativo');
     this.name = 'NoVipToRevoke';
   }
 }
