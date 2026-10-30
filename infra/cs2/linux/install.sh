@@ -445,23 +445,31 @@ install_gameplay_plugin() {
   fi
 }
 
-# Deathmatch com o patch do Carmine (ADR 0028): compila o fonte da tag pinada com os patches de
-# infra/cs2/deathmatch-patch (uma vez por execução) e troca as duas DLLs do zip. O resto do zip (lang, configs,
-# dependências) fica como veio.
+# Deathmatch com o patch do Carmine (ADR 0028): troca o Deathmatch.dll e o DeathmatchAPI.dll do zip oficial pelos que a
+# CI compilou e pôs na release do Carmine.Core (o host não compila nada). O resto do zip (idiomas, configs, dependências)
+# fica como veio. As DLLs já foram conferidas pelo SHA256SUMS, pela atestação e pelo manifesto em release_fetch.
+# Sem release (instalação com --plugin-dir ou compilada no host) ou numa release antiga que não o traz, o Deathmatch
+# fica sem o patch e as preferências dele não seguem a Conta: o aviso diz isso e a instalação continua.
 install_patched_deathmatch() {
-  local game_dir="$1" patched="$BUILD_DIR/deathmatch-patched" dotnet
-  if [[ ! -f "$patched/Deathmatch.dll" || ! -f "$patched/DeathmatchAPI.dll" || "$(cat "$patched/.source" 2>/dev/null)" != "$DM_SRC_COMMIT" ]]; then
-    dotnet="$(ensure_dotnet)"
-    mkdir -p "$BUILD_DIR"
-    PATH="$(dirname "$dotnet"):$PATH" DOTNET_ROOT="$(dirname "$dotnet")" DOTNET="$dotnet" \
-      DOTNET_CLI_HOME="$BUILD_DIR/.dotnet" DOTNET_NOLOGO=1 DOTNET_CLI_TELEMETRY_OPTOUT=1 \
-      bash "$REPO_ROOT/infra/cs2/deathmatch-patch/build.sh" --out "$patched"
-    echo "$DM_SRC_COMMIT" >"$patched/.source"
+  local game_dir="$1" version manifest dir
+  version="$(release_installed_version)"
+  dir=""
+  if [[ -n "$version" ]]; then
+    dir="$(release_dir "$version")/deathmatch"
+    manifest="$(release_dir "$version")/manifest.json"
   fi
-  cp -f "$patched/Deathmatch.dll" "$game_dir/addons/counterstrikesharp/plugins/Deathmatch/Deathmatch.dll"
+  if [[ -z "$dir" || ! -f "$dir/Deathmatch.dll" || ! -f "$dir/DeathmatchAPI.dll" ]]; then
+    echo "    AVISO: Deathmatch sem o patch do Carmine (use --core-release com uma release que o traga): as preferências do Deathmatch não seguem a Conta" >&2
+    return 0
+  fi
+  # As DLLs patchadas são da tag do zip que acabou de ser instalado; outra versão do plugin quebraria o servidor.
+  if [[ "$(jq -r '.deathmatch.sourceCommit // empty' "$manifest")" != "$DM_SRC_COMMIT" ]]; then
+    die "o Deathmatch patchado da release core-v$version é de outro commit do plugin ($(jq -r '.deathmatch.sourceCommit // "?"' "$manifest")) que o do zip instalado ($DM_SRC_COMMIT): instale uma release feita com este versions.sh"
+  fi
+  cp -f "$dir/Deathmatch.dll" "$game_dir/addons/counterstrikesharp/plugins/Deathmatch/Deathmatch.dll"
   mkdir -p "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI"
-  cp -f "$patched/DeathmatchAPI.dll" "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI/DeathmatchAPI.dll"
-  echo "    Deathmatch patchado ($DM_SRC_TAG + patches do Carmine)"
+  cp -f "$dir/DeathmatchAPI.dll" "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI/DeathmatchAPI.dll"
+  echo "    Deathmatch patchado ($DM_SRC_TAG + patches do Carmine, release core-v$version)"
 }
 
 install_invsim() {

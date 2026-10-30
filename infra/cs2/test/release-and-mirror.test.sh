@@ -46,6 +46,8 @@ GP_URL[Plugin]="$OFFICIAL/dois.zip"
 GP_SHA256[Plugin]='$SHA_DOIS'
 ALLOCATOR_GAMEDATA_URL="$OFFICIAL/um.zip"
 ALLOCATOR_GAMEDATA_SHA256='$SHA_UM'
+DM_SRC_TAG='v1.3.6'
+DM_SRC_COMMIT='a309e88e0f635a91b3e8c5576393b7e008b1dd13'
 VERS
 export VERSIONS_FILE="$T/versions.sh"
 
@@ -65,6 +67,27 @@ if bash "$CS2/release/make-manifest.sh" --version 9.9 --commit x --zip "$T/carmi
   fail "manifesto: aceitou versão inválida"
 fi
 pass "manifest.json"
+# o Deathmatch patchado (ADR 0028): o zip, o hash de cada DLL e os patches entram no manifesto; sem o zip, não entra
+[[ "$(jq 'has("deathmatch")' "$M")" == false ]] || fail "manifesto sem --deathmatch-zip não deveria ter deathmatch"
+mkdir -p "$T/dm"
+printf 'dll do deathmatch' >"$T/dm/Deathmatch.dll"
+printf 'dll da api' >"$T/dm/DeathmatchAPI.dll"
+(cd "$T/dm" && zip -qr "$T/carmine-deathmatch-9.9.9.zip" Deathmatch.dll DeathmatchAPI.dll)
+bash "$CS2/release/make-manifest.sh" --version 9.9.9 --commit abc123 --zip "$T/carmine-core-9.9.9.zip" \
+  --deathmatch-zip "$T/carmine-deathmatch-9.9.9.zip" --openapi "$T/openapi.json" --out "$T/manifest-dm.json" >/dev/null
+D="$T/manifest-dm.json"
+[[ "$(jq -r .deathmatch.asset.sha256 "$D")" == "$(sha256sum "$T/carmine-deathmatch-9.9.9.zip" | cut -d' ' -f1)" ]] || fail "manifesto: sha do zip do Deathmatch"
+[[ "$(jq -r '.deathmatch.files["Deathmatch.dll"]' "$D")" == "$(sha256sum "$T/dm/Deathmatch.dll" | cut -d' ' -f1)" ]] || fail "manifesto: sha da Deathmatch.dll"
+[[ "$(jq -r '.deathmatch.files["DeathmatchAPI.dll"]' "$D")" == "$(sha256sum "$T/dm/DeathmatchAPI.dll" | cut -d' ' -f1)" ]] || fail "manifesto: sha da DeathmatchAPI.dll"
+[[ "$(jq -r .deathmatch.sourceCommit "$D")" == a309e88e0f635a91b3e8c5576393b7e008b1dd13 && "$(jq -r .deathmatch.sourceTag "$D")" == v1.3.6 ]] || fail "manifesto: tag e commit do fonte"
+[[ "$(jq -r '.deathmatch.patches[0].sha256' "$D")" == "$(sha256sum "$CS2"/deathmatch-patch/0001-*.patch | cut -d' ' -f1)" ]] || fail "manifesto: sha do patch"
+printf 'sem dll' >"$T/dm/so-uma.txt"
+(cd "$T/dm" && zip -qr "$T/incompleto.zip" so-uma.txt)
+if bash "$CS2/release/make-manifest.sh" --version 9.9.9 --commit x --zip "$T/carmine-core-9.9.9.zip" --deathmatch-zip "$T/incompleto.zip" \
+  --openapi "$T/openapi.json" --out "$T/x.json" >/dev/null 2>&1; then
+  fail "manifesto: aceitou um zip do Deathmatch sem as DLLs"
+fi
+pass "manifesto com o Deathmatch patchado"
 # o manifesto com o versions.sh de verdade também sai
 VERSIONS_FILE='' bash "$CS2/release/make-manifest.sh" --version 0.0.1 --commit x --zip "$T/carmine-core-9.9.9.zip" \
   --openapi "$T/openapi.json" --out "$T/real.json" >/dev/null
