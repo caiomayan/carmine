@@ -19,11 +19,12 @@ export async function staffPost<T>(
   path: `/api/staff/${string}`,
   body: unknown,
   parse: (value: unknown) => T,
+  method: 'POST' | 'PUT' = 'POST',
 ): Promise<StaffResult<T>> {
   const csrf = readCookie(CSRF_COOKIE);
   try {
     const response = await fetch(path, {
-      method: 'POST',
+      method,
       headers: { 'content-type': 'application/json', ...(csrf ? { [CSRF_HEADER]: csrf } : {}) },
       body: JSON.stringify(body),
     });

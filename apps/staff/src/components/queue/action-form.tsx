@@ -20,6 +20,7 @@ export function ActionForm<T = unknown>({
   testId,
   kind = 'default',
   reasonLabel = 'Motivo (vai para o log de auditoria)',
+  description,
   validate,
   onSubmit,
   onDone,
@@ -32,6 +33,8 @@ export function ActionForm<T = unknown>({
   testId: string;
   kind?: 'default' | 'danger';
   reasonLabel?: string;
+  /** Explica a ação ao abrir o formulário. */
+  description?: string;
   /** Erro dos campos extras, ou `null` se está tudo certo. */
   validate?: () => string | null;
   onSubmit: (reason: string) => Promise<StaffResult<T>>;
@@ -96,6 +99,7 @@ export function ActionForm<T = unknown>({
 
   return (
     <form className="stp-form" onSubmit={submit} data-testid={testId} noValidate>
+      {description ? <p className="stp-muted">{description}</p> : null}
       {children}
       <label className="stp-label" htmlFor={`${id}-reason`}>
         {reasonLabel}

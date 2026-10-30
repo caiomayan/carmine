@@ -17,6 +17,7 @@ import {
   sanctionGuard,
   sanctionState,
 } from '@/lib/staff-rules';
+import { ErasurePanel, RankingPanel, RolePanel, VipPanel } from './account-panels';
 import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 
 const ROLE_LABEL = { owner: 'Dono', admin: 'Admin', moderator: 'Moderador' } as const;
@@ -109,34 +110,36 @@ export function AccountFile({
         </div>
 
         <div className="stp-col">
+          <VipPanel detail={detail} viewer={viewer} onChange={setDetail} />
           {staffCan(viewer.role, 'displayName.reset') ? (
             <DisplayNamePanel detail={detail} onChange={setDetail} />
           ) : null}
 
+          <RankingPanel detail={detail} viewer={viewer} onChange={setDetail} />
+          <RolePanel detail={detail} viewer={viewer} onChange={setDetail} />
+          <ErasurePanel detail={detail} viewer={viewer} />
+
           <section className="stp-card" aria-labelledby="auditoria-conta">
-            <h2 id="auditoria-conta" className="stp-card-h">
-              Ações da Staff nesta Conta
-            </h2>
+            <div className="stp-card-h-row">
+              <h2 id="auditoria-conta" className="stp-card-h">
+                Ações da Staff nesta Conta
+              </h2>
+              {staffCan(viewer.role, 'audit.read') ? (
+                <Link
+                  href={`/auditoria?alvo=${account.steamId}`}
+                  prefetch={false}
+                  className="stp-link"
+                >
+                  Ver tudo no log
+                </Link>
+              ) : null}
+            </div>
             {detail.audit.length > 0 ? (
               <AuditEntries entries={detail.audit} showTarget={false} />
             ) : (
               <p className="stp-muted">Nenhuma ação registrada.</p>
             )}
           </section>
-
-          {siteUrl ? (
-            <p className="stp-muted stp-transition">
-              VIP, Ranking, papel e a exclusão de dados desta Conta ainda ficam na{' '}
-              <a
-                href={`${siteUrl}/staff/contas/${account.publicId}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                ficha do site
-              </a>
-              .
-            </p>
-          ) : null}
         </div>
       </div>
     </div>
