@@ -9,6 +9,46 @@ export const gameModeSchema = z.enum(['retake', 'deathmatch']).meta({ id: 'GameM
 
 export type GameMode = z.infer<typeof gameModeSchema>;
 
+/**
+ * Preferência de jogo (ADR 0028): uma escolha do jogador que um plugin de jogo guarda por servidor e
+ * que o Carmine guarda na Conta, para valer em todo servidor do Modo. Cada chave nova entra aqui, com
+ * o padrão e os Modos onde vale. `awp_raffle`: o jogador está no sorteio da AWP do Retake.
+ */
+export const gamePreferenceKeySchema = z.enum(['awp_raffle']).meta({ id: 'GamePreferenceKey' });
+
+export type GamePreferenceKey = z.infer<typeof gamePreferenceKeySchema>;
+
+/** O valor de cada chave quando a Conta nunca a mudou (decisão do dono, 2026-10-29: fora do sorteio da AWP). */
+export const GAME_PREFERENCE_DEFAULTS: Record<GamePreferenceKey, boolean> = {
+  awp_raffle: false,
+};
+
+/** Os Modos onde cada chave existe; fora deles a API recusa a escrita e o plugin não aplica nada. */
+export const GAME_PREFERENCE_MODES: Record<GamePreferenceKey, readonly GameMode[]> = {
+  awp_raffle: ['retake'],
+};
+
+/** As Preferências de jogo de uma Conta, com o padrão no lugar do que ela nunca mudou. */
+export const gamePreferencesSchema = z
+  .strictObject({ awpRaffle: z.boolean() })
+  .meta({ id: 'GamePreferences' });
+
+export type GamePreferences = z.infer<typeof gamePreferencesSchema>;
+
+/** Corpo de `PUT /api/server/players/{steamId}/preferences/{key}`: o valor explícito da preferência. */
+export const gamePreferenceSetSchema = z
+  .strictObject({ enabled: z.boolean() })
+  .meta({ id: 'GamePreferenceSet' });
+
+export type GamePreferenceSet = z.infer<typeof gamePreferenceSetSchema>;
+
+/** O valor de uma preferência depois de gravada ou alternada (`PUT` e `POST …/toggle`). */
+export const gamePreferenceValueSchema = z
+  .strictObject({ key: gamePreferenceKeySchema, enabled: z.boolean() })
+  .meta({ id: 'GamePreferenceValue' });
+
+export type GamePreferenceValue = z.infer<typeof gamePreferenceValueSchema>;
+
 /** Nome do mapa como o jogo o conhece (`de_mirage`), sem tratamento. */
 export const mapNameSchema = z
   .string()
@@ -62,11 +102,11 @@ export const playerConnectResultSchema = z
      */
     chatHidden: z.boolean(),
     /**
-     * A Conta ainda não passou pela AWP por padrão do Retake (S16): no primeiro spawn num Retake, o
-     * plugin põe o jogador na fila da AWP do alocador e avisa a API (`markPlayerAwpDefaultApplied`).
-     * `false` depois disso, para sempre: quem sair da fila fica fora.
+     * As Preferências de jogo da Conta que valem no Modo deste servidor (ADR 0028): o plugin as aplica
+     * nos plugins de jogo no primeiro spawn de cada conexão, para a escolha acompanhar a Conta de um
+     * servidor para o outro.
      */
-    applyAwpDefault: z.boolean(),
+    preferences: gamePreferencesSchema,
     /**
      * A linha única do connect nos servidores abertos (S16), já em português e sem o prefixo: as
      * boas-vindas da Conta nova no Modo ou uma curiosidade da semana. O plugin a mostra no primeiro

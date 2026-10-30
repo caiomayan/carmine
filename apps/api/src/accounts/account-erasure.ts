@@ -3,6 +3,7 @@ import { and, eq, ne, sql } from 'drizzle-orm';
 import { eraseAvatarsOf } from '../avatars/avatar-erasure.js';
 import type { Database } from '../database/database.js';
 import {
+  accountGamePreferences,
   accountStatsDaily,
   accountStatsWeekly,
   accounts,
@@ -127,6 +128,10 @@ export class AccountErasure {
           .delete(vipPeriods)
           .where(eq(vipPeriods.accountId, accountId))
           .returning({ id: vipPeriods.id });
+        // Preferências de jogo (ADR 0028): a linha da Conta fica, então o cascade não age.
+        await tx
+          .delete(accountGamePreferences)
+          .where(eq(accountGamePreferences.accountId, accountId));
         const removedStats = await tx
           .delete(accountStatsWeekly)
           .where(eq(accountStatsWeekly.accountId, accountId))

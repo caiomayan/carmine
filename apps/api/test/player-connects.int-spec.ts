@@ -1,4 +1,5 @@
 import {
+  gamePreferenceValueSchema,
   type PlayerConnectResult,
   playerConnectResultSchema,
   playerVipSchema,
@@ -7,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { placeholderNameFor } from '../src/accounts/placeholder-names.js';
 import { isPrettyNumber } from '../src/accounts/public-id.js';
 import { vipPeriods } from '../src/database/schema.js';
+import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 
 describe('POST /api/server/player-connects', () => {
@@ -45,7 +47,8 @@ describe('POST /api/server/player-connects', () => {
     expect(result).toMatchObject({
       displayName: 'coldzera',
       isFirstConnect: true,
-      greeting: 'Bem-vindo, coldzera. Ao jogar você concorda com os termos: stcarmine.com/terms',
+      greeting:
+        'Bem-vindo, coldzera. Ao jogar você concorda com os termos: stcarmine.com/terms\n!awp coloca você no sorteio da AWP.',
     });
     expect(result.publicId).toBeGreaterThanOrEqual(10_000);
     expect(await t.accounts.findBySteamId(steamId)).toMatchObject({
@@ -71,7 +74,7 @@ describe('POST /api/server/player-connects', () => {
       vipEndsAt: null,
       sanctions: [],
       chatHidden: false,
-      applyAwpDefault: true,
+      preferences: { awpRaffle: false },
       greeting: 'Bem-vindo, FalleN.',
     });
   });
@@ -268,30 +271,95 @@ describe('POST /api/server/player-connects', () => {
     });
   });
 
-  describe('AWP por padrão do Retake (S16)', () => {
-    function markAwp(steamId: string, key: string | null = t.serverKey) {
+  describe('Preferências de jogo: o sorteio da AWP do Retake (ADR 0028)', () => {
+    function preference(
+      method: 'PUT' | 'POST',
+      steamId: string,
+      payload?: object,
+      key: string | null = t.serverKey,
+      name = 'awp_raffle',
+    ) {
       return t.app.inject({
-        method: 'POST',
-        url: `/api/server/players/${steamId}/awp-default`,
+        method,
+        url: `/api/server/players/${steamId}/preferences/${name}${method === 'POST' ? '/toggle' : ''}`,
         headers: key === null ? {} : { authorization: `Bearer ${key}` },
+        payload,
       });
     }
 
-    it('todo connect manda applyAwpDefault até a marca; depois dela, nunca mais, e marcar de novo não muda nada', async () => {
+    it('a Conta nasce fora do sorteio; o !awp alterna e a escolha volta em todo connect', async () => {
       const steamId = steamIdFor(710);
-      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(true);
-      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(true);
+      expect((await connectOk({ steamId, steamName: 'sniper' })).preferences).toEqual({
+        awpRaffle: false,
+      });
 
-      expect((await markAwp(steamId)).statusCode).toBe(204);
-      expect((await markAwp(steamId)).statusCode).toBe(204);
+      const entered = await preference('POST', steamId);
+      expect(entered.statusCode, entered.body).toBe(200);
+      expect(gamePreferenceValueSchema.parse(entered.json())).toEqual({
+        key: 'awp_raffle',
+        enabled: true,
+      });
+      expect((await connectOk({ steamId, steamName: 'sniper' })).preferences.awpRaffle).toBe(true);
 
-      expect((await connectOk({ steamId, steamName: 'sniper' })).applyAwpDefault).toBe(false);
+      const left = await preference('POST', steamId);
+      expect(gamePreferenceValueSchema.parse(left.json()).enabled).toBe(false);
+      expect((await connectOk({ steamId, steamName: 'sniper' })).preferences.awpRaffle).toBe(false);
     });
 
-    it('Conta que não existe: 404; SteamID inválido: 400; sem a chave do servidor: 401', async () => {
-      expect((await markAwp(steamIdFor(711))).statusCode).toBe(404);
-      expect((await markAwp('123')).statusCode).toBe(400);
-      expect((await markAwp(steamIdFor(1), null)).statusCode).toBe(401);
+    it('o PUT grava o valor explícito, e repetir não muda nada', async () => {
+      const steamId = steamIdFor(711);
+      await connectOk({ steamId, steamName: 'explicito' });
+
+      for (let i = 0; i < 2; i++) {
+        const response = await preference('PUT', steamId, { enabled: true });
+        expect(response.statusCode, response.body).toBe(200);
+        expect(gamePreferenceValueSchema.parse(response.json()).enabled).toBe(true);
+      }
+      expect((await connectOk({ steamId, steamName: 'explicito' })).preferences.awpRaffle).toBe(
+        true,
+      );
+    });
+
+    it('fora do sorteio, o primeiro connect leva o aviso do !awp numa segunda linha', async () => {
+      const result = await connectOk({ steamId: steamIdFor(712), steamName: 'novato' });
+
+      expect(result.greeting).toBe(
+        'Bem-vindo, novato. Ao jogar você concorda com os termos: stcarmine.com/terms\n!awp coloca você no sorteio da AWP.',
+      );
+    });
+
+    it('no sorteio, o primeiro connect não leva o aviso do !awp', async () => {
+      const steamId = steamIdFor(713);
+      await connectOk({ steamId, steamName: 'veterano' });
+      await preference('PUT', steamId, { enabled: true });
+      // A Conta não é mais nova: o segundo connect não repete os termos nem o aviso.
+      const again = await connectOk({ steamId, steamName: 'veterano' });
+
+      expect(again.greeting).not.toContain('!awp');
+      expect(again.greeting).not.toContain('termos');
+    });
+
+    it('a preferência vale só no Modo da chave: num servidor de Deathmatch, 400 e nada gravado', async () => {
+      const steamId = steamIdFor(714);
+      await connectOk({ steamId, steamName: 'dm' });
+      const { key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'dm-preferencias', mode: 'deathmatch', address: '127.0.0.1:27040' });
+
+      expect((await preference('POST', steamId, undefined, key)).statusCode).toBe(400);
+      expect((await preference('PUT', steamId, { enabled: true }, key)).statusCode).toBe(400);
+      expect((await connectOk({ steamId, steamName: 'dm' })).preferences.awpRaffle).toBe(false);
+    });
+
+    it('Conta que não existe: 404; SteamID, chave ou corpo inválido: 400; sem a chave do servidor: 401', async () => {
+      expect((await preference('POST', steamIdFor(715))).statusCode).toBe(404);
+      expect((await preference('PUT', steamIdFor(715), { enabled: true })).statusCode).toBe(404);
+      expect((await preference('POST', '123')).statusCode).toBe(400);
+      expect(
+        (await preference('POST', steamIdFor(1), undefined, t.serverKey, 'zeus')).statusCode,
+      ).toBe(400);
+      expect((await preference('PUT', steamIdFor(1), { enabled: 'sim' })).statusCode).toBe(400);
+      expect((await preference('POST', steamIdFor(1), undefined, null)).statusCode).toBe(401);
     });
   });
 

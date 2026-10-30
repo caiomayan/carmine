@@ -44,6 +44,7 @@ const facts = (over: Partial<GreetingFacts> = {}): GreetingFacts => ({
     { day: '2026-10-27', roundsWon: 132, kills: 90 },
   ],
   totalSeconds: 37 * 3600 + 120,
+  awpHint: false,
   ...over,
 });
 
@@ -96,6 +97,19 @@ describe('linha do connect', () => {
     expect(firstConnectGreeting('Gabriel')).toBe(
       'Bem-vindo, Gabriel. Ao jogar você concorda com os termos: stcarmine.com/terms',
     );
+  });
+
+  it('primeiro connect fora do sorteio da AWP: uma segunda linha com o aviso do !awp', () => {
+    expect(firstConnectGreeting('Gabriel', true)).toBe(
+      'Bem-vindo, Gabriel. Ao jogar você concorda com os termos: stcarmine.com/terms\n!awp coloca você no sorteio da AWP.',
+    );
+  });
+
+  it('fora do sorteio da AWP no Retake, o aviso do !awp é uma das curiosidades; no sorteio, não', () => {
+    expect(curiosities(facts({ awpHint: true })).map((c) => c.line)).toContain(
+      '!awp coloca você no sorteio da AWP.',
+    );
+    expect(curiosities(facts({ awpHint: false })).some((c) => c.key === 'awp-hint')).toBe(false);
   });
 
   it('Conta nova no Modo: boas-vindas com o nome', () => {
