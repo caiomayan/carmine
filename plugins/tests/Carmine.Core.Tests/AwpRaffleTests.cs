@@ -23,6 +23,56 @@ public class AwpRaffleTests
         Assert.DoesNotContain("css_awp", AwpRaffle.JoinCommand + AwpRaffle.LeaveCommand);
     }
 
+    [Theory]
+    [InlineData("css_awp")]
+    [InlineData("CSS_AWP")]
+    [InlineData("Css_Awp")]
+    public void So_o_Carmine_trata_o_css_awp_em_qualquer_caixa(string command)
+    {
+        // O chat "!awp" chega como css_awp; o do alocador não pode rodar junto (a Conta e o alocador divergiriam).
+        Assert.True(AwpRaffle.OwnsCommand(command));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("awp")]
+    [InlineData("css_awp2")]
+    [InlineData("css_gun")]
+    [InlineData("css_removegun")]
+    [InlineData("say")]
+    public void Os_outros_comandos_passam_intactos_inclusive_os_que_o_Core_executa_no_alocador(string? command)
+    {
+        // O Core aplica a AWP com css_gun e css_removegun: eles não podem ser barrados.
+        Assert.False(AwpRaffle.OwnsCommand(command));
+        Assert.False(AwpRaffle.OwnsCommand(AwpRaffle.JoinCommand.Split(" ")[0]));
+        Assert.False(AwpRaffle.OwnsCommand(AwpRaffle.LeaveCommand.Split(" ")[0]));
+    }
+
+    [Fact]
+    public void O_Core_registra_o_listener_global_que_barra_o_css_awp_do_alocador()
+    {
+        // A fiação com o jogo não roda no teste; este guarda contra remover o bloqueio sem querer. Um listener por nome
+        // não serve: o CounterStrikeSharp roda os handlers de mesmo nome na ordem de registro dos plugins.
+        var source = File.ReadAllText(FindRepoFile("plugins", "src", "Carmine.Core", "CorePlugin.cs"));
+
+        Assert.Contains("AddCommandListener(null, OnAnyCommand, HookMode.Pre)", source);
+        Assert.Contains("AwpRaffle.OwnsCommand(info.GetArg(0))", source);
+        Assert.Contains("return HookResult.Stop;", source);
+    }
+
+    private static string FindRepoFile(params string[] parts)
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            var file = Path.Combine(parts.Prepend(dir.FullName).ToArray());
+            if (File.Exists(file))
+            {
+                return file;
+            }
+        }
+        throw new FileNotFoundException(string.Join("/", parts));
+    }
     [Fact]
     public void Os_avisos_sao_os_do_dono()
     {

@@ -105,11 +105,27 @@ describe('linha do connect', () => {
     );
   });
 
-  it('fora do sorteio da AWP no Retake, o aviso do !awp é uma das curiosidades; no sorteio, não', () => {
-    expect(curiosities(facts({ awpHint: true })).map((c) => c.line)).toContain(
-      '!awp coloca você no sorteio da AWP.',
+  it('o aviso do !awp não é uma curiosidade: não entra no sorteio nem na lista', () => {
+    expect(curiosities(facts({ awpHint: true })).some((c) => c.line.includes('!awp'))).toBe(false);
+  });
+
+  it('fora do sorteio da AWP, TODO connect leva o aviso do !awp numa segunda linha', () => {
+    const hint = '!awp coloca você no sorteio da AWP.';
+    for (const roll of [0, 0.5, 0.99]) {
+      // Conta com dados: a curiosidade sorteada e, embaixo, o aviso.
+      const withData = pickGreeting(facts({ awpHint: true }), null, () => roll);
+      expect(withData.line.split('\n')).toHaveLength(2);
+      expect(withData.line.endsWith('\n' + hint)).toBe(true);
+      expect(withData.curiosityKey).not.toBeNull();
+    }
+    // Conta nova no Modo: as boas-vindas e, embaixo, o aviso.
+    expect(pickGreeting(facts({ awpHint: true, hasStatsInMode: false }), null).line).toBe(
+      'Bem-vindo, Gabriel.' + '\n' + hint,
     );
-    expect(curiosities(facts({ awpHint: false })).some((c) => c.key === 'awp-hint')).toBe(false);
+  });
+
+  it('no sorteio da AWP não há aviso do !awp', () => {
+    expect(pickGreeting(facts({ awpHint: false }), null).line).not.toContain('!awp');
   });
 
   it('Conta nova no Modo: boas-vindas com o nome', () => {

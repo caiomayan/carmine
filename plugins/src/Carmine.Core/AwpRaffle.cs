@@ -21,6 +21,17 @@ public sealed class AwpRaffle(ICarmineApiClient api)
     /// <summary>Desliga a AWP no alocador (<c>remove: true</c> zera a preferência de sniper).</summary>
     public const string LeaveCommand = "css_removegun awp ct";
 
+    /// <summary>O comando (digitado como <c>css_awp</c> ou <c>!awp</c> no chat) que só o Carmine trata.</summary>
+    public const string Command = "css_awp";
+
+    /// <summary>
+    /// <c>true</c> para o <c>css_awp</c>, sem diferenciar maiúsculas. O alocador tem o mesmo comando e ele alterna a
+    /// cópia local: se os dois rodassem, a Conta e o alocador podiam acabar diferentes e a resposta sairia duas vezes.
+    /// O Core o toma por um listener global de pré-comando (ver <c>CorePlugin.OnAnyCommand</c>).
+    /// </summary>
+    public static bool OwnsCommand(string? commandName) =>
+        string.Equals(commandName, Command, StringComparison.OrdinalIgnoreCase);
+
     public const string EnteredMessage = "Você entrou no sorteio da AWP. Para sair, digite !awp.";
 
     public const string LeftMessage = "Você saiu do sorteio da AWP. Para voltar, digite !awp.";
