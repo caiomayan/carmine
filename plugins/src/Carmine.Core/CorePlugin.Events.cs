@@ -33,6 +33,10 @@ public sealed partial class CorePlugin
         RegisterEventHandler<EventPlayerHurt>(OnPlayerHurt);
         RegisterEventHandler<EventRoundStart>(OnRoundStartEvents);
         RegisterEventHandler<EventRoundEnd>(OnRoundEndEvents);
+        RegisterEventHandler<EventRoundFreezeEnd>(OnRoundFreezeEndEvents);
+        RegisterEventHandler<EventBombPlanted>(OnBombPlanted);
+        RegisterEventHandler<EventBombDefused>(OnBombDefused);
+        RegisterEventHandler<EventBombExploded>(OnBombExploded);
         RegisterListener<Listeners.OnMapEnd>(FlushEvents);
         RegisterListener<Listeners.OnMapStart>(OnMapStartEvents);
         RegisterEventHandler<EventBeginNewMatch>(OnBeginNewMatch);
@@ -122,7 +126,16 @@ public sealed partial class CorePlugin
                 @event.Headshot,
                 @event.Weapon,
                 IsWarmup(),
-                TeammatesAreEnemies());
+                TeammatesAreEnemies(),
+                new KillDetail(
+                    @event.Assistedflash,
+                    @event.Penetrated,
+                    @event.Thrusmoke,
+                    @event.Attackerblind,
+                    @event.Noscope,
+                    @event.Distance,
+                    PointOf(@event.Attacker),
+                    PointOf(@event.Userid)));
         }
         return HookResult.Continue;
     }
@@ -133,7 +146,13 @@ public sealed partial class CorePlugin
             && PlayerRefOf(@event.Attacker) is { } attacker
             && PlayerRefOf(@event.Userid) is { } victim)
         {
-            recorder.Damage(attacker, victim, @event.DmgHealth, IsWarmup(), TeammatesAreEnemies());
+            recorder.Damage(
+                attacker,
+                victim,
+                @event.DmgHealth,
+                IsWarmup(),
+                TeammatesAreEnemies(),
+                new DamageDetail(@event.Weapon, @event.Hitgroup, @event.DmgArmor, @event.DmgHealth));
         }
         return HookResult.Continue;
     }
@@ -141,9 +160,59 @@ public sealed partial class CorePlugin
     private HookResult OnRoundStartEvents(EventRoundStart @event, GameEventInfo info)
     {
         ReconcileMatch();
-        _recorder?.RoundStarted(Utilities.GetPlayers().Select(PlayerRefOf).OfType<PlayerRef>());
+        // Round de verdade (fora do aquecimento, com placar de times): entra na coleta por round (S17).
+        _recorder?.RoundStarted(Utilities.GetPlayers().Select(PlayerRefOf).OfType<PlayerRef>(), collect: !IsWarmup() && !TeammatesAreEnemies());
         return HookResult.Continue;
     }
+
+    /// <summary>O freeze acabou: o round vale. Manda o início do round com o lado e o equipamento de cada um (S17).</summary>
+    private HookResult OnRoundFreezeEndEvents(EventRoundFreezeEnd @event, GameEventInfo info)
+    {
+        _recorder?.FreezeEnded(
+            Utilities.GetPlayers()
+                .Select(player => PlayerRefOf(player) is { } reference
+                    ? new RoundPlayerInfo(reference, player.PlayerPawn.Value?.FreezetimeEndEquipmentValue ?? 0)
+                    : null)
+                .OfType<RoundPlayerInfo>());
+        return HookResult.Continue;
+    }
+
+    private HookResult OnBombPlanted(EventBombPlanted @event, GameEventInfo info) =>
+        BombEvent(BombEventKind.Plant, @event.Userid, @event.Site);
+
+    private HookResult OnBombDefused(EventBombDefused @event, GameEventInfo info) =>
+        BombEvent(BombEventKind.Defuse, @event.Userid, @event.Site);
+
+    private HookResult OnBombExploded(EventBombExploded @event, GameEventInfo info) =>
+        BombEvent(BombEventKind.Explode, null, @event.Site);
+
+    private HookResult BombEvent(BombEventKind kind, CCSPlayerController? actor, int site)
+    {
+        _recorder?.Bomb(kind, PlayerRefOf(actor), BombSiteOf(site), IsWarmup());
+        return HookResult.Continue;
+    }
+
+    /// <summary>
+    /// O bomb site do evento. O <c>site</c> do jogo é o índice da entidade do alvo (<c>CBombTarget</c>), e ele diz se é o B.
+    /// ESCOLHA QUE O JOGO CONFIRMA: se o índice não for o do alvo, o site sai nulo (o contrato aceita) e o resto do evento vale.
+    /// </summary>
+    private static BombSite? BombSiteOf(int entityIndex)
+    {
+        try
+        {
+            return Utilities.GetEntityFromIndex<CBombTarget>(entityIndex) is { IsValid: true } target
+                ? (target.IsBombSiteB ? BombSite.B : BombSite.A)
+                : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>A posição do jogador (a dos pés), para o radar de mortes da S17; nula se ele não tem corpo.</summary>
+    private static Point? PointOf(CCSPlayerController? player) =>
+        player?.PlayerPawn.Value?.AbsOrigin is { } origin ? new Point(origin.X, origin.Y, origin.Z) : null;
 
     private HookResult OnRoundEndEvents(EventRoundEnd @event, GameEventInfo info)
     {
@@ -153,7 +222,13 @@ public sealed partial class CorePlugin
             CsTeam.Terrorist => RoundWinner.T,
             _ => RoundWinner.None,
         };
-        _recorder?.RoundEnded(winner, IsWarmup(), TeammatesAreEnemies());
+        _recorder?.RoundEnded(
+            winner,
+            IsWarmup(),
+            TeammatesAreEnemies(),
+            new RoundEndInfo(
+                RoundEndReasons.Map((uint)@event.Reason),
+                [.. Utilities.GetPlayers().Where(player => IsHuman(player) && player.PawnIsAlive).Select(player => player.SteamID)]));
         // O placar novo vai no batimento logo, sem esperar os 10 s.
         ScheduleHeartbeat();
         return HookResult.Continue;

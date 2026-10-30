@@ -91,18 +91,21 @@ public class EventRecorderTests
     }
 
     [Fact]
-    public void Bot_contra_bot_nao_sai_do_servidor()
+    public void Bot_contra_bot_tambem_sai_marcado_e_a_API_decide_o_que_conta()
     {
         using var f = new Fixture();
 
         f.Recorder.Kill(Bot, Bot, null, false, "ak47", false, false);
         f.Recorder.Kill(null, Bot, null, false, "world", false, false);
 
-        Assert.Empty(f.Reporter.Snapshot().Kills);
+        var kills = f.Reporter.Snapshot().Kills.ToList();
+        Assert.Equal(2, kills.Count);
+        Assert.All(kills, k => Assert.True(k.VictimIsBot));
+        Assert.True(kills[0].KillerIsBot);
     }
 
     [Fact]
-    public void Dano_so_sai_de_humano_em_inimigo_humano()
+    public void Dano_de_humano_sai_em_inimigo_aliado_e_bot_marcado_e_a_API_decide()
     {
         using var f = new Fixture();
 
@@ -114,7 +117,12 @@ public class EventRecorderTests
         f.Recorder.Damage(Ana, Bia, 0, false, false);
         f.Recorder.Damage(Ana, Caio, 40, false, teammatesAreEnemies: true);
 
-        Assert.Equal([27, 40], f.Reporter.Snapshot().Damages.Select(d => d.Amount));
+        var damages = f.Reporter.Snapshot().Damages.ToList();
+        // Bia (inimigo), Caio (aliado), bot, e Caio de novo no Deathmatch (todos contra todos). Bot atacando, o mundo, o
+        // próprio jogador e dano zero não saem.
+        Assert.Equal([27, 27, 27, 40], damages.Select(d => d.Amount));
+        Assert.Equal([false, false, true, false], damages.Select(d => d.VictimIsBot));
+        Assert.Equal([false, true, false, false], damages.Select(d => d.TeamDamage));
     }
 
     [Fact]
