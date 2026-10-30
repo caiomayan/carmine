@@ -146,6 +146,8 @@ test.describe('Contas no painel', () => {
     page,
   }) => {
     const server = createServer();
+    // O jogador é criado antes da sessão: o connect do servidor não aceita a sessão do painel aberta.
+    const { steamId } = await seedPlayer(page, server);
     await signInAsStaff(page, server, 'moderator');
 
     const me = (await (await page.request.get('/api/me')).json()) as {
@@ -155,7 +157,6 @@ test.describe('Contas no painel', () => {
     await expect(page.getByTestId('sanction-guard')).toContainText('não pode se punir');
     await expect(page.getByTestId('apply-sanction')).toHaveCount(0);
 
-    const { steamId } = await seedPlayer(page, server);
     await openFile(page, steamId);
     await page.getByTestId('sanction-category').selectOption('offensive_chat');
     await page.getByTestId('measure-type').first().selectOption('ban');
