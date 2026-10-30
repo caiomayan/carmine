@@ -21,6 +21,8 @@ import { ProfileStatsController } from './profile-stats.controller.js';
 import { ProfileStatsReader } from './profile-stats.js';
 import { RankingController } from './ranking.controller.js';
 import { RankingCache } from './ranking-cache.js';
+import { RatingPopulations, RatingPopulationsJob } from './rating-populations.js';
+import { RatingReader } from './rating-reader.js';
 import { WeekSummaryController } from './week-summary.controller.js';
 import { WeekSummaryReader } from './week-summary.js';
 import { WeeklyRanking } from './weekly-ranking.js';
@@ -73,6 +75,25 @@ import { WeeklyRanking } from './weekly-ranking.js';
       useFactory: (db: Database, ranking: WeeklyRanking) => new GameStatsReader(db, ranking),
     },
     {
+      // A população do Rating Carmine (S21): média e desvio por Modo e lado, uma vez por semana.
+      provide: RatingPopulations,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new RatingPopulations(db),
+    },
+    {
+      // Confere de hora em hora (a cadência da limpeza de retenção) se a semana já tem população.
+      provide: RatingPopulationsJob,
+      inject: [RatingPopulations, APP_CONFIG],
+      useFactory: (populations: RatingPopulations, config: AppConfig) =>
+        new RatingPopulationsJob(populations, config.reports.retentionSweepMs),
+    },
+    {
+      provide: RatingReader,
+      inject: [DATABASE, RatingPopulations],
+      useFactory: (db: Database, populations: RatingPopulations) =>
+        new RatingReader(db, populations),
+    },
+    {
       // Percebe a troca do primeiro lugar da semana para a faixa de atividade.
       provide: RankingLeaderWatch,
       inject: [WeeklyRanking, ActivityFeed, VALKEY],
@@ -80,6 +101,6 @@ import { WeeklyRanking } from './weekly-ranking.js';
         new RankingLeaderWatch(ranking, activity, valkey, 30_000),
     },
   ],
-  exports: [WeeklyRanking],
+  exports: [WeeklyRanking, RatingReader],
 })
 export class StatsModule {}

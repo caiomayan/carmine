@@ -8,8 +8,10 @@ import {
   roundPlayerSummaries,
   roundSummaries,
 } from '../database/schema.js';
+import { type RatingDayKey, refreshRatingDaily } from './rating-daily.js';
 import { type RoundEventRow, rebuildRound } from './round-events.js';
 import { summarizeRound } from './round-summary.js';
+import { dayOf } from './stats-week.js';
 
 type Transaction = Parameters<Parameters<Database['transaction']>[0]>[0];
 
@@ -50,6 +52,8 @@ export async function recomputeRounds(
   rounds: readonly AffectedRound[],
 ): Promise<number> {
   let written = 0;
+  // As Contas e os dias cujas contagens do Rating (S21) este lote pode ter mudado.
+  const ratingKeys: RatingDayKey[] = [];
   for (const round of rounds) {
     // Dois lotes do mesmo mapa ao mesmo tempo esperam um pelo outro em vez de gravar em paralelo.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${round.mapPlayId}, 17))`);
@@ -95,6 +99,31 @@ export async function recomputeRounds(
       map: meta.map,
       updatedAt: sql`now()`,
     };
+    // Um round refeito pode trocar quem jogou ou o dia em que acabou: as contagens da versão velha
+    // também são refeitas, senão sobraria conta de um jogador que saiu do resumo.
+    const [previous] = await tx
+      .select({ endedAt: roundSummaries.endedAt })
+      .from(roundSummaries)
+      .where(
+        and(
+          eq(roundSummaries.mapPlayId, meta.mapPlayId),
+          eq(roundSummaries.roundNumber, meta.roundNumber),
+        ),
+      );
+    if (previous) {
+      const before = await tx
+        .select({ accountId: roundPlayerSummaries.accountId })
+        .from(roundPlayerSummaries)
+        .where(
+          and(
+            eq(roundPlayerSummaries.mapPlayId, meta.mapPlayId),
+            eq(roundPlayerSummaries.roundNumber, meta.roundNumber),
+          ),
+        );
+      for (const { accountId } of before) {
+        ratingKeys.push({ accountId, day: dayOf(previous.endedAt) });
+      }
+    }
     await tx
       .insert(roundSummaries)
       .values({ mapPlayId: meta.mapPlayId, roundNumber: meta.roundNumber, ...values })
@@ -136,8 +165,14 @@ export async function recomputeRounds(
         kast: p.kast,
       })),
     );
+    for (const p of summary.players) {
+      ratingKeys.push({ accountId: p.steamId, day: dayOf(meta.endedAt) });
+    }
     written++;
   }
+
+  // As contagens do Rating saem dos resumos de round, depois que todos os rounds do lote estão gravados.
+  await refreshRatingDaily(tx, ratingKeys);
 
   const touched = [...new Set(rounds.map((r) => r.mapPlayId))];
   if (written > 0) await refreshMapPlays(tx, touched);

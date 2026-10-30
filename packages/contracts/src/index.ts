@@ -17,6 +17,7 @@ export * from './plans.js';
 export * from './player-search.js';
 export * from './profile.js';
 export * from './ranking.js';
+export * from './rating.js';
 export * from './reports.js';
 export * from './server-detail.js';
 export * from './staff.js';

@@ -5,6 +5,7 @@ import {
   boolean,
   check,
   date,
+  doublePrecision,
   foreignKey,
   index,
   integer,
@@ -941,6 +942,77 @@ export const mapPlayPlayers = pgTable(
     primaryKey({ columns: [table.mapPlayId, table.accountId] }),
     index('map_play_players_account_idx').on(table.accountId),
   ],
+);
+
+/**
+ * As contagens do Rating Carmine (S21, ADR 0029) por Conta, dia de Brasília, Modo, mapa e lado,
+ * somadas dos resumos de round. Refeita do resumo do round a cada vez que ele é gravado (nunca
+ * incrementada), então um round refeito não deixa conta velha. Guarda **contagens, não pontos**:
+ * mudar um peso do impacto não pede reler os resumos. O mapa vazio é o round sem nome de mapa.
+ */
+export const accountRatingDaily = pgTable(
+  'account_rating_daily',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    day: date({ mode: 'string' }).notNull(),
+    mode: gameMode().notNull(),
+    map: text().notNull().default(''),
+    side: gameTeam().notNull(),
+    rounds: integer().notNull(),
+    kills: integer().notNull(),
+    survivedRounds: integer().notNull(),
+    kastRounds: integer().notNull(),
+    damage: integer().notNull(),
+    openingKills: integer().notNull(),
+    openingDeaths: integer().notNull(),
+    mk2: integer().notNull(),
+    mk3: integer().notNull(),
+    mk4: integer().notNull(),
+    mk5: integer().notNull(),
+    cw1: integer().notNull(),
+    cw2: integer().notNull(),
+    cw3: integer().notNull(),
+    cw4: integer().notNull(),
+    cw5: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId, table.day, table.mode, table.map, table.side] }),
+    index('account_rating_daily_mode_day_idx').on(table.mode, table.day),
+  ],
+);
+
+/**
+ * A população do Rating (S21, ADR 0029): a média e o desvio de cada parte, por Modo e lado, que a
+ * semana inteira usa. Uma linha por versão da fórmula, semana (a segunda-feira de Brasília em que
+ * foi calculada), Modo e lado; sem linha, o Modo não tem Rating (menos de 20 Contas elegíveis).
+ */
+export const ratingPopulation = pgTable(
+  'rating_population',
+  {
+    version: smallint().notNull(),
+    weekStart: date({ mode: 'string' }).notNull(),
+    mode: gameMode().notNull(),
+    side: gameTeam().notNull(),
+    /** Quantas Contas entraram (100 rounds ou mais no lado na janela). */
+    accounts: integer().notNull(),
+    /** A janela de 90 dias de onde saíram as contagens (inclusive nas duas pontas). */
+    windowFrom: date({ mode: 'string' }).notNull(),
+    windowTo: date({ mode: 'string' }).notNull(),
+    meanKills: doublePrecision().notNull(),
+    meanSurvival: doublePrecision().notNull(),
+    meanKast: doublePrecision().notNull(),
+    meanDamage: doublePrecision().notNull(),
+    meanImpact: doublePrecision().notNull(),
+    sdKills: doublePrecision().notNull(),
+    sdSurvival: doublePrecision().notNull(),
+    sdKast: doublePrecision().notNull(),
+    sdDamage: doublePrecision().notNull(),
+    sdImpact: doublePrecision().notNull(),
+    computedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.version, table.weekStart, table.mode, table.side] })],
 );
 
 /**

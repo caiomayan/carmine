@@ -176,6 +176,13 @@
       "when": 1793321343529,
       "tag": "0024_s20_planos",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793325491356,
+      "tag": "0025_s21_nucleo_do_rating",
+      "breakpoints": true
     }
   ]
 }
