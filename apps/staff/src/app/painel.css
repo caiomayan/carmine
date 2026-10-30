@@ -1921,6 +1921,7 @@ button.stp-row:hover {
   filter: brightness(1.08);
 }
 a.stp-btn {
+  color: var(--stp-text);
   text-decoration: none;
 }
 .stp-table tbody tr,
@@ -1939,5 +1940,66 @@ a.stp-btn {
   .stp-table tbody tr,
   .stp-cards > li {
     transition: none;
+  }
+}
+
+/* o prazo alinha com o cabeçalho; as ações do caso ficam sempre à vista no fim da coluna do detalhe */
+.stp-table td .stp-eta {
+  justify-items: start;
+}
+.stp-detail > .stp-detail-foot:not(:has(.stp-form)) {
+  position: sticky;
+  bottom: 0;
+  margin: 0 -4px;
+  background: var(--stp-card);
+  padding: 12px 4px 2px;
+}
+
+/* ---------- animação das filas (S25 PR C): o detalhe, o formulário e a linha do tempo entram em sequência curta ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .stp-detail > * {
+    animation: stp-rise 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-detail > :nth-child(2) {
+    animation-delay: 40ms;
+  }
+  .stp-detail > :nth-child(3) {
+    animation-delay: 80ms;
+  }
+  .stp-detail > :nth-child(4) {
+    animation-delay: 120ms;
+  }
+  .stp-detail > :nth-child(n + 5) {
+    animation-delay: 160ms;
+  }
+  .stp-detail .stp-tl {
+    animation: stp-row 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-detail .stp-tl:nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .stp-detail .stp-tl:nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .stp-detail .stp-tl:nth-child(n + 4) {
+    animation-delay: 180ms;
+  }
+  .stp-form {
+    animation: stp-pop 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-done {
+    animation: stp-pop 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-photo-large,
+  .stp-thumb {
+    animation: stp-fade 360ms ease both;
+  }
+  .stp-count-chip[data-many] {
+    animation: stp-nudge-in 520ms cubic-bezier(0.22, 1, 0.36, 1) 240ms both;
+  }
+}
+@keyframes stp-fade {
+  from {
+    opacity: 0;
   }
 }

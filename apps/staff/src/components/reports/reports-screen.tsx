@@ -249,6 +249,7 @@ export function ReportsScreen({
         >
           {selected ? (
             <ReportDetail
+              key={selected.id}
               report={selected}
               nowMs={now}
               siteUrl={siteUrl}

@@ -145,4 +145,6 @@ O painel da Staff (`apps/staff`) é um segundo app na mesma pilha: serviço `sta
 - [ ] **3. DNS.** O registro do `staff-dev` é criado pelo próprio painel do túnel ao salvar a rota (CNAME proxied para o túnel); confira em DNS > Records.
 - [ ] **4. Conferir.** Abra `https://staff-dev.stcarmine.com`, passe pelo PIN do Access, clique em *Entrar com a Steam*. Uma Conta **sem** papel de Staff volta para a tela de entrada com "sem acesso" e nenhuma sessão; a sua Conta (papel de Dono) entra no Início.
 
+O painel leva à ficha da Conta no site (onde a Punição é aplicada até a tela de Contas migrar para ele) pela variável `SITE_URL` do serviço `staff` (já no compose, `https://dev.stcarmine.com`); a sessão do site é outra, então a Staff entra no site uma vez para punir.
+
 **Produção (`staff.stcarmine.com`)** entra num PR seguinte, com o mesmo roteiro no túnel `carmine-prod` (rotas `staff` e `staff/api`) e o Access `staff.stcarmine.com`, depois que a homologação estiver validada.

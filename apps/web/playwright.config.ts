@@ -127,7 +127,7 @@ export default defineConfig({
       cwd: '../staff',
       url: `http://localhost:${STAFF_PORT}/healthz`,
       reuseExistingServer: !process.env.CI,
-      env: { API_URL: `http://localhost:${API_PORT}` },
+      env: { API_URL: `http://localhost:${API_PORT}`, SITE_URL: baseURL },
       timeout: 60_000,
     },
     {

@@ -273,6 +273,7 @@ export function PhotosScreen({
         >
           {selected ? (
             <PhotoDetail
+              key={selected.avatar.id}
               item={selected}
               nowMs={now}
               siteUrl={siteUrl}

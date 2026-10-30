@@ -147,6 +147,8 @@ services:
     environment:
       NODE_ENV: production
       API_URL: http://api:3333
+      # Onde fica o site: o painel leva à ficha da Conta (a Punição) até a tela de Contas migrar para ele.
+      SITE_URL: https://dev.stcarmine.com
       NODE_OPTIONS: --max-old-space-size=320
     networks:
       edge:

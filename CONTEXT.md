@@ -174,6 +174,10 @@ _Evitar_: apelação, contestação
 Um aviso de um jogador sobre outro, feito dentro do jogo com o `!report` e enviado à fila da Staff, com o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro), o servidor, o mapa, o round, o horário e uma cópia das últimas linhas do chat. Vale 1 por alvo a cada 10 minutos e 5 por hora, por denunciante, e no máximo 10 por dia (de Brasília) por Conta, somando todos os tipos de Denúncia, inclusive a de foto (a API recusa o excedente e diz quando tentar de novo). Na fila da Staff, as Denúncias contra a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado viram um caso só, com a contagem e as provas juntas; arquivar ou punir resolve todas. O prazo da Staff é de 72 h para o jogo e o chat, e de 24 h para a foto e a logo. Quem tem 3 Denúncias arquivadas em 90 dias e mais arquivadas do que confirmadas perde peso: as Denúncias dela vão para o fim da fila e não têm prazo correndo (ADR 0027). Fica na fila até a Staff arquivá-la com motivo ou aplicar uma Punição a partir dela; some 90 dias depois de criada. Denúncia de cheat ou voz sozinha não gera Punição: só com evidência adicional.
 _Evitar_: report, reclamação
 
+**Caso** (da fila da Staff):
+Um item da fila da Staff: as Denúncias de jogo ou de chat contra a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado (ou todas as de uma mesma imagem, no caso da foto e da logo), reunidas com a contagem e as provas juntas. A Staff decide o caso uma vez (arquivar ou punir) e a decisão vale para todas as Denúncias dele. Cada caso tem o seu prazo (deadlineAt) ou, quando todas as Denúncias abertas são de quem perdeu peso, nenhum. É o que o painel da Staff (S25) mostra em cada linha e o que o selo do trilho conta.
+_Evitar_: ticket, chamado (ticket é o pedido de Recurso, no Discord)
+
 **Log de chat** (`chat_messages`):
 O registro de tudo o que é dito no chat dos Servidores Carmine (com o horário, o time de quem falou e se foi chat de time), retido por 30 dias, para a moderação. Registra o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off`.
 _Evitar_: histórico de chat, chat log
