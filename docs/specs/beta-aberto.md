@@ -410,9 +410,10 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 
 **Rating escondido e FACEIT**
 - Além do Rating Carmine, que mede desempenho, existe um **rating de habilidade escondido** (Glicko-2), que ninguém vê. Ele serve para **equilibrar os times das Salas** (S23) e para o **matchmaking** do futuro distante. É atualizado pelos resultados das partidas de 5v5 que contam.
-- **FACEIT:** o Carmine procura a conta FACEIT de cada um **pelo ID Steam**, pela API pública da FACEIT (Data API, com uma chave do servidor). Se achar, guarda o **nível e o elo**, atualizados de tempos em tempos. Usos:
-  - **ponto de partida** do rating escondido;
-  - **selo do nível FACEIT** no Perfil, que a pessoa pode esconder nas Configurações.
+- **FACEIT** (P6 e P7; **decisão do dono de 2026-10-29**): o Carmine procura a conta FACEIT de **toda Conta, reivindicada ou não**, **pelo ID Steam**, pela API pública da FACEIT (Data API, com uma chave do servidor). Se achar, guarda o **nível e o elo**, atualizados de tempos em tempos. Usos:
+  - **ponto de partida** do rating escondido, **só uso interno**, para qualquer Conta;
+  - **selo do nível FACEIT** no Perfil, **só para Conta reivindicada**, que pode escondê-lo nas Configurações. Quem não reivindicou não aparece com selo até reivindicar (o dado já está guardado, então o selo surge quando a pessoa entra e não o esconde).
+  - **Advogado:** o cruzamento pela Steam ID é só anotado na lista do advogado ([`docs/legal/para-o-advogado.md`](../legal/para-o-advogado.md), D7), **sem bloquear** a fatia. O texto de privacidade cita a API de terceiros.
 
 **Aceite**
 - Com os resumos de round gravados de uma amostra, o Rating de cada jogador bate com a planilha de conferência da fórmula v1.
@@ -420,10 +421,12 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 - Uma Conta com 37 rounds no Modo vê `Calibrando · 37/100` no Perfil, no `!rank` e no card.
 - O Ranking de Retake ordena pelo Rating da semana e continua exigindo 50 rounds.
 - A página `/rating` explica as partes sem mostrar os pesos.
-- Uma Conta com FACEIT vinculada à mesma Steam mostra o selo do nível, e esconder o selo funciona.
+- Uma **Conta reivindicada** com FACEIT vinculada à mesma Steam mostra o selo do nível, e esconder o selo funciona. Uma Conta **não reivindicada** com FACEIT não mostra selo, mas o nível dela já serve de ponto de partida do rating escondido.
 - Nenhum texto do site usa "HLTV Rating".
 - Filtrar as Estatísticas detalhadas por "desde o início" mostra o K/D de toda a vida da Conta, e um período anterior à S17 mostra o aviso no lugar do Rating.
 - Um filtro aberto pela URL compartilhada mostra o mesmo recorte.
+
+**Como ficou a fórmula v1** (P1, [ADR 0029](../adr/0029-rating-carmine-formula-v1.md)): a conta de cada parte, o impacto com os pesos iniciais, a população (90 dias, por Modo e lado, 100 rounds ou mais no lado, mínimo de 20 Contas), o espalhamento (`1 + 0,20 · média dos z`), o puxão (`k = 50`) e o Calibrando (100 rounds desde o início da coleta, 100 já mostra o número). A planilha de conferência do Aceite está em `apps/api/test/support/rating-v1/`.
 
 ---
 

@@ -235,6 +235,7 @@ Hoje **tudo isso está desligado** e nada vai ao ar sem o dono ligar a chave cer
 - **Sorteios e brindes:** sortear VIP em live ou no Discord é promoção comercial e, em regra, precisa de autorização do Ministério da Fazenda (Lei 5.768/1971). **Hoje não há sorteio**; a regra interna é não fazer sem consultar. Brinde para todos (sem sorteio) não tem o problema.
 - **Marca "Carmine":** fazer a busca no INPI antes de investir em divulgação.
 - **Aceite por adolescentes:** contratos de menores de 16 anos são nulos e, de 16 a 18, anuláveis (Código Civil, arts. 3º, 4º, 166 e 171). Para o jogo grátis pesa pouco; para o VIP, é um motivo a mais para o Pagador adulto (A1).
+- **FACEIT (S21, P6):** o Carmine busca a conta FACEIT de toda Conta pela Steam ID (Data API, chave do servidor) e guarda nível e elo; o dado de quem nunca entrou no site só serve de ponto de partida do rating escondido, e o selo público só aparece para Conta reivindicada, que pode escondê-lo (decisão do dono de 2026-10-29). **Anotado, não bloqueia:** cruzar dado de terceiro pela Steam ID de quem não reivindicou; a Política precisa citar a API de terceiros.
 - **Termos da Steam Web API e o Steam Subscriber Agreement:** buscar avatar de Contas não reivindicadas no connect é defensável, mas é leitura nossa; **matchmaking** sem consentimento escrito da Valve é proibido (só na Fase 2).
 - **Pergunta:** o advogado confirma cada um (a Fase 2 pede parecer próprio).
 - **Onde:** [riscos-juridicos.md](riscos-juridicos.md) item 6, ADR 0001.
@@ -293,7 +294,7 @@ Para colar num e-mail. Cada número aponta para o ponto acima.
 20. (D4) Os prazos de retenção da lista são proporcionais? É adequado mostrar horários e Sessões recentes de adolescentes no Perfil público?
 21. (D5) O dono pode ser controlador e encarregado? Há RIPD obrigatório?
 22. (D6) Qual o dever de agir e de guardar registro nas denúncias graves? Comparar contas pelo histórico e amigos Steam é legítimo? Manter um registro mínimo do ban permanente após a exclusão é aceitável?
-23. (D7) Sorteios, marca no INPI e aceite por adolescentes: confirmar.
+23. (D7) Sorteios, marca no INPI, aceite por adolescentes e a busca da conta FACEIT pela Steam ID de toda Conta: confirmar.
 
 # Depois da resposta
 

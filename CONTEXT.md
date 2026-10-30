@@ -211,7 +211,14 @@ O que cada jogador fez num round (kills, mortes, assistências, dano, sobreviveu
 
 **Rating Carmine** (`rating`), S21:
 A estatística principal de desempenho, com média 1,00, calculada por Modo (Retake e 5v5) a partir dos Resumos do round, mais um **Rating Carmine geral**. Aparece só depois de 100 rounds no Modo ("Calibrando").
+A fórmula v1 (5 partes por lado, comparadas com a População do Rating, com puxão para 1,00 em amostra pequena) está no ADR 0029.
 _Evitar_: HLTV Rating (é marca de outra empresa), nota, skill
+
+**Calibrando** (`calibrating`), S21:
+O estado de quem ainda não tem 100 rounds no Modo desde o início da coleta: o Perfil, o `!rank`, o `!stats` e o card mostram `Calibrando 37/100` no lugar do Rating.
+
+**População do Rating**, S21:
+As Contas com 100 rounds ou mais num Modo e lado nos últimos 90 dias, de onde saem a média e o desvio de cada parte do Rating. Recalculada toda semana, com a versão da fórmula gravada. Interna: não aparece para o jogador.
 
 **Pontuação DM** (`dmScore`), S21:
 O número de desempenho do Deathmatch, numa escala própria em torno de 100, porque o DM não tem round.
