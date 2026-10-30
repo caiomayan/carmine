@@ -13,6 +13,17 @@ public class ChatMessageTests
     }
 
     [Fact]
+    public void Um_texto_de_duas_linhas_vira_duas_mensagens_do_Carmine()
+    {
+        var lines = ChatMessage.FormatLines("Primeira."+"
+"+"Segunda.").ToList();
+
+        Assert.Equal(2, lines.Count);
+        Assert.EndsWith(" · Primeira.", lines[0]);
+        Assert.StartsWith(" Carmine · Segunda.", lines[1]);
+    }
+
+    [Fact]
     public void Nenhuma_constante_do_Core_tem_exclamacao_de_propaganda_nem_caixa_alta()
     {
         string[] messages =
