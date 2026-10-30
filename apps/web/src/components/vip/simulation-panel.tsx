@@ -57,7 +57,7 @@ export function SimulationPanel({
 
   return (
     <div className="container-page max-w-[720px] pt-12 pb-24" data-testid="fake-provider">
-      <p className="v-label text-muted-foreground">Ambiente de teste</p>
+      <p className="v-label text-muted-foreground">Compra de teste</p>
       <h1 className="mt-2 text-display max-md:text-[26px]">Provedor de pagamento falso</h1>
       <p className="mt-2 max-w-[56ch] text-body-sm text-muted-foreground">
         Faz o papel do banco e do checkout do cartão: ninguém é cobrado. Escolha o que acontece com

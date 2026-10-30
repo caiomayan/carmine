@@ -1,7 +1,8 @@
-import type { PurchaseEligibility, VipPackage, VipPackages } from '@carmine/contracts/payments';
+import type { PurchaseEligibility, VipPackages } from '@carmine/contracts/payments';
+import { PLANS, type Plan, type PlanPackageItem } from '@carmine/contracts/plans';
 
 /**
- * A matemática da página do VIP, sem React: preço em reais, preço por mês, quanto cada Pacote economiza em relação
+ * A matemática da página dos planos, sem React: preço em reais, preço por mês, quanto cada Pacote economiza em relação
  * a comprar mês a mês, o Pacote de melhor preço e em que estado fica o botão de comprar (aberto, "Em breve", entrar
  * com a Steam ou travado, com o motivo). Nada aqui inventa preço: tudo sai do `GET /api/vip/packages`.
  */
@@ -12,14 +13,17 @@ const brl = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' 
 export const formatBrl = (cents: number) => brl.format(cents / 100);
 
 /** O preço de um mês dentro do Pacote, arredondado ao centavo. */
-export const perMonthCents = (pack: Pick<VipPackage, 'priceCents' | 'months'>) =>
+export const perMonthCents = (pack: Pick<PlanPackageItem, 'priceCents' | 'months'>) =>
   Math.round(pack.priceCents / pack.months);
 
 /**
  * Quanto o Pacote economiza (em %, inteiro) em relação a pagar o mês avulso (o Pacote de 1 mês) pelo mesmo tempo.
  * Zero para o próprio mês avulso, ou quando não há Pacote de 1 mês para comparar.
  */
-export function savingsPercent(pack: VipPackage, packages: readonly VipPackage[]): number {
+export function savingsPercent(
+  pack: PlanPackageItem,
+  packages: readonly PlanPackageItem[],
+): number {
   const single = packages.find((candidate) => candidate.months === 1);
   if (!single || pack.months === 1) return 0;
   const full = single.priceCents * pack.months;
@@ -28,9 +32,9 @@ export function savingsPercent(pack: VipPackage, packages: readonly VipPackage[]
 }
 
 /** O Pacote de menor preço por mês (o de mais meses no empate); nulo se só há um Pacote. */
-export function bestValueId(packages: readonly VipPackage[]): VipPackage['id'] | null {
+export function bestValueId(packages: readonly PlanPackageItem[]): PlanPackageItem['id'] | null {
   if (packages.length < 2) return null;
-  let best: VipPackage | null = null;
+  let best: PlanPackageItem | null = null;
   for (const pack of packages) {
     if (
       !best ||
@@ -64,4 +68,18 @@ export function buyState(data: Pick<VipPackages, 'enabled' | 'eligibility'>): Bu
 }
 
 /** O endereço da confirmação de compra de um Pacote. */
-export const purchaseHref = (id: VipPackage['id']) => `/plans/checkout?pacote=${id}`;
+export const purchaseHref = (id: PlanPackageItem['id']) => `/plans/checkout?pacote=${id}`;
+
+/**
+ * Os Pacotes agrupados por plano, na ordem dos planos (Capo, depois Padrinho). `planPackages` é da S20; uma API
+ * sem ele só devolve os Pacotes do Capo (`packages`), e então só há o grupo do Capo. Plano sem Pacote não entra.
+ */
+export function packagesByPlan(
+  data: Pick<VipPackages, 'packages' | 'planPackages'>,
+): { plan: Plan; packages: PlanPackageItem[] }[] {
+  const all: PlanPackageItem[] =
+    data.planPackages ?? data.packages.map((pack) => ({ ...pack, plan: 'capo' as const }));
+  return PLANS.map((plan) => ({ plan, packages: all.filter((pack) => pack.plan === plan) })).filter(
+    (group) => group.packages.length > 0,
+  );
+}
