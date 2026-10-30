@@ -3,6 +3,7 @@ import './zod-jitless.js';
 export * from './activity.js';
 export * from './auth.js';
 export * from './discord.js';
+export * from './dm-score.js';
 export * from './equipped.js';
 export * from './game-server.js';
 export * from './header-previews.js';

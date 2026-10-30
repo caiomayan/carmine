@@ -13,6 +13,8 @@ import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { type RankingIdentity, rankingIdentity } from '../accounts/profile-privacy.js';
 import type { Database } from '../database/database.js';
 import { accountStatsWeekly, accounts, rankingRemovals } from '../database/schema.js';
+import { type DmSums, dmScore } from './dm-score.js';
+import { DmScoreReader } from './dm-score-reader.js';
 import { DEATHMATCH_MIN_SECONDS, progressToMinimum, type RankedRow, rankWeek } from './ranking.js';
 import type { RankingCache } from './ranking-cache.js';
 import { parseWeekStart, weekEndOf, weekStartOf } from './stats-week.js';
@@ -38,11 +40,15 @@ const statColumns = {
  * sempre lidas na hora.
  */
 export class WeeklyRanking {
+  private readonly dm: DmScoreReader;
+
   constructor(
     private readonly db: Database,
     private readonly cache: RankingCache | null,
     private readonly now: () => Date = () => new Date(),
-  ) {}
+  ) {
+    this.dm = new DmScoreReader(db, now);
+  }
 
   async read(
     mode: GameMode,
@@ -130,7 +136,25 @@ export class WeeklyRanking {
           eligible,
         ),
       );
-    return rankWeek(mode, rows);
+    const ranked = rankWeek(mode, rows);
+    return mode === 'deathmatch' ? this.withDmScore(ranked, rows, weekStart) : ranked;
+  }
+
+  /**
+   * A Pontuação DM da semana de cada linha (S21, ADR 0030): a semana da Conta contra a população dos
+   * 90 dias que terminam no fim da semana (ou hoje, na semana atual). A ordem não muda.
+   */
+  private async withDmScore(
+    ranked: RankedRow[],
+    rows: readonly (DmSums & { accountId: string })[],
+    weekStart: string,
+  ): Promise<RankedRow[]> {
+    const population = await this.dm.population(this.dm.windowEnd(weekEndOf(weekStart)));
+    const sums = new Map(rows.map((row) => [row.accountId, row]));
+    return ranked.map((row) => {
+      const own = sums.get(row.accountId);
+      return { ...row, dmScore: own ? dmScore(own, population) : null };
+    });
   }
 
   /** A semana atual e as anteriores com atividade neste Modo, da mais recente à mais antiga. */
@@ -219,6 +243,7 @@ function toEntry(row: RankedRow, player: RankingPlayer, self: boolean): RankingE
     headshotPercent: row.headshotPercent,
     roundsPlayed: row.roundsPlayed,
     secondsPlayed: row.secondsPlayed,
+    ...(row.dmScore === undefined ? {} : { dmScore: row.dmScore }),
     self,
   };
 }

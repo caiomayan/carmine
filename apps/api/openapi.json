@@ -12634,6 +12634,11 @@
             "nullable": true,
             "type": "number",
             "minimum": 0
+          },
+          "dmScore": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0
           }
         },
         "required": [
@@ -13243,6 +13248,11 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "dmScore": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0
           },
           "self": {
             "type": "boolean"

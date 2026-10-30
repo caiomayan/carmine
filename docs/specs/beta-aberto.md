@@ -395,7 +395,7 @@ O **Rating Carmine** vira a **estatística principal** da plataforma. É inspira
 
   As partes têm peso igual, e o resultado é escalado para média 1,00.
 - **v2, parecido com a 3.0**, quando houver milhares de rounds de 5v5: entra o **Round Swing**, que mede quanto cada ação muda a chance de vencer o round, com uma tabela aprendida dos nossos próprios rounds (vivos × vivos × bomba × economia), e o ajuste por economia. O Retake ganha uma versão simples do Swing, sem economia (o allocator dá as armas).
-- **Deathmatch não tem Rating**, porque não tem round, time nem vitória. Tem a **Pontuação DM**: abates por minuto, K/D, dano por minuto e HS%, comparados com a população do DM, numa escala própria em torno de **100**, para não ser confundida com o Rating.
+- **Deathmatch não tem Rating**, porque não tem round, time nem vitória. Tem a **Pontuação DM**: abates por minuto, K/D, dano por minuto e HS%, comparados com a população do DM, numa escala própria em torno de **100**, para não ser confundida com o Rating. Como ficou: `100 + 15 · média dos quatro z-scores`, peso igual, puxada para 100 em amostra pequena, só depois dos mesmos **30 minutos** do Ranking do DM, contra a população dos 90 dias; o Ranking do DM continua por abates por minuto ([ADR 0030](../adr/0030-pontuacao-dm.md)).
 - **Rating Carmine geral:** a média dos Ratings de Retake e 5v5, **pesada pelos rounds** jogados em cada um. O DM não entra. Aparece no Perfil como número secundário.
 
 **Regras**

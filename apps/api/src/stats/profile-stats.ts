@@ -4,6 +4,7 @@ import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { canSeeStats } from '../accounts/profile-privacy.js';
 import type { Database } from '../database/database.js';
 import { accountStatsWeekly } from '../database/schema.js';
+import { DmScoreReader } from './dm-score-reader.js';
 import { type StatsTotals, toModeStats, toTotalStats } from './stats-formulas.js';
 import { buildSeries } from './stats-series.js';
 import { weekStartOf } from './stats-week.js';
@@ -12,7 +13,10 @@ const MODE_ORDER: GameMode[] = ['retake', 'deathmatch'];
 
 /** As Estatísticas de sempre de uma Conta (S12): as semanas somadas, por Modo e no total. */
 export class ProfileStatsReader {
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: Database,
+    private readonly dm: DmScoreReader = new DmScoreReader(db),
+  ) {}
 
   /**
    * Respeita o Perfil privado (S11) por `canSeeStats`: para quem não pode ver, `visible` é falso e
@@ -65,10 +69,17 @@ export class ProfileStatsReader {
         secondsPlayed: 0,
       },
     );
+    // A Pontuação DM (S21, ADR 0030) é dos últimos 90 dias, não de sempre como o resto da linha.
+    const dmScore = modes.some((row) => row.mode === 'deathmatch')
+      ? await this.dm.forAccount(account.id)
+      : null;
     return {
       visible: true,
       total: toTotalStats(total),
-      modes: modes.map((row) => toModeStats(row.mode, row)),
+      modes: modes.map((row) => ({
+        ...toModeStats(row.mode, row),
+        ...(row.mode === 'deathmatch' ? { dmScore } : {}),
+      })),
     };
   }
 

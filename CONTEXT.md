@@ -233,7 +233,7 @@ O estado de quem ainda não tem 100 rounds no Modo desde o início da coleta: o 
 As Contas com 100 rounds ou mais num Modo e lado nos últimos 90 dias, de onde saem a média e o desvio de cada parte do Rating. Recalculada toda semana, com a versão da fórmula gravada. Interna: não aparece para o jogador.
 
 **Pontuação DM** (`dmScore`), S21:
-O número de desempenho do Deathmatch, numa escala própria em torno de 100, porque o DM não tem round.
+O número de desempenho do Deathmatch, numa escala própria em torno de 100 (a média da população do DM), porque o DM não tem round. Compara abates por minuto, K/D, dano por minuto e HS% com a população dos últimos 90 dias, e só aparece depois dos mesmos 30 minutos do Ranking do DM (ADR 0030).
 
 **Rating escondido** (`skillRating`), S21:
 O rating de habilidade (Glicko-2) que ninguém vê, usado para equilibrar os times das Salas e, no futuro, no matchmaking.
