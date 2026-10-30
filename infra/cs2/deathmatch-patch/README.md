@@ -14,8 +14,21 @@ coisas pequenas, que este patch acrescenta:
 
 Não é um repositório divergente nem um plugin novo: o `build.sh` baixa o fonte da **tag pinada em
 `infra/cs2/linux/versions.sh`** (`DM_SRC_TAG`, com o commit conferido em `DM_SRC_COMMIT`), aplica os `.patch` desta
-pasta e compila. O `install.sh` troca o `Deathmatch.dll` e o `DeathmatchAPI.dll` do zip oficial pelos patchados; o
-resto do zip (idiomas, configs, dependências) fica como veio.
+pasta e compila.
+
+## Como chega ao servidor (o host não compila nada)
+
+1. **A CI compila.** O workflow `release-plugin.yml` roda o `build.sh` e põe as duas DLLs num zip da release do
+   Carmine.Core (`carmine-deathmatch-X.Y.Z.zip`), junto do zip do plugin. O `manifest.json` registra o hash do zip, o hash de
+   cada DLL, a tag e o commit do fonte e o hash de cada patch; o `SHA256SUMS` e a atestação de proveniência cobrem o zip.
+2. **O host só baixa e confere.** `release_fetch` (`lib-release.sh`) baixa o zip, confere o `SHA256SUMS`, o hash do manifesto, a
+   atestação e o hash de cada DLL, e extrai em `releases/core-X.Y.Z/deathmatch/`.
+3. **O `install.sh` troca as DLLs.** Na etapa `profiles`, o `Deathmatch.dll` e o `DeathmatchAPI.dll` do zip oficial são
+   trocados pelos da release instalada (`--core-release`); o resto do zip (idiomas, configs, dependências) fica como veio.
+   Se a release foi feita com outro commit do plugin que o do zip instalado, o `install.sh` recusa. Sem release (instalação com
+   `--plugin-dir`) ou numa release antiga sem o Deathmatch, ele só avisa e o Deathmatch fica sem o patch.
+4. **O `carmine-plugin-deploy` troca só o Carmine.Core.** As DLLs do Deathmatch chegam ao servidor pelo `install.sh --steps profiles` (com
+   os servidores parados); o patch muda raramente.
 
 ## Como atualizar o plugin
 
@@ -35,6 +48,6 @@ resto do zip (idiomas, configs, dependências) fica como veio.
 
 - `infra/cs2/test/deathmatch-patch.test.sh` (job de servidores CS2): o patch não aplica na tag pinada, o commit da tag
   mudou, a versão do zip e a do fonte divergem, ou o fonte patchado perdeu a API nova.
-- O job `dotnet`: o fonte patchado não compila.
+- O job `dotnet`: o fonte patchado não compila. A release roda o mesmo `build.sh`: se ele falhar, a release não sai (e não chega nada quebrado ao servidor).
 
 Vale propor o patch ao autor do plugin; enquanto não entra, ele fica conosco.

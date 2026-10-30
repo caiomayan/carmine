@@ -95,6 +95,11 @@ jobs:
           dotnet publish plugins/src/Carmine.Core/Carmine.Core.csproj -c Release -o "$RUNNER_TEMP/core" --artifacts-path "$RUNNER_TEMP/artifacts"
           test -f "$RUNNER_TEMP/core/Carmine.Core.dll"
 
+      # O Deathmatch patchado (ADR 0028) é compilado aqui e vai pronto na release: o host de CS2 não compila nada no deploy.
+      - name: Compilar o Deathmatch patchado
+        if: steps.version.outputs.skip != 'true'
+        run: bash infra/cs2/deathmatch-patch/build.sh --out "$RUNNER_TEMP/deathmatch"
+
       - name: Empacotar (zip, manifesto e SHA256SUMS)
         if: steps.version.outputs.skip != 'true'
         env:
@@ -102,16 +107,18 @@ jobs:
         run: |
           mkdir dist
           (cd "$RUNNER_TEMP/core" && zip -qr "$GITHUB_WORKSPACE/dist/carmine-core-$VERSION.zip" .)
+          (cd "$RUNNER_TEMP/deathmatch" && zip -qr "$GITHUB_WORKSPACE/dist/carmine-deathmatch-$VERSION.zip" Deathmatch.dll DeathmatchAPI.dll)
           # O commit do manifesto é o commit construído (o do checkout), que é o que a promoção compara com a produção.
           bash infra/cs2/release/make-manifest.sh --version "$VERSION" --commit "$(git rev-parse HEAD)" \
-            --zip "dist/carmine-core-$VERSION.zip" --openapi apps/api/openapi.json --out dist/manifest.json
-          (cd dist && sha256sum "carmine-core-$VERSION.zip" manifest.json > SHA256SUMS && cat SHA256SUMS)
+            --zip "dist/carmine-core-$VERSION.zip" --deathmatch-zip "dist/carmine-deathmatch-$VERSION.zip" --openapi apps/api/openapi.json --out dist/manifest.json
+          (cd dist && sha256sum "carmine-core-$VERSION.zip" "carmine-deathmatch-$VERSION.zip" manifest.json > SHA256SUMS && cat SHA256SUMS)
 
       - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         if: steps.version.outputs.skip != 'true'
         with:
           subject-path: |
             dist/carmine-core-*.zip
+            dist/carmine-deathmatch-*.zip
             dist/manifest.json
 
       - name: Criar a release (pré-lançamento)
