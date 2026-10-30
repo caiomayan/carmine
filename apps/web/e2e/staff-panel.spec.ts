@@ -9,11 +9,11 @@ import {
 import { axeViolations } from './fixtures';
 
 /**
- * O painel da Staff de verdade (S25 PR B, `apps/staff`): outro host (aqui, a porta 3100), login Steam próprio com a
+ * O painel da Staff de verdade (S25 PR B, `apps/staff`): outro host (aqui, a porta 3200), login Steam próprio com a
  * sessão `__Host-` do host dele (ADR 0015) e só Conta com papel de Staff entra. O painel serve o próprio /api pelo
  * rewrite do Next (em produção, pelo túnel), contra a mesma API do E2E.
  */
-const STAFF = `http://localhost:${process.env.STAFF_E2E_PORT ?? 3100}`;
+const STAFF = `http://localhost:${process.env.STAFF_E2E_PORT ?? 3200}`;
 
 test.use({ baseURL: STAFF });
 

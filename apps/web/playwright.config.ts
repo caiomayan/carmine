@@ -4,7 +4,7 @@ import { E2E_DATABASE_URL } from './e2e/api-cli';
 const PORT = Number(process.env.WEB_E2E_PORT ?? 3000);
 const baseURL = `http://localhost:${PORT}`;
 const API_PORT = Number(process.env.API_E2E_PORT ?? 3333);
-const STAFF_PORT = Number(process.env.STAFF_E2E_PORT ?? 3100);
+const STAFF_PORT = Number(process.env.STAFF_E2E_PORT ?? 3200);
 /** O mesmo build do web com a contagem de páginas ligada (A1d): só o `analytics.spec.ts` roda nele. */
 export const ANALYTICS_WEB_PORT = Number(process.env.WEB_E2E_ANALYTICS_PORT ?? 3100);
 /** O PostHog do E2E: um host de mentira, que o teste intercepta (nada sai da máquina). */

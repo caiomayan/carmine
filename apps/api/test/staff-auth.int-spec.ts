@@ -51,6 +51,8 @@ describe('Login Steam do painel da Staff (S25)', () => {
     const found = await t.accounts.findBySteamId(steamId);
     if (!found) throw new Error('Conta não nasceu');
     if (role) {
+      // O papel só vai para Conta reivindicada (a Staff já entrou no site uma vez).
+      await t.accounts.claimOnLogin(steamId);
       await t.app
         .get(StaffRoles)
         .set(found.id, role, { actorSteamId: FOUNDER, reason: 'teste do painel' });
