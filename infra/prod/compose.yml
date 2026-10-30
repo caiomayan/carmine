@@ -47,6 +47,9 @@ x-api-env: &api-env
   # segredo do webhook; `fake` a API recusa fora de homologação.
   PAYMENTS_ENABLED: ${PAYMENTS_ENABLED:-false}
   PAYMENTS_PROVIDER: ${PAYMENTS_PROVIDER:-}
+  # Beta da S20 (docs/operacao/pagamentos.md, "Beta: compra de teste em produção"): `true` com `PAYMENTS_PROVIDER=fake`
+  # abre a compra de teste a todos, sem cobrar. Vira `false` (e o provedor `mercadopago`) no dia de ligar a cobrança real.
+  PAYMENTS_BETA_TEST: ${PAYMENTS_BETA_TEST:-false}
   PAYMENTS_DATA_KEY: ${PAYMENTS_DATA_KEY:-}
   MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
   MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
