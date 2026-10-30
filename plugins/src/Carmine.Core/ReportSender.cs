@@ -22,6 +22,7 @@ public sealed class ReportSender(ICarmineApiClient api, EventReporter events)
         ReportReason reason,
         long? round,
         string? map,
+        Guid? mapPlayId,
         CancellationToken cancellationToken)
     {
         await events.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -35,6 +36,7 @@ public sealed class ReportSender(ICarmineApiClient api, EventReporter events)
                     Reason = reason,
                     Round = round,
                     Map = map is { Length: > 64 } ? map[..64] : map,
+                    MapPlayId = mapPlayId,
                 },
                 cancellationToken).ConfigureAwait(false);
             return new ReportOutcome(result.Message, result.Accepted);
