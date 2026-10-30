@@ -436,9 +436,9 @@
         ]
       }
     },
-    "/api/server/players/{steamId}/awp-default": {
-      "post": {
-        "operationId": "markPlayerAwpDefaultApplied",
+    "/api/server/players/{steamId}/preferences/{key}": {
+      "put": {
+        "operationId": "setPlayerGamePreference",
         "parameters": [
           {
             "name": "steamId",
@@ -447,14 +447,39 @@
             "schema": {
               "$ref": "#/components/schemas/SteamId64"
             }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/GamePreferenceKey"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GamePreferenceSet"
+              }
+            }
+          }
+        },
         "responses": {
-          "204": {
-            "description": "Marcado; os próximos connects mandam applyAwpDefault falso"
+          "200": {
+            "description": "O valor gravado; vale em todo servidor do Modo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePreferenceValue"
+                }
+              }
+            }
           },
           "400": {
-            "description": "SteamID64 inválido"
+            "description": "SteamID64, chave ou corpo inválido, ou a chave não vale no Modo do servidor"
           },
           "401": {
             "description": "Chave de Servidor Carmine ausente ou inválida"
@@ -491,7 +516,83 @@
             "bearer": []
           }
         ],
-        "summary": "Marca que a Conta já entrou na fila da AWP do Retake (vale uma vez por Conta)",
+        "summary": "Grava o valor explícito de uma Preferência de jogo da Conta (ADR 0028)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/server/players/{steamId}/preferences/{key}/toggle": {
+      "post": {
+        "operationId": "togglePlayerGamePreference",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/GamePreferenceKey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O novo valor; vale em todo servidor do Modo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePreferenceValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 ou chave inválida, ou a chave não vale no Modo do servidor"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Inverte uma Preferência de jogo da Conta e devolve o novo valor (o !awp do jogo)",
         "tags": [
           "server"
         ]
@@ -982,6 +1083,96 @@
           }
         ],
         "summary": "A Conta da sessão atual, o token CSRF das mutações, se é o primeiro login, o VIP e o papel de Staff",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/steam/staff/login": {
+      "get": {
+        "operationId": "startStaffSteamLogin",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "description": "Caminho interno do painel para onde voltar depois do login (padrão: /)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Para a Steam (ou para /entrar?erro=indisponivel no painel)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "summary": "Começa o login Steam do painel da Staff: redireciona para a Steam",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/steam/staff/callback": {
+      "get": {
+        "operationId": "completeStaffSteamLogin",
+        "parameters": [],
+        "responses": {
+          "303": {
+            "description": "Para a página de origem no painel (sessão aberta) ou para /entrar?erro=<motivo>"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "summary": "Volta da Steam no painel: verifica a asserção e abre a sessão só para quem tem papel de Staff",
         "tags": [
           "auth"
         ]
@@ -7801,8 +7992,8 @@
           "chatHidden": {
             "type": "boolean"
           },
-          "applyAwpDefault": {
-            "type": "boolean"
+          "preferences": {
+            "$ref": "#/components/schemas/GamePreferences"
           },
           "greeting": {
             "nullable": true,
@@ -7818,7 +8009,7 @@
           "vipEndsAt",
           "sanctions",
           "chatHidden",
-          "applyAwpDefault",
+          "preferences",
           "greeting"
         ],
         "additionalProperties": false
@@ -7893,6 +8084,18 @@
           "ban_evasion"
         ]
       },
+      "GamePreferences": {
+        "type": "object",
+        "properties": {
+          "awpRaffle": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "awpRaffle"
+        ],
+        "additionalProperties": false
+      },
       "PlayerVip": {
         "type": "object",
         "properties": {
@@ -7925,6 +8128,40 @@
           "endsAt",
           "endedAt",
           "notice"
+        ],
+        "additionalProperties": false
+      },
+      "GamePreferenceKey": {
+        "type": "string",
+        "enum": [
+          "awp_raffle"
+        ]
+      },
+      "GamePreferenceSet": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "GamePreferenceValue": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/GamePreferenceKey"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "enabled"
         ],
         "additionalProperties": false
       },

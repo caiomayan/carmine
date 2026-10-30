@@ -15,6 +15,7 @@ import { AccountSettingsController } from './account-settings.controller.js';
 import { AccountsService } from './accounts.service.js';
 import { AvatarRefresher } from './avatar-refresher.js';
 import { DisplayNames } from './display-names.js';
+import { GamePreferencesStore } from './game-preferences.js';
 import { PlayerConnectsController } from './player-connects.controller.js';
 import { PlayerPreferencesController } from './player-preferences.controller.js';
 import { PlayerSearchController } from './player-search.controller.js';
@@ -64,6 +65,11 @@ import { SteamWebApi } from './steam-profiles.js';
           db,
           new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
         ),
+    },
+    {
+      provide: GamePreferencesStore,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new GamePreferencesStore(db),
     },
     {
       provide: PlayerSearcher,

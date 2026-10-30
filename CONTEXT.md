@@ -18,6 +18,10 @@ _Evitar_: mod, pacote de skins
 O painel que entra deslizando por cerca de 6 s quando o jogador nasce num servidor aberto, com nome, plano, posição no Ranking, amigos online e (a partir da S21) o Rating. Os textos vêm da API; o addon só os desenha.
 _Evitar_: popup, toast
 
+**Preferência de jogo** (`GamePreference`):
+Uma escolha do jogador que um plugin de jogo guardaria por servidor (estar no sorteio da AWP, as armas do `!guns`, os sons e o HUD do Deathmatch). Fica na Conta, guardada pela API, vale em todo servidor do Modo e o Carmine.Core a aplica no plugin (ADR 0028). Sem linha guardada vale o padrão da chave. Não é uma configuração do site: o jogador a muda dentro do jogo, por comando.
+_Evitar_: configuração do servidor, settings, preferências do plugin
+
 **Conta não reivindicada** (`unclaimed`):
 Conta que só existe porque a pessoa jogou; ela nunca fez login no site.
 _Evitar_: conta fantasma, conta temporária

@@ -49,6 +49,7 @@ describe('loadConfig', () => {
       analytics: { mode: 'off', environment: 'producao', posthog: null },
       sentry: { dsn: null, environment: 'development', release: null },
       publicWebUrl: 'http://localhost:3000',
+      publicStaffUrl: null,
       steamOpenIdUrl: 'https://steamcommunity.com/openid/login',
       session: { idleTtlSeconds: 1_209_600, absoluteTtlSeconds: 7_776_000 },
     });

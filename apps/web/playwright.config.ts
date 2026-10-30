@@ -4,6 +4,7 @@ import { E2E_DATABASE_URL } from './e2e/api-cli';
 const PORT = Number(process.env.WEB_E2E_PORT ?? 3000);
 const baseURL = `http://localhost:${PORT}`;
 const API_PORT = Number(process.env.API_E2E_PORT ?? 3333);
+const STAFF_PORT = Number(process.env.STAFF_E2E_PORT ?? 3200);
 /** O mesmo build do web com a contagem de páginas ligada (A1d): só o `analytics.spec.ts` roda nele. */
 export const ANALYTICS_WEB_PORT = Number(process.env.WEB_E2E_ANALYTICS_PORT ?? 3100);
 /** O PostHog do E2E: um host de mentira, que o teste intercepta (nada sai da máquina). */
@@ -69,6 +70,8 @@ export default defineConfig({
         DATABASE_URL: E2E_DATABASE_URL,
         LOG_LEVEL: 'warn',
         PUBLIC_WEB_URL: baseURL,
+        // O painel da Staff (S25, apps/staff) é outro host: o login Steam dele tem o realm daqui.
+        PUBLIC_STAFF_URL: `http://localhost:${STAFF_PORT}`,
         STEAM_OPENID_URL: `http://127.0.0.1:${FAKE_STEAM_PORT}/openid/login`,
         // A Steam Web API do E2E é a mesma Steam falsa: amigos por SteamID (lista privada e
         // Steam fora do ar em IDs fixos) e nenhum avatar, então as Contas ficam com o neutro.
@@ -116,6 +119,15 @@ export default defineConfig({
         // Qualquer erro de i18n derruba a página (src/i18n/request.ts).
         CARMINE_STRICT_I18N: '1',
       },
+      timeout: 60_000,
+    },
+    {
+      // O painel da Staff (apps/staff): outro app, outro host, a mesma API (o /api dele é um rewrite do Next).
+      command: `pnpm exec next ${process.env.E2E_DEV === '1' ? 'dev' : 'start'} --port ${STAFF_PORT}`,
+      cwd: '../staff',
+      url: `http://localhost:${STAFF_PORT}/healthz`,
+      reuseExistingServer: !process.env.CI,
+      env: { API_URL: `http://localhost:${API_PORT}` },
       timeout: 60_000,
     },
     {

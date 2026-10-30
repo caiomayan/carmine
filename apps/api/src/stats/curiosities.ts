@@ -18,7 +18,12 @@ export interface GreetingFacts {
   days: readonly { day: string; roundsWon: number; kills: number }[];
   /** Tempo de jogo de sempre, todos os Modos. */
   totalSeconds: number;
+  /** Servidor de Retake e a Conta está fora do sorteio da AWP: vale lembrar do `!awp`. */
+  awpHint: boolean;
 }
+
+/** O aviso do `!awp` para quem está fora do sorteio da AWP no Retake (S16, decisão do dono 2026-10-29). */
+export const AWP_HINT = '!awp coloca você no sorteio da AWP.';
 
 export interface Curiosity {
   key: string;
@@ -86,15 +91,27 @@ export function curiosities(facts: GreetingFacts): Curiosity[] {
 /**
  * A linha do primeiro connect de uma Conta: as boas-vindas com o aviso dos termos que o ADR 0007 pede
  * (base legal de legítimo interesse). Só esse connect leva o link; os seguintes mostram a curiosidade.
+ * Quem está fora do sorteio da AWP no Retake ganha uma segunda linha, com o aviso do `!awp`.
  */
-export function firstConnectGreeting(displayName: string): string {
-  return `Bem-vindo, ${displayName}. Ao jogar você concorda com os termos: stcarmine.com/terms`;
+export function firstConnectGreeting(displayName: string, awpHint = false): string {
+  const welcome = `Bem-vindo, ${displayName}. Ao jogar você concorda com os termos: stcarmine.com/terms`;
+  return withAwpHint(welcome, awpHint);
+}
+
+/**
+ * Num Retake, quem está fora do sorteio da AWP é avisado do `!awp` em TODO connect, numa linha a mais
+ * (decisão do dono, 2026-10-30: "no bem-vindo, se ele tiver sem o !awp ativado, informar que !awp faz ele
+ * entrar no sorteio"). Não é uma curiosidade: não entra no sorteio nem conta como a última mostrada.
+ */
+export function withAwpHint(line: string, awpHint: boolean): string {
+  return awpHint ? `${line}\n${AWP_HINT}` : line;
 }
 
 /**
  * A linha do connect: Conta nova no Modo recebe as boas-vindas; Conta com dados, uma curiosidade
  * sorteada entre as que se aplicam e diferente da última mostrada. Sem curiosidade nova, as
- * boas-vindas (nunca a mesma curiosidade duas vezes seguidas).
+ * boas-vindas (nunca a mesma curiosidade duas vezes seguidas). Fora do sorteio da AWP, o aviso do
+ * `!awp` vai numa segunda linha em qualquer um desses casos.
  */
 export function pickGreeting(
   facts: GreetingFacts,
@@ -102,8 +119,11 @@ export function pickGreeting(
   random: () => number = Math.random,
 ): { line: string; curiosityKey: string | null } {
   const welcome = { line: `Bem-vindo, ${facts.displayName}.`, curiosityKey: null };
-  if (!facts.hasStatsInMode) return welcome;
-  const options = curiosities(facts).filter((c) => c.key !== lastKey);
-  const chosen = options[Math.floor(random() * options.length)];
-  return chosen ? { line: chosen.line, curiosityKey: chosen.key } : welcome;
+  const picked = (() => {
+    if (!facts.hasStatsInMode) return welcome;
+    const options = curiosities(facts).filter((c) => c.key !== lastKey);
+    const chosen = options[Math.floor(random() * options.length)];
+    return chosen ? { line: chosen.line, curiosityKey: chosen.key } : welcome;
+  })();
+  return { line: withAwpHint(picked.line, facts.awpHint), curiosityKey: picked.curiosityKey };
 }

@@ -3,6 +3,8 @@
     "ingress": [
       { "hostname": "dev.stcarmine.com", "path": "^/api(/|$)", "service": "http://api:3333" },
       { "hostname": "dev.stcarmine.com", "service": "http://web:3000" },
+      { "hostname": "staff-dev.stcarmine.com", "path": "^/api(/|$)", "service": "http://api:3333" },
+      { "hostname": "staff-dev.stcarmine.com", "service": "http://staff:3100" },
       { "service": "http_status:404" }
     ]
   }

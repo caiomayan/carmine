@@ -25,8 +25,9 @@ export class Greetings {
     displayName: string,
     mode: GameMode,
     isFirstConnect: boolean,
+    awpHint: boolean,
   ): Promise<string> {
-    if (isFirstConnect) return firstConnectGreeting(displayName);
+    if (isFirstConnect) return firstConnectGreeting(displayName, awpHint);
     const weekStart = weekStartOf(this.now());
     const [anyRow, week, days, total, last, ranking] = await Promise.all([
       this.db
@@ -81,6 +82,7 @@ export class Greetings {
       viewer: ranking.viewer,
       days: days.filter((d) => d.secondsPlayed > 0 || d.roundsWon > 0 || d.kills > 0),
       totalSeconds: total[0]?.seconds ?? 0,
+      awpHint,
     };
     const picked = pickGreeting(facts, last[0]?.lastCuriosity ?? null, this.random);
     if (picked.curiosityKey !== null) {

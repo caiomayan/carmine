@@ -1,0 +1,234 @@
+/*
+ * Tokens da identidade Liberty: fonte única das cores, da forma e do movimento.
+ * Escala neutra exportada pelo dono (prototypes/identity/liberty/tokens-exportados-dono-v2.css),
+ * cores de contexto de prototypes/identity/shared/liberty-status.css e raio/hover da
+ * liberty-final.css. O globals.css expõe estes nomes ao Tailwind e ao shadcn/ui via @theme.
+ *
+ * Só neutros (preto quente e creme): não há cor de acento de marca. A ação primária é o
+ * preenchido invertido (texto e fundo trocados). Escuro é o padrão; o claro "papel" entra
+ * com html[data-theme=light].
+ */
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  /* Identidade v3 (decisão do dono): marca em preto e branco duro, sem tom quente; o carmim foi
+     descontinuado e o ◆ dos títulos é branco. A cor só entra pelo contexto (abaixo). */
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1e1e1e;
+  --line: #2e2e2e;
+  --line-strong: #707070;
+  --text: #f5f5f5;
+  --muted: #a8a8a8;
+  /* decoração e ponto offline (3:1 sobre bg e surface); texto de verdade usa --muted */
+  --faint: #7a7a7a;
+  --accent-hover: #d6d6d6;
+  /* menus e popovers sobem um degrau acima das superfícies */
+  --raised: var(--surface-2);
+  --shadow: rgb(0 0 0 / 0.6);
+
+  /* o ◆ dos títulos de seção: monocromático (era carmim, descontinuado) */
+  --carmine: #f5f5f5;
+
+  /* raridade: o ponto de cada Item (mesmas cores da cs2-lib no escuro; no claro, tons com 3:1 sobre as superfícies) */
+  --rarity-consumer: #b0c3d9;
+  --rarity-industrial: #5e98d9;
+  --rarity-milspec: #4b69ff;
+  --rarity-restricted: #8847ff;
+  --rarity-classified: #d32ce6;
+  --rarity-covert: #eb4b4b;
+  --rarity-contraband: #e4ae39;
+
+  /*
+   * Escala de fundos (regra do dono: fundos, não anéis): repouso, hover e ativo/selecionado são camadas
+   * do texto sobre a superfície onde o controle está, então valem em qualquer fundo; `--fill-focus` é o
+   * degrau dos campos de texto ao focar. O foco do teclado nos controles é o anel fino (`--focus-ring`,
+   * só no modo teclado). Os dois estão medidos em lib/focus-contrast.test.ts.
+   */
+  --fill-rest: color-mix(in srgb, var(--text) 7%, transparent);
+  --fill-hover: color-mix(in srgb, var(--text) 12%, transparent);
+  --fill-active: color-mix(in srgb, var(--text) 17%, transparent);
+  --fill-focus: color-mix(in srgb, var(--text) 28%, transparent);
+
+  /*
+   * Cores de contexto: NÃO fazem parte da identidade. Só em sinais pequenos (pontos, barras
+   * finas, ícones de ping e de mensagem, selo VIP); nunca em botões, navegação ou superfícies.
+   * Contraste >= 4,5:1 sobre --bg, --surface e --surface-2 (offline é o próprio --faint e
+   * sempre vem com rótulo).
+   */
+  --status-online: #3ddc84;
+  --status-warn: #ffb52e;
+  --status-danger: #ff6f61;
+  --status-info: #5eaaff;
+  --status-vip: #ffc447;
+
+  /* degradê que escurece o mapa no cartão de servidor (U2): % da cor de fundo, de baixo p/ cima */
+  --scrim-0: 97%;
+  --scrim-40: 93%;
+  --scrim-70: 62%;
+  --scrim-100: 28%;
+  /* texto de apoio sobre o mapa: um passo mais claro que o cinza de sempre no escuro, e quase o texto no claro (o mapa por baixo varia) */
+  --on-map-muted: color-mix(in srgb, var(--text) 60%, var(--muted));
+  /* lados do jogo (bolinhas CT e TR): cor de contexto, ver shared/liberty-status.css */
+  --side-ct: #4d9bff;
+  --side-t: #ff9231;
+  /* fases do desgaste na barra do float, da Nova de Fábrica (verde) à Veterana de Guerra (vermelho) */
+  --wear-fn: var(--status-online);
+  --wear-mw: #b4b660;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #e0905c;
+  --wear-bs: var(--status-danger);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f6f6f6;
+  --surface: #ececec;
+  --surface-2: #dfdfdf;
+  --line: #cfcfcf;
+  --line-strong: #7a7a7a;
+  --text: #0a0a0a;
+  --muted: #565656;
+  --faint: #7c7c7c;
+  --accent-hover: #333333;
+  --raised: var(--bg);
+  /* no papel claro a mesma camada rende menos: o degrau de foco sobe para manter a distância do hover */
+  --fill-rest: color-mix(in srgb, var(--text) 8%, transparent);
+  --fill-hover: color-mix(in srgb, var(--text) 13%, transparent);
+  --fill-active: color-mix(in srgb, var(--text) 18%, transparent);
+  --fill-focus: color-mix(in srgb, var(--text) 34%, transparent);
+  --shadow: rgb(0 0 0 / 0.18);
+  --carmine: #0a0a0a;
+  --rarity-consumer: #537cac;
+  --rarity-industrial: #317bce;
+  --rarity-milspec: #4b69ff;
+  --rarity-restricted: #8847ff;
+  --rarity-classified: #ce1be3;
+  --rarity-covert: #e82f2f;
+  --rarity-contraband: #9d7215;
+
+  --status-online: #0f7a3d;
+  --status-warn: #8a5a00;
+  --status-danger: #b3321f;
+  --status-info: #1f5fb8;
+  --status-vip: #7d5a00;
+
+  --scrim-0: 95%;
+  --scrim-40: 90%;
+  --scrim-70: 62%;
+  --scrim-100: 14%;
+  --on-map-muted: color-mix(in srgb, var(--text) 88%, var(--bg));
+  --side-ct: #1f6fe0;
+  --side-t: #d45f00;
+  --wear-fn: var(--status-online);
+  --wear-mw: #6b6a1c;
+  --wear-ft: var(--status-warn);
+  --wear-ww: #94490f;
+  --wear-bs: var(--status-danger);
+}
+
+/*
+ * Nomes semânticos do shadcn/ui, derivados da escala acima. Ficam no mesmo seletor dos temas
+ * para que um trecho com data-theme próprio resolva as próprias cores.
+ */
+:root,
+[data-theme] {
+  /* hover e ativo de controles sem borda: fundo um pouco mais claro que o de baixo */
+  --hover: color-mix(in srgb, var(--text) 9%, transparent);
+  --status-success: var(--status-online);
+  --status-offline: var(--faint);
+
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--raised);
+  --popover-foreground: var(--text);
+  --primary: var(--text);
+  --primary-foreground: var(--bg);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted-foreground: var(--muted);
+  --accent: var(--hover);
+  --accent-foreground: var(--text);
+  --destructive: var(--status-danger);
+  --border: var(--line);
+  --input: var(--surface);
+  --ring: var(--text);
+  /* anel de foco do teclado: fino, com 3:1 sobre as superfícies nos dois temas (lib/focus-contrast.test.ts) */
+  --focus-ring: color-mix(in srgb, var(--text) 85%, transparent);
+  --focus-ring-width: 2px;
+}
+
+:root {
+  /* tipografia: Inter em toda a UI; a DM Serif Display só existe no wordmark, em contornos */
+  --font-ui: var(--font-inter), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* forma: raios no estilo Liquid Glass (macOS Tahoe, iOS 26). Cápsula nos controles, campo 16, cartão 28,
+     painel 36, diálogo 40; aninhados usam raio interno = raio externo − respiro (ver .v-inner em vida.css).
+     Mapeados para rounded-sm..3xl em globals.css (@theme). */
+  --r-chip: 999px; /* cápsula: chip, selo, aba, botão, busca, header e dock */
+  --r-ctl: 999px;
+  --r-field: 16px; /* campo com rótulo */
+  --r-card: 28px;
+  --r-panel: 36px; /* painel e seção grande */
+  --r-dialog: 40px; /* diálogo, Ctrl+K e sheet */
+  --radius: 16px;
+
+  /* estrutura (U3c): a barra fina de lotação/float, o afastamento do sublinhado e a sombra dos painéis sobre a página */
+  --bar-h: 3px;
+  --underline-offset: 3px;
+  --shadow-overlay: 0 24px 64px -24px var(--shadow), 0 0 0 1px var(--line);
+  /* o fundo de "selecionado" é o degrau ativo da escala de fundos (--fill-*) */
+  --fill-selected: var(--fill-active);
+
+  /* layout: container global de 1280 px com margem lateral mínima de 36 px */
+  --page-max: 1280px;
+  --mx: 36px;
+  --hdr-h: 60px;
+  /* a arte de borda a borda sob o header nasce em fade nesta altura, sem corte seco com o header (Home, Perfil, Servidor) */
+  --hdr-fade: 88px;
+  --wm-h: 22px;
+  --tap: 36px;
+
+  /* movimento */
+  --dur-instant: 90ms; /* press */
+  --dur-fast: 140ms; /* hover, cor */
+  --dur-base: 220ms; /* troca de estado */
+  --dur-slow: 360ms; /* troca de painel, tema */
+  --dur-enter: 520ms; /* entrada de lista */
+  --dur-zoom: 600ms; /* aproximar a imagem do cartão */
+  --dur-pulse: 2400ms; /* pulso do "ao vivo" */
+  --dur-skel: 1500ms; /* varredura do skeleton */
+  --stagger: 32ms;
+  --stagger-max: 8; /* teto: 8 × 32 = 256 ms de atraso */
+  --rise: 8px;
+}
+
+@media (max-width: 760px) {
+  :root {
+    /* no mobile a margem é 16 px + 25% do excedente sobre 16 px (21 px) */
+    --mx: calc(16px + (36px - 16px) * 0.25);
+    --wm-h: 20px;
+    --tap: 44px; /* alvos de 44 px no mobile */
+  }
+}
+
+/* movimento reduzido: some o deslocamento e o escalonamento; ficam fades curtos */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rise: 0px;
+    --stagger: 0ms;
+    --dur-enter: 180ms;
+    --dur-slow: 160ms;
+    --dur-base: 140ms;
+  }
+}
+
+/* o texto corrido do celular sobe de 13 para 14 px (piso de leitura; ver --text-body-sm em globals.css) */
+@media (max-width: 760px) {
+  :root {
+    --text-body-sm: 14px;
+  }
+}
