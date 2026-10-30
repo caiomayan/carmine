@@ -216,10 +216,28 @@ describe('loadConfig', () => {
       expect(config.discordMissing).toEqual([]);
     });
 
+    it('o cargo VIP legado (DISCORD_ROLE_VIP_ID) vale como o do Capo; o CAPO_ID, se vier, vale mais', () => {
+      const legacy = loadConfig({ ...discordEnv, DISCORD_ROLE_VIP_ID: '810000000000000002' });
+      expect(legacy.discord?.roleIds).toMatchObject({ capo: '810000000000000002' });
+      const both = loadConfig({
+        ...discordEnv,
+        DISCORD_ROLE_VIP_ID: '810000000000000002',
+        DISCORD_ROLE_CAPO_ID: '810000000000000007',
+        DISCORD_ROLE_PADRINHO_ID: '810000000000000008',
+      });
+      expect(both.discord?.roleIds).toMatchObject({
+        capo: '810000000000000007',
+        padrinho: '810000000000000008',
+      });
+      expect(both.discord?.roleIds).not.toHaveProperty('vip');
+    });
+
     it('com o conjunto base liga; cargo sem ID não é gerenciado e sem canal não há status', () => {
       const config = loadConfig({
         ...discordEnv,
         DISCORD_ROLE_PLAYER_ID: '810000000000000001',
+        DISCORD_ROLE_CAPO_ID: '',
+        DISCORD_ROLE_PADRINHO_ID: '',
         DISCORD_ROLE_VIP_ID: '',
       });
 

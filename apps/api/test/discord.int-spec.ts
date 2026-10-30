@@ -1,5 +1,5 @@
 import { currentSessionSchema, discordLinkStatusSchema } from '@carmine/contracts';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccountErasure } from '../src/accounts/account-erasure.js';
 import { LogTransport, type OutgoingEvent } from '../src/analytics/analytics-transport.js';
@@ -21,9 +21,10 @@ import { signedInPlayer } from './support/player.js';
 
 const ROLE = {
   player: '810000000000000001',
-  vip: '810000000000000002',
+  capo: '810000000000000002',
   staff: '810000000000000003',
   owner: '810000000000000004',
+  padrinho: '810000000000000005',
 };
 const COMMUNITY_ROLE = '810000000000000099';
 const STATUS_CHANNEL = '820000000000000001';
@@ -42,7 +43,8 @@ describe('Discord integrado (S15)', () => {
       DISCORD_BOT_TOKEN: FAKE_DISCORD_BOT_TOKEN,
       DISCORD_GUILD_ID: FAKE_DISCORD_GUILD_ID,
       DISCORD_ROLE_PLAYER_ID: ROLE.player,
-      DISCORD_ROLE_VIP_ID: ROLE.vip,
+      DISCORD_ROLE_CAPO_ID: ROLE.capo,
+      DISCORD_ROLE_PADRINHO_ID: ROLE.padrinho,
       DISCORD_ROLE_STAFF_ID: ROLE.staff,
       DISCORD_ROLE_OWNER_ID: ROLE.owner,
       DISCORD_STATUS_CHANNEL_ID: STATUS_CHANNEL,
@@ -258,13 +260,13 @@ describe('Discord integrado (S15)', () => {
   });
 
   describe('cargos sincronizados', () => {
-    it('um VIP concedido dá o cargo VIP e um VIP vencido o tira, pelo job', async () => {
+    it('um plano concedido dá o cargo dele e um plano vencido o tira, pelo job', async () => {
       const p = await account();
       await link(p);
       expect(rolesOf(p.user)).toEqual([ROLE.player]);
 
       await t.app.get(VipPeriods).grant(p.account.id, 30, new Date(), STAFF);
-      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.vip].sort());
+      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.capo].sort());
 
       // O Período acaba sem nenhum evento: só o job percebe.
       await t.postgres.db
@@ -277,14 +279,37 @@ describe('Discord integrado (S15)', () => {
       await eventually(() => rolesOf(p.user), [ROLE.player]);
     });
 
-    it('um VIP revogado pela Staff tira o cargo', async () => {
+    it('um plano revogado pela Staff tira o cargo', async () => {
       const p = await account({ vipUntil: Date.now() + 10 * 86_400_000 });
       await link(p);
-      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.vip].sort());
+      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.capo].sort());
 
       await t.app.get(VipPeriods).revoke(p.account.id, STAFF);
 
       await eventually(() => rolesOf(p.user), [ROLE.player]);
+    });
+
+    it('o Padrinho tem só o cargo Padrinho; ao acabar, o Capo guardado volta e o cargo muda sozinho', async () => {
+      const p = await account();
+      await link(p);
+      const periods = t.app.get(VipPeriods);
+      const day = 86_400_000;
+
+      await periods.grant(p.account.id, 30, new Date(Date.now() - 10 * day), STAFF);
+      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.capo].sort());
+
+      await periods.grant(p.account.id, 5, new Date(Date.now() - day), STAFF, { plan: 'padrinho' });
+      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.padrinho].sort());
+
+      // Passam 5 dias: o Padrinho acabou e o Capo guardado corre de novo; só o job percebe, e o cargo acompanha.
+      await t.postgres.db
+        .update(vipPeriods)
+        .set({
+          startsAt: sql`${vipPeriods.startsAt} - interval '5 days'`,
+          endsAt: sql`${vipPeriods.endsAt} - interval '5 days'`,
+        })
+        .where(eq(vipPeriods.accountId, p.account.id));
+      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.capo].sort());
     });
 
     it('um papel de Staff dado no painel vira cargo; Dono soma o cargo Dono; tirar o papel tira os cargos', async () => {
@@ -314,7 +339,7 @@ describe('Discord integrado (S15)', () => {
 
       await link(p);
 
-      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.vip].sort());
+      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.capo].sort());
     });
 
     it('com o Discord fora do ar o vínculo não fica pela metade: avisa e dá para tentar de novo', async () => {
@@ -341,7 +366,7 @@ describe('Discord integrado (S15)', () => {
       discord.broken = false;
 
       // Tenta de novo em segundos (10 s depois da falha).
-      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.vip].sort());
+      await eventually(() => rolesOf(p.user), [ROLE.player, ROLE.capo].sort());
     });
 
     it('quem sai do servidor do Discord não derruba o job das outras Contas', async () => {
@@ -353,7 +378,7 @@ describe('Discord integrado (S15)', () => {
 
       await t.app.get(VipPeriods).grant(stays.account.id, 30, new Date(), STAFF);
 
-      await eventually(() => rolesOf(stays.user), [ROLE.player, ROLE.vip].sort());
+      await eventually(() => rolesOf(stays.user), [ROLE.player, ROLE.capo].sort());
       expect((await status(gone)).link).not.toBeNull();
     });
   });
@@ -363,7 +388,7 @@ describe('Discord integrado (S15)', () => {
       const p = await account({ vipUntil: Date.now() + 10 * 86_400_000 });
       discord.join(p.user.id, [COMMUNITY_ROLE]);
       await link(p);
-      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.vip, COMMUNITY_ROLE].sort());
+      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.capo, COMMUNITY_ROLE].sort());
 
       const response = await p.call('DELETE', '/api/discord/link');
 
@@ -399,7 +424,7 @@ describe('Discord integrado (S15)', () => {
     it('o pedido de exclusão da Conta (S08) apaga o vínculo e tira os cargos', async () => {
       const p = await account({ vipUntil: Date.now() + 10 * 86_400_000 });
       await link(p);
-      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.vip].sort());
+      expect(rolesOf(p.user)).toEqual([ROLE.player, ROLE.capo].sort());
       const discord_ = t.app.get<DiscordIntegration>(DISCORD);
 
       await new AccountErasure(t.postgres.db, {

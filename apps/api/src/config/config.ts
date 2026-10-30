@@ -111,6 +111,10 @@ const envSchema = z
     DISCORD_BOT_TOKEN: z.string().trim().default(''),
     DISCORD_GUILD_ID: snowflake(),
     DISCORD_ROLE_PLAYER_ID: snowflake(),
+    // Capo e Padrinho (S20). `DISCORD_ROLE_VIP_ID` é o nome legado do cargo do Capo: vale como `DISCORD_ROLE_CAPO_ID`
+    // enquanto este não vier, para o servidor que já tinha o cargo VIP seguir funcionando (renomeie-o para Capo).
+    DISCORD_ROLE_CAPO_ID: snowflake(),
+    DISCORD_ROLE_PADRINHO_ID: snowflake(),
     DISCORD_ROLE_VIP_ID: snowflake(),
     DISCORD_ROLE_STAFF_ID: snowflake(),
     DISCORD_ROLE_OWNER_ID: snowflake(),
@@ -275,7 +279,7 @@ export interface AppConfig {
   session: { idleTtlSeconds: number; absoluteTtlSeconds: number };
 }
 
-export type DiscordRoleKey = 'player' | 'vip' | 'staff' | 'owner';
+export type DiscordRoleKey = 'player' | 'capo' | 'padrinho' | 'staff' | 'owner';
 
 export interface DiscordConfig {
   clientId: string;
@@ -483,7 +487,8 @@ function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
   }
   const roles: [DiscordRoleKey, string][] = [
     ['player', e.DISCORD_ROLE_PLAYER_ID],
-    ['vip', e.DISCORD_ROLE_VIP_ID],
+    ['capo', e.DISCORD_ROLE_CAPO_ID || e.DISCORD_ROLE_VIP_ID],
+    ['padrinho', e.DISCORD_ROLE_PADRINHO_ID],
     ['staff', e.DISCORD_ROLE_STAFF_ID],
     ['owner', e.DISCORD_ROLE_OWNER_ID],
   ];

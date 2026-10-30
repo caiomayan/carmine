@@ -1,6 +1,6 @@
 # Discord integrado (S15): passo a passo do dono
 
-O que a integração faz: a pessoa vincula o Discord em Configurações > Conexões, o bot dá os cargos **Jogador**, **VIP**, **Staff** e **Dono** no servidor do Carmine (e os atualiza sozinho em até 1 minuto) e mantém uma mensagem com o status dos servidores num canal. As decisões estão no [ADR 0020](../adr/0020-discord-vinculo-rest-e-reconciliacao.md).
+O que a integração faz: a pessoa vincula o Discord em Configurações > Conexões, o bot dá os cargos **Jogador**, **Capo** ou **Padrinho** (o do plano ativo), **Staff** e **Dono** no servidor do Carmine (e os atualiza sozinho em até 1 minuto) e mantém uma mensagem com o status dos servidores num canal. As decisões estão no [ADR 0020](../adr/0020-discord-vinculo-rest-e-reconciliacao.md).
 
 Sem as variáveis `DISCORD_*` a integração fica **desligada, sem erro**: em Configurações > Conexões aparece o selo "Em breve" no lugar do botão e nenhum job roda. Dá para fazer este passo a passo com calma; nada quebra enquanto ele não termina.
 
@@ -12,7 +12,7 @@ Em **Configurações do usuário > Avançado**, ligue **Modo desenvolvedor**. Co
 
 ## 2. Criar os cargos no servidor
 
-Em **Configurações do servidor > Cargos**, crie quatro cargos (os nomes são livres; sugestão: `Jogador`, `VIP`, `Staff`, `Dono`). Eles só marcam quem a pessoa é, não precisam de nenhuma permissão. Se já existem cargos com esses papéis, use-os: o bot só adiciona e tira os quatro e **nunca mexe nos outros cargos** da pessoa.
+Em **Configurações do servidor > Cargos**, crie cinco cargos (os nomes são livres; sugestão: `Jogador`, `Capo`, `Padrinho`, `Staff`, `Dono`). Se o servidor já tinha o cargo `VIP`, **renomeie-o para `Capo`** (quem era VIP vira Capo, o mesmo que a API fez com os Períodos) e use o ID dele nos dois lugares abaixo; `Padrinho` é um cargo novo. Eles só marcam quem a pessoa é, não precisam de nenhuma permissão. Se já existem cargos com esses papéis, use-os: o bot só adiciona e tira os cinco e **nunca mexe nos outros cargos** da pessoa.
 
 Copie o ID de cada um (botão direito no cargo na lista > **Copiar ID**) e o ID do servidor (botão direito no ícone do servidor > **Copiar ID do servidor**).
 
@@ -77,7 +77,9 @@ DISCORD_CLIENT_SECRET=<Client Secret>
 DISCORD_BOT_TOKEN=<token do bot>
 DISCORD_GUILD_ID=<ID do servidor>
 DISCORD_ROLE_PLAYER_ID=<ID do cargo Jogador>
-DISCORD_ROLE_VIP_ID=<ID do cargo VIP>
+DISCORD_ROLE_CAPO_ID=<ID do cargo Capo>
+DISCORD_ROLE_PADRINHO_ID=<ID do cargo Padrinho>
+# DISCORD_ROLE_VIP_ID é o nome antigo do cargo do Capo: vale como CAPO_ID se este estiver vazio.
 DISCORD_ROLE_STAFF_ID=<ID do cargo Staff>
 DISCORD_ROLE_OWNER_ID=<ID do cargo Dono>
 DISCORD_STATUS_CHANNEL_ID=<ID do canal do status, ou vazio>
@@ -95,7 +97,7 @@ sudo /opt/carmine/bin/dc up -d api
 
 1. Abra Configurações logado (`https://stcarmine.com/settings/connections`): a linha **Discord** deve ter o botão **Vincular Discord** (sem o selo "Em breve").
 2. Clique, autorize no Discord e volte: o aviso "Discord ligado" aparece e o seu usuário fica na linha. Você ganha o cargo **Jogador** na hora (e, se não estava no servidor, entra nele).
-3. Dê um VIP de teste (painel da Staff ou `vip grant --steam-id ... --days 1 --by ... --reason ...`, ver o README) ou um papel de Staff pelo painel: o cargo muda em até 1 minuto.
+3. Dê um plano de teste (painel da Staff ou `vip grant --steam-id ... --days 1 --by ... --reason ...`, ver o README) ou um papel de Staff pelo painel: o cargo muda em até 1 minuto.
 4. O canal de status mostra os servidores e o horário da última atualização (o carimbo "Hoje às ..." do embed muda a cada minuto).
 5. Em **Desvincular**, os cargos saem e o botão volta.
 
@@ -112,7 +114,7 @@ sudo /opt/carmine/bin/dc up -d api
 | Quem saiu do servidor e voltou ficou sem cargos | O bot reconfere quem não está no servidor a cada 30 minutos |
 | O servidor tem "triagem de membros" (regras a aceitar) | Quem entra pelo vínculo fica pendente até aceitar as regras; os cargos são dados mesmo assim, mas só valem depois que a pessoa aceita |
 
-O Discord limita o número de chamadas por segundo. A API respeita os limites sozinha (espera e repete); em picos de muitos VIPs vencendo ao mesmo tempo, os cargos podem levar alguns segundos a mais, nunca mais que o próximo ciclo.
+O Discord limita o número de chamadas por segundo. A API respeita os limites sozinha (espera e repete); em picos de muitos planos vencendo ao mesmo tempo, os cargos podem levar alguns segundos a mais, nunca mais que o próximo ciclo.
 
 ## Trocar ou desligar
 
