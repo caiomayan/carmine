@@ -133,3 +133,16 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
 - **Falhou o deploy**: o `deploy.sh` mostra o log dos serviços e volta sozinho para a tag anterior. Migrações só andam para a frente; se a anterior não sobe com o schema novo, `zerar_banco`. A produção não é tocada em nenhum desses passos.
 - **Deploy recusado por memória** ("só N MB de memória disponível"): olhe `free -h` e o `docker stats` na VM. A homologação se recusa a subir antes de apertar a produção.
 - **Faxina**: o deploy guarda as 3 últimas releases e as 2 últimas imagens baixadas pela homologação; nunca roda `prune -a` (as imagens de rollback da produção não são dela).
+
+## Painel da Staff (staff-dev.stcarmine.com, S25)
+
+O painel da Staff (`apps/staff`) é um segundo app na mesma pilha: serviço `staff` no compose, imagem `carmine-staff` (mesmo `IMAGE_TAG`). Serve o **próprio** `/api/*` pelo túnel, no mesmo padrão do site (ADR 0015): a sessão `__Host-` é do host do painel, o login Steam dele é `/api/auth/steam/staff/*` com o realm de `PUBLIC_STAFF_URL` (já no compose), e só Conta com papel de Staff entra.
+
+**Passos do dono (uma vez, ~10 min, nada de nome interno no repositório):**
+
+- [ ] **1. Rotas do túnel `carmine-hml`.** Zero Trust > Networks > Tunnels > `carmine-hml` > Public Hostnames. Duas rotas novas, nesta ordem (a de `/api` primeiro): `staff-dev.stcarmine.com` com caminho `^/api(/|$)` → HTTP `api:3333`; `staff-dev.stcarmine.com` (sem caminho) → HTTP `staff:3100`. A cópia versionada é `infra/hml/tunnel/ingress.json`.
+- [ ] **2. Access do painel.** Zero Trust > Access > Applications > *Add an application* > *Self-hosted*. Nome `Carmine homologação painel`; domínio `staff-dev.stcarmine.com`; duração da sessão 1 mês. Política *Allow* com a regra *Emails* = só os e-mails da Staff (hoje o seu); login por *One-time PIN*. Nenhuma política *Bypass* nem *Everyone*. (É a primeira trava; a segunda é o login Steam com papel de Staff.)
+- [ ] **3. DNS.** O registro do `staff-dev` é criado pelo próprio painel do túnel ao salvar a rota (CNAME proxied para o túnel); confira em DNS > Records.
+- [ ] **4. Conferir.** Abra `https://staff-dev.stcarmine.com`, passe pelo PIN do Access, clique em *Entrar com a Steam*. Uma Conta **sem** papel de Staff volta para a tela de entrada com "sem acesso" e nenhuma sessão; a sua Conta (papel de Dono) entra no Início.
+
+**Produção (`staff.stcarmine.com`)** entra num PR seguinte, com o mesmo roteiro no túnel `carmine-prod` (rotas `staff` e `staff/api`) e o Access `staff.stcarmine.com`, depois que a homologação estiver validada.

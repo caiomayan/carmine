@@ -10,6 +10,8 @@ O navegador sempre chama a API por caminhos relativos em `/api/*` da própria or
 - Atrás do túnel, todo pedido chega à API vindo do `cloudflared`: o IP real do visitante vem em `CF-Connecting-IP`, e limites por IP precisam ler esse cabeçalho antes de valer para rotas do site.
 - O túnel precisa de duas regras de ingress por caminho (S09); o rewrite do Next fica no build de produção como alternativa inofensiva.
 
+- **Nota (S25, o painel da Staff):** o painel é outro host (`staff.stcarmine.com`, `staff-dev.stcarmine.com` na homologação) e segue esta decisão, sem cookie de domínio compartilhado: o host do painel serve o próprio `/api/*` pelo túnel (mesmo padrão do site), a sessão `__Host-` é **desse host** (uma sessão por host) e o login Steam do painel tem rotas próprias (`/api/auth/steam/staff/login` e `/callback`), com o realm e o `return_to` de `PUBLIC_STAFF_URL`, que como `PUBLIC_WEB_URL` vem da configuração e nunca do cabeçalho `Host`. Quem entra no painel precisa de papel de Staff (`staffRole` em `/api/me`); a Cloudflare Access fica na frente como segunda trava.
+
 ## Considered Options
 
 - Subdomínio `api.stcarmine.com`: mesmo site para o `SameSite`, mas exige CORS com credenciais, cookie com `Domain=stcarmine.com` (sem o prefixo `__Host-`, sobrescrevível por qualquer subdomínio) e um segundo hostname no túnel.

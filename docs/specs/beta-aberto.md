@@ -596,7 +596,7 @@ O painel da Staff deixa de ser uma seção do site e vira **outra aplicação**:
 
 **Onde fica**
 - Um app próprio no monorepo (`apps/staff`, Next) em **`staff.stcarmine.com`**. Na homologação, **`staff-dev.stcarmine.com`**. Fala com a mesma API.
-- **Login com duas travas:** a mesma sessão da Steam (o cookie vale nos dois subdomínios) e, na frente, o **Cloudflare Access** com código por e-mail, só para os e-mails da Staff.
+- **Login com duas travas:** **login Steam próprio do painel** (uma sessão por host, [ADR 0015](../adr/0015-web-e-api-na-mesma-origem.md): `staff.stcarmine.com` serve o próprio `/api/*` pelo túnel, e a API tem rotas de login do painel com o realm de `PUBLIC_STAFF_URL`) e, na frente, o **Cloudflare Access** com código por e-mail, só para os e-mails da Staff. Uma Conta sem papel de Staff não entra, mesmo logada.
 - As 7 telas de hoje (`/staff`, `/staff/denuncias`, `/staff/fotos`, `/staff/contas/...`, `/staff/pagamentos`, `/staff/servidores`, `/staff/auditoria`) são **migradas** e **removidas do site**. `stcarmine.com/staff` redireciona para o painel. O site deixa de carregar qualquer código da Staff.
 
 **Visual** (a direção é do maestro e do dono; o dono valida na homologação)
