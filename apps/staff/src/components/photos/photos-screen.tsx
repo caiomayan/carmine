@@ -90,6 +90,11 @@ export function PhotosScreen({
   };
 
   const decided = useCallback((avatarId: string) => {
+    // O aviso de que deu certo fica à vista um instante; depois o detalhe fecha e a foto sai da fila.
+    setTimeout(
+      () => setSelected((current) => (current?.avatar.id === avatarId ? null : current)),
+      900,
+    );
     setLeaving((current) => new Set(current).add(avatarId));
     setTimeout(() => {
       setCases((current) => current.filter((item) => item.avatar.id !== avatarId));

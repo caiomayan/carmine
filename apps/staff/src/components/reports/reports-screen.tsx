@@ -88,6 +88,8 @@ export function ReportsScreen({
   };
 
   const archived = useCallback((id: string) => {
+    // O aviso de que deu certo fica à vista um instante; depois o detalhe fecha e a linha sai da fila.
+    setTimeout(() => setSelected((current) => (current?.id === id ? null : current)), 900);
     setLeaving((current) => new Set(current).add(id));
     setTimeout(() => {
       setReports((current) => current.filter((report) => report.id !== id));

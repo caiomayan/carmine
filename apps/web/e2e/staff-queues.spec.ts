@@ -124,6 +124,8 @@ test.describe('Denúncias no painel', () => {
     await expect(page.getByTestId('archive-report-done')).toContainText(
       'Caso arquivado (2 denúncias)',
     );
+    // O detalhe fecha sozinho depois do aviso, e o caso sai da fila.
+    await expect(page.getByTestId('stp-detail')).toBeHidden();
     await expect(page.getByTestId('stp-row')).toHaveCount(0);
 
     await page.getByTestId('stp-tab-archived').click();
