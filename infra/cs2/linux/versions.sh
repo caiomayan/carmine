@@ -69,3 +69,10 @@ declare -A MAM_SHA256=(
 )
 MAM_FILE="MultiAddonManager-v${MAM_VERSION}-${MAM_RUNTIME}.tar.gz"
 MAM_URL="https://github.com/Source2ZE/MultiAddonManager/releases/download/v${MAM_VERSION}/${MAM_FILE}"
+
+# Deathmatch patchado (ADR 0028): o fonte da MESMA tag do GP_URL[Deathmatch], com o commit conferido (a tag pode ser
+# movida) e os patches de infra/cs2/deathmatch-patch aplicados. O install.sh troca o Deathmatch.dll e o
+# DeathmatchAPI.dll do zip pelos patchados. Para subir de versão: troque o GP_URL, a tag e o commit juntos.
+DM_SRC_REPO='https://github.com/NockyCZ/CS2-Deathmatch.git'
+DM_SRC_TAG='v1.3.6'
+DM_SRC_COMMIT='a309e88e0f635a91b3e8c5576393b7e008b1dd13'
