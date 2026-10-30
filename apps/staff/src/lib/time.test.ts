@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   brasiliaDay,
+  deadlineAtOf,
   deadlineOf,
   greeting,
   PHOTO_DEADLINE_HOURS,
   REPORT_DEADLINE_HOURS,
+  soonest,
 } from './time';
 
 const NOW = Date.parse('2026-10-29T15:00:00-03:00');
@@ -51,5 +53,30 @@ describe('horário de Brasília', () => {
     expect(greeting(Date.parse('2026-10-29T15:00:00-03:00'))).toBe('Boa tarde');
     expect(greeting(Date.parse('2026-10-29T21:00:00-03:00'))).toBe('Boa noite');
     expect(greeting(Date.parse('2026-10-29T03:00:00-03:00'))).toBe('Boa noite');
+  });
+});
+
+describe('prazo que vem da API (deadlineAt, regra única de denúncia)', () => {
+  const at = (hours: number) => new Date(NOW + hours * 3_600_000).toISOString();
+
+  it('sem deadlineAt (caso decidido ou denunciante de peso baixo) não há prazo correndo', () => {
+    expect(deadlineAtOf(null, REPORT_DEADLINE_HOURS, NOW)).toBeNull();
+  });
+
+  it('mede o que falta até o deadlineAt, no total da fila', () => {
+    const photo = deadlineAtOf(at(6), PHOTO_DEADLINE_HOURS, NOW);
+    expect(photo?.leftMin).toBe(6 * 60);
+    expect(photo?.remaining).toBeCloseTo(0.25, 5);
+    const report = deadlineAtOf(at(-2), REPORT_DEADLINE_HOURS, NOW);
+    expect(report?.leftMin).toBe(-2 * 60);
+    expect(report?.tone).toBe('danger');
+  });
+
+  it('o cartão mostra o prazo mais perto de vencer e ignora quem não tem prazo', () => {
+    const soon = deadlineAtOf(at(3), REPORT_DEADLINE_HOURS, NOW);
+    const late = deadlineAtOf(at(40), REPORT_DEADLINE_HOURS, NOW);
+    expect(soonest([null, late, soon])?.leftMin).toBe(3 * 60);
+    expect(soonest([null, null])).toBeNull();
+    expect(soonest([])).toBeNull();
   });
 });

@@ -23,10 +23,11 @@ import {
   brasiliaDay,
   brl,
   type Deadline,
-  deadlineOf,
+  deadlineAtOf,
   greeting,
   PHOTO_DEADLINE_HOURS,
   REPORT_DEADLINE_HOURS,
+  soonest,
 } from '@/lib/time';
 
 export const metadata: Metadata = { title: 'Início' };
@@ -68,6 +69,7 @@ function QueueCard({
   href,
   count,
   oldest,
+  noDeadline,
   hours,
   unavailable,
 }: {
@@ -76,6 +78,8 @@ function QueueCard({
   href: string;
   count: number | null;
   oldest: Deadline | null;
+  /** Casos de quem perdeu peso: no fim da fila e sem prazo correndo. */
+  noDeadline: number;
   hours: number;
   unavailable: boolean;
 }) {
@@ -111,9 +115,17 @@ function QueueCard({
               <div className="stp-card-sub">
                 {soonLabel(oldest)} · prazo de {hours} h
               </div>
+              {noDeadline > 0 ? (
+                <div className="stp-card-sub">
+                  {noDeadline} {noDeadline === 1 ? 'caso' : 'casos'} sem prazo (denunciante com peso
+                  baixo)
+                </div>
+              ) : null}
             </>
           ) : (
-            <div className="stp-card-sub">fila vazia</div>
+            <div className="stp-card-sub">
+              {count === 0 ? 'fila vazia' : 'nenhum prazo correndo'}
+            </div>
           )}
         </>
       )}
@@ -146,14 +158,20 @@ export default async function InicioPage() {
       : null,
   ]);
 
-  const oldestReport =
-    reports?.ok && reports.data.reports[0]
-      ? deadlineOf(reports.data.reports[0].createdAt, REPORT_DEADLINE_HOURS, now)
-      : null;
-  const oldestPhoto =
-    photos?.ok && photos.data.cases[0]
-      ? deadlineOf(photos.data.cases[0].reports.firstAt, PHOTO_DEADLINE_HOURS, now)
-      : null;
+  // O prazo vem da API por caso (`deadlineAt`, regra única de denúncia): o mais perto de vencer é o do cartão; os casos
+  // de quem perdeu peso não têm prazo correndo e só aparecem na contagem à parte.
+  const oldestReport = reports?.ok
+    ? soonest(
+        reports.data.reports.map((c) => deadlineAtOf(c.deadlineAt, REPORT_DEADLINE_HOURS, now)),
+      )
+    : null;
+  const oldestPhoto = photos?.ok
+    ? soonest(photos.data.cases.map((c) => deadlineAtOf(c.deadlineAt, PHOTO_DEADLINE_HOURS, now)))
+    : null;
+  const reportsNoDeadline = reports?.ok
+    ? reports.data.reports.filter((c) => c.lowWeight).length
+    : 0;
+  const photosNoDeadline = photos?.ok ? photos.data.cases.filter((c) => c.lowWeight).length : 0;
 
   const today = brasiliaDay(now);
   const paidToday = payments?.ok
@@ -248,6 +266,7 @@ export default async function InicioPage() {
             href="/denuncias"
             count={reports.ok ? reports.data.openCount : null}
             oldest={oldestReport}
+            noDeadline={reportsNoDeadline}
             hours={REPORT_DEADLINE_HOURS}
             unavailable={!reports.ok}
           />
@@ -259,6 +278,7 @@ export default async function InicioPage() {
             href="/fotos"
             count={photos.ok ? photos.data.openCount : null}
             oldest={oldestPhoto}
+            noDeadline={photosNoDeadline}
             hours={PHOTO_DEADLINE_HOURS}
             unavailable={!photos.ok}
           />

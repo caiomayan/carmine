@@ -1,6 +1,8 @@
-/** Os prazos da Staff por fila: foto denunciada 24 h (ADR 0022), Denúncia de jogo ou de chat 72 h (ADR 0019). */
-export const PHOTO_DEADLINE_HOURS = 24;
-export const REPORT_DEADLINE_HOURS = 72;
+import { REPORT_REVIEW_DEADLINE_HOURS } from '@carmine/contracts/reports';
+
+/** Os prazos da Staff por fila, os mesmos da API (regra única de denúncia, ADR 0027): foto 24 h, Denúncia de jogo 72 h. */
+export const PHOTO_DEADLINE_HOURS = REPORT_REVIEW_DEADLINE_HOURS.avatar;
+export const REPORT_DEADLINE_HOURS = REPORT_REVIEW_DEADLINE_HOURS.game;
 
 export type Deadline = {
   /** Minutos que faltam (negativo: venceu). */
@@ -27,6 +29,33 @@ export function deadlineOf(createdAtIso: string, totalHours: number, nowMs: numb
     tone,
     label: leftMin < 0 ? `venceu há ${text}` : `${text} restantes`,
   };
+}
+
+/**
+ * O prazo de um item a partir do `deadlineAt` que a API calcula (regra única de denúncia, ADR 0027). `null` quando a
+ * API não dá prazo: o caso já foi decidido, ou todas as Denúncias abertas dele são de quem perdeu peso (sem prazo
+ * correndo, nada fica vermelho nem conta como atrasado).
+ */
+export function deadlineAtOf(
+  deadlineAtIso: string | null,
+  totalHours: number,
+  nowMs: number,
+): Deadline | null {
+  if (deadlineAtIso === null) return null;
+  // O prazo vence em `deadlineAt`; o início dele é `totalHours` antes.
+  const startIso = new Date(
+    new Date(deadlineAtIso).getTime() - totalHours * 3_600_000,
+  ).toISOString();
+  return deadlineOf(startIso, totalHours, nowMs);
+}
+
+/** O prazo mais perto de vencer entre vários (o que a fila mostra no cartão do Início). */
+export function soonest(deadlines: (Deadline | null)[]): Deadline | null {
+  let best: Deadline | null = null;
+  for (const deadline of deadlines) {
+    if (deadline && (best === null || deadline.leftMin < best.leftMin)) best = deadline;
+  }
+  return best;
 }
 
 /** O dia de hoje no horário de Brasília, `AAAA-MM-DD` (os números "do dia" seguem a semana do site). */
