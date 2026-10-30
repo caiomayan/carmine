@@ -455,6 +455,23 @@ install_invsim() {
   fi
 }
 
+# MultiAddonManager (S19): o plugin do Metamod que faz os clientes baixarem o addon do Workshop. Só nos perfis
+# com "addon": true. O pacote traz addons/ (o .so e o vdf do Metamod) e cfg/multiaddonmanager/; o prestart.sh
+# regrava o cfg a cada início (ID do item, chave de emergência).
+install_multiaddonmanager() {
+  local game_dir="$1" tarball
+  [[ -n "${MAM_SHA256[$MAM_RUNTIME]:-}" ]] || die "CARMINE_MAM_RUNTIME inválido: $MAM_RUNTIME (use steamrt3 ou steamrt4)."
+  tarball="$(fetch_verified "$MAM_URL" "${MAM_SHA256[$MAM_RUNTIME]}" "$MAM_FILE")"
+  new_work_dir
+  tar -xzf "$tarball" -C "$WORK"
+  [[ -f "$WORK/addons/multiaddonmanager/bin/multiaddonmanager.so" ]] || die "$MAM_FILE sem addons/multiaddonmanager/bin/multiaddonmanager.so."
+  [[ -f "$WORK/addons/metamod/multiaddonmanager.vdf" ]] || die "$MAM_FILE sem addons/metamod/multiaddonmanager.vdf."
+  cp -a "$WORK/addons/." "$game_dir/addons/"
+  mkdir -p "$game_dir/cfg"
+  cp -a "$WORK/cfg/." "$game_dir/cfg/"
+  echo "    MultiAddonManager $MAM_VERSION ($MAM_RUNTIME)"
+}
+
 # Copia os arquivos versionados do perfil (infra/cs2/profiles/<perfil>/csgo) por cima da instância.
 # {{csgoDir}} vira o game/csgo da instância, para caminhos absolutos.
 copy_profile_files() {
@@ -478,7 +495,8 @@ write_profile_env() {
     "START_MAP=\(.startMap)",
     "PUBLIC_SLOTS=\(.publicSlots)",
     "RESERVED_SLOTS=\(.reservedSlots)",
-    "INVSIM_FALLBACK_TEAM=\(if .inventorySimulator.fallbackTeam then 1 else 0 end)"
+    "INVSIM_FALLBACK_TEAM=\(if .inventorySimulator.fallbackTeam then 1 else 0 end)",
+    "ADDON=\(if .addon == true then 1 else 0 end)"
   ' "$spec" >"$target"
 }
 
@@ -515,6 +533,9 @@ step_profiles() {
     copy_profile_files "$spec_dir" "$game_dir"
     if jq -e '.plugins | index("InventorySimulator")' "$spec_dir/profile.json" >/dev/null; then
       install_invsim "$game_dir"
+    fi
+    if jq -e '.addon == true' "$spec_dir/profile.json" >/dev/null; then
+      install_multiaddonmanager "$game_dir"
     fi
     write_profile_env "$spec_dir" "$instance"
     fix_owner "$instance"

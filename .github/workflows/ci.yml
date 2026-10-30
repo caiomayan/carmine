@@ -56,6 +56,7 @@ jobs:
           bash infra/cs2/test/cs2-update.test.sh
           bash infra/cs2/test/vps-tools.test.sh
           bash infra/cs2/test/promote-plugin.test.sh
+          bash infra/cs2/test/addon-prestart.test.sh
       - name: OpenAPI versionado está atualizado
         run: |
           pnpm --filter @carmine/api openapi:generate
