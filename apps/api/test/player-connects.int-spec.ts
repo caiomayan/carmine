@@ -75,7 +75,7 @@ describe('POST /api/server/player-connects', () => {
       sanctions: [],
       chatHidden: false,
       preferences: { awpRaffle: false },
-      greeting: 'Bem-vindo, FalleN.',
+      greeting: 'Bem-vindo, FalleN.\n!awp coloca você no sorteio da AWP.',
     });
   });
 
@@ -326,6 +326,17 @@ describe('POST /api/server/player-connects', () => {
       expect(result.greeting).toBe(
         'Bem-vindo, novato. Ao jogar você concorda com os termos: stcarmine.com/terms\n!awp coloca você no sorteio da AWP.',
       );
+    });
+
+    it('fora do sorteio, TODO connect leva o aviso do !awp, não só o primeiro', async () => {
+      const steamId = steamIdFor(716);
+      await connectOk({ steamId, steamName: 'persistente' });
+
+      for (let i = 0; i < 3; i++) {
+        const again = await connectOk({ steamId, steamName: 'persistente' });
+        expect(again.greeting?.split('\n').at(-1)).toBe('!awp coloca você no sorteio da AWP.');
+        expect(again.greeting).not.toContain('termos');
+      }
     });
 
     it('no sorteio, o primeiro connect não leva o aviso do !awp', async () => {

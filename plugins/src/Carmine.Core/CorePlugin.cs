@@ -132,7 +132,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         AddCommand("css_plano", "!plano é o mesmo que !vip", OnVipCommand);
         if (_awp is not null)
         {
+            // O nome fica reservado para o chat "!awp" virar css_awp mesmo sem o alocador; quem trata é o listener global,
+            // que roda antes de qualquer comando por nome e barra o css_awp do alocador (ver OnAnyCommand).
             AddCommand("css_awp", "!awp entra ou sai do sorteio da AWP; a escolha fica na Conta e vale em todo Retake", OnAwpCommand);
+            AddCommandListener(null, OnAnyCommand, HookMode.Pre);
         }
         HookUserMessage(SayText2MessageId, OnSayText2, HookMode.Pre);
         AddTimer(Config.RetryIntervalSeconds, FlushPending, TimerFlags.REPEAT);
@@ -630,9 +633,26 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         player.PawnIsAlive && player.Team is CsTeam.Terrorist or CsTeam.CounterTerrorist;
 
     /// <summary>
+    /// Só o Carmine trata o <c>css_awp</c>. O CounterStrikeSharp guarda os comandos de mesmo nome numa lista só, na
+    /// ordem em que os plugins os registram (e a ordem de carga dos plugins não é garantida); já o listener global
+    /// (<c>AddCommandListener(null, …, Pre)</c>) roda antes de qualquer um deles, tanto no console quanto no chat, e
+    /// um <see cref="HookResult.Stop"/> impede os handlers por nome, inclusive o do alocador. Fonte:
+    /// <c>ConCommandManager::ExecuteCommandCallbacks</c> do CounterStrikeSharp 1.0.376.
+    /// Só jogadores de verdade: o console do servidor segue com o comportamento do alocador.
+    /// </summary>
+    private HookResult OnAnyCommand(CCSPlayerController? player, CommandInfo info)
+    {
+        if (player is null || !IsHuman(player) || !AwpRaffle.OwnsCommand(info.GetArg(0)))
+        {
+            return HookResult.Continue;
+        }
+        OnAwpCommand(player, info);
+        return HookResult.Stop;
+    }
+
+    /// <summary>
     /// <c>!awp</c> (e <c>css_awp</c>): a API inverte a preferência da Conta e o Core a aplica no alocador de
-    /// forma explícita. O <c>css_awp</c> do próprio alocador também roda neste comando e alterna a cópia local,
-    /// mas a aplicação explícita vem depois e deixa o alocador igual à Conta.
+    /// forma explícita. Chega aqui pelo <see cref="OnAnyCommand"/>, que barra o <c>css_awp</c> do alocador.
     /// </summary>
     private void OnAwpCommand(CCSPlayerController? player, CommandInfo info)
     {
