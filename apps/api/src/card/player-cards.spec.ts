@@ -60,8 +60,12 @@ describe('card de boas-vindas', () => {
       removed: false,
     });
 
-    expect(buildPlayerCard(facts({ viewer: outside(12) })).rank).toBe('Faltam 12 rounds para o Ranking');
-    expect(buildPlayerCard(facts({ viewer: outside(1) })).rank).toBe('Falta 1 round para o Ranking');
+    expect(buildPlayerCard(facts({ viewer: outside(12) })).rank).toBe(
+      'Faltam 12 rounds para o Ranking',
+    );
+    expect(buildPlayerCard(facts({ viewer: outside(1) })).rank).toBe(
+      'Falta 1 round para o Ranking',
+    );
   });
 
   it('um amigo online fala no singular, e nenhum não escreve nada', () => {

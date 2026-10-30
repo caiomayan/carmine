@@ -13,13 +13,40 @@ public static class AddonCard
     /// <summary>Caminho do layout dentro do addon (<c>custom_hud_layout</c> carrega por ele).</summary>
     public const string LayoutResource = "panorama/layout/custom_game/carmine_card.xml";
 
+    /// <summary>Quanto tempo o card fica na tela por padrão, em segundos.</summary>
+    public const float DefaultSeconds = 6f;
+
+    /// <summary>O material do logo nas paredes, dentro do addon.</summary>
+    public const string WallLogoMaterial = "materials/carmine/wall_logo.vmat";
+
     /// <summary>O painel do card; é nele que as variáveis de diálogo e a classe valem.</summary>
     public const string PanelId = "carmine_card";
 
     /// <summary>Com a classe o card fica fora da tela; sem ela, entra deslizando.</summary>
     public const string HiddenClass = "CarmineCardHidden";
 
+    /// <summary>Com a classe a linha do card some (o CSS não esconde um <c>Label</c> sem texto sozinho).</summary>
+    public const string RowHiddenClass = "CarmineRowHidden";
+
     public static readonly IReadOnlyList<string> Variables = ["name", "plan", "rank", "friends", "rating"];
+
+    /// <summary>O painel de cada linha opcional do card, pela variável que ela mostra.</summary>
+    public static readonly IReadOnlyDictionary<string, string> RowPanels = new Dictionary<string, string>
+    {
+        ["plan"] = "carmine_row_plan",
+        ["rank"] = "carmine_row_rank",
+        ["friends"] = "carmine_row_friends",
+        ["rating"] = "carmine_row_rating",
+    };
+
+    /// <summary>Para cada linha opcional, se ela fica escondida: texto vazio não deixa buraco no card.</summary>
+    public static IReadOnlyList<(string Panel, bool Hidden)> RowsFor(PlayerCard card) =>
+    [
+        (RowPanels["plan"], string.IsNullOrEmpty(card.Plan)),
+        (RowPanels["rank"], string.IsNullOrEmpty(card.Rank)),
+        (RowPanels["friends"], string.IsNullOrEmpty(card.Friends)),
+        (RowPanels["rating"], string.IsNullOrEmpty(card.Rating)),
+    ];
 
     /// <summary>As variáveis de diálogo do jogador, na ordem do contrato. Texto vazio deixa a linha sem nada.</summary>
     public static IReadOnlyList<(string Variable, string Value)> VariablesFor(PlayerCard card) =>

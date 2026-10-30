@@ -57,6 +57,10 @@ jobs:
           bash infra/cs2/test/vps-tools.test.sh
           bash infra/cs2/test/promote-plugin.test.sh
           bash infra/cs2/test/addon-prestart.test.sh
+      - name: Addon do Workshop (validação dos arquivos e testes do validador, sem o jogo)
+        run: |
+          node infra/cs2/addon/tools/validate-addon.mjs
+          node --test "infra/cs2/addon/tools/*.test.mjs"
       - name: OpenAPI versionado está atualizado
         run: |
           pnpm --filter @carmine/api openapi:generate

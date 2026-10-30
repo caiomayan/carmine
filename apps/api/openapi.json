@@ -2973,6 +2973,74 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/card": {
+      "get": {
+        "operationId": "getPlayerCard",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Textos prontos em português; vazio quando não há o que dizer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Os textos do card de boas-vindas do addon (nome, plano, Ranking, amigos, Rating)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/staff/accounts": {
       "get": {
         "operationId": "searchStaffAccounts",
@@ -10263,6 +10331,34 @@
         },
         "required": [
           "server"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerCard": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "string"
+          },
+          "friends": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "plan",
+          "rank",
+          "friends",
+          "rating"
         ],
         "additionalProperties": false
       },

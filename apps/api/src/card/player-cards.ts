@@ -24,7 +24,13 @@ function rankLabel(mode: GameMode, viewer: RankingViewer | null): string {
   if (viewer?.progress) {
     const { unit, missing } = viewer.progress;
     const noun =
-      unit === 'rounds' ? (missing === 1 ? 'round' : 'rounds') : missing === 1 ? 'minuto' : 'minutos';
+      unit === 'rounds'
+        ? missing === 1
+          ? 'round'
+          : 'rounds'
+        : missing === 1
+          ? 'minuto'
+          : 'minutos';
     return `${missing === 1 ? 'Falta' : 'Faltam'} ${missing} ${noun} para o Ranking`;
   }
   return '';

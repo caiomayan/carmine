@@ -30,6 +30,8 @@ public sealed class WallLogos
 
     private static readonly JsonSerializerOptions Options = new() { PropertyNameCaseInsensitive = true };
 
+    private static readonly JsonSerializerOptions DescribeOptions = new() { DefaultIgnoreCondition = JsonIgnoreCondition.Never };
+
     private readonly Dictionary<string, IReadOnlyList<WallLogoPoint>> _maps;
 
     private WallLogos(Dictionary<string, IReadOnlyList<WallLogoPoint>> maps) => _maps = maps;
@@ -79,7 +81,7 @@ public sealed class WallLogos
 
     /// <summary>A linha de configuração de um ponto, para o comando de desenvolvimento colar no arquivo.</summary>
     public static string Describe(WallLogoPoint point) =>
-        JsonSerializer.Serialize(point, new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.Never });
+        JsonSerializer.Serialize(point, DescribeOptions);
 
     private sealed class WallLogosFile
     {

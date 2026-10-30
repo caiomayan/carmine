@@ -64,11 +64,11 @@ public sealed class CoreConfig : BasePluginConfig
 
     /// <summary>Quanto tempo o card de boas-vindas fica na tela, em segundos.</summary>
     [JsonPropertyName("CardSeconds")]
-    public float CardSeconds { get; set; } = 6f;
+    public float CardSeconds { get; set; } = AddonCard.DefaultSeconds;
 
     /// <summary>O material do logo nas paredes, dentro do addon.</summary>
     [JsonPropertyName("WallLogoMaterial")]
-    public string WallLogoMaterial { get; set; } = "materials/carmine/wall_logo.vmat";
+    public string WallLogoMaterial { get; set; } = AddonCard.WallLogoMaterial;
 
     /// <summary>O modo da Vaga reservada; lança se o texto não é um dos aceitos.</summary>
     [JsonIgnore]

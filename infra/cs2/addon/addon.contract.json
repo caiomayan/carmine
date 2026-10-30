@@ -1,0 +1,17 @@
+{
+  "$comment": "Contrato entre o addon (src/panorama/...) e o plugin C# do Carmine. O validador (tools/validate-addon.mjs) confere que o layout e o CSS cumprem este arquivo; o plugin pode lê-lo num teste para não divergir. Mudar um nome aqui exige mudar o layout, o CSS e o plugin, e republicar o addon.",
+  "addonName": "carmine_hud",
+  "layout": "panorama/layout/custom_game/carmine_card.xml",
+  "style": "panorama/styles/custom_game/carmine_card.css",
+  "panel": "carmine_card",
+  "hiddenClass": "CarmineCardHidden",
+  "rowHiddenClass": "CarmineRowHidden",
+  "rowPanels": {
+    "plan": "carmine_row_plan",
+    "rank": "carmine_row_rank",
+    "friends": "carmine_row_friends",
+    "rating": "carmine_row_rating"
+  },
+  "variables": ["name", "plan", "rank", "friends", "rating"],
+  "wallLogoMaterial": "materials/carmine/wall_logo.vmat"
+}

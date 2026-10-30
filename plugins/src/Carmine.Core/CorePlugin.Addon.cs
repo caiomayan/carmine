@@ -57,7 +57,7 @@ public sealed partial class CorePlugin
         var logos = WallLogos.Parse(File.Exists(path) ? File.ReadAllText(path) : null, out var error);
         if (error is not null)
         {
-            Logger.LogWarning("wall-logos.json inválido, sem logo nas paredes: {Error}", error);
+            Log.WallLogosInvalid(Logger, error);
         }
         return logos;
     }
@@ -93,7 +93,7 @@ public sealed partial class CorePlugin
         var layout = Utilities.CreateEntityByName<CCSCustomHudLayout>("custom_hud_layout");
         if (layout is null)
         {
-            Logger.LogWarning("Não consegui criar o custom_hud_layout; o card não aparece.");
+            Log.CardLayoutFailed(Logger);
             return;
         }
         layout.StrLayout = AddonCard.LayoutResource;
@@ -130,6 +130,10 @@ public sealed partial class CorePlugin
         foreach (var (variable, value) in AddonCard.VariablesFor(card))
         {
             layout.SetDialogVariableStringForPlayer(player, AddonCard.PanelId, variable, value);
+        }
+        foreach (var (panel, hidden) in AddonCard.RowsFor(card))
+        {
+            layout.SetHasClassForPlayer(player, panel, AddonCard.RowHiddenClass, hidden);
         }
         layout.SetHasClassForPlayer(player, AddonCard.PanelId, AddonCard.HiddenClass, false);
         AddTimer(Config.CardSeconds, () => HideCard(slot, steamId));
