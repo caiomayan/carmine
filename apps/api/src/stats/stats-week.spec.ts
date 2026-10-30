@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   dayOf,
+  dayStartOf,
   hourStartOf,
+  nextDayStartOf,
   parseWeekStart,
   splitByDay,
   splitByWeek,
@@ -146,6 +148,22 @@ describe('hourStartOf', () => {
   it('é a hora cheia', () => {
     expect(hourStartOf(new Date('2026-10-14T20:59:59.999Z')).toISOString()).toBe(
       '2026-10-14T20:00:00.000Z',
+    );
+  });
+});
+
+describe('dayStartOf e nextDayStartOf', () => {
+  it('o dia de Brasília começa às 03:00 UTC e fecha às 03:00 UTC do dia seguinte', () => {
+    const at = new Date('2026-10-19T15:00:00.000Z');
+    expect(dayStartOf(at).toISOString()).toBe('2026-10-19T03:00:00.000Z');
+    expect(nextDayStartOf(at).toISOString()).toBe('2026-10-20T03:00:00.000Z');
+  });
+
+  it('02:59 UTC ainda é o dia anterior em Brasília', () => {
+    const at = new Date('2026-10-19T02:59:59.999Z');
+    expect(dayStartOf(at).toISOString()).toBe('2026-10-18T03:00:00.000Z');
+    expect(dayStartOf(new Date('2026-10-19T03:00:00.000Z')).toISOString()).toBe(
+      '2026-10-19T03:00:00.000Z',
     );
   });
 });

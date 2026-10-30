@@ -12,7 +12,7 @@ O lançamento oficial fica entre o 1º e o 2º semestre de 2027, quando o advoga
 - **Só o essencial da lei.** Valem as obrigações legais (comunicar material de abuso infantil, arrependimento de 7 dias, apagar dados a pedido, transferência internacional, sorteio, identificação do fornecedor) e a página para pais. As outras travas são escolha de produto e podem ser simplificadas. O levantamento das 40 regras está em [`pesquisas-2026-10-28/travas-legais.md`](pesquisas-2026-10-28/travas-legais.md).
 - **Nada clicável no jogo.** Toda interação no jogo é por comando no chat.
 - **Rotas e comandos em inglês** (S16b), pensando na internacionalização (português e inglês, talvez a partir de 2028). As rotas em português citadas nesta spec passam a ser as equivalentes em inglês da tabela da S16b, e os comandos têm sinônimo em português.
-- **Prefixo das mensagens do Carmine no jogo:** `Carmine`, sem colchetes, em vermelho escuro, o carmim (`ChatColors.DarkRed`), seguido da mensagem na cor padrão. É o "detalhe mínimo" em que o carmim é permitido (decisão U3).
+- **Prefixo das mensagens do Carmine no jogo:** `Carmine`, sem colchetes, em vermelho escuro, o carmim (`ChatColors.DarkRed`), seguido da mensagem na cor padrão. É o "detalhe mínimo" em que o carmim é permitido (decisão U3). **As linhas desta spec escritas com `Carmine · ` mostram como a mensagem fica na tela:** o texto que a API manda vem sem o prefixo, e quem o põe é o plugin (`ChatMessage.Format`). Mandar o prefixo na API faz a linha sair com ele duas vezes.
 
 ## Fatias
 
@@ -240,6 +240,12 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
 - **Teto por dia:** além dos limites de hoje (1 por alvo a cada 10 min e 5 por hora), no máximo **10 Denúncias por dia** por Conta, somando todos os tipos. Passou disso: `Carmine · Você já enviou 10 denúncias hoje. Tente amanhã.` (no site, o mesmo texto sem o prefixo).
 - **Agrupar na fila:** Denúncias contra **a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado** (ou contra a mesma imagem) viram **um item só** na fila, com a contagem (`4 denúncias`) e todas as provas juntas. A Staff decide uma vez, e a decisão vale para todas.
 - **Aceite:** a 11ª Denúncia do dia é recusada com o texto acima; uma Conta com 3 arquivadas em 90 dias (e mais arquivadas que confirmadas) tem as novas no fim da fila e sem prazo; 4 Denúncias pelo mesmo motivo no mesmo Mapa jogado aparecem como um item com `4 denúncias`, e arquivar ou punir resolve as 4.
+
+**Como ficou a regra única de denúncia** (decisões da implementação; o registro completo está no [ADR 0027](../adr/0027-regra-unica-de-denuncia.md))
+- O peso soma os tipos (jogo e foto) numa consulta só; a fila aberta ordena pela Denúncia de peso normal mais antiga do caso, que é a do prazo, e o caso só de quem perdeu peso vai para o fim, sem `deadlineAt`.
+- O teto de 10 é por **dia de Brasília** e vale antes do descarte por imagem aprovada (a resposta é a mesma de uma Denúncia aceita); a API manda o mesmo texto, sem prefixo, ao jogo (o plugin põe o `Carmine · `) e ao site (`report_daily_limit`, 429).
+- "Mesmo Mapa jogado" é o `mapPlayId` (campo novo e opcional em `POST /api/server/reports`). **O plugin ainda não o envia**; até lá o caso é servidor + nome do mapa. Mandar o `mapPlayId` é uma mudança pequena do plugin, fora desta fatia.
+- Migração `0022`: `reports.map_play_id`.
 
 **Histórico das últimas 5 fotos**
 - No diálogo de trocar a foto, abaixo do envio, aparecem as **últimas 5 fotos que ficaram no ar**, da mais nova para a mais velha, junto com "Voltar à foto da Steam".

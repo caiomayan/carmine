@@ -31,10 +31,3 @@ export const AVATAR_REMOVED_RETENTION_DAYS = 30;
 /** Bloqueio de novos envios depois de uma remoção: a Staff escolhe os dias (0 não bloqueia); este é o sugerido. */
 export const AVATAR_BLOCK_DAYS_SUGGESTED = 7;
 export const AVATAR_BLOCK_DAYS_MAX = 365;
-/**
- * Quem denuncia muito o que a Staff mantém perde peso: com pelo menos `AVATAR_REPORTER_KEPT_MIN` denúncias
- * mantidas pela Staff nos últimos `AVATAR_REPORTER_WINDOW_DAYS` dias, e mais mantidas do que confirmadas, as
- * denúncias da Conta vão para o fim da fila.
- */
-export const AVATAR_REPORTER_KEPT_MIN = 3;
-export const AVATAR_REPORTER_WINDOW_DAYS = 90;

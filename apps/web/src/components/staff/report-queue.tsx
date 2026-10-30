@@ -115,6 +115,11 @@ function ReportCard({
           <span className="inline-flex min-h-5 items-center rounded-xs bg-surface-2 px-1.5 text-[11px] font-semibold">
             {REPORT_REASON_LABELS[report.reason]}
           </span>
+          {report.count > 1 ? (
+            <span className="inline-flex min-h-5 items-center rounded-xs bg-surface-2 px-1.5 text-[11px] font-semibold">
+              {t('caseCount', { count: report.count })}
+            </span>
+          ) : null}
           <Link href={`/staff/contas/${report.target.publicId}` as Route} className={personLink}>
             {report.target.displayName}
           </Link>
