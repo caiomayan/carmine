@@ -190,7 +190,7 @@ export function rate(
     const zs = {} as Parts;
     let sum = 0;
     for (const part of PARTS) {
-      zs[part] = pop.sd[part] === 0 ? 0 : clip((rates[part] - pop.mean[part]) / pop.sd[part]);
+      zs[part] = pop.sd[part] < 1e-9 ? 0 : clip((rates[part] - pop.mean[part]) / pop.sd[part]);
       sum += zs[part];
     }
     z[s] = zs;

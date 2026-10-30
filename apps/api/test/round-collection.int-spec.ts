@@ -3,6 +3,7 @@ import { and, eq, isNull, or } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountErasure } from '../src/accounts/account-erasure.js';
 import {
+  accountRatingDaily,
   accountStatsWeekly,
   accounts,
   mapPlayPlayers,
@@ -13,6 +14,7 @@ import {
 } from '../src/database/schema.js';
 import { DataRetention } from '../src/reports/data-retention.js';
 import { RoundEventPartitions } from '../src/stats/round-event-partitions.js';
+import { dayOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
 import { installStableClock } from './support/stable-clock.js';
@@ -227,6 +229,44 @@ describe('Coleta por round (S17): ingestão, resumo e retenção', () => {
       openingKills: 1,
     });
 
+    // As contagens do Rating (S21): uma linha por Conta, dia de Brasília, Modo, mapa e lado.
+    const day = dayOf(new Date(T0 + 7000));
+    const rating = await db()
+      .select()
+      .from(accountRatingDaily)
+      .where(
+        or(
+          eq(accountRatingDaily.accountId, a.account.id),
+          eq(accountRatingDaily.accountId, b.account.id),
+        ),
+      );
+    expect(rating).toHaveLength(2);
+    expect(rating.find((r) => r.accountId === a.account.id)).toMatchObject({
+      day,
+      mode: 'retake',
+      map: 'de_mirage',
+      side: 'ct',
+      rounds: 1,
+      kills: 1,
+      survivedRounds: 1,
+      kastRounds: 1,
+      damage: 60,
+      openingKills: 1,
+      openingDeaths: 0,
+      mk2: 0,
+      cw1: 0,
+    });
+    expect(rating.find((r) => r.accountId === b.account.id)).toMatchObject({
+      side: 't',
+      rounds: 1,
+      kills: 0,
+      survivedRounds: 0,
+      kastRounds: 0,
+      damage: 0,
+      openingKills: 0,
+      openingDeaths: 1,
+    });
+
     // Nenhuma linha bruta guarda o SteamID.
     const raw = JSON.stringify(
       await db().select().from(roundEvents).where(eq(roundEvents.mapPlayId, id)),
@@ -365,6 +405,20 @@ describe('Coleta por round (S17): ingestão, resumo e retenção', () => {
     expect(
       await db().select().from(roundSummaries).where(eq(roundSummaries.mapPlayId, id)),
     ).toHaveLength(1);
+    // As contagens do Rating também foram refeitas: um round, não dois.
+    const rating = await db()
+      .select()
+      .from(accountRatingDaily)
+      .where(eq(accountRatingDaily.accountId, a.account.id));
+    expect(rating).toHaveLength(1);
+    expect(rating[0]).toMatchObject({ rounds: 1, kills: 1, damage: 60, openingKills: 1 });
+    // Reenviar o lote não muda nada.
+    await send(batch({ damages: [r.hit], kills: [r.kill] }));
+    const again = await db()
+      .select()
+      .from(accountRatingDaily)
+      .where(eq(accountRatingDaily.accountId, a.account.id));
+    expect(again).toEqual(rating);
   });
 
   it('dois mapas jogados (um reinício) são dois resumos de mapa, e rounds somam no mesmo mapa', async () => {
@@ -542,6 +596,19 @@ describe('Coleta por round (S17): ingestão, resumo e retenção', () => {
     expect(
       await db().select().from(mapPlayPlayers).where(eq(mapPlayPlayers.accountId, a.account.id)),
     ).toHaveLength(0);
+    // As contagens do Rating (S21) saem com o resumo; as da outra Conta ficam.
+    expect(
+      await db()
+        .select()
+        .from(accountRatingDaily)
+        .where(eq(accountRatingDaily.accountId, a.account.id)),
+    ).toHaveLength(0);
+    expect(
+      await db()
+        .select()
+        .from(accountRatingDaily)
+        .where(eq(accountRatingDaily.accountId, b.account.id)),
+    ).toHaveLength(1);
 
     const mentions = await db()
       .select()

@@ -23,7 +23,7 @@ Vale para o Retake agora e para o 5v5 quando existir (S23): cada Modo tem a pró
 
 **As 5 partes, por round, em cada lado:** abates (`kills / rounds`), sobrevivência (`survivedRounds / rounds`), KAST (`kastRounds / rounds`), dano (`damage / rounds`) e impacto (`pontos de impacto / rounds`).
 
-**O impacto.** Soma de pontos por round (decisão do dono de 2026-10-29: pesos iniciais calibrados na planilha e escritos aqui como v1):
+**O impacto.** Soma de pontos por round (decisão do maestro, 2026-10-29: pesos iniciais calibrados na planilha e escritos aqui como v1):
 
 | O que | Pontos |
 |---|---|
@@ -37,7 +37,7 @@ Por que estes números: a abertura é o que mais muda a chance de ganhar o round
 
 **A população.** Para cada Modo e lado: as Contas com **100 rounds ou mais naquele lado nos últimos 90 dias**. Para cada uma das 5 partes, a média e o desvio-padrão (divisor N, cada Conta pesa igual) entre essas Contas. Recalculada **toda semana** (job do P3) e gravada com a **versão da fórmula**. Com **menos de 20 Contas elegíveis** no Modo e lado, a população não existe e ninguém tem Rating naquele Modo (sem dado inventado).
 
-**Do desvio ao Rating do lado.** Para cada parte, `z = (parte da Conta − média) / desvio`, **limitado a ±3** (nada domina o número) e `0` se o desvio for zero. O Rating do lado é `1 + 0,20 · (média dos 5 z)`. Peso igual entre as partes, como a spec pede; **0,20** é quanto um desvio vale (uma Conta 1 desvio acima da população em tudo fica com 1,20).
+**Do desvio ao Rating do lado.** Para cada parte, `z = (parte da Conta − média) / desvio`, **limitado a ±3** (nada domina o número) e `0` se o desvio for zero (menor que 1e-9, para o ruído de ponto flutuante de uma parte que não varia não virar divisão por quase nada). O Rating do lado é `1 + 0,20 · (média dos 5 z)`. Peso igual entre as partes, como a spec pede; **0,20** é quanto um desvio vale (uma Conta 1 desvio acima da população em tudo fica com 1,20).
 
 **Dos lados ao Modo.** O Rating bruto é a média dos Ratings dos lados **pesada pelos rounds** de cada lado. Quem jogou um lado só tem o bruto desse lado. Se um lado jogado não tem população, não há Rating.
 
@@ -75,9 +75,9 @@ Média dos z = −0,799, então o Rating do CT é 1 + 0,20 · (−0,799) = **0,8
 
 ## Consequences
 
-- **Os pesos do impacto estão num repositório público.** A spec quer a página `/rating` sem os pesos, "como faz a HLTV", para ninguém otimizar o número. A página segue sem eles, mas quem lê este ADR os vê. Foi o pedido do dono (pesos escritos no ADR como v1); se a abertura ao público mudar de ideia, os valores vão para uma nota privada e o ADR guarda só a forma. As defesas contra farm que a pesquisa lista (limitar o peso de kill em quem salvou arma e na pistola inicial) **não entram na v1**.
+- **Os pesos do impacto estão num repositório público.** A spec quer a página `/rating` sem os pesos, "como faz a HLTV", para ninguém otimizar o número. A página segue sem eles, mas quem lê este ADR os vê. Foi a decisão do maestro de 2026-10-29 (pesos escritos no ADR como v1); se a abertura ao público mudar de ideia, os valores vão para uma nota privada e o ADR guarda só a forma. As defesas contra farm que a pesquisa lista (limitar o peso de kill em quem salvou arma e na pistola inicial) **não entram na v1**.
 - O P3 implementa isto, com a agregação diária por Conta, Modo, mapa e lado; a população e a versão ficam em tabela. O mapa só filtra as Estatísticas detalhadas (P5): a população não é por mapa na v1.
-- Não há Rating enquanto o Modo tem menos de 20 Contas elegíveis, o que no começo do beta será a regra, não a exceção: as telas dizem isso (`sem população`), e o Ranking de Retake mantém a ordenação de hoje até haver cobertura (decisão do dono de 2026-10-29, ADR do P4).
+- Não há Rating enquanto o Modo tem menos de 20 Contas elegíveis, o que no começo do beta será a regra, não a exceção: as telas dizem isso (`sem população`), e o Ranking de Retake mantém a ordenação de hoje até haver cobertura (decisão do maestro, 2026-10-29; ADR do P4).
 - A população inclui Contas pouco acima de 100 rounds, cujas taxas são ruidosas, o que **infla um pouco os desvios** e portanto aproxima os Ratings de 1,00. A v2 pode corrigir a variância pela amostra.
 - O "5v5" não existe no banco ainda (`game_mode` tem `retake` e `deathmatch`); entra com a S23, com população própria.
 
@@ -93,3 +93,12 @@ Média dos z = −0,799, então o Rating do CT é 1 + 0,20 · (−0,799) = **0,8
 ## O que ainda falta
 
 Com dados reais: conferir os pesos do impacto (algum evento domina?), o espalhamento de 0,20 (o desvio do Rating da população dá quanto?), o `k = 50` e o mínimo de 20 Contas. Cada mudança é uma versão nova (v2) e recalcula do resumo de round.
+
+## Adendo (P3): como ficou o núcleo
+
+- **Duas tabelas novas** (migração `0025_s21_nucleo_do_rating`, aditiva). `account_rating_daily`: as contagens da tabela acima por Conta, dia de Brasília (-03:00 fixo, ADR 0018), Modo, mapa e lado. É **refeita** do resumo do round, nunca incrementada: a cada round gravado (e a cada round refeito por evento atrasado), as linhas das Contas e dos dias tocados são apagadas e recalculadas por SQL na mesma transação do lote, então o reenvio não soma duas vezes e um jogador que saiu do resumo não deixa conta velha. `rating_population`: uma linha por versão, semana, Modo e lado, com o número de Contas, a janela e as 5 médias e 5 desvios. **Não há tabela de versões**: a versão é a constante `RATING_FORMULA_VERSION`, gravada em cada linha de população.
+- **A população é calculada uma vez por semana** pelo `RatingPopulationsJob`, que confere de hora em hora (a cadência da limpeza de retenção) se a semana de Brasília já tem população e, se não, calcula e grava. A janela são os 90 dias que terminam **no dia anterior ao do cálculo**. Um lado com menos de 20 Contas elegíveis não ganha linha e é tentado de novo na rodada seguinte; depois de gravada, a população não muda até a semana virar. O leitor usa a mais recente da versão atual.
+- **A leitura** (`RatingReader`) devolve o contrato `ModeRating` (`rated`, `calibrating`, `no_rounds`, `no_population`) e o geral. A janela é parâmetro: o Perfil passa os 90 dias, e o Ranking (P4) passará a semana, com as mesmas médias.
+- **A calculadora** (`apps/api/src/stats/rating.ts`) é pura e escrita à parte do oráculo da planilha; `rating.spec.ts` e `rating.int-spec.ts` a comparam com `expected.json`. Um desvio menor que 1e-9 vale zero, porque uma parte que não varia deixa ruído de ponto flutuante no desvio, e dividir por ele jogaria a parte nos ±3 desvios.
+- Ao apagar a Conta (S08) as contagens saem junto com os resumos.
+- **Ainda não aparece em tela nem em rota:** o Perfil, o `!rank`, o card e o Ranking são o P4; o filtro por mapa e período, o P5.

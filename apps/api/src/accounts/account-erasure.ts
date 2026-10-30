@@ -4,6 +4,7 @@ import { eraseAvatarsOf } from '../avatars/avatar-erasure.js';
 import type { Database } from '../database/database.js';
 import {
   accountGamePreferences,
+  accountRatingDaily,
   accountStatsDaily,
   accountStatsWeekly,
   accounts,
@@ -153,6 +154,8 @@ export class AccountErasure {
         // e o resto do round, que é dos outros jogadores também, fica.
         await tx.delete(roundPlayerSummaries).where(eq(roundPlayerSummaries.accountId, accountId));
         await tx.delete(mapPlayPlayers).where(eq(mapPlayPlayers.accountId, accountId));
+        // S21 (ADR 0029): as contagens do Rating saem junto com os resumos de que vêm.
+        await tx.delete(accountRatingDaily).where(eq(accountRatingDaily.accountId, accountId));
         await tx
           .update(roundEvents)
           .set({ actorAccountId: null })
