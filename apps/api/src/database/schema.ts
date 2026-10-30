@@ -305,6 +305,9 @@ export const paymentEvents = pgTable(
  * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. A
  * concessão e a revogação pela Staff (S05, com auditoria) e os Pacotes VIP (S14) mexem aqui.
  */
+/** O plano de um Período (S20). O nome legado `vip_periods` continua (ADR 0026); toda linha antiga é Capo. */
+export const planKind = pgEnum('plan', ['capo', 'padrinho']);
+
 export const vipPeriods = pgTable(
   'vip_periods',
   {
@@ -319,11 +322,36 @@ export const vipPeriods = pgTable(
       .unique()
       .references(() => payments.id),
     createdAt: timestamptz().notNull().defaultNow(),
+    /** O plano deste Período (S20); as linhas anteriores à S20 são Capo. */
+    plan: planKind().notNull().default('capo'),
+    /** Compra de teste do beta (ninguém paga de verdade): acaba no dia em que a cobrança real ligar (ADR 0026). */
+    test: boolean().notNull().default(false),
   },
   (table) => [
     index('vip_periods_account_idx').on(table.accountId, table.endsAt),
     check('vip_periods_ends_after_start', sql`${table.endsAt} > ${table.startsAt}`),
   ],
+);
+
+/**
+ * Revogações de plano pela Staff (S20, ADR 0026): cada uma zera tudo o que a Conta tinha naquele instante, inclusive os
+ * dias guardados na fila. É um registro à parte, escrito na mesma transação e com o mesmo instante e motivo da linha
+ * `vip_revoke` do `staff_audit_log`. A revogação antiga, que encurta os Períodos, continua valendo e legível: a
+ * revogação nova também encurta (para o rollback de imagem não ressuscitar o plano) e registra aqui.
+ */
+export const planRevocations = pgTable(
+  'plan_revocations',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    revokedAt: timestamptz().notNull(),
+    /** SteamID64 de quem revogou (o Admin). */
+    revokedBySteamId: bigint({ mode: 'bigint' }).notNull(),
+    reason: text().notNull(),
+  },
+  (table) => [index('plan_revocations_account_idx').on(table.accountId, table.revokedAt)],
 );
 
 /**

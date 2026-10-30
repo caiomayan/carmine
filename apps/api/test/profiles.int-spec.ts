@@ -1,6 +1,7 @@
 import { profileLocationSchema, profilePlayingSchema, profileSchema } from '@carmine/contracts';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
+import { VipPeriods } from '../src/vip/vip-periods.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
 
@@ -37,6 +38,7 @@ describe('Perfil público', () => {
       claimed: false,
       memberSince: expect.any(String),
       isVip: false,
+      plan: null,
       loadoutShowcase: { items: [] },
       sanctions: { active: [], history: null },
       isPrivate: false,
@@ -85,6 +87,21 @@ describe('Perfil público', () => {
     expect(new Date(memberSince).getTime()).toBeGreaterThanOrEqual(before - 1000);
   });
 
+  it('o Perfil mostra o plano ativo (só o selo): Padrinho, com o Capo guardado esperando', async () => {
+    const who = await signedInPlayer(t, 6, { vipUntil: Date.now() + 20 * 24 * 60 * 60 * 1000 });
+    await t.app
+      .get(VipPeriods)
+      .grant(who.account.id, 10, new Date(), undefined, { plan: 'padrinho' });
+
+    const profile = profileSchema.parse(
+      (await t.app.inject({ url: `/api/profiles/${who.account.publicId}` })).json(),
+    );
+
+    expect(profile).toMatchObject({ isVip: true, plan: 'padrinho' });
+    const me = (await who.call('GET', '/api/me')).json();
+    expect(me.vip).toMatchObject({ active: true, plan: 'padrinho' });
+  });
+
   it('o selo VIP vale só com Período ativo, também para um visitante sem sessão', async () => {
     const vip = await signedInPlayer(t, 3, { vipUntil: Date.now() + 5 * 24 * 60 * 60 * 1000 });
     const expired = await signedInPlayer(t, 4, { vipUntil: Date.now() - 1000 });
@@ -98,6 +115,8 @@ describe('Perfil público', () => {
     // Na sessão, a mesma Conta vê o selo e o fim do Período em campos separados.
     const me = (await vip.call('GET', '/api/me')).json();
     expect(me.account.isVip).toBe(true);
+    expect(me.account.plan).toBe('capo');
+    expect(me.vip.plan).toBe('capo');
     expect(me.vip.active).toBe(true);
   });
 

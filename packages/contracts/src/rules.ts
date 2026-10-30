@@ -34,7 +34,10 @@ export const APPEAL_RESPONSE_HOURS = 72;
 /** Presets no plano grátis (só o principal, que é o Loadout). */
 export const PRESETS_FREE_LIMIT = 1;
 
-/** Presets com Período VIP ativo, contando o principal. */
+/**
+ * @deprecated Legado do VIP único (S14). Desde a S20 o limite é o do plano (`presetLimitFor`: Capo 6, Padrinho
+ * 25). Fica só até a web (PR D) trocar os últimos usos; a API não o usa mais.
+ */
 export const PRESETS_VIP_LIMIT = 20;
 
 export const PRESET_NAME_MAX_LENGTH = 32;

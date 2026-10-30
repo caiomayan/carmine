@@ -1,6 +1,7 @@
 import './zod-jitless.js';
 import { z } from 'zod';
 import { gameSanctionSchema } from './moderation.js';
+import { planSchema } from './plans.js';
 import { steamId64Schema } from './steam.js';
 import { vipNoticeSchema } from './vip.js';
 
@@ -84,6 +85,8 @@ export const playerConnectResultSchema = z
      * A Conta tem VIP ativo agora: no servidor lotado, só o VIP fica na Vaga reservada (S14).
      */
     isVip: z.boolean(),
+    /** O plano ativo agora (S20): Capo ou Padrinho; nulo sem plano. O plugin novo lê este; o antigo segue com `isVip`. */
+    plan: planSchema.nullable().optional(),
     /**
      * O aviso do fim do VIP a mostrar no chat do jogo (S14): 3 dias antes, no dia e no dia em que
      * acabou. O plugin o mostra uma vez por conexão, no primeiro spawn. Nulo: nenhum aviso.

@@ -10,10 +10,9 @@ import {
   type LoadoutSide,
   MAIN_PRESET_NAME,
   PRESET_HIGHLIGHT_SLOTS,
-  PRESETS_FREE_LIMIT,
-  PRESETS_VIP_LIMIT,
   type Preset,
   type PresetList,
+  presetLimitFor,
   type ShowcaseItem,
   type UnequipInput,
 } from '@carmine/contracts';
@@ -65,8 +64,9 @@ interface SlotChange {
 
 /**
  * O Loadout e os Presets (`Preset`) de cada Conta (S05). O Loadout é o Preset ativo; toda Conta
- * tem um Preset principal, criado na primeira leitura ou mutação. Com Período VIP ativo, a Conta
- * tem até {@link PRESETS_VIP_LIMIT} Presets; sem VIP, os extras ficam somente leitura. Toda
+ * tem um Preset principal, criado na primeira leitura ou mutação. O limite de Presets é o do plano da Conta
+ * (S20: grátis 1, Capo 6, Padrinho 25, `presetLimitFor`); o que passa do limite (ao trocar ou perder o plano) fica
+ * guardado, somente leitura, até voltar a caber. Toda
  * recusa é uma {@link LoadoutRejection}; toda mudança no Preset ativo avisa o
  * {@link LoadoutChangeListener} (o cache do `equipped/v5`).
  */
@@ -86,9 +86,9 @@ export class Loadouts {
   /** O Loadout (o Preset ativo) ou outro Preset, com todos os slots. */
   async get(accountId: string, presetId?: string): Promise<Loadout> {
     await this.ensureMain(this.db, accountId);
-    const vip = await this.vipOf(accountId);
+    const access = await this.accessOf(accountId);
     const preset = await this.findPreset(this.db, accountId, presetId);
-    return this.loadoutOf(this.db, preset, vip);
+    return this.loadoutOf(this.db, preset, access);
   }
 
   /** Equipa o Item no slot dele, nos lados pedidos; o que estava lá é substituído. */
@@ -226,7 +226,7 @@ export class Loadouts {
       .from(presets)
       .where(and(eq(presets.accountId, accountId), eq(presets.active, true)));
     if (!active) return [];
-    const vip = await this.vipOf(accountId);
+    const { vip } = await this.accessOf(accountId);
     const assigned = await this.assignedOf(this.db, active.id);
     return this.catalog.slots().flatMap(({ slot, side }): ShowcaseItem[] => {
       const equipped = assigned.get(slotKey(slot, side));
@@ -251,17 +251,17 @@ export class Loadouts {
   /** Os Presets da Conta: o principal primeiro, depois do mais antigo ao mais novo. */
   async listPresets(accountId: string): Promise<PresetList> {
     await this.ensureMain(this.db, accountId);
-    const vip = await this.vipOf(accountId);
-    return this.presetListOf(this.db, accountId, vip);
+    const access = await this.accessOf(accountId);
+    return this.presetListOf(this.db, accountId, access);
   }
 
-  /** Cria um Preset (exige VIP), cópia do Loadout atual ou vazio. Não ativa. */
+  /** Cria um Preset (exige um plano), cópia do Loadout atual ou vazio. Não ativa. */
   async createPreset(
     accountId: string,
     input: { name: string; from: 'current' | 'empty' },
   ): Promise<Preset> {
-    const vip = await this.vipOf(accountId);
-    if (!vip) throw new LoadoutRejection('vip_required', 'Criar Presets exige VIP');
+    const access = await this.accessOf(accountId);
+    if (!access.vip) throw new LoadoutRejection('vip_required', 'Criar Presets exige um plano');
     const { created, totalAfter } = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       await this.ensureMain(tx, accountId);
@@ -269,8 +269,8 @@ export class Loadouts {
         .select({ value: count() })
         .from(presets)
         .where(eq(presets.accountId, accountId));
-      if ((total?.value ?? 0) >= PRESETS_VIP_LIMIT) {
-        throw new LoadoutRejection('preset_limit', `No máximo ${PRESETS_VIP_LIMIT} Presets`);
+      if ((total?.value ?? 0) >= access.limit) {
+        throw new LoadoutRejection('preset_limit', `No máximo ${access.limit} Presets`);
       }
       const now = this.clock();
       const [created] = await tx
@@ -290,7 +290,10 @@ export class Loadouts {
             .values(slots.map((slot) => ({ ...slot, presetId: preset.id })));
         }
       }
-      return { created: await this.presetOf(tx, preset, vip), totalAfter: (total?.value ?? 0) + 1 };
+      return {
+        created: await this.presetOf(tx, preset, access),
+        totalAfter: (total?.value ?? 0) + 1,
+      };
     });
     this.analytics.capture('preset_criado', {
       accountId,
@@ -300,25 +303,25 @@ export class Loadouts {
   }
 
   async renamePreset(accountId: string, presetId: string, name: string): Promise<Preset> {
-    const vip = await this.vipOf(accountId);
-    const preset = await this.writablePreset(this.db, accountId, presetId, vip);
+    const access = await this.accessOf(accountId);
+    const preset = await this.writablePreset(this.db, accountId, presetId, access);
     const [renamed] = await this.db
       .update(presets)
       .set({ name, updatedAt: this.clock() })
       .where(eq(presets.id, preset.id))
       .returning();
-    return this.presetOf(this.db, renamed as PresetRow, vip);
+    return this.presetOf(this.db, renamed as PresetRow, access);
   }
 
   /** Ativa o Preset: ele passa a ser o Loadout (o que vai para o jogo). */
   async activatePreset(accountId: string, presetId: string): Promise<PresetList> {
-    const vip = await this.vipOf(accountId);
+    const access = await this.accessOf(accountId);
     const list = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       await this.ensureMain(tx, accountId);
-      const preset = await this.writablePreset(tx, accountId, presetId, vip);
+      const preset = await this.writablePreset(tx, accountId, presetId, access);
       await this.setActive(tx, accountId, preset.id);
-      return this.presetListOf(tx, accountId, vip);
+      return this.presetListOf(tx, accountId, access);
     });
     await this.listener.loadoutChanged(accountId);
     this.analytics.capture('preset_ativado', {
@@ -330,7 +333,7 @@ export class Loadouts {
 
   /** Apaga um Preset extra; se era o ativo, o principal volta a ser o Loadout. */
   async deletePreset(accountId: string, presetId: string): Promise<PresetList> {
-    const vip = await this.vipOf(accountId);
+    const access = await this.accessOf(accountId);
     const { list, wasActive } = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       await this.ensureMain(tx, accountId);
@@ -338,13 +341,13 @@ export class Loadouts {
       if (preset.main) {
         throw new LoadoutRejection('preset_main', 'O Preset principal não é apagado');
       }
-      await this.writablePreset(tx, accountId, presetId, vip);
+      await this.writablePreset(tx, accountId, presetId, access);
       await tx.delete(presets).where(eq(presets.id, preset.id));
       if (preset.active) {
         const main = await this.mainPreset(tx, accountId);
         await this.setActive(tx, accountId, main.id);
       }
-      return { list: await this.presetListOf(tx, accountId, vip), wasActive: preset.active };
+      return { list: await this.presetListOf(tx, accountId, access), wasActive: preset.active };
     });
     if (wasActive) await this.listener.loadoutChanged(accountId);
     this.analytics.capture('preset_apagado', {
@@ -363,11 +366,11 @@ export class Loadouts {
     presetId: string | undefined,
     plan: (tx: Transaction) => Promise<SlotChange[]>,
   ): Promise<{ change: LoadoutChange; preset: PresetRow }> {
-    const vip = await this.vipOf(accountId);
+    const access = await this.accessOf(accountId);
     const result = await this.db.transaction(async (tx) => {
       await this.lockAccount(tx, accountId);
       await this.ensureMain(tx, accountId);
-      const preset = await this.writablePreset(tx, accountId, presetId, vip);
+      const preset = await this.writablePreset(tx, accountId, presetId, access);
       const changes = await plan(tx);
       const before = await this.assignedOf(tx, preset.id);
       const previous: LoadoutAssignment[] = [];
@@ -384,7 +387,7 @@ export class Loadouts {
       if (previous.length > 0) {
         await tx.update(presets).set({ updatedAt: this.clock() }).where(eq(presets.id, preset.id));
       }
-      return { preset, previous, loadout: await this.loadoutOf(tx, preset, vip) };
+      return { preset, previous, loadout: await this.loadoutOf(tx, preset, access) };
     });
     if (result.preset.active && result.previous.length > 0) {
       await this.listener.loadoutChanged(accountId);
@@ -424,16 +427,16 @@ export class Loadouts {
     return definitions.map(({ side }) => side as LoadoutSide);
   }
 
-  private async loadoutOf(db: Db, preset: PresetRow, vip: boolean): Promise<Loadout> {
+  private async loadoutOf(db: Db, preset: PresetRow, access: Access): Promise<Loadout> {
     const assigned = await this.assignedOf(db, preset.id);
-    const readOnly = isReadOnly(preset, vip);
+    const readOnly = await this.isHeld(db, preset, access);
     return {
       presetId: preset.id,
       presetName: preset.name,
       active: preset.active,
       readOnly,
       readOnlyReason: readOnly ? 'vip_inactive' : null,
-      entries: entriesOf(this.catalog.slots(), assigned, { vip }),
+      entries: entriesOf(this.catalog.slots(), assigned, { vip: access.vip }),
     };
   }
 
@@ -478,7 +481,7 @@ export class Loadouts {
       );
   }
 
-  private async presetListOf(db: Db, accountId: string, vip: boolean): Promise<PresetList> {
+  private async presetListOf(db: Db, accountId: string, access: Access): Promise<PresetList> {
     const rows = await db
       .select()
       .from(presets)
@@ -490,19 +493,25 @@ export class Loadouts {
       this.highlightsOf(db, ids),
     ]);
     return {
-      presets: rows.map((row) =>
-        toPreset(row, vip, counts.get(row.id) ?? 0, highlights.get(row.id) ?? []),
+      presets: rows.map((row, position) =>
+        toPreset(
+          row,
+          position >= access.limit,
+          counts.get(row.id) ?? 0,
+          highlights.get(row.id) ?? [],
+        ),
       ),
-      limit: vip ? PRESETS_VIP_LIMIT : PRESETS_FREE_LIMIT,
+      limit: access.limit as PresetList['limit'],
     };
   }
 
-  private async presetOf(db: Db, row: PresetRow, vip: boolean): Promise<Preset> {
+  private async presetOf(db: Db, row: PresetRow, access: Access): Promise<Preset> {
     const [counts, highlights] = await Promise.all([
       this.equippedCounts(db, [row.id]),
       this.highlightsOf(db, [row.id]),
     ]);
-    return toPreset(row, vip, counts.get(row.id) ?? 0, highlights.get(row.id) ?? []);
+    const held = await this.isHeld(db, row, access);
+    return toPreset(row, held, counts.get(row.id) ?? 0, highlights.get(row.id) ?? []);
   }
 
   /** Os Itens equipados nos slots de destaque de cada Preset (Itens removidos não contam). */
@@ -557,16 +566,30 @@ export class Loadouts {
     db: Db,
     accountId: string,
     presetId: string | undefined,
-    vip: boolean,
+    access: Access,
   ): Promise<PresetRow> {
     const preset = await this.findPreset(db, accountId, presetId);
-    if (isReadOnly(preset, vip)) {
+    if (await this.isHeld(db, preset, access)) {
       throw new LoadoutRejection(
         'preset_read_only',
-        'Sem VIP ativo, este Preset é somente leitura; ative o Principal para editar',
+        'Este Preset passa do limite do seu plano e é somente leitura; ative um dentro do limite para editar',
       );
     }
     return preset;
+  }
+
+  /**
+   * O Preset passa do limite do plano e fica guardado, somente leitura. A ordem é a do Loadout: o principal
+   * primeiro, depois do mais antigo ao mais novo; os `limit` primeiros se editam.
+   */
+  private async isHeld(db: Db, preset: PresetRow, access: Access): Promise<boolean> {
+    if (preset.main) return false;
+    const rows = await db
+      .select({ id: presets.id })
+      .from(presets)
+      .where(eq(presets.accountId, preset.accountId))
+      .orderBy(desc(presets.main), asc(presets.createdAt), asc(presets.id));
+    return rows.findIndex(({ id }) => id === preset.id) >= access.limit;
   }
 
   private async findPreset(
@@ -630,20 +653,25 @@ export class Loadouts {
       .for('update');
   }
 
-  private async vipOf(accountId: string): Promise<boolean> {
-    return (await this.vipPeriods.statusOf(accountId, this.clock())).active;
+  /** O plano da Conta agora: se tem algum (os Itens exclusivos) e o limite de Presets dele. */
+  private async accessOf(accountId: string): Promise<Access> {
+    const status = await this.vipPeriods.planStatusOf(accountId, this.clock());
+    return { vip: status.active, limit: presetLimitFor(status.plan) };
   }
 }
 
-const isReadOnly = (preset: PresetRow, vip: boolean) => !preset.main && !vip;
+/** O que o plano da Conta libera no Loadout (S20). */
+interface Access {
+  vip: boolean;
+  limit: number;
+}
 
 function toPreset(
   row: PresetRow,
-  vip: boolean,
+  readOnly: boolean,
   equippedCount: number,
   highlights: LoadoutAssignment[],
 ): Preset {
-  const readOnly = isReadOnly(row, vip);
   return {
     id: row.id,
     name: row.name,

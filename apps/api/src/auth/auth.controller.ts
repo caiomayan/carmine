@@ -246,14 +246,14 @@ export class AuthController {
       throw new UnauthorizedException('Sessão ausente ou expirada; entre de novo');
     }
     const [vip, showcase, sanctions, staffRole, own] = await Promise.all([
-      this.vipPeriods.statusOf(account.id),
+      this.vipPeriods.planStatusOf(account.id),
       this.loadouts.showcase(account.id),
       this.sanctions.profileOf(account.id, { withHistory: true }),
       this.staffRoles.roleOf(account.id),
       this.sanctions.activeOf(account.id),
     ]);
     return {
-      account: toProfile(account, showcase, sanctions, vip.active),
+      account: toProfile(account, showcase, sanctions, vip.active, vip.plan),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
       vip: toVipStatus(vip),

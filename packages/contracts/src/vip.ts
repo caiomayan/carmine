@@ -1,6 +1,7 @@
 import './zod-jitless.js';
 import { z } from 'zod';
 import type { Cs2Item } from './inventory.js';
+import { planSchema } from './plans.js';
 
 /**
  * VIP da Conta da sessão (vem em `GET /api/me`). `endsAt` é o fim do Período VIP ativo (somando
@@ -13,6 +14,10 @@ export const vipStatusSchema = z
     active: z.boolean(),
     endsAt: z.iso.datetime({ offset: true }).nullable(),
     endedAt: z.iso.datetime({ offset: true }).nullable(),
+    /** O plano ativo agora (S20): Capo ou Padrinho; nulo sem plano. Ausente em respostas de antes da S20. */
+    plan: planSchema.nullable().optional(),
+    /** O trecho de agora é de teste do beta (ninguém paga de verdade). */
+    test: z.boolean().optional(),
   })
   .meta({ id: 'VipStatus' });
 

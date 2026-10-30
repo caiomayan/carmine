@@ -126,6 +126,15 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
         ['vip-3m', 2690],
         ['vip-6m', 4990],
       ]);
+      // S20: os pacotes dos dois planos, para a tela de planos.
+      expect(body.planPackages?.map((p) => [p.id, p.plan, p.priceCents])).toEqual([
+        ['vip-1m', 'capo', 990],
+        ['vip-3m', 'capo', 2690],
+        ['vip-6m', 'capo', 4990],
+        ['padrinho-1m', 'padrinho', 1990],
+        ['padrinho-3m', 'padrinho', 5390],
+        ['padrinho-6m', 'padrinho', 9990],
+      ]);
     });
 
     it('com sessão, diz se a Conta pode comprar agora e por que não', async () => {
@@ -391,6 +400,56 @@ describe('Pacotes VIP e pagamentos (S14), com o provedor falso', () => {
       expect(expired.status).toBe('expired');
       expect(expired.pix).toBeNull();
       expect(await vipEnd(who)).toBeNull();
+    });
+
+    describe('os planos Capo e Padrinho (S20)', () => {
+      const planOf = async (who: Player) => (await vip.planStatusOf(who.account.id)).plan;
+
+      it('comprar o Padrinho dá o plano Padrinho (de teste, com o provedor falso) pelos dias do pacote', async () => {
+        const who = await player();
+
+        const paid = await buyAndPay(who, { package: 'padrinho-1m' });
+
+        expect(paid).toMatchObject({ package: 'padrinho-1m', status: 'approved', days: 30 });
+        expect(await vip.planStatusOf(who.account.id)).toMatchObject({
+          plan: 'padrinho',
+          test: true,
+        });
+        roughly(await vipEnd(who), 30);
+      });
+
+      it('Padrinho sobre Capo: o Padrinho começa na hora e os dias do Capo voltam depois', async () => {
+        const who = await player({ vipUntil: Date.now() + 20 * DAY_MS });
+
+        await buyAndPay(who, { package: 'padrinho-1m' });
+
+        const now = await vip.planStatusOf(who.account.id);
+        expect(now.plan).toBe('padrinho');
+        expect(now.next).toMatchObject({ plan: 'capo' });
+        roughly(now.planEndsAt, 30);
+        roughly(now.endsAt, 50);
+      });
+
+      it('Capo sobre Padrinho entra na fila e o plano de agora continua Padrinho', async () => {
+        const who = await player();
+        await buyAndPay(who, { package: 'padrinho-1m' });
+
+        await buyAndPay(who, { package: 'vip-1m' });
+
+        expect(await planOf(who)).toBe('padrinho');
+        roughly((await vip.planStatusOf(who.account.id)).endsAt, 60);
+      });
+
+      it('reembolsar o Padrinho recua o fim e devolve o Capo à frente', async () => {
+        const who = await player({ vipUntil: Date.now() + 20 * DAY_MS });
+        const padrinho = await buyAndPay(who, { package: 'padrinho-1m' });
+        roughly(await vipEnd(who), 50);
+
+        await who.call('POST', `/api/me/purchases/${padrinho.id}/refund`);
+
+        expect(await planOf(who)).toBe('capo');
+        roughly(await vipEnd(who), 20);
+      });
     });
 
     it('comprar 3 meses com 10 dias de VIP resulta em 100 dias', async () => {

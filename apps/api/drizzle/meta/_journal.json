@@ -169,6 +169,13 @@
       "when": 1793319953270,
       "tag": "0023_preferencias_de_jogo",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793321343529,
+      "tag": "0024_s20_planos",
+      "breakpoints": true
     }
   ]
 }

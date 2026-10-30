@@ -35,7 +35,7 @@ A ligação opcional de uma Conta a um usuário do Discord (ID e nome), feita pe
 _Evitar_: login com Discord, conta Discord
 
 **Cargo do Discord** (`DiscordRole`):
-O cargo que o bot dá a uma Conta vinculada no servidor do Discord: Jogador (todo vinculado), VIP (Período VIP ativo), Staff (qualquer papel de Staff) e Dono (papel `owner`). Só esses quatro são gerenciados; os outros cargos da pessoa não são tocados.
+O cargo que o bot dá a uma Conta vinculada no servidor do Discord: Jogador (todo vinculado), Capo ou Padrinho (o do plano ativo, um só), Staff (qualquer papel de Staff) e Dono (papel `owner`). Só esses cinco são gerenciados; os outros cargos da pessoa não são tocados.
 _Evitar_: role, tag
 
 **Conta anonimizada** (`anonymizedAt`):

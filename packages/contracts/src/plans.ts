@@ -50,6 +50,17 @@ export const planPackageIdSchema = z
 
 export type PlanPackageId = (typeof PLAN_PACKAGES)[number]['id'];
 
+/** Um pacote como a API o devolve (`GET /api/vip/packages`, `planPackages`). */
+export const planPackageSchema = z
+  .object({
+    id: planPackageIdSchema,
+    plan: planSchema,
+    months: z.int().positive(),
+    days: z.int().positive(),
+    priceCents: z.int().positive(),
+  })
+  .meta({ id: 'PlanPackage' });
+
 export type PlanPackage = (typeof PLAN_PACKAGES)[number];
 
 /** O pacote de um ID (que diz de qual plano ele é). */
