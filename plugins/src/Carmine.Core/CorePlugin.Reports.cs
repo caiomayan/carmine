@@ -55,9 +55,10 @@ public sealed partial class CorePlugin
             case ReportStep.Submit submit:
                 var round = ReportRound.InProgress(GameRules()?.TotalRoundsPlayed, IsWarmup());
                 var map = Server.MapName;
+                var mapPlayId = ReportMapPlay.Current(_match);
                 RunInBackground(async token =>
                 {
-                    var outcome = await sender.SendAsync(reporter, submit.Target.SteamId, submit.Reason, round, map, token);
+                    var outcome = await sender.SendAsync(reporter, submit.Target.SteamId, submit.Reason, round, map, mapPlayId, token);
                     Log.ReportSent(Logger, reporter, submit.Target.SteamId, submit.Reason, outcome.Accepted);
                     Server.NextFrame(() =>
                     {

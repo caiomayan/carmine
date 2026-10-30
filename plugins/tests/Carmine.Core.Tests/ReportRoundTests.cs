@@ -20,6 +20,27 @@ public class ReportRoundTests
     }
 
     [Fact]
+    public void A_Denuncia_leva_o_Mapa_jogado_do_rastreador_em_qualquer_momento_inclusive_no_aquecimento()
+    {
+        var match = new MatchTracker();
+        var first = match.MapPlayId;
+
+        // O MatchTracker já tem um mapa jogado no aquecimento; o !report manda esse mesmo.
+        Assert.Equal(first, ReportMapPlay.Current(match));
+
+        // Partida nova (mapa novo, fim do aquecimento, reinício): a Denúncia seguinte leva o novo.
+        match.Reset();
+        Assert.NotEqual(first, ReportMapPlay.Current(match));
+        Assert.Equal(match.MapPlayId, ReportMapPlay.Current(match));
+    }
+
+    [Fact]
+    public void Sem_o_rastreador_nao_manda_nada()
+    {
+        Assert.Null(ReportMapPlay.Current(null));
+    }
+
+    [Fact]
     public void Sem_as_regras_do_jogo_o_round_e_desconhecido()
     {
         Assert.Null(ReportRound.InProgress(null, warmup: false));
