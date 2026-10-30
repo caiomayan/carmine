@@ -142,4 +142,8 @@ sed -i -E 's/"FollowCS2ServerGuidelines"[[:space:]]*:[[:space:]]*true/"FollowCS2
 # cada plugin carrega o lang/pt-BR.json dele (os que não trazem, o perfil entrega).
 sed -i -E 's/"ServerLanguage"[[:space:]]*:[[:space:]]*"[^"]*"/"ServerLanguage": "pt-BR"/' "$core_json"
 
-echo "carmine-cs2@$PROFILE: configs gravadas (API $CARMINE_API_BASE_URL, addon $([[ "$ADDON_ON" == true ]] && echo ligado || echo desligado))"
+addon_state=desligado
+if [[ "$ADDON_ON" == true ]]; then
+  addon_state=ligado
+fi
+echo "carmine-cs2@$PROFILE: configs gravadas (API $CARMINE_API_BASE_URL, addon $addon_state)"
