@@ -1,4 +1,5 @@
 import { type GameMode, type HeaderPreviews, headerPreviewsSchema } from '@carmine/contracts';
+import type { LightMyRequestResponse } from 'fastify';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { accountStatsWeekly } from '../src/database/schema.js';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
@@ -338,7 +339,7 @@ describe('Prévias do header (U3e), com cache', () => {
   });
 
   const read = async (
-    who: { call: (m: 'GET', url: string) => ReturnType<TestApp['app']['inject']> },
+    who: { call: (m: 'GET', url: string) => Promise<LightMyRequestResponse> },
     query = '',
   ) => headerPreviewsSchema.parse((await who.call('GET', `/api/header-previews${query}`)).json());
 
