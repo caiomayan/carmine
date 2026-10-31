@@ -17,6 +17,13 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - O `main` é produção e só recebe PR de uma branch de release congelada (`release/<data><letra>`).
 - Commits em português, no formato `tipo(escopo): o que mudou` (`feat(web): ...`, `fix(api): ...`, `test(e2e): ...`, `docs(specs): ...`).
 
+## Agentes
+A filosofia geral está no CLAUDE.md global do dono; aqui fica o que é do Carmine (decisões do dono, 2026-10-31).
+- **Modelos:** maestro e decisões caras em Opus. Implementação em Sonnet, com o conselheiro nas decisões difíceis. Docs, issues, buscas e PRs mecânicos em Haiku ou Sonnet.
+- **Sessão nova por issue.** Antes de encerrar: commit, push e um comentário de estado na issue (feito, falta, próximo passo).
+- **Papéis por tarefa:** tela leva QA de aceite na homologação; regra de negócio leva escritor de testes separado de quem implementa. Quem verifica não é quem fez.
+- **Auditoria de PO antes de cada release:** só leitura, sessão limpa, compara spec, código e issues. Divergência vira issue, e as metas são sugestão para o dono decidir.
+
 ## Skills
 - Rastreador: GitHub Issues (`docs/agents/issue-tracker.md`).
 - Etiquetas de triagem: as padrão (`docs/agents/triage-labels.md`).
