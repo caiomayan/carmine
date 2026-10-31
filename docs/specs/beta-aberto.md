@@ -260,7 +260,7 @@ A foto de perfil (ADR 0022) já está pronta e desligada. Esta fatia a liga no b
 **Como ficou a regra única de denúncia** (decisões da implementação; o registro completo está no [ADR 0027](../adr/0027-regra-unica-de-denuncia.md))
 - O peso soma os tipos (jogo e foto) numa consulta só; a fila aberta ordena pela Denúncia de peso normal mais antiga do caso, que é a do prazo, e o caso só de quem perdeu peso vai para o fim, sem `deadlineAt`.
 - O teto de 10 é por **dia de Brasília** e vale antes do descarte por imagem aprovada (a resposta é a mesma de uma Denúncia aceita); a API manda o mesmo texto, sem prefixo, ao jogo (o plugin põe o `Carmine · `) e ao site (`report_daily_limit`, 429).
-- "Mesmo Mapa jogado" é o `mapPlayId` (campo novo e opcional em `POST /api/server/reports`). **O plugin ainda não o envia**; até lá o caso é servidor + nome do mapa. Mandar o `mapPlayId` é uma mudança pequena do plugin, fora desta fatia.
+- "Mesmo Mapa jogado" é o `mapPlayId` (campo novo e opcional em `POST /api/server/reports`). O plugin o envia desde o #217. Sem ele (aquecimento, ou um servidor sem o rastreador do mapa), o caso é servidor + nome do mapa.
 - Migração `0022`: `reports.map_play_id`.
 
 **Histórico das últimas 5 fotos**
