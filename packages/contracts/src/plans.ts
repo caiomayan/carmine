@@ -61,6 +61,9 @@ export const planPackageSchema = z
   })
   .meta({ id: 'PlanPackage' });
 
+/** Um pacote como a API o devolve (os campos soltos, não os literais de {@link PLAN_PACKAGES}). */
+export type PlanPackageItem = z.infer<typeof planPackageSchema>;
+
 export type PlanPackage = (typeof PLAN_PACKAGES)[number];
 
 /** O pacote de um ID (que diz de qual plano ele é). */

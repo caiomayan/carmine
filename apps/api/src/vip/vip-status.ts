@@ -37,12 +37,15 @@ export function vipStatusAt(periods: readonly VipPeriod[], now: Date): VipStatus
 }
 
 /** O VIP no formato do contrato (`VipStatus`); com o plano (S20), leva o plano e se é de teste. */
-export function toVipStatus(vip: VipStatusAt & { plan?: Plan | null; test?: boolean }): VipStatus {
+export function toVipStatus(
+  vip: VipStatusAt & { plan?: Plan | null; test?: boolean; planEndsAt?: Date | null },
+): VipStatus {
   return {
     active: vip.active,
     endsAt: vip.endsAt?.toISOString() ?? null,
     endedAt: vip.endedAt?.toISOString() ?? null,
     ...(vip.plan !== undefined && { plan: vip.plan }),
     ...(vip.test !== undefined && { test: vip.test }),
+    ...(vip.planEndsAt !== undefined && { planEndsAt: vip.planEndsAt?.toISOString() ?? null }),
   };
 }

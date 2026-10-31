@@ -1153,7 +1153,7 @@
         "body": "Tente de novo em instantes. Se você acabou de pagar, o VIP chega mesmo assim.",
         "retry": "Tentar de novo"
       },
-      "sandbox": "Ambiente de teste: o pagamento é de mentira e ninguém é cobrado.",
+      "sandbox": "Beta: compra de teste. Nada é cobrado.",
       "list": "Suas compras",
       "package": "VIP · {months, plural, one {# mês} other {# meses}}",
       "days": "{days} dias de VIP",
@@ -1293,103 +1293,113 @@
     }
   },
   "vip": {
-    "metaTitle": "VIP",
-    "metaDescription": "Vaga reservada nos servidores lotados, mais Presets e os Itens exclusivos do Loadout. Pagamento único, sem renovação.",
-    "eyebrow": "VIP",
+    "metaTitle": "Planos Capo e Padrinho",
+    "metaDescription": "Capo e Padrinho: vaga reservada nos servidores lotados, mais Presets e os Itens exclusivos do Loadout. Pagamento único, sem renovação.",
+    "eyebrow": "Planos",
     "title": "Jogue com o Loadout completo.",
-    "subtitle": "Vaga reservada nos servidores lotados, mais Presets e os Itens exclusivos. Pagamento único, sem renovação automática.",
-    "sandbox": {
-      "title": "Ambiente de teste",
-      "body": "O pagamento aqui é de mentira: ninguém é cobrado e nada do que você fizer vale fora desta homologação."
-    },
+    "subtitle": "Dois planos: vaga reservada nos servidores lotados, mais Presets e os Itens exclusivos. Pagamento único, sem renovação automática.",
     "yours": {
-      "active": "Seu VIP vai até {date}.",
-      "activeBody": "Comprar outro Pacote soma os dias ao fim atual.",
-      "ended": "Seu VIP acabou em {date}.",
-      "endedBody": "Os Itens VIP continuam no seu Inventário e voltam ao jogo quando você comprar um Pacote.",
-      "endedBodyHeld": "Os Itens VIP ficam guardados por {days} dias depois do fim do VIP. Se você comprar um Pacote nesse prazo, eles voltam como estavam e vão para o jogo."
+      "active": "Seu plano é o {plan} até {date}.",
+      "activeBody": "Comprar outro Pacote soma os dias. O Padrinho começa na hora e guarda os dias do Capo; o Capo espera na fila.",
+      "next": "Depois volta o {plan}, até {date}.",
+      "ended": "Seu plano acabou em {date}.",
+      "endedBody": "Os Itens exclusivos continuam no seu Inventário e voltam ao jogo quando você comprar um Pacote.",
+      "endedBodyHeld": "Os Itens exclusivos ficam guardados por {days} dias depois do fim do plano. Se você comprar um Pacote nesse prazo, eles voltam como estavam e vão para o jogo."
     },
     "packages": {
-      "title": "Escolha um Pacote",
+      "title": "Escolha um plano e um Pacote",
       "subtitle": "Pagamento único: sem renovação, nada é cobrado de novo. Os Pacotes se somam.",
-      "listLabel": "Pacotes VIP",
+      "listLabel": "Pacotes do {plan}",
       "months": "{months, plural, one {# mês} other {# meses}}",
-      "days": "{days} dias de VIP",
+      "days": "{days} dias",
       "perMonth": "{price} por mês",
       "save": "Economize {percent}%",
       "best": "Melhor preço",
       "buy": "Comprar",
-      "buyAria": "Comprar o Pacote de {months, plural, one {# mês} other {# meses}}, por {price}",
+      "buyAria": "Comprar o {plan}, {months, plural, one {# mês} other {# meses}}, por {price}",
       "soon": "Em breve",
       "signIn": "Entrar para comprar",
       "unavailable": "Não deu para carregar os Pacotes agora",
       "unavailableBody": "Tente de novo em instantes. Nada foi cobrado.",
-      "retry": "Tentar de novo"
+      "retry": "Tentar de novo",
+      "planLead": {
+        "capo": "Até {presets} Presets, os Itens exclusivos, a vaga reservada e o cargo Capo no Discord.",
+        "padrinho": "Tudo do Capo e até {presets} Presets, com o cargo Padrinho no Discord."
+      }
     },
     "notices": {
-      "soon": "A compra do VIP ainda não abriu. Quando abrir, os Pacotes já aparecem aqui prontos para comprar.",
-      "banned": "Contas com ban permanente não compram VIP.",
+      "soon": "A compra dos planos ainda não abriu. Quando abrir, os Pacotes já aparecem aqui prontos para comprar.",
+      "banned": "Contas com ban permanente não compram planos.",
       "purchases_blocked": "As compras desta Conta estão bloqueadas. Fale com a Staff no Discord.",
       "purchase_in_progress": "Você tem um pagamento em análise. Espere a resposta antes de comprar de novo.",
       "daily_limit": "Você chegou ao limite de compras de hoje. Tente de novo amanhã.",
       "myPurchases": "Ver minhas compras"
     },
     "compare": {
-      "title": "O que muda com o VIP",
+      "title": "O que muda com um plano",
       "free": "Plano grátis",
-      "vip": "VIP",
+      "capo": "Capo",
+      "padrinho": "Padrinho",
       "freeItems": {
         "skins": "Inventário livre: skins de armas, facas e luvas",
         "attachments": "Stickers e charms nas suas skins",
         "preset": "{count, plural, one {# Preset de Loadout (o principal)} other {# Presets de Loadout}}",
         "servers": "Os servidores, o Ranking e o Perfil"
       },
-      "vipItems": {
+      "capoItems": {
         "all": "Tudo do plano grátis",
         "reserved": "Vaga reservada nos servidores lotados",
         "presets": "Até {count} Presets de Loadout",
         "agents": "Agentes e music kits",
         "attributes": "StatTrak™ e nametag nas skins",
-        "discord": "O cargo VIP no nosso Discord"
+        "discord": "O cargo Capo no nosso Discord"
       },
-      "reservedNote": "No Retake, a vaga vem da saída de um jogador sem VIP; no Deathmatch, de vagas extras."
+      "padrinhoItems": {
+        "all": "Tudo do Capo",
+        "presets": "Até {count} Presets de Loadout",
+        "discord": "O cargo Padrinho no nosso Discord"
+      },
+      "reservedNote": "No Retake, a vaga vem da saída de um jogador sem plano; no Deathmatch, de vagas extras."
     },
     "how": {
       "title": "Como funciona",
       "once": "Pagamento único, sem renovação automática: nada é cobrado de novo sem você pagar outro Pacote.",
-      "starts": "O VIP começa quando o pagamento é confirmado, normalmente em segundos. Pix ou cartão.",
+      "starts": "O plano começa quando o pagamento é confirmado, normalmente em segundos. Pix ou cartão.",
       "payer": "Quem paga precisa ser maior de 18 anos. Pode ser outra pessoa, como pai, mãe ou responsável, comprando para a Conta de um jogador.",
       "refund": "Desistiu? Em até {days} dias você recebe o valor de volta.",
       "refundLink": "Política de Reembolso",
-      "ban": "Ban permanente encerra o VIP, sem reembolso dos dias restantes.",
-      "termsLink": "Termos de Uso"
+      "ban": "Ban permanente encerra o plano, sem reembolso dos dias restantes.",
+      "termsLink": "Termos de Uso",
+      "swap": "Padrinho sobre Capo: o Padrinho começa na hora e os dias que sobram do Capo voltam depois. Capo sobre Padrinho: o Capo espera na fila e começa quando o Padrinho acabar."
     },
     "confirm": {
-      "metaTitle": "Confirmar compra do VIP",
+      "metaTitle": "Confirmar compra do plano",
       "title": "Confirmar compra",
-      "subtitle": "Confira a Conta que recebe o VIP, o valor e a data. Nada é cobrado até você pagar.",
+      "subtitle": "Confira a Conta que recebe o plano, o valor e a data. Nada é cobrado até você pagar.",
       "back": "Voltar aos Pacotes",
       "beneficiary": {
-        "label": "Conta que recebe o VIP",
+        "label": "Conta que recebe o plano",
         "id": "ID {id}",
         "profile": "Ver perfil",
-        "note": "O VIP é desta Conta e não passa para outra. Se não é a Conta certa, saia e entre de novo com a Steam de quem vai jogar."
+        "note": "O plano é desta Conta e não passa para outra. Se não é a Conta certa, saia e entre de novo com a Steam de quem vai jogar."
       },
       "summary": {
         "title": "Resumo",
         "package": "Pacote",
-        "packageValue": "VIP, {months, plural, one {# mês} other {# meses}}",
+        "packageValue": "{plan}, {months, plural, one {# mês} other {# meses}}",
         "duration": "Duração",
         "durationValue": "{days} dias",
         "price": "Valor",
-        "newEnd": "VIP até",
-        "adds": "Soma ao seu VIP atual, que vai até {date}.",
+        "newEnd": "Plano até",
+        "adds": "Soma ao seu plano atual, que vai até {date}.",
         "starts": "Começa quando o pagamento for confirmado.",
-        "once": "Pagamento único, sem renovação automática. Nada é cobrado de novo."
+        "once": "Pagamento único, sem renovação automática. Nada é cobrado de novo.",
+        "padrinhoOverCapo": "O Padrinho começa agora e os dias que restam do seu Capo voltam depois.",
+        "capoOverPadrinho": "O Capo entra na fila e começa quando o Padrinho acabar."
       },
       "ban": {
-        "title": "Antes de pagar: ban permanente encerra o VIP",
-        "body": "Se esta Conta receber um ban permanente, o VIP acaba na hora e os dias que sobrarem não são reembolsados.",
+        "title": "Antes de pagar: ban permanente encerra o plano",
+        "body": "Se esta Conta receber um ban permanente, o plano acaba na hora e os dias que sobrarem não são reembolsados.",
         "refund": "Fora isso, você pode desistir em até {days} dias depois da aprovação e receber o valor de volta.",
         "terms": "Termos de Uso"
       },
@@ -1408,24 +1418,24 @@
       "submitting": "Criando o pagamento",
       "horizon": {
         "title": "Esse Pacote passa do limite",
-        "body": "O VIP de uma Conta pode ir até {days} dias à frente. Com este Pacote ele passaria disso: espere o VIP diminuir ou escolha um Pacote menor.",
+        "body": "O plano de uma Conta pode ir até {days} dias à frente. Com este Pacote ele passaria disso: espere o plano diminuir ou escolha um Pacote menor.",
         "back": "Escolher outro Pacote"
       },
       "blocked": {
         "title": "Não dá para comprar agora",
-        "banned": "Contas com ban permanente não compram VIP.",
+        "banned": "Contas com ban permanente não compram planos.",
         "purchases_blocked": "As compras desta Conta estão bloqueadas. Fale com a Staff no Discord.",
         "purchase_in_progress": "Você tem um pagamento em análise. Espere a resposta antes de comprar de novo.",
         "daily_limit": "Você chegou ao limite de compras de hoje. Tente de novo amanhã.",
-        "soon": "A compra do VIP ainda não abriu.",
+        "soon": "A compra dos planos ainda não abriu.",
         "myPurchases": "Ver minhas compras"
       },
       "errors": {
-        "payments_disabled": "A compra do VIP ainda não abriu.",
+        "payments_disabled": "A compra dos planos ainda não abriu.",
         "invalid_body": "Não deu para ler o pedido. Recarregue a página e tente de novo.",
-        "banned": "Contas com ban permanente não compram VIP.",
+        "banned": "Contas com ban permanente não compram planos.",
         "purchases_blocked": "As compras desta Conta estão bloqueadas. Fale com a Staff no Discord.",
-        "vip_horizon": "Esse Pacote passaria do limite de VIP à frente. Escolha um Pacote menor.",
+        "vip_horizon": "Esse Pacote passaria do limite de plano à frente. Escolha um Pacote menor.",
         "daily_limit": "Você chegou ao limite de compras de hoje. Tente de novo amanhã.",
         "provider_unavailable": "O provedor de pagamento não respondeu. Nada foi cobrado: tente de novo em instantes.",
         "not_found": "Não achamos essa compra.",
@@ -1435,15 +1445,15 @@
       }
     },
     "purchase": {
-      "metaTitle": "Sua compra do VIP",
-      "sandbox": "Ambiente de teste: o pagamento é de mentira e ninguém é cobrado.",
+      "metaTitle": "Sua compra do plano",
+      "sandbox": "Beta: compra de teste. Nada é cobrado.",
       "summary": "{package} · {price}",
-      "packageName": "VIP, {months, plural, one {# mês} other {# meses}}",
+      "packageName": "{plan}, {months, plural, one {# mês} other {# meses}}",
       "statusLabel": "Estado da compra",
       "waiting": {
         "pix": {
           "title": "Pague com Pix",
-          "body": "Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código. O VIP chega sozinho assim que o pagamento for confirmado.",
+          "body": "Abra o app do seu banco, escolha Pix e leia o QR Code ou cole o código. O plano chega sozinho assim que o pagamento for confirmado.",
           "qrAlt": "QR Code do Pix",
           "code": "Pix copia e cola",
           "copy": "Copiar código",
@@ -1461,21 +1471,21 @@
           "expires": "O checkout vale por mais {clock}."
         },
         "checking": "Esta página confere sozinha a cada poucos segundos.",
-        "simulate": "Simular o pagamento (ambiente de teste)"
+        "simulate": "Simular o pagamento (compra de teste)"
       },
       "processing": {
         "title": "Ainda estamos processando",
-        "body": "O pagamento ainda não foi confirmado. Pode fechar esta página: se for aprovado, o VIP é liberado sozinho e a compra aparece em Minhas compras.",
+        "body": "O pagamento ainda não foi confirmado. Pode fechar esta página: se for aprovado, o plano é liberado sozinho e a compra aparece em Minhas compras.",
         "myPurchases": "Ver minhas compras"
       },
       "in_review": {
         "title": "Pagamento em análise",
-        "body": "O provedor está analisando o pagamento. Isso pode levar um tempo. Pode fechar esta página: o VIP é liberado sozinho se for aprovado."
+        "body": "O provedor está analisando o pagamento. Isso pode levar um tempo. Pode fechar esta página: o plano é liberado sozinho se for aprovado."
       },
       "approved": {
-        "title": "VIP liberado",
-        "body": "Pagamento confirmado. Os Itens e as vantagens do VIP já valem na sua Conta.",
-        "until": "Seu VIP vai até {date}.",
+        "title": "Plano liberado",
+        "body": "Pagamento confirmado. Os Itens e as vantagens do plano já valem na sua Conta.",
+        "until": "Seu plano vai até {date}.",
         "receipt": "Ver recibo",
         "loadout": "Ir ao Loadout",
         "refundUntil": "Você pode pedir o reembolso até {date}."
@@ -1497,7 +1507,7 @@
       },
       "refunded": {
         "title": "Compra reembolsada",
-        "body": "O valor foi devolvido e os dias saíram do seu VIP.",
+        "body": "O valor foi devolvido e os dias saíram do seu plano.",
         "retry": "Ver os Pacotes"
       },
       "partially_refunded": {
@@ -1506,7 +1516,7 @@
       },
       "charged_back": {
         "title": "Pagamento contestado",
-        "body": "O pagamento foi contestado junto ao banco ou à operadora do cartão e o VIP desta compra foi desfeito. Se foi engano, fale com a Staff no Discord."
+        "body": "O pagamento foi contestado junto ao banco ou à operadora do cartão e o plano desta compra foi desfeito. Se foi engano, fale com a Staff no Discord."
       },
       "poll": {
         "failed": "Não deu para atualizar agora. Tentamos de novo em instantes."
@@ -1516,6 +1526,12 @@
         "body": "O endereço pode estar errado, ou a compra é de outra Conta. As suas compras ficam em Minhas compras.",
         "myPurchases": "Ver minhas compras"
       }
+    },
+    "betaNotice": "Beta: compra de teste. Nada é cobrado.",
+    "slotLabel": "Plano",
+    "plans": {
+      "capo": "Capo",
+      "padrinho": "Padrinho"
     }
   },
   "vipBand": {

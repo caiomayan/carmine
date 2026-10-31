@@ -1,6 +1,7 @@
 'use client';
 
-import { ADULT_DECLARATION_VERSION, type VipPackage } from '@carmine/contracts/payments';
+import { ADULT_DECLARATION_VERSION } from '@carmine/contracts/payments';
+import type { PlanPackageItem } from '@carmine/contracts/plans';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -34,7 +35,7 @@ export function PurchaseForm({
   expiresMinutes,
   demo = false,
 }: {
-  packageId: VipPackage['id'];
+  packageId: PlanPackageItem['id'];
   price: string;
   expiresMinutes: number;
   demo?: boolean;
