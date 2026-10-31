@@ -1,4 +1,5 @@
 import { CSRF_HEADER, type Cs2Item, inventoryItemSchema } from '@carmine/contracts';
+import type { LightMyRequestResponse } from 'fastify';
 import { SESSION_COOKIE } from '../../src/auth/session-cookies.js';
 import { SessionStore } from '../../src/auth/sessions.js';
 import { vipPeriods } from '../../src/database/schema.js';
@@ -25,7 +26,7 @@ export async function signedInPlayer(t: TestApp, n: number, options: { vipUntil?
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     url: string,
     payload?: object,
-  ) =>
+  ): Promise<LightMyRequestResponse> =>
     t.app.inject({
       method,
       url,
@@ -42,7 +43,7 @@ export async function signedInPlayer(t: TestApp, n: number, options: { vipUntil?
     payload: Buffer,
     contentType: string,
     headers: Record<string, string> = {},
-  ) =>
+  ): Promise<LightMyRequestResponse> =>
     t.app.inject({
       method,
       url,
