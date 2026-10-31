@@ -62,6 +62,7 @@ Faça no **AWS CloudShell** (botão `>_` no console, região São Paulo; já vem
    Os avisos chegam com atraso de horas (a AWS atualiza o custo algumas vezes por dia): eles pegam "esqueci ligada por dias", não "esqueci ligada esta noite". Para a noite, use o desligamento por ociosidade (passo 7) e o hábito de rodar `cs2-beta.ps1 stop`.
 4. Em *EC2 → Settings → Data protection and security*, ligue **EBS encryption** por padrão (região sa-east-1).
 5. Crie um usuário IAM só para operar (não use a conta raiz no dia a dia): *IAM → Users → `carmine-operator`*, com a política `infra/cs2/aws/operator-policy.json` (permite apenas ver, ligar, desligar e abrir terminal **na instância com a tag `Name=carmine-cs2-beta`**), chave de acesso e `aws configure --profile carmine`.
+   A política também deixa rodar comandos na instância por `aws ssm send-command` (documento `AWS-RunShellScript`, só na instância com a tag `carmine-cs2-beta`). É o caminho para o maestro operar os servidores, com o dono ciente de cada passo (decisão do dono, 2026-10-31).
 
 ### 2. Rede e papel da instância
 
