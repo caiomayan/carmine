@@ -8,6 +8,7 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - **Como chamar as coisas**: [`CONTEXT.md`](CONTEXT.md). Use os termos dele no código, na interface e nos commits. Termo novo entra lá no mesmo PR.
 - **Decisão que a spec não cobre**: confira antes no `CONTEXT.md`, nos ADRs e nas specs, e cite a fonte na descrição do PR (o modelo em `.github/pull_request_template.md` pede). Se contradiz algum deles, não decida: pergunte. Se nenhum cobre e muda o que o jogador vê ou o que conta, é decisão do dono.
 - **Mudou uma regra**: atualize no mesmo PR todos os lugares que a citam (procure com `git grep`): spec, `CONTEXT.md`, ADR, comentários de contrato e textos da interface. Documento desatualizado vira a próxima decisão errada.
+- **Decisão cara** (pagamento, migração, segurança, regra do que conta no Ranking ou nas Estatísticas, algo irreversível): antes de fechar, use a skill `doubt-driven-development`, com a spec, os ADRs e o `CONTEXT.md` como contrato. Pule o segundo modelo e diga que pulou, sem parar para perguntar. Em mudança simples, não use.
 - **Como operar**: [`docs/operacao/`](docs/operacao/) (deploy, homologação, CS2, pagamentos, foto, Discord).
 
 ## Fluxo
