@@ -19,7 +19,7 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - **O repositório é público.** Nada de IP, hostname interno, nome de chave, token ou e-mail pessoal em código, docs ou commits.
 - **Contratos primeiro**: tipo ou rota nova nasce em `packages/contracts`. O cliente C# do plugin é gerado pelo NSwag na CI a partir do OpenAPI da API.
 - **Textos da interface** ficam em `apps/web/messages/pt-BR.json`. **Rotas e comandos do jogo em inglês** (S16b); comandos têm sinônimo em português.
-- **fps**: nada anima em loop sem o usuário pedir. Quando precisar: só `transform` e `opacity`, numa camada pequena, pausado fora da tela e com a aba oculta. A CI não mede fps (decisão do dono, 2026-10-31): use a skill `animation-performance` ao animar e `pnpm fps:audit` para auditar sob demanda.
+- **Animação**: as skills `animate` e `animation-performance` orientam como animar sem perder fluidez (meta: 120 fps no notebook do dono). A CI não mede fps; `pnpm fps:audit` audita sob demanda (decisão do dono, 2026-10-31).
 - **Orçamento de JS** por página (a CI mede): código pesado só carrega quando usado.
 - **Plugin**: o `ModuleVersion` em `plugins/src/Carmine.Core/CorePlugin.cs` só sobe ao cortar um release, porque ele dispara a release do plugin para os servidores.
 - **O plugin só relata; a API decide** o que conta nas Estatísticas (ADR 0018). Toda mensagem do Carmine no chat do jogo começa com `Carmine` em carmim (`ChatColors.DarkRed`).
