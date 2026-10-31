@@ -17,6 +17,10 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - O `main` é produção e só recebe PR de uma branch de release congelada (`release/<data><letra>`).
 - Commits em português, no formato `tipo(escopo): o que mudou` (`feat(web): ...`, `fix(api): ...`, `test(e2e): ...`, `docs(specs): ...`).
 
+## Custo
+- Equilibre custo e benefício em cada agente (decisão do dono, 2026-10-31). Maestro e decisões caras: Opus. Implementação: Sonnet, com o conselheiro nas decisões difíceis. Docs, issues, buscas e PRs mecânicos: Haiku ou Sonnet.
+- Contexto costuma pesar mais que o modelo: uma sessão nova por issue, e buscas grandes em subagente.
+
 ## Skills
 - Rastreador: GitHub Issues (`docs/agents/issue-tracker.md`).
 - Etiquetas de triagem: as padrão (`docs/agents/triage-labels.md`).
