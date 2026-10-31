@@ -3,7 +3,7 @@
 Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turborepo: `apps/api` (NestJS, Fastify, Drizzle, Postgres, Valkey), `apps/web` (Next 16, Tailwind), `packages/contracts` (Zod, fonte única dos contratos), `plugins/` (C#, CounterStrikeSharp), `infra/` (Docker, perfis dos servidores de CS2, homologação, produção).
 
 ## Antes de mexer
-- **O que fazer**: a fatia na spec viva, [`docs/specs/beta-aberto.md`](docs/specs/beta-aberto.md). [`docs/specs/mvp.md`](docs/specs/mvp.md) é o histórico das fatias S00 a S15, entregues; vale onde a beta-aberto não muda nada.
+- **O que fazer**: a issue do GitHub, que aponta para a fatia na spec viva, [`docs/specs/beta-aberto.md`](docs/specs/beta-aberto.md). [`docs/specs/mvp.md`](docs/specs/mvp.md) é o histórico das fatias S00 a S15, entregues; vale onde a beta-aberto não muda nada.
 - **Por que algo é assim**: [`docs/adr/`](docs/adr/). Mudar uma decisão registrada pede um ADR novo, que cita o antigo.
 - **Como chamar as coisas**: [`CONTEXT.md`](CONTEXT.md). Use os termos dele no código, na interface e nos commits. Termo novo entra lá no mesmo PR.
 - **Decisão que a spec não cobre**: confira antes no `CONTEXT.md`, nos ADRs e nas specs, e cite a fonte na descrição do PR (o modelo em `.github/pull_request_template.md` pede). Se contradiz algum deles, não decida: pergunte. Se nenhum cobre e muda o que o jogador vê ou o que conta, é decisão do dono.
@@ -12,9 +12,15 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - **Como operar**: [`docs/operacao/`](docs/operacao/) (deploy, homologação, CS2, pagamentos, foto, Discord).
 
 ## Fluxo
+- O trabalho vem de issues: o maestro manda `/implement <issue>`. Um PR por issue, com `Closes #N`. Falha de segurança e dado pessoal nunca entram em issue, porque o repositório é público.
 - Branch curto a partir do `dev`, PR para o `dev`. A **CI do PR é a verificação**: verify, integração, E2E em 3 partes e .NET, agregados no check `node`. Localmente, rode só o leve do pacote que você tocou (lint, typecheck, unit); build e E2E completos ficam para a CI.
 - O `main` é produção e só recebe PR de uma branch de release congelada (`release/<data><letra>`).
 - Commits em português, no formato `tipo(escopo): o que mudou` (`feat(web): ...`, `fix(api): ...`, `test(e2e): ...`, `docs(specs): ...`).
+
+## Skills
+- Rastreador: GitHub Issues (`docs/agents/issue-tracker.md`).
+- Etiquetas de triagem: as padrão (`docs/agents/triage-labels.md`).
+- Documentos de domínio: um contexto só, com `CONTEXT.md` como glossário (`docs/agents/domain.md`).
 
 ## Regras que nenhuma config conta
 - **O repositório é público.** Nada de IP, hostname interno, nome de chave, token ou e-mail pessoal em código, docs ou commits.
