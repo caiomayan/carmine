@@ -24,6 +24,7 @@ export function ActionForm<T = unknown>({
   validate,
   onSubmit,
   onDone,
+  onCancel,
   onSuccess,
   children,
 }: {
@@ -39,6 +40,8 @@ export function ActionForm<T = unknown>({
   validate?: () => string | null;
   onSubmit: (reason: string) => Promise<StaffResult<T>>;
   onDone?: () => void;
+  /** Chamado ao cancelar (o formulário fecha); quem tem campos extras desfaz o rascunho aqui. */
+  onCancel?: () => void;
   /** Recebe o que a API devolveu (ex.: a ficha atualizada). */
   onSuccess?: (data: T) => void;
   children?: ReactNode;
@@ -127,7 +130,15 @@ export function ActionForm<T = unknown>({
         </p>
       ) : null}
       <div className="stp-form-actions">
-        <button type="button" className="stp-btn" onClick={() => setOpen(false)} disabled={pending}>
+        <button
+          type="button"
+          className="stp-btn"
+          onClick={() => {
+            setOpen(false);
+            onCancel?.();
+          }}
+          disabled={pending}
+        >
           Cancelar
         </button>
         <button

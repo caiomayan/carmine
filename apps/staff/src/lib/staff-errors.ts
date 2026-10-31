@@ -18,6 +18,8 @@ export const STAFF_ERROR_MESSAGES: Record<string, string> = {
   report_target_mismatch: 'Essa Denúncia é contra outra Conta.',
   report_needs_evidence:
     'Denúncia de cheat ou voz só gera Punição com evidência adicional: informe a testemunha ou o link.',
+  server_not_found: 'Esse servidor não existe mais.',
+  server_code_taken: 'Outro servidor já usa esse código.',
   avatar_not_found: 'Essa foto não existe mais.',
   avatar_not_reviewable: 'Essa foto já foi decidida, trocada ou removida.',
   no_custom_avatar: 'Esta Conta não tem foto própria no ar.',
