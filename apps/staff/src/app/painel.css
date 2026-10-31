@@ -2393,3 +2393,88 @@ a.stp-btn {
   justify-content: space-between;
   gap: 12px;
 }
+
+/* ---------- Servidores (S25): um cartão por servidor, o hostname ao vivo em destaque ---------- */
+.stp-srv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr));
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stp-srv {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  border-radius: 28px;
+  background: var(--stp-card);
+  padding: 18px;
+}
+.stp-srv-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stp-srv-name {
+  margin: 8px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.stp-srv-host {
+  display: grid;
+  gap: 2px;
+  margin: 10px 0 8px;
+  border-radius: 20px;
+  background: var(--stp-card-2);
+  padding: 12px 14px;
+}
+.stp-srv-host b {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.stp-srv-host b[data-pending] {
+  color: var(--stp-faint);
+  font-weight: 500;
+}
+.stp-srv-draft {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--stp-muted);
+  font-size: 12px;
+}
+.stp-srv-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px;
+  gap: 10px;
+}
+.stp-srv .stp-input {
+  background: var(--stp-card);
+}
+@media (max-width: 480px) {
+  .stp-srv-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .stp-srv-grid > li {
+    animation: stp-rise 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stp-srv-grid > li:nth-child(2) {
+    animation-delay: 50ms;
+  }
+  .stp-srv-grid > li:nth-child(3) {
+    animation-delay: 100ms;
+  }
+  .stp-srv-grid > li:nth-child(n + 4) {
+    animation-delay: 150ms;
+  }
+  .stp-srv-host b {
+    animation: stp-fade 180ms ease both;
+  }
+}

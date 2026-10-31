@@ -19,7 +19,7 @@ export async function staffPost<T>(
   path: `/api/staff/${string}`,
   body: unknown,
   parse: (value: unknown) => T,
-  method: 'POST' | 'PUT' = 'POST',
+  method: 'POST' | 'PUT' | 'PATCH' = 'POST',
 ): Promise<StaffResult<T>> {
   const csrf = readCookie(CSRF_COOKIE);
   try {
