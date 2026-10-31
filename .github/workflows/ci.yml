@@ -57,6 +57,7 @@ jobs:
           bash infra/cs2/test/vps-tools.test.sh
           bash infra/cs2/test/promote-plugin.test.sh
           bash infra/cs2/test/addon-prestart.test.sh
+          bash infra/cs2/test/deathmatch-install.test.sh
       - name: Deathmatch patchado (o patch aplica na tag pinada)
         run: bash infra/cs2/test/deathmatch-patch.test.sh
       - name: Addon do Workshop (validação dos arquivos e testes do validador, sem o jogo)

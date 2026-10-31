@@ -3,7 +3,8 @@
 # Lido com `source` pelo install.sh (--core-release) e pelo carmine-plugin-deploy. Quem lê define `die` e `log`
 # e HOME_DIR (padrão /srv/carmine-cs2).
 #
-# Layout:  $HOME_DIR/releases/core-X.Y.Z/{manifest.json, SHA256SUMS, carmine-core-X.Y.Z.zip, plugin/}
+# Layout:  $HOME_DIR/releases/core-X.Y.Z/{manifest.json, SHA256SUMS, carmine-core-X.Y.Z.zip, plugin/,
+#          carmine-deathmatch-X.Y.Z.zip, deathmatch/}   (o Deathmatch patchado, ADR 0028, só nas releases que o trazem)
 #          $HOME_DIR/releases/installed   a versão que o install.sh pôs nas instâncias (para remontar depois de um update do CS2)
 #
 # "Latest" é a release `core-v*` que NÃO é pré-lançamento nem rascunho: promover a pré-lançamento no GitHub (depois do
@@ -69,6 +70,15 @@ release_fetch() { # release_fetch <X.Y.Z>
     curl -fsSL --retry 3 --retry-delay 2 -o "$dir/$name" "$url" || { rm -rf "$dir"; die "falha ao baixar $url"; }
   done
 
+  # O Deathmatch patchado, se esta release o traz (o manifesto diz): a CI o compila e o host só o baixa e confere.
+  local dm_name
+  dm_name="$(jq -r '.deathmatch.asset.name // empty' "$dir/manifest.json")"
+  if [[ -n "$dm_name" ]]; then
+    url="$(jq -r --arg n "$dm_name" '.assets[] | select(.name == $n) | .browser_download_url' <<<"$json")"
+    [[ -n "$url" ]] || { rm -rf "$dir"; die "a release core-v$version não tem o arquivo $dm_name"; }
+    curl -fsSL --retry 3 --retry-delay 2 -o "$dir/$dm_name" "$url" || { rm -rf "$dir"; die "falha ao baixar $url"; }
+  fi
+
   # Três conferências independentes: SHA256SUMS contra os arquivos, e o manifesto contra o zip.
   if ! (cd "$dir" && sha256sum --check --status SHA256SUMS); then
     rm -rf "$dir"
@@ -86,6 +96,27 @@ release_fetch() { # release_fetch <X.Y.Z>
       || { rm -rf "$dir"; die "a atestação de proveniência de core-v$version não confere"; }
   else
     log "aviso: 'gh' não instalado; a atestação de proveniência não foi conferida (SHA-256 conferido)"
+  fi
+
+  if [[ -n "$dm_name" ]]; then
+    local dm_file="$dir/$dm_name" dll
+    if [[ "$(jq -r .deathmatch.asset.sha256 "$dir/manifest.json")" != "$(sha256sum "$dm_file" | cut -d' ' -f1)" ]]; then
+      rm -rf "$dir"
+      die "o manifesto da release core-v$version não bate com o zip do Deathmatch"
+    fi
+    if command -v gh >/dev/null; then
+      gh attestation verify "$dm_file" --repo "$RELEASES_REPO" >/dev/null 2>&1 \
+        || { rm -rf "$dir"; die "a atestação de proveniência do Deathmatch de core-v$version não confere"; }
+    fi
+    mkdir -p "$dir/deathmatch"
+    unzip -q -o "$dm_file" -d "$dir/deathmatch" || { rm -rf "$dir"; die "unzip de $dm_file falhou"; }
+    # Cada DLL tem o hash no manifesto: o que o install.sh vai copiar é exatamente o que a CI compilou.
+    for dll in Deathmatch.dll DeathmatchAPI.dll; do
+      if [[ ! -f "$dir/deathmatch/$dll" || "$(jq -r --arg d "$dll" '.deathmatch.files[$d]' "$dir/manifest.json")" != "$(sha256sum "$dir/deathmatch/$dll" | cut -d' ' -f1)" ]]; then
+        rm -rf "$dir"
+        die "o $dll do Deathmatch de core-v$version não bate com o manifesto"
+      fi
+    done
   fi
 
   mkdir -p "$dir/plugin"

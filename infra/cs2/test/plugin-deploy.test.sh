@@ -22,6 +22,9 @@ URL="http://127.0.0.1:$PORT"
 
 # ---- releases de mentira ---------------------------------------------------------------------------
 declare -A KIND
+# Variáveis opcionais do make_release (cada chamada zera): WITH_DM=1 inclui o Deathmatch patchado;
+# DM_TAMPER=1 adultera o zip dele; DM_SWAP=1 troca uma DLL por dentro do zip sem atualizar o manifesto.
+WITH_DM=0 DM_TAMPER=0 DM_SWAP=0
 make_release() { # make_release <versão> <conteúdo da dll> [adulterar]
   local v="$1" content="$2" tamper="${3:-}" w="$T/rel-$1"
   rm -rf "$w"
@@ -29,17 +32,35 @@ make_release() { # make_release <versão> <conteúdo da dll> [adulterar]
   printf '%s' "$content" >"$w/pub/Carmine.Core.dll"
   printf '{}' >"$w/pub/Carmine.Core.deps.json"
   (cd "$w/pub" && zip -qr "$w/out/carmine-core-$v.zip" .)
+  local dm_args=() sums=("carmine-core-$v.zip" manifest.json) assets=("carmine-core-$v.zip" manifest.json SHA256SUMS)
+  if [[ "$WITH_DM" == 1 ]]; then
+    mkdir -p "$w/dm"
+    printf 'deathmatch-%s' "$v" >"$w/dm/Deathmatch.dll"
+    printf 'api-%s' "$v" >"$w/dm/DeathmatchAPI.dll"
+    (cd "$w/dm" && zip -qr "$w/out/carmine-deathmatch-$v.zip" Deathmatch.dll DeathmatchAPI.dll)
+    dm_args=(--deathmatch-zip "$w/out/carmine-deathmatch-$v.zip")
+    sums+=("carmine-deathmatch-$v.zip")
+    assets+=("carmine-deathmatch-$v.zip")
+  fi
   printf '{"openapi":"3"}' >"$w/openapi.json"
   VERSIONS_FILE='' bash "$CS2/release/make-manifest.sh" --version "$v" --commit "c$v" \
-    --zip "$w/out/carmine-core-$v.zip" --openapi "$w/openapi.json" --out "$w/out/manifest.json" >/dev/null
-  (cd "$w/out" && sha256sum "carmine-core-$v.zip" manifest.json >SHA256SUMS)
+    --zip "$w/out/carmine-core-$v.zip" "${dm_args[@]}" --openapi "$w/openapi.json" --out "$w/out/manifest.json" >/dev/null
+  if [[ "$DM_SWAP" == 1 ]]; then
+    # o zip passa a ter outra DLL, e o manifesto aponta para o zip novo (o hash do zip confere; o da DLL não)
+    printf 'dll-trocada' >"$w/dm/Deathmatch.dll"
+    rm -f "$w/out/carmine-deathmatch-$v.zip"
+    (cd "$w/dm" && zip -qr "$w/out/carmine-deathmatch-$v.zip" Deathmatch.dll DeathmatchAPI.dll)
+    jq --arg s "$(sha256sum "$w/out/carmine-deathmatch-$v.zip" | cut -d' ' -f1)" '.deathmatch.asset.sha256 = $s' "$w/out/manifest.json" >"$w/out/m.tmp"
+    mv "$w/out/m.tmp" "$w/out/manifest.json"
+  fi
+  (cd "$w/out" && sha256sum "${sums[@]}" >SHA256SUMS)
   if [[ -n "$tamper" ]]; then printf 'adulterado' >>"$w/out/carmine-core-$v.zip"; fi
+  if [[ "$DM_TAMPER" == 1 ]]; then printf 'adulterado' >>"$w/out/carmine-deathmatch-$v.zip"; fi
   mkdir -p "$GH/dl/$v"
   cp "$w/out/"* "$GH/dl/$v/"
-  jq -n --arg v "$v" --arg u "$URL/dl/$v" '{
+  jq -n --arg v "$v" --arg u "$URL/dl/$v" --argjson assets "$(printf '%s\n' "${assets[@]}" | jq -R . | jq -s .)" '{
     tag_name: ("core-v" + $v), draft: false, prerelease: false,
-    assets: [("carmine-core-" + $v + ".zip"), "manifest.json", "SHA256SUMS"]
-      | map({name: ., browser_download_url: ($u + "/" + .)})}' >"$w/release.json"
+    assets: $assets | map({name: ., browser_download_url: ($u + "/" + .)})}' >"$w/release.json"
 }
 publish() { # publish <versão> <prerelease: true|false>: reescreve a lista e a página da tag
   local v="$1" pre="$2"
@@ -198,5 +219,28 @@ rm -f "$T/state/carmine-cs2@retake.service.active"
 run 0 --version 0.11.0 --server retake
 [[ "$(version_of retake)" == 0.11.0 && ! -f "$T/state/carmine-cs2@retake.service.active" ]] || fail "servidor parado deveria só trocar os arquivos"
 pass "--dry-run não muda nada; servidor parado só troca os arquivos"
+
+# ---- o Deathmatch patchado na release (ADR 0028) ----------------------------------------------------
+WITH_DM=1 make_release 0.15.0 dll-0.15.0
+publish 0.15.0 true
+run 0 --version 0.15.0
+[[ "$(version_of retake)" == 0.15.0 && "$(version_of deathmatch)" == 0.15.0 ]] || fail "a release com o Deathmatch não foi instalada nos servidores"
+[[ "$(cat "$T/home/releases/core-0.15.0/deathmatch/Deathmatch.dll")" == deathmatch-0.15.0 ]] || fail "o Deathmatch patchado não foi baixado e extraído"
+[[ "$(cat "$T/home/releases/core-0.15.0/deathmatch/DeathmatchAPI.dll")" == api-0.15.0 ]] || fail "a DeathmatchAPI patchada não foi extraída"
+pass "a release traz o Deathmatch patchado: baixado, conferido e extraído ao lado do plugin"
+
+WITH_DM=1 DM_TAMPER=1 make_release 0.15.1 dll-0.15.1
+publish 0.15.1 true
+run 1 --version 0.15.1
+grep -q 'SHA-256' "$T/out.txt" || fail "faltou o erro de SHA-256 do zip do Deathmatch adulterado"
+[[ ! -d "$T/home/releases/core-0.15.1" ]] || fail "release com o Deathmatch adulterado ficou no disco"
+pass "zip do Deathmatch adulterado: recusado"
+
+WITH_DM=1 DM_SWAP=1 make_release 0.15.2 dll-0.15.2
+publish 0.15.2 true
+run 1 --version 0.15.2
+grep -q 'não bate com o manifesto' "$T/out.txt" || fail "faltou o erro da DLL que não bate com o manifesto"
+[[ ! -d "$T/home/releases/core-0.15.2" ]] || fail "release com DLL trocada ficou no disco"
+pass "DLL do Deathmatch que não bate com o manifesto: recusada"
 
 echo "### TUDO CERTO"
