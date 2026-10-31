@@ -26,40 +26,43 @@ export function ServerCard({ initial }: { initial: StaffServer }) {
   const [name, setName] = useState(initial.showcaseName ?? '');
   const [code, setCode] = useState(initial.code ?? '');
   const [round, setRound] = useState(0);
-  const preview = previewHostname(name, code);
+  const normalized = normalizeServerCode(code);
+  const preview = previewHostname(name, normalized);
   const nameBad = name.trim().length > 0 && previewHostname(name, 'SP·1') === null;
-  const codeBad = code.trim().length > 0 && previewHostname('Retake', code) === null;
-  const live = preview ?? server.hostname;
+  const codeBad = code.trim().length > 0 && previewHostname('Retake', normalized) === null;
+  const reset = () => {
+    setName(server.showcaseName ?? '');
+    setCode(server.code ?? '');
+  };
 
   return (
     <li className="stp-srv" data-testid="staff-server" data-server={server.name}>
       <div className="stp-srv-top">
-        <span className="stp-dot" data-tone="ok">
-          {MODE_LABEL[server.mode]}
-        </span>
+        <span className="stp-dot">{MODE_LABEL[server.mode]}</span>
         {server.code ? <span className="stp-count-chip">{server.code}</span> : null}
       </div>
       <h2 className="stp-srv-name">{server.showcaseName ?? server.name}</h2>
       <p className="stp-cell-sub">
         {server.name} · {server.address}
       </p>
-      <p className="stp-srv-host" aria-live="polite">
+      <p className="stp-srv-host">
         <span className="stp-label">No jogo</span>
         <b
-          key={live ?? 'pending'}
-          data-testid="hostname-preview"
-          data-pending={live ? undefined : ''}
+          key={server.hostname ?? 'pending'}
+          data-testid="hostname-live"
+          data-pending={server.hostname ? undefined : ''}
         >
-          {live ?? 'Defina nome e código para o hostname mudar.'}
+          {server.hostname ?? 'Defina nome e código para o hostname mudar.'}
         </b>
         {preview && preview !== server.hostname ? (
-          <span className="stp-srv-draft">
-            <ArrowRightIcon size={13} aria-hidden="true" /> ainda não salvo
+          <span className="stp-srv-draft" data-testid="hostname-preview">
+            <ArrowRightIcon size={13} aria-hidden="true" /> ficaria: {preview}
           </span>
         ) : null}
       </p>
       <ActionForm
         key={round}
+        onCancel={reset}
         label="Editar"
         submitLabel="Salvar"
         doneLabel="Salvo. O hostname muda no jogo em até 10 s."
@@ -69,12 +72,14 @@ export function ServerCard({ initial }: { initial: StaffServer }) {
         onSubmit={async (reason) => {
           const result = await staffPost(
             `/api/staff/servers/${server.id}`,
-            { showcaseName: name.trim(), code: code.trim(), reason },
+            { showcaseName: name.trim(), code: normalized, reason },
             (value) => staffServerSchema.parse(value),
             'PATCH',
           );
           if (result.ok) {
             setServer(result.data);
+            setName(result.data.showcaseName ?? '');
+            setCode(result.data.code ?? '');
             setTimeout(() => setRound((n) => n + 1), SAVED_MS);
           }
           return result;

@@ -2474,7 +2474,9 @@ a.stp-btn {
   .stp-srv-grid > li:nth-child(n + 4) {
     animation-delay: 150ms;
   }
-  .stp-srv-host b {
+  .stp-srv-host b,
+  .stp-srv-draft,
+  .stp-srv button[data-testid$="-open"] {
     animation: stp-fade 180ms ease both;
   }
 }

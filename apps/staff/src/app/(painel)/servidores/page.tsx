@@ -15,6 +15,7 @@ export default async function ServidoresPage() {
     notFound();
 
   const result = await apiGet<unknown>('/api/staff/servers');
+  if (result.status === 401 || result.status === 403) notFound();
   const list = result.ok ? staffServerListSchema.safeParse(result.data) : null;
 
   return (
