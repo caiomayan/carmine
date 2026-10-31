@@ -179,7 +179,7 @@ test('substituir avisa com "Desfazer", que devolve o Item anterior; desequipar v
 test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com o !ws', async ({
   page,
 }) => {
-  await signIn(page, { start: '/inventario' });
+  await signIn(page, { start: '/inventory' });
   const quick = page.getByRole('button', { name: 'Adicionar e equipar AK-47 | Linhas Vermelhas' });
   await hydrated(quick);
   await quick.click();
@@ -192,7 +192,7 @@ test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com
   await expect(slot(page, 'weapon_ak47', 't')).toHaveAttribute('data-equipped', /.+/);
 
   // Do catálogo, pelo editor: a AWP vai para os dois lados.
-  await page.goto(`/inventario/adicionar/${AWP_ASIIMOV}`);
+  await page.goto(`/inventory/add/${AWP_ASIIMOV}`);
   const addAndEquip = page.getByTestId('add-and-equip');
   await hydrated(addAndEquip);
   await addAndEquip.click();
@@ -207,7 +207,7 @@ test('adicionar e equipar em um passo, do Inventário vazio, leva ao Loadout com
 });
 
 test('equipar pelo menu do cartão no Inventário oferece só os lados do Item', async ({ page }) => {
-  await signIn(page, { start: '/inventario' });
+  await signIn(page, { start: '/inventory' });
   const usp = await addItem(page, { id: USP_KILL_CONFIRMED });
   await page.reload();
   const card = page.locator(`[data-uid="${usp}"]`);
@@ -234,12 +234,14 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await page.reload();
   await boardReady(page);
   await expect(page.getByTestId('vip-notice')).toBeVisible();
-  await expect(page.getByTestId('preset-count')).toHaveText('1 de 20');
+  // O aviso do fim leva aos Pacotes (S14b): renovar a um clique.
+  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/plans');
+  await expect(page.getByTestId('preset-count')).toHaveText('1 de 6');
   await page.getByTestId('preset-new').click();
   await page.getByTestId('preset-name').fill('Retake de sexta');
   await page.getByTestId('preset-submit').click();
   await expect(toast(page, 'Preset Retake de sexta criado')).toBeVisible();
-  await expect(page.getByTestId('preset-count')).toHaveText('2 de 20');
+  await expect(page.getByTestId('preset-count')).toHaveText('2 de 6');
 
   await page.getByRole('button', { name: 'Ativar Retake de sexta' }).click();
   await expect(toast(page, 'Retake de sexta é o seu Loadout')).toBeVisible();
@@ -251,6 +253,7 @@ test('Presets: grátis tem só o Principal; VIP cria e ativa; sem VIP, os extras
   await page.reload();
   await boardReady(page);
   await expect(page.getByTestId('vip-notice')).toHaveAttribute('data-notice', 'ended_today');
+  await expect(page.getByTestId('vip-notice-renew')).toHaveAttribute('href', '/plans');
   await expect(page.getByTestId('preset-active-read-only')).toContainText(
     'ficou somente leitura sem VIP',
   );
@@ -588,6 +591,39 @@ for (const size of [
           `cartão ${index} da coluna ${column} sob a barra de cima`,
         ).toBeGreaterThanOrEqual((bar?.y ?? 0) + (bar?.height ?? 0) - 0.5);
       }
+    }
+  });
+}
+
+/**
+ * A barra de cima (TR | CT e as categorias) gruda sozinha: nenhuma faixa de fundo cheio atrás dela, que
+ * aparecia como um corte preto de ponta a ponta sobre o brilho colorido da página.
+ */
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 390, height: 844 },
+]) {
+  test(`a barra de cima gruda sem faixa de fundo atrás (${size.width} × ${size.height})`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(size);
+    await signIn(page);
+    await page.evaluate(() => window.scrollTo(0, 320));
+    await page.waitForTimeout(200);
+
+    const sticky = await page.getByTestId('side-t').evaluate((node) => {
+      const found: { background: string }[] = [];
+      for (let el = node.parentElement; el && el.tagName !== 'MAIN'; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.position === 'sticky') {
+          found.push({ background: style.backgroundColor });
+        }
+      }
+      return found;
+    });
+    expect(sticky.length).toBeGreaterThan(0);
+    for (const bar of sticky) {
+      expect(bar.background).toBe('rgba(0, 0, 0, 0)');
     }
   });
 }

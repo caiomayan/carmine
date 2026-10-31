@@ -120,6 +120,69 @@
       "when": 1793059620736,
       "tag": "0016_s14_pagamentos",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793065082212,
+      "tag": "0017_a1_analytics",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793067214364,
+      "tag": "0018_a1_presenca",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793303346340,
+      "tag": "0019_s17_coleta_por_round",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793305886908,
+      "tag": "0020_s18_historico_de_fotos",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793312263129,
+      "tag": "0021_s16_jogo_pacote1",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793313835975,
+      "tag": "0022_s18_regra_unica_de_denuncia",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793319953270,
+      "tag": "0023_preferencias_de_jogo",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793321343529,
+      "tag": "0024_s20_planos",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1793325491356,
+      "tag": "0025_s21_nucleo_do_rating",
+      "breakpoints": true
     }
   ]
 }

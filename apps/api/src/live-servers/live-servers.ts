@@ -2,6 +2,7 @@ import type { LiveServer, LiveServerList, ServerHeartbeat } from '@carmine/contr
 import { Logger, type OnApplicationShutdown, type OnModuleInit } from '@nestjs/common';
 import type { GameServer, GameServerRegistry } from '../game-servers/game-server-registry.js';
 import { buildLiveServerList, type ServerPresence } from './live-server-list.js';
+import type { ServerPresenceSamples } from './server-presence-samples.js';
 import type { ServerPresenceStore } from './server-presence-store.js';
 
 export interface LiveServersOptions {
@@ -32,6 +33,8 @@ export class LiveServers implements OnModuleInit, OnApplicationShutdown {
     private readonly presence: ServerPresenceStore,
     private readonly options: LiveServersOptions,
     private readonly now: () => Date = () => new Date(),
+    /** O amostrador de jogadores simultâneos (A1): uma amostra por minuto por servidor. Sem ele, não amostra. */
+    private readonly samples: Pick<ServerPresenceSamples, 'record'> | null = null,
   ) {}
 
   onModuleInit(): void {
@@ -46,15 +49,18 @@ export class LiveServers implements OnModuleInit, OnApplicationShutdown {
 
   /** Guarda o batimento do servidor e avisa quem está ouvindo, sem esperar o aviso. */
   async recordHeartbeat(serverId: string, heartbeat: ServerHeartbeat): Promise<void> {
+    const players = [...new Set(heartbeat.players)];
     await this.presence.save(serverId, {
       map: heartbeat.map,
-      players: [...new Set(heartbeat.players)],
+      players,
       maxPlayers: heartbeat.maxPlayers,
       at: this.now(),
       // O estado inteiro de cada batimento: sem `match`, o placar anterior não sobra.
       match: heartbeat.match ?? null,
       scoreboard: heartbeat.scoreboard ?? null,
     });
+    // Sem esperar e sem nunca falhar o batimento (o amostrador engole os próprios erros).
+    void this.samples?.record(serverId, players.length, this.now());
     void this.refresh();
   }
 

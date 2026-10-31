@@ -16,10 +16,13 @@ import type {
   WeekSummary,
 } from '@carmine/contracts';
 import { recentActivitySchema } from '@carmine/contracts/activity';
+import type { AnalyticsPreference } from '@carmine/contracts/analytics';
 import { headerPreviewsSchema } from '@carmine/contracts/header-previews';
 import { inventorySchema } from '@carmine/contracts/inventory';
 import { liveServerListSchema } from '@carmine/contracts/live-servers';
 import { loadoutSchema, presetListSchema } from '@carmine/contracts/loadout';
+import type { Purchase, VipPackages } from '@carmine/contracts/payments';
+import { purchaseListSchema, purchaseSchema, vipPackagesSchema } from '@carmine/contracts/payments';
 import { currentSessionSchema, profileSchema } from '@carmine/contracts/profile';
 import { rankingSchema } from '@carmine/contracts/ranking';
 import { serverPlayersSchema, serverTodaySchema } from '@carmine/contracts/server-detail';
@@ -31,6 +34,7 @@ import {
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { apiGet, VISITOR_IP_HEADER } from './api-base';
+import { parseAnalyticsPreference } from './api-guards';
 import type { Mode } from './modes';
 
 /**
@@ -105,6 +109,21 @@ async function readAccount<T>(
     return { status: 'unavailable' };
   }
 }
+
+/**
+ * A preferência de análise de uso da Conta da sessão (A1d): `participate` (a chave de /settings) e `enabled`
+ * (há análise ligada neste ambiente; desligada, a chave nem aparece). Sem sessão, `anonymous`.
+ */
+export const getAnalyticsPreference = cache(
+  (): Promise<AccountRead<AnalyticsPreference>> =>
+    readAccount('/me/analytics', {
+      parse: (value) => {
+        const preference = parseAnalyticsPreference(value);
+        if (!preference) throw new Error('formato inesperado');
+        return preference;
+      },
+    }),
+);
 
 export const getInventory = cache(async (): Promise<InventoryResult> => {
   const result = await readAccount('/inventory', inventorySchema);
@@ -317,3 +336,56 @@ export async function getHeaderPreviews(side: LoadoutSide): Promise<HeaderPrevie
     return null;
   }
 }
+
+/** As compras da Conta da sessão, da mais nova (S14b). Sem sessão, `anonymous`; com a API fora, `unavailable`. */
+export const getPurchases = cache(
+  (): Promise<AccountRead<Purchase[]>> =>
+    readAccount('/me/purchases', {
+      parse: (value) => purchaseListSchema.parse(value).purchases,
+    }),
+);
+
+/**
+ * Uma compra da Conta. Se ela está pendente, a API já pergunta ao provedor antes de responder: ler
+ * de novo é o que faz a tela perceber o pagamento. `not-found` também para a de outra Conta.
+ */
+export type PurchaseResult =
+  | { status: 'ok'; purchase: Purchase }
+  | { status: 'not-found' }
+  | { status: 'anonymous' }
+  | { status: 'unavailable' };
+
+export const getPurchase = cache(async (id: string): Promise<PurchaseResult> => {
+  const cookie = await sessionCookie();
+  if (!cookie) return { status: 'anonymous' };
+  try {
+    const response = await apiGet(`/me/purchases/${encodeURIComponent(id)}`, {
+      cookie,
+      visitorIp: await visitorIp(),
+    });
+    if (response.status === 401) return { status: 'anonymous' };
+    if (response.status === 404 || response.status === 400) return { status: 'not-found' };
+    if (!response.ok) return { status: 'unavailable' };
+    return { status: 'ok', purchase: purchaseSchema.parse(await response.json()) };
+  } catch {
+    return { status: 'unavailable' };
+  }
+});
+
+/**
+ * Os Pacotes VIP e se a cobrança está ligada (e se é o provedor de mentira); nulo com a API fora. Com sessão, a API diz
+ * também se a Conta pode comprar (`eligibility`); sem ela, `eligibility` é nulo.
+ */
+export const getVipPackages = cache(async (): Promise<VipPackages | null> => {
+  try {
+    const cookie = await sessionCookie();
+    const response = await apiGet('/vip/packages', {
+      ...(cookie ? { cookie } : {}),
+      visitorIp: await visitorIp(),
+    });
+    if (!response.ok) return null;
+    return vipPackagesSchema.parse(await response.json());
+  } catch {
+    return null;
+  }
+});

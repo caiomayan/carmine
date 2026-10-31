@@ -1,3 +1,5 @@
+import { analyticsPreferenceSchema } from '@carmine/contracts/analytics';
+import { avatarStateSchema } from '@carmine/contracts/avatar';
 import {
   friendsPlayingSchema,
   liveServerListSchema,
@@ -6,6 +8,8 @@ import {
 import { profilePlayingSchema } from '@carmine/contracts/profile';
 import { describe, expect, it } from 'vitest';
 import {
+  parseAnalyticsPreference,
+  parseAvatarState,
   parseFriendsPlaying,
   parseLiveServerList,
   parseNowPlaying,
@@ -188,6 +192,110 @@ describe('parseNowPlaying concorda com nowPlayingSchema', () => {
     expect(
       parseNowPlaying({ server: { ...playing(), address: '203.0.113.5:27015', players: 4 } }),
     ).toEqual({ server: playing() });
+  });
+});
+
+describe('parseAnalyticsPreference concorda com analyticsPreferenceSchema', () => {
+  it('aceita o que o schema aceita e devolve só os dois campos', () => {
+    for (const value of [
+      { participate: true, enabled: true },
+      { participate: false, enabled: false },
+    ]) {
+      expect(analyticsPreferenceSchema.safeParse(value).success).toBe(true);
+      expect(parseAnalyticsPreference(value)).toEqual(value);
+    }
+    expect(parseAnalyticsPreference({ participate: true, enabled: true, extra: 1 })).toEqual({
+      participate: true,
+      enabled: true,
+    });
+  });
+
+  it('recusa o que o schema recusa', () => {
+    for (const value of [
+      null,
+      [],
+      {},
+      { participate: 'sim', enabled: true },
+      { participate: true },
+      { enabled: true },
+    ]) {
+      expect(analyticsPreferenceSchema.safeParse(value).success).toBe(false);
+      expect(parseAnalyticsPreference(value)).toBeNull();
+    }
+  });
+});
+
+describe('parseAvatarState concorda com avatarStateSchema', () => {
+  const state = (over: Record<string, unknown> = {}) => ({
+    enabled: true,
+    source: 'steam',
+    steamAvatarUrl: 'https://avatars.steamstatic.com/abc_full.jpg',
+    custom: null,
+    history: [],
+    canUseHistory: true,
+    canUpload: true,
+    cannotUploadReason: null,
+    retryAfter: null,
+    removal: null,
+    ...over,
+  });
+  const item = {
+    id: ID,
+    url: 'https://img.stcarmine.com/avatars/x/512.webp',
+    uploadedAt: AT,
+    current: true,
+  };
+  const custom = {
+    url: 'https://img.stcarmine.com/avatars/x/512.webp',
+    status: 'active',
+    uploadedAt: AT,
+  };
+
+  it('aceita o que o schema aceita', () => {
+    for (const value of [
+      state(),
+      state({ source: 'custom', custom }),
+      state({ custom: { ...custom, status: 'suspended' } }),
+      state({ steamAvatarUrl: null }),
+      state({ canUpload: false, cannotUploadReason: 'upload_limit', retryAfter: AT }),
+      state({
+        source: 'custom',
+        custom,
+        history: [item, { ...item, id: ID.replace('5a', '6b'), current: false }],
+      }),
+      state({ canUseHistory: false, cannotUploadReason: 'punished', canUpload: false }),
+      state({ removal: { at: AT, reason: 'staff_removed' } }),
+      state({ enabled: false }),
+    ]) {
+      const schema = avatarStateSchema.safeParse(value);
+      // O motivo de remoção do exemplo pode não ser um dos do schema: o que vale é a guarda aceitar o que o schema aceita.
+      if (schema.success) expect(parseAvatarState(value)).toEqual(schema.data);
+    }
+    expect(avatarStateSchema.safeParse(state()).success).toBe(true);
+    expect(parseAvatarState(state())).not.toBeNull();
+    expect(parseAvatarState(state({ source: 'custom', custom }))).not.toBeNull();
+  });
+
+  it('recusa o que quebraria a tela, como o schema', () => {
+    for (const value of [
+      null,
+      [],
+      {},
+      state({ enabled: 'sim' }),
+      state({ source: 'outra' }),
+      state({ custom: { url: 1, status: 'active', uploadedAt: AT } }),
+      state({ custom: { ...custom, status: 'removida' } }),
+      state({ canUpload: undefined }),
+      state({ history: undefined }),
+      state({ history: [{ ...item, current: 'sim' }] }),
+      state({ history: [{ ...item, url: 3 }] }),
+      state({ canUseHistory: 'sim' }),
+      state({ steamAvatarUrl: 5 }),
+      state({ removal: { at: AT } }),
+    ]) {
+      expect(avatarStateSchema.safeParse(value).success).toBe(false);
+      expect(parseAvatarState(value)).toBeNull();
+    }
   });
 });
 

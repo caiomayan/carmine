@@ -51,6 +51,12 @@ public sealed class MatchTracker
     private int _t;
     private bool _divergenceReported;
 
+    /// <summary>
+    /// O mapa jogado (S17): um UUID v7 novo a cada mapa, a cada partida que recomeça e quando o plugin adota uma partida em
+    /// andamento. Agrupa os rounds de um mapa na coleta por round; não aparece para ninguém.
+    /// </summary>
+    public Guid MapPlayId { get; private set; } = Guid.CreateVersion7();
+
     public int RoundsPlayed => _played;
 
     public int CtScore => _ct;
@@ -64,6 +70,7 @@ public sealed class MatchTracker
         _ct = 0;
         _t = 0;
         _divergenceReported = false;
+        MapPlayId = Guid.CreateVersion7();
     }
 
     /// <summary>
@@ -75,6 +82,7 @@ public sealed class MatchTracker
         _played = Math.Max(game.RoundsPlayed, 0);
         _ct = Math.Max(game.CtScore, 0);
         _t = Math.Max(game.TScore, 0);
+        MapPlayId = Guid.CreateVersion7();
     }
 
     /// <summary>

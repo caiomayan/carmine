@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { and, gt, inArray } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { staffMembers, vipPeriods } from '../database/schema.js';
-import { vipStatusAt } from '../vip/vip-status.js';
+import { type PeriodRow, planStatusOfPeriods } from '../plans/plan-periods.js';
 import type { DiscordClient } from './discord-client.js';
 import type { DiscordLink, DiscordLinks } from './discord-links.js';
 import {
@@ -200,18 +200,20 @@ export class DiscordRoleSync {
           accountId: vipPeriods.accountId,
           startsAt: vipPeriods.startsAt,
           endsAt: vipPeriods.endsAt,
+          plan: vipPeriods.plan,
+          test: vipPeriods.test,
         })
         .from(vipPeriods)
         .where(and(inArray(vipPeriods.accountId, accountIds), gt(vipPeriods.endsAt, now))),
     ]);
     const roles = new Map(staff.map((row) => [row.accountId, row.role]));
-    const byAccount = new Map<string, { startsAt: Date; endsAt: Date }[]>();
+    const byAccount = new Map<string, PeriodRow[]>();
     for (const { accountId, ...period } of periods) {
       byAccount.set(accountId, [...(byAccount.get(accountId) ?? []), period]);
     }
     for (const accountId of accountIds) {
       facts.set(accountId, {
-        vipActive: vipStatusAt(byAccount.get(accountId) ?? [], now).active,
+        plan: planStatusOfPeriods(byAccount.get(accountId) ?? [], now).plan,
         staffRole: roles.get(accountId) ?? null,
       });
     }
@@ -219,7 +221,7 @@ export class DiscordRoleSync {
   }
 }
 
-const NO_FACTS: RoleFacts = { vipActive: false, staffRole: null };
+const NO_FACTS: RoleFacts = { plan: null, staffRole: null };
 
 function sameKeys(stored: readonly string[], desired: readonly string[]): boolean {
   return stored.length === desired.length && desired.every((key) => stored.includes(key));

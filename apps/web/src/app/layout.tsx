@@ -1,9 +1,11 @@
+import { ANALYTICS_PLAN_VERSION } from '@carmine/contracts/analytics';
 import type { Metadata, Viewport } from 'next';
 import { Big_Shoulders, DM_Serif_Display, Inter } from 'next/font/google';
 import { cookies, headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { PageViewTracker } from '@/components/analytics/page-view-tracker';
 import { ErrorReporting } from '@/components/error-reporting';
 import { InputModality } from '@/components/input-modality';
 import { SanctionNotice } from '@/components/moderation/sanction-notice';
@@ -14,7 +16,9 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { ThemeScript } from '@/components/theme-script';
 import { Effects } from '@/components/vida/effects';
+import { VipEndingBar } from '@/components/vip/vip-ending-bar';
 import { locale } from '@/i18n/request';
+import { analyticsWebConfig } from '@/lib/analytics-config';
 import { getServerSession } from '@/lib/api-server';
 import { FIRST_STEPS_COOKIE, hasDismissedFirstSteps } from '@/lib/first-steps';
 import { NONCE_HEADER } from '@/lib/security-headers';
@@ -81,6 +85,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   // O nonce da CSP desta requisição (proxy.ts); o Next marca os próprios scripts sozinho.
   const nonce = (await headers()).get(NONCE_HEADER) ?? undefined;
   const sentry = sentryWebConfig(process.env);
+  const analytics = analyticsWebConfig(process.env);
   const dismissed = (await cookies()).get(FIRST_STEPS_COOKIE)?.value;
   // Abrem sozinhos só na sessão do primeiro login da Conta; depois, só pelo menu.
   const firstStepsOpen =
@@ -136,6 +141,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                   >
                     <SanctionNotice />
                   </NextIntlClientProvider>
+                  {/* O aviso do fim do VIP (3 dias antes e no dia): vem do servidor, sem empurrar a página. */}
+                  <VipEndingBar vip={session?.vip ?? null} nonce={nonce} />
                   <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
                     <FirstSteps
                       labels={{
@@ -160,6 +167,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 <SiteFooter />
               </div>
               {sentry ? <ErrorReporting {...sentry} /> : null}
+              {analytics ? (
+                <PageViewTracker config={{ ...analytics, planVersion: ANALYTICS_PLAN_VERSION }} />
+              ) : null}
             </SessionProvider>
           </MotionProvider>
         </NextIntlClientProvider>

@@ -10,6 +10,18 @@ Termos em **PT-BR** são os da interface; o nome entre parênteses é o usado no
 O registro de uma pessoa na plataforma, identificado pelo SteamID64. Nasce automaticamente no primeiro connect a um Servidor Carmine.
 _Evitar_: usuário, perfil, cadastro
 
+**Addon do Carmine** (S19):
+O conteúdo do Workshop que os servidores abertos exigem do jogador (card de boas-vindas em Panorama e logo nas paredes). Um item só, neutro, publicado pela conta Steam do dono; as Salas privadas nunca o usam. A chave de emergência (`CARMINE_ADDON_ENABLED=0`) o desliga sem novo release.
+_Evitar_: mod, pacote de skins
+
+**Card de boas-vindas** (S19):
+O painel que entra deslizando por cerca de 6 s quando o jogador nasce num servidor aberto, com nome, plano, posição no Ranking, amigos online e (a partir da S21) o Rating. Os textos vêm da API; o addon só os desenha.
+_Evitar_: popup, toast
+
+**Preferência de jogo** (`GamePreference`):
+Uma escolha do jogador que um plugin de jogo guardaria por servidor (estar no sorteio da AWP, as armas do `!guns`, os sons e o HUD do Deathmatch). Fica na Conta, guardada pela API, vale em todo servidor do Modo e o Carmine.Core a aplica no plugin (ADR 0028). Sem linha guardada vale o padrão da chave. Não é uma configuração do site: o jogador a muda dentro do jogo, por comando.
+_Evitar_: configuração do servidor, settings, preferências do plugin
+
 **Conta não reivindicada** (`unclaimed`):
 Conta que só existe porque a pessoa jogou; ela nunca fez login no site.
 _Evitar_: conta fantasma, conta temporária
@@ -23,7 +35,7 @@ A ligação opcional de uma Conta a um usuário do Discord (ID e nome), feita pe
 _Evitar_: login com Discord, conta Discord
 
 **Cargo do Discord** (`DiscordRole`):
-O cargo que o bot dá a uma Conta vinculada no servidor do Discord: Jogador (todo vinculado), VIP (Período VIP ativo), Staff (qualquer papel de Staff) e Dono (papel `owner`). Só esses quatro são gerenciados; os outros cargos da pessoa não são tocados.
+O cargo que o bot dá a uma Conta vinculada no servidor do Discord: Jogador (todo vinculado), Capo ou Padrinho (o do plano ativo, um só), Staff (qualquer papel de Staff) e Dono (papel `owner`). Só esses cinco são gerenciados; os outros cargos da pessoa não são tocados.
 _Evitar_: role, tag
 
 **Conta anonimizada** (`anonymizedAt`):
@@ -35,7 +47,7 @@ Número curto e único que identifica a Conta na plataforma; números menores pe
 _Evitar_: username, apelido, handle
 
 **ID reservado**:
-ID público abaixo de 10.000, ou marcado como número bonito, atribuído manualmente pela Staff (fundador, beta, Staff), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável).
+ID público de 1 a 9.999, atribuído manualmente pela Staff (fundador, beta, Staff, números bonitos), seja no nascimento da Conta, seja por reatribuição do ID automático (uma única vez por Conta; depois de reservado, o ID é imutável). Não há ID reservado de 10.000 para cima: os números bonitos acima de 10.000 ficam numa lista de bloqueio e o sorteio automático os pula (ADR 0013).
 
 **Nome de exibição** (`displayName`):
 O nome que representa a Conta no site e dentro dos Servidores Carmine. Não é único. É o nome Steam, ou o **nome próprio** (`customDisplayName`) que a Conta reivindicada escolhe no site (2 a 24 caracteres, filtro de palavras, uma troca a cada 7 dias). O reset da Staff apaga o nome próprio e recomeça o prazo.
@@ -135,7 +147,7 @@ _Evitar_: banir do Ranking, punir (a Remoção não é uma Punição)
 ## VIP e pagamento
 
 **VIP**:
-O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis.
+O plano pago único da plataforma, que libera Itens e benefícios além do plano grátis. Na S20 vira o **Plano** (Capo ou Padrinho); "VIP" fica só como **nome legado interno** (tabela `vip_periods`, IDs de pacote `vip-1m`, `vip-3m`, `vip-6m`) e nunca aparece para o usuário.
 _Evitar_: premium, gold
 
 **Período VIP** (`VipPeriod`):
@@ -171,9 +183,79 @@ O pedido do jogador para rever uma Punição, feito por ticket no Discord, com r
 _Evitar_: apelação, contestação
 
 **Denúncia** (`Report`):
-Um aviso de um jogador sobre outro, feito dentro do jogo com o `!report` e enviado à fila da Staff, com o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro), o servidor, o mapa, o round, o horário e uma cópia das últimas linhas do chat. Vale 1 por alvo a cada 10 minutos e 5 por hora, por denunciante (a API recusa o excedente e diz quando tentar de novo). Fica na fila até a Staff arquivá-la com motivo ou aplicar uma Punição a partir dela; some 90 dias depois de criada. Denúncia de cheat ou voz sozinha não gera Punição: só com evidência adicional.
+Um aviso de um jogador sobre outro, feito dentro do jogo com o `!report` e enviado à fila da Staff, com o motivo (cheat, voz ofensiva, chat ofensivo, antijogo ou outro), o servidor, o mapa, o round, o horário e uma cópia das últimas linhas do chat. Vale 1 por alvo a cada 10 minutos e 5 por hora, por denunciante, e no máximo 10 por dia (de Brasília) por Conta, somando todos os tipos de Denúncia, inclusive a de foto (a API recusa o excedente e diz quando tentar de novo). Na fila da Staff, as Denúncias contra a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado viram um caso só, com a contagem e as provas juntas; arquivar ou punir resolve todas. O prazo da Staff é de 72 h para o jogo e o chat, e de 24 h para a foto e a logo. Quem tem 3 Denúncias arquivadas em 90 dias e mais arquivadas do que confirmadas perde peso: as Denúncias dela vão para o fim da fila e não têm prazo correndo (ADR 0027). Fica na fila até a Staff arquivá-la com motivo ou aplicar uma Punição a partir dela; some 90 dias depois de criada. Denúncia de cheat ou voz sozinha não gera Punição: só com evidência adicional.
 _Evitar_: report, reclamação
+
+**Caso** (da fila da Staff):
+Um item da fila da Staff: as Denúncias de jogo ou de chat contra a mesma Conta, pelo mesmo motivo, no mesmo Mapa jogado (ou todas as de uma mesma imagem, no caso da foto e da logo), reunidas com a contagem e as provas juntas. A Staff decide o caso uma vez (arquivar ou punir) e a decisão vale para todas as Denúncias dele. Cada caso tem o seu prazo (deadlineAt) ou, quando todas as Denúncias abertas são de quem perdeu peso, nenhum. É o que o painel da Staff (S25) mostra em cada linha e o que o selo do trilho conta.
+_Evitar_: ticket, chamado (ticket é o pedido de Recurso, no Discord)
 
 **Log de chat** (`chat_messages`):
 O registro de tudo o que é dito no chat dos Servidores Carmine (com o horário, o time de quem falou e se foi chat de time), retido por 30 dias, para a moderação. Registra o que foi dito, mesmo para quem escondeu o chat dos outros com `!chat off`.
 _Evitar_: histórico de chat, chat log
+
+## Termos planejados (beta aberto)
+
+Termos já decididos para as fatias de [`docs/specs/beta-aberto.md`](docs/specs/beta-aberto.md). Cada fatia, ao entrar, move o seu termo para a seção certa acima e ajusta os termos que ele substitui.
+
+**Plano** (`Plan`), S20:
+O que a Conta assina para ter benefícios. Há dois: **Capo** (`capo`) e **Padrinho** (`padrinho`). Substitui o VIP, que some da interface.
+_Evitar_: VIP, premium, assinatura (a assinatura é só uma forma de pagar)
+
+**Concessão do plano** (`PlanGrant`), S20:
+Uma compra de pacote, concessão da Staff ou compra de teste: plano, dias e o instante em que foi feita. Não muda depois de gravada. O plano da Conta num instante é **calculado** das concessões (`apps/api/src/plans/plan-timeline.ts`): Padrinho gasta primeiro e o Capo que sobra fica guardado; Capo sobre Padrinho espera na fila. Ver ADR 0026.
+
+**Período do plano** (`PlanPeriod`), S20:
+Um trecho de tempo em que a Conta tem um plano ativo, calculado da agenda (substitui o Período VIP).
+
+**Pacote** (`PlanPackage`), S20:
+O que se compra: 1, 3 ou 6 meses de Capo ou de Padrinho. A duração é forma de pagamento, não plano.
+
+**Plano de teste** (`test`), S20:
+O plano das compras de teste do beta, em que ninguém paga de verdade. Acaba no dia em que a cobrança real ligar, com aviso 7 dias antes.
+
+**Mapa jogado** (`MapPlay`), S17:
+Um mapa do começo ao fim (ou até um reinício) num Servidor Carmine, que agrupa os rounds da coleta por round. Interno: não aparece para o jogador.
+_Evitar_: partida (nos servidores abertos não há Partida)
+
+**Resumo do round** (`RoundSummary`), S17:
+O que cada jogador fez num round (kills, mortes, assistências, dano, sobreviveu, foi trocado, abertura, multi-kill, clutch, KAST), calculado pela API no fim do round e guardado para sempre.
+
+**Rating Carmine** (`rating`), S21:
+A estatística principal de desempenho, com média 1,00, calculada por Modo (Retake e 5v5) a partir dos Resumos do round, mais um **Rating Carmine geral**. Aparece só depois de 100 rounds no Modo ("Calibrando").
+A fórmula v1 (5 partes por lado, comparadas com a População do Rating, com puxão para 1,00 em amostra pequena) está no ADR 0029.
+_Evitar_: HLTV Rating (é marca de outra empresa), nota, skill
+
+**Calibrando** (`calibrating`), S21:
+O estado de quem ainda não tem 100 rounds no Modo desde o início da coleta: o Perfil, o `!rank`, o `!stats` e o card mostram `Calibrando 37/100` no lugar do Rating.
+
+**População do Rating**, S21:
+As Contas com 100 rounds ou mais num Modo e lado nos últimos 90 dias, de onde saem a média e o desvio de cada parte do Rating. Recalculada toda semana, com a versão da fórmula gravada. Interna: não aparece para o jogador.
+
+**Pontuação DM** (`dmScore`), S21:
+O número de desempenho do Deathmatch, numa escala própria em torno de 100 (a média da população do DM), porque o DM não tem round. Compara abates por minuto, K/D, dano por minuto e HS% com a população dos últimos 90 dias, e só aparece depois dos mesmos 30 minutos do Ranking do DM (ADR 0030).
+
+**Rating escondido** (`skillRating`), S21:
+O rating de habilidade (Glicko-2) que ninguém vê, usado para equilibrar os times das Salas e, no futuro, no matchmaking.
+
+**Modo anônimo** (`anonymousMode`), S22:
+Benefício do Padrinho: no servidor, o nome vira uma palavra estranha e sem sentido; nas Salas, quem era só aparece na página da Partida depois do fim.
+_Evitar_: streamer mode, incógnito
+
+**Sala** (`Room`), S23:
+Uma partida privada que uma Conta com Plano cria no site, com o Modo escolhido (5v5, Retake ou Deathmatch) e um servidor só para ela.
+_Evitar_: lobby, sala privada (na interface basta "Sala")
+
+**Partida** (`Match`), S23:
+Muda de sentido: passa a ser só o jogo de uma **Sala**, com página, placar e, no 5v5 com 5 contra 5, demo. Os servidores abertos e o 5v5 Casual não têm Partida.
+
+**Amizade** (`Friendship`), S28:
+Vínculo mútuo entre duas Contas no Carmine (um pede, o outro aceita). Os amigos da Steam viram sugestão.
+
+**Time** (`Team`), S30:
+Grupo fixo com nome, tag, logo e dono, que desafia outros Times. Um jogador pode estar em até 5.
+_Evitar_: clã, equipe
+
+**Consigliere** (`agent`), S27:
+O assistente de IA do Carmine: responde sobre os dados e faz ações com confirmação.
+_Evitar_: bot, IA, Treinador

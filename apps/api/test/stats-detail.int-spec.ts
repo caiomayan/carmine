@@ -23,6 +23,10 @@ import { DataRetention } from '../src/reports/data-retention.js';
 import { dayOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = new Date();
@@ -245,7 +249,11 @@ describe('Estatísticas detalhadas (S12b)', () => {
       at: at(1),
       warmup: false,
       winner: 'ct',
-      players: [],
+      // Humanos dos dois lados: round de verdade (o sintético do cs2-retakes não conta).
+      players: [
+        { steamId: steamIdFor(9_001), team: 'ct' },
+        { steamId: steamIdFor(9_002), team: 't' },
+      ],
       map: 'de_nuke',
       ...over,
     });
@@ -452,6 +460,7 @@ describe('Estatísticas detalhadas (S12b)', () => {
           endedAt: null,
           seconds: 900,
           live: false,
+          server: null,
         },
       ]);
       // A própria Conta vê o horário.
@@ -459,6 +468,44 @@ describe('Estatísticas detalhadas (S12b)', () => {
         (await a.call('GET', `/api/profiles/${publicId}/sessions`)).json(),
       );
       expect(own.sessions[0]?.startedAt).toBe(AT);
+    });
+
+    it('a Sessão em andamento qualquer pessoa vê, enquanto a presença ainda tem a Conta no servidor', async () => {
+      const playing = await player();
+      const left = await player();
+      await send(
+        batch({
+          sessionStarts: [playing, left].map(({ steamId }) => ({
+            id: eventId(),
+            at: AT,
+            sessionId: eventId(),
+            steamId,
+          })),
+        }),
+      );
+      const heartbeat = await t.app.inject({
+        method: 'POST',
+        url: '/api/server/heartbeat',
+        headers: { authorization: `Bearer ${t.serverKey}` },
+        payload: { map: 'de_mirage', players: [playing.steamId], maxPlayers: 9 },
+      });
+      expect(heartbeat.statusCode, heartbeat.body).toBe(200);
+
+      const sessionsOf = async (who: { account: { publicId: number } }) =>
+        profileSessionsSchema.parse(
+          (await t.app.inject({ url: `/api/profiles/${who.account.publicId}/sessions` })).json(),
+        );
+
+      // Sem login nenhum: o "em andamento" aparece, sem hora do relógio nem duração.
+      const [now] = (await sessionsOf(playing)).sessions;
+      expect(now).toMatchObject({ live: true, startedAt: null, endedAt: null, seconds: null });
+      // E onde: o servidor, com o id da página dele.
+      expect(now?.server).toMatchObject({ id: await serverId() });
+      expect(now?.server?.name).toBeTruthy();
+      // A Sessão ainda aberta de quem já saiu do servidor não é "em andamento".
+      const [gone] = (await sessionsOf(left)).sessions;
+      expect(gone?.live).toBe(false);
+      expect(gone?.server).toBeNull();
     });
 
     it('uma Conta sem nada detalhado volta vazia, com since nulo', async () => {

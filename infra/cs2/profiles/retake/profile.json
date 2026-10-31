@@ -7,6 +7,7 @@
   "maxPlayers": 10,
   "publicSlots": 9,
   "reservedSlots": "retake",
+  "addon": true,
   "gameType": 0,
   "gameMode": 1,
   "startMap": "de_mirage",

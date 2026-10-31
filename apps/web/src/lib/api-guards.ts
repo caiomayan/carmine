@@ -6,6 +6,8 @@ import type {
   PlayingFriend,
   ProfilePlaying,
 } from '@carmine/contracts';
+import type { AnalyticsPreference } from '@carmine/contracts/analytics';
+import type { AvatarState } from '@carmine/contracts/avatar';
 
 /**
  * Conferência leve das respostas da nossa própria API no navegador, sem o Zod. Os schemas (`@carmine/contracts`)
@@ -152,4 +154,39 @@ export function parseNowPlaying(value: unknown): NowPlaying | null {
       map: server.map,
     },
   };
+}
+
+/** `GET /api/me/analytics` (a chave "Participar da análise de uso"); `null` se o formato não é o do contrato. */
+export function parseAnalyticsPreference(value: unknown): AnalyticsPreference | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.participate !== 'boolean' || typeof value.enabled !== 'boolean') return null;
+  return { participate: value.participate, enabled: value.enabled };
+}
+
+/**
+ * `GET`/`DELETE /api/me/avatar` e as rotas do histórico (o estado da foto de perfil própria em Configurações); `null` se o formato não é o do
+ * contrato. Só o formato: os motivos (`cannotUploadReason`, `removal.reason`) são textos que a tela procura nas
+ * mensagens, e um motivo novo cai no texto genérico.
+ */
+export function parseAvatarState(value: unknown): AvatarState | null {
+  if (!isRecord(value)) return null;
+  if (typeof value.enabled !== 'boolean' || typeof value.canUpload !== 'boolean') return null;
+  if (typeof value.canUseHistory !== 'boolean' || !Array.isArray(value.history)) return null;
+  for (const item of value.history) {
+    if (!isRecord(item) || !isString(item.id) || !isString(item.url)) return null;
+    if (!isString(item.uploadedAt) || typeof item.current !== 'boolean') return null;
+  }
+  if (value.source !== 'steam' && value.source !== 'custom') return null;
+  if (!isNullableString(value.steamAvatarUrl) || !isNullableString(value.retryAfter)) return null;
+  if (!isNullableString(value.cannotUploadReason)) return null;
+  const custom = value.custom;
+  if (custom !== null) {
+    if (!isRecord(custom) || !isString(custom.url) || !isString(custom.uploadedAt)) return null;
+    if (custom.status !== 'active' && custom.status !== 'suspended') return null;
+  }
+  const removal = value.removal;
+  if (removal !== null) {
+    if (!isRecord(removal) || !isString(removal.at) || !isString(removal.reason)) return null;
+  }
+  return value as unknown as AvatarState;
 }

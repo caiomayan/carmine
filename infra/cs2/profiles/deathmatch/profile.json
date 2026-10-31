@@ -7,6 +7,7 @@
   "maxPlayers": 18,
   "publicSlots": 16,
   "reservedSlots": "deathmatch",
+  "addon": true,
   "gameType": 1,
   "gameMode": 2,
   "startMap": "de_dust2",

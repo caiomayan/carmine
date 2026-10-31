@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   ADULT_DECLARATION_VERSION,
   type CreatePurchase,
+  PLAN_PACKAGES,
   PURCHASE_EXPIRES_MINUTES,
   PURCHASES_PER_DAY_LIMIT,
   type Purchase,
@@ -80,6 +81,7 @@ export class Payments {
       enabled: this.available,
       sandbox: this.options.gateway?.name === 'fake',
       packages: VIP_PACKAGES.map((p) => ({ ...p })),
+      planPackages: PLAN_PACKAGES.map((p) => ({ ...p })),
       eligibility: accountId === null ? null : await this.eligibility(accountId, now),
     };
   }
@@ -119,9 +121,9 @@ export class Payments {
   ): Promise<Purchase> {
     const gateway = this.options.gateway;
     if (!this.options.enabled || gateway === null) {
-      throw new PurchaseRejection('payments_disabled', 'A compra do VIP ainda não está aberta');
+      throw new PurchaseRejection('payments_disabled', 'A compra do plano ainda não está aberta');
     }
-    const pkg = VIP_PACKAGES.find((p) => p.id === input.package);
+    const pkg = PLAN_PACKAGES.find((p) => p.id === input.package);
     if (!pkg) throw new PurchaseRejection('invalid_body', 'Pacote desconhecido');
 
     const key = idempotencyKey ?? randomUUID();
@@ -151,14 +153,14 @@ export class Payments {
         );
       }
       if (await this.hasPermanentBan(tx, accountId)) {
-        throw new PurchaseRejection('banned', 'Uma Conta com ban permanente não compra VIP');
+        throw new PurchaseRejection('banned', 'Uma Conta com ban permanente não compra plano');
       }
       const status = await this.options.vip.statusOf(accountId, now);
       const end = (status.endsAt ?? now).getTime() + pkg.days * DAY_MS;
       if (end - now.getTime() > VIP_MAX_HORIZON_DAYS * DAY_MS) {
         throw new PurchaseRejection(
           'vip_horizon',
-          `O VIP não pode passar de ${VIP_MAX_HORIZON_DAYS} dias à frente`,
+          `O plano não pode passar de ${VIP_MAX_HORIZON_DAYS} dias à frente`,
         );
       }
 
@@ -249,7 +251,7 @@ export class Payments {
         method: row.method,
         description: `Saint Carmine · VIP ${row.days} dias`,
         expiresAt: row.expiresAt as Date,
-        backUrl: `${this.options.publicWebUrl}/vip/compra/${row.id}?retorno=cartao`,
+        backUrl: `${this.options.publicWebUrl}/plans/purchase/${row.id}?retorno=cartao`,
       });
       const [updated] = await this.db
         .update(payments)
@@ -568,7 +570,11 @@ export class Payments {
             break;
           }
           // O dinheiro entrou: vale até para o que já tínhamos expirado ou cancelado.
-          await this.options.vip.grantPackage(tx, row.accountId, row.days, row.id, now);
+          // O pacote diz o plano (S20); com o provedor falso a compra é de teste do beta (ninguém paga de verdade).
+          await this.options.vip.grantPackage(tx, row.accountId, row.days, row.id, now, {
+            plan: PLAN_PACKAGES.find((p) => p.id === row.package)?.plan ?? 'capo',
+            test: this.options.gateway?.name === 'fake',
+          });
           await tx
             .update(payments)
             .set({

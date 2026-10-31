@@ -62,7 +62,7 @@ test.describe('abrir e fechar', () => {
   test('"/" abre quando nenhum campo está em foco; dentro de um campo, é só a barra', async ({
     page,
   }) => {
-    await page.goto('/inventario/adicionar');
+    await page.goto('/inventory/add');
     await hydrated(page);
     const field = page
       .getByRole('searchbox')
@@ -130,10 +130,10 @@ test.describe('o que a paleta acha', () => {
     await expect(page.getByRole('option', { name: /^Inventário/ })).toBeVisible();
     await page.keyboard.press('Enter');
 
-    await expect(page).toHaveURL(/\/inventario$/);
+    await expect(page).toHaveURL(/\/inventory$/);
     await expect(palette(page)).toBeHidden();
 
-    await openPalette(page, '/inventario');
+    await openPalette(page, '/inventory');
     await input(page).fill('rankign');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/ranking$/);
@@ -167,7 +167,7 @@ test.describe('o que a paleta acha', () => {
     await expect(hit).toBeVisible();
     await expect(page.getByTestId('palette-list')).toContainText('Catálogo');
     await hit.click();
-    await expect(page).toHaveURL(/\/inventario\/adicionar\/222$/);
+    await expect(page).toHaveURL(/\/inventory\/add\/222$/);
 
     await openPalette(page);
     await input(page).fill('redline');
@@ -230,7 +230,7 @@ test.describe('o que a paleta acha', () => {
     await expect(page.getByTestId('palette-list')).toContainText('No seu Inventário');
     await page.getByTestId('palette-item').first().click();
 
-    await expect(page).toHaveURL(new RegExp(`/inventario/${uid}$`));
+    await expect(page).toHaveURL(new RegExp(`/inventory/${uid}$`));
   });
 
   test('o Painel da Staff só aparece para a Staff; Meu perfil e Sair, para quem entrou', async ({
@@ -305,7 +305,7 @@ test.describe('estados', () => {
   });
 
   test('enquanto busca, mostra o carregando e depois o resultado', async ({ page }) => {
-    await page.route('**/busca/itens**', async (route) => {
+    await page.route('**/search/items**', async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 600));
       await route.continue();
     });
@@ -351,7 +351,7 @@ test.describe('estados', () => {
     await page.route('**/api/players/search**', (route) =>
       route.fulfill({ status: 503, body: '{}' }),
     );
-    await page.route('**/busca/itens**', (route) => route.fulfill({ status: 503, body: '{}' }));
+    await page.route('**/search/items**', (route) => route.fulfill({ status: 503, body: '{}' }));
     await openPalette(page);
 
     await input(page).fill('zzqqxxyy');

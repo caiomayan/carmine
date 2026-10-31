@@ -67,6 +67,12 @@ public sealed class EventReporter(ICarmineApiClient api, TimeProvider time, int 
 
     public void Add(SessionEndEvent end) => Enqueue(end);
 
+    /// <summary>O início de um round de coleta (S17): lados e valor do equipamento.</summary>
+    public void Add(RoundStartEvent roundStart) => Enqueue(roundStart);
+
+    /// <summary>A bomba foi plantada, desarmada ou explodiu (S17).</summary>
+    public void Add(BombEvent bomb) => Enqueue(bomb);
+
     /// <summary>Tudo o que espera na fila, na ordem em que aconteceu (para testes e diagnóstico).</summary>
     public EventBatch Snapshot()
     {
@@ -211,6 +217,12 @@ public sealed class EventReporter(ICarmineApiClient api, TimeProvider time, int 
                     break;
                 case ChatMessageEvent chat:
                     (batch.ChatMessages ??= []).Add(chat);
+                    break;
+                case RoundStartEvent roundStart:
+                    (batch.RoundStarts ??= []).Add(roundStart);
+                    break;
+                case BombEvent bomb:
+                    (batch.Bombs ??= []).Add(bomb);
                     break;
             }
         }

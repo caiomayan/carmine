@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { parseTrustedProxies } from '../client-ip/client-ip.js';
 import type { RateLimitPolicyName } from '../rate-limit/policies.js';
@@ -110,6 +111,10 @@ const envSchema = z
     DISCORD_BOT_TOKEN: z.string().trim().default(''),
     DISCORD_GUILD_ID: snowflake(),
     DISCORD_ROLE_PLAYER_ID: snowflake(),
+    // Capo e Padrinho (S20). `DISCORD_ROLE_VIP_ID` é o nome legado do cargo do Capo: vale como `DISCORD_ROLE_CAPO_ID`
+    // enquanto este não vier, para o servidor que já tinha o cargo VIP seguir funcionando (renomeie-o para Capo).
+    DISCORD_ROLE_CAPO_ID: snowflake(),
+    DISCORD_ROLE_PADRINHO_ID: snowflake(),
     DISCORD_ROLE_VIP_ID: snowflake(),
     DISCORD_ROLE_STAFF_ID: snowflake(),
     DISCORD_ROLE_OWNER_ID: snowflake(),
@@ -141,6 +146,20 @@ const envSchema = z
     ),
     // De quanto em quanto tempo a fila de remoção de arquivos roda (0 desliga).
     MEDIA_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(30),
+    // Analytics de produto (A1, ADR 0021). Sem a chave do projeto do PostHog (e sem ANALYTICS_DRIVER=log) nada é
+    // enviado, como o Discord. Região UE: o host de ingestão é eu.i.posthog.com e o da API de gestão, eu.posthog.com.
+    POSTHOG_API_KEY: z.string().trim().default(''),
+    POSTHOG_HOST: urlWithProtocol(['https:', 'http:']).default('https://eu.i.posthog.com'),
+    POSTHOG_API_HOST: urlWithProtocol(['https:', 'http:']).default('https://eu.posthog.com'),
+    // Para apagar a pessoa no PostHog quando a Conta é anonimizada (S08); sem eles, o passo fica pendente no log.
+    POSTHOG_PERSONAL_API_KEY: z.string().trim().default(''),
+    POSTHOG_PROJECT_ID: z.string().trim().default(''),
+    // `log`: só registra os eventos no log da API (a homologação); ganha da chave do PostHog, então nada sai de lá.
+    ANALYTICS_DRIVER: z.enum(['', 'log']).default(''),
+    // Separa os eventos da homologação dos de verdade (propriedade `ambiente`).
+    ANALYTICS_ENVIRONMENT: z.enum(['producao', 'staging']).default('producao'),
+    // De quanto em quanto tempo a fila de eventos é enviada em lote.
+    ANALYTICS_FLUSH_SECONDS: z.coerce.number().int().positive().default(5),
     ALERT_SERVER_OFFLINE_CONFIRM_SECONDS: z.coerce.number().int().positive().default(60),
     ALERT_SWEEP_SECONDS: z.coerce.number().int().positive().default(15),
     // Sentry (S09): DSN vazio desliga. Ambiente e release identificam o deploy nos eventos.
@@ -153,6 +172,9 @@ const envSchema = z
     // Onde o web é servido; a API fica em <origem>/api (mesma origem, ADR 0015). É o realm do
     // login Steam e a base do return_to e dos redirecionamentos depois do login.
     PUBLIC_WEB_URL: origin().default('http://localhost:3000'),
+    // Onde o painel da Staff é servido (S25, ADR 0015): outro host, que serve o próprio /api; é o realm do login Steam
+    // DO PAINEL (/api/auth/steam/staff/*). Vazio: o painel não tem login. Vem da configuração, nunca do cabeçalho Host.
+    PUBLIC_STAFF_URL: z.union([z.literal(''), origin()]).default(''),
     // Endpoint OpenID 2.0 da Steam; nos testes, a Steam falsa local.
     STEAM_OPENID_URL: urlWithProtocol(['https:', 'http:']).default(
       'https://steamcommunity.com/openid/login',
@@ -250,15 +272,19 @@ export interface AppConfig {
   media: MediaConfig | null;
   /** Variáveis base da foto de perfil que faltam quando só parte delas foi preenchida. */
   mediaMissing: string[];
+  /** Analytics de produto (A1): `off` sem chave do PostHog, `log` na homologação, `posthog` ligado. */
+  analytics: AnalyticsConfig;
   /** Sentry (S09): sem DSN, desligado. */
   sentry: { dsn: string | null; environment: string; release: string | null };
   /** Origem pública do web, sem barra final (ex.: `https://stcarmine.com`). */
   publicWebUrl: string;
+  /** Origem pública do painel da Staff (S25), sem barra final; `null` sem painel. */
+  publicStaffUrl: string | null;
   steamOpenIdUrl: string;
   session: { idleTtlSeconds: number; absoluteTtlSeconds: number };
 }
 
-export type DiscordRoleKey = 'player' | 'vip' | 'staff' | 'owner';
+export type DiscordRoleKey = 'player' | 'capo' | 'padrinho' | 'staff' | 'owner';
 
 export interface DiscordConfig {
   clientId: string;
@@ -288,10 +314,42 @@ export interface MediaConfig {
   sweepMs: number;
 }
 
+export interface AnalyticsConfig {
+  mode: 'off' | 'log' | 'posthog';
+  environment: 'producao' | 'staging';
+  posthog: {
+    apiKey: string;
+    host: string;
+    apiHost: string;
+    /** Chave pessoal e projeto para apagar pessoas; nulos: a exclusão fica pendente. */
+    erasure: { personalApiKey: string; projectId: string } | null;
+    flushMs: number;
+  } | null;
+}
+
 export const APP_CONFIG = Symbol('APP_CONFIG');
 
+/**
+ * `PAYMENTS_DATA_KEY_FILE`: a chave de dados vinda de um arquivo (a homologação a sorteia sozinha num volume,
+ * sem passar pelo .env). A variável `PAYMENTS_DATA_KEY`, se houver, vale mais. Arquivo ilegível é erro, e a
+ * mensagem não repete o conteúdo.
+ */
+function withDataKeyFile(
+  env: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const file = env.PAYMENTS_DATA_KEY_FILE?.trim();
+  if (!file || env.PAYMENTS_DATA_KEY?.trim()) return env;
+  try {
+    return { ...env, PAYMENTS_DATA_KEY: readFileSync(file, 'utf8').trim() };
+  } catch {
+    throw new Error(`Configuração inválida:
+  - PAYMENTS_DATA_KEY_FILE: não consegui ler ${file}`);
+  }
+}
+
 /** Lê e valida as variáveis de ambiente; falha listando todas as inválidas de uma vez. */
-export function loadConfig(env: Record<string, string | undefined>): AppConfig {
+export function loadConfig(rawEnv: Record<string, string | undefined>): AppConfig {
+  const env = withDataKeyFile(rawEnv);
   const result = envSchema.safeParse(env);
   if (!result.success) {
     const problems = result.error.issues
@@ -358,12 +416,14 @@ export function loadConfig(env: Record<string, string | undefined>): AppConfig {
     },
     ...discordConfig(e),
     ...mediaConfig(e),
+    analytics: analyticsConfig(e),
     sentry: {
       dsn: e.SENTRY_DSN === '' ? null : e.SENTRY_DSN,
       environment: e.SENTRY_ENVIRONMENT === '' ? e.NODE_ENV : e.SENTRY_ENVIRONMENT,
       release: e.SENTRY_RELEASE === '' ? null : e.SENTRY_RELEASE,
     },
     publicWebUrl: e.PUBLIC_WEB_URL.replace(/\/+$/, ''),
+    publicStaffUrl: e.PUBLIC_STAFF_URL === '' ? null : e.PUBLIC_STAFF_URL.replace(/\/+$/, ''),
     steamOpenIdUrl: e.STEAM_OPENID_URL,
     session: {
       idleTtlSeconds: e.SESSION_IDLE_TTL_SECONDS,
@@ -433,7 +493,8 @@ function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
   }
   const roles: [DiscordRoleKey, string][] = [
     ['player', e.DISCORD_ROLE_PLAYER_ID],
-    ['vip', e.DISCORD_ROLE_VIP_ID],
+    ['capo', e.DISCORD_ROLE_CAPO_ID || e.DISCORD_ROLE_VIP_ID],
+    ['padrinho', e.DISCORD_ROLE_PADRINHO_ID],
     ['staff', e.DISCORD_ROLE_STAFF_ID],
     ['owner', e.DISCORD_ROLE_OWNER_ID],
   ];
@@ -450,6 +511,27 @@ function discordConfig(e: Env): Pick<AppConfig, 'discord' | 'discordMissing'> {
       authorizeUrl: e.DISCORD_AUTHORIZE_URL,
       syncMs: e.DISCORD_SYNC_SECONDS * 1000,
       statusMs: e.DISCORD_STATUS_SECONDS * 1000,
+    },
+  };
+}
+
+/** O modo do analytics: `log` ganha de tudo (a homologação nunca envia a ninguém); sem a chave do projeto, desligado. */
+function analyticsConfig(e: Env): AnalyticsConfig {
+  const environment = e.ANALYTICS_ENVIRONMENT;
+  if (e.ANALYTICS_DRIVER === 'log') return { mode: 'log', environment, posthog: null };
+  if (e.POSTHOG_API_KEY === '') return { mode: 'off', environment, posthog: null };
+  return {
+    mode: 'posthog',
+    environment,
+    posthog: {
+      apiKey: e.POSTHOG_API_KEY,
+      host: e.POSTHOG_HOST.replace(/\/+$/, ''),
+      apiHost: e.POSTHOG_API_HOST.replace(/\/+$/, ''),
+      erasure:
+        e.POSTHOG_PERSONAL_API_KEY !== '' && e.POSTHOG_PROJECT_ID !== ''
+          ? { personalApiKey: e.POSTHOG_PERSONAL_API_KEY, projectId: e.POSTHOG_PROJECT_ID }
+          : null,
+      flushMs: e.ANALYTICS_FLUSH_SECONDS * 1000,
     },
   };
 }

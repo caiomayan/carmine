@@ -53,8 +53,8 @@ describe('showsFirstStepsStrip', () => {
   });
 
   it('não aparece em outras rotas, nem no Perfil de outra Conta', () => {
-    expect(showsFirstStepsStrip('/inventario', 10_017)).toBe(false);
-    expect(showsFirstStepsStrip('/termos', 10_017)).toBe(false);
+    expect(showsFirstStepsStrip('/inventory', 10_017)).toBe(false);
+    expect(showsFirstStepsStrip('/terms', 10_017)).toBe(false);
     expect(showsFirstStepsStrip('/10018', 10_017)).toBe(false);
     expect(showsFirstStepsStrip('/staff', 10_017)).toBe(false);
   });

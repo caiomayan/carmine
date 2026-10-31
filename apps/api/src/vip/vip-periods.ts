@@ -1,12 +1,42 @@
+import type { Plan } from '@carmine/contracts';
 import { and, desc, eq, gt, gte, lte, sql } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
-import { accounts, staffAuditLog, vipPeriods } from '../database/schema.js';
+import { accounts, planRevocations, staffAuditLog, vipPeriods } from '../database/schema.js';
+import { planStatusOfPeriods } from '../plans/plan-periods.js';
+import { type PurchaseWrites, planPurchase } from '../plans/plan-purchase.js';
+import type { PlanSegment, PlanStatus } from '../plans/plan-timeline.js';
 import { recordStaffAudit, type StaffAction, type Transaction } from '../staff/audit-log.js';
-import { type VipStatusAt, vipStatusAt } from './vip-status.js';
+import type { VipStatusAt } from './vip-status.js';
 
 export type { StaffAction } from '../staff/audit-log.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** O VIP de antes (`active`, `endsAt`, `endedAt`) mais o plano (S20): quem é, até quando e o que vem depois. */
+export interface PlanVipStatus extends VipStatusAt {
+  plan: Plan | null;
+  /** O trecho de agora é de teste do beta. */
+  test: boolean;
+  /** Quando o plano de agora acaba ou muda (o Capo guardado volta depois do Padrinho). */
+  planEndsAt: Date | null;
+  next: PlanSegment | null;
+}
+
+/** Opções de uma concessão: o plano (Capo, se não vier) e se é compra de teste do beta. */
+export interface GrantOptions {
+  plan?: Plan;
+  test?: boolean;
+}
+
+const toVip = (status: PlanStatus): PlanVipStatus => ({
+  active: status.active,
+  endsAt: status.endsAt,
+  endedAt: status.endedAt,
+  plan: status.plan,
+  test: status.test,
+  planEndsAt: status.planEndsAt,
+  next: status.next,
+});
 
 /** Uma linha do log de auditoria da Staff (a visão do CLI). */
 export interface StaffAuditEntry {
@@ -18,10 +48,10 @@ export interface StaffAuditEntry {
   createdAt: Date;
 }
 
-/** Revogar uma Conta sem VIP ativo. */
+/** Revogar uma Conta sem plano ativo. */
 export class NoVipToRevoke extends Error {
   constructor() {
-    super('a Conta não tem VIP ativo');
+    super('a Conta não tem plano ativo');
     this.name = 'NoVipToRevoke';
   }
 }
@@ -33,14 +63,31 @@ export class NoVipToRevoke extends Error {
 export class VipPeriods {
   constructor(private readonly db: Database) {}
 
-  /** O VIP da Conta agora: ativo e até quando, somando os Períodos encadeados. */
+  /** O VIP da Conta agora: ativo e até quando, somando os Períodos encadeados (qualquer plano). */
   async statusOf(accountId: string, now = new Date()): Promise<VipStatusAt> {
+    const { active, endsAt, endedAt } = await this.planStatusOf(accountId, now);
+    return { active, endsAt, endedAt };
+  }
+
+  /** O plano da Conta agora (S20): qual, até quando, se é de teste e o que vem depois. */
+  async planStatusOf(accountId: string, now = new Date()): Promise<PlanVipStatus> {
     // Todos os Períodos: os encerrados dão o `endedAt`. São poucos por Conta.
     const periods = await this.db
-      .select({ startsAt: vipPeriods.startsAt, endsAt: vipPeriods.endsAt })
+      .select({
+        startsAt: vipPeriods.startsAt,
+        endsAt: vipPeriods.endsAt,
+        plan: vipPeriods.plan,
+        test: vipPeriods.test,
+      })
       .from(vipPeriods)
       .where(eq(vipPeriods.accountId, accountId));
-    return vipStatusAt(periods, now);
+    const revocations = await this.db
+      .select({ revokedAt: planRevocations.revokedAt })
+      .from(planRevocations)
+      .where(eq(planRevocations.accountId, accountId));
+    return toVip(
+      planStatusOfPeriods(periods, now, { revokedAt: revocations.map((r) => r.revokedAt) }),
+    );
   }
 
   /**
@@ -53,18 +100,24 @@ export class VipPeriods {
     days: number,
     now = new Date(),
     staff?: StaffAction,
+    options: GrantOptions = {},
   ): Promise<VipStatusAt> {
+    const plan = options.plan ?? 'capo';
     await this.db.transaction(async (tx) => {
       const steamId = await this.lock(tx, accountId);
       const before = await this.activeStatus(tx, accountId, now);
-      const startsAt = before.endsAt ?? now;
-      const endsAt = new Date(startsAt.getTime() + days * DAY_MS);
-      await tx.insert(vipPeriods).values({ accountId, startsAt, endsAt });
+      const { purchase } = await this.write(tx, accountId, now, {
+        plan,
+        days,
+        test: options.test ?? false,
+        paymentId: null,
+      });
       if (staff) {
         await this.audit(tx, 'vip_grant', accountId, steamId, staff, now, {
           days,
+          plan,
           endsAtBefore: before.endsAt?.toISOString() ?? null,
-          endsAtAfter: endsAt.toISOString(),
+          endsAtAfter: purchase.endsAt.toISOString(),
         });
       }
     });
@@ -83,13 +136,16 @@ export class VipPeriods {
     days: number,
     paymentId: string | null,
     now = new Date(),
+    options: GrantOptions = {},
   ): Promise<{ startsAt: Date; endsAt: Date }> {
     await this.lock(tx, accountId);
-    const before = await this.activeStatus(tx, accountId, now);
-    const startsAt = before.endsAt ?? now;
-    const endsAt = new Date(startsAt.getTime() + days * DAY_MS);
-    await tx.insert(vipPeriods).values({ accountId, startsAt, endsAt, paymentId });
-    return { startsAt, endsAt };
+    const { purchase } = await this.write(tx, accountId, now, {
+      plan: options.plan ?? 'capo',
+      days,
+      test: options.test ?? false,
+      paymentId,
+    });
+    return { startsAt: purchase.startsAt, endsAt: purchase.endsAt };
   }
 
   /**
@@ -147,8 +203,17 @@ export class VipPeriods {
         .update(vipPeriods)
         .set({ endsAt: now })
         .where(and(ongoing, lte(vipPeriods.startsAt, now)));
+      // Registro da revogação (S20, ADR 0026): mesmo instante e motivo da linha do log de auditoria. Os Períodos
+      // também foram encurtados acima, então a imagem antiga, que não conhece esta tabela, vê o mesmo resultado.
+      await tx.insert(planRevocations).values({
+        accountId,
+        revokedAt: now,
+        revokedBySteamId: BigInt(staff.actorSteamId),
+        reason: staff.reason,
+      });
       await this.audit(tx, 'vip_revoke', accountId, steamId, staff, now, {
         endsAtBefore: before.endsAt?.toISOString() ?? null,
+        plan: before.plan,
       });
     });
     return this.statusOf(accountId, now);
@@ -188,10 +253,66 @@ export class VipPeriods {
 
   private async activeStatus(tx: Transaction, accountId: string, now: Date) {
     const periods = await tx
-      .select({ startsAt: vipPeriods.startsAt, endsAt: vipPeriods.endsAt })
+      .select({
+        startsAt: vipPeriods.startsAt,
+        endsAt: vipPeriods.endsAt,
+        plan: vipPeriods.plan,
+        test: vipPeriods.test,
+      })
       .from(vipPeriods)
       .where(and(eq(vipPeriods.accountId, accountId), gt(vipPeriods.endsAt, now)));
-    return vipStatusAt(periods, now);
+    return toVip(planStatusOfPeriods(periods, now));
+  }
+
+  /**
+   * Grava um pacote pela regra dos planos ({@link planPurchase}): corta o Capo em curso, empurra a fila, insere o
+   * pacote (com o pagamento) e o Capo que ficou guardado. Devolve o Período do pacote.
+   */
+  private async write(
+    tx: Transaction,
+    accountId: string,
+    now: Date,
+    purchase: { plan: Plan; days: number; test: boolean; paymentId: string | null },
+  ): Promise<{ purchase: { startsAt: Date; endsAt: Date } }> {
+    const rows = await tx
+      .select({
+        id: vipPeriods.id,
+        startsAt: vipPeriods.startsAt,
+        endsAt: vipPeriods.endsAt,
+        plan: vipPeriods.plan,
+        test: vipPeriods.test,
+      })
+      .from(vipPeriods)
+      .where(and(eq(vipPeriods.accountId, accountId), gt(vipPeriods.endsAt, now)));
+    const writes: PurchaseWrites = planPurchase(rows, now, purchase);
+    for (const { id, endsAt } of writes.truncate) {
+      await tx.update(vipPeriods).set({ endsAt }).where(eq(vipPeriods.id, id));
+    }
+    for (const id of writes.remove) await tx.delete(vipPeriods).where(eq(vipPeriods.id, id));
+    for (const { id, byMs } of writes.shift) {
+      const by = sql`make_interval(secs => ${byMs / 1000})`;
+      await tx
+        .update(vipPeriods)
+        .set({
+          startsAt: sql`${vipPeriods.startsAt} + ${by}`,
+          endsAt: sql`${vipPeriods.endsAt} + ${by}`,
+        })
+        .where(eq(vipPeriods.id, id));
+    }
+    let bought: { startsAt: Date; endsAt: Date } | null = null;
+    for (const period of writes.insert) {
+      const isPurchase = period.role === 'purchase';
+      await tx.insert(vipPeriods).values({
+        accountId,
+        startsAt: period.startsAt,
+        endsAt: period.endsAt,
+        plan: period.plan,
+        test: period.test,
+        paymentId: isPurchase ? purchase.paymentId : null,
+      });
+      if (isPurchase) bought = { startsAt: period.startsAt, endsAt: period.endsAt };
+    }
+    return { purchase: bought as { startsAt: Date; endsAt: Date } };
   }
 
   private async audit(

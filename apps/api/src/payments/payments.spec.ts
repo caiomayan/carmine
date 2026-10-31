@@ -1,4 +1,7 @@
 import { createHmac, randomBytes } from 'node:crypto';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { VIP_PACKAGES } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../config/config.js';
@@ -109,7 +112,7 @@ describe('o CPF do Pagador', () => {
     expect(digitsOf('123.456.789-09')).toBe('12345678909');
     expect(last3Of('123.456.789-09')).toBe('909');
     expect(last3Of('1234')).toBeNull();
-    expect(maskDocument('909')).toBe('***.***.909-**');
+    expect(maskDocument('909')).toBe('***.***.**9-09');
     expect(maskDocument(null)).toBeNull();
   });
 });
@@ -199,5 +202,30 @@ describe('a configuração dos pagamentos', () => {
 
   it('a chave de dados precisa ter 32 bytes', () => {
     expect(() => loadConfig({ ...base, PAYMENTS_DATA_KEY: 'curta' })).toThrow(/PAYMENTS_DATA_KEY/);
+  });
+
+  it('a chave de dados pode vir de um arquivo (a homologação a sorteia sozinha), sem repeti-la no erro', () => {
+    const file = join(mkdtempSync(join(tmpdir(), 'carmine-key-')), 'payments-data-key');
+    writeFileSync(
+      file,
+      `${key}
+`,
+    );
+    const fromFile = {
+      ...base,
+      PAYMENTS_ENABLED: 'true',
+      PAYMENTS_PROVIDER: 'fake',
+      PAYMENTS_DATA_KEY_FILE: file,
+    };
+    expect(loadConfig(fromFile).payments.dataKey?.toString('base64')).toBe(key);
+    // A variável, se houver, vale mais que o arquivo.
+    const other = randomBytes(32).toString('base64');
+    expect(
+      loadConfig({ ...fromFile, PAYMENTS_DATA_KEY: other }).payments.dataKey?.toString('base64'),
+    ).toBe(other);
+    // Arquivo que não existe: erro claro, sem chave.
+    expect(() => loadConfig({ ...fromFile, PAYMENTS_DATA_KEY_FILE: `${file}.nao-existe` })).toThrow(
+      /PAYMENTS_DATA_KEY_FILE: não consegui ler/,
+    );
   });
 });

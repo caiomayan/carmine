@@ -1,5 +1,6 @@
 import {
   type EventBatch,
+  type GameMode,
   type GameTeam,
   type KillEvent,
   PLAY_SESSION_MAX_SECONDS,
@@ -48,7 +49,18 @@ export interface TeamKill {
   weapon: string;
 }
 
+/** Uma Sessão de jogo aceita (fim novo, com Conta e duração válida): o analytics mede `sessao_de_jogo_encerrada`. */
+export interface AcceptedSession {
+  /** O ID do evento do plugin (UUID v7): o `uuid` do analytics sai dele, então reenviar o lote não duplica. */
+  id: string;
+  steamId: string;
+  at: Date;
+  seconds: number;
+}
+
 export interface CollectedStats {
+  /** As Sessões de jogo que entraram nas somas. */
+  sessions: AcceptedSession[];
   deltas: StatsDelta[];
   /** As mesmas somas por dia (S12b): o que entra em uma entra na outra, pelas mesmas regras. */
   dailyDeltas: DayDelta[];
@@ -66,17 +78,40 @@ export interface CollectedStats {
 type Counters = Omit<StatsDelta, 'steamId' | 'weekStart'>;
 
 /**
+ * Um round de verdade: tem humanos nos dois lados. O `cs2-retakes` encerra sozinho o round de um lado sem
+ * humanos (e dá a vitória aos TR), e esse round sintético não foi jogado: nem o placar do plugin
+ * (docs/specs/s12b-placar-do-retake.md) nem as Estatísticas o contam.
+ */
+export function isPlayedByBothSides(round: Pick<RoundEndEvent, 'players'>): boolean {
+  return (
+    round.players.some((player) => player.team === 'ct') &&
+    round.players.some((player) => player.team === 't')
+  );
+}
+
+/**
+ * Os rounds que contam num Modo: no Retake, só o jogado por humanos dos dois lados; o Deathmatch não tem
+ * placar de times, então o fim de round dele segue como sempre.
+ */
+export function roundCounts(round: Pick<RoundEndEvent, 'players'>, mode: GameMode): boolean {
+  return mode !== 'retake' || isPlayedByBothSides(round);
+}
+
+/**
  * As regras da S12 sobre o que conta: transforma eventos novos (já sem duplicatas) em somas por
- * Conta e semana. Só conta quem está em `knownSteamIds` (tem Conta). Não toca em banco.
+ * Conta e semana. Só conta quem está em `knownSteamIds` (tem Conta). `mode` é o do servidor que mandou
+ * o lote. Não toca em banco.
  */
 export function collectStats(
   batch: EventBatch,
   knownSteamIds: ReadonlySet<string>,
+  mode: GameMode,
 ): CollectedStats {
   const weekly = new Map<string, StatsDelta>();
   const daily = new Map<string, StatsDelta>();
   const weapons = new Map<string, WeaponDelta>();
   const teamKills: TeamKill[] = [];
+  const sessions: AcceptedSession[] = [];
   let ignored = 0;
 
   /** Soma para a Conta, se existir, na semana e no dia; diz se algo foi somado. */
@@ -103,7 +138,7 @@ export function collectStats(
   }
 
   for (const round of batch.roundEnds) {
-    if (round.warmup || !countRound(round, add)) ignored++;
+    if (round.warmup || !roundCounts(round, mode) || !countRound(round, add)) ignored++;
   }
 
   for (const end of batch.sessionEnds) {
@@ -118,6 +153,7 @@ export function collectStats(
       ignored++;
       continue;
     }
+    sessions.push({ id: end.id, steamId: end.steamId, at: stop, seconds });
     for (const piece of splitByWeek(start, stop)) {
       addTo(weekly, end.steamId, piece.weekStart, { secondsPlayed: piece.seconds });
     }
@@ -127,6 +163,7 @@ export function collectStats(
   }
 
   return {
+    sessions,
     deltas: [...weekly.values()],
     dailyDeltas: [...daily.values()].map(({ weekStart, ...rest }) => ({ ...rest, day: weekStart })),
     weapons: [...weapons.values()],

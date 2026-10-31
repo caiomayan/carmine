@@ -4,6 +4,7 @@ import { cs2ItemSchema } from './inventory.js';
 import { liveServerSchema } from './live-servers.js';
 import { loadoutSlotSchema, loadoutSlotSideSchema } from './loadout.js';
 import { ownSanctionSchema, profileSanctionsSchema } from './moderation.js';
+import { planSchema } from './plans.js';
 import { staffRoleSchema } from './staff.js';
 import { steamId64Schema } from './steam.js';
 import { vipStatusSchema } from './vip.js';
@@ -50,6 +51,8 @@ export const profileSchema = z
      * (`vip` em `/api/me`), nunca do Perfil público.
      */
     isVip: z.boolean(),
+    /** O plano ativo agora (S20), só o selo: Capo ou Padrinho; nulo sem plano. */
+    plan: planSchema.nullable().optional(),
     loadoutShowcase: z
       .object({
         items: z.array(showcaseItemSchema),
@@ -116,6 +119,12 @@ export const currentSessionSchema = z
     firstLogin: z.boolean(),
     /** Período VIP da Conta: decide o cadeado dos Itens VIP no editor (S04). */
     vip: vipStatusSchema,
+    /**
+     * Quantos dias os Itens VIP ficam guardados depois do fim do VIP (S14a, `VIP_HOLD_ENABLED`). Nulo com a guarda
+     * desligada: aí os Itens seguem no Inventário (só deixam de ir para o jogo). O aviso do fim do VIP no site
+     * diz uma coisa ou a outra conforme este campo; o web nunca lê a variável de ambiente.
+     */
+    vipHoldDays: z.int().positive().nullable(),
     /** Papel de Staff da Conta (S07); nulo para quem não é da Staff. */
     staffRole: staffRoleSchema.nullable(),
     /**

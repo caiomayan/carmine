@@ -2,6 +2,8 @@
 
 > **NÃO PUBLICAR ainda.** Este arquivo **não** é lido pelo web (só os quatro documentos listados em `docs/legal/README.md` são publicados). Os trechos abaixo entram em `politica-de-privacidade.md`, `regras-de-conduta.md` e `termos-de-uso.md` **juntos com o código**, quando a foto de perfil for ligada (a F3 do web e as variáveis `R2_MEDIA_*` na VM), e com a revisão do advogado. Ao entrar, subir a versão e a data de cada documento e avisar no site e no Discord, como dizem as próprias Regras.
 >
+> **Atualizado para o beta aberto (S18, [ADR 0025](../adr/0025-foto-de-perfil-no-beta-historico-e-moderacao-por-fila.md)):** a denúncia não tira a foto do ar (só entra na fila da Staff), saem a idade mínima da Conta e os 3 envios por dia (valem limites internos, que o texto não cita), o bloqueio depois de uma remoção é escolhido pela Staff, e as últimas 5 fotos ficam num histórico (com os arquivos) até a pessoa apagá-las ou entrarem fotos mais novas. Onde o texto abaixo ainda cita a regra antiga, vale esta nota.
+>
 > Decisões que sustentam o texto: [ADR 0022](../adr/0022-foto-de-perfil-publica-na-hora-moderacao-depois.md) (decisões do dono de 2026-10-26: todos enviam; **publica na hora e a moderação é depois**; a foto denunciada por 2 Contas diferentes sai do ar até a Staff decidir; Conta com menos de 24 h ou com Punição ativa não envia; a prévia do link mostra a foto; a Staff decide em até 24 h; as removidas ficam guardadas em privado por 30 dias; **e, mais tarde no mesmo dia, duas decisões que fecham pontos deste rascunho: os registros de foto trocada, devolvida ou removida e as denúncias contra elas são apagados 90 dias depois, e o bucket das fotos fica na mesma localização do bucket de backup**). Operação: [foto-de-perfil.md](../operacao/foto-de-perfil.md). Marcas: **[ENTRA COM A FOTO]** = vale quando a funcionalidade for ligada; **[VALIDAR COM ADVOGADO]** = revisão profissional antes de publicar; **[DONO: ...]** = decisão do dono.
 
 ## Pontos para o advogado e para o dono (leia antes dos textos)
@@ -10,7 +12,7 @@
 2. **Comunicação de material de abuso.** A Cloudflare CSAM Scanning Tool bloqueia a URL e avisa por e-mail, mas a comunicação às autoridades é nossa. O texto cita o dever legal em geral; **o procedimento exato** (a quem, como, o que guardar e por quanto tempo) precisa ser definido com o advogado e escrito para quem trata a fila da Staff.
 3. **Retenção das removidas: 30 dias**, privadas. O advogado confirma se o prazo serve (por exemplo, para atender a uma ordem judicial) e se precisa guardar algo além.
 4. **Localização do bucket (decidido pelo dono).** As fotos ficam na **mesma localização do bucket de backup** (automática; não se usa a jurisdição "União Europeia" do R2): **um só perfil de transferência internacional** para tudo o que o Carmine guarda no R2. Ele vai para a **lista do advogado**, junto com a transferência já listada na Política (seção 6). A CDN guarda cópias nas pontas, no mundo todo, por design.
-5. **Retenção dos registros (decidido pelo dono: 90 dias).** A exclusão da Conta apaga todas as fotos e denúncias de foto, mas **hoje nenhum job apaga o registro de uma foto trocada, devolvida à Steam ou removida** (nem as denúncias contra ela) enquanto a Conta existir; os arquivos saem, a linha fica. Decisão: apagar esses registros **90 dias depois** de a foto deixar de ser a da Conta (o mesmo prazo das Denúncias do jogo). **Falta implementar** (tarefa da F2: a limpeza roda junto da retenção de Denúncias); o texto da Política só pode ser publicado com essa limpeza no ar.
+5. **Retenção dos registros (decidido pelo dono: 90 dias; implementada).** A exclusão da Conta apaga todas as fotos e denúncias de foto na hora. Para a Conta que segue existindo, o registro de uma foto trocada, devolvida à Steam ou removida (e as denúncias contra ela) é apagado **90 dias depois** de a foto deixar de ser a da Conta (o mesmo prazo das Denúncias do jogo). A limpeza **já está no ar**: `AvatarRetention` e `AvatarRetentionJob` (`apps/api/src/avatars/avatar-retention.ts`, `AVATAR_RECORD_RETENTION_DAYS = 90`) rodam no mesmo intervalo da retenção de Denúncias (`RETENTION_SWEEP_MINUTES`). A foto no ar ou suspensa nunca é tocada, e os arquivos saem antes, pela fila de remoção. A condição que este ponto punha para publicar o texto da Política (a limpeza estar no ar) está cumprida.
 6. **Prévia do link com a foto** (decisão do dono): a foto aparece no WhatsApp, Discord e outros, mesmo para quem nunca entrou no Carmine. O texto diz isso com todas as letras.
 7. **Termos de Uso:** hoje não há cláusula sobre conteúdo enviado pela pessoa. O trecho do fim deste arquivo é a proposta mínima.
 
@@ -71,9 +73,9 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 | Dado | Por quanto tempo |
 |---|---|
 | Foto de perfil no ar | Enquanto a Conta existir ou até você trocar a foto ou voltar à foto da Steam |
-| Foto que você trocou ou devolveu à Steam | Apagada logo em seguida (em minutos); as cópias da rede de entrega saem pela purga, e o resto expira sozinho |
-| Foto **removida pela Staff** (ou suspensa por denúncias) | 30 dias, **em um local privado** que só a Staff acessa, para analisar uma contestação ou atender a uma ordem judicial; depois, apagada. A Conta volta à foto da Steam na hora |
-| Registro da foto (datas e estado) e as denúncias contra ela | 90 dias depois de a foto deixar de ser a da Conta; se a Conta for excluída, na hora |
+| Foto que você trocou ou devolveu à Steam | Fica no **histórico das suas últimas 5 fotos**, para você voltar a ela. Sai quando você usa "Apagar" ou quando entra a 6ª foto: aí é apagada em minutos; as cópias da rede de entrega saem pela purga, e o resto expira sozinho. **[VALIDAR COM ADVOGADO]** (antes, a foto trocada era apagada na hora) |
+| Foto **removida pela Staff** | 30 dias, **em um local privado** que só a Staff acessa, para analisar uma contestação ou atender a uma ordem judicial; depois, apagada. A Conta volta à foto da Steam na hora |
+| Registro da foto (datas e estado) e as denúncias contra ela | 90 dias depois de a foto sair do histórico (apagada por você ou empurrada pela 6ª) ou de ser removida; se a Conta for excluída, na hora |
 
 ### 8. "Os seus direitos": acrescentar  **[ENTRA COM A FOTO]**
 
@@ -101,7 +103,7 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 >
 > Nomes ofensivos são bloqueados por um filtro, e a Staff pode resetar o Nome de exibição a qualquer momento (ele volta ao seu nome Steam). Se o nome for discriminatório, vale a linha de discriminação da tabela.
 >
-> **A foto de perfil é opcional.** Sem ela, aparece o avatar da Steam. Qualquer Conta pode enviar uma foto, desde que tenha mais de 24 horas e nenhuma Punição ativa, em até 3 envios por dia. A foto **aparece na hora**, antes de qualquer análise, e vale a regra de sempre: a responsabilidade pelo que você envia é sua.
+> **A foto de perfil é opcional.** Sem ela, aparece o avatar da Steam. Qualquer Conta pode enviar uma foto, desde que não tenha uma Punição ativa. A foto **aparece na hora**, antes de qualquer análise, e vale a regra de sempre: a responsabilidade pelo que você envia é sua.
 >
 > **O que não pode numa foto de perfil:**
 > - nudez ou conteúdo sexual;
@@ -113,9 +115,9 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 > **Uma dica:** prefira uma arte, uma imagem de jogo ou um animal a uma foto de rosto. O Carmine é frequentado por muitos adolescentes, e a foto fica pública.
 >
 > **O que acontece com uma foto que não pode:**
-> 1. Qualquer pessoa logada pode **denunciar a foto**. Se **2 Contas diferentes** denunciarem a mesma foto, ela **sai do ar sozinha** (volta o avatar da Steam) até a Staff decidir. Você é avisado no site; ninguém é punido por causa de uma denúncia só.
-> 2. A Staff analisa em **até 24 horas** e **mantém** a foto (ela volta ao ar) ou **remove** (você volta ao avatar da Steam). A decisão é sempre de uma pessoa da Staff, nunca de um robô. A Staff pode remover uma foto mesmo sem denúncia.
-> 3. Depois de uma foto removida, **o seu envio de fotos fica bloqueado** por 7 dias; se acontecer de novo em 90 dias, por 30 dias. **Isso não é uma Punição** da tabela abaixo e não aparece no seu Perfil; só a Staff vê. Quem está bloqueado vê apenas que o envio não está disponível agora.
+> 1. Qualquer pessoa logada pode **denunciar a foto**. Uma denúncia **não tira a foto do ar**: ela vai para a fila da Staff. Ninguém é punido por causa de uma denúncia. Se a Staff aprovar a foto, novas denúncias contra aquela mesma imagem são descartadas.
+> 2. A Staff analisa em **até 24 horas** e **mantém** a foto ou **remove** (você volta ao avatar da Steam). A decisão é sempre de uma pessoa da Staff, nunca de um robô. A Staff pode remover uma foto mesmo sem denúncia.
+> 3. Depois de uma foto removida, **o seu envio de fotos pode ficar bloqueado** pelo número de dias que a Staff escolher. **Isso não é uma Punição** da tabela abaixo e não aparece no seu Perfil; só a Staff vê. Quem está bloqueado vê apenas que o envio não está disponível agora.
 > 4. **Casos graves** (conteúdo sexual envolvendo menor, por exemplo) seguem a linha "Assédio sexual ou risco à segurança de menores" da tabela: ban permanente e comunicação às autoridades. [VALIDAR COM ADVOGADO]
 > 5. A foto removida fica guardada em privado por **30 dias**, só para a Staff, e depois é apagada.
 >
@@ -135,7 +137,7 @@ Acrescentar ao parágrafo "**Sobre crianças e adolescentes.**":
 
 ### 12. "O que é seu e o que é nosso": acrescentar um parágrafo  **[ENTRA COM A FOTO] [VALIDAR COM ADVOGADO]**
 
-> **O que você envia.** A foto de perfil continua sendo sua. Ao enviá-la, você nos autoriza, de graça e sem exclusividade, a **mostrá-la no Carmine e nas prévias de link do seu Perfil** enquanto ela estiver no ar, e a guardá-la em privado pelo tempo que as [Regras de conduta](/regras) e a [Política de Privacidade](/privacidade) dizem. Você declara que **tem o direito de usar a imagem** e que ela não mostra outra pessoa sem a autorização dela. Podemos tirar do ar a foto que desrespeitar as Regras.
+> **O que você envia.** A foto de perfil continua sendo sua. Ao enviá-la, você nos autoriza, de graça e sem exclusividade, a **mostrá-la no Carmine e nas prévias de link do seu Perfil** enquanto ela estiver no ar, e a guardá-la em privado pelo tempo que as [Regras de conduta](/rules) e a [Política de Privacidade](/privacy) dizem. Você declara que **tem o direito de usar a imagem** e que ela não mostra outra pessoa sem a autorização dela. Podemos tirar do ar a foto que desrespeitar as Regras.
 
 ---
 

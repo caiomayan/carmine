@@ -1,0 +1,15 @@
+# Procura uma release nova do Carmine.Core (a Latest do GitHub) e a entrega aos servidores vazios, um por vez.
+# Disparado pelo carmine-plugin-sync.timer; à mão: systemctl start carmine-plugin-sync.service
+[Unit]
+Description=Entrega do Carmine.Core aos servidores CS2 Carmine
+Documentation=https://github.com/caiomayan/carmine/tree/main/infra/cs2/linux
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# 75 (EX_TEMPFAIL) = servidor ocupado, o timer tenta de novo: não é falha.
+SuccessExitStatus=75
+ExecStart=@LIBDIR@/plugin-deploy.sh --version latest --when-empty --no-wait
+TimeoutStartSec=15min
+Nice=10

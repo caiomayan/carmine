@@ -1,6 +1,11 @@
 import { parseArgs } from 'node:util';
-import { steamId64Schema } from '@carmine/contracts';
-import { NoVipToRevoke, type StaffAction, type VipPeriods } from './vip-periods.js';
+import { PLANS, type Plan, steamId64Schema } from '@carmine/contracts';
+import {
+  NoVipToRevoke,
+  type PlanVipStatus,
+  type StaffAction,
+  type VipPeriods,
+} from './vip-periods.js';
 import type { VipStatusAt } from './vip-status.js';
 
 export interface VipCliDeps {
@@ -14,7 +19,7 @@ export interface VipCliDeps {
 }
 
 const USAGE = `Uso:
-  vip grant  --steam-id <SteamID64> --days <dias> --by <SteamID64 da Staff> --reason "<motivo>"
+  vip grant  --steam-id <SteamID64> --days <dias> [--plan capo|padrinho] [--test] --by <SteamID64 da Staff> --reason "<motivo>"
   vip revoke --steam-id <SteamID64> --by <SteamID64 da Staff> --reason "<motivo>"
   vip status --steam-id <SteamID64>`;
 
@@ -27,8 +32,8 @@ const STATUS_AUDIT_LINES = 5;
 class UsageError extends Error {}
 
 /**
- * CLI de operação do VIP (S05): a Staff concede e revoga Períodos VIP sem pagamento, com
- * registro no log de auditoria (autor, ação, alvo, motivo e horário). O painel da Staff (S07)
+ * CLI de operação dos planos (S05, S20): a Staff concede (Capo por padrão, ou Padrinho; `--test` para o plano de teste do
+ * beta) e revoga Períodos sem pagamento, com registro no log de auditoria (autor, ação, alvo, motivo e horário). O painel da Staff (S07)
  * usa as mesmas operações. Devolve o código de saída do processo.
  */
 export async function runVipCli(argv: string[], deps: VipCliDeps): Promise<number> {
@@ -54,14 +59,22 @@ export async function runVipCli(argv: string[], deps: VipCliDeps): Promise<numbe
   }
 }
 
-type Option = 'steam-id' | 'days' | 'by' | 'reason';
+type Option = 'steam-id' | 'days' | 'by' | 'reason' | 'plan';
 
-function options(args: string[], required: Option[]): Record<Option, string> {
+interface Parsed extends Record<Option, string> {
+  test: boolean;
+}
+
+function options(args: string[], required: Option[], extras: ('plan' | 'test')[] = []): Parsed {
   let values: Record<string, string | boolean | undefined>;
   try {
     ({ values } = parseArgs({
       args,
-      options: Object.fromEntries(required.map((name) => [name, { type: 'string' as const }])),
+      options: {
+        ...Object.fromEntries(required.map((name) => [name, { type: 'string' as const }])),
+        ...(extras.includes('plan') && { plan: { type: 'string' as const } }),
+        ...(extras.includes('test') && { test: { type: 'boolean' as const } }),
+      },
       strict: true,
     }));
   } catch (error) {
@@ -82,6 +95,9 @@ function options(args: string[], required: Option[]): Record<Option, string> {
       throw new UsageError(`--days precisa ser um inteiro de 1 a ${MAX_DAYS}\n${USAGE}`);
     }
   }
+  if (values.plan !== undefined && !(PLANS as readonly string[]).includes(value('plan'))) {
+    throw new UsageError(`--plan precisa ser ${PLANS.join(' ou ')}\n${USAGE}`);
+  }
   if (required.includes('reason') && value('reason').trim() === '') {
     throw new UsageError(`--reason é obrigatório: vai para o log de auditoria\n${USAGE}`);
   }
@@ -90,6 +106,8 @@ function options(args: string[], required: Option[]): Record<Option, string> {
     days: value('days'),
     by: value('by'),
     reason: value('reason').trim(),
+    plan: value('plan'),
+    test: values.test === true,
   };
 }
 
@@ -103,10 +121,13 @@ async function accountOf(steamId: string, deps: VipCliDeps): Promise<string> {
   return accountId;
 }
 
-function describe(steamId: string, vip: VipStatusAt): string {
-  return vip.endsAt === null
-    ? `${steamId}: sem VIP`
-    : `${steamId}: VIP até ${vip.endsAt.toISOString()}`;
+const PLAN_NAMES: Record<Plan, string> = { capo: 'Capo', padrinho: 'Padrinho' };
+
+function describe(steamId: string, vip: VipStatusAt | PlanVipStatus): string {
+  if (vip.endsAt === null) return `${steamId}: sem plano`;
+  const plan = 'plan' in vip && vip.plan ? PLAN_NAMES[vip.plan] : 'Capo';
+  const test = 'test' in vip && vip.test ? ' (teste)' : '';
+  return `${steamId}: ${plan}${test} até ${vip.endsAt.toISOString()}`;
 }
 
 const staffOf = (values: Record<Option, string>): StaffAction => ({
@@ -115,13 +136,18 @@ const staffOf = (values: Record<Option, string>): StaffAction => ({
 });
 
 async function grant(args: string[], deps: VipCliDeps): Promise<number> {
-  const values = options(args, ['steam-id', 'days', 'by', 'reason']);
+  const values = options(args, ['steam-id', 'days', 'by', 'reason'], ['plan', 'test']);
   const steamId = values['steam-id'];
   const days = Number(values.days);
+  const plan = (values.plan || 'capo') as Plan;
   const accountId = await accountOf(steamId, deps);
-  const vip = await deps.vipPeriods.grant(accountId, days, new Date(), staffOf(values));
+  await deps.vipPeriods.grant(accountId, days, new Date(), staffOf(values), {
+    plan,
+    test: values.test,
+  });
   await deps.invalidateEquipped(steamId);
-  deps.out(`+${days} dia(s). ${describe(steamId, vip)}`);
+  const status = await deps.vipPeriods.planStatusOf(accountId);
+  deps.out(`+${days} dia(s) de ${PLAN_NAMES[plan]}. ${describe(steamId, status)}`);
   return 0;
 }
 
@@ -132,7 +158,7 @@ async function revoke(args: string[], deps: VipCliDeps): Promise<number> {
   try {
     const vip = await deps.vipPeriods.revoke(accountId, staffOf(values));
     await deps.invalidateEquipped(steamId);
-    deps.out(`VIP revogado. ${describe(steamId, vip)}`);
+    deps.out(`Plano revogado. ${describe(steamId, vip)}`);
     return 0;
   } catch (error) {
     if (error instanceof NoVipToRevoke) throw new UsageError(`${steamId}: ${error.message}`);
@@ -143,7 +169,7 @@ async function revoke(args: string[], deps: VipCliDeps): Promise<number> {
 async function status(args: string[], deps: VipCliDeps): Promise<number> {
   const steamId = options(args, ['steam-id'])['steam-id'];
   const accountId = await accountOf(steamId, deps);
-  deps.out(describe(steamId, await deps.vipPeriods.statusOf(accountId)));
+  deps.out(describe(steamId, await deps.vipPeriods.planStatusOf(accountId)));
   for (const entry of await deps.vipPeriods.auditOf(accountId, STATUS_AUDIT_LINES)) {
     deps.out(
       `  ${entry.createdAt.toISOString()} ${entry.action} por ${entry.actorSteamId}: ${entry.reason} ${JSON.stringify(entry.details)}`,

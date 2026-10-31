@@ -1,5 +1,6 @@
 import './zod-jitless.js';
 import { z } from 'zod';
+import { planPackageIdSchema, planPackageSchema } from './plans.js';
 
 /**
  * S14 · Pacotes VIP e pagamentos (docs/specs/mvp.md, ADR de pagamentos). O contrato do que o site
@@ -86,7 +87,8 @@ export type PaymentStatus = z.infer<typeof paymentStatusSchema>;
 /** `POST /api/me/purchases`: o corpo da compra. A declaração de maioridade é obrigatória. */
 export const createPurchaseSchema = z
   .object({
-    package: vipPackageIdSchema,
+    /** O pacote (S20: 1, 3 ou 6 meses de Capo ou de Padrinho; os IDs do Capo são os legados `vip-*`). */
+    package: planPackageIdSchema,
     method: paymentMethodSchema,
     /** O Pagador declara ser maior de 18 anos (ADR 0011). */
     adultDeclaration: z.literal(true),
@@ -125,6 +127,8 @@ export const vipPackagesSchema = z
     /** O provedor é o falso (dev e homologação): a tela avisa que o pagamento é de mentira. */
     sandbox: z.boolean(),
     packages: z.array(vipPackageSchema),
+    /** S20: todos os pacotes, dos dois planos (`packages` segue com os do Capo, como antes da S20). */
+    planPackages: z.array(planPackageSchema).optional(),
     /** Se a Conta da sessão pode comprar agora; nulo para visitante (sem sessão). */
     eligibility: purchaseEligibilitySchema.nullable(),
   })
@@ -151,7 +155,7 @@ export const purchaseSchema = z
   .object({
     id: z.uuid(),
     status: paymentStatusSchema,
-    package: vipPackageIdSchema,
+    package: planPackageIdSchema,
     days: z.int().positive(),
     amountCents: z.int().positive(),
     method: paymentMethodSchema,
@@ -163,7 +167,7 @@ export const purchaseSchema = z
     pix: purchasePixSchema.nullable(),
     redirectUrl: z.string().nullable(),
     simulationUrl: z.string().nullable(),
-    /** `***.***.123-**`: só o fim do CPF do Pagador, depois de aprovado. */
+    /** `***.***.**1-23`: só o fim do CPF do Pagador (os 3 últimos dígitos), depois de aprovado. */
     payerDocumentMasked: z.string().nullable(),
     /** O nome do Pagador, como o provedor o informa (depois de aprovado). */
     payerName: z.string().nullable(),
@@ -222,7 +226,7 @@ export type FakePaymentAction = z.infer<typeof fakePaymentActionSchema>;
 /**
  * `GET /api/dev/payments/{providerId}` e o corpo de `POST /api/dev/payments/{providerId}/{action}`: a
  * cobrança no provedor falso. `externalReference` é o `id` da compra (a página volta para
- * `/vip/compra/<externalReference>`). Só existe com o provedor falso (404 nos outros).
+ * `/plans/purchase/<externalReference>`). Só existe com o provedor falso (404 nos outros).
  */
 export const fakePaymentSchema = z.object({
   providerPaymentId: z.string(),

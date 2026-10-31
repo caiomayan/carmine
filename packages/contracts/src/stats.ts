@@ -27,10 +27,41 @@ export const gameTeamSchema = z.enum(['ct', 't']).meta({ id: 'GameTeam' });
 
 export type GameTeam = z.infer<typeof gameTeamSchema>;
 
+/**
+ * S17 (coleta por round): o que todo evento de round pode levar a mais. Tudo opcional, para a API
+ * seguir aceitando o plugin que ainda não manda. `mapPlayId` (UUID v7, criado pelo `MatchTracker` a
+ * cada mapa novo ou reinício de partida) agrupa os rounds de um mapa jogado e não aparece para
+ * ninguém. `atMs` é o horário do servidor em milissegundos desde 1970, mais exato que `at` para a
+ * ordem das kills dentro do round (trade, clutch).
+ */
+const roundContextShape = {
+  mapPlayId: z.uuid().optional(),
+  roundNumber: z.int().positive().max(999).optional(),
+  atMs: z.int().nonnegative().optional(),
+};
+
+/** Posição no mapa, em unidades do jogo. */
+export const positionSchema = z
+  .object({
+    x: z.number().min(-100_000).max(100_000),
+    y: z.number().min(-100_000).max(100_000),
+    z: z.number().min(-100_000).max(100_000),
+  })
+  .meta({ id: 'Position' });
+
+export type Position = z.infer<typeof positionSchema>;
+
 /** Quem venceu o round; `none` é empate (ou round sem vencedor). */
 export const roundWinnerSchema = z.enum(['ct', 't', 'none']).meta({ id: 'RoundWinner' });
 
 export type RoundWinner = z.infer<typeof roundWinnerSchema>;
+
+/** Como um round acabou (S17): bomba explodiu, bomba desarmada, eliminação, tempo ou outro. */
+export const roundEndReasonSchema = z
+  .enum(['bomb_exploded', 'bomb_defused', 'elimination', 'time', 'other'])
+  .meta({ id: 'RoundEndReason' });
+
+export type RoundEndReason = z.infer<typeof roundEndReasonSchema>;
 
 /**
  * Os campos nulos (SteamID do assassino, da vítima e do assistente) também valem AUSENTES: o cliente
@@ -65,6 +96,23 @@ export const killEventSchema = z
      * ausente) quando o assassino é o mundo, um bot ou não tem lado.
      */
     killerTeam: gameTeamSchema.nullable().optional(),
+    ...roundContextShape,
+    /** S17: o lado da vítima na hora da morte; nulo (ou ausente) quando não tem lado. */
+    victimTeam: gameTeamSchema.nullable().optional(),
+    /** S17: a assistência veio de uma flash (`assistedflash`). */
+    flashAssist: z.boolean().optional(),
+    /** S17: quantas superfícies o tiro atravessou (`penetrated`); acima de 0 é wallbang. */
+    penetrated: z.int().nonnegative().max(16).optional(),
+    /** S17: o tiro atravessou fumaça (`thrusmoke`). */
+    throughSmoke: z.boolean().optional(),
+    /** S17: o assassino estava cego por flash (`attackerblind`). */
+    attackerBlind: z.boolean().optional(),
+    /** S17: sniper sem mira (`noscope`). */
+    noScope: z.boolean().optional(),
+    /** S17: distância entre os dois, em unidades do jogo. */
+    distance: z.number().nonnegative().max(100_000).optional(),
+    killerPosition: positionSchema.nullable().optional(),
+    victimPosition: positionSchema.nullable().optional(),
   })
   .meta({ id: 'KillEvent' });
 
@@ -80,7 +128,18 @@ export const damageEventSchema = z
     /** Só o dano em inimigo conta: bot e aliado ficam de fora. */
     victimIsBot: z.boolean(),
     teamDamage: z.boolean(),
+    /** O valor bruto do acerto: as somas de hoje (ADR 0018) continuam usando este. */
     amount: z.int().min(1).max(DAMAGE_EVENT_MAX),
+    ...roundContextShape,
+    /** S17: quem levou o dano. Nulo (ou ausente) quando não é um humano com Conta possível. */
+    victimSteamId: steamId64Schema.nullable().optional(),
+    weapon: z.string().max(64).optional(),
+    /** S17: a parte do corpo do acerto (`hitgroup` do jogo: 1 cabeça, 2 peito, 3 barriga...). */
+    hitgroup: z.int().min(0).max(10).optional(),
+    /** S17: o dano que a armadura absorveu. */
+    armorDamage: z.int().min(0).max(DAMAGE_EVENT_MAX).optional(),
+    /** S17: o dano limitado à vida que a vítima tinha antes do hit (é o que entra no ADR do rating). */
+    healthDamage: z.int().min(0).max(DAMAGE_EVENT_MAX).optional(),
   })
   .meta({ id: 'DamageEvent' });
 
@@ -113,10 +172,82 @@ export const roundEndEventSchema = z
     roundNumber: z.int().positive().max(999).optional(),
     scoreCt: z.int().nonnegative().max(999).optional(),
     scoreT: z.int().nonnegative().max(999).optional(),
+    /** S17: `roundNumber` acima já existe; o resto do contexto é o mapa jogado e o horário em ms. */
+    mapPlayId: roundContextShape.mapPlayId,
+    atMs: roundContextShape.atMs,
+    /** S17: como o round acabou. `other` cobre o que o plugin não sabe classificar. */
+    reason: roundEndReasonSchema.optional(),
+    /** S17: da abertura do round (fim do freeze) até o fim, em milissegundos. */
+    durationMs: z.int().nonnegative().max(3_600_000).optional(),
+    /** S17: os humanos vivos no fim do round (a verdade sobre quem sobreviveu). */
+    alive: z.array(steamId64Schema).max(64).optional(),
   })
   .meta({ id: 'RoundEndEvent' });
 
 export type RoundEndEvent = z.infer<typeof roundEndEventSchema>;
+
+/** Um jogador na abertura de um round: o lado e o valor do equipamento no fim do freeze. */
+export const roundStartPlayerSchema = z
+  .object({
+    steamId: steamId64Schema,
+    team: gameTeamSchema,
+    /** `FreezetimeEndEquipmentValue`, em dólares do jogo. */
+    equipmentValue: z.int().nonnegative().max(100_000),
+  })
+  .meta({ id: 'RoundStartPlayer' });
+
+export type RoundStartPlayer = z.infer<typeof roundStartPlayerSchema>;
+
+/**
+ * Início de um round (fim do freeze, S17). `players` são os humanos; os bots só entram na conta
+ * de quantos há em cada lado (`botsCt`, `botsT`), para a API saber quantos estavam vivos num clutch.
+ * Um round sem humanos nos dois lados (os rounds sintéticos do `cs2-retakes`) não gera resumo.
+ */
+export const roundStartEventSchema = z
+  .object({
+    id: eventIdSchema,
+    at: eventTimeSchema,
+    atMs: roundContextShape.atMs,
+    warmup: z.boolean(),
+    mapPlayId: z.uuid(),
+    roundNumber: z.int().positive().max(999),
+    map: mapNameSchema.optional(),
+    players: z.array(roundStartPlayerSchema).max(64),
+    botsCt: z.int().nonnegative().max(64).default(0),
+    botsT: z.int().nonnegative().max(64).default(0),
+  })
+  .meta({ id: 'RoundStartEvent' });
+
+export type RoundStartEvent = z.infer<typeof roundStartEventSchema>;
+
+/** A bomba foi plantada, desarmada ou explodiu. */
+export const bombEventKindSchema = z
+  .enum(['plant', 'defuse', 'explode'])
+  .meta({ id: 'BombEventKind' });
+
+export type BombEventKind = z.infer<typeof bombEventKindSchema>;
+
+/** Um bomb site. */
+export const bombSiteSchema = z.enum(['a', 'b']).meta({ id: 'BombSite' });
+
+export type BombSite = z.infer<typeof bombSiteSchema>;
+
+/** Bomba (S17). `steamId` é quem plantou ou desarmou; a explosão não tem autor. */
+export const bombEventSchema = z
+  .object({
+    id: eventIdSchema,
+    at: eventTimeSchema,
+    atMs: roundContextShape.atMs,
+    warmup: z.boolean(),
+    mapPlayId: z.uuid(),
+    roundNumber: z.int().positive().max(999),
+    kind: bombEventKindSchema,
+    steamId: steamId64Schema.nullable().optional(),
+    site: bombSiteSchema.nullable().optional(),
+  })
+  .meta({ id: 'BombEvent' });
+
+export type BombEvent = z.infer<typeof bombEventSchema>;
 
 /** Um jogador entrou no servidor (o plugin gera o `sessionId`, UUID v7). */
 export const sessionStartEventSchema = z
@@ -161,6 +292,8 @@ export function countEvents(batch: {
   sessionStarts: readonly unknown[];
   sessionEnds: readonly unknown[];
   chatMessages?: readonly unknown[];
+  roundStarts?: readonly unknown[];
+  bombs?: readonly unknown[];
 }): number {
   return (
     batch.kills.length +
@@ -168,7 +301,9 @@ export function countEvents(batch: {
     batch.roundEnds.length +
     batch.sessionStarts.length +
     batch.sessionEnds.length +
-    (batch.chatMessages?.length ?? 0)
+    (batch.chatMessages?.length ?? 0) +
+    (batch.roundStarts?.length ?? 0) +
+    (batch.bombs?.length ?? 0)
   );
 }
 
@@ -186,6 +321,9 @@ export const eventBatchSchema = z
     sessionEnds: z.array(sessionEndEventSchema).max(EVENT_BATCH_MAX_EVENTS),
     /** Chat dos servidores (S13): vai no mesmo lote e na mesma fila. Ausente: nenhuma. */
     chatMessages: z.array(chatMessageEventSchema).max(EVENT_BATCH_MAX_EVENTS).optional(),
+    /** Coleta por round (S17): início do round e bomba. Ausentes: o plugin ainda não manda. */
+    roundStarts: z.array(roundStartEventSchema).max(EVENT_BATCH_MAX_EVENTS).optional(),
+    bombs: z.array(bombEventSchema).max(EVENT_BATCH_MAX_EVENTS).optional(),
   })
   .refine((batch) => countEvents(batch) <= EVENT_BATCH_MAX_EVENTS, {
     message: `no máximo ${EVENT_BATCH_MAX_EVENTS} eventos por lote`,
@@ -230,6 +368,11 @@ export const modeStatsSchema = z
     adr: z.number().nonnegative().nullable(),
     /** Kills ÷ minutos jogados, 2 casas; só no Deathmatch e com tempo jogado. */
     kpm: z.number().nonnegative().nullable(),
+    /**
+     * Pontuação DM dos últimos 90 dias (S21, ADR 0030), 1 casa; só no Deathmatch. Nula enquanto a
+     * Conta não tem o mínimo de minutos do Ranking do DM na janela, ou a população é pequena demais.
+     */
+    dmScore: z.number().nonnegative().nullable().optional(),
   })
   .meta({ id: 'ModeStats' });
 

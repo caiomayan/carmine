@@ -76,6 +76,23 @@ export function initialLive(list: LiveServerList | null): LiveState {
   };
 }
 
+/**
+ * As duas listas mostram o mesmo? Compara o que a tela usa, sem o `generatedAt` nem o horário do batimento (que mudam
+ * sem que nada visível mude; a API também os deixa fora do que vale um evento). Serve para não trocar o estado, e então
+ * não renderizar a lista inteira de novo, quando um evento (por exemplo, o primeiro depois de reconectar) traz o que a
+ * página já tem.
+ */
+export function sameVisibleList(a: LiveServerList, b: LiveServerList): boolean {
+  if (a.summary.online !== b.summary.online || a.summary.players !== b.summary.players)
+    return false;
+  if (a.servers.length !== b.servers.length) return false;
+  const key = ({ lastHeartbeatAt: _, ...server }: LiveServer) => JSON.stringify(server);
+  return a.servers.every((server, index) => {
+    const other = b.servers[index];
+    return other !== undefined && key(server) === key(other);
+  });
+}
+
 export function liveReducer(state: LiveState, event: LiveEvent): LiveState {
   if (event.type === 'lost') {
     if (state.connection === 'lost') return state;
@@ -87,6 +104,15 @@ export function liveReducer(state: LiveState, event: LiveEvent): LiveState {
   }
   const older =
     state.list && Date.parse(event.list.generatedAt) < Date.parse(state.list.generatedAt);
+  // Já ao vivo e nada visível mudou: o mesmo estado (o React não renderiza de novo). `confirmedAt` só é lido com a
+  // conexão caída, e a queda grava o instante dela.
+  if (
+    state.connection === 'live' &&
+    state.list &&
+    (older || sameVisibleList(state.list, event.list))
+  ) {
+    return state;
+  }
   return { list: older ? state.list : event.list, connection: 'live', confirmedAt: event.at };
 }
 

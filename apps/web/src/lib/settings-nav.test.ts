@@ -7,31 +7,41 @@ import {
 } from './settings-nav';
 
 describe('settingsHref', () => {
-  it('monta o caminho de cada seção sob /configuracoes', () => {
-    expect(SETTINGS_BASE).toBe('/configuracoes');
-    expect(settingsHref('perfil')).toBe('/configuracoes/perfil');
-    expect(settingsHref('conexoes')).toBe('/configuracoes/conexoes');
+  it('monta o caminho de cada seção sob /settings', () => {
+    expect(SETTINGS_BASE).toBe('/settings');
+    expect(settingsHref('perfil')).toBe('/settings/profile');
+    expect(settingsHref('conexoes')).toBe('/settings/connections');
+    expect(settingsHref('compras')).toBe('/settings/purchases');
+    expect(settingsHref('aparencia')).toBe('/settings/appearance');
+    expect(settingsHref('dados')).toBe('/settings/data');
   });
 
-  it('a ordem das seções é Perfil, Conexões, Aparência, Dados e conta', () => {
-    expect(SETTINGS_SECTIONS).toEqual(['perfil', 'conexoes', 'aparencia', 'dados']);
+  it('a ordem das seções é Perfil, Compras, Conexões, Aparência, Dados e conta', () => {
+    expect(SETTINGS_SECTIONS).toEqual(['perfil', 'compras', 'conexoes', 'aparencia', 'dados']);
   });
 });
 
 describe('activeSettingsSection', () => {
   it('reconhece a seção pelo caminho', () => {
-    expect(activeSettingsSection('/configuracoes/aparencia')).toBe('aparencia');
-    expect(activeSettingsSection('/configuracoes/dados/')).toBe('dados');
+    expect(activeSettingsSection('/settings/appearance')).toBe('aparencia');
+    expect(activeSettingsSection('/settings/data/')).toBe('dados');
   });
 
-  it('na raiz de /configuracoes, nenhuma está aberta (no celular é a lista)', () => {
-    expect(activeSettingsSection('/configuracoes')).toBeNull();
-    expect(activeSettingsSection('/configuracoes/')).toBeNull();
+  it('o recibo é da seção Compras', () => {
+    expect(activeSettingsSection('/settings/purchases')).toBe('compras');
+    expect(activeSettingsSection('/settings/purchases/3f9c8b1e-7a52-4c1e-9d3a-2f6a8e0b4c11')).toBe(
+      'compras',
+    );
   });
 
-  it('fora de /configuracoes ou com seção que não existe, nenhuma', () => {
-    expect(activeSettingsSection('/inventario')).toBeNull();
-    expect(activeSettingsSection('/configuracoes/vip')).toBeNull();
-    expect(activeSettingsSection('/configuracoes-antigas/perfil')).toBeNull();
+  it('na raiz de /settings, nenhuma está aberta (no celular é a lista)', () => {
+    expect(activeSettingsSection('/settings')).toBeNull();
+    expect(activeSettingsSection('/settings/')).toBeNull();
+  });
+
+  it('fora de /settings ou com seção que não existe, nenhuma', () => {
+    expect(activeSettingsSection('/inventory')).toBeNull();
+    expect(activeSettingsSection('/settings/vip')).toBeNull();
+    expect(activeSettingsSection('/settings-old/profile')).toBeNull();
   });
 });

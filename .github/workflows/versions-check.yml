@@ -1,0 +1,62 @@
+# Confere toda semana (e a cada mudança em versions.sh) que os terceiros do CS2 fixados por SHA-256 ainda existem
+# nos endereços oficiais, e mantém o espelho privado deles no R2 do dono (infra/cs2/linux/lib-assets.sh).
+# O Metamod do AlliedModders, por exemplo, só guarda os builds recentes: sem isto o hash fixado vira um 404 e a
+# instalação de um servidor novo quebra no dia do lançamento. Problema => abre (ou atualiza) uma issue.
+#
+# Secrets do repositório (opcionais; sem eles só confere o oficial): MIRROR_URL (https://<conta>.r2.cloudflarestorage.com/<bucket>),
+# MIRROR_ACCESS_KEY_ID e MIRROR_SECRET_ACCESS_KEY (token R2 de ESCRITA nesse bucket; a VPS usa outro, só de leitura).
+name: Terceiros do CS2
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    paths:
+      - infra/cs2/linux/versions.sh
+      - infra/cs2/linux/lib-assets.sh
+      - infra/cs2/release/versions-check.sh
+      - .github/workflows/versions-check.yml
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    name: versions-check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Conferir e espelhar
+        id: check
+        env:
+          MIRROR_URL: ${{ secrets.MIRROR_URL }}
+          MIRROR_ACCESS_KEY_ID: ${{ secrets.MIRROR_ACCESS_KEY_ID }}
+          MIRROR_SECRET_ACCESS_KEY: ${{ secrets.MIRROR_SECRET_ACCESS_KEY }}
+        run: |
+          set +e
+          bash infra/cs2/release/versions-check.sh --report "$RUNNER_TEMP/relatorio.md"
+          code=$?
+          cat "$RUNNER_TEMP/relatorio.md" >> "$GITHUB_STEP_SUMMARY"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Abrir ou atualizar a issue
+        if: steps.check.outputs.code != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CODE: ${{ steps.check.outputs.code }}
+        run: |
+          title="Terceiros do CS2: versions.sh precisa de atenção"
+          [[ "$CODE" == 2 ]] && title="Terceiros do CS2: SEM CÓPIA com o SHA fixado (a instalação do zero quebra)"
+          existing="$(gh issue list --state open --search 'Terceiros do CS2 in:title' --json number --jq '.[0].number // empty')"
+          if [[ -n "$existing" ]]; then
+            gh issue edit "$existing" --title "$title" --body-file "$RUNNER_TEMP/relatorio.md"
+          else
+            gh issue create --title "$title" --body-file "$RUNNER_TEMP/relatorio.md"
+          fi
+      - name: Falhar se faltar cópia
+        if: steps.check.outputs.code == '2'
+        run: exit 1

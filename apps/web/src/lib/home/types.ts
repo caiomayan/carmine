@@ -25,7 +25,7 @@ export type LoadoutEntry = {
   player: { name: string; avatarUrl: string | null; href: Route };
 };
 
-/** O que `/vitrine/semana` devolve: a vitrine dos Loadouts, buscada só quando a faixa chega perto da tela. */
+/** O que `/showcase/week` devolve: a vitrine dos Loadouts, buscada só quando a faixa chega perto da tela. */
 export type LoadoutsWeek = { entries: LoadoutEntry[] };
 
 /** Tudo o que a Home recebe do servidor na primeira pintura. Nulo é "a API não respondeu", nunca zero. */

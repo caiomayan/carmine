@@ -1,5 +1,5 @@
 /*
- * A página do servidor (/servidores/[id]), na linguagem Vida. Prefixo `vs-`. A base (tipografia, painéis, cor
+ * A página do servidor (/servers/[id]), na linguagem Vida. Prefixo `vs-`. A base (tipografia, painéis, cor
  * ambiente) é a de components/vida/vida.css; a cor do mapa chega por variável (--v-map, --v-map-deep, --v-map-ink)
  * como nos cartões da Home. CT e TR são cores de contexto (--side-ct, --side-t): só em pontinhos, barras e legendas.
  */
@@ -14,8 +14,20 @@
   transform: translateX(-50%);
   z-index: -1;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 58%, transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--hdr-fade),
+    #000 58%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--hdr-fade),
+    #000 58%,
+    transparent 100%
+  );
 }
 .vs-art img {
   width: 100%;
@@ -40,18 +52,9 @@
 .vs-art[data-asleep] img {
   filter: grayscale(0.55) brightness(0.55);
 }
-@media (prefers-reduced-motion: no-preference) {
-  .vs-art img {
-    animation: vs-kenburns 40s ease-in-out infinite alternate;
-  }
-}
-@keyframes vs-kenburns {
-  from {
-    transform: scale(1.02);
-  }
-  to {
-    transform: scale(1.1) translate3d(-1.2%, -1%, 0);
-  }
+/* A arte do servidor fica parada, no meio do antigo Ken Burns de 40 s (ver a da Home). */
+.vs-art img {
+  transform: scale(1.06) translate(-0.6%, -0.5%);
 }
 @media (max-width: 760px) {
   .vs-art {
@@ -409,13 +412,14 @@
   overflow: hidden;
 }
 .vs-strip {
-  display: flex;
-  flex-direction: column;
+  display: block;
   transition: transform 820ms var(--ease-out);
 }
-.vs-strip > span {
+/* A fita 0..9: uma linha por dígito (1em cada, então a fita tem 10em e -10% desliza um dígito). Sem elementos filhos. */
+.vs-strip::before {
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
   display: block;
-  height: 1em;
+  white-space: pre;
   line-height: 1em;
   text-align: center;
 }

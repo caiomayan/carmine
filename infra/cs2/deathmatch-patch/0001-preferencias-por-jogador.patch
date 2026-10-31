@@ -1,0 +1,85 @@
+diff --git a/source/Deathmatch/API.cs b/source/Deathmatch/API.cs
+index a299f46..eefda9d 100644
+--- a/source/Deathmatch/API.cs
++++ b/source/Deathmatch/API.cs
+@@ -101,6 +101,25 @@ public partial class Deathmatch : IDeathmatchAPI
+         DisableDefaultSpawns();
+     }
+ 
++    public object? GetPlayerPreference(CCSPlayerController player, string name)
++    {
++        return player != null && player.IsValid && playerData.TryGetValue(player.Slot, out var data) && data.Preferences.TryGetValue(name, out var value)
++            ? value
++            : null;
++    }
++
++    public bool SetPlayerPreference(CCSPlayerController player, string name, object value)
++    {
++        if (player == null || !player.IsValid || !playerData.TryGetValue(player.Slot, out var data))
++            return false;
++
++        if (data.Preferences.TryGetValue(name, out var current) && current.GetType() != value.GetType())
++            return false;
++
++        data.Preferences[name] = value;
++        return true;
++    }
++
+     public Preference? RegisterPreference(string name, PreferencesBooleanData data, bool vipOnly = false)
+     {
+         var preference = Preference.RegisterPreference(name, data, vipOnly);
+diff --git a/source/Deathmatch/Functions/Players.cs b/source/Deathmatch/Functions/Players.cs
+index 7eb4be4..7096707 100644
+--- a/source/Deathmatch/Functions/Players.cs
++++ b/source/Deathmatch/Functions/Players.cs
+@@ -431,6 +431,8 @@ namespace Deathmatch
+                 data.Preferences[preference] = !currentValue;
+             }
+ 
++            TriggerEvent(new DeathmatchAPI.Events.IDeathmatchEventsAPI.OnPlayerPreferenceChanged(player, preference, data.Preferences[preference]));
++
+             var changedValue = (bool)data.Preferences[preference] ? Localizer["Menu.Enabled"] : Localizer["Menu.Disabled"];
+             var Preference = Localizer[$"Prefs.{preference}"];
+             player.PrintToChat($"{Localizer["Chat.Prefix"]} {Localizer["Prefs.ValueChanged", Preference, changedValue]}");
+@@ -452,6 +454,8 @@ namespace Deathmatch
+                 data.Preferences[preference] = newValue;
+             }
+ 
++            TriggerEvent(new DeathmatchAPI.Events.IDeathmatchEventsAPI.OnPlayerPreferenceChanged(player, preference, data.Preferences[preference]));
++
+             var Preference = Localizer[$"Prefs.{preference}"];
+             player.PrintToChat($"{Localizer["Chat.Prefix"]} {Localizer["Prefs.ValueSet", Preference, data.Preferences[preference]]}");
+         }
+diff --git a/source/DeathmatchAPI/DeathmatchAPI.cs b/source/DeathmatchAPI/DeathmatchAPI.cs
+index f359655..9dcd0a4 100644
+--- a/source/DeathmatchAPI/DeathmatchAPI.cs
++++ b/source/DeathmatchAPI/DeathmatchAPI.cs
+@@ -11,6 +11,10 @@ public interface IDeathmatchAPI
+     public Preference? RegisterPreference(string name, PreferencesData data, bool vipOnly = false);
+     public List<Preference> GetAllPreferences();
+     public Preference? GetPreferenceByName(string name);
++    /// <summary>Carmine: o valor atual da preferência do jogador (bool ou string), ou null se o jogador ou a preferência não existem.</summary>
++    public object? GetPlayerPreference(CCSPlayerController player, string name);
++    /// <summary>Carmine: grava o valor da preferência do jogador sem avisar o jogador nem disparar o evento de mudança. Falso se o jogador não tem dados ou o tipo não bate com o da preferência.</summary>
++    public bool SetPlayerPreference(CCSPlayerController player, string name, object value);
+     public Categorie? RegisterMenuCategory(string name, string menuTitle, string menuOption, bool useLocalizer = false);
+     public void RemoveMenuCategory(string name);
+     public void RemoveMenuCategory(Categorie category);
+diff --git a/source/DeathmatchAPI/Events.cs b/source/DeathmatchAPI/Events.cs
+index 69f73d8..21f58b7 100644
+--- a/source/DeathmatchAPI/Events.cs
++++ b/source/DeathmatchAPI/Events.cs
+@@ -1,4 +1,5 @@
+ 
++using CounterStrikeSharp.API.Core;
+ using DeathmatchAPI.Helpers;
+ 
+ namespace DeathmatchAPI.Events;
+@@ -6,4 +7,6 @@ public interface IDeathmatchEventsAPI
+ {
+     public record OnCustomModeStarted(int modeId, ModeData data) : IDeathmatchEventsAPI;
+     public record OnSpawnPointsLoaded(List<SpawnData> spawns) : IDeathmatchEventsAPI;
++    /// <summary>Carmine: o jogador mudou uma preferência (pelo menu ou por um atalho de comando).</summary>
++    public record OnPlayerPreferenceChanged(CCSPlayerController player, string name, object value) : IDeathmatchEventsAPI;
+ }
+\ No newline at end of file

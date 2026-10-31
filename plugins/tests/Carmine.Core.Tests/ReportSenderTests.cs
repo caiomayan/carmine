@@ -51,7 +51,7 @@ public class ReportSenderTests
             Text = "seu lixo",
         });
 
-        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Offensive_chat, 7, "de_nuke", TestContext.Current.CancellationToken);
+        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Offensive_chat, 7, "de_nuke", null, TestContext.Current.CancellationToken);
 
         Assert.True(outcome.Accepted);
         Assert.Equal("Denúncia recebida; a Staff analisa em até 72 h.", outcome.Message);
@@ -67,13 +67,36 @@ public class ReportSenderTests
     }
 
     [Fact]
+    public async Task A_Denuncia_leva_o_Mapa_jogado_quando_o_plugin_o_conhece()
+    {
+        using var f = new Fixture(Respond);
+        var mapPlay = Guid.CreateVersion7(Now);
+
+        await f.Sender.SendAsync(Reporter, Target, ReportReason.Cheat, 7, "de_nuke", mapPlay, TestContext.Current.CancellationToken);
+
+        var report = JsonDocument.Parse(f.Api.Requests.Single(IsReport).Body).RootElement;
+        Assert.Equal(mapPlay.ToString(), report.GetProperty("mapPlayId").GetString());
+    }
+
+    [Fact]
+    public async Task Sem_Mapa_jogado_o_campo_nao_vai_e_a_API_agrupa_como_antes()
+    {
+        using var f = new Fixture(Respond);
+
+        await f.Sender.SendAsync(Reporter, Target, ReportReason.Cheat, 7, "de_nuke", null, TestContext.Current.CancellationToken);
+
+        var report = JsonDocument.Parse(f.Api.Requests.Single(IsReport).Body).RootElement;
+        Assert.False(report.TryGetProperty("mapPlayId", out var value) && value.ValueKind != JsonValueKind.Null);
+    }
+
+    [Fact]
     public async Task A_recusa_da_API_chega_ao_jogador_com_a_mensagem_dela()
     {
         using var f = new Fixture(request => IsReport(request)
             ? StubHandler.Json(HttpStatusCode.OK, """{"accepted":false,"message":"Você já denunciou este jogador há pouco. Tente de novo em 6 min.","refusal":"same_target_cooldown","retryAfterSeconds":360}""")
             : StubHandler.Json(HttpStatusCode.OK, """{"accepted":0,"duplicates":0,"ignored":0}"""));
 
-        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Cheat, null, null, TestContext.Current.CancellationToken);
+        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Cheat, null, null, null, TestContext.Current.CancellationToken);
 
         Assert.False(outcome.Accepted);
         Assert.Equal("Você já denunciou este jogador há pouco. Tente de novo em 6 min.", outcome.Message);
@@ -84,7 +107,7 @@ public class ReportSenderTests
     {
         using var f = new Fixture(_ => throw new HttpRequestException("Connection refused"));
 
-        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Griefing, 3, "de_mirage", TestContext.Current.CancellationToken);
+        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Griefing, 3, "de_mirage", null, TestContext.Current.CancellationToken);
 
         Assert.False(outcome.Accepted);
         Assert.Equal(ReportSender.UnavailableMessage, outcome.Message);
@@ -97,7 +120,7 @@ public class ReportSenderTests
             ? StubHandler.Json(HttpStatusCode.BadRequest, """{"statusCode":400,"message":"Corpo inválido"}""")
             : StubHandler.Json(HttpStatusCode.OK, """{"accepted":0,"duplicates":0,"ignored":0}"""));
 
-        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Other, null, null, TestContext.Current.CancellationToken);
+        var outcome = await f.Sender.SendAsync(Reporter, Target, ReportReason.Other, null, null, null, TestContext.Current.CancellationToken);
 
         Assert.False(outcome.Accepted);
         Assert.Equal(ReportSender.UnavailableMessage, outcome.Message);

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DiscordWebhook } from '../alerts/discord-webhook.js';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
@@ -15,7 +16,7 @@ import { StaffReports } from './staff-reports.js';
  * limpeza de retenção do chat e das Denúncias.
  */
 @Module({
-  imports: [GameServersModule],
+  imports: [GameServersModule, AnalyticsModule],
   controllers: [ServerReportsController],
   providers: [
     { provide: Reports, inject: [DATABASE], useFactory: (db: Database) => new Reports(db) },

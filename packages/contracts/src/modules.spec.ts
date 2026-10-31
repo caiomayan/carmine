@@ -28,8 +28,15 @@ describe('módulos do contrato como subpaths', () => {
 
   it('o índice reexporta cada módulo (a API continua importando de um lugar só), menos os que são só para o cliente', () => {
     const index = source('index.ts');
-    // Estes ficam de fora do índice de propósito (peso no JS do cliente; ver avatar.ts e rules.ts).
-    const subpathOnly = new Set(['rules.ts', 'avatar.ts', 'avatar-rules.ts', 'avatar-url.ts']);
+    // Estes ficam de fora do índice de propósito (peso no JS do cliente; ver avatar.ts e rules.ts; analytics.ts é só da API).
+    const subpathOnly = new Set([
+      'rules.ts',
+      'avatar.ts',
+      'avatar-rules.ts',
+      'avatar-url.ts',
+      'analytics.ts',
+      'analytics-routes.ts',
+    ]);
     for (const name of modules) {
       if (['index.ts', 'zod-jitless.ts'].includes(name) || subpathOnly.has(name)) continue;
       expect(index, name).toContain(`'./${name.replace('.ts', '.js')}'`);

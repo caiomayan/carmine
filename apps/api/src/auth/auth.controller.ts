@@ -3,7 +3,9 @@ import {
   currentSessionSchema,
   DEFAULT_RETURN_PATH,
   type LoginError,
+  safeReturnPath,
 } from '@carmine/contracts';
+import { analyticsRouteOf } from '@carmine/contracts/analytics-routes';
 import {
   Controller,
   Get,
@@ -36,11 +38,13 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { AccountsService } from '../accounts/accounts.service.js';
 import { nextDisplayNameChange } from '../accounts/display-name.js';
 import { toProfile } from '../accounts/profile.js';
+import { Analytics } from '../analytics/analytics.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { Loadouts } from '../loadout/loadouts.js';
 import { Sanctions } from '../moderation/sanctions.js';
 import { RateLimit } from '../rate-limit/rate-limit.decorator.js';
 import { StaffRoles } from '../staff/staff-roles.js';
+import { VIP_HOLD_DAYS } from '../vip/vip-hold.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import { toVipStatus } from '../vip/vip-status.js';
 import { LoginRateLimitFilter, loginErrorUrl } from './login-errors.js';
@@ -65,7 +69,7 @@ const LOGIN_ERRORS: Record<OpenIdFailure['reason'], LoginError> = {
 /**
  * Login Steam (OpenID 2.0), sessão e logout (S03, ADR 0007). As rotas de login são navegações
  * do navegador, então respondem com redirecionamentos, nunca com JSON: o sucesso volta à página
- * de origem e a falha vai para `/entrar?erro=<motivo>`.
+ * de origem e a falha vai para `/login?erro=<motivo>`.
  */
 @ApiTags('auth')
 @Controller()
@@ -81,6 +85,7 @@ export class AuthController {
     @Inject(Loadouts) private readonly loadouts: Loadouts,
     @Inject(Sanctions) private readonly sanctions: Sanctions,
     @Inject(StaffRoles) private readonly staffRoles: StaffRoles,
+    @Inject(Analytics) private readonly analytics: Analytics,
   ) {}
 
   @Get('auth/steam/login')
@@ -96,7 +101,7 @@ export class AuthController {
     description: 'Caminho interno do web para onde voltar depois do login (padrão: /)',
   })
   @ApiFoundResponse({
-    description: 'Para a Steam (ou para /entrar?erro=indisponivel, ou erro=limite acima do limite)',
+    description: 'Para a Steam (ou para /login?erro=indisponivel, ou erro=limite acima do limite)',
   })
   async start(
     @Query('returnTo') returnTo: string | undefined,
@@ -112,6 +117,10 @@ export class AuthController {
         maxAge: LOGIN_FLOW_TTL_SECONDS,
       });
       reply.redirect(redirectUrl, HttpStatus.FOUND);
+      // Só quando a Steam foi de fato o próximo passo; a página de origem vira a rota do plano, nunca o caminho.
+      this.analytics.capture('login_iniciado', {
+        props: { destino: analyticsRouteOf(safeReturnPath(returnTo)) },
+      });
     } catch (error) {
       this.logger.error(`Login Steam não começou: ${(error as Error).message}`);
       reply.redirect(this.errorUrl('indisponivel', DEFAULT_RETURN_PATH), HttpStatus.FOUND);
@@ -127,7 +136,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: HttpStatus.SEE_OTHER,
-    description: 'Para a página de origem (sessão aberta) ou para /entrar?erro=<motivo>',
+    description: 'Para a página de origem (sessão aberta) ou para /login?erro=<motivo>',
   })
   async complete(@Req() request: FastifyRequest, @Res() reply: FastifyReply): Promise<void> {
     reply.clearCookie(LOGIN_STATE_COOKIE, { path: LOGIN_STATE_PATH });
@@ -138,11 +147,12 @@ export class AuthController {
         if (result.reason !== 'cancelled') {
           this.logger.warn(`Login Steam recusado (${result.reason}): ${result.detail}`);
         }
+        this.analytics.capture('login_falhou', { props: { motivo: LOGIN_ERRORS[result.reason] } });
         reply.redirect(this.errorUrl(LOGIN_ERRORS[result.reason], result.returnTo), 303);
         return;
       }
 
-      const { account, firstLogin } = await this.accounts.claimOnLogin(result.steamId);
+      const { account, firstLogin, created } = await this.accounts.claimOnLogin(result.steamId);
       // Rotação: a sessão de antes do login (se havia) morre; o id novo nunca foi visto por ninguém.
       const previous = request.cookies[SESSION_COOKIE];
       if (previous) {
@@ -151,10 +161,44 @@ export class AuthController {
       setSessionCookies(reply, await this.sessions.create(account.id, { firstLogin }));
       this.logger.log(`Login Steam de ${result.steamId} (#${account.publicId})`);
       reply.redirect(`${this.config.publicWebUrl}${result.returnTo}`, HttpStatus.SEE_OTHER);
+      this.measureLogin(account, { firstLogin, created }, analyticsRouteOf(result.returnTo));
     } catch (error) {
+      this.analytics.capture('login_falhou', { props: { motivo: 'indisponivel' } });
       this.logger.error(`Login Steam falhou: ${(error as Error).message}`);
       reply.redirect(this.errorUrl('indisponivel', DEFAULT_RETURN_PATH), HttpStatus.SEE_OTHER);
     }
+  }
+
+  /** Os eventos de um login que deu certo (A1): `conta_criada` (se nasceu agora) e `login_concluido`. */
+  private measureLogin(
+    account: Awaited<ReturnType<AccountsService['claimOnLogin']>>['account'],
+    login: { firstLogin: boolean; created: boolean },
+    destino: ReturnType<typeof analyticsRouteOf>,
+  ): void {
+    const now = new Date();
+    if (login.created) {
+      this.analytics.capture('conta_criada', {
+        accountId: account.id,
+        props: { origem: 'site', modo: null },
+        at: now,
+        naturalId: account.id,
+      });
+    }
+    const firstConnect = account.firstConnectedAt;
+    this.analytics.capture('login_concluido', {
+      accountId: account.id,
+      props: {
+        primeiro_login: login.firstLogin,
+        jogou_antes: firstConnect !== null,
+        conta_criada_no_login: login.created,
+        dias_desde_primeiro_connect:
+          firstConnect === null
+            ? null
+            : Math.max(0, Math.floor((now.getTime() - firstConnect.getTime()) / 86_400_000)),
+        destino,
+      },
+      at: now,
+    });
   }
 
   @Post('auth/logout')
@@ -202,17 +246,19 @@ export class AuthController {
       throw new UnauthorizedException('Sessão ausente ou expirada; entre de novo');
     }
     const [vip, showcase, sanctions, staffRole, own] = await Promise.all([
-      this.vipPeriods.statusOf(account.id),
+      this.vipPeriods.planStatusOf(account.id),
       this.loadouts.showcase(account.id),
       this.sanctions.profileOf(account.id, { withHistory: true }),
       this.staffRoles.roleOf(account.id),
       this.sanctions.activeOf(account.id),
     ]);
     return {
-      account: toProfile(account, showcase, sanctions, vip.active),
+      account: toProfile(account, showcase, sanctions, vip.active, vip.plan),
       csrfToken: session.csrfToken,
       firstLogin: session.firstLogin,
       vip: toVipStatus(vip),
+      // Só diz que os Itens VIP ficam guardados com a guarda ligada; o web não lê a variável de ambiente.
+      vipHoldDays: this.config.vipHold.enabled ? VIP_HOLD_DAYS : null,
       staffRole,
       sanctions: own,
       displayNameChange: {

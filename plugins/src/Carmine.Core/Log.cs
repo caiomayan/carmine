@@ -68,6 +68,12 @@ internal static partial class Log
         Message = "Carmine.Core: o placar do jogo diverge da contagem do plugin (plugin: {Rounds} rounds, CT {Ct} x T {T}; jogo: {GameRounds} rounds, CT {GameCt} x T {GameT}); vale a contagem do plugin")]
     public static partial void MatchDiverged(ILogger logger, int rounds, int ct, int t, int gameRounds, int gameCt, int gameT);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: wall-logos.json inválido, sem logo nas paredes: {Error}")]
+    public static partial void WallLogosInvalid(ILogger logger, string error);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: não consegui criar o custom_hud_layout; o card de boas-vindas não aparece")]
+    public static partial void CardLayoutFailed(ILogger logger);
+
     [LoggerMessage(Level = LogLevel.Information, Message = "Carmine.Core: Denúncia de {Reporter} contra {Target} ({Reason}); aceita: {Accepted}")]
     public static partial void ReportSent(ILogger logger, ulong reporter, ulong target, ReportReason reason, bool accepted);
 }

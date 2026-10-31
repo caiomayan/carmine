@@ -80,7 +80,7 @@ function buildLoadout(
         equipped: true,
         ...names(item),
         image: item.image,
-        href: `/inventario/${slot.uid}` as Route,
+        href: `/inventory/${slot.uid}` as Route,
         statTrak: slot.statTrak,
       };
     }
@@ -110,7 +110,7 @@ function buildInventory(
         key: entry.uid,
         ...names(item),
         image: item.image,
-        href: `/inventario/${entry.uid}` as Route,
+        href: `/inventory/${entry.uid}` as Route,
         statTrak: entry.statTrak,
       },
     ];

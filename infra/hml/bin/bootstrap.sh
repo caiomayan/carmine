@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Prepara a VM para a homologação. Rode UMA vez (e de novo quando bin/deploy.sh mudar) NA VM, como
+# Prepara a VM para a homologação. Rode UMA vez NA VM (o deploy.sh passa a se atualizar sozinho), como
 # root, a partir de uma cópia de infra/hml:
 #
 #   sudo ./bin/bootstrap.sh "ssh-ed25519 AAAA... carmine-hml"
 #
 # O argumento é a chave PÚBLICA do deploy da homologação (a privada vai só para o secret
 # DEPLOY_HML_SSH_KEY do GitHub). Cria o usuário `deployhml` (outro que o `deploy` de produção, com
-# a própria chave), /opt/carmine-hml e instala deploy, dc e tunnel com dono root. A chave só roda
+# a própria chave), /opt/carmine-hml e instala deploy (que se atualiza sozinho), dc e tunnel (dono root). A chave só roda
 # o deploy: sem shell, sem encaminhamento de portas. Não toca em /opt/carmine nem no usuário `deploy`.
 set -euo pipefail
 
@@ -21,7 +21,12 @@ usermod -aG docker deployhml
 
 install -d -o root -g root -m 0755 "$ROOT" "$ROOT/bin"
 install -d -o deployhml -g deployhml -m 0755 "$ROOT/releases" "$ROOT/state"
-install -o root -g root -m 0755 "$HERE/bin/deploy.sh" "$ROOT/bin/deploy"
+# O deploy mora num diretório do `deployhml` para se atualizar sozinho a partir de cada release (deploy.sh
+# explica); dc e tunnel continuam com dono root, porque o dono os roda com sudo. O link mantém o caminho do
+# comando forçado da chave. Esta é a ÚLTIMA vez que o bootstrap precisa rodar por causa do deploy.sh.
+install -d -o deployhml -g deployhml -m 0755 "$ROOT/self"
+install -o deployhml -g deployhml -m 0755 "$HERE/bin/deploy.sh" "$ROOT/self/deploy"
+ln -sfn "$ROOT/self/deploy" "$ROOT/bin/deploy"
 install -o root -g root -m 0755 "$HERE/bin/dc.sh" "$ROOT/bin/dc"
 install -o root -g root -m 0755 "$HERE/bin/tunnel.sh" "$ROOT/bin/tunnel"
 install -d -o root -g root -m 0755 "$ROOT/releases/bootstrap"
@@ -33,8 +38,6 @@ if [[ ! -f "$ROOT/.env" ]]; then
   for key in POSTGRES_PASSWORD VALKEY_PASSWORD DEMO_SEED_SECRET; do
     sed -i "s|^${key}=\$|${key}=$(openssl rand -hex 24)|" "$ROOT/.env"
   done
-  # A chave dos dados de pagamento (32 bytes em base64; o base64 não tem `|`, então o sed é seguro).
-  sed -i "s|^PAYMENTS_DATA_KEY=\$|PAYMENTS_DATA_KEY=$(openssl rand -base64 32)|" "$ROOT/.env"
   echo "Criado $ROOT/.env com as senhas sorteadas. Falta colar CLOUDFLARE_TUNNEL_TOKEN (sudoedit $ROOT/.env)."
 fi
 

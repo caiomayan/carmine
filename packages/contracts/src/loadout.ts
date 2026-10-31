@@ -1,18 +1,14 @@
 import './zod-jitless.js';
 import { z } from 'zod';
-import {
-  LOADOUT_SIDES,
-  PRESET_NAME_MAX_LENGTH,
-  PRESETS_FREE_LIMIT,
-  PRESETS_VIP_LIMIT,
-} from './rules.js';
+import { PRESETS_CAPO_LIMIT, PRESETS_PADRINHO_LIMIT } from './plans.js';
+import { LOADOUT_SIDES, PRESET_NAME_MAX_LENGTH, PRESETS_FREE_LIMIT } from './rules.js';
 
 /**
  * Contratos do Loadout e dos Presets (S05).
  *
  * O Loadout é o Preset ativo: equipar e desequipar mudam o Preset ativo (ou outro, com
  * `presetId`). Toda Conta tem o Preset principal (`main`), que é o Loadout do plano grátis e
- * nunca fica somente leitura; com VIP ativo, cria até {@link PRESETS_VIP_LIMIT} no total. Sem
+ * nunca fica somente leitura; com um plano ativo, cria até o limite dele no total (Capo 6, Padrinho 25). Sem
  * VIP, os Presets extras ficam somente leitura (nem editar, renomear, ativar ou apagar); se um
  * deles estava ativo, ele continua sendo o Loadout, só que sem os Itens VIP no jogo, até a
  * Conta ativar o principal.
@@ -268,9 +264,13 @@ export type Preset = z.infer<typeof presetSchema>;
 /** `GET /api/presets`: o principal primeiro, depois os outros do mais antigo ao mais novo. */
 export const presetListSchema = z
   .object({
-    presets: z.array(presetSchema).min(1).max(PRESETS_VIP_LIMIT),
+    presets: z.array(presetSchema).min(1).max(PRESETS_PADRINHO_LIMIT),
     /** Quantos Presets a Conta pode ter agora (1 sem VIP, 20 com VIP). */
-    limit: z.union([z.literal(PRESETS_FREE_LIMIT), z.literal(PRESETS_VIP_LIMIT)]),
+    limit: z.union([
+      z.literal(PRESETS_FREE_LIMIT),
+      z.literal(PRESETS_CAPO_LIMIT),
+      z.literal(PRESETS_PADRINHO_LIMIT),
+    ]),
   })
   .meta({ id: 'PresetList' });
 
@@ -320,7 +320,7 @@ export const LOADOUT_ERROR_CODES = [
   'preset_read_only',
   /** O Preset principal não é apagado. */
   'preset_main',
-  /** Já há {@link PRESETS_VIP_LIMIT} Presets. */
+  /** Já há tantos Presets quanto o plano permite (Capo 6, Padrinho 25). */
   'preset_limit',
 ] as const;
 

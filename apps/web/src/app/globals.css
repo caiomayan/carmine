@@ -111,7 +111,9 @@
   --animate-rise: rise var(--dur-enter) var(--ease-out) backwards;
   --animate-fade-up: fade-up var(--dur-slow) var(--ease-out) backwards;
   --animate-shimmer: shimmer var(--dur-skel) linear infinite;
-  --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) infinite;
+  /* O "ao vivo" pulsa 3 vezes ao aparecer e para: 11 pontos pulsando para sempre (Servidor) custavam ~55 ms por quadro. O fim do
+     pulso deixa o halo no tamanho do próprio ponto (mesma cor), então o ponto parado fica igual ao de antes. */
+  --animate-pulse-dot: pulse-dot var(--dur-pulse) var(--ease-out) 3;
   /* a faixa de atividade da home: o trilho anda a metade (uma cópia) por volta; a duração vem da largura */
   --animate-marquee: marquee var(--marquee-duration, 30s) linear infinite;
 
@@ -129,12 +131,11 @@
     }
   }
 
+  /* A faixa de brilho do esqueleto anda por transform (compositor): a versão antiga animava background-position, que repinta
+     o elemento a cada quadro na thread principal. */
   @keyframes shimmer {
-    from {
-      background-position: 120% 0;
-    }
     to {
-      background-position: -120% 0;
+      transform: translateX(100%);
     }
   }
 
@@ -180,15 +181,22 @@
 
 /* silhueta de carregamento com varredura */
 @utility shimmer {
-  background:
-    linear-gradient(
-      90deg,
-      var(--surface-2) 0%,
-      color-mix(in srgb, var(--text) 8%, var(--surface-2)) 50%,
-      var(--surface-2) 100%
-    )
-    0 0 / 240% 100%;
-  animation: var(--animate-shimmer);
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 20%,
+      color-mix(in srgb, var(--text) 9%, transparent) 50%,
+      transparent 80%
+    );
+    transform: translateX(-100%);
+    animation: var(--animate-shimmer);
+  }
 }
 
 /*
@@ -408,7 +416,7 @@
   }
 }
 
-/* ---------- /entrar: o traço do vínculo com a Steam se desenha na chegada ---------- */
+/* ---------- /login: o traço do vínculo com a Steam se desenha na chegada ---------- */
 @keyframes link-draw {
   from {
     clip-path: inset(0 100% 0 0);
@@ -469,7 +477,7 @@
   }
 
   /* o skeleton e o pulso do "ao vivo" param; o resto já encurta pelos tokens */
-  .shimmer,
+  .shimmer::after,
   .animate-pulse-dot {
     animation: none;
   }

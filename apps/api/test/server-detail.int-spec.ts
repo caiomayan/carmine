@@ -11,6 +11,10 @@ import { GameServerRegistry } from '../src/game-servers/game-server-registry.js'
 import { dayOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const NOW = new Date();
 const AT = NOW.toISOString();
@@ -261,7 +265,11 @@ describe('A página do servidor (S12b, PR C)', () => {
         at: AT,
         warmup: false,
         winner,
-        players: [],
+        // Humanos dos dois lados: round de verdade (o sintético do cs2-retakes não conta).
+        players: [
+          { steamId: a.steamId, team: 'ct' as const },
+          { steamId: b.steamId, team: 't' as const },
+        ],
         map: 'de_ancient',
         roundNumber: n,
         scoreCt: n === 1 ? 1 : 1,

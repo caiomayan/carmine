@@ -9,9 +9,9 @@ const MUSIC_KIT = 1781;
 /** Entra com uma Conta nova (Steam falsa) e, se pedido, dá VIP. */
 async function signIn(page: Page, { vip = false } = {}) {
   const steamId = newSteamId();
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   await signInFromHeader(page, steamId);
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
   if (vip) {
     grantVip(steamId);
     await page.reload();
@@ -50,21 +50,21 @@ async function addItemByApi(page: Page, item: Record<string, unknown>) {
 }
 
 test('sem sessão, o Inventário convida a entrar e o catálogo continua aberto', async ({ page }) => {
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   const invite = page.getByTestId('inventory-signed-out');
   await expect(invite).toContainText('Entre para montar o seu Inventário');
   await expect(invite.getByRole('link', { name: 'Entrar com a Steam' })).toHaveAttribute(
     'href',
-    '/entrar?voltar=%2Finventario',
+    '/login?voltar=%2Finventory',
   );
   await invite.getByRole('link', { name: 'Ver o catálogo' }).click();
-  await expect(page).toHaveURL('/inventario/adicionar');
+  await expect(page).toHaveURL('/inventory/add');
 
   // No editor, salvar vira entrar (e volta para o mesmo Item).
   await page.getByTestId(`catalog-item-${AK_REDLINE}`).click();
   await expect(page.getByTestId('sign-in-to-add')).toHaveAttribute(
     'href',
-    `/entrar?voltar=%2Finventario%2Fadicionar%2F${AK_REDLINE}`,
+    `/login?voltar=%2Finventory%2Fadd%2F${AK_REDLINE}`,
   );
 });
 
@@ -78,7 +78,7 @@ async function openFilters(page: Page) {
 test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado vazio', async ({
   page,
 }) => {
-  await page.goto('/inventario/adicionar');
+  await page.goto('/inventory/add');
   await page.getByTestId('catalog-search').fill('linhas vermelhas');
   await expect(page).toHaveURL(/q=linhas\+vermelhas/);
   await expect(page.getByTestId(`catalog-item-${AK_REDLINE}`)).toBeVisible();
@@ -100,13 +100,13 @@ test('catálogo: busca sem acento, filtros na URL, sem Armas padrão e estado va
   await page.getByTestId('catalog-search').fill('nada-disso-existe');
   await expect(page.getByText('Nada encontrado')).toBeVisible();
   await page.getByRole('button', { name: 'Limpar filtros' }).click();
-  await expect(page).toHaveURL('/inventario/adicionar');
+  await expect(page).toHaveURL('/inventory/add');
 });
 
 test('catálogo: busca tolerante (parcial, erro de digitação, inglês) e ordenada por relevância', async ({
   page,
 }) => {
-  await page.goto('/inventario/adicionar');
+  await page.goto('/inventory/add');
   const search = page.getByTestId('catalog-search');
   const first = page.locator('[data-testid^="catalog-item-"]').first();
 
@@ -129,7 +129,7 @@ test('catálogo: busca tolerante (parcial, erro de digitação, inglês) e orden
 test('catálogo: a busca das listas de Arma e Coleção acha em qualquer ordem, em inglês e sem acento', async ({
   page,
 }) => {
-  await page.goto('/inventario/adicionar');
+  await page.goto('/inventory/add');
   const search = page.getByRole('combobox', { name: 'Buscar na lista' });
   const options = page.getByRole('option');
 
@@ -179,7 +179,7 @@ test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot 
   page,
 }) => {
   await signIn(page, { vip: true });
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await page.getByTestId('add-sticker').click();
   const picker = page.getByTestId('picker-sticker');
   const category = picker.getByRole('combobox', { name: 'Campeonato ou coleção' });
@@ -215,7 +215,7 @@ test('seletor de stickers: a categoria é um Combobox dentro do Dialog e o slot 
 for (const theme of ['dark', 'light'] as const) {
   test(`axe com o Combobox do catálogo aberto (${theme})`, async ({ page }) => {
     await saveTheme(page, theme);
-    await page.goto('/inventario/adicionar');
+    await page.goto('/inventory/add');
     await openFilters(page);
     await page.getByLabel('Arma').click();
     await expect(page.getByRole('combobox', { name: 'Buscar na lista' })).toBeFocused();
@@ -230,7 +230,7 @@ test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igua
   await expect(page.getByTestId('inventory-empty')).toBeVisible();
   // O Inventário vazio conduz até a primeira skin: as sugestões abrem o editor.
   await page.getByTestId(`catalog-item-${AK_REDLINE}`).click();
-  await expect(page).toHaveURL(`/inventario/adicionar/${AK_REDLINE}`);
+  await expect(page).toHaveURL(`/inventory/add/${AK_REDLINE}`);
 
   await page.getByTestId('field-wear').fill('0,15');
   await page.getByTestId('field-seed').fill('661');
@@ -251,7 +251,7 @@ test('adiciona a AK do aceite (float 0,15, seed 661, StatTrak, 2 stickers): igua
     });
 
   await page.getByTestId('save-item').click();
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
   await expect(page.getByTestId('notice-toast')).toContainText(
     'AK-47 | Linhas Vermelhas entrou no seu Inventário.',
   );
@@ -283,7 +283,7 @@ test('sem VIP, StatTrak e nametag ficam com cadeado e não salvam; music kit nem
   page,
 }) => {
   await signIn(page);
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await expect(page.getByTestId('vip-attributes-lock')).toBeVisible();
   // O cadeado de cada campo trava com a palavra VIP à vista, não só o ícone.
   const locks = page.getByTestId('field-vip-lock');
@@ -293,9 +293,9 @@ test('sem VIP, StatTrak e nametag ficam com cadeado e não salvam; music kit nem
   await page.getByTestId('save-item').click();
   await expect(page.getByTestId('editor-alert')).toContainText('Corrija 1 campo para salvar.');
   await expect(page.getByText('Isto exige um Período VIP ativo.')).toBeVisible();
-  await expect(page).toHaveURL(`/inventario/adicionar/${AK_REDLINE}`);
+  await expect(page).toHaveURL(`/inventory/add/${AK_REDLINE}`);
 
-  await page.goto(`/inventario/adicionar/${MUSIC_KIT}`);
+  await page.goto(`/inventory/add/${MUSIC_KIT}`);
   await expect(page.getByTestId('vip-item-lock')).toBeVisible();
   await expect(page.getByTestId('save-item')).toBeDisabled();
   // Music kit é sempre 2D, sem iframe.
@@ -325,7 +325,7 @@ test('o erro de validação da API vira mensagem no campo', async ({
         })
       : route.continue(),
   );
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await page.getByTestId('field-wear').fill('0,2');
   await page.getByTestId('save-item').click();
   await expect(page.getByText('O float desta skin vai de 0,10 a 0,70.')).toBeVisible();
@@ -336,7 +336,7 @@ test('3D sem botão de modo: o sticker é selecionado sozinho, arrasta e o ajust
   page,
 }) => {
   await signIn(page);
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await addSticker(page, 'furia');
   await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
   // O 3D precisa ter recebido o sticker antes de arrastá-lo.
@@ -359,14 +359,14 @@ test('3D sem botão de modo: o sticker é selecionado sozinho, arrasta e o ajust
     .toMatchObject({ stickers: { '0': { x: 0.25, y: 0.1 } } });
 
   await page.getByTestId('save-item').click();
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
   const inventory = await (await page.request.get('/api/inventory')).json();
   expect(inventory.items[0].item.stickers['0']).toMatchObject({ x: 0.25, y: 0.1 });
 });
 
 test('a seleção do 3D segue o foco: outra linha, o chaveiro e fora do bloco', async ({ page }) => {
   await signIn(page);
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await addSticker(page, 'furia');
   await addSticker(page, 'vitality');
   await page.getByTestId('add-charm').click();
@@ -387,7 +387,7 @@ test('a seleção do 3D segue o foco: outra linha, o chaveiro e fora do bloco', 
   await expect(page.getByTestId('sticker-0')).not.toHaveAttribute('data-selected');
 
   // O chaveiro só é selecionado enquanto a linha dele tem o foco.
-  await page.getByTestId('charm').getByLabel('Padrão do chaveiro').focus();
+  await page.getByTestId('charm').getByLabel('Padrão do charm').focus();
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
   await expect(page.getByTestId('on-viewer-charm')).toBeVisible();
 
@@ -417,7 +417,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
   page,
 }) => {
   await signIn(page);
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await page.getByTestId('add-charm').click();
   await page
     .getByTestId('picker-charm')
@@ -456,7 +456,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
 
   // Arrastar o chaveiro no 3D é só atalho: o resultado também é "Personalizada".
   await chooseOption(page, placement, '1');
-  await charm.getByLabel('Padrão do chaveiro').focus();
+  await charm.getByLabel('Padrão do charm').focus();
   await expect.poll(() => viewerSelection(page)).toEqual({ kind: 'keychain', index: 0 });
   expect(await dragSelectedInViewer(page)).toBe(true);
   await expect(placement).toContainText('Personalizada');
@@ -469,7 +469,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
 
   await chooseOption(page, placement, '4');
   await page.getByTestId('save-item').click();
-  await expect(page).toHaveURL('/inventario');
+  await expect(page).toHaveURL('/inventory');
   const inventory = await (await page.request.get('/api/inventory')).json();
   expect(inventory.items[0].item.keychains['0']).toMatchObject({
     x: expect.any(Number),
@@ -481,7 +481,7 @@ test('chaveiro em slots: posições prontas, ajuste fino e o arrasto no 3D vira 
 });
 
 test('a barra do float tem uma faixa por fase da faixa real da skin', async ({ page }) => {
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   // A AK Linhas Vermelhas vai de 0,10 a 0,70: sem a Nova de Fábrica, com as outras quatro fases.
   const track = (await page.getByTestId('field-wear-range').getAttribute('style')) ?? '';
   for (const tier of ['mw', 'ft', 'ww', 'bs']) expect(track).toContain(`var(--wear-${tier})`);
@@ -509,15 +509,15 @@ test('em 390 px o editor com stickers e chaveiro não rola na horizontal', async
     stickers: { '0': { id: 1847, schema: 0, rotation: 0, wear: 0 } },
     keychains: { '0': { id: 13113, seed: 5 } },
   });
-  await page.goto(`/inventario/${uid}`);
+  await page.goto(`/inventory/${uid}`);
   await expect(page.getByTestId('charm')).toBeVisible();
   await page.getByTestId('charm').getByText('Ajuste fino').click();
   const overflow = () =>
     page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(await overflow()).toBeLessThanOrEqual(0);
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   expect(await overflow()).toBeLessThanOrEqual(0);
-  await page.goto('/inventario/adicionar');
+  await page.goto('/inventory/add');
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
 
@@ -539,7 +539,7 @@ test.describe('editor em 390 px, no toque', () => {
       stickers: { '0': { id: 28158 }, '1': { id: 28156 }, '2': { id: 28154 } },
       keychains: { '0': { id: 28159, seed: 4321 } },
     });
-    await page.goto(`/inventario/${uid}`);
+    await page.goto(`/inventory/${uid}`);
     await expect(page.getByTestId('item-editor')).toBeVisible();
     await expect(page.getByTestId('viewer-2d-attachments')).toBeVisible();
     await expect(page.getByTestId('sticker-2')).toBeVisible();
@@ -567,7 +567,7 @@ test.describe('editor em 390 px, no toque', () => {
 test('a dica do 3D lista girar, mover (Shift) e aproximar; no toque, só girar', async ({
   page,
 }) => {
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
   await expect(page.getByTestId('item-viewer')).toContainText(
     'Arraste para girar · Shift + arraste para mover · Roda para aproximar',
@@ -581,7 +581,7 @@ test.describe('no toque', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
   test('a dica do 3D diz só "Arraste para girar"', async ({ page }) => {
-    await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+    await page.goto(`/inventory/add/${AK_REDLINE}`);
     await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
     const hint = page.getByTestId('item-viewer').locator('figcaption');
     await expect(hint).toContainText('Arraste para girar');
@@ -600,7 +600,7 @@ test.describe('com o 3D bloqueado', () => {
   }) => {
     // O Chrome registra o iframe recusado.
     expectedConsoleErrors.push(/3d\.cstrike\.app|ERR_BLOCKED_BY_CLIENT/);
-    await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+    await page.goto(`/inventory/add/${AK_REDLINE}`);
     const viewer = page.getByTestId('item-viewer');
     await expect(viewer).toHaveAttribute('data-mode', '2d', { timeout: 15_000 });
     await expect(page.getByTestId('viewer-fallback')).toHaveAttribute('data-reason', 'timeout');
@@ -631,7 +631,7 @@ test('a grade do Inventário tem cinco colunas no desktop, três no tablet e dua
 }) => {
   await signIn(page, { vip: true });
   for (const id of [AK_REDLINE, MUSIC_KIT, 1327]) await addItemByApi(page, { id });
-  await page.goto('/inventario');
+  await page.goto('/inventory');
   const grid = page.getByTestId('inventory-grid');
   const columns = () =>
     grid.evaluate((el) => getComputedStyle(el).gridTemplateColumns.split(' ').length);
@@ -686,25 +686,25 @@ test('sessão expirada no editor: a edição volta depois do novo login', async 
 }) => {
   expectedConsoleErrors.push(/401 \(Unauthorized\)/);
   await signIn(page);
-  await page.goto(`/inventario/adicionar/${AK_REDLINE}`);
+  await page.goto(`/inventory/add/${AK_REDLINE}`);
   await page.getByTestId('field-seed').fill('661');
   await page.getByTestId('field-wear').fill('0,33');
   await page.context().clearCookies({ name: '__Host-carmine_session' });
   await page.getByTestId('save-item').click();
 
   await expect(page).toHaveURL(
-    `/entrar?voltar=%2Finventario%2Fadicionar%2F${AK_REDLINE}&motivo=sessao-expirada`,
+    `/login?voltar=%2Finventory%2Fadd%2F${AK_REDLINE}&motivo=sessao-expirada`,
   );
   // A Steam falsa lembra da mesma Conta neste navegador.
   await page.getByRole('link', { name: 'Entrar com a Steam' }).click();
-  await expect(page).toHaveURL(`/inventario/adicionar/${AK_REDLINE}`);
+  await expect(page).toHaveURL(`/inventory/add/${AK_REDLINE}`);
   await expect(page.getByTestId('draft-restored')).toBeVisible();
   await expect(page.getByTestId('field-seed')).toHaveValue('661');
   await expect(page.getByTestId('field-wear')).toHaveValue('0,33');
 });
 
-test('/entrar?erro=limite explica o limite de tentativas', async ({ page }) => {
-  await page.goto('/entrar?erro=limite');
+test('/login?erro=limite explica o limite de tentativas', async ({ page }) => {
+  await page.goto('/login?erro=limite');
   // O anunciador de rotas do Next também é um role="alert" (no dev e na produção): filtra pelo texto.
   await expect(
     page.getByRole('alert').filter({ hasText: 'Muitas tentativas de login seguidas' }),
@@ -726,7 +726,7 @@ for (const theme of ['dark', 'light'] as const) {
     });
     await page.reload();
     expect(await axeViolations(page), `inventário (${theme})`).toEqual([]);
-    await page.goto(`/inventario/${uid}`);
+    await page.goto(`/inventory/${uid}`);
     await expect(page.getByTestId('item-viewer')).toHaveAttribute('data-phase', 'ready');
     await page.getByTestId('charm').getByText('Ajuste fino').click();
     await chooseOption(page, page.getByTestId('charm-placement'), '2');

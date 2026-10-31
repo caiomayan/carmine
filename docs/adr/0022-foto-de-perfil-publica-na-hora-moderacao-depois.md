@@ -1,5 +1,7 @@
 # Foto de perfil própria: publica na hora, moderação depois, em um R2 de mídia separado do backup
 
+> **Parcialmente substituído pelo [ADR 0025](0025-foto-de-perfil-no-beta-historico-e-moderacao-por-fila.md) (S18, beta aberto).** Mudaram: a denúncia deixa de tirar a foto do ar (decisão 2), saem a idade mínima da Conta e os 3 envios por dia (viram 5 a cada 30 min e 10 s entre envios), sai a escada de bloqueio (a Staff escolhe os dias), a foto trocada passa a ficar no histórico das últimas 5 (e a decisão 6 vale só para o que saiu dele). O resto continua valendo.
+
 Hoje o avatar de toda Conta é o da Steam (ou o neutro). O dono decidiu (2026-10-26) que **todas as Contas** podem enviar uma foto própria, que a foto **publica na hora** e que a moderação é **depois**: denúncia, remoção rápida pela Staff e a ferramenta de varredura de abuso da Cloudflare. A proposta com as alternativas e os números está em `carmine-avatar-proposta.md` (fora do repositório); este ADR guarda o que ficou decidido e os limites.
 
 **Decisões do dono de 2026-10-26.**

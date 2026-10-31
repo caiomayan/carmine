@@ -1,0 +1,313 @@
+/*
+ * A página do VIP (S14b), linguagem Vida. Prefixo `vp-`. A marca é preto e branco; a única cor é a do status VIP
+ * (--status-vip), só em pontinhos e no destaque do Pacote de melhor preço.
+ */
+
+.vp {
+  position: relative;
+}
+.vp-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--status-vip);
+}
+.vp-hero {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+  padding-top: 64px;
+  padding-bottom: 12px;
+}
+@media (max-width: 760px) {
+  .vp-hero {
+    padding-top: 36px;
+  }
+}
+.vp-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--on-map-muted);
+}
+.vp-title {
+  max-width: 14ch;
+  font-size: clamp(48px, 8vw, 112px);
+  line-height: 0.98;
+  letter-spacing: -0.014em;
+  text-wrap: balance;
+}
+.vp-lead {
+  max-width: 54ch;
+  font-size: clamp(16px, 1.6vw, 20px);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text) 82%, transparent);
+}
+/* as vagas do servidor: a última é a vaga reservada, o selo do VIP */
+.vp-slots {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 8px;
+  width: min(100%, 460px);
+  margin-top: 10px;
+  /* A vaga do VIP entra deslizando da direita: sem isso, nos primeiros instantes ela passa da tela e cria rolagem lateral. */
+  overflow-x: clip;
+}
+.vp-slot {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: color-mix(in srgb, var(--text) 78%, transparent);
+}
+.vp-slot-vip {
+  color: #1a1305;
+  background: var(--status-vip);
+  animation: vp-slot-in 700ms var(--ease-out) 300ms both;
+}
+@keyframes vp-slot-in {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vp-slot-vip {
+    animation: none;
+  }
+}
+
+/* avisos */
+.vp-sandbox,
+.vp-yours,
+.vp-notice {
+  display: grid;
+  gap: 4px;
+  max-width: 720px;
+  margin-top: 28px;
+  border-radius: var(--r-card);
+  padding: 16px 20px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  background: var(--fill-rest);
+}
+.vp-sandbox b,
+.vp-yours-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.vp-sandbox {
+  background: color-mix(in srgb, var(--status-vip) 14%, transparent);
+}
+.vp-notice {
+  margin-top: 0;
+  margin-bottom: 18px;
+}
+.vp-notice a,
+.vp-how a {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--text) 30%, transparent);
+  text-underline-offset: 4px;
+}
+
+/* seções */
+.vp-section {
+  margin-top: 72px;
+}
+@media (max-width: 760px) {
+  .vp-section {
+    margin-top: 52px;
+  }
+}
+.vp-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 6px 16px;
+  padding-bottom: 20px;
+}
+.vp-section-note {
+  max-width: 52ch;
+  font-size: 14.5px;
+  color: var(--on-map-muted);
+}
+
+/* os Pacotes */
+.vp-packages {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .vp-packages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.vp-card {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border-radius: var(--r-panel);
+  padding: 26px 26px 24px;
+  list-style: none;
+  background: var(--surface);
+}
+.vp-card-best {
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--status-vip) 13%, transparent),
+      transparent 60%
+    ),
+    var(--surface);
+}
+@media (max-width: 760px) {
+  .vp-card {
+    padding: 20px 18px 20px;
+    border-radius: 32px;
+  }
+}
+.vp-card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.vp-months {
+  font-size: 34px;
+  line-height: 1;
+}
+.vp-tags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.vp-tag {
+  border-radius: 999px;
+  padding: 5px 11px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--fill-rest);
+}
+.vp-tag-best {
+  color: #1a1305;
+  background: var(--status-vip);
+}
+.vp-price {
+  margin-top: 10px;
+  font-size: clamp(48px, 5vw, 68px);
+  line-height: 1;
+}
+.vp-sub {
+  font-size: 14.5px;
+  color: var(--on-map-muted);
+}
+.vp-buy {
+  margin-top: 14px;
+  width: 100%;
+}
+
+/* o que muda */
+.vp-compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 900px) {
+  .vp-compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.vp-plan {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  border-radius: var(--r-panel);
+  padding: 26px 28px 28px;
+  background: var(--surface);
+}
+.vp-plan-vip {
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--status-vip) 11%, transparent),
+      transparent 55%
+    ),
+    var(--surface);
+}
+@media (max-width: 760px) {
+  .vp-plan {
+    padding: 20px 18px 22px;
+    border-radius: 32px;
+  }
+}
+.vp-plan-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.vp-list {
+  display: grid;
+  gap: 12px;
+}
+.vp-list li {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  font-size: 15.5px;
+  line-height: 1.4;
+}
+.vp-check {
+  margin-top: 2px;
+  color: var(--on-map-muted);
+}
+.vp-plan-vip .vp-check {
+  color: var(--status-vip);
+}
+.vp-plan-note {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--on-map-muted);
+}
+
+/* como funciona */
+.vp-how {
+  display: grid;
+  gap: 12px;
+  max-width: 68ch;
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--text) 86%, transparent);
+}
+.vp-how li {
+  padding-left: 18px;
+  position: relative;
+}
+.vp-how li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--on-map-muted);
+}
+
+/* No tema claro o --status-vip é âmbar escuro: o texto sobre ele vira branco (contraste 6:1; o escuro de antes dava 2,9:1). */
+[data-theme="light"] .vp-slot-vip,
+[data-theme="light"] .vp-tag-best {
+  color: #fff;
+}

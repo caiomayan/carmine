@@ -105,7 +105,7 @@ export class AvatarReportsController {
   @errorResponse(422, 'A própria foto não se denuncia (own_avatar)')
   @errorResponse(
     429,
-    '5 denúncias de foto na última hora (report_limit); `retryAfter` diz quando libera',
+    '5 denúncias de foto na última hora (report_limit) ou 10 no dia, de todos os tipos (report_daily_limit); `retryAfter` diz quando libera',
   )
   @errorResponse(503, 'Funcionalidade desligada neste ambiente (disabled)')
   report(

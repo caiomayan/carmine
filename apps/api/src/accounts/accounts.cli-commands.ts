@@ -96,6 +96,11 @@ async function anonymize(args: string[], deps: AccountsCliDeps): Promise<number>
     if (erasure.steamIdRetained) {
       deps.out('Há um ban valendo: o SteamID64 fica na Conta até ele acabar, e depois some.');
     }
+    if (erasure.analytics === 'pending') {
+      deps.err(
+        `Aviso: não deu para apagar a pessoa no PostHog; apague a pessoa ${accountId} (distinct_id) à mão no painel (docs/operacao/exclusao-de-dados.md).`,
+      );
+    }
     if (!erasure.sessionsDropped) {
       deps.err('Aviso: as sessões do site não caíram (Valkey fora); elas expiram sozinhas.');
     }

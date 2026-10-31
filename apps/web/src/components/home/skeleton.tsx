@@ -47,9 +47,14 @@ export function HomeSkeleton({ label }: { label: string }) {
 }
 
 /** O esqueleto da vitrine dos Loadouts (enquanto o chunk e os dados chegam). */
-export function LoadoutsSkeleton() {
+/**
+ * `still`: o esqueleto de quem ainda não chegou à vista (o `fallback` do `InView`, abaixo da dobra) fica PARADO: 8 faixas
+ * animando para sempre fora da tela eram ~100 a 170 recálculos de estilo por segundo na Home parada. Quando a vitrine entra
+ * na tela, o `InView` troca para o esqueleto de carregamento (este mesmo, animado), que só dura até o dado chegar.
+ */
+export function LoadoutsSkeleton({ still = false }: { still?: boolean }) {
   return (
-    <div aria-hidden="true" className="mt-4 py-12">
+    <div aria-hidden="true" data-still={still || undefined} className="mt-4 py-12">
       <div className={cn(bone, 'mb-6 h-4 w-52')} />
       <div className="grid gap-5 min-[1000px]:grid-cols-[1.25fr_1fr]">
         <div className={cn(bone, 'h-[420px] rounded-2xl')} />

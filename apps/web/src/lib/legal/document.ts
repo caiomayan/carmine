@@ -61,16 +61,26 @@ export function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+const FIXED_ANCHOR = /^(.*?)\s*\{#([a-z][a-z0-9-]*)\}$/;
+
+/**
+ * O título e a âncora de uma seção. A âncora é o `slugify` do título, ou a que o texto fixa no fim do título com
+ * `{#âncora}` (`## Recurso {#appeal}`), para os endereços em inglês de um texto em português (`/rules#appeal`).
+ */
+export function headingAnchor(raw: string): { id: string; text: string } {
+  const title = raw.trim();
+  const fixed = FIXED_ANCHOR.exec(title);
+  if (fixed) return { id: fixed[2] as string, text: fixed[1] as string };
+  return { id: slugify(title), text: title };
+}
+
 /** Os títulos `##` do documento, na ordem, para o sumário (fora dos blocos de código). */
 export function legalHeadings(body: string): { id: string; text: string }[] {
   const headings: { id: string; text: string }[] = [];
   let inCode = false;
   for (const line of body.split('\n')) {
     if (line.startsWith('```')) inCode = !inCode;
-    else if (!inCode && line.startsWith('## ')) {
-      const text = line.slice(3).trim();
-      headings.push({ id: slugify(text), text });
-    }
+    else if (!inCode && line.startsWith('## ')) headings.push(headingAnchor(line.slice(3)));
   }
   return headings;
 }

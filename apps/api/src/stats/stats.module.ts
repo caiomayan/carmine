@@ -4,6 +4,8 @@ import { AccountsModule } from '../accounts/accounts.module.js';
 import { ActivityModule } from '../activity/activity.module.js';
 import { ActivityFeed } from '../activity/activity-feed.js';
 import { RankingLeaderWatch } from '../activity/ranking-leader-watch.js';
+import { Analytics } from '../analytics/analytics.js';
+import { AnalyticsModule } from '../analytics/analytics.module.js';
 import { APP_CONFIG, type AppConfig } from '../config/config.js';
 import { DATABASE, type Database } from '../database/database.module.js';
 import { GameServersModule } from '../game-servers/game-servers.module.js';
@@ -12,20 +14,25 @@ import { LiveServersModule } from '../live-servers/live-servers.module.js';
 import { VALKEY } from '../valkey/valkey.module.js';
 import { GameEventIngest } from './game-event-ingest.js';
 import { GameEventsController } from './game-events.controller.js';
+import { GameStatsReader } from './game-stats.js';
+import { PlayerGameStatsController } from './player-game-stats.controller.js';
 import { ProfileDetailReader } from './profile-detail.js';
 import { ProfileStatsController } from './profile-stats.controller.js';
 import { ProfileStatsReader } from './profile-stats.js';
 import { RankingController } from './ranking.controller.js';
 import { RankingCache } from './ranking-cache.js';
+import { RatingPopulations, RatingPopulationsJob } from './rating-populations.js';
+import { RatingReader } from './rating-reader.js';
 import { WeekSummaryController } from './week-summary.controller.js';
 import { WeekSummaryReader } from './week-summary.js';
 import { WeeklyRanking } from './weekly-ranking.js';
 
 /** Eventos do jogo e Estatísticas das Contas (S12). */
 @Module({
-  imports: [GameServersModule, AccountsModule, ActivityModule, LiveServersModule],
+  imports: [GameServersModule, AccountsModule, ActivityModule, LiveServersModule, AnalyticsModule],
   controllers: [
     GameEventsController,
+    PlayerGameStatsController,
     ProfileStatsController,
     RankingController,
     WeekSummaryController,
@@ -33,8 +40,9 @@ import { WeeklyRanking } from './weekly-ranking.js';
   providers: [
     {
       provide: GameEventIngest,
-      inject: [DATABASE, ActivityFeed],
-      useFactory: (db: Database, activity: ActivityFeed) => new GameEventIngest(db, activity),
+      inject: [DATABASE, ActivityFeed, Analytics],
+      useFactory: (db: Database, activity: ActivityFeed, analytics: Analytics) =>
+        new GameEventIngest(db, activity, analytics),
     },
     {
       provide: ProfileStatsReader,
@@ -61,6 +69,31 @@ import { WeeklyRanking } from './weekly-ranking.js';
         new WeeklyRanking(db, new RankingCache(valkey, config.rankingCacheTtlSeconds)),
     },
     {
+      // O !rank e o !stats do jogo (S16).
+      provide: GameStatsReader,
+      inject: [DATABASE, WeeklyRanking],
+      useFactory: (db: Database, ranking: WeeklyRanking) => new GameStatsReader(db, ranking),
+    },
+    {
+      // A população do Rating Carmine (S21): média e desvio por Modo e lado, uma vez por semana.
+      provide: RatingPopulations,
+      inject: [DATABASE],
+      useFactory: (db: Database) => new RatingPopulations(db),
+    },
+    {
+      // Confere de hora em hora (a cadência da limpeza de retenção) se a semana já tem população.
+      provide: RatingPopulationsJob,
+      inject: [RatingPopulations, APP_CONFIG],
+      useFactory: (populations: RatingPopulations, config: AppConfig) =>
+        new RatingPopulationsJob(populations, config.reports.retentionSweepMs),
+    },
+    {
+      provide: RatingReader,
+      inject: [DATABASE, RatingPopulations],
+      useFactory: (db: Database, populations: RatingPopulations) =>
+        new RatingReader(db, populations),
+    },
+    {
       // Percebe a troca do primeiro lugar da semana para a faixa de atividade.
       provide: RankingLeaderWatch,
       inject: [WeeklyRanking, ActivityFeed, VALKEY],
@@ -68,6 +101,6 @@ import { WeeklyRanking } from './weekly-ranking.js';
         new RankingLeaderWatch(ranking, activity, valkey, 30_000),
     },
   ],
-  exports: [WeeklyRanking],
+  exports: [WeeklyRanking, RatingReader],
 })
 export class StatsModule {}

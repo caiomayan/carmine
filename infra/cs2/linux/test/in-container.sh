@@ -70,9 +70,29 @@ verify() {
     grep -q "$P/retake/game/csgo/addons/counterstrikesharp/data/RetakesAllocator/allocator.db" \
     "$P/retake/game/csgo/addons/counterstrikesharp/configs/plugins/RetakesAllocator/config.json"
   check "deathmatch: plugin Deathmatch" test -d "$P/deathmatch/game/csgo/addons/counterstrikesharp/plugins/Deathmatch"
+  # Idiomas em português (S16): o do alocador e o do Deathmatch vêm do perfil (os plugins só trazem en).
+  check "retake: lang pt-BR do alocador" \
+    jq -e 'has("announcement.roundtype")' "$P/retake/game/csgo/addons/counterstrikesharp/plugins/RetakesAllocator/lang/pt-BR.json"
+  check "retake: lang pt-BR do RetakesPlugin e do RockTheVote (vêm nos zips)" \
+    test -f "$P/retake/game/csgo/addons/counterstrikesharp/plugins/RetakesPlugin/lang/pt-BR.json" \
+    -a -f "$P/retake/game/csgo/addons/counterstrikesharp/plugins/RockTheVote/lang/pt-BR.json"
+  check "deathmatch: lang pt-BR do Deathmatch" \
+    jq -e 'has("Chat.Prefix")' "$P/deathmatch/game/csgo/addons/counterstrikesharp/plugins/Deathmatch/lang/pt-BR.json"
+  check "retake: 50 rounds por mapa" grep -qx 'mp_maxrounds 50' "$P/retake/game/csgo/cfg/cs2-retakes/retakes.cfg"
+  check "deathmatch: 5 mapas na votação" \
+    test "$(grep -vc '^//' "$P/deathmatch/game/csgo/addons/counterstrikesharp/plugins/RockTheVote/maplist.txt")" = 5
   check "env de exemplo criado com 0600" test "$(stat -c %a /etc/carmine-cs2/retake.env)" = 600
   check "unidade e target instalados" test -f /etc/systemd/system/carmine-cs2@.service -a -f /etc/systemd/system/carmine-cs2.target
   check "unidades habilitadas (links do enable)" test -L /etc/systemd/system/carmine-cs2.target.wants/carmine-cs2@retake.service
+  check "carmine-plugin-deploy instalado e achando a biblioteca pelo link"     bash -c 'carmine-plugin-deploy --help | grep -q -- --rollback'
+  check "helper A2S instalado" test -x /usr/local/lib/carmine-cs2/a2s-players.py
+  for cmd in carmine-secrets carmine-vps-check carmine-vps-smoke carmine-cs2-update; do
+    check "comando $cmd instalado e com --help" bash -c "$cmd --help | head -n 1 | grep -q ."
+  done
+  check "carmine-vps-check roda e lista os itens" bash -c "carmine-vps-check --no-network --machine | grep -q '|arquitetura|'"
+  check "unidades do update do CS2 instaladas" test -f /etc/systemd/system/carmine-cs2-update.service -a -f /etc/systemd/system/carmine-cs2-update.timer
+  check "versão do plugin registrada por instância (compilado no host = local)"     test "$(cat "$P/retake/carmine-core.version")" = local
+  check "o timer de entrega só liga com release instalada (aqui compilou no host)"     test ! -e /etc/systemd/system/timers.target.wants/carmine-plugin-sync.timer
 }
 verify
 
@@ -114,17 +134,21 @@ check "invsim_apikey no cfg" grep -q '^invsim_apikey "chave-do-teste-123"$' "$IN
 check "retake: invsim_fallback_team 0" grep -q '^invsim_fallback_team 0$' "$INVSIM"
 check "FollowCS2ServerGuidelines desligado" \
   grep -q '"FollowCS2ServerGuidelines": false' "$P/retake/game/csgo/addons/counterstrikesharp/configs/core.json"
+check "ServerLanguage em pt-BR" \
+  grep -q '"ServerLanguage": "pt-BR"' "$P/retake/game/csgo/addons/counterstrikesharp/configs/core.json"
 check "config com segredo é 0600" test "$(stat -c %a "$CORE")" = 600
 run_prestart deathmatch CARMINE_API_KEY=outra-chave CS2_GSLT=ABCDEF0123456789ABCDEF0123456789 CARMINE_API_BASE_URL=https://exemplo.test/api
 check "deathmatch: fallback_team 1" grep -q '^invsim_fallback_team 1$' "$P/deathmatch/game/csgo/cfg/carmine/inventory-simulator.cfg"
-check "deathmatch: API do ambiente" grep -q '^invsim_url "https://exemplo.test/api"$' "$P/deathmatch/game/csgo/cfg/carmine/inventory-simulator.cfg"
+check "deathmatch: API do ambiente (o /api do fim é removido, #34)" grep -q '^invsim_url "https://exemplo.test"$' "$P/deathmatch/game/csgo/cfg/carmine/inventory-simulator.cfg"
 rc=0
 run_prestart retake CARMINE_API_KEY='a"b' CS2_GSLT=x 2>/dev/null || rc=$?
 check "chave com aspas é recusada (sem injeção no JSON)" test "$rc" = 78
 
 echo "### 7. systemd-analyze verify"
 printf 'CARMINE_API_KEY=k\nCS2_GSLT=g\n' >/etc/carmine-cs2/retake.env
-systemd-analyze verify /etc/systemd/system/carmine-cs2@retake.service /etc/systemd/system/carmine-cs2.target
+systemd-analyze verify /etc/systemd/system/carmine-cs2@retake.service /etc/systemd/system/carmine-cs2.target \
+  /etc/systemd/system/carmine-plugin-sync.service /etc/systemd/system/carmine-plugin-sync.timer \
+  /etc/systemd/system/carmine-cs2-update.service /etc/systemd/system/carmine-cs2-update.timer
 echo "ok   - unidades válidas"
 
 echo "### TUDO CERTO"

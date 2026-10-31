@@ -75,6 +75,17 @@ export function dayOf(at: Date): string {
   return new Date(at.getTime() + BRASILIA_OFFSET_MS).toISOString().slice(0, 10);
 }
 
+/** A meia-noite de Brasília que abre o dia em que o instante cai. */
+export function dayStartOf(at: Date): Date {
+  const local = at.getTime() + BRASILIA_OFFSET_MS;
+  return new Date(Math.floor(local / DAY_MS) * DAY_MS - BRASILIA_OFFSET_MS);
+}
+
+/** A meia-noite de Brasília que fecha o dia em que o instante cai (abre o seguinte). */
+export function nextDayStartOf(at: Date): Date {
+  return new Date(dayStartOf(at).getTime() + DAY_MS);
+}
+
 /** Um pedaço de uma Sessão de jogo dentro de um dia. */
 export interface DaySeconds {
   day: string;

@@ -69,7 +69,7 @@ test.describe('menu da Conta', () => {
     await expect(menu.getByRole('menuitemradio')).toHaveCount(0);
 
     await page.getByTestId('menu-settings').click();
-    await expect(page).toHaveURL('/configuracoes');
+    await expect(page).toHaveURL('/settings');
   });
 
   test('Meu perfil, Inventário e Loadout levam às páginas', async ({ page, request }) => {
@@ -79,7 +79,7 @@ test.describe('menu da Conta', () => {
     await expect(page).toHaveURL(`/${account.publicId}`);
 
     await menuGo(page, page.getByRole('menuitem', { name: 'Inventário' }));
-    await expect(page).toHaveURL('/inventario');
+    await expect(page).toHaveURL('/inventory');
 
     await menuGo(page, page.getByRole('menuitem', { name: 'Loadout' }));
     await expect(page).toHaveURL('/loadout');
@@ -187,13 +187,13 @@ test.describe('menu da Conta', () => {
 
 test.describe('Configurações', () => {
   test('sem sessão convida a entrar e volta para Configurações', async ({ page }) => {
-    await page.goto('/configuracoes');
+    await page.goto('/settings');
     await expect(page.getByTestId('settings-signed-out')).toContainText(
       'Entre para ver as suas configurações',
     );
     await expect(page.getByTestId('settings-nav-perfil')).toHaveCount(0);
     await page.getByRole('link', { name: 'Entrar com a Steam' }).click();
-    await expect(page).toHaveURL('/entrar?voltar=%2Fconfiguracoes');
+    await expect(page).toHaveURL('/login?voltar=%2Fsettings');
   });
 
   test('no desktop a navegação lateral leva a cada seção e a raiz abre o Perfil', async ({
@@ -202,11 +202,12 @@ test.describe('Configurações', () => {
   }) => {
     await signedIn(page, request, 'Config Desktop');
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/configuracoes');
+    await page.goto('/settings');
 
     const nav = page.getByRole('navigation', { name: 'Seções das configurações' });
     await expect(nav.getByRole('link')).toHaveText([
       'Perfil',
+      'Compras',
       'Conexões',
       'Aparência',
       'Dados e conta',
@@ -217,7 +218,7 @@ test.describe('Configurações', () => {
     await expect(page.getByTestId('settings-back')).toHaveCount(0);
 
     await page.getByTestId('settings-nav-conexoes').click();
-    await expect(page).toHaveURL('/configuracoes/conexoes');
+    await expect(page).toHaveURL('/settings/connections');
     await expect(page.getByTestId('settings-nav-conexoes')).toHaveAttribute('aria-current', 'page');
     await expect(page.getByTestId('settings-nav-perfil')).not.toHaveAttribute(
       'aria-current',
@@ -227,14 +228,14 @@ test.describe('Configurações', () => {
     await expect(page.getByTestId('profile-settings')).toHaveCount(0);
 
     await page.getByTestId('settings-nav-dados').click();
-    await expect(page).toHaveURL('/configuracoes/dados');
+    await expect(page).toHaveURL('/settings/data');
     await expect(page.getByTestId('data-request')).toContainText('conforme a LGPD');
     await expect(
       page.getByRole('main').getByRole('link', { name: 'Contato e exclusão de dados' }),
-    ).toHaveAttribute('href', '/contato');
+    ).toHaveAttribute('href', '/contact');
     await expect(
       page.getByRole('main').getByRole('link', { name: 'Política de privacidade' }),
-    ).toHaveAttribute('href', '/privacidade');
+    ).toHaveAttribute('href', '/privacy');
   });
 
   test('Aparência: dois rádios trocam o tema, que fica salvo no navegador', async ({
@@ -243,7 +244,7 @@ test.describe('Configurações', () => {
   }) => {
     await signedIn(page, request, 'Config Tema');
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/configuracoes/aparencia');
+    await page.goto('/settings/appearance');
 
     const dark = page.getByTestId('theme-dark');
     const light = page.getByTestId('theme-light');
@@ -270,7 +271,7 @@ test.describe('Configurações', () => {
   }) => {
     await signedIn(page, request, 'Config Celular');
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/configuracoes');
+    await page.goto('/settings');
 
     for (const section of ['perfil', 'conexoes', 'aparencia', 'dados']) {
       await expect(page.getByTestId(`settings-nav-${section}`)).toBeVisible();
@@ -286,7 +287,7 @@ test.describe('Configurações', () => {
     const columnX = (await page.getByTestId('settings-nav-aparencia').boundingBox())?.x ?? -1;
 
     await page.getByTestId('settings-nav-aparencia').click();
-    await expect(page).toHaveURL('/configuracoes/aparencia');
+    await expect(page).toHaveURL('/settings/appearance');
     await expect(page.getByTestId('settings-nav-perfil')).toBeHidden();
     await expect(page.getByTestId('theme-setting')).toBeVisible();
     // O H1 segue no DOM (para leitor de tela), só some da vista.
@@ -295,7 +296,7 @@ test.describe('Configurações', () => {
     const backX = (await page.getByTestId('settings-back').boundingBox())?.x ?? -99;
     expect(Math.abs(backX - columnX)).toBeLessThanOrEqual(1);
     await page.getByTestId('settings-back').click();
-    await expect(page).toHaveURL('/configuracoes');
+    await expect(page).toHaveURL('/settings');
     await expect(page.getByTestId('settings-nav-perfil')).toBeVisible();
     expect(await overflow(page)).toBe(0);
   });
@@ -312,11 +313,11 @@ test.describe('Configurações', () => {
       for (const width of WIDTHS) {
         await page.setViewportSize({ width, height: 900 });
         for (const route of [
-          '/configuracoes',
-          '/configuracoes/perfil',
-          '/configuracoes/conexoes',
-          '/configuracoes/aparencia',
-          '/configuracoes/dados',
+          '/settings',
+          '/settings/profile',
+          '/settings/connections',
+          '/settings/appearance',
+          '/settings/data',
         ]) {
           await page.goto(route);
           await expect(page.getByRole('heading', { level: 1, name: 'Configurações' })).toHaveCount(
@@ -337,7 +338,7 @@ test.describe('foco', () => {
   }) => {
     await signedIn(page, request, 'Foco Campos');
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto('/configuracoes/perfil');
+    await page.goto('/settings/profile');
     await page.getByTestId('name-edit').click();
     const input = page.getByTestId('name-input');
     await expect(input).toBeFocused();
@@ -371,7 +372,7 @@ test.describe('foco', () => {
   test('botões e links: anel fino só no foco do teclado; mouse e toque nunca o mostram', async ({
     page,
   }) => {
-    await page.goto('/regras');
+    await page.goto('/rules');
     const html = page.locator('html');
     const focused = () =>
       page.evaluate(() => {

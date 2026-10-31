@@ -34,7 +34,7 @@ A homologação cede à produção: `cpu_shares: 128` (só perde CPU quando há 
 
 ## Pagamentos de mentira (S14)
 
-A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Detalhes e as variáveis em `docs/operacao/pagamentos.md`. Numa homologação já criada, acrescente ao `.env` `PAYMENTS_ENABLED=true`, `PAYMENTS_PROVIDER=fake`, `PAYMENTS_DATA_KEY` (`openssl rand -base64 32`) e `VIP_HOLD_ENABLED=true`.
+A homologação vende VIP com o provedor **falso** (`PAYMENTS_PROVIDER=fake`): a página de simulação paga, recusa, expira, estorna e contesta, e o webhook assinado percorre o caminho real. Tudo vem do compose (a chave de dados é sorteada sozinha); nada a preencher no `.env`. Detalhes em `docs/operacao/pagamentos.md`.
 
 ## Memória (tetos do compose)
 
@@ -115,6 +115,7 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
   sudoedit /opt/carmine-hml/.env                  # colar só CLOUDFLARE_TUNNEL_TOKEN (passo 2); as senhas já vêm sorteadas
   sudo /opt/carmine-hml/bin/tunnel                # sobe só o túnel novo
   ```
+  **O deploy se atualiza sozinho.** O bootstrap instala o `deploy` em `/opt/carmine-hml/self/` (dono `deployhml`; `/opt/carmine-hml/bin/deploy` é um link para ele). Quando o `deploy.sh` da release difere do instalado, o instalado verifica a versão nova (`bash -n`, shebang, tamanho), troca-se por ela de forma atômica (guardando `deploy.anterior`), registra os dois sha256 no log e refaz o mesmo deploy com ela. Por isso mudar o `deploy.sh` **não pede mais o bootstrap**: rode-o de novo só uma vez, para sair do `deploy` antigo (que só avisava), ou se mudar o próprio `bootstrap.sh`. A confiança é a do `compose.yml` que vem no mesmo tar (o usuário já está no grupo `docker`); a produção tem deploy próprio, com dono root, e não se autoatualiza. Se uma versão quebrada do `deploy.sh` entrar no `dev`, a seguinte, corrigida, se instala sozinha; em último caso, o bootstrap reinstala. Teste: `bash infra/hml/test/deploy-self-update.test.sh` (roda no CI).
   No `.env`, opcionais: `DEMO_OWNER_STEAM_ID` (o seu SteamID64: a sua Conta ganha a demonstração e o papel de Dono) e `STEAM_WEB_API_KEY` (a mesma de produção, para o seu nome e avatar).
 
   **Se o 4c não entrar** (o Access deixou passar, mas o `ssh` recusou a chave para `ubuntu`), plano B: abrir a 22 só para você por alguns minutos. Oracle > Networking > a VCN > Security Lists > *Add Ingress Rules*: origem `<seu IP público>/32` (busque "meu ip"), TCP, porta 22. No atalho, troque `HostName` por `<IP da VM>` e tire a linha `ProxyCommand`. Terminou? **Remova a regra** na hora. Último recurso, sem mexer em regra: *Compute > Instances > a VM > Console connection*.
@@ -132,3 +133,18 @@ Ordem importa: o Access vem antes de o site existir, para nunca ficar exposto se
 - **Falhou o deploy**: o `deploy.sh` mostra o log dos serviços e volta sozinho para a tag anterior. Migrações só andam para a frente; se a anterior não sobe com o schema novo, `zerar_banco`. A produção não é tocada em nenhum desses passos.
 - **Deploy recusado por memória** ("só N MB de memória disponível"): olhe `free -h` e o `docker stats` na VM. A homologação se recusa a subir antes de apertar a produção.
 - **Faxina**: o deploy guarda as 3 últimas releases e as 2 últimas imagens baixadas pela homologação; nunca roda `prune -a` (as imagens de rollback da produção não são dela).
+
+## Painel da Staff (staff-dev.stcarmine.com, S25)
+
+O painel da Staff (`apps/staff`) é um segundo app na mesma pilha: serviço `staff` no compose, imagem `carmine-staff` (mesmo `IMAGE_TAG`). Serve o **próprio** `/api/*` pelo túnel, no mesmo padrão do site (ADR 0015): a sessão `__Host-` é do host do painel, o login Steam dele é `/api/auth/steam/staff/*` com o realm de `PUBLIC_STAFF_URL` (já no compose), e só Conta com papel de Staff entra.
+
+**Passos do dono (uma vez, ~10 min, nada de nome interno no repositório):**
+
+- [ ] **1. Access do painel (primeiro, antes de qualquer rota).** Zero Trust > Access > Applications > *Add an application* > *Self-hosted*. Nome `Carmine homologação painel`; domínio `staff-dev.stcarmine.com`; duração da sessão 1 mês. Política *Allow* com a regra *Emails* = só os e-mails da Staff (hoje o seu); login por *One-time PIN*. Nenhuma política *Bypass* nem *Everyone*. (É a primeira trava; a segunda é o login Steam com papel de Staff.) **Por que primeiro:** a rota do túnel (passo 2) põe o endereço no ar na hora; sem o Access já criado, ele ficaria público por alguns minutos, sem a primeira trava.
+- [ ] **2. Rotas do túnel `carmine-hml` (só depois do Access).** Zero Trust > Networks > Tunnels > `carmine-hml` > Public Hostnames. Duas rotas novas, nesta ordem (a de `/api` primeiro): `staff-dev.stcarmine.com` com caminho `^/api(/|$)` → HTTP `api:3333`; `staff-dev.stcarmine.com` (sem caminho) → HTTP `staff:3100`. A cópia versionada é `infra/hml/tunnel/ingress.json`.
+- [ ] **3. DNS.** O registro do `staff-dev` é criado pelo próprio painel do túnel ao salvar a rota (CNAME proxied para o túnel); confira em DNS > Records.
+- [ ] **4. Conferir.** Abra `https://staff-dev.stcarmine.com`, passe pelo PIN do Access, clique em *Entrar com a Steam*. Uma Conta **sem** papel de Staff volta para a tela de entrada com "sem acesso" e nenhuma sessão; a sua Conta (papel de Dono) entra no Início.
+
+A Punição, a revogação e o reset do nome já são feitos **dentro do painel** (tela Contas). A variável `SITE_URL` do serviço `staff` (já no compose, `https://dev.stcarmine.com`) só leva ao Perfil público; VIP, Ranking, papel, exclusão de dados e a Auditoria também já são do painel. O que ainda mora no site é a foto de perfil na ficha, Pagamentos e Servidores (a sessão do site é outra, então a Staff entra no site uma vez para usá-los).
+
+**Produção (`staff.stcarmine.com`)** entra num PR seguinte, com o mesmo roteiro **na mesma ordem** (primeiro o Access `staff.stcarmine.com`, só depois as rotas `staff` e `staff/api` no túnel `carmine-prod`, para o endereço nunca ficar público sem a primeira trava), depois que a homologação estiver validada.

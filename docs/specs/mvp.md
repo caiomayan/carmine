@@ -1,5 +1,7 @@
 # Spec do MVP · v2
 
+> **Histórico.** As fatias S00 a S15 foram entregues. A spec viva é a [`beta-aberto.md`](beta-aberto.md); esta continua valendo onde aquela não muda nada.
+
 > Linguagem do domínio: [`CONTEXT.md`](../../CONTEXT.md). Decisões: [`docs/adr/`](../adr/). Identidade visual de referência: [`prototypes/identity/liberty-final.html`](../../prototypes/identity/liberty-final.html), com os tokens em [`prototypes/identity/liberty/tokens-exportados-dono-v2.css`](../../prototypes/identity/liberty/tokens-exportados-dono-v2.css) e as cores de contexto em [`prototypes/identity/shared/liberty-status.css`](../../prototypes/identity/shared/liberty-status.css). A direção 2c foi substituída.
 >
 > v2 incorpora a revisão do Product Owner (2026-10-10): núcleo jogável antes de cobrança, regras de gameplay, estados de pagamento, comportamento em falhas e critérios de saída do beta.
@@ -347,7 +349,7 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 
 **Decidido na parte B (Ranking e telas)**
 - **Quem entra:** o mínimo é de **rounds jogados** (50, Retake) ou **minutos jogados** (30, Deathmatch) na semana, não de rounds vencidos. Contas anonimizadas e entradas removidas pela Staff ficam de fora.
-- **Ordem, sempre determinística:** Retake = rounds vencidos, depois K/D, depois mais kills, depois a Conta mais antiga (menor ID público). Deathmatch = KPM, depois HS%, depois mais kills, depois a Conta mais antiga. K/D e KPM (2 casas) e HS% (1 casa) são comparados como aparecem na tela, então um empate visível nunca é decidido por uma casa oculta. O ID público é único, então a ordem é total (ADR 0018, adendo).
+- **Ordem, sempre determinística:** Retake = rounds vencidos, depois K/D, depois mais kills, depois a Conta mais antiga (menor data de criação; o ID público só fecha o empate). Deathmatch = KPM, depois HS%, depois mais kills, depois a Conta mais antiga. K/D e KPM (2 casas) e HS% (1 casa) são comparados como aparecem na tela, então um empate visível nunca é decidido por uma casa oculta. O ID público é único, então a ordem é total (ADR 0018, adendo).
 - **API:** `GET /api/ranking/{mode}?week=YYYY-MM-DD` (público; sem `week`, a semana atual; `week` precisa ser uma segunda-feira que já começou, senão 400). Devolve o top 50, o mínimo, a lista de semanas consultáveis (a atual e até 12 com atividade) e, para quem está logado, `viewer`: a própria linha (mesmo fora do top 50), o que falta para o mínimo ("faltam 12 rounds" / "faltam 8 minutos", minutos arredondados para cima) ou o aviso de remoção.
 - **Perfil privado:** `rankingIdentity` é lido na hora (o cache guarda só números e IDs internos), então ligar o Perfil privado tira a identidade do Ranking sem esperar o cache. A própria Conta vê a sua linha marcada "Você", mesmo privada.
 - **Cache:** a ordem de cada Modo e semana fica 45 s no Valkey (`RANKING_CACHE_TTL_SECONDS`; 0 desliga). A remoção pela Staff invalida a chave, no painel e no CLI.
@@ -406,6 +408,7 @@ A S12 vai em dois PRs. **A (coleta e Estatísticas na API):** o Carmine.Core gra
 - **Indisponibilidade acima de 24 h:** a Staff compensa os dias de todos os VIPs ativos de uma vez (`payments compensate`), com alerta; não é automática.
 - **Contestação** tira os dias do Pacote e bloqueia novas compras até a Staff revisar; **todo ban permanente** encerra o VIP sem reembolso e impede a compra (J2). Recibo em página imprimível, sem nota fiscal (pessoa física).
 - **Cartão por Checkout Pro** (checkout hospedado, fora do escopo PCI); Pix pela API, com o QR na própria tela (30 minutos, recuperável em "Minhas compras").
+- **Plugin (S14d):** o connect traz `vipNotice` (`ending_soon`, `ending_today`, `ended_today`) e `vipEndsAt`; o Carmine.Core mostra o aviso no chat uma vez por conexão, no primeiro spawn. O `!vip` pergunta à API (`GET /api/server/players/{steamId}/vip`) e diz até quando vai o VIP. Os textos legais novos estão em `docs/legal/rascunho-s14-vip-e-pagamentos.md`, publicados só junto com a cobrança.
 
 ### S15 · Discord integrado
 

@@ -1,0 +1,41 @@
+// Logo do Carmine para decal de parede (env_decal), colocado pelo plugin.
+// Baseado no exemplo do CS2-Poor-MapAdvertisements (addons/decalExample/materials/Example/exampleTexture.vmat):
+// shader csgo_projected_decals.vfx, blend Mod2X, cor + máscara de translucidez em PNGs separados.
+// O que o teste no jogo decide (README, "O que o teste no jogo decide"): F_BLEND_MODE, g_flDecalZAlphaScale e
+// a rotação da textura (o exemplo pede a mesma rotação do exampleTexture.png).
+
+Layer0
+{
+	shader "csgo_projected_decals.vfx"
+
+	//---- Decal ----
+	F_BLEND_MODE 1 // Mod2X: cinza 50% é neutro; o disco preto escurece e o C e o anel claros clareiam a parede
+
+	//---- Alpha ----
+	g_flDecalZAlphaScale "0.010"
+
+	//---- Color ----
+	TextureColor "materials/carmine/wall_logo.png"
+
+	//---- Translucent ----
+	TextureTranslucency "materials/carmine/wall_logo_trans.png"
+
+	ToolAttributes
+	{
+		UVSet1FastTextureOp "2"
+		UVSet2FastTextureOp "2"
+	}
+
+	VariableState
+	{
+		"Alpha"
+		{
+		}
+		"Color"
+		{
+		}
+		"Translucent"
+		{
+		}
+	}
+}

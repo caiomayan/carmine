@@ -26,6 +26,31 @@ export interface ItemRuleViolation {
   message: string;
   field?: string;
   range?: { min: number; max: number };
+  /** Só em `vip_required`: o recurso VIP que o Item usa. Vai para o analytics; não sai no corpo do erro. */
+  feature?: VipFeature;
+}
+
+/** O tipo do Item do catálogo como o plano de eventos o nomeia. */
+const TIPO: Record<string, 'arma' | 'faca' | 'luvas' | 'agente' | 'music_kit'> = {
+  weapon: 'arma',
+  melee: 'faca',
+  glove: 'luvas',
+  agent: 'agente',
+  musickit: 'music_kit',
+};
+
+/** O tipo do plano para o `type` do catálogo da cs2-lib; `null` se não é um Item do Inventário. */
+export const itemKindOf = (type: string) => TIPO[type] ?? null;
+
+/** As propriedades de Item que `item_adicionado` e `item_editado` levam (plano de eventos, A1). */
+export interface ItemEventProps {
+  tipo: 'arma' | 'faca' | 'luvas' | 'agente' | 'music_kit';
+  item_id: number;
+  exclusivo_vip: boolean;
+  tem_stattrak: boolean;
+  tem_nametag: boolean;
+  qtd_stickers: number;
+  tem_charm: boolean;
 }
 
 /**
@@ -76,6 +101,26 @@ export class ItemRules {
       this.checkWithCs2Lib(normalizeItem(item)) ??
       (account.vip ? null : checkFreePlan(item, catalogItem))
     );
+  }
+
+  /**
+   * O que o analytics mede de um Item: o tipo, se usa um recurso VIP e os adicionais. O texto da nametag **não** sai,
+   * só se existe. `null` para um Item fora do catálogo (a validação já o teria recusado).
+   */
+  eventProps(item: Cs2Item): ItemEventProps | null {
+    if (!this.economy.items.has(item.id)) return null;
+    const type = this.economy.getById(item.id).type;
+    const tipo = TIPO[type];
+    if (!tipo) return null;
+    return {
+      tipo,
+      item_id: item.id,
+      exclusivo_vip: vipFeaturesOf(type, item).length > 0,
+      tem_stattrak: item.statTrak !== undefined,
+      tem_nametag: item.nameTag !== undefined,
+      qtd_stickers: Math.min(Object.keys(item.stickers ?? {}).length, 5),
+      tem_charm: Object.keys(item.keychains ?? {}).length > 0,
+    };
   }
 
   /**
@@ -188,7 +233,12 @@ const VIP_FIELDS: Record<VipFeature, string> = {
 function checkFreePlan(item: Cs2Item, catalogItem: CS2EconomyItem): ItemRuleViolation | null {
   const [feature] = vipFeaturesOf(catalogItem.type, item);
   if (feature === undefined) return null;
-  return { code: 'vip_required', field: VIP_FIELDS[feature], message: `${feature} exige VIP` };
+  return {
+    code: 'vip_required',
+    field: VIP_FIELDS[feature],
+    message: `${feature} exige VIP`,
+    feature,
+  };
 }
 
 function checkStatTrak(

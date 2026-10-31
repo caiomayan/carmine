@@ -184,7 +184,7 @@ export function SlotDock({
           ) : null}
           {item ? (
             <Button asChild variant="ghost" size="sm" className="max-md:flex-1">
-              <Link href={`/inventario/${item.uid}` as Route} prefetch={false}>
+              <Link href={`/inventory/${item.uid}` as Route} prefetch={false}>
                 {t('panel.edit')}
               </Link>
             </Button>

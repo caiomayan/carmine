@@ -150,6 +150,28 @@ O site já está no ar; para os amigos jogarem falta a instância AWS com os doi
 - [ ] Combinar com quem conduz: o `servers create` usa o Elastic IP, e a instalação baixa ~69 GB (ok para você?).
 - [ ] Hábito: `cs2-beta.ps1 stop` ao fim de cada sessão (ligada custa ~US$ 6,7 por dia).
 
+## 16. Lançamento dos servidores CS2 na VPS
+
+O passo a passo do dia (com os comandos) está em `lancamento-cs2.md`; aqui só o que **só você** faz. Tudo o resto é código.
+
+**Antes do dia**
+- [ ] **Comprar a VPS** (Enxadahost VPS.4 Plano II) conferindo antes de pagar: Ubuntu 24.04, KVM, ≥ 120 GB de NVMe, 4 vCPU/8 GB, CPU de clock alto, IPv4 fixo, **anti-DDoS que cubra UDP 27015-27016**, root por SSH com chave, franquia de banda.
+- [ ] **Dois tokens GSLT** (App ID 730, contas Steam distintas com telefone) e **1 a 3 de reserva**, no gerenciador de senhas.
+- [ ] **Webhook do Discord** dos alertas da VPS (pode ser o mesmo da API).
+- [ ] **Bucket R2 privado** para o espelho dos terceiros + **dois tokens só desse bucket** (um de leitura e escrita, outro só de leitura). Os três valores do token de escrita vão para os secrets `MIRROR_URL`, `MIRROR_ACCESS_KEY_ID` e `MIRROR_SECRET_ACCESS_KEY` do GitHub; o de leitura, para a VPS (`carmine-secrets mirror`). Depois, *Actions > Terceiros do CS2 > Run workflow* uma vez.
+- [ ] Aprovar o download de ~69 GB e a banda da VPS.
+
+**No dia**
+- [ ] Instalar o Ubuntu 24.04 com a **sua chave SSH** e passar o IP a quem conduz.
+- [ ] Abrir **UDP 27015-27016** no firewall/anti-DDoS do painel do provedor, se houver.
+- [ ] DNS: `retake.stcarmine.com` e `dm.stcarmine.com`, registros **A** só-DNS (**nuvem cinza**) para o IP.
+- [ ] **Digitar** os GSLT e as chaves no `carmine-secrets` (sem eco; não passam por chat).
+- [ ] Entrar no jogo e fazer o teste final (Loadout, `!vip`, bombsite, RTV).
+
+**Depois**
+- [ ] Encerrar a AWS (terminar a instância, **liberar o Elastic IP**, **apagar o volume**).
+- [ ] Combinar uma janela para um `reboot` da VPS (kernel novo das atualizações de segurança).
+
 ## Depois
 
 - Se faltar um segredo, o serviço correspondente fica desligado, não quebrado: sem DSN, sem Sentry; sem webhook, sem alertas; sem chave da Steam, avatar neutro; **sem as credenciais do R2, o backup noturno falha e avisa**.

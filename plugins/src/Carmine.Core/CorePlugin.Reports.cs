@@ -49,20 +49,21 @@ public sealed partial class CorePlugin
             case ReportStep.Say say:
                 foreach (var line in say.Lines)
                 {
-                    player.PrintToChat($" {line}");
+                    player.SendChat(line);
                 }
                 break;
             case ReportStep.Submit submit:
-                var round = GameRules()?.TotalRoundsPlayed;
+                var round = ReportRound.InProgress(GameRules()?.TotalRoundsPlayed, IsWarmup());
                 var map = Server.MapName;
+                var mapPlayId = ReportMapPlay.Current(_match);
                 RunInBackground(async token =>
                 {
-                    var outcome = await sender.SendAsync(reporter, submit.Target.SteamId, submit.Reason, round, map, token);
+                    var outcome = await sender.SendAsync(reporter, submit.Target.SteamId, submit.Reason, round, map, mapPlayId, token);
                     Log.ReportSent(Logger, reporter, submit.Target.SteamId, submit.Reason, outcome.Accepted);
                     Server.NextFrame(() =>
                     {
                         var current = Utilities.GetPlayers().FirstOrDefault(p => IsHuman(p) && p.SteamID == reporter);
-                        current?.PrintToChat($" {outcome.Message}");
+                        current?.SendChat(outcome.Message);
                     });
                 });
                 break;

@@ -20,8 +20,8 @@ Runbook do ADR 0002: operamos com skins simuladas aceitando o risco de a Valve b
 
 1. **Avise** no Discord (canal de avisos) antes de reiniciar: "manutenção, 2 min".
 2. Pegue o próximo token livre no gerenciador de senhas e marque o antigo como `BANIDO (data)`.
-3. Aplique no servidor afetado: abra um terminal na máquina (AWS: `./infra/cs2/aws/cs2-beta.ps1 shell`; VPS: SSH), `sudoedit /etc/carmine-cs2/<perfil>.env` e troque a linha `CS2_GSLT=` pelo token novo.
-4. Reinicie **só** o servidor afetado: `sudo systemctl restart carmine-cs2@<perfil>` (o outro segue no ar). Confira: `journalctl -u carmine-cs2@<perfil> -n 80` sem erro de logon na Steam e o servidor na lista de servidores do CS2 (busque pelo nome); ele volta à lista do site em até 1 min (batimento) e o alerta 🟢 não é necessário se a queda foi menor que 60 s.
+3. Aplique no servidor afetado: abra um terminal na máquina (AWS: `./infra/cs2/aws/cs2-beta.ps1 shell`; VPS: SSH) e rode `sudo carmine-secrets gslt <perfil>`: o token é digitado **sem eco** (não fica no histórico do shell), validado e gravado em `/etc/carmine-cs2/<perfil>.env`. (Sem o comando, `sudoedit` no mesmo arquivo e troque a linha `CS2_GSLT=`.)
+4. O `carmine-secrets gslt` já reinicia **só** o servidor afetado (o outro segue no ar); à mão: `sudo systemctl restart carmine-cs2@<perfil>`. Confira: `sudo carmine-vps-smoke` (acusa o GSLT recusado pela Steam) ou `journalctl -u carmine-cs2@<perfil> -n 80` sem erro de logon na Steam e o servidor na lista de servidores do CS2 (busque pelo nome); ele volta à lista do site em até 1 min (batimento) e o alerta 🟢 não é necessário se a queda foi menor que 60 s.
 5. Registre a ocorrência (data, servidor, conta de origem do token banido) numa nota do Maestri. Se for o **segundo** ban no mês, avalie desligar o módulo de skins (ADR 0002: ele deve poder ser desligado sem afetar o resto) e abra uma conversa de produto.
 6. Gere um novo token de reserva para repor o estoque e, se a conta banida tiver outros tokens, **troque-os também**: a Valve costuma banir por conta.
 

@@ -1,19 +1,29 @@
-import { profileSchema, STAFF_ERROR_STATUS, staffErrorSchema } from '@carmine/contracts';
 import {
-  AVATAR_BLOCK_DAYS_FIRST,
-  AVATAR_BLOCK_DAYS_REPEAT,
+  profileSchema,
+  REPORT_DAILY_LIMIT,
+  REPORTER_ARCHIVED_MIN,
+  reportResultSchema,
+  STAFF_ERROR_STATUS,
+  staffErrorSchema,
+  staffReportPageSchema,
+} from '@carmine/contracts';
+import {
+  AVATAR_BLOCK_DAYS_MAX,
+  AVATAR_BLOCK_DAYS_SUGGESTED,
   AVATAR_ERROR_STATUS,
+  AVATAR_HISTORY_SIZE,
   AVATAR_REPORTS_PER_HOUR,
   AVATAR_SIZES,
   type AvatarReason,
   avatarErrorSchema,
   avatarReportReceivedSchema,
   avatarStateSchema,
+  type StaffAvatarCase,
   staffAccountAvatarSchema,
   staffAvatarCasePageSchema,
   staffAvatarCaseSchema,
 } from '@carmine/contracts/avatar';
-import { eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AvatarRetention } from '../src/avatars/avatar-retention.js';
@@ -23,6 +33,7 @@ import {
   accounts,
   avatarReports,
   mediaDeletions,
+  reports,
   staffAuditLog,
 } from '../src/database/schema.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
@@ -45,11 +56,11 @@ const photo = () =>
     .toBuffer();
 
 /**
- * Moderação da foto de perfil (ADR 0022, F2): a denúncia, a suspensão automática com duas Contas
- * diferentes, a fila e a decisão da Staff, a remoção em um clique, o bloqueio de reincidente e a
- * auditoria. O R2 e a purga da Cloudflare são de mentira (`FakeMedia`).
+ * Moderação da foto de perfil (ADR 0022 e 0025): a denúncia que só entra na fila, a imagem aprovada que fica
+ * imune, o peso de quem denuncia, a fila e a decisão da Staff, a remoção em um clique com o bloqueio que a Staff
+ * escolhe, a foto do histórico e a auditoria. O R2 e a purga da Cloudflare são de mentira (`FakeMedia`).
  */
-describe('Moderação da foto de perfil (F2)', () => {
+describe('Moderação da foto de perfil (F2 e S18)', () => {
   let t: TestApp;
   let media: FakeMedia;
   let next = 1;
@@ -78,16 +89,12 @@ describe('Moderação da foto de perfil (F2)', () => {
   const drain = () => t.app.get(MediaDeletions).drain();
   const keysOf = (id: string, bucket: string) => media.keys(bucket).filter((k) => k.includes(id));
 
-  /** Uma Conta que pode enviar (reivindicada, com mais de 24 h e foto da Steam) e já com foto própria no ar. */
+  /** Uma Conta que pode enviar (reivindicada, com a foto da Steam) e já com foto própria no ar. */
   async function withPhoto() {
     const player = await signedInPlayer(t, next++);
     await t.postgres.db
       .update(accounts)
-      .set({
-        createdAt: new Date(Date.now() - 2 * DAY_MS),
-        steamAvatarUrl: STEAM_AVATAR,
-        avatarUrl: STEAM_AVATAR,
-      })
+      .set({ steamAvatarUrl: STEAM_AVATAR, avatarUrl: STEAM_AVATAR })
       .where(eq(accounts.id, player.account.id));
     const sent = await player.raw('POST', '/api/me/avatar', await photo(), 'image/png');
     expect(sent.statusCode, sent.body).toBe(200);
@@ -99,6 +106,26 @@ describe('Moderação da foto de perfil (F2)', () => {
   }
 
   type Owner = Awaited<ReturnType<typeof withPhoto>>['player'];
+
+  /**
+   * Um novo envio da Conta, com o tempo da janela de envios já passado (assim passa de 5 envios sem bater no
+   * limite). Devolve o ID da foto que ficou no ar.
+   */
+  async function replaceWith(player: Owner): Promise<string> {
+    await t.postgres.db
+      .update(accountAvatars)
+      .set({ createdAt: sql`${accountAvatars.createdAt} - interval '31 minutes'` })
+      .where(eq(accountAvatars.accountId, player.account.id));
+    const sent = await player.raw('POST', '/api/me/avatar', await photo(), 'image/png');
+    expect(sent.statusCode, sent.body).toBe(200);
+    const [active] = await t.postgres.db
+      .select()
+      .from(accountAvatars)
+      .where(
+        and(eq(accountAvatars.accountId, player.account.id), eq(accountAvatars.status, 'active')),
+      );
+    return active?.id as string;
+  }
 
   /** Uma Conta comum, só para denunciar. */
   const reporter = () => signedInPlayer(t, next++);
@@ -143,6 +170,33 @@ describe('Moderação da foto de perfil (F2)', () => {
 
   const decide = (member: Awaited<ReturnType<typeof staff>>, avatarId: string, body: object) =>
     member.call('POST', `/api/staff/avatars/${avatarId}/decision`, body);
+
+  /** Toda a fila aberta, página a página (ela é compartilhada com os outros testes). */
+  async function openCases(
+    member: Awaited<ReturnType<typeof staff>>,
+    limit = 20,
+  ): Promise<StaffAvatarCase[]> {
+    const cases: StaffAvatarCase[] = [];
+    let cursor: string | null = null;
+    let pages = 0;
+    do {
+      const response = await member.call(
+        'GET',
+        `/api/staff/avatar-reports?limit=${limit}${cursor ? `&before=${cursor}` : ''}`,
+      );
+      expect(response.statusCode, response.body).toBe(200);
+      const page = staffAvatarCasePageSchema.parse(response.json());
+      cases.push(...page.cases);
+      cursor = page.nextCursor;
+      pages += 1;
+    } while (cursor && pages < 200);
+    const ids = cases.map((c) => c.avatar.id);
+    expect(new Set(ids).size, 'a paginação repetiu um caso').toBe(ids.length);
+    return cases;
+  }
+
+  const openQueue = async (member: Awaited<ReturnType<typeof staff>>, limit = 20) =>
+    (await openCases(member, limit)).map((c) => c.avatar.id);
 
   describe('denunciar', () => {
     it('uma denúncia entra na fila e a foto segue no ar; a resposta não diz mais nada', async () => {
@@ -205,29 +259,27 @@ describe('Moderação da foto de perfil (F2)', () => {
     });
   });
 
-  describe('suspensão automática (duas Contas diferentes)', () => {
-    it('sai do ar sozinha: volta o avatar da Steam, o privado guarda a imagem, o público é apagado e purgado', async () => {
+  describe('a denúncia não tira nada do ar', () => {
+    it('várias Contas diferentes denunciam e a foto segue no ar, no avatar efetivo e no bucket público', async () => {
       const { player, avatarId } = await withPhoto();
+
+      for (let i = 0; i < 4; i += 1) {
+        expect((await report(await reporter(), player, 'hate')).statusCode).toBe(200);
+      }
+
+      const found = await row(avatarId);
+      expect(found).toMatchObject({ status: 'active', takenDownAt: null });
       expect(await effectiveAvatar(player)).toContain(avatarId);
-
-      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(200);
-      expect((await row(avatarId))?.status).toBe('active');
-      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(200);
-
-      const suspended = await row(avatarId);
-      expect(suspended?.status).toBe('suspended');
-      expect(suspended?.takenDownAt).toBeTruthy();
-      expect(await effectiveAvatar(player)).toBe(STEAM_AVATAR);
-      expect(keysOf(avatarId, PRIVATE)).toHaveLength(AVATAR_SIZES.length);
+      expect((await stateOf(player)).custom?.status).toBe('active');
       await drain();
-      expect(keysOf(avatarId, PUBLIC)).toEqual([]);
-      expect(media.purges.flatMap((p) => p.files)).toContain(
-        `${ORIGIN}/avatars/${avatarId}/512.webp`,
-      );
-      // O dono é avisado ("em análise") e não envia outra por cima até a Staff decidir.
-      const state = await stateOf(player);
-      expect(state.custom?.status).toBe('suspended');
-      expect(state.cannotUploadReason).toBe('upload_blocked');
+      expect(keysOf(avatarId, PUBLIC)).toHaveLength(AVATAR_SIZES.length);
+      expect(keysOf(avatarId, PRIVATE)).toEqual([]);
+      // Todas entram na fila da Staff, que é quem decide.
+      const moderator = await staff();
+      expect((await openCases(moderator)).find((c) => c.avatar.id === avatarId)).toMatchObject({
+        avatar: { status: 'active' },
+        reports: { reporters: 4 },
+      });
     });
 
     it('a mesma Conta denunciando duas vezes não conta como duas', async () => {
@@ -254,7 +306,7 @@ describe('Moderação da foto de perfil (F2)', () => {
       const page = staffAvatarCasePageSchema.parse(response.json());
       const found = page.cases.find((c) => c.avatar.id === avatarId);
       expect(found).toMatchObject({
-        avatar: { status: 'suspended', url: null },
+        avatar: { status: 'active', url: `${ORIGIN}/avatars/${avatarId}/512.webp` },
         account: { publicId: player.account.publicId },
         reports: { reporters: 2 },
         previousRemovals: 0,
@@ -264,8 +316,8 @@ describe('Moderação da foto de perfil (F2)', () => {
         { reason: 'hate', count: 1 },
         { reason: 'minor', count: 1 },
       ]);
-      // Suspensa, a foto já não aparece para denunciar: a terceira pessoa não consegue (ela nem vê a foto).
-      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(404);
+      // A foto segue no ar, então uma terceira pessoa ainda pode denunciar: a fila só soma.
+      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(200);
       expect(page.openCount).toBeGreaterThanOrEqual(1);
 
       const image = await moderator.call('GET', `/api/staff/avatars/${avatarId}/image`);
@@ -319,11 +371,11 @@ describe('Moderação da foto de perfil (F2)', () => {
   });
 
   describe('decidir', () => {
-    it('manter: a foto suspensa volta ao ar, as denúncias são arquivadas e fica no log', async () => {
+    it('manter: as denúncias são arquivadas, fica no log e a imagem aprovada fica imune; só uma imagem nova pode ser denunciada de novo', async () => {
       const { player, avatarId } = await withPhoto();
+      const first = await reporter();
+      await report(first, player);
       await report(await reporter(), player);
-      await report(await reporter(), player);
-      await drain();
       const moderator = await staff();
 
       const response = await decide(moderator, avatarId, {
@@ -339,10 +391,8 @@ describe('Moderação da foto de perfil (F2)', () => {
         note: 'Revisei: é uma arte, sem problema',
         by: { steamId: moderator.steamId },
       });
-      const back = await row(avatarId);
-      expect(back).toMatchObject({ status: 'active', takenDownAt: null });
+      expect(await row(avatarId)).toMatchObject({ status: 'active', decision: 'keep' });
       expect(await effectiveAvatar(player)).toContain(avatarId);
-      expect(keysOf(avatarId, PUBLIC)).toHaveLength(AVATAR_SIZES.length);
       await drain();
       expect(keysOf(avatarId, PUBLIC)).toHaveLength(AVATAR_SIZES.length);
       expect(keysOf(avatarId, PRIVATE)).toEqual([]);
@@ -356,21 +406,31 @@ describe('Moderação da foto de perfil (F2)', () => {
       );
       expect(logged?.reason).toBe('Revisei: é uma arte, sem problema');
       // O caso sai da fila aberta e vai para as decididas.
-      const open = staffAvatarCasePageSchema.parse(
-        (await moderator.call('GET', '/api/staff/avatar-reports')).json(),
-      );
-      expect(open.cases.map((c) => c.avatar.id)).not.toContain(avatarId);
+      expect(await openQueue(moderator)).not.toContain(avatarId);
       const history = staffAvatarCasePageSchema.parse(
         (await moderator.call('GET', '/api/staff/avatar-reports?status=decided')).json(),
       );
       expect(history.cases.map((c) => c.avatar.id)).toContain(avatarId);
-      // Reabrir exige denúncias novas: duas Contas novas tiram do ar de novo.
-      await report(await reporter(), player);
-      await report(await reporter(), player);
-      expect((await row(avatarId))?.status).toBe('suspended');
+
+      // Imune: novas denúncias contra a mesma imagem são descartadas (a resposta é a mesma, inclusive para
+      // quem já tinha denunciado), nada entra na fila e nada sai do ar.
+      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(200);
+      expect((await report(first, player)).statusCode).toBe(200);
+      const after = await t.postgres.db
+        .select()
+        .from(avatarReports)
+        .where(eq(avatarReports.avatarId, avatarId));
+      expect(after).toHaveLength(2);
+      expect(await openQueue(moderator)).not.toContain(avatarId);
+      expect((await row(avatarId))?.status).toBe('active');
+
+      // Uma imagem nova não herda a imunidade: ela pode ser denunciada.
+      const fresh = await replaceWith(player);
+      expect((await report(await reporter(), player, 'hate')).statusCode).toBe(200);
+      expect(await openQueue(moderator)).toContain(fresh);
     });
 
-    it('remover: a Conta volta à Steam, a imagem fica guardada 30 dias, o envio é bloqueado 7 dias e o dono vê o aviso', async () => {
+    it('remover: a Conta volta à Steam, a imagem fica guardada 30 dias, o envio é bloqueado pelos dias escolhidos e o dono vê o aviso', async () => {
       const { player, avatarId } = await withPhoto();
       await report(await reporter(), player, 'sexual');
       await report(await reporter(), player, 'sexual');
@@ -381,6 +441,7 @@ describe('Moderação da foto de perfil (F2)', () => {
         decision: 'remove',
         reason: 'sexual',
         note: 'Nudez confirmada na imagem',
+        blockDays: AVATAR_BLOCK_DAYS_SUGGESTED,
       });
 
       expect(response.statusCode, response.body).toBe(200);
@@ -395,8 +456,12 @@ describe('Moderação da foto de perfil (F2)', () => {
       });
       expect(await effectiveAvatar(player)).toBe(STEAM_AVATAR);
       const until = await blockedUntilOf(player);
-      expect(until?.getTime()).toBeGreaterThan(before + (AVATAR_BLOCK_DAYS_FIRST - 0.01) * DAY_MS);
-      expect(until?.getTime()).toBeLessThan(Date.now() + (AVATAR_BLOCK_DAYS_FIRST + 0.01) * DAY_MS);
+      expect(until?.getTime()).toBeGreaterThan(
+        before + (AVATAR_BLOCK_DAYS_SUGGESTED - 0.01) * DAY_MS,
+      );
+      expect(until?.getTime()).toBeLessThan(
+        Date.now() + (AVATAR_BLOCK_DAYS_SUGGESTED + 0.01) * DAY_MS,
+      );
       // Guardada em privado pelo prazo (a retenção está na fila para daqui a 30 dias).
       await drain();
       expect(keysOf(avatarId, PUBLIC)).toEqual([]);
@@ -425,62 +490,49 @@ describe('Moderação da foto de perfil (F2)', () => {
       expect(logged?.details).toMatchObject({ avatarId, avatarReason: 'sexual', blockDays: 7 });
     });
 
-    it('a reincidência em 90 dias bloqueia 30 dias; blockDays troca a regra (0 não bloqueia)', async () => {
+    it('o bloqueio dura os dias que a Staff escolher; sem blockDays, ou com 0, não há bloqueio, nem escada automática', async () => {
       const { player, avatarId } = await withPhoto();
       const moderator = await staff();
-      const first = await decide(moderator, avatarId, {
-        decision: 'remove',
-        reason: 'hate',
-        note: 'primeira',
-      });
-      expect(first.statusCode, first.body).toBe(200);
-      // Liberado o bloqueio, a pessoa envia outra foto e a Staff remove de novo.
-      await t.postgres.db
-        .update(accounts)
-        .set({ avatarUploadBlockedUntil: null })
-        .where(eq(accounts.id, player.account.id));
-      const second = await player.raw('POST', '/api/me/avatar', await photo(), 'image/png');
-      expect(second.statusCode, second.body).toBe(200);
-      const secondId = (
-        await t.postgres.db
-          .select()
-          .from(accountAvatars)
-          .where(eq(accountAvatars.accountId, player.account.id))
-      ).find((a) => a.status === 'active')?.id as string;
+      const remove = (id: string, extra: object = {}) =>
+        decide(moderator, id, { decision: 'remove', reason: 'hate', note: 'nota', ...extra });
+      const unblock = () =>
+        t.postgres.db
+          .update(accounts)
+          .set({ avatarUploadBlockedUntil: null })
+          .where(eq(accounts.id, player.account.id));
 
-      const response = await decide(moderator, secondId, {
-        decision: 'remove',
-        reason: 'hate',
-        note: 'de novo',
-      });
+      // 1ª remoção, sem blockDays: não bloqueia, e a Conta já pode enviar outra foto.
+      expect((await remove(avatarId)).statusCode).toBe(200);
+      expect(await blockedUntilOf(player)).toBeNull();
+      expect((await stateOf(player)).canUpload).toBe(true);
 
+      // 2ª remoção (reincidência), com 30 dias: bloqueia 30 dias.
+      const second = await replaceWith(player);
+      const response = await remove(second, { blockDays: 30 });
       expect(response.statusCode, response.body).toBe(200);
       expect(staffAvatarCaseSchema.parse(response.json()).previousRemovals).toBe(1);
       const until = await blockedUntilOf(player);
-      expect(until?.getTime()).toBeGreaterThan(
-        Date.now() + (AVATAR_BLOCK_DAYS_REPEAT - 0.01) * DAY_MS,
-      );
+      expect(until?.getTime()).toBeGreaterThan(Date.now() + (30 - 0.01) * DAY_MS);
+      expect(until?.getTime()).toBeLessThan(Date.now() + (30 + 0.01) * DAY_MS);
 
-      // Override: 0 não bloqueia (o bloqueio anterior segue como estava) e 365 é o teto.
-      await t.postgres.db
-        .update(accounts)
-        .set({ avatarUploadBlockedUntil: null })
-        .where(eq(accounts.id, player.account.id));
-      const third = await player.raw('POST', '/api/me/avatar', await photo(), 'image/png');
-      expect(third.statusCode, third.body).toBe(200);
-      const thirdId = (
-        await t.postgres.db
-          .select()
-          .from(accountAvatars)
-          .where(eq(accountAvatars.accountId, player.account.id))
-      ).find((a) => a.status === 'active')?.id as string;
-      await decide(moderator, thirdId, {
-        decision: 'remove',
-        reason: 'other',
-        note: 'sem bloqueio',
-        blockDays: 0,
-      });
+      // 3ª remoção, sem blockDays: a reincidência não vira bloqueio sozinha (a escada de 7, 30 e 365 dias saiu).
+      await unblock();
+      const third = await replaceWith(player);
+      expect((await remove(third)).statusCode).toBe(200);
       expect(await blockedUntilOf(player)).toBeNull();
+
+      // 0 também não bloqueia; 365 é o teto e mais que isso é inválido.
+      const fourth = await replaceWith(player);
+      expect((await remove(fourth, { blockDays: 0 })).statusCode).toBe(200);
+      expect(await blockedUntilOf(player)).toBeNull();
+      const fifth = await replaceWith(player);
+      const tooLong = await remove(fifth, { blockDays: AVATAR_BLOCK_DAYS_MAX + 1 });
+      expect(tooLong.statusCode).toBe(400);
+      expect((await row(fifth))?.status).toBe('active');
+      expect((await remove(fifth, { blockDays: AVATAR_BLOCK_DAYS_MAX })).statusCode).toBe(200);
+      expect((await blockedUntilOf(player))?.getTime()).toBeGreaterThan(
+        Date.now() + (AVATAR_BLOCK_DAYS_MAX - 0.01) * DAY_MS,
+      );
     });
 
     it('recusa decidir de novo (avatar_not_reviewable), foto inexistente e remover sem motivo', async () => {
@@ -535,6 +587,7 @@ describe('Moderação da foto de perfil (F2)', () => {
         decision: 'remove',
         reason: 'personal_data',
         note: 'Mostra o documento de outra pessoa',
+        blockDays: AVATAR_BLOCK_DAYS_SUGGESTED,
       });
 
       expect(response.statusCode, response.body).toBe(200);
@@ -604,15 +657,148 @@ describe('Moderação da foto de perfil (F2)', () => {
     });
   });
 
+  describe('quem denuncia muito o que a Staff mantém perde peso', () => {
+    /** Uma Conta que denunciou `kept` fotos que a Staff manteve e `upheld` que ela removeu. */
+    async function reporterWith(
+      moderator: Awaited<ReturnType<typeof staff>>,
+      kept: number,
+      upheld: number,
+    ) {
+      const who = await reporter();
+      for (const decision of [...Array(kept).fill('keep'), ...Array(upheld).fill('remove')]) {
+        const { player, avatarId } = await withPhoto();
+        expect((await report(who, player)).statusCode).toBe(200);
+        // Recua a denúncia: o limite de denúncias por hora não é o assunto aqui.
+        await t.postgres.db
+          .update(avatarReports)
+          .set({ createdAt: sql`${avatarReports.createdAt} - interval '2 hours'` })
+          .where(eq(avatarReports.reporterAccountId, who.account.id));
+        const response = await decide(moderator, avatarId, {
+          decision,
+          ...(decision === 'remove' && { reason: 'other' }),
+          note: 'Decisão de teste da fila',
+        });
+        expect(response.statusCode, response.body).toBe(200);
+      }
+      return who;
+    }
+
+    it(`com ${REPORTER_ARCHIVED_MIN} denúncias mantidas e mais mantidas que confirmadas, as denúncias da Conta vão para o fim da fila`, async () => {
+      const moderator = await staff('admin');
+      const noisy = await reporterWith(moderator, REPORTER_ARCHIVED_MIN, 0);
+      // Denunciada primeiro, mas só por quem perdeu peso.
+      const onlyNoisy = await withPhoto();
+      await report(noisy, onlyNoisy.player);
+      const normal = await withPhoto();
+      await report(await reporter(), normal.player);
+      // Com uma denúncia de peso normal junto, a foto fica no grupo normal.
+      const both = await withPhoto();
+      await report(noisy, both.player);
+      await report(await reporter(), both.player);
+
+      const ids = await openQueue(moderator, 2);
+
+      expect(ids).toContain(onlyNoisy.avatarId);
+      expect(ids.indexOf(normal.avatarId)).toBeLessThan(ids.indexOf(onlyNoisy.avatarId));
+      expect(ids.indexOf(both.avatarId)).toBeLessThan(ids.indexOf(onlyNoisy.avatarId));
+    });
+
+    it('quem acerta tanto quanto erra, ou denuncia poucas mantidas, mantém o peso', async () => {
+      const moderator = await staff('admin');
+      const noisy = await reporterWith(moderator, REPORTER_ARCHIVED_MIN, 0);
+      const mixed = await reporterWith(moderator, REPORTER_ARCHIVED_MIN, REPORTER_ARCHIVED_MIN);
+      const few = await reporterWith(moderator, REPORTER_ARCHIVED_MIN - 1, 0);
+      const older = await withPhoto();
+      await report(noisy, older.player);
+      const byMixed = await withPhoto();
+      await report(mixed, byMixed.player);
+      const byFew = await withPhoto();
+      await report(few, byFew.player);
+
+      const ids = await openQueue(moderator, 2);
+
+      // O da Conta barulhenta é o mais antigo e mesmo assim fica depois dos outros dois.
+      expect(ids.indexOf(byMixed.avatarId)).toBeLessThan(ids.indexOf(older.avatarId));
+      expect(ids.indexOf(byFew.avatarId)).toBeLessThan(ids.indexOf(older.avatarId));
+    });
+  });
+
+  describe('foto no histórico', () => {
+    it('a denúncia segue na fila depois de a foto ser trocada; a Staff remove a do histórico, ela sai de lá para sempre e a atual segue no ar', async () => {
+      const { player, avatarId } = await withPhoto();
+      await report(await reporter(), player, 'sexual');
+      const current = await replaceWith(player);
+      const moderator = await staff();
+
+      expect((await openCases(moderator)).find((c) => c.avatar.id === avatarId)).toMatchObject({
+        avatar: { status: 'replaced' },
+        reports: { reporters: 1 },
+      });
+      const image = await moderator.call('GET', `/api/staff/avatars/${avatarId}/image`);
+      expect(image.statusCode).toBe(200);
+
+      const response = await decide(moderator, avatarId, {
+        decision: 'remove',
+        reason: 'sexual',
+        note: 'Nudez confirmada na imagem antiga',
+        blockDays: 3,
+      });
+
+      expect(response.statusCode, response.body).toBe(200);
+      expect(await row(avatarId)).toMatchObject({ status: 'removed', decision: 'remove' });
+      // A atual não mexe: segue no ar e como avatar efetivo.
+      expect(await row(current)).toMatchObject({ status: 'active' });
+      expect(await effectiveAvatar(player)).toContain(current);
+      await drain();
+      expect(keysOf(avatarId, PUBLIC)).toEqual([]);
+      expect(keysOf(avatarId, PRIVATE)).toHaveLength(AVATAR_SIZES.length);
+      expect(keysOf(current, PUBLIC)).toHaveLength(AVATAR_SIZES.length);
+      // Nunca mais volta ao histórico, nem depois do bloqueio.
+      const state = await stateOf(player);
+      expect(state.history.map((item) => item.id)).toEqual([current]);
+      expect(state.canUseHistory).toBe(false);
+      await t.postgres.db
+        .update(accounts)
+        .set({ avatarUploadBlockedUntil: null })
+        .where(eq(accounts.id, player.account.id));
+      const back = await player.call('POST', `/api/me/avatar/history/${avatarId}`);
+      expect(back.statusCode).toBe(404);
+      expect(avatarErrorSchema.parse(back.json()).code).toBe('not_in_history');
+      for (let i = 0; i < AVATAR_HISTORY_SIZE + 1; i += 1) await replaceWith(player);
+      expect((await stateOf(player)).history.map((item) => item.id)).not.toContain(avatarId);
+    });
+
+    it('apagar do histórico uma foto denunciada tira o caso da fila (nada mais a decidir)', async () => {
+      const { player, avatarId } = await withPhoto();
+      await report(await reporter(), player);
+      await replaceWith(player);
+      const moderator = await staff();
+      expect(await openQueue(moderator)).toContain(avatarId);
+
+      const erased = await player.call('DELETE', `/api/me/avatar/history/${avatarId}`);
+
+      expect(erased.statusCode, erased.body).toBe(200);
+      expect(await openQueue(moderator)).not.toContain(avatarId);
+      const tooLate = await decide(moderator, avatarId, { decision: 'keep', note: 'tarde demais' });
+      expect(staffErrorSchema.parse(tooLate.json()).code).toBe('avatar_not_reviewable');
+    });
+  });
+
   describe('retenção dos registros (90 dias)', () => {
     const setState = (
       avatarId: string,
       status: 'replaced' | 'reverted' | 'removed',
       daysAgo: number,
+      options: { stillInHistory?: boolean } = {},
     ) =>
       t.postgres.db
         .update(accountAvatars)
-        .set({ status, retiredAt: new Date(Date.now() - daysAgo * DAY_MS) })
+        .set({
+          status,
+          retiredAt: new Date(Date.now() - daysAgo * DAY_MS),
+          // Trocada ou devolvida só some do banco depois de sair do histórico (arquivos apagados).
+          ...(status !== 'removed' && !options.stillInHistory && { deletedAt: new Date() }),
+        })
         .where(eq(accountAvatars.id, avatarId));
 
     const reportsOf = (avatarId: string) =>
@@ -650,18 +836,142 @@ describe('Moderação da foto de perfil (F2)', () => {
       expect((await t.app.get(AvatarRetention).sweep()).avatars).toBe(0);
     });
 
-    it('não toca a foto suspensa, mesmo antiga', async () => {
-      const { player, avatarId } = await withPhoto();
-      await report(await reporter(), player);
-      await report(await reporter(), player);
+    it('não toca a foto no ar, a suspensa (estado antigo) nem a que ainda está no histórico, mesmo antigas', async () => {
+      const live = await withPhoto();
+      const old = await withPhoto();
+      const inHistory = await withPhoto();
+      await report(await reporter(), inHistory.player);
+      await t.postgres.db
+        .update(accountAvatars)
+        .set({ status: 'suspended', createdAt: new Date(Date.now() - 200 * DAY_MS) })
+        .where(eq(accountAvatars.id, old.avatarId));
+      await setState(inHistory.avatarId, 'replaced', 200, { stillInHistory: true });
       await t.postgres.db
         .update(accountAvatars)
         .set({ createdAt: new Date(Date.now() - 200 * DAY_MS) })
-        .where(eq(accountAvatars.id, avatarId));
+        .where(eq(accountAvatars.id, live.avatarId));
 
       await t.app.get(AvatarRetention).sweep();
 
-      expect((await row(avatarId))?.status).toBe('suspended');
+      expect((await row(live.avatarId))?.status).toBe('active');
+      expect((await row(old.avatarId))?.status).toBe('suspended');
+      expect(await row(inHistory.avatarId)).toMatchObject({ status: 'replaced', deletedAt: null });
+      expect(await reportsOf(inHistory.avatarId)).toHaveLength(1);
+    });
+  });
+
+  /** A regra única de denúncia (ADR 0027) vista pela foto: prazo, peso de todos os tipos e teto por dia. */
+  describe('a regra única de denúncia', () => {
+    it('a foto tem prazo de 24 h, contado da denúncia mais antiga de peso normal', async () => {
+      const { player, avatarId } = await withPhoto();
+      const before = Date.now();
+      await report(await reporter(), player);
+      const moderator = await staff();
+
+      const found = (await openCases(moderator)).find((c) => c.avatar.id === avatarId);
+
+      expect(found).toMatchObject({ kind: 'avatar', lowWeight: false });
+      const wait = Date.parse(found?.deadlineAt as string) - before;
+      expect(wait).toBeGreaterThanOrEqual(24 * 3_600_000 - 1000);
+      expect(wait).toBeLessThan(24 * 3_600_000 + 60_000);
+    });
+
+    it('o peso soma os tipos: 2 fotos mantidas e 1 Denúncia de jogo arquivada tiram o peso nas duas filas', async () => {
+      const moderator = await staff('admin');
+      const noisy = await reporter();
+      for (let i = 0; i < REPORTER_ARCHIVED_MIN - 1; i += 1) {
+        const kept = await withPhoto();
+        await report(noisy, kept.player);
+        await decide(moderator, kept.avatarId, { decision: 'keep', note: 'Pode ficar' });
+      }
+      const someone = await withPhoto();
+      await t.postgres.db.insert(reports).values({
+        reporterAccountId: noisy.account.id,
+        targetAccountId: someone.player.account.id,
+        reason: 'other',
+        chatContext: [],
+        status: 'archived',
+        resolvedAt: new Date(),
+        resolvedBySteamId: 1n,
+        resolutionReason: 'Sem prova',
+      });
+      const gameTarget = await withPhoto();
+      await t.postgres.db.insert(reports).values({
+        reporterAccountId: noisy.account.id,
+        targetAccountId: gameTarget.player.account.id,
+        reason: 'other',
+        chatContext: [],
+      });
+      const photoTarget = await withPhoto();
+      await report(noisy, photoTarget.player);
+
+      const photo = (await openCases(moderator)).find((c) => c.avatar.id === photoTarget.avatarId);
+      const gameQueue = staffReportPageSchema.parse(
+        (await moderator.call('GET', '/api/staff/reports?limit=100')).json(),
+      );
+      const game = gameQueue.reports.find(
+        (r) => r.target.publicId === gameTarget.player.account.publicId,
+      );
+
+      expect(photo).toMatchObject({ lowWeight: true, deadlineAt: null });
+      expect(game).toMatchObject({ lowWeight: true, deadlineAt: null });
+    });
+
+    it('o teto de 10 por dia soma fotos e jogo; a 11ª é recusada, no site sem o prefixo', async () => {
+      const who = await reporter();
+      for (let i = 0; i < AVATAR_REPORTS_PER_HOUR; i += 1) {
+        const { player } = await withPhoto();
+        expect((await report(who, player)).statusCode).toBe(200);
+      }
+      const server = (target: Owner) =>
+        t.app.inject({
+          method: 'POST',
+          url: '/api/server/reports',
+          headers: { authorization: `Bearer ${t.serverKey}` },
+          payload: {
+            reporterSteamId: who.steamId,
+            targetSteamId: target.steamId,
+            reason: 'other',
+            round: null,
+            map: null,
+          },
+        });
+      for (let i = 0; i < REPORT_DAILY_LIMIT - AVATAR_REPORTS_PER_HOUR; i += 1) {
+        const { player } = await withPhoto();
+        const outcome = reportResultSchema.parse((await server(player)).json());
+        expect(outcome.accepted, `denúncia de jogo ${i + 1}`).toBe(true);
+      }
+      const { player } = await withPhoto();
+
+      const blocked = await report(who, player);
+
+      expect(blocked.statusCode).toBe(429);
+      const error = avatarErrorSchema.parse(blocked.json());
+      expect(error).toMatchObject({
+        code: 'report_daily_limit',
+        message: 'Você já enviou 10 denúncias hoje. Tente amanhã.',
+      });
+      expect(error.retryAfter).toBeTruthy();
+      // E a de jogo, da mesma Conta, também.
+      expect(reportResultSchema.parse((await server(player)).json()).accepted).toBe(false);
+    });
+
+    it('a denúncia contra imagem aprovada também passa pelos limites, para a resposta ser sempre a mesma', async () => {
+      const moderator = await staff();
+      const { player, avatarId } = await withPhoto();
+      await report(await reporter(), player);
+      expect(
+        (await decide(moderator, avatarId, { decision: 'keep', note: 'Pode ficar' })).statusCode,
+      ).toBe(200);
+      const who = await reporter();
+      for (let i = 0; i < AVATAR_REPORTS_PER_HOUR; i += 1) {
+        const other = await withPhoto();
+        expect((await report(who, other.player)).statusCode).toBe(200);
+      }
+
+      const blocked = await report(who, player);
+
+      expect(avatarErrorSchema.parse(blocked.json()).code).toBe('report_limit');
     });
   });
 });

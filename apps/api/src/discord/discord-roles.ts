@@ -1,19 +1,22 @@
-import type { StaffRole } from '@carmine/contracts';
+import type { Plan, StaffRole } from '@carmine/contracts';
 import type { DiscordRoleKey } from '../config/config.js';
 
 export type { DiscordRoleKey } from '../config/config.js';
 
 /** O que decide os cargos de uma Conta com o Discord vinculado. */
 export interface RoleFacts {
-  /** Há um Período VIP ativo agora. */
-  vipActive: boolean;
+  /** O plano ativo agora (Capo ou Padrinho), ou nulo na Conta grátis. */
+  plan: Plan | null;
   staffRole: StaffRole | null;
 }
 
-/** Os cargos que a Conta deve ter: Jogador (todo vinculado), VIP, Staff (qualquer papel) e Dono. */
-export function desiredRoleKeys({ vipActive, staffRole }: RoleFacts): DiscordRoleKey[] {
+/**
+ * Os cargos que a Conta deve ter: Jogador (todo vinculado), o do plano ativo (Capo ou Padrinho, um só), Staff
+ * (qualquer papel) e Dono.
+ */
+export function desiredRoleKeys({ plan, staffRole }: RoleFacts): DiscordRoleKey[] {
   const keys: DiscordRoleKey[] = ['player'];
-  if (vipActive) keys.push('vip');
+  if (plan !== null) keys.push(plan);
   if (staffRole !== null) keys.push('staff');
   if (staffRole === 'owner') keys.push('owner');
   return keys;

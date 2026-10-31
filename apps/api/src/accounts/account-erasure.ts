@@ -3,6 +3,8 @@ import { and, eq, ne, sql } from 'drizzle-orm';
 import { eraseAvatarsOf } from '../avatars/avatar-erasure.js';
 import type { Database } from '../database/database.js';
 import {
+  accountGamePreferences,
+  accountRatingDaily,
   accountStatsDaily,
   accountStatsWeekly,
   accounts,
@@ -10,9 +12,12 @@ import {
   chatMessages,
   discordLinks,
   inventoryItems,
+  mapPlayPlayers,
   playSessions,
   presets,
   reports,
+  roundEvents,
+  roundPlayerSummaries,
   sanctions,
   staffMembers,
   vipHeldItems,
@@ -42,7 +47,14 @@ export interface ErasureDeps {
   invalidateEquipped: (steamId: string) => Promise<void>;
   /** Tira os cargos do Discord de quem estava vinculado (S15); ausente: o Discord está desligado. */
   removeDiscordRoles?: (discordId: string) => Promise<void>;
+  /**
+   * Apaga a pessoa e os eventos dela no PostHog (A1, ADR 0021); ausente ou `off`: a análise está desligada. `pending`:
+   * não deu agora (sem a chave de gestão ou o PostHog fora) e o Dono apaga à mão (`docs/operacao/exclusao-de-dados.md`).
+   */
+  erasePerson?: (accountId: string) => Promise<AnalyticsErasure>;
 }
+
+export type AnalyticsErasure = 'removed' | 'absent' | 'pending' | 'off';
 
 export interface Erasure {
   publicId: number;
@@ -51,6 +63,8 @@ export interface Erasure {
   steamIdRetained: boolean;
   /** As sessões do site caíram (com o Valkey fora, não; elas expiram sozinhas). */
   sessionsDropped: boolean;
+  /** O que houve com a pessoa no PostHog; `pending` pede o passo manual. */
+  analytics: AnalyticsErasure;
 }
 
 /**
@@ -115,6 +129,10 @@ export class AccountErasure {
           .delete(vipPeriods)
           .where(eq(vipPeriods.accountId, accountId))
           .returning({ id: vipPeriods.id });
+        // Preferências de jogo (ADR 0028): a linha da Conta fica, então o cascade não age.
+        await tx
+          .delete(accountGamePreferences)
+          .where(eq(accountGamePreferences.accountId, accountId));
         const removedStats = await tx
           .delete(accountStatsWeekly)
           .where(eq(accountStatsWeekly.accountId, accountId))
@@ -132,6 +150,24 @@ export class AccountErasure {
           .delete(playSessions)
           .where(eq(playSessions.accountId, accountId))
           .returning({ id: playSessions.id });
+        // S17 (ADR 0024): o resumo dos rounds e do mapa some; nos eventos brutos a Conta vira nula (anonimizada)
+        // e o resto do round, que é dos outros jogadores também, fica.
+        await tx.delete(roundPlayerSummaries).where(eq(roundPlayerSummaries.accountId, accountId));
+        await tx.delete(mapPlayPlayers).where(eq(mapPlayPlayers.accountId, accountId));
+        // S21 (ADR 0029): as contagens do Rating saem junto com os resumos de que vêm.
+        await tx.delete(accountRatingDaily).where(eq(accountRatingDaily.accountId, accountId));
+        await tx
+          .update(roundEvents)
+          .set({ actorAccountId: null })
+          .where(eq(roundEvents.actorAccountId, accountId));
+        await tx
+          .update(roundEvents)
+          .set({ targetAccountId: null })
+          .where(eq(roundEvents.targetAccountId, accountId));
+        await tx
+          .update(roundEvents)
+          .set({ assistAccountId: null })
+          .where(eq(roundEvents.assistAccountId, accountId));
         const removedHeld = await tx
           .delete(vipHeldItems)
           .where(eq(vipHeldItems.accountId, accountId))
@@ -229,6 +265,14 @@ export class AccountErasure {
       // Melhor esforço: a Conta já foi anonimizada; um cargo que sobrar não identifica ninguém.
       await this.deps.removeDiscordRoles?.(discordId).catch(() => undefined);
     }
-    return { publicId, anonymizedAt: now, steamIdRetained, sessionsDropped };
+    // Depois do commit e sem nunca falhar a exclusão: o que não der agora fica como pendente.
+    const analytics = await this.deps.erasePerson?.(accountId).catch(() => 'pending' as const);
+    return {
+      publicId,
+      anonymizedAt: now,
+      steamIdRetained,
+      sessionsDropped,
+      analytics: analytics ?? 'off',
+    };
   }
 }

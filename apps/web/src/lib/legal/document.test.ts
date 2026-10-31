@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { legalHeadings, parseLegalDocument, slugify } from './document';
+import { headingAnchor, legalHeadings, parseLegalDocument, slugify } from './document';
 
 const source = (version: string, body: string) =>
   `---\ntitle: Regras de conduta\nupdatedAt: 2026-10-12\nversion: ${version}\n---\n\n${body}`;
@@ -67,12 +67,24 @@ describe('âncoras das seções', () => {
     expect(slugify('  Se você é menor de idade? ')).toBe('se-voce-e-menor-de-idade');
   });
 
+  it('o título pode fixar a âncora com {#id}, e o texto mostrado fica sem ela', () => {
+    expect(headingAnchor('Recurso {#appeal}')).toEqual({ id: 'appeal', text: 'Recurso' });
+    expect(headingAnchor('  Recurso  {#appeal}  ')).toEqual({ id: 'appeal', text: 'Recurso' });
+    expect(headingAnchor('Punições no Perfil')).toEqual({
+      id: 'punicoes-no-perfil',
+      text: 'Punições no Perfil',
+    });
+  });
+
   it('lista os títulos ## para o sumário, sem confundir com código', () => {
     const body =
       '## Resumo\n\nTexto ## não\n\n### Tipos\n\n## Recurso\n\n```\n## dentro de código\n```';
     expect(legalHeadings(body)).toEqual([
       { id: 'resumo', text: 'Resumo' },
       { id: 'recurso', text: 'Recurso' },
+    ]);
+    expect(legalHeadings('## Recurso {#appeal}\n\ntexto')).toEqual([
+      { id: 'appeal', text: 'Recurso' },
     ]);
   });
 });

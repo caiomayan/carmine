@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { analyticsIngestOrigin, analyticsWebConfig } from '@/lib/analytics-config';
 import { findPublicIdBySteamId, VISITOR_IP_HEADER } from '@/lib/api-base';
 import { PROFILE_PATH_HEADER, parseProfileSegment } from '@/lib/auth-links';
 import { formerPublicId } from '@/lib/former-public-ids';
@@ -27,6 +28,7 @@ export async function proxy(request: NextRequest) {
     nonce,
     dev: process.env.NODE_ENV === 'development',
     reportingOrigin: sentryIngestOrigin(sentryWebConfig(process.env)),
+    analyticsOrigin: analyticsIngestOrigin(analyticsWebConfig(process.env)),
   });
 
   const headers = new Headers(request.headers);

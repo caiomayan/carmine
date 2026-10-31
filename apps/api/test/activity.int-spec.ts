@@ -14,6 +14,10 @@ import { GameServerRegistry } from '../src/game-servers/game-server-registry.js'
 import { weekStartOf } from '../src/stats/stats-week.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 import { signedInPlayer } from './support/player.js';
+import { installStableClock } from './support/stable-clock.js';
+
+// Antes de qualquer `new Date()` do arquivo: sem cruzar a meia-noite de Brasília durante o teste.
+installStableClock();
 
 const NOW = () => new Date().toISOString();
 const THIS_WEEK = weekStartOf(new Date());
@@ -153,7 +157,7 @@ describe('Faixa de atividade ao vivo', () => {
       expect(body.events).toEqual([]);
     });
 
-    it('Conta que não existe no site não aparece', async () => {
+    it('quem entra sem o connect ter chegado já é uma Conta e aparece como qualquer outro', async () => {
       await send(
         batch({
           sessionStarts: [
@@ -167,7 +171,10 @@ describe('Faixa de atividade ao vivo', () => {
         }),
       );
 
-      expect((await activity()).body.events).toEqual([]);
+      const { response, body } = await activity();
+      const [joined] = ofType(body.events, 'joined');
+      expect(joined).toMatchObject({ type: 'joined', player: { private: false } });
+      expect(response.body).not.toContain(steamIdFor(99_999));
     });
   });
 

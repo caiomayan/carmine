@@ -4,6 +4,7 @@ import type { WeekSummary } from '@carmine/contracts';
 import { useTranslations } from 'next-intl';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { Ticker } from '@/components/vida/ticker';
+import { useVisibleInterval } from '@/hooks/use-visible-interval';
 import {
   type WeekDelta,
   type WeekRow,
@@ -46,12 +47,11 @@ function Unit({ value, label, pad = 2 }: { value: number; label: string; pad?: n
 function WeekCountdown({ turnAt, className }: { turnAt: number; className?: string }) {
   const t = useTranslations('home.week.countdown');
   const [left, setLeft] = useState<number | null>(null);
-  useEffect(() => {
-    const tick = () => setLeft(Math.max(0, turnAt - Date.now()));
-    tick();
-    const timer = setInterval(tick, 1000);
-    return () => clearInterval(timer);
-  }, [turnAt]);
+  const tick = () => setLeft(Math.max(0, turnAt - Date.now()));
+  // Só corre com a aba à vista (ao voltar, atualiza na hora); o primeiro valor vem aqui, depois da hidratação.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `tick` só depende de `turnAt`
+  useEffect(tick, [turnAt]);
+  useVisibleInterval(tick, 1000);
   const total = Math.floor((left ?? 0) / 1000);
   const days = Math.floor(total / 86400);
   const hours = Math.floor((total % 86400) / 3600);
@@ -93,22 +93,20 @@ export function WeekStrip({ summary }: { summary: WeekSummary | null }) {
   // Relógio só no navegador: o servidor e a hidratação concordam em "sem barra" até aqui.
   const [progress, setProgress] = useState<{ ratio: number; day: string } | null>(null);
   const weekStart = summary?.weekStart;
-  useEffect(() => {
+  const update = () => {
     if (!weekStart) return;
-    const update = () => {
-      const now = Date.now();
-      setProgress({
-        ratio: weekProgress(weekStart, now),
-        day: new Intl.DateTimeFormat('pt-BR', {
-          weekday: 'long',
-          timeZone: 'America/Sao_Paulo',
-        }).format(now),
-      });
-    };
-    update();
-    const timer = setInterval(update, 60_000);
-    return () => clearInterval(timer);
-  }, [weekStart]);
+    const now = Date.now();
+    setProgress({
+      ratio: weekProgress(weekStart, now),
+      day: new Intl.DateTimeFormat('pt-BR', {
+        weekday: 'long',
+        timeZone: 'America/Sao_Paulo',
+      }).format(now),
+    });
+  };
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `update` só depende de `weekStart`
+  useEffect(update, [weekStart]);
+  useVisibleInterval(update, weekStart ? 60_000 : null);
 
   if (!summary) return null;
   const rows = summary.current.players > 0 ? weekRows(summary) : null;

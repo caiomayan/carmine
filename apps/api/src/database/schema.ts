@@ -5,6 +5,8 @@ import {
   boolean,
   check,
   date,
+  doublePrecision,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -12,6 +14,7 @@ import {
   pgSequence,
   pgTable,
   primaryKey,
+  smallint,
   text,
   timestamp,
   uniqueIndex,
@@ -25,6 +28,23 @@ export const gameMode = pgEnum('game_mode', ['retake', 'deathmatch']);
 
 /** Onde o Servidor Carmine roda (S06); no MVP, só a VPS de São Paulo (ADR 0009). */
 export const gameServerRegion = pgEnum('game_server_region', ['sao-paulo']);
+
+/**
+ * Jogadores simultâneos por servidor, uma amostra por minuto (A1, ADR 0021): o pico e a média do "mídia kit". Só o
+ * servidor, o minuto e a contagem; nenhum dado pessoal. Apaga junto com o servidor.
+ */
+export const serverPresenceSamples = pgTable(
+  'server_presence_samples',
+  {
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id, { onDelete: 'cascade' }),
+    /** O minuto da amostra (segundos e milissegundos zerados). */
+    at: timestamptz().notNull(),
+    players: integer().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.serverId, table.at] })],
+);
 
 /** Servidor Carmine (`GameServer`): uma instância de CS2 de um único Modo. */
 export const gameServers = pgTable('game_servers', {
@@ -96,6 +116,11 @@ export const accounts = pgTable(
     avatarSource: avatarSource().notNull().default('steam'),
     /** Envio de foto bloqueado até aqui (reincidente, ADR 0022); só a Staff vê. */
     avatarUploadBlockedUntil: timestamptz(),
+    /**
+     * A pessoa desligou a chave "Participar da análise de uso" (A1, ADR 0021): a API não envia nenhum evento
+     * dela. Padrão `false` (a Conta participa até desligar, decisão do dono).
+     */
+    analyticsOptOut: boolean().notNull().default(false),
     /** Nulo enquanto a Conta não foi reivindicada por login Steam no site (S03). */
     claimedAt: timestamptz(),
     /** Nulos enquanto a Conta nunca conectou num Servidor Carmine (criada pelo site, S03). */
@@ -103,6 +128,15 @@ export const accounts = pgTable(
     lastConnectedAt: timestamptz(),
     /** `!chat off` no jogo: o jogador não vê o chat dos outros. Padrão: chat visível. */
     chatHidden: boolean().notNull().default(false),
+    /**
+     * Sem uso desde a decisão de 2026-10-29 (a AWP passou a ser uma Preferência de jogo, tabela
+     * `account_game_preferences`). A coluna nunca foi para a produção; sai numa migração própria,
+     * depois que nenhuma instância antiga a ler.
+     * @deprecated
+     */
+    awpDefaultAppliedAt: timestamptz(),
+    /** A última curiosidade mostrada no connect (S16), para dois connects seguidos não repetirem. */
+    lastCuriosity: text(),
     /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
     anonymizedAt: timestamptz(),
     /**
@@ -272,6 +306,9 @@ export const paymentEvents = pgTable(
  * Período VIP (`VipPeriod`): o intervalo `[startsAt, endsAt)` em que a Conta tem VIP. A
  * concessão e a revogação pela Staff (S05, com auditoria) e os Pacotes VIP (S14) mexem aqui.
  */
+/** O plano de um Período (S20). O nome legado `vip_periods` continua (ADR 0026); toda linha antiga é Capo. */
+export const planKind = pgEnum('plan', ['capo', 'padrinho']);
+
 export const vipPeriods = pgTable(
   'vip_periods',
   {
@@ -286,11 +323,36 @@ export const vipPeriods = pgTable(
       .unique()
       .references(() => payments.id),
     createdAt: timestamptz().notNull().defaultNow(),
+    /** O plano deste Período (S20); as linhas anteriores à S20 são Capo. */
+    plan: planKind().notNull().default('capo'),
+    /** Compra de teste do beta (ninguém paga de verdade): acaba no dia em que a cobrança real ligar (ADR 0026). */
+    test: boolean().notNull().default(false),
   },
   (table) => [
     index('vip_periods_account_idx').on(table.accountId, table.endsAt),
     check('vip_periods_ends_after_start', sql`${table.endsAt} > ${table.startsAt}`),
   ],
+);
+
+/**
+ * Revogações de plano pela Staff (S20, ADR 0026): cada uma zera tudo o que a Conta tinha naquele instante, inclusive os
+ * dias guardados na fila. É um registro à parte, escrito na mesma transação e com o mesmo instante e motivo da linha
+ * `vip_revoke` do `staff_audit_log`. A revogação antiga, que encurta os Períodos, continua valendo e legível: a
+ * revogação nova também encurta (para o rollback de imagem não ressuscitar o plano) e registra aqui.
+ */
+export const planRevocations = pgTable(
+  'plan_revocations',
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    revokedAt: timestamptz().notNull(),
+    /** SteamID64 de quem revogou (o Admin). */
+    revokedBySteamId: bigint({ mode: 'bigint' }).notNull(),
+    reason: text().notNull(),
+  },
+  (table) => [index('plan_revocations_account_idx').on(table.accountId, table.revokedAt)],
 );
 
 /**
@@ -551,6 +613,26 @@ export const accountStatsWeekly = pgTable(
   ],
 );
 
+/**
+ * Preferências de jogo da Conta (ADR 0028): o que um plugin de jogo guardaria por servidor, guardado
+ * na Conta para valer em todo servidor do Modo. Uma linha por preferência que a Conta mudou; sem linha,
+ * vale o padrão do contrato (`GAME_PREFERENCE_DEFAULTS`). O valor é JSON para caber os não booleanos
+ * que virão (por exemplo, as armas do Retake). Some com a Conta (cascade e anonimização).
+ */
+export const accountGamePreferences = pgTable(
+  'account_game_preferences',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    mode: gameMode().notNull(),
+    key: text().notNull(),
+    value: jsonb().notNull(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.accountId, table.mode, table.key] })],
+);
+
 /** Lado de um jogador num round (S12b). */
 export const gameTeam = pgEnum('game_team', ['ct', 't']);
 
@@ -666,6 +748,271 @@ export const serverHours = pgTable(
     primaryKey({ columns: [table.serverId, table.hourStart, table.map] }),
     index('server_hours_hour_idx').on(table.hourStart),
   ],
+);
+
+/** Quem venceu um round (S17). */
+export const roundWinner = pgEnum('round_winner', ['ct', 't', 'none']);
+
+/** Como um round acabou (S17). */
+export const roundEndReason = pgEnum('round_end_reason', [
+  'bomb_exploded',
+  'bomb_defused',
+  'elimination',
+  'time',
+  'other',
+]);
+
+/** O tipo de uma linha de `round_events` (S17). */
+export const roundEventKind = pgEnum('round_event_kind', [
+  'round_start',
+  'round_player',
+  'kill',
+  'damage',
+  'bomb',
+  'round_end',
+  'round_alive',
+]);
+
+/**
+ * Os eventos brutos de um round (S17, ADR 0024). **Tabela particionada por mês de `occurred_at`**
+ * (a migração 0019 declara o `PARTITION BY RANGE`, que o Drizzle não sabe descrever; a
+ * `RoundEventPartitions` cria os meses e solta os que passam de 12 meses). Só entra evento com
+ * `mapPlayId` e número do round, e nunca o de aquecimento.
+ *
+ * Nenhuma linha guarda SteamID: o jogador é uma Conta (`*_account_id`), e a anonimização da Conta
+ * (S08) zera esses campos. Quem não tem Conta fica sem referência e, para a calculadora, age como
+ * um bot (`payload.killerUnknown` e afins). O resto do evento vai em `payload`, sem identidade.
+ * `seq` é 0 no evento e 1..n nas linhas derivadas dele (o elenco do `round_start` e os vivos do
+ * `round_end`). Sem chaves estrangeiras, para a escrita ser barata e a partição poder cair.
+ */
+export const roundEvents = pgTable(
+  'round_events',
+  {
+    /** O ID do evento no plugin (UUID v7). */
+    id: uuid().notNull(),
+    seq: smallint().notNull().default(0),
+    occurredAt: timestamptz().notNull(),
+    serverId: uuid().notNull(),
+    mapPlayId: uuid().notNull(),
+    roundNumber: smallint().notNull(),
+    kind: roundEventKind().notNull(),
+    /** O horário do servidor em milissegundos, quando o plugin mandou. */
+    atMs: bigint({ mode: 'number' }),
+    /** Quem fez: assassino, atacante, quem plantou ou desarmou, o jogador do elenco ou o vivo. */
+    actorAccountId: uuid(),
+    /** Quem sofreu: a vítima da kill ou do dano. */
+    targetAccountId: uuid(),
+    /** Quem assistiu (flash assist) na kill. */
+    assistAccountId: uuid(),
+    payload: jsonb().$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (table) => [
+    primaryKey({ columns: [table.id, table.seq, table.occurredAt] }),
+    index('round_events_round_idx').on(table.mapPlayId, table.roundNumber, table.occurredAt),
+    index('round_events_actor_idx')
+      .on(table.actorAccountId)
+      .where(sql`${table.actorAccountId} is not null`),
+    index('round_events_target_idx')
+      .on(table.targetAccountId)
+      .where(sql`${table.targetAccountId} is not null`),
+    index('round_events_assist_idx')
+      .on(table.assistAccountId)
+      .where(sql`${table.assistAccountId} is not null`),
+  ],
+);
+
+/**
+ * O Mapa jogado (S17): um mapa do começo ao fim (ou até um reinício) num Servidor Carmine. O `id` é
+ * o `mapPlayId` do plugin. Recalculado dos `round_summaries` a cada round; guardado para sempre.
+ */
+export const mapPlays = pgTable(
+  'map_plays',
+  {
+    id: uuid().primaryKey(),
+    serverId: uuid()
+      .notNull()
+      .references(() => gameServers.id),
+    /** O Modo do servidor (da chave), não do evento. */
+    mode: gameMode().notNull(),
+    map: text(),
+    startedAt: timestamptz().notNull(),
+    endedAt: timestamptz().notNull(),
+    /** Quantos rounds com resumo. */
+    rounds: integer().notNull(),
+    /** O placar depois do último round que veio com ele. */
+    scoreCt: integer(),
+    scoreT: integer(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [index('map_plays_server_idx').on(table.serverId, table.startedAt)],
+);
+
+/** O resumo de um round (S17), sem os jogadores: o vencedor, o motivo e a duração. Para sempre. */
+export const roundSummaries = pgTable(
+  'round_summaries',
+  {
+    mapPlayId: uuid()
+      .notNull()
+      .references(() => mapPlays.id, { onDelete: 'cascade' }),
+    roundNumber: smallint().notNull(),
+    winner: roundWinner().notNull(),
+    reason: roundEndReason(),
+    durationMs: integer(),
+    startedAt: timestamptz().notNull(),
+    endedAt: timestamptz().notNull(),
+    scoreCt: integer(),
+    scoreT: integer(),
+    map: text(),
+    updatedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.mapPlayId, table.roundNumber] })],
+);
+
+/**
+ * O resumo do round por jogador (S17): o que a calculadora (`stats/round-summary.ts`) devolve, base
+ * do Rating Carmine. Para sempre; a anonimização da Conta apaga as linhas dela.
+ */
+export const roundPlayerSummaries = pgTable(
+  'round_player_summaries',
+  {
+    mapPlayId: uuid().notNull(),
+    roundNumber: smallint().notNull(),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    side: gameTeam().notNull(),
+    equipmentValue: integer(),
+    kills: smallint().notNull(),
+    headshots: smallint().notNull(),
+    deaths: smallint().notNull(),
+    assists: smallint().notNull(),
+    flashAssists: smallint().notNull(),
+    /** Dano em inimigos humanos, limitado pela vida que a vítima tinha. */
+    damage: integer().notNull(),
+    survived: boolean().notNull(),
+    traded: boolean().notNull(),
+    openingKill: boolean().notNull(),
+    openingDeath: boolean().notNull(),
+    /** 2 a 5 kills no round; nulo com menos de 2. */
+    multiKill: smallint(),
+    /** Contra quantos inimigos vivos ficou como último do time; nulo sem clutch. */
+    clutchAgainst: smallint(),
+    clutchWon: boolean(),
+    kast: boolean().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.mapPlayId, table.roundNumber, table.accountId] }),
+    foreignKey({
+      columns: [table.mapPlayId, table.roundNumber],
+      foreignColumns: [roundSummaries.mapPlayId, roundSummaries.roundNumber],
+    }).onDelete('cascade'),
+    index('round_player_summaries_account_idx').on(table.accountId),
+    check(
+      'round_player_summaries_clutch_complete',
+      sql`(${table.clutchAgainst} is null) = (${table.clutchWon} is null)`,
+    ),
+  ],
+);
+
+/** Os jogadores de um Mapa jogado (S17), somados dos resumos de round; recalculado a cada round. */
+export const mapPlayPlayers = pgTable(
+  'map_play_players',
+  {
+    mapPlayId: uuid()
+      .notNull()
+      .references(() => mapPlays.id, { onDelete: 'cascade' }),
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    rounds: integer().notNull(),
+    kills: integer().notNull(),
+    headshots: integer().notNull(),
+    deaths: integer().notNull(),
+    assists: integer().notNull(),
+    flashAssists: integer().notNull(),
+    damage: integer().notNull(),
+    kastRounds: integer().notNull(),
+    survivedRounds: integer().notNull(),
+    openingKills: integer().notNull(),
+    openingDeaths: integer().notNull(),
+    clutches: integer().notNull(),
+    clutchesWon: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.mapPlayId, table.accountId] }),
+    index('map_play_players_account_idx').on(table.accountId),
+  ],
+);
+
+/**
+ * As contagens do Rating Carmine (S21, ADR 0029) por Conta, dia de Brasília, Modo, mapa e lado,
+ * somadas dos resumos de round. Refeita do resumo do round a cada vez que ele é gravado (nunca
+ * incrementada), então um round refeito não deixa conta velha. Guarda **contagens, não pontos**:
+ * mudar um peso do impacto não pede reler os resumos. O mapa vazio é o round sem nome de mapa.
+ */
+export const accountRatingDaily = pgTable(
+  'account_rating_daily',
+  {
+    accountId: uuid()
+      .notNull()
+      .references(() => accounts.id, { onDelete: 'cascade' }),
+    day: date({ mode: 'string' }).notNull(),
+    mode: gameMode().notNull(),
+    map: text().notNull().default(''),
+    side: gameTeam().notNull(),
+    rounds: integer().notNull(),
+    kills: integer().notNull(),
+    survivedRounds: integer().notNull(),
+    kastRounds: integer().notNull(),
+    damage: integer().notNull(),
+    openingKills: integer().notNull(),
+    openingDeaths: integer().notNull(),
+    mk2: integer().notNull(),
+    mk3: integer().notNull(),
+    mk4: integer().notNull(),
+    mk5: integer().notNull(),
+    cw1: integer().notNull(),
+    cw2: integer().notNull(),
+    cw3: integer().notNull(),
+    cw4: integer().notNull(),
+    cw5: integer().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.accountId, table.day, table.mode, table.map, table.side] }),
+    index('account_rating_daily_mode_day_idx').on(table.mode, table.day),
+  ],
+);
+
+/**
+ * A população do Rating (S21, ADR 0029): a média e o desvio de cada parte, por Modo e lado, que a
+ * semana inteira usa. Uma linha por versão da fórmula, semana (a segunda-feira de Brasília em que
+ * foi calculada), Modo e lado; sem linha, o Modo não tem Rating (menos de 20 Contas elegíveis).
+ */
+export const ratingPopulation = pgTable(
+  'rating_population',
+  {
+    version: smallint().notNull(),
+    weekStart: date({ mode: 'string' }).notNull(),
+    mode: gameMode().notNull(),
+    side: gameTeam().notNull(),
+    /** Quantas Contas entraram (100 rounds ou mais no lado na janela). */
+    accounts: integer().notNull(),
+    /** A janela de 90 dias de onde saíram as contagens (inclusive nas duas pontas). */
+    windowFrom: date({ mode: 'string' }).notNull(),
+    windowTo: date({ mode: 'string' }).notNull(),
+    meanKills: doublePrecision().notNull(),
+    meanSurvival: doublePrecision().notNull(),
+    meanKast: doublePrecision().notNull(),
+    meanDamage: doublePrecision().notNull(),
+    meanImpact: doublePrecision().notNull(),
+    sdKills: doublePrecision().notNull(),
+    sdSurvival: doublePrecision().notNull(),
+    sdKast: doublePrecision().notNull(),
+    sdDamage: doublePrecision().notNull(),
+    sdImpact: doublePrecision().notNull(),
+    computedAt: timestamptz().notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.version, table.weekStart, table.mode, table.side] })],
 );
 
 /**
@@ -785,6 +1132,8 @@ export const reports = pgTable(
     serverId: uuid().references(() => gameServers.id),
     map: text(),
     round: integer(),
+    /** O Mapa jogado em andamento (S17), quando o plugin o manda; agrupa os casos da fila. Sem FK: o resumo pode não existir. */
+    mapPlayId: uuid(),
     reason: reportReason().notNull(),
     chatContext: jsonb().$type<ReportChatLineRow[]>().notNull(),
     status: reportStatus().notNull().default('open'),
@@ -854,11 +1203,12 @@ export const avatarReason = pgEnum('avatar_reason', [
 ]);
 
 /**
- * Foto de perfil própria (ADR 0022): publica na hora e a moderação vem depois. Os arquivos
- * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`; `suspended` (duas
- * Contas denunciaram) e `removed` (Staff) os tiram de lá e guardam o de 512 px no bucket
- * privado (`removed/<id>/512.webp`) até a limpeza; `replaced` e `reverted` os apagam. Uma Conta
- * tem no máximo uma foto `active` ou `suspended`.
+ * Foto de perfil própria (ADR 0022 e 0025): publica na hora e a moderação vem depois. Os arquivos
+ * (`avatars/<id>/<tamanho>.webp`) ficam no bucket público enquanto `active`, e também em `replaced` e
+ * `reverted` (a foto trocada ou devolvida à Steam segue no histórico das últimas 5, até `deletedAt`); `removed`
+ * (Staff) os tira de lá e guarda os tamanhos no bucket privado (`removed/<id>/<tamanho>.webp`) até a limpeza.
+ * `suspended` é o estado antigo (duas denúncias tiravam a foto do ar): não é mais criado. Uma Conta tem no
+ * máximo uma foto `active` ou `suspended`.
  */
 export const accountAvatars = pgTable(
   'account_avatars',
@@ -873,6 +1223,11 @@ export const accountAvatars = pgTable(
     takenDownAt: timestamptz(),
     /** Quando deixou de ser a foto da Conta (removida, trocada ou devolvida à Steam). */
     retiredAt: timestamptz(),
+    /**
+     * Quando os arquivos saíram do histórico (a pessoa usou "Apagar" ou entrou a 6ª foto). A linha fica, sem
+     * arquivos, para contar nos limites de envio, até a retenção de 90 dias.
+     */
+    deletedAt: timestamptz(),
     /** A decisão da Staff (manter ou remover): a última. Nula sem decisão. */
     decision: text().$type<'keep' | 'remove'>(),
     decidedAt: timestamptz(),

@@ -50,6 +50,8 @@ export const rankingEntrySchema = z
     headshotPercent: z.number().min(0).max(100).nullable(),
     roundsPlayed: z.int().nonnegative(),
     secondsPlayed: z.int().nonnegative(),
+    /** Pontuação DM da semana (S21, ADR 0030), 1 casa; só no Deathmatch, nula sem população que valha. */
+    dmScore: z.number().nonnegative().nullable().optional(),
     /** É a linha de quem pede (só vale para quem está logado; nunca identifica outra pessoa). */
     self: z.boolean(),
   })

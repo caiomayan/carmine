@@ -1,5 +1,4 @@
 import { cn } from '@/lib/utils';
-import './empty-scene.css';
 
 /**
  * Estado vazio com cena em vez de caixa de texto: silhuetas de jogadores (amigos), de arma (Loadout e
@@ -62,7 +61,6 @@ export function EmptyScene({
             strokeWidth="1.5"
             strokeDasharray="3 5"
             opacity="0.75"
-            className="origin-[95px_30px] motion-safe:animate-[spin_18s_linear_infinite]"
           />
         </svg>
       </div>
@@ -76,7 +74,7 @@ export function EmptyScene({
           src={weaponImage}
           alt=""
           loading="lazy"
-          className="absolute inset-0 size-full object-contain opacity-[0.22] brightness-0 motion-safe:animate-[v-float_6s_ease-in-out_infinite] dark:invert"
+          className="absolute inset-0 size-full object-contain opacity-[0.22] brightness-0 dark:invert"
         />
       </div>
     );

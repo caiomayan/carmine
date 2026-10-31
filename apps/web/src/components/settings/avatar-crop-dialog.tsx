@@ -2,7 +2,7 @@
 
 import type { AvatarState } from '@carmine/contracts/avatar';
 import { AVATAR_MAX_UPLOAD_BYTES, AVATAR_MIN_PX } from '@carmine/contracts/avatar-rules';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import ReactCrop, {
   type Crop,
@@ -83,7 +83,6 @@ export default function AvatarCropDialog({
   onSaved: (state: AvatarState) => void;
 }) {
   const t = useTranslations('settings.avatar');
-  const format = useFormatter();
   const { mutate } = useSession();
   const [src, setSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
@@ -178,18 +177,7 @@ export default function AvatarCropDialog({
       const refused = avatarErrorSchema.safeParse(body);
       if (refused.success) {
         const code = refused.data.code;
-        setError(
-          t(`errors.${code}`, {
-            limit: 3,
-            when: refused.data.retryAfter
-              ? format.dateTime(new Date(refused.data.retryAfter), {
-                  dateStyle: 'long',
-                  timeStyle: 'short',
-                  timeZone: 'America/Sao_Paulo',
-                })
-              : '',
-          }),
-        );
+        setError(t.has(`errors.${code}`) ? t(`errors.${code}`) : t('errors.generic'));
       } else {
         setError(t('errors.generic'));
       }

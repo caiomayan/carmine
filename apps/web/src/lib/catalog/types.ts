@@ -34,10 +34,10 @@ export const hasSkinName = (type: CatalogType | null) =>
 export type FacetOption = { value: string; label: string; keywords: string[] };
 
 /**
- * Versão do formato da resposta de `/inventario/aplicaveis`. Vai na URL do pedido porque a resposta
+ * Versão do formato da resposta de `/inventory/applicable`. Vai na URL do pedido porque a resposta
  * fica em cache no navegador e na borda (1 hora, e até 1 dia servindo a antiga enquanto revalida):
  * quem mudar o formato (`AttachmentPage`) sobe este número, e o cache antigo deixa de valer em vez de
- * chegar ao código novo no formato velho. O teste "formato da resposta de /inventario/aplicaveis"
+ * chegar ao código novo no formato velho. O teste "formato da resposta de /inventory/applicable"
  * (`catalog.test.ts`) falha se o formato mudar sem esta versão subir.
  */
 export const ATTACHMENTS_PAYLOAD_VERSION = '2';

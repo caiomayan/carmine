@@ -26,7 +26,6 @@ export function EmptyScene({ className }: { className?: string }) {
           strokeWidth="1.5"
           strokeDasharray="3 5"
           opacity="0.5"
-          className="origin-[95px_30px] motion-safe:animate-[spin_18s_linear_infinite]"
         />
       </svg>
     </div>

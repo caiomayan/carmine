@@ -34,6 +34,11 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 PROFILES_SRC="$REPO_ROOT/infra/cs2/profiles"
 # shellcheck source=versions.sh
 source "$SCRIPT_DIR/versions.sh"
+# shellcheck source=lib-assets.sh
+source "$SCRIPT_DIR/lib-assets.sh"
+mirror_load_env
+# shellcheck source=lib-release.sh
+source "$SCRIPT_DIR/lib-release.sh"
 
 HOME_DIR=/srv/carmine-cs2
 SERVICE_USER=carmine-cs2
@@ -44,6 +49,7 @@ DOTNET_DIR=/opt/dotnet
 API_BASE_URL='https://stcarmine.com'
 WEB_DISPLAY_URL='stcarmine.com'
 PLUGIN_DIR=''
+CORE_RELEASE=''
 DOWNLOAD_CS2=0
 PROFILES=(retake deathmatch)
 ALL_STEPS=(deps user steamcmd cs2 metamod css build profiles services)
@@ -59,6 +65,7 @@ Uso: sudo install.sh [opções]
   --api-base-url URL      API usada nos arquivos de ambiente novos (origem do site, sem /api; padrão: https://stcarmine.com)
   --web-display-url TEXTO endereço do site que o !ws mostra (padrão: stcarmine.com)
   --plugin-dir DIR        usa um Carmine.Core já compilado em vez de compilar (saída do dotnet publish)
+  --core-release V        usa a release do GitHub (latest, installed ou X.Y.Z) em vez de compilar: sem SDK .NET no host
   -h, --help
 EOF
 }
@@ -87,6 +94,7 @@ while (($#)); do
     --api-base-url) API_BASE_URL="${2:?--api-base-url pede um valor}"; shift ;;
     --web-display-url) WEB_DISPLAY_URL="${2:?--web-display-url pede um valor}"; shift ;;
     --plugin-dir) PLUGIN_DIR="${2:?--plugin-dir pede um valor}"; shift ;;
+    --core-release) CORE_RELEASE="${2:?--core-release pede um valor}"; shift ;;
     -h | --help) usage; exit 0 ;;
     *) usage >&2; die "opção desconhecida: $1" ;;
   esac
@@ -94,6 +102,7 @@ while (($#)); do
 done
 
 [[ $EUID -eq 0 ]] || die "rode como root (sudo)"
+[[ -z "$PLUGIN_DIR" || -z "$CORE_RELEASE" ]] || die "use --plugin-dir ou --core-release, não os dois"
 for s in "${STEPS[@]}"; do
   [[ " ${ALL_STEPS[*]} " == *" $s "* ]] || die "etapa desconhecida: $s (válidas: ${ALL_STEPS[*]})"
 done
@@ -110,6 +119,7 @@ INSTANCES_DIR="$HOME_DIR/profiles"
 DOWNLOADS_DIR="$HOME_DIR/downloads"
 BUILD_DIR="$HOME_DIR/build"
 WORK_DIRS=()
+log() { echo "    $*" >&2; }
 
 cleanup() {
   local d
@@ -139,21 +149,40 @@ assert_game_installed() {
 }
 
 # Baixa uma vez para DOWNLOADS_DIR e confere o SHA-256 (download corrompido ou release trocada param aqui).
+# Tenta o endereço oficial e, se ele falhar ou entregar outro conteúdo, o espelho privado (lib-assets.sh), que
+# só guarda o objeto com exatamente este SHA-256: cair nele nunca troca a versão fixada.
 fetch_verified() {
   local url="$1" sha="$2" name="$3" file="$DOWNLOADS_DIR/$3"
   mkdir -p "$DOWNLOADS_DIR"
-  if [[ ! -f "$file" ]] || ! echo "$sha  $file" | sha256sum --check --status; then
-    echo "    baixando $url" >&2
-    curl -fsSL --retry 3 --retry-delay 3 -o "$file.part" "$url"
+  if [[ -f "$file" ]] && echo "$sha  $file" | sha256sum --check --status; then
+    echo "$file"
+    return
+  fi
+  local why=''
+  echo "    baixando $url" >&2
+  if curl -fsSL --retry 3 --retry-delay 3 -o "$file.part" "$url"; then
     mv -f "$file.part" "$file"
-  fi
-  if ! echo "$sha  $file" | sha256sum --check --status; then
-    local got
-    got="$(sha256sum "$file" | cut -d' ' -f1)"
+    if echo "$sha  $file" | sha256sum --check --status; then
+      echo "$file"
+      return
+    fi
+    why="SHA-256 não confere (esperado $sha, veio $(sha256sum "$file" | cut -d' ' -f1))"
     rm -f "$file"
-    die "SHA-256 de $url não confere (esperado $sha, veio $got)."
+  else
+    rm -f "$file.part"
+    why="o download falhou"
   fi
-  echo "$file"
+  if mirror_configured; then
+    echo "    $url: $why; tentando o espelho" >&2
+    if mirror_get "$sha" "$file.part" && mv -f "$file.part" "$file" \
+      && echo "$sha  $file" | sha256sum --check --status; then
+      echo "$file"
+      return
+    fi
+    rm -f "$file" "$file.part"
+    die "$url: $why, e o espelho também não tem uma cópia com o SHA-256 $sha."
+  fi
+  die "$url: $why (sem espelho configurado: veja lib-assets.sh)."
 }
 
 # O unzip devolve 1 quando só avisa (ex.: zips feitos no Windows com "\" nos nomes, que ele converte).
@@ -275,24 +304,45 @@ find_dotnet() {
   return 1
 }
 
+# O caminho do dotnet com o SDK certo; instala o SDK em $DOTNET_DIR se não houver. O texto de progresso vai para o stderr.
+ensure_dotnet() {
+  local dotnet
+  if ! dotnet="$(find_dotnet)"; then
+    echo "    instalando o SDK $DOTNET_SDK_VERSION em $DOTNET_DIR" >&2
+    new_work_dir
+    curl -fsSL --retry 3 -o "$WORK/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh >&2
+    bash "$WORK/dotnet-install.sh" --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_DIR" --no-path >&2
+    dotnet="$DOTNET_DIR/dotnet"
+  fi
+  echo "$dotnet"
+}
+
 step_build() {
   step "Carmine.Core para Linux"
+  if [[ -n "$CORE_RELEASE" ]]; then
+    local version
+    version="$(release_resolve "$CORE_RELEASE")"
+    release_fetch "$version"
+    rm -rf "$BUILD_DIR/Carmine.Core"
+    mkdir -p "$BUILD_DIR"
+    cp -a "$(release_dir "$version")/plugin" "$BUILD_DIR/Carmine.Core"
+    echo "$version" >"$BUILD_DIR/Carmine.Core.version"
+    echo "$version" >"$HOME_DIR/releases/installed"
+    fix_owner "$BUILD_DIR"
+    echo "    usando a release core-v$version"
+    return
+  fi
   if [[ -n "$PLUGIN_DIR" ]]; then
     [[ -f "$PLUGIN_DIR/Carmine.Core.dll" ]] || die "$PLUGIN_DIR/Carmine.Core.dll não existe"
     rm -rf "$BUILD_DIR/Carmine.Core"
     mkdir -p "$BUILD_DIR"
     cp -a "$PLUGIN_DIR" "$BUILD_DIR/Carmine.Core"
+    echo "local" >"$BUILD_DIR/Carmine.Core.version"
     echo "    usando o build pronto de $PLUGIN_DIR"
     return
   fi
   local dotnet
-  if ! dotnet="$(find_dotnet)"; then
-    echo "    instalando o SDK $DOTNET_SDK_VERSION em $DOTNET_DIR"
-    new_work_dir
-    curl -fsSL --retry 3 -o "$WORK/dotnet-install.sh" https://dot.net/v1/dotnet-install.sh
-    bash "$WORK/dotnet-install.sh" --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_DIR" --no-path
-    dotnet="$DOTNET_DIR/dotnet"
-  fi
+  dotnet="$(ensure_dotnet)"
   # O CounterStrikeSharp carrega as dependências da pasta do plugin: o publish copia todas. O
   # Carmine.Core é IL puro (net10.0), então a saída vale em qualquer SO; compilar aqui só garante
   # que o plugin é do mesmo commit dos perfis. A saída vai para fora da árvore do repositório.
@@ -305,6 +355,7 @@ step_build() {
     "$dotnet" publish "$REPO_ROOT/plugins/src/Carmine.Core/Carmine.Core.csproj" \
     -c Release -o "$out" --artifacts-path "$BUILD_DIR/artifacts"
   [[ -f "$out/Carmine.Core.dll" ]] || die "o publish não gerou Carmine.Core.dll"
+  echo "local" >"$BUILD_DIR/Carmine.Core.version"
   fix_owner "$BUILD_DIR"
 }
 
@@ -382,12 +433,43 @@ install_gameplay_plugin() {
   done
   echo "    $name ($(basename "$zip"))"
 
+  if [[ "$name" == Deathmatch ]]; then
+    install_patched_deathmatch "$game_dir"
+  fi
+
   if [[ "$name" == RetakesAllocator ]]; then
     local gamedata_dir="$game_dir/addons/counterstrikesharp/plugins/RetakesAllocator/gamedata" gamedata
     mkdir -p "$gamedata_dir" "$game_dir/addons/counterstrikesharp/data/RetakesAllocator"
     gamedata="$(fetch_verified "$ALLOCATOR_GAMEDATA_URL" "$ALLOCATOR_GAMEDATA_SHA256" RetakesAllocator_gamedata.json)"
     cp -f "$gamedata" "$gamedata_dir/RetakesAllocator_gamedata.json"
   fi
+}
+
+# Deathmatch com o patch do Carmine (ADR 0028): troca o Deathmatch.dll e o DeathmatchAPI.dll do zip oficial pelos que a
+# CI compilou e pôs na release do Carmine.Core (o host não compila nada). O resto do zip (idiomas, configs, dependências)
+# fica como veio. As DLLs já foram conferidas pelo SHA256SUMS, pela atestação e pelo manifesto em release_fetch.
+# Sem release (instalação com --plugin-dir ou compilada no host) ou numa release antiga que não o traz, o Deathmatch
+# fica sem o patch e as preferências dele não seguem a Conta: o aviso diz isso e a instalação continua.
+install_patched_deathmatch() {
+  local game_dir="$1" version manifest dir
+  version="$(release_installed_version)"
+  dir=""
+  if [[ -n "$version" ]]; then
+    dir="$(release_dir "$version")/deathmatch"
+    manifest="$(release_dir "$version")/manifest.json"
+  fi
+  if [[ -z "$dir" || ! -f "$dir/Deathmatch.dll" || ! -f "$dir/DeathmatchAPI.dll" ]]; then
+    echo "    AVISO: Deathmatch sem o patch do Carmine (use --core-release com uma release que o traga): as preferências do Deathmatch não seguem a Conta" >&2
+    return 0
+  fi
+  # As DLLs patchadas são da tag do zip que acabou de ser instalado; outra versão do plugin quebraria o servidor.
+  if [[ "$(jq -r '.deathmatch.sourceCommit // empty' "$manifest")" != "$DM_SRC_COMMIT" ]]; then
+    die "o Deathmatch patchado da release core-v$version é de outro commit do plugin ($(jq -r '.deathmatch.sourceCommit // "?"' "$manifest")) que o do zip instalado ($DM_SRC_COMMIT): instale uma release feita com este versions.sh"
+  fi
+  cp -f "$dir/Deathmatch.dll" "$game_dir/addons/counterstrikesharp/plugins/Deathmatch/Deathmatch.dll"
+  mkdir -p "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI"
+  cp -f "$dir/DeathmatchAPI.dll" "$game_dir/addons/counterstrikesharp/shared/DeathmatchAPI/DeathmatchAPI.dll"
+  echo "    Deathmatch patchado ($DM_SRC_TAG + patches do Carmine, release core-v$version)"
 }
 
 install_invsim() {
@@ -409,6 +491,23 @@ install_invsim() {
     [[ ! -s "$server_cfg" || -z "$(tail -c1 "$server_cfg")" ]] || echo >>"$server_cfg"
     echo "$exec_line" >>"$server_cfg"
   fi
+}
+
+# MultiAddonManager (S19): o plugin do Metamod que faz os clientes baixarem o addon do Workshop. Só nos perfis
+# com "addon": true. O pacote traz addons/ (o .so e o vdf do Metamod) e cfg/multiaddonmanager/; o prestart.sh
+# regrava o cfg a cada início (ID do item, chave de emergência).
+install_multiaddonmanager() {
+  local game_dir="$1" tarball
+  [[ -n "${MAM_SHA256[$MAM_RUNTIME]:-}" ]] || die "CARMINE_MAM_RUNTIME inválido: $MAM_RUNTIME (use steamrt3 ou steamrt4)."
+  tarball="$(fetch_verified "$MAM_URL" "${MAM_SHA256[$MAM_RUNTIME]}" "$MAM_FILE")"
+  new_work_dir
+  tar -xzf "$tarball" -C "$WORK"
+  [[ -f "$WORK/addons/multiaddonmanager/bin/multiaddonmanager.so" ]] || die "$MAM_FILE sem addons/multiaddonmanager/bin/multiaddonmanager.so."
+  [[ -f "$WORK/addons/metamod/multiaddonmanager.vdf" ]] || die "$MAM_FILE sem addons/metamod/multiaddonmanager.vdf."
+  cp -a "$WORK/addons/." "$game_dir/addons/"
+  mkdir -p "$game_dir/cfg"
+  cp -a "$WORK/cfg/." "$game_dir/cfg/"
+  echo "    MultiAddonManager $MAM_VERSION ($MAM_RUNTIME)"
 }
 
 # Copia os arquivos versionados do perfil (infra/cs2/profiles/<perfil>/csgo) por cima da instância.
@@ -434,7 +533,8 @@ write_profile_env() {
     "START_MAP=\(.startMap)",
     "PUBLIC_SLOTS=\(.publicSlots)",
     "RESERVED_SLOTS=\(.reservedSlots)",
-    "INVSIM_FALLBACK_TEAM=\(if .inventorySimulator.fallbackTeam then 1 else 0 end)"
+    "INVSIM_FALLBACK_TEAM=\(if .inventorySimulator.fallbackTeam then 1 else 0 end)",
+    "ADDON=\(if .addon == true then 1 else 0 end)"
   ' "$spec" >"$target"
 }
 
@@ -459,7 +559,9 @@ step_profiles() {
           rm -rf "$game_dir/addons/counterstrikesharp/plugins/Carmine.Core"
           mkdir -p "$game_dir/addons/counterstrikesharp/plugins/Carmine.Core"
           cp -a "$BUILD_DIR/Carmine.Core/." "$game_dir/addons/counterstrikesharp/plugins/Carmine.Core/"
-          echo "    Carmine.Core"
+          # A versão por instância é o que o carmine-plugin-deploy compara; compilado no host vale "local".
+          cat "$BUILD_DIR/Carmine.Core.version" >"$instance/carmine-core.version" 2>/dev/null || echo local >"$instance/carmine-core.version"
+          echo "    Carmine.Core $(cat "$instance/carmine-core.version")"
           ;;
         InventorySimulator) ;; # depois dos arquivos do perfil, abaixo
         *) install_gameplay_plugin "$plugin" "$game_dir" ;;
@@ -469,6 +571,9 @@ step_profiles() {
     copy_profile_files "$spec_dir" "$game_dir"
     if jq -e '.plugins | index("InventorySimulator")' "$spec_dir/profile.json" >/dev/null; then
       install_invsim "$game_dir"
+    fi
+    if jq -e '.addon == true' "$spec_dir/profile.json" >/dev/null; then
+      install_multiaddonmanager "$game_dir"
     fi
     write_profile_env "$spec_dir" "$instance"
     fix_owner "$instance"
@@ -489,10 +594,26 @@ step_services() {
   step "Unidades systemd e arquivos de ambiente"
   install -d -m 0755 "$LIB_DIR"
   install -m 0755 "$SCRIPT_DIR/prestart.sh" "$LIB_DIR/prestart.sh"
+  install -m 0644 "$SCRIPT_DIR/lib-release.sh" "$LIB_DIR/lib-release.sh"
+  install -m 0644 "$SCRIPT_DIR/lib-servers.sh" "$LIB_DIR/lib-servers.sh"
+  install -m 0755 "$SCRIPT_DIR/a2s-players.py" "$LIB_DIR/a2s-players.py"
+  # O deploy do plugin mora no PATH do root e acha a biblioteca e o helper ao lado do script instalado.
+  install -m 0755 "$SCRIPT_DIR/plugin-deploy.sh" "$LIB_DIR/plugin-deploy.sh"
+  ln -sfn "$LIB_DIR/plugin-deploy.sh" /usr/local/sbin/carmine-plugin-deploy
+  # Os demais comandos do operador (cada um acha as bibliotecas ao lado do script resolvido pelo link).
+  local cmd
+  for cmd in cs2-update:carmine-cs2-update secrets:carmine-secrets vps-check:carmine-vps-check vps-smoke:carmine-vps-smoke; do
+    install -m 0755 "$SCRIPT_DIR/${cmd%%:*}.sh" "$LIB_DIR/${cmd%%:*}.sh"
+    ln -sfn "$LIB_DIR/${cmd%%:*}.sh" "/usr/local/sbin/${cmd##*:}"
+  done
   install -d -m 0755 "$UNIT_DIR"
   sed -e "s|@HOME@|$HOME_DIR|g" -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-cs2@.service" >"$UNIT_DIR/carmine-cs2@.service"
   install -m 0644 "$SCRIPT_DIR/carmine-cs2.target" "$UNIT_DIR/carmine-cs2.target"
   chmod 0644 "$UNIT_DIR/carmine-cs2@.service"
+  sed -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-plugin-sync.service" >"$UNIT_DIR/carmine-plugin-sync.service"
+  install -m 0644 "$SCRIPT_DIR/carmine-plugin-sync.timer" "$UNIT_DIR/carmine-plugin-sync.timer"
+  sed -e "s|@LIBDIR@|$LIB_DIR|g" "$SCRIPT_DIR/carmine-cs2-update.service" >"$UNIT_DIR/carmine-cs2-update.service"
+  install -m 0644 "$SCRIPT_DIR/carmine-cs2-update.timer" "$UNIT_DIR/carmine-cs2-update.timer"
 
   # Segredos: o systemd lê como root, então 0600 root basta. Arquivo que já existe nunca é tocado.
   install -d -m 0750 "$ETC_DIR"
@@ -514,6 +635,16 @@ step_services() {
   if command -v systemctl >/dev/null; then
     [[ -d /run/systemd/system ]] && systemctl daemon-reload
     systemctl_offline_aware enable carmine-cs2.target >/dev/null 2>&1
+    # Só habilitado com release instalada: quem compilou no host (--plugin-dir/sem --core-release) não quer o timer.
+    if [[ -f "$HOME_DIR/releases/installed" ]]; then
+      systemctl_offline_aware enable carmine-plugin-sync.timer >/dev/null 2>&1
+      [[ -d /run/systemd/system ]] && systemctl start carmine-plugin-sync.timer
+    fi
+    # A atualização automática do CS2 só faz sentido com o CS2 instalado (o appmanifest existe).
+    if [[ -f "$SERVER_DIR/steamapps/appmanifest_730.acf" ]]; then
+      systemctl_offline_aware enable carmine-cs2-update.timer >/dev/null 2>&1
+      [[ -d /run/systemd/system ]] && systemctl start carmine-cs2-update.timer
+    fi
     for name in "${PROFILES[@]}"; do
       systemctl_offline_aware enable "carmine-cs2@$name.service" >/dev/null 2>&1
     done

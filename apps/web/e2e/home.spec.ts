@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { chooseSteamAccount, newSteamId, reconnectPlayer } from './accounts';
 import { axeViolations, expect, saveTheme, test } from './fixtures';
+import { OPPONENT } from './game-events';
 import { fakeServer, routeLiveServers } from './live-servers';
 
 /**
@@ -17,7 +18,7 @@ const hero = (page: Page) => page.getByTestId('home-hero');
 /** Entra pela Steam falsa e volta para a home. */
 async function signIn(page: Page) {
   await chooseSteamAccount(page.context(), newSteamId());
-  await page.goto('/entrar');
+  await page.goto('/login');
   await page.getByTestId('steam-login').click();
   await page.waitForURL('/');
 }
@@ -55,7 +56,10 @@ async function playRounds(request: APIRequestContext, name: string, rounds = 120
         at,
         warmup: false,
         winner: 'ct',
-        players: [{ steamId, team: 'ct' }],
+        players: [
+          { steamId, team: 'ct' },
+          { steamId: OPPONENT, team: 't' },
+        ],
       })),
       sessionStarts: [],
       sessionEnds: [],
@@ -126,7 +130,7 @@ test.describe('os estados do hero', () => {
     await expect(page.getByTestId('home-lead')).toContainText('Entre com a Steam');
     const cta = page.getByTestId('home-cta');
     await expect(cta).toHaveText('Entrar com a Steam');
-    await expect(cta).toHaveAttribute('href', /^\/entrar/);
+    await expect(cta).toHaveAttribute('href', /^\/login/);
     await expect(hero(page).getByRole('link', { name: 'Ver os servidores' })).toHaveAttribute(
       'href',
       '#jogar',
@@ -326,7 +330,7 @@ test.describe('Loadouts da semana', () => {
   }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await routeLiveServers(page, live());
-    await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUTS }));
+    await page.route('**/showcase/week', (route) => route.fulfill({ json: LOADOUTS }));
     await page.goto('/');
     const section = page.getByTestId('loadouts-week');
     const slot = page.getByTestId('loadouts-slot');
@@ -356,7 +360,7 @@ test.describe('Loadouts da semana', () => {
 
   test('sem ninguém para mostrar (ou com a API fora), a seção não aparece', async ({ page }) => {
     await routeLiveServers(page, live());
-    await page.route('**/vitrine/semana', (route) => route.fulfill({ json: { entries: [] } }));
+    await page.route('**/showcase/week', (route) => route.fulfill({ json: { entries: [] } }));
     await page.goto('/');
     await page.getByTestId('week-strip').scrollIntoViewIfNeeded();
     await page.mouse.wheel(0, 4000);
@@ -377,7 +381,7 @@ test.describe('tamanhos e temas', () => {
     test(`sem rolagem de lado e sem nada cortado (${width} px)`, async ({ page }) => {
       await page.setViewportSize({ width, height: 900 });
       await routeLiveServers(page, live());
-      await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUTS }));
+      await page.route('**/showcase/week', (route) => route.fulfill({ json: LOADOUTS }));
       await page.goto('/');
       await expect(page.getByTestId('home')).toBeVisible();
       await page.getByTestId('week-strip').scrollIntoViewIfNeeded();
@@ -421,7 +425,7 @@ test.describe('tamanhos e temas', () => {
         await saveTheme(page, theme);
         await page.setViewportSize({ width, height: 900 });
         await routeLiveServers(page, live());
-        await page.route('**/vitrine/semana', (route) => route.fulfill({ json: LOADOUT_ONE }));
+        await page.route('**/showcase/week', (route) => route.fulfill({ json: LOADOUT_ONE }));
         await page.goto('/');
         await expect(page.getByTestId('home')).toBeVisible();
         await page.getByTestId('loadouts-slot').scrollIntoViewIfNeeded();

@@ -42,12 +42,27 @@ x-api-env: &api-env
   MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
   CLOUDFLARE_ZONE_ID: ${CLOUDFLARE_ZONE_ID:-}
   CLOUDFLARE_PURGE_TOKEN: ${CLOUDFLARE_PURGE_TOKEN:-}
+  # Pagamentos e VIP (S14, docs/operacao/pagamentos.md e docs/operacao/mercadopago.md): a cobrança nasce DESLIGADA e
+  # sem provedor; o dono preenche o .env da VM no dia de ligar. `PAYMENTS_PROVIDER=mercadopago` exige o token e o
+  # segredo do webhook; `fake` a API recusa fora de homologação.
+  PAYMENTS_ENABLED: ${PAYMENTS_ENABLED:-false}
+  PAYMENTS_PROVIDER: ${PAYMENTS_PROVIDER:-}
+  PAYMENTS_DATA_KEY: ${PAYMENTS_DATA_KEY:-}
+  MERCADOPAGO_ACCESS_TOKEN: ${MERCADOPAGO_ACCESS_TOKEN:-}
+  MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
+  VIP_HOLD_ENABLED: ${VIP_HOLD_ENABLED:-false}
+  # Analytics de produto (A1, ADR 0021): vazio desliga; região UE (os hosts padrão da API).
+  POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
+  POSTHOG_PERSONAL_API_KEY: ${POSTHOG_PERSONAL_API_KEY:-}
+  POSTHOG_PROJECT_ID: ${POSTHOG_PROJECT_ID:-}
   # Discord integrado (S15): vazio desliga (docs/operacao/discord.md).
   DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
   DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
   DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
   DISCORD_GUILD_ID: ${DISCORD_GUILD_ID:-}
   DISCORD_ROLE_PLAYER_ID: ${DISCORD_ROLE_PLAYER_ID:-}
+  DISCORD_ROLE_CAPO_ID: ${DISCORD_ROLE_CAPO_ID:-}
+  DISCORD_ROLE_PADRINHO_ID: ${DISCORD_ROLE_PADRINHO_ID:-}
   DISCORD_ROLE_VIP_ID: ${DISCORD_ROLE_VIP_ID:-}
   DISCORD_ROLE_STAFF_ID: ${DISCORD_ROLE_STAFF_ID:-}
   DISCORD_ROLE_OWNER_ID: ${DISCORD_ROLE_OWNER_ID:-}
@@ -92,8 +107,15 @@ services:
       SENTRY_DSN: ${WEB_SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: production
       SENTRY_RELEASE: ${IMAGE_TAG}
+      # Contagem de páginas (A1d, ADR 0021): a mesma chave pública do projeto do PostHog da API; vazio desliga (sem
+      # nada no navegador e sem mudar a CSP). Lida em tempo de execução, nunca no build.
+      POSTHOG_API_KEY: ${POSTHOG_API_KEY:-}
       # A origem pública das fotos de perfil (a mesma da API): libera as imagens dela no CSP e liga o convite do Perfil.
       MEDIA_PUBLIC_URL: ${MEDIA_PUBLIC_URL:-}
+      # O recibo da compra (S14b) mostra quem vende; vazio, ele diz "a informar" (docs/operacao/pagamentos.md).
+      RECEIPT_SUPPLIER_NAME: ${RECEIPT_SUPPLIER_NAME:-}
+      RECEIPT_SUPPLIER_DOCUMENT: ${RECEIPT_SUPPLIER_DOCUMENT:-}
+      RECEIPT_SUPPLIER_ADDRESS: ${RECEIPT_SUPPLIER_ADDRESS:-}
     networks:
       edge:
         ipv4_address: 172.30.0.11

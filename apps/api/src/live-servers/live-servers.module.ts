@@ -10,6 +10,7 @@ import { LiveServerStreams } from './live-server-streams.js';
 import { HeartbeatController, LiveServersController } from './live-servers.controller.js';
 import { LiveServers } from './live-servers.js';
 import { ServerPlayersReader } from './server-players.js';
+import { ServerPresenceSamples } from './server-presence-samples.js';
 import { ServerPresenceStore } from './server-presence-store.js';
 import { ServerTodayCache, ServerTodayReader } from './server-today.js';
 
@@ -20,9 +21,15 @@ import { ServerTodayCache, ServerTodayReader } from './server-today.js';
   providers: [
     {
       provide: LiveServers,
-      inject: [GameServerRegistry, VALKEY, APP_CONFIG],
-      useFactory: (registry: GameServerRegistry, valkey: Redis, config: AppConfig) =>
-        new LiveServers(registry, new ServerPresenceStore(valkey), config.liveServers),
+      inject: [GameServerRegistry, VALKEY, APP_CONFIG, DATABASE],
+      useFactory: (registry: GameServerRegistry, valkey: Redis, config: AppConfig, db: Database) =>
+        new LiveServers(
+          registry,
+          new ServerPresenceStore(valkey),
+          config.liveServers,
+          undefined,
+          new ServerPresenceSamples(db),
+        ),
     },
     {
       // A página do servidor (S12b): quem está lá agora e o histórico do dia.

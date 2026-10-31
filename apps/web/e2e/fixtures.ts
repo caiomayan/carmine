@@ -6,23 +6,23 @@ export type Theme = 'dark' | 'light';
 
 export const ROUTES = [
   '/',
-  '/inventario',
+  '/inventory',
   '/loadout',
-  '/inventario/adicionar',
-  '/inventario/adicionar?tipo=weapon&arma=AK-47',
-  '/inventario/adicionar?q=nada-disso-existe',
-  '/inventario/adicionar/222',
-  '/inventario/adicionar/1781',
-  '/termos',
-  '/privacidade',
-  '/regras',
-  '/reembolso',
-  '/contato',
+  '/inventory/add',
+  '/inventory/add?tipo=weapon&arma=AK-47',
+  '/inventory/add?q=nada-disso-existe',
+  '/inventory/add/222',
+  '/inventory/add/1781',
+  '/terms',
+  '/privacy',
+  '/rules',
+  '/refunds',
+  '/contact',
   '/nao-existe',
-  '/entrar',
-  '/entrar?erro=indisponivel&motivo=sessao-expirada',
-  '/entrar?erro=limite',
-  '/configuracoes',
+  '/login',
+  '/login?erro=indisponivel&motivo=sessao-expirada',
+  '/login?erro=limite',
+  '/settings',
   '/dev/componentes',
 ] as const;
 export const WIDTHS = [390, 820, 1100, 1440] as const;
@@ -118,13 +118,16 @@ export async function settle(page: Page) {
       .catch(() => undefined);
     const again = await page.evaluate(async () => {
       const finite = () =>
-        document
-          .getAnimations()
-          .filter(
-            (a) =>
-              a.timeline === document.timeline &&
-              a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY,
-          );
+        document.getAnimations().filter(
+          (a) =>
+            a.timeline === document.timeline &&
+            a.effect?.getComputedTiming().iterations !== Number.POSITIVE_INFINITY &&
+            // O pulso e o brilho do "ao vivo" são decorativos (3 pulsos de 2,4 s e 2 brilhos de 2,6 s ao aparecer): a página já está parada sem ele.
+            !(
+              a.effect instanceof KeyframeEffect &&
+              a.effect.target?.closest?.('.animate-pulse-dot, .vh-shine')
+            ),
+        );
       const running = finite();
       await Promise.all(running.map((a) => a.finished.catch(() => undefined)));
       // Dois quadros: o React monta o que acabou de chegar e as entradas novas já se registram.

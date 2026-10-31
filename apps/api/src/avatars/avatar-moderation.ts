@@ -1,10 +1,10 @@
-import { STAFF_REPORTS_PAGE_DEFAULT } from '@carmine/contracts';
 import {
-  AVATAR_BLOCK_DAYS_FIRST,
-  AVATAR_BLOCK_DAYS_REPEAT,
+  REPORT_DAILY_LIMIT,
+  REPORT_DAILY_LIMIT_MESSAGE,
+  STAFF_REPORTS_PAGE_DEFAULT,
+} from '@carmine/contracts';
+import {
   AVATAR_REMOVED_RETENTION_DAYS,
-  AVATAR_REPEAT_WINDOW_DAYS,
-  AVATAR_REPORT_SUSPEND_THRESHOLD,
   AVATAR_REPORTS_PER_HOUR,
   type AvatarDecisionInput,
   type AvatarReason,
@@ -31,9 +31,12 @@ import {
 } from 'drizzle-orm';
 import type { Database } from '../database/database.js';
 import { accountAvatars, accounts, avatarReports } from '../database/schema.js';
+import { countReportsSince, lockReporter } from '../reports/report-tally.js';
+import { reporterLowWeight, reviewDeadline, weightWindowStart } from '../reports/report-weight.js';
 import { recordStaffAudit } from '../staff/audit-log.js';
 import type { StaffActor } from '../staff/staff.guard.js';
 import { StaffRejection } from '../staff/staff-errors.js';
+import { dayStartOf, nextDayStartOf } from '../stats/stats-week.js';
 import type { AvatarFiles } from './avatar-files.js';
 import type { AvatarReportNotifier } from './avatar-moderation-discord.js';
 import { AvatarRejection } from './avatar-processor.js';
@@ -51,23 +54,42 @@ export class InvalidAvatarCursor extends Error {}
 
 const decider = aliasedTable(accounts, 'decider');
 
+/** As fotos que a Staff pode decidir: a atual da Conta e as que ainda estão no histórico (com arquivos). */
+const REVIEWABLE: AvatarRow['status'][] = ['active', 'suspended', 'replaced', 'reverted'];
+
 /** Um valor de data que o driver pode devolver como `Date` ou como texto (colunas calculadas). */
 const asDate = (value: Date | string): Date => (value instanceof Date ? value : new Date(value));
 
 /**
- * O instante da primeira denúncia ainda aberta da foto (a ordem da fila aberta). Colunas por extenso: ver
- * o comentário em `page`.
+ * O instante que ordena a foto na fila aberta: o da denúncia aberta mais antiga de quem tem peso normal (a do prazo) e,
+ * se todas são de quem perdeu peso, o da mais antiga. Colunas por extenso: ver o comentário em `page`.
  */
-const FIRST_OPEN = sql`(
-  select min(r.created_at) from avatar_reports r
-  where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+const firstOpen = (since: Date) => sql`coalesce(
+  (
+    select min(r.created_at) from avatar_reports r
+    where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+      and not ${reporterLowWeight(sql.raw('r.reporter_account_id'), since)}
+  ),
+  (
+    select min(r.created_at) from avatar_reports r
+    where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+  )
 )`;
 
 /**
- * A moderação da foto de perfil (ADR 0022), depois da publicação na hora: a denúncia (duas Contas
- * diferentes tiram a foto do ar sozinhas), a fila da Staff, a decisão (manter ou remover) e a
- * remoção em um clique, com o bloqueio de reincidente só no histórico da Staff. Toda decisão fica
- * no log de auditoria, na mesma transação. Os arquivos mudam de lugar pelos primitivos de
+ * O grupo da foto na fila aberta: 0 se ela tem alguma denúncia aberta de quem tem peso normal, 1 se só tem de quem
+ * perdeu peso (essas vão para o fim da fila). O peso é o da regra única de denúncia (ADR 0027), de todos os tipos.
+ */
+const queueGroup = (since: Date) => sql<number>`(case when exists (
+  select 1 from avatar_reports r
+  where r.avatar_id = "account_avatars"."id" and r.dismissed_at is null
+    and not ${reporterLowWeight(sql.raw('r.reporter_account_id'), since)}
+) then 0 else 1 end)`;
+
+/**
+ * A moderação da foto de perfil (ADR 0022 e 0025), depois da publicação na hora: a denúncia (só entra na fila; não
+ * tira nada do ar), a fila da Staff, a decisão (manter ou remover) e a remoção em um clique, com o bloqueio de novos
+ * envios que a Staff escolhe. Toda decisão fica no log de auditoria, na mesma transação. Os arquivos mudam de lugar pelos primitivos de
  * {@link AvatarFiles}, também dentro da transação (o R2 não participa dela: se a cópia falhar,
  * nada muda).
  */
@@ -88,7 +110,8 @@ export class AvatarModeration {
 
   /**
    * Denuncia a foto própria de um Perfil. Uma por Conta e foto; no máximo `AVATAR_REPORTS_PER_HOUR`
-   * por hora por pessoa. A resposta nunca diz se a foto saiu do ar (não ensina a denunciar em dupla).
+   * por hora por pessoa. A denúncia só entra na fila da Staff: nunca tira a foto do ar. Contra uma imagem que a Staff
+   * já aprovou, ela é descartada (a resposta é a mesma). Só uma imagem nova pode ser denunciada de novo.
    */
   async report(
     reporterId: string,
@@ -112,91 +135,73 @@ export class AvatarModeration {
       .from(accountAvatars)
       .where(and(eq(accountAvatars.accountId, target.id), eq(accountAvatars.status, 'active')));
     if (!avatar) throw new AvatarRejection('no_custom_avatar', 'Este Perfil não tem foto própria');
+    const verdict = await this.db.transaction(async (tx) => {
+      await lockReporter(tx, reporterId);
+      // O teto por dia soma todos os tipos de Denúncia (regra única de denúncia, ADR 0027).
+      const sentToday = await countReportsSince(tx, reporterId, dayStartOf(now));
+      if (sentToday >= REPORT_DAILY_LIMIT) {
+        throw new AvatarRejection(
+          'report_daily_limit',
+          REPORT_DAILY_LIMIT_MESSAGE,
+          nextDayStartOf(now),
+        );
+      }
+      const recent = await tx
+        .select({ createdAt: avatarReports.createdAt })
+        .from(avatarReports)
+        .where(
+          and(
+            eq(avatarReports.reporterAccountId, reporterId),
+            gt(avatarReports.createdAt, new Date(now.getTime() - HOUR_MS)),
+          ),
+        )
+        .orderBy(avatarReports.createdAt);
+      if (recent.length >= AVATAR_REPORTS_PER_HOUR) {
+        const counting = recent[recent.length - AVATAR_REPORTS_PER_HOUR];
+        throw new AvatarRejection(
+          'report_limit',
+          'Muitas denúncias de foto na última hora',
+          counting && new Date(counting.createdAt.getTime() + HOUR_MS),
+        );
+      }
+      // Imagem já aprovada: descarta, sem gravar nada. Fica depois dos limites para a resposta ser a mesma de uma
+      // denúncia aceita em qualquer caso (quem denuncia não aprende se a imagem está aprovada).
+      if (avatar.decision === 'keep') return 'discarded' as const;
+      const inserted = await tx
+        .insert(avatarReports)
+        .values({ avatarId: avatar.id, reporterAccountId: reporterId, reason, createdAt: now })
+        .onConflictDoNothing()
+        .returning({ id: avatarReports.id });
+      if (inserted.length === 0) {
+        throw new AvatarRejection('already_reported', 'Você já denunciou esta foto');
+      }
+      return 'recorded' as const;
+    });
+    if (verdict === 'discarded') return { received: true };
 
-    const recent = await this.db
-      .select({ createdAt: avatarReports.createdAt })
+    // Avisa a Staff na primeira denúncia aberta da foto.
+    const [open] = await this.db
+      .select({ reporters: count() })
       .from(avatarReports)
-      .where(
-        and(
-          eq(avatarReports.reporterAccountId, reporterId),
-          gt(avatarReports.createdAt, new Date(now.getTime() - HOUR_MS)),
-        ),
-      )
-      .orderBy(avatarReports.createdAt);
-    if (recent.length >= AVATAR_REPORTS_PER_HOUR) {
-      const counting = recent[recent.length - AVATAR_REPORTS_PER_HOUR];
-      throw new AvatarRejection(
-        'report_limit',
-        'Muitas denúncias de foto na última hora',
-        counting && new Date(counting.createdAt.getTime() + HOUR_MS),
-      );
-    }
-
-    const inserted = await this.db
-      .insert(avatarReports)
-      .values({ avatarId: avatar.id, reporterAccountId: reporterId, reason, createdAt: now })
-      .onConflictDoNothing()
-      .returning({ id: avatarReports.id });
-    if (inserted.length === 0) {
-      throw new AvatarRejection('already_reported', 'Você já denunciou esta foto');
-    }
-
-    // A denúncia já está gravada (e na fila da Staff): se tirar a foto do ar falhar (R2 fora), a
-    // próxima denúncia ou a decisão da Staff retomam, e a resposta não conta o que houve.
-    let suspended = false;
-    let reporters = 1;
-    try {
-      const outcome = await this.suspendIfDue(avatar.id);
-      suspended = outcome.suspended;
-      reporters = outcome.reporters;
-    } catch (error) {
-      this.logger.error(
-        `Não deu para tirar a foto ${avatar.id} do ar: ${(error as Error).message}`,
-      );
-    }
-    // Avisa a Staff na primeira denúncia aberta e quando a foto sai do ar.
-    if (suspended || reporters === 1) {
+      .where(and(eq(avatarReports.avatarId, avatar.id), isNull(avatarReports.dismissedAt)));
+    const reporters = open?.reporters ?? 1;
+    if (reporters === 1) {
       this.notifier.notify({
         reason,
         targetName: target.displayName,
         targetPublicId: target.publicId,
         reporters,
-        suspended,
       });
     }
     return { received: true };
   }
 
-  /** Duas Contas diferentes denunciaram: a foto sai do ar até a Staff decidir. */
-  private async suspendIfDue(avatarId: string): Promise<{ suspended: boolean; reporters: number }> {
-    const now = this.now();
-    const result = await this.db.transaction(async (tx) => {
-      const locked = await this.lock(tx, avatarId);
-      const [open] = await tx
-        .select({ reporters: count() })
-        .from(avatarReports)
-        .where(and(eq(avatarReports.avatarId, avatarId), isNull(avatarReports.dismissedAt)));
-      const reporters = open?.reporters ?? 0;
-      if (locked?.avatar.status !== 'active' || reporters < AVATAR_REPORT_SUSPEND_THRESHOLD) {
-        return { suspended: false, reporters };
-      }
-      await this.files.takeDown(tx, avatarId);
-      await tx
-        .update(accountAvatars)
-        .set({ status: 'suspended', takenDownAt: now })
-        .where(eq(accountAvatars.id, avatarId));
-      await this.backToSteam(tx, locked.account);
-      return { suspended: true, reporters };
-    });
-    if (result.suspended) this.drain();
-    return result;
-  }
-
   /* ------------------------------- a fila ------------------------------- */
 
   /**
-   * A fila de denúncias de foto. `open`: fotos no ar ou suspensas com denúncia ainda sem decisão, as
-   * mais antigas primeiro (o prazo de 24 h corre); `decided`: as já decididas, da mais recente.
+   * A fila de denúncias de foto. `open`: fotos no ar, no histórico (ainda com arquivos) ou no estado antigo de
+   * suspensas, com denúncia ainda sem decisão, as mais antigas primeiro (o prazo de 24 h corre) e, no fim, as que só
+   * têm denúncia de quem perdeu peso; `decided`: as já decididas, da mais recente.
    */
   async page(
     status: 'open' | 'decided',
@@ -206,11 +211,14 @@ export class AvatarModeration {
     const open = status === 'open';
     // Colunas escritas por extenso de propósito: numa seleção de uma tabela só, o drizzle tira o prefixo das
     // colunas dentro de `sql`, e a subconsulta passaria a comparar com as colunas dela mesma.
-    const sortAt = open ? FIRST_OPEN : sql`"account_avatars"."decided_at"`;
+    const since = weightWindowStart(this.now());
+    const sortAt = open ? firstOpen(since) : sql`"account_avatars"."decided_at"`;
     const sortKey = sql<string>`to_char(${sortAt} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
+    const group = open ? queueGroup(since) : sql<number>`0`;
     const conditions: SQL[] = open
       ? [
-          inArray(accountAvatars.status, ['active', 'suspended']),
+          inArray(accountAvatars.status, REVIEWABLE),
+          isNull(accountAvatars.deletedAt),
           exists(
             this.db
               .select({ one: sql`1` })
@@ -235,23 +243,28 @@ export class AvatarModeration {
           ),
         ];
     if (options.before) {
-      const { key, id } = decodeCursor(options.before);
-      const after = open ? sql`>` : sql`<`;
+      const cursor = decodeCursor(options.before);
       conditions.push(
-        sql`(${sortAt} ${after} ${key}::timestamptz or (${sortAt} = ${key}::timestamptz and ${accountAvatars.id} ${after} ${id}))`,
+        open
+          ? sql`(${group}, ${sortAt}, ${accountAvatars.id}) > (${cursor.group}::int, ${cursor.key}::timestamptz, ${cursor.id}::uuid)`
+          : sql`(${sortAt}, ${accountAvatars.id}) < (${cursor.key}::timestamptz, ${cursor.id}::uuid)`,
       );
     }
     const rows = await this.db
-      .select({ avatar: accountAvatars, sortKey })
+      .select({ avatar: accountAvatars, sortKey, group })
       .from(accountAvatars)
       .where(and(...conditions))
       .orderBy(
-        open ? sortAt : desc(accountAvatars.decidedAt),
-        open ? accountAvatars.id : desc(accountAvatars.id),
+        ...(open
+          ? [group, sortAt, accountAvatars.id]
+          : [desc(accountAvatars.decidedAt), desc(accountAvatars.id)]),
       )
       .limit(limit + 1);
     const pageRows = rows.slice(0, limit);
-    const cases = await this.casesOf(pageRows.map((row) => row.avatar));
+    const cases = await this.casesOf(
+      pageRows.map((row) => row.avatar),
+      since,
+    );
     const last = rows.length > limit ? pageRows[pageRows.length - 1] : undefined;
 
     const [counted] = await this.db
@@ -259,7 +272,8 @@ export class AvatarModeration {
       .from(accountAvatars)
       .where(
         and(
-          inArray(accountAvatars.status, ['active', 'suspended']),
+          inArray(accountAvatars.status, REVIEWABLE),
+          isNull(accountAvatars.deletedAt),
           exists(
             this.db
               .select({ one: sql`1` })
@@ -275,7 +289,7 @@ export class AvatarModeration {
       );
     return {
       cases,
-      nextCursor: last ? encodeCursor(last.sortKey, last.avatar.id) : null,
+      nextCursor: last ? encodeCursor(last.group, last.sortKey, last.avatar.id) : null,
       openCount: counted?.openCount ?? 0,
     };
   }
@@ -286,16 +300,16 @@ export class AvatarModeration {
       .select()
       .from(accountAvatars)
       .where(eq(accountAvatars.id, avatarId));
-    const [one] = avatar ? await this.casesOf([avatar]) : [];
+    const [one] = avatar ? await this.casesOf([avatar], weightWindowStart(this.now())) : [];
     if (!one) throw new StaffRejection('avatar_not_found', 'Foto não encontrada');
     return one;
   }
 
   /** Monta os casos de uma lista de fotos, na mesma ordem. */
-  private async casesOf(avatars: AvatarRow[]): Promise<StaffAvatarCase[]> {
+  private async casesOf(avatars: AvatarRow[], since: Date): Promise<StaffAvatarCase[]> {
     if (avatars.length === 0) return [];
     const ids = avatars.map((avatar) => avatar.id);
-    const [people, totals, reasons, previous] = await Promise.all([
+    const [people, totals, reasons, previous, waiting] = await Promise.all([
       this.db
         .select({
           avatarId: accountAvatars.id,
@@ -341,12 +355,29 @@ export class AvatarModeration {
             ),
           ),
         ),
+      // As denúncias ainda abertas de cada foto: quantas e a mais antiga de quem tem peso normal (a do prazo).
+      this.db
+        .select({
+          avatarId: avatarReports.avatarId,
+          open: count(),
+          firstNormalAt: sql<
+            Date | string | null
+          >`min(${avatarReports.createdAt}) filter (where not ${reporterLowWeight(sql.raw('"avatar_reports"."reporter_account_id"'), since)})`,
+        })
+        .from(avatarReports)
+        .where(and(inArray(avatarReports.avatarId, ids), isNull(avatarReports.dismissedAt)))
+        .groupBy(avatarReports.avatarId),
     ]);
     return avatars.map((avatar): StaffAvatarCase => {
       const who = people.find((row) => row.avatarId === avatar.id);
       const total = totals.find((row) => row.avatarId === avatar.id);
+      const pending = waiting.find((row) => row.avatarId === avatar.id);
+      const firstNormal = pending?.firstNormalAt ? asDate(pending.firstNormalAt) : null;
       return {
+        kind: 'avatar',
         avatar: this.staffAvatar(avatar),
+        deadlineAt: reviewDeadline('avatar', firstNormal)?.toISOString() ?? null,
+        lowWeight: pending !== undefined && pending.open > 0 && firstNormal === null,
         account: { publicId: who?.publicId ?? 0, displayName: who?.displayName ?? '' },
         reports: {
           reporters: total?.reporters ?? 0,
@@ -392,7 +423,7 @@ export class AvatarModeration {
 
   /* ------------------------------- decisão ------------------------------- */
 
-  /** Decide uma foto denunciada (ou qualquer foto própria no ar ou suspensa): manter ou remover. */
+  /** Decide uma foto denunciada (ou qualquer foto própria no ar ou no histórico): manter ou remover. */
   async decide(
     actor: StaffActor,
     avatarId: string,
@@ -437,9 +468,11 @@ export class AvatarModeration {
       const locked = await this.lock(tx, avatarId);
       if (!locked) throw new StaffRejection('avatar_not_found', 'Foto não encontrada');
       const { avatar, account } = locked;
-      if (avatar.status !== 'active' && avatar.status !== 'suspended') {
+      if (!REVIEWABLE.includes(avatar.status) || avatar.deletedAt !== null) {
         throw new StaffRejection('avatar_not_reviewable', 'Esta foto já não está em análise');
       }
+      // A foto atual da Conta (no ar ou no estado antigo de suspensa); as outras estão só no histórico.
+      const isCurrent = avatar.status === 'active' || avatar.status === 'suspended';
       const decided = {
         decision: input.decision,
         decidedAt: now,
@@ -451,7 +484,7 @@ export class AvatarModeration {
       let blockedUntil: Date | null = null;
 
       if (input.decision === 'keep') {
-        // Volta ao ar o que estava suspenso; as denúncias são arquivadas (a decisão da Staff vale).
+        // Volta ao ar o que estava suspenso (estado antigo); as denúncias são arquivadas e a imagem fica imune.
         if (avatar.status === 'suspended') {
           await this.files.putBack(tx, avatar.id);
           await tx
@@ -470,11 +503,11 @@ export class AvatarModeration {
           .set({ dismissedAt: now })
           .where(and(eq(avatarReports.avatarId, avatar.id), isNull(avatarReports.dismissedAt)));
       } else {
-        // No ar: copia para o privado antes (se falhar, nada muda). Suspensa: já está no privado.
-        if (avatar.status === 'active') await this.files.takeDown(tx, avatar.id);
+        // No ar ou no histórico: copia para o privado antes (se falhar, nada muda). Suspensa: já está no privado.
+        if (avatar.status !== 'suspended') await this.files.takeDown(tx, avatar.id);
         await this.files.retain(tx, avatar.id, AVATAR_REMOVED_RETENTION_DAYS, now);
-        // Antes de marcar esta como removida: a reincidência são as remoções de antes.
-        blockDays = input.blockDays ?? (await this.defaultBlockDays(tx, account.id, now));
+        // A Staff escolhe o bloqueio; sem ele, não bloqueia.
+        blockDays = input.blockDays ?? 0;
         await tx
           .update(accountAvatars)
           .set({
@@ -484,7 +517,7 @@ export class AvatarModeration {
             retiredAt: now,
           })
           .where(eq(accountAvatars.id, avatar.id));
-        await this.backToSteam(tx, account);
+        if (isCurrent) await this.backToSteam(tx, account);
         if (blockDays > 0) {
           blockedUntil = new Date(now.getTime() + blockDays * DAY_MS);
           await tx
@@ -512,27 +545,9 @@ export class AvatarModeration {
     this.drain();
   }
 
-  /** 7 dias na primeira remoção; 30 se a Conta já teve uma foto removida nos últimos 90 dias. */
-  private async defaultBlockDays(tx: Transaction, accountId: string, now: Date): Promise<number> {
-    const [recent] = await tx
-      .select({ removals: count() })
-      .from(accountAvatars)
-      .where(
-        and(
-          eq(accountAvatars.accountId, accountId),
-          eq(accountAvatars.status, 'removed'),
-          gt(
-            accountAvatars.decidedAt,
-            new Date(now.getTime() - AVATAR_REPEAT_WINDOW_DAYS * DAY_MS),
-          ),
-        ),
-      );
-    return (recent?.removals ?? 0) > 0 ? AVATAR_BLOCK_DAYS_REPEAT : AVATAR_BLOCK_DAYS_FIRST;
-  }
-
   /* ------------------------------ a ficha ------------------------------ */
 
-  /** A foto na ficha da Conta: a atual, o bloqueio de reincidente e as remoções anteriores. */
+  /** A foto na ficha da Conta: a atual, o bloqueio de novos envios e as remoções anteriores. */
   async accountAvatar(publicId: number): Promise<StaffAccountAvatar> {
     const [account] = await this.db.select().from(accounts).where(eq(accounts.publicId, publicId));
     if (!account) throw new StaffRejection('account_not_found', 'Conta não encontrada');
@@ -574,10 +589,15 @@ export class AvatarModeration {
   /** A imagem (512 px) de uma foto, no ar, suspensa ou guardada, para a Staff ver. */
   async image(avatarId: string): Promise<Buffer> {
     const [avatar] = await this.db
-      .select({ status: accountAvatars.status })
+      .select({ status: accountAvatars.status, deletedAt: accountAvatars.deletedAt })
       .from(accountAvatars)
       .where(eq(accountAvatars.id, avatarId));
-    if (!avatar || !this.enabled || !['active', 'suspended', 'removed'].includes(avatar.status)) {
+    if (
+      !avatar ||
+      !this.enabled ||
+      avatar.deletedAt !== null ||
+      ![...REVIEWABLE, 'removed'].includes(avatar.status)
+    ) {
       throw new StaffRejection('avatar_not_found', 'Foto não encontrada');
     }
     const bytes = await this.files.read(avatarId);
@@ -629,15 +649,22 @@ export class AvatarModeration {
   }
 }
 
-/** O cursor leva o instante com microssegundos (como o banco o guarda): um `Date` os perderia e repetiria o último caso. */
-function encodeCursor(key: string, id: string): string {
-  return Buffer.from(`${key}|${id}`).toString('base64url');
+/**
+ * O cursor leva o grupo da fila, o instante com microssegundos (como o banco o guarda: um `Date` os perderia e
+ * repetiria o último caso) e o ID.
+ */
+function encodeCursor(group: number, key: string, id: string): string {
+  return Buffer.from(`${group}|${key}|${id}`).toString('base64url');
 }
 
-function decodeCursor(cursor: string): { key: string; id: string } {
-  const [key = '', id = ''] = Buffer.from(cursor, 'base64url').toString().split('|');
-  if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/.test(key) || !/^[0-9a-f-]{36}$/.test(id)) {
+function decodeCursor(cursor: string): { group: number; key: string; id: string } {
+  const [group = '', key = '', id = ''] = Buffer.from(cursor, 'base64url').toString().split('|');
+  if (
+    !/^[01]$/.test(group) ||
+    !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z$/.test(key) ||
+    !/^[0-9a-f-]{36}$/.test(id)
+  ) {
     throw new InvalidAvatarCursor('cursor inválido');
   }
-  return { key, id };
+  return { group: Number(group), key, id };
 }

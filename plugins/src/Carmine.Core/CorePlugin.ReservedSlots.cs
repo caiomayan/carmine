@@ -99,7 +99,7 @@ public sealed partial class CorePlugin
         }
         if (isVip && slots.HasVipWaiting(humans))
         {
-            player.PrintToChat(" Servidor lotado: sua Vaga reservada de VIP abre no fim do round.");
+            player.SendChat(ReservedSlots.QueuedVipMessage);
             FindVacancy(vacancy => _vacancy = vacancy);
         }
         return false;
@@ -134,7 +134,7 @@ public sealed partial class CorePlugin
             _kicking.Remove(steamId);
             return;
         }
-        player.PrintToChat($" {message}");
+        player.SendChat(message);
         player.PrintToCenter(message);
         player.PrintToConsole($"[Carmine] {message}");
         AddTimer(delay, () =>

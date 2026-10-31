@@ -368,6 +368,236 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/vip": {
+      "get": {
+        "operationId": "getPlayerVip",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VIP ativo e até quando, ou quando acabou, e o aviso do fim a mostrar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerVip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "O VIP da Conta agora (para o !vip do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/server/players/{steamId}/preferences/{key}": {
+      "put": {
+        "operationId": "setPlayerGamePreference",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/GamePreferenceKey"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GamePreferenceSet"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "O valor gravado; vale em todo servidor do Modo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePreferenceValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64, chave ou corpo inválido, ou a chave não vale no Modo do servidor"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Grava o valor explícito de uma Preferência de jogo da Conta (ADR 0028)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/server/players/{steamId}/preferences/{key}/toggle": {
+      "post": {
+        "operationId": "togglePlayerGamePreference",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          },
+          {
+            "name": "key",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/GamePreferenceKey"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "O novo valor; vale em todo servidor do Modo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GamePreferenceValue"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 ou chave inválida, ou a chave não vale no Modo do servidor"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Inverte uma Preferência de jogo da Conta e devolve o novo valor (o !awp do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/server/players/{steamId}/chat-preference": {
       "put": {
         "operationId": "setPlayerChatPreference",
@@ -677,7 +907,7 @@
         ],
         "responses": {
           "302": {
-            "description": "Para a Steam (ou para /entrar?erro=indisponivel, ou erro=limite acima do limite)"
+            "description": "Para a Steam (ou para /login?erro=indisponivel, ou erro=limite acima do limite)"
           },
           "429": {
             "description": "Limite de requisições por IP excedido (política \"login\")",
@@ -718,7 +948,7 @@
         "parameters": [],
         "responses": {
           "303": {
-            "description": "Para a página de origem (sessão aberta) ou para /entrar?erro=<motivo>"
+            "description": "Para a página de origem (sessão aberta) ou para /login?erro=<motivo>"
           },
           "429": {
             "description": "Limite de requisições por IP excedido (política \"login\")",
@@ -853,6 +1083,96 @@
           }
         ],
         "summary": "A Conta da sessão atual, o token CSRF das mutações, se é o primeiro login, o VIP e o papel de Staff",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/steam/staff/login": {
+      "get": {
+        "operationId": "startStaffSteamLogin",
+        "parameters": [
+          {
+            "name": "returnTo",
+            "required": false,
+            "in": "query",
+            "description": "Caminho interno do painel para onde voltar depois do login (padrão: /)",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Para a Steam (ou para /entrar?erro=indisponivel no painel)"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "summary": "Começa o login Steam do painel da Staff: redireciona para a Steam",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/auth/steam/staff/callback": {
+      "get": {
+        "operationId": "completeStaffSteamLogin",
+        "parameters": [],
+        "responses": {
+          "303": {
+            "description": "Para a página de origem no painel (sessão aberta) ou para /entrar?erro=<motivo>"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"login\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"login\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"login\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "summary": "Volta da Steam no painel: verifica a asserção e abre a sessão só para quem tem papel de Staff",
         "tags": [
           "auth"
         ]
@@ -2040,7 +2360,7 @@
             "description": "Sem sessão, ou ela expirou"
           },
           "403": {
-            "description": "Exige VIP (vip_required), ou CSRF inválido",
+            "description": "Exige um plano (vip_required, nome legado), ou CSRF inválido",
             "content": {
               "application/json": {
                 "schema": {
@@ -2050,7 +2370,7 @@
             }
           },
           "409": {
-            "description": "Já há 20 Presets (preset_limit)",
+            "description": "Já há tantos Presets quanto o plano permite (preset_limit)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2841,6 +3161,74 @@
         "summary": "Servidor Carmine em que uma Conta está jogando agora, se estiver; público, inclusive no Perfil privado",
         "tags": [
           "profiles"
+        ]
+      }
+    },
+    "/api/server/players/{steamId}/card": {
+      "get": {
+        "operationId": "getPlayerCard",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Textos prontos em português; vazio quando não há o que dizer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerCard"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Os textos do card de boas-vindas do addon (nome, plano, Ranking, amigos, Rating)",
+        "tags": [
+          "server"
         ]
       }
     },
@@ -4474,6 +4862,142 @@
         ]
       }
     },
+    "/api/server/players/{steamId}/rank": {
+      "get": {
+        "operationId": "getPlayerRankLine",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A linha pronta em português",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerGameLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A posição da semana no Modo do servidor (o !rank do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
+    "/api/server/players/{steamId}/stats": {
+      "get": {
+        "operationId": "getPlayerStatsLine",
+        "parameters": [
+          {
+            "name": "steamId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A linha pronta em português",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerGameLine"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "SteamID64 inválido"
+          },
+          "401": {
+            "description": "Chave de Servidor Carmine ausente ou inválida"
+          },
+          "404": {
+            "description": "Nenhuma Conta com esse SteamID64"
+          },
+          "429": {
+            "description": "Limite de requisições por Servidor Carmine excedido (política \"server\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"server\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"server\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Os números da semana no Modo do servidor (o !stats do jogo)",
+        "tags": [
+          "server"
+        ]
+      }
+    },
     "/api/profiles/{publicId}/stats": {
       "get": {
         "operationId": "getProfileStats",
@@ -5145,7 +5669,7 @@
             "cookie": []
           }
         ],
-        "summary": "Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria (no ar ou suspensa), se pode enviar e por que não",
+        "summary": "Estado da foto de perfil da Conta: de onde vem o avatar, a foto própria, o histórico das últimas 5 fotos, se pode enviar e por que não",
         "tags": [
           "me"
         ]
@@ -5192,7 +5716,7 @@
             "description": "Sem sessão, ou ela expirou"
           },
           "403": {
-            "description": "Conta com menos de 24 horas, com Punição ativa ou com o envio bloqueado (account_too_new, punished, upload_blocked), ou CSRF inválido",
+            "description": "Conta com Punição ativa ou com o envio bloqueado pela Staff (punished, upload_blocked), ou CSRF inválido",
             "content": {
               "application/json": {
                 "schema": {
@@ -5232,7 +5756,7 @@
             }
           },
           "429": {
-            "description": "3 envios em 24 horas (daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "description": "Passou do limite de envios (upload_limit) ou outro envio há poucos segundos (upload_too_soon); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
             "headers": {
               "Retry-After": {
                 "description": "Segundos até a próxima requisição ser aceita",
@@ -5331,7 +5855,174 @@
             "cookie": []
           }
         ],
-        "summary": "Volta à foto da Steam na hora, sem moderação; a foto própria é apagada. Sem foto própria, não muda nada",
+        "summary": "Volta à foto da Steam na hora, sem moderação; a foto própria segue no histórico. Sem foto própria, não muda nada",
+        "tags": [
+          "me"
+        ]
+      }
+    },
+    "/api/me/avatar/history/{id}": {
+      "post": {
+        "operationId": "chooseAvatarFromHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da foto, como vem em `history` do estado",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Com a foto escolhida no ar",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Punição ativa ou envio bloqueado (punished, upload_blocked), ou CSRF inválido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "A foto não está no histórico desta Conta (not_in_history)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Funcionalidade desligada neste ambiente (disabled)\n\nSem como contar o limite agora; tente de novo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Escolhe uma foto do histórico: ela volta ao ar na hora e não conta nos limites de envio. Quem tem Punição ativa ou o envio bloqueado não escolhe",
+        "tags": [
+          "me"
+        ]
+      },
+      "delete": {
+        "operationId": "deleteAvatarFromHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "ID da foto, como vem em `history` do estado",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sem a foto",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarState"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "404": {
+            "description": "A foto não está no histórico desta Conta (not_in_history)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Apaga uma foto do histórico e do armazenamento. Se era a que estava no ar, volta a foto da Steam",
         "tags": [
           "me"
         ]
@@ -5416,7 +6107,7 @@
             }
           },
           "429": {
-            "description": "5 denúncias de foto na última hora (report_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "description": "5 denúncias de foto na última hora (report_limit) ou 10 no dia, de todos os tipos (report_daily_limit); `retryAfter` diz quando libera\n\nLimite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
             "headers": {
               "Retry-After": {
                 "description": "Segundos até a próxima requisição ser aceita",
@@ -6350,6 +7041,691 @@
           "webhooks"
         ]
       }
+    },
+    "/api/staff/payments": {
+      "get": {
+        "operationId": "listStaffPayments",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "1 a 100",
+            "schema": {}
+          },
+          {
+            "name": "before",
+            "required": false,
+            "in": "query",
+            "description": "`nextCursor` da página anterior",
+            "schema": {}
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "`all` ou um estado do pagamento",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Uma página",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPaymentPage"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Pagamentos do VIP, do mais recente ao mais antigo, com filtro por estado e a contagem de cada estado",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/payments/compensation": {
+      "get": {
+        "operationId": "getStaffCompensation",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "O resumo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffCompensationOverview"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "O que ver antes de compensar por indisponibilidade: quantas Contas têm VIP ativo agora e as últimas compensações",
+        "tags": [
+          "staff"
+        ]
+      },
+      "post": {
+        "operationId": "applyStaffCompensation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffCompensationInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Aplicada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffCompensationResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Compensa por indisponibilidade acima de 24 h: soma os dias a todos os VIPs ativos de uma vez. A chave é única por queda (repetir não soma de novo); avisa no Discord e vai para o log de auditoria",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/payments/reconcile": {
+      "post": {
+        "operationId": "reconcileStaffPayments",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffReconcileInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Quantos foram conferidos e quantos mudaram",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffReconcileResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Concilia agora com o provedor os pagamentos dos últimos dias (pega reembolso, contestação e webhook perdido)",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/payments/{id}": {
+      "get": {
+        "operationId": "getStaffPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "O identificador do pagamento (o da compra)",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A ficha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPaymentDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "A ficha do pagamento: o provedor, os valores, o que ainda dá para devolver, os webhooks recebidos e o que a Staff já fez",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/payments/{id}/refund": {
+      "post": {
+        "operationId": "refundStaffPayment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "O identificador do pagamento",
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffPaymentRefund"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A ficha atualizada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPaymentDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Reembolsa um pagamento aprovado (depois dos 7 dias, ou parcial por dias): o provedor estorna e os dias saem do VIP. Com motivo, vai para o log de auditoria",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/staff/accounts/{publicId}/purchases/unblock": {
+      "post": {
+        "operationId": "unblockStaffPurchases",
+        "parameters": [
+          {
+            "name": "publicId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StaffReasonBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reabertas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffPurchasesUnblocked"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "403": {
+            "description": "Sem papel de Staff com a permissão \"payments.manage\""
+          },
+          "404": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Recusa com código estável (`StaffError`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StaffError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Reabre as compras de uma Conta bloqueada por contestação, depois de a Staff revisar. Com motivo, vai para o log de auditoria",
+        "tags": [
+          "staff"
+        ]
+      }
+    },
+    "/api/me/analytics": {
+      "get": {
+        "operationId": "getAnalyticsPreference",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "A escolha",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por IP excedido (política \"public\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"public\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"public\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Se a Conta participa da análise de uso (padrão: sim) e se a análise está ligada neste ambiente",
+        "tags": [
+          "me"
+        ]
+      },
+      "put": {
+        "operationId": "setAnalyticsPreference",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsPreferenceInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A escolha nova",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsPreference"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem sessão, ou ela expirou"
+          },
+          "429": {
+            "description": "Limite de requisições por sessão (sem sessão, IP) excedido (política \"mutations\")",
+            "headers": {
+              "Retry-After": {
+                "description": "Segundos até a próxima requisição ser aceita",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit": {
+                "description": "Vagas restantes (r) e segundos até repor (t), ex.: \"mutations\";r=0;t=15",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Policy": {
+                "description": "Cota (q) por janela em segundos (w), ex.: \"mutations\";q=240;w=60",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Sem como contar o limite agora; tente de novo"
+          }
+        },
+        "security": [
+          {
+            "cookie": []
+          }
+        ],
+        "summary": "Liga ou desliga a participação na análise de uso. Desligada, nenhum evento da Conta é enviado (vale na hora)",
+        "tags": [
+          "me"
+        ]
+      }
     }
   },
   "info": {
@@ -6593,6 +7969,28 @@
           "isVip": {
             "type": "boolean"
           },
+          "plan": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "vipNotice": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VipNotice"
+              }
+            ]
+          },
+          "vipEndsAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
           "sanctions": {
             "type": "array",
             "items": {
@@ -6601,6 +7999,13 @@
           },
           "chatHidden": {
             "type": "boolean"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/GamePreferences"
+          },
+          "greeting": {
+            "nullable": true,
+            "type": "string"
           }
         },
         "required": [
@@ -6608,10 +8013,29 @@
           "displayName",
           "isFirstConnect",
           "isVip",
+          "vipNotice",
+          "vipEndsAt",
           "sanctions",
-          "chatHidden"
+          "chatHidden",
+          "preferences",
+          "greeting"
         ],
         "additionalProperties": false
+      },
+      "Plan": {
+        "type": "string",
+        "enum": [
+          "capo",
+          "padrinho"
+        ]
+      },
+      "VipNotice": {
+        "type": "string",
+        "enum": [
+          "ending_soon",
+          "ending_today",
+          "ended_today"
+        ]
       },
       "GameSanction": {
         "type": "object",
@@ -6674,6 +8098,87 @@
           "doxxing",
           "ban_evasion"
         ]
+      },
+      "GamePreferences": {
+        "type": "object",
+        "properties": {
+          "awpRaffle": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "awpRaffle"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerVip": {
+        "type": "object",
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "endsAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "endedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "notice": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/VipNotice"
+              }
+            ]
+          }
+        },
+        "required": [
+          "active",
+          "endsAt",
+          "endedAt",
+          "notice"
+        ],
+        "additionalProperties": false
+      },
+      "GamePreferenceKey": {
+        "type": "string",
+        "enum": [
+          "awp_raffle"
+        ]
+      },
+      "GamePreferenceSet": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "GamePreferenceValue": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "$ref": "#/components/schemas/GamePreferenceKey"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "enabled"
+        ],
+        "additionalProperties": false
       },
       "PlayerChatPreference": {
         "type": "object",
@@ -6813,6 +8318,14 @@
           },
           "isVip": {
             "type": "boolean"
+          },
+          "plan": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
           },
           "loadoutShowcase": {
             "$ref": "#/components/schemas/LoadoutShowcase"
@@ -7095,6 +8608,13 @@
           "vip": {
             "$ref": "#/components/schemas/VipStatus"
           },
+          "vipHoldDays": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
           "staffRole": {
             "nullable": true,
             "allOf": [
@@ -7118,6 +8638,7 @@
           "csrfToken",
           "firstLogin",
           "vip",
+          "vipHoldDays",
           "staffRole",
           "sanctions",
           "displayNameChange"
@@ -7141,6 +8662,17 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "plan": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Plan"
+              }
+            ]
+          },
+          "test": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -8076,7 +9608,7 @@
         "properties": {
           "presets": {
             "minItems": 1,
-            "maxItems": 20,
+            "maxItems": 25,
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/Preset"
@@ -8093,7 +9625,13 @@
               {
                 "type": "number",
                 "enum": [
-                  20
+                  6
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  25
                 ]
               }
             ]
@@ -9073,6 +10611,34 @@
         ],
         "additionalProperties": false
       },
+      "PlayerCard": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "string"
+          },
+          "friends": {
+            "type": "string"
+          },
+          "rating": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "plan",
+          "rank",
+          "friends",
+          "rating"
+        ],
+        "additionalProperties": false
+      },
       "StaffAccountSearch": {
         "type": "object",
         "properties": {
@@ -9500,7 +11066,12 @@
               "report_needs_evidence",
               "avatar_not_found",
               "avatar_not_reviewable",
-              "no_custom_avatar"
+              "no_custom_avatar",
+              "payment_not_found",
+              "payment_not_refundable",
+              "payment_provider_unavailable",
+              "purchases_not_blocked",
+              "compensation_applied"
             ]
           },
           "message": {
@@ -9855,6 +11426,9 @@
             "format": "uuid",
             "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
+          "kind": {
+            "$ref": "#/components/schemas/ReportKind"
+          },
           "status": {
             "$ref": "#/components/schemas/ReportStatus"
           },
@@ -9865,6 +11439,28 @@
             "type": "string",
             "format": "date-time",
             "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "count": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "members": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffReportMember"
+            }
+          },
+          "deadlineAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "lowWeight": {
+            "type": "boolean"
           },
           "target": {
             "$ref": "#/components/schemas/ReportPerson"
@@ -9920,9 +11516,14 @@
         },
         "required": [
           "id",
+          "kind",
           "status",
           "reason",
           "createdAt",
+          "count",
+          "members",
+          "deadlineAt",
+          "lowWeight",
           "target",
           "reporter",
           "server",
@@ -9934,6 +11535,15 @@
           "resolution"
         ],
         "additionalProperties": false
+      },
+      "ReportKind": {
+        "type": "string",
+        "enum": [
+          "game",
+          "chat",
+          "avatar",
+          "logo"
+        ]
       },
       "ReportStatus": {
         "type": "string",
@@ -9952,6 +11562,46 @@
           "griefing",
           "other"
         ]
+      },
+      "StaffReportMember": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "reporter": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReportPerson"
+              }
+            ]
+          },
+          "round": {
+            "nullable": true,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "lowWeight": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "reporter",
+          "round",
+          "lowWeight"
+        ],
+        "additionalProperties": false
       },
       "ReportPerson": {
         "type": "object",
@@ -10190,6 +11840,20 @@
             "items": {
               "$ref": "#/components/schemas/ChatMessageEvent"
             }
+          },
+          "roundStarts": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoundStartEvent"
+            }
+          },
+          "bombs": {
+            "maxItems": 500,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BombEvent"
+            }
           }
         },
         "required": [
@@ -10269,6 +11933,68 @@
                 "$ref": "#/components/schemas/GameTeam"
               }
             ]
+          },
+          "mapPlayId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 999
+          },
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "victimTeam": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GameTeam"
+              }
+            ]
+          },
+          "flashAssist": {
+            "type": "boolean"
+          },
+          "penetrated": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 16
+          },
+          "throughSmoke": {
+            "type": "boolean"
+          },
+          "attackerBlind": {
+            "type": "boolean"
+          },
+          "noScope": {
+            "type": "boolean"
+          },
+          "distance": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "killerPosition": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ]
+          },
+          "victimPosition": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Position"
+              }
+            ]
           }
         },
         "required": [
@@ -10281,6 +12007,31 @@
           "headshot",
           "weapon",
           "teamKill"
+        ]
+      },
+      "Position": {
+        "type": "object",
+        "properties": {
+          "x": {
+            "type": "number",
+            "minimum": -100000,
+            "maximum": 100000
+          },
+          "y": {
+            "type": "number",
+            "minimum": -100000,
+            "maximum": 100000
+          },
+          "z": {
+            "type": "number",
+            "minimum": -100000,
+            "maximum": 100000
+          }
+        },
+        "required": [
+          "x",
+          "y",
+          "z"
         ]
       },
       "DamageEvent": {
@@ -10311,6 +12062,49 @@
           "amount": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 500
+          },
+          "mapPlayId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 999
+          },
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "victimSteamId": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SteamId64"
+              }
+            ]
+          },
+          "weapon": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "hitgroup": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10
+          },
+          "armorDamage": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 500
+          },
+          "healthDamage": {
+            "type": "integer",
+            "minimum": 0,
             "maximum": 500
           }
         },
@@ -10372,6 +12166,35 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 999
+          },
+          "mapPlayId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/RoundEndReason"
+              }
+            ]
+          },
+          "durationMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3600000
+          },
+          "alive": {
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SteamId64"
+            }
           }
         },
         "required": [
@@ -10403,6 +12226,16 @@
         "required": [
           "steamId",
           "team"
+        ]
+      },
+      "RoundEndReason": {
+        "type": "string",
+        "enum": [
+          "bomb_exploded",
+          "bomb_defused",
+          "elimination",
+          "time",
+          "other"
         ]
       },
       "SessionStartEvent": {
@@ -10520,6 +12353,171 @@
           "text"
         ]
       },
+      "RoundStartEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "warmup": {
+            "type": "boolean"
+          },
+          "mapPlayId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 999
+          },
+          "map": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MapName"
+              }
+            ]
+          },
+          "players": {
+            "maxItems": 64,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RoundStartPlayer"
+            }
+          },
+          "botsCt": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64
+          },
+          "botsT": {
+            "default": 0,
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 64
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "warmup",
+          "mapPlayId",
+          "roundNumber",
+          "players"
+        ]
+      },
+      "RoundStartPlayer": {
+        "type": "object",
+        "properties": {
+          "steamId": {
+            "$ref": "#/components/schemas/SteamId64"
+          },
+          "team": {
+            "$ref": "#/components/schemas/GameTeam"
+          },
+          "equipmentValue": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100000
+          }
+        },
+        "required": [
+          "steamId",
+          "team",
+          "equipmentValue"
+        ]
+      },
+      "BombEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "atMs": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "warmup": {
+            "type": "boolean"
+          },
+          "mapPlayId": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "roundNumber": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 999
+          },
+          "kind": {
+            "$ref": "#/components/schemas/BombEventKind"
+          },
+          "steamId": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SteamId64"
+              }
+            ]
+          },
+          "site": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BombSite"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "at",
+          "warmup",
+          "mapPlayId",
+          "roundNumber",
+          "kind"
+        ]
+      },
+      "BombEventKind": {
+        "type": "string",
+        "enum": [
+          "plant",
+          "defuse",
+          "explode"
+        ]
+      },
+      "BombSite": {
+        "type": "string",
+        "enum": [
+          "a",
+          "b"
+        ]
+      },
       "EventBatchResult": {
         "type": "object",
         "properties": {
@@ -10543,6 +12541,19 @@
           "accepted",
           "duplicates",
           "ignored"
+        ],
+        "additionalProperties": false
+      },
+      "PlayerGameLine": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "message"
         ],
         "additionalProperties": false
       },
@@ -10660,6 +12671,11 @@
             "minimum": 0
           },
           "kpm": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0
+          },
+          "dmScore": {
             "nullable": true,
             "type": "number",
             "minimum": 0
@@ -11116,6 +13132,14 @@
           },
           "live": {
             "type": "boolean"
+          },
+          "server": {
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProfileLiveServer"
+              }
+            ]
           }
         },
         "required": [
@@ -11127,7 +13151,33 @@
           "startedAt",
           "endedAt",
           "seconds",
-          "live"
+          "live",
+          "server"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileLiveServer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "code": {
+            "nullable": true,
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "code"
         ],
         "additionalProperties": false
       },
@@ -11238,6 +13288,11 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 9007199254740991
+          },
+          "dmScore": {
+            "nullable": true,
+            "type": "number",
+            "minimum": 0
           },
           "self": {
             "type": "boolean"
@@ -11927,6 +13982,13 @@
             "nullable": true,
             "type": "string",
             "maxLength": 64
+          },
+          "mapPlayId": {
+            "default": null,
+            "nullable": true,
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           }
         },
         "required": [
@@ -11975,7 +14037,8 @@
           "self",
           "unknown_account",
           "same_target_cooldown",
-          "hourly_limit"
+          "hourly_limit",
+          "daily_limit"
         ]
       },
       "AvatarState": {
@@ -12020,6 +14083,16 @@
             ],
             "additionalProperties": false
           },
+          "history": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AvatarHistoryItem"
+            }
+          },
+          "canUseHistory": {
+            "type": "boolean"
+          },
           "canUpload": {
             "type": "boolean"
           },
@@ -12062,6 +14135,8 @@
           "source",
           "steamAvatarUrl",
           "custom",
+          "history",
+          "canUseHistory",
           "canUpload",
           "cannotUploadReason",
           "retryAfter",
@@ -12076,13 +14151,42 @@
           "custom"
         ]
       },
+      "AvatarHistoryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "uploadedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "current": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "uploadedAt",
+          "current"
+        ],
+        "additionalProperties": false
+      },
       "AvatarIneligibleReason": {
         "type": "string",
         "enum": [
-          "account_too_new",
           "punished",
           "upload_blocked",
-          "daily_limit"
+          "upload_limit",
+          "upload_too_soon"
         ]
       },
       "AvatarReason": {
@@ -12113,14 +14217,16 @@
               "too_large",
               "invalid_image",
               "bad_dimensions",
-              "account_too_new",
               "punished",
               "upload_blocked",
-              "daily_limit",
+              "upload_limit",
+              "upload_too_soon",
+              "not_in_history",
               "no_custom_avatar",
               "own_avatar",
               "already_reported",
-              "report_limit"
+              "report_limit",
+              "report_daily_limit"
             ]
           },
           "message": {
@@ -12194,8 +14300,23 @@
       "StaffAvatarCase": {
         "type": "object",
         "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "avatar"
+            ]
+          },
           "avatar": {
             "$ref": "#/components/schemas/StaffAvatar"
+          },
+          "deadlineAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "lowWeight": {
+            "type": "boolean"
           },
           "account": {
             "type": "object",
@@ -12280,7 +14401,10 @@
           }
         },
         "required": [
+          "kind",
           "avatar",
+          "deadlineAt",
+          "lowWeight",
           "account",
           "reports",
           "previousRemovals",
@@ -12530,6 +14654,12 @@
               "$ref": "#/components/schemas/VipPackage"
             }
           },
+          "planPackages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanPackage"
+            }
+          },
           "eligibility": {
             "nullable": true,
             "allOf": [
@@ -12588,6 +14718,54 @@
           "vip-6m"
         ]
       },
+      "PlanPackage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/PlanPackageId"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/Plan"
+          },
+          "months": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "priceCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "id",
+          "plan",
+          "months",
+          "days",
+          "priceCents"
+        ],
+        "additionalProperties": false
+      },
+      "PlanPackageId": {
+        "type": "string",
+        "enum": [
+          "vip-1m",
+          "vip-3m",
+          "vip-6m",
+          "padrinho-1m",
+          "padrinho-3m",
+          "padrinho-6m"
+        ]
+      },
       "PurchaseEligibility": {
         "type": "string",
         "enum": [
@@ -12625,7 +14803,7 @@
             "$ref": "#/components/schemas/PaymentStatus"
           },
           "package": {
-            "$ref": "#/components/schemas/VipPackageId"
+            "$ref": "#/components/schemas/PlanPackageId"
           },
           "days": {
             "type": "integer",
@@ -12794,7 +14972,7 @@
         "type": "object",
         "properties": {
           "package": {
-            "$ref": "#/components/schemas/VipPackageId"
+            "$ref": "#/components/schemas/PlanPackageId"
           },
           "method": {
             "$ref": "#/components/schemas/PaymentMethod"
@@ -12816,6 +14994,557 @@
           "method",
           "adultDeclaration",
           "declarationVersion"
+        ]
+      },
+      "StaffPaymentPage": {
+        "type": "object",
+        "properties": {
+          "payments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPaymentSummary"
+            }
+          },
+          "nextCursor": {
+            "nullable": true,
+            "type": "string"
+          },
+          "counts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          }
+        },
+        "required": [
+          "payments",
+          "nextCursor",
+          "counts"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPaymentSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "status": {
+            "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "package": {
+            "type": "string"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "amountCents": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "refundedCents": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "method": {
+            "$ref": "#/components/schemas/PaymentMethod"
+          },
+          "provider": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "approvedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "account": {
+            "$ref": "#/components/schemas/StaffPaymentAccount"
+          },
+          "payerName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "payerDocumentMasked": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "package",
+          "days",
+          "amountCents",
+          "refundedCents",
+          "method",
+          "provider",
+          "createdAt",
+          "approvedAt",
+          "account",
+          "payerName",
+          "payerDocumentMasked"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPaymentAccount": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "purchasesBlocked": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "publicId",
+          "displayName",
+          "purchasesBlocked"
+        ],
+        "additionalProperties": false
+      },
+      "StaffCompensationOverview": {
+        "type": "object",
+        "properties": {
+          "activeVips": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "recent": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffCompensationEntry"
+            }
+          }
+        },
+        "required": [
+          "activeVips",
+          "recent"
+        ],
+        "additionalProperties": false
+      },
+      "StaffCompensationEntry": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          },
+          "accounts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "actorName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "actorSteamId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "days",
+          "accounts",
+          "reason",
+          "createdAt",
+          "actorName",
+          "actorSteamId"
+        ],
+        "additionalProperties": false
+      },
+      "StaffCompensationInput": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 30
+          },
+          "key": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 80,
+            "pattern": "^[A-Za-z0-9._:-]+$"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "days",
+          "key",
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "StaffCompensationResult": {
+        "type": "object",
+        "properties": {
+          "accounts": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "accounts",
+          "days"
+        ],
+        "additionalProperties": false
+      },
+      "StaffReconcileInput": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "default": 8,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 400
+          }
+        },
+        "additionalProperties": false
+      },
+      "StaffReconcileResult": {
+        "type": "object",
+        "properties": {
+          "checked": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "changed": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "checked",
+          "changed"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPaymentDetail": {
+        "type": "object",
+        "properties": {
+          "payment": {
+            "$ref": "#/components/schemas/StaffPaymentSummary"
+          },
+          "providerPaymentId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "expiresAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "refundedDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "refundedAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "chargedBackAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "adultDeclaredAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "declarationVersion": {
+            "type": "string"
+          },
+          "failureReason": {
+            "nullable": true,
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "vipEndsAt": {
+            "nullable": true,
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "purchaseBlock": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "at": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "reason": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "at",
+              "reason"
+            ],
+            "additionalProperties": false
+          },
+          "refundable": {
+            "nullable": true,
+            "type": "object",
+            "properties": {
+              "days": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              },
+              "cents": {
+                "type": "integer",
+                "minimum": 0,
+                "exclusiveMinimum": true,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": [
+              "days",
+              "cents"
+            ],
+            "additionalProperties": false
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPaymentEvent"
+            }
+          },
+          "audit": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StaffPaymentAudit"
+            }
+          }
+        },
+        "required": [
+          "payment",
+          "providerPaymentId",
+          "expiresAt",
+          "refundedDays",
+          "refundedAt",
+          "chargedBackAt",
+          "adultDeclaredAt",
+          "declarationVersion",
+          "failureReason",
+          "updatedAt",
+          "vipEndsAt",
+          "purchaseBlock",
+          "refundable",
+          "events",
+          "audit"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPaymentEvent": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "receivedAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "topic": {
+            "nullable": true,
+            "type": "string"
+          },
+          "requestId": {
+            "nullable": true,
+            "type": "string"
+          },
+          "signatureValid": {
+            "type": "boolean"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "detail": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "receivedAt",
+          "topic",
+          "requestId",
+          "signatureValid",
+          "outcome",
+          "detail"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPaymentAudit": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+          },
+          "action": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+          },
+          "actorSteamId": {
+            "type": "string"
+          },
+          "actorName": {
+            "nullable": true,
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {}
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "reason",
+          "createdAt",
+          "actorSteamId",
+          "actorName",
+          "details"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPaymentRefund": {
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500
+          },
+          "days": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3650
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "additionalProperties": false
+      },
+      "StaffPurchasesUnblocked": {
+        "type": "object",
+        "properties": {
+          "publicId": {
+            "type": "integer",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "publicId"
+        ],
+        "additionalProperties": false
+      },
+      "AnalyticsPreference": {
+        "type": "object",
+        "properties": {
+          "participate": {
+            "type": "boolean"
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "participate",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "AnalyticsPreferenceInput": {
+        "type": "object",
+        "properties": {
+          "participate": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "participate"
         ]
       }
     }

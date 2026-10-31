@@ -1,0 +1,29 @@
+# Pontuação DM: quatro taxas contra a população do DM, em torno de 100
+
+A S21 da [spec do beta aberto](../specs/beta-aberto.md) diz que o Deathmatch não tem Rating (não tem round, time nem vitória) e que tem a **Pontuação DM**: abates por minuto, K/D, dano por minuto e HS%, comparados com a população do DM, numa escala própria em torno de **100**, para não ser confundida com o Rating (média 1,00). A spec não fixa a conta. Este ADR a fixa. Ela sai só das somas que o [ADR 0018](0018-eventos-do-jogo-em-lotes-idempotentes.md) já mantém (`account_stats_weekly` e `account_stats_daily`), então não depende da coleta por round (S17, [ADR 0024](0024-coleta-por-round-eventos-brutos-e-resumos.md)) nem do plugin.
+
+## Decisão
+
+- **A conta.** Para cada uma das quatro partes (abates por minuto, K/D, dano por minuto, HS%), o z-score da Conta contra a média e o desvio da população. A Pontuação é `100 + 15 · média dos quatro z`, **peso igual** (como na v1 do Rating). Quem joga como a média tem 100; 15 pontos valem um desvio padrão. Como as quatro partes andam juntas (quem acerta mais mata mais), a média dos z varia menos do que cada parte e a escala real fica um pouco abaixo de 15 de desvio. É a mesma convenção dos testes de QI, conhecida e distante do 1,00 do Rating.
+- **As partes** seguem as definições da S12 (`stats-formulas.ts`): K/D é `kills ÷ max(mortes, 1)`; HS% é `headshots ÷ kills` em %, e vale 0 para quem não fez nenhuma kill; abates e dano por minuto usam os **segundos jogados** da Sessão de jogo. O dano é o dano bruto do ADR 0018 (sem o corte pela vida da vítima, ao contrário do Retake).
+- **Amostra pequena** é puxada para 100: `100 + (bruto − 100) · m ÷ (m + 15)`, com `m` em minutos jogados na janela (`DM_SCORE_PULL_MINUTES`). Quem acabou de cumprir o mínimo do Ranking (30 min) fica a 2/3 do caminho entre 100 e o bruto, e com 5 horas jogadas, a 95%. Mesmo estilo do puxão do Rating, em minutos porque o DM não tem round.
+- **O mínimo para aparecer é o do Ranking do DM:** 30 minutos (`DEATHMATCH_MIN_MINUTES`), decisão do maestro, 2026-10-29, ao aprovar a divisão da S21. Vale para a Conta (na janela dela) e para as Contas que entram na população. Abaixo disso a pontuação é `null`, nunca um número calculado com pouco tempo.
+- **A população** são as Contas do DM com o mínimo de minutos na janela de **90 dias** que termina em hoje (ou, no Ranking de uma semana que já fechou, no domingo dela, para a pontuação de uma semana passada não mudar com o tempo), exceto as anonimizadas. A média e o desvio (da população, `stddev_pop`) saem de uma consulta SQL sobre `account_stats_daily`, que vale 400 dias; o resultado fica 60 s na memória por dia final. **Sem migração, sem job semanal.** Com menos de 20 Contas elegíveis (`DM_SCORE_MIN_POPULATION`) não há média nem desvio que valham, e a pontuação é `null`. Uma parte sem variação na população (desvio 0) vale 0 em z.
+- **Onde aparece.** No Perfil, `dmScore` em `ModeStats` do Deathmatch (e só nele): a pontuação dos **últimos 90 dias**, o número de destaque, contra a população da mesma janela. No Ranking do DM, `dmScore` em cada `RankingEntry`: a pontuação **da semana** da linha, contra a população dos 90 dias. A **ordem do Ranking não muda**: continua por abates por minuto (S21). Os dois campos são opcionais e nulos, então o cliente antigo não quebra. As telas são do P8 da S21.
+
+## Consequences
+
+- **Média 100 ± 1** vale para a população da janela (por construção antes do puxão, e dentro de 1 ponto depois, nos testes). A pontuação de **uma semana** contra a população de 90 dias não precisa ter média 100: a semana tem menos minutos, é puxada mais para o centro e a média da semana pode descolar um pouco.
+- **Limites herdados do ADR 0018:** o tempo é o da Sessão de jogo (com a pessoa parada ou espectando, ele corre), e o dano é bruto: uma arma que passa de 100 de dano numa vítima com pouca vida infla o dano por minuto. As quatro partes pesam igual, então o efeito é limitado, e a conta se refina quando houver o dano limitado no DM.
+- **K/D tem cauda longa** (quem morreu pouco tem K/D alto): infla o desvio e achata o z de todos os outros. Aceito na v1; a comparação por rank (percentil) é a alternativa, descartada por ser menos legível.
+- **A Staff que remove uma entrada do Ranking** (por Conta, Modo e semana, ADR 0018) **não tira a Conta da população**: a remoção não apaga as Estatísticas. Só a Conta anonimizada sai.
+- **Custo de leitura.** Uma agregação sobre as linhas diárias do DM de 90 dias, uma por minuto no máximo por dia final e processo. Se o tráfego crescer, a população pode virar tabela recalculada por job (como as médias do Rating, P3 da S21), sem mudar o contrato.
+- **Constantes ajustáveis** (`packages/contracts/src/dm-score.ts`): 100, 15, 90 dias, 15 minutos de puxão e 20 Contas de população. Os três últimos (15 min, 20 Contas e o espalhamento 15) são escolhas desta fatia, não da spec.
+
+## Considered Options
+
+- **Percentil da população em vez de z-score:** mais legível ("melhor que 80%"), mas não fica "em torno de 100" com média definida, e dois jogadores muito acima da média se confundem. Descartado.
+- **Pontuação só da semana, sem janela de 90 dias:** instável para quem joga pouco por semana; a spec já pede os 90 dias para o número de destaque. Descartado.
+- **População só da semana do Ranking:** nas primeiras semanas do beta seria de poucas Contas e mudaria a cada semana; a de 90 dias é mais estável e é a mesma janela do Rating.
+- **Tabela de médias recalculada toda semana (como o Rating):** guardaria a versão da fórmula, mas é uma migração e um job para uma conta que a consulta responde na hora com as somas diárias. Fica para quando o volume pedir.
+- **Pesos diferentes entre as partes:** não há dado de DM para justificá-los; peso igual, como a v1 do Rating, até haver.

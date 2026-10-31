@@ -4,7 +4,7 @@ updatedAt: 2026-10-12
 version: 0.3.0
 ---
 
-Esta página explica quando você recebe o dinheiro do VIP de volta, como pedir e o que acontece com o seu Período VIP. Ela complementa os [Termos de Uso](/termos).
+Esta página explica quando você recebe o dinheiro do VIP de volta, como pedir e o que acontece com o seu Período VIP. Ela complementa os [Termos de Uso](/terms).
 
 ## Resumo
 
@@ -25,7 +25,7 @@ Toda compra pela internet pode ser desfeita em até 7 dias, pelo Código de Defe
 ## 2. Como pedir
 
 1. **Pelo site, no mesmo lugar da compra:** em "Minhas compras", use **Pedir reembolso** no pagamento. É o caminho principal: a lei garante que você possa desistir pelo mesmo meio que usou para comprar (Decreto 7.962/2013, art. 5º, § 1º).
-2. Ou pela página de [contato](/contato), com o assunto "Reembolso", o seu ID público e o identificador do pagamento (aparece em "Minhas compras" e no comprovante do Mercado Pago).
+2. Ou pela página de [contato](/contact), com o assunto "Reembolso", o seu ID público e o identificador do pagamento (aparece em "Minhas compras" e no comprovante do Mercado Pago).
 3. Também aceitamos o pedido por ticket no Discord do Carmine.
 
 Confirmamos que recebemos o pedido na hora (no site) ou em até 1 dia (contato e Discord).
@@ -46,7 +46,7 @@ Confirmamos que recebemos o pedido na hora (no site) ou em até 1 dia (contato e
 
 ## 5. Indisponibilidade
 
-Quando os Servidores Carmine ficam fora do ar, ou os benefícios do VIP param de chegar ao jogo, por motivos como bloqueio dos tokens pela Valve, atualização do CS2 ou queda da hospedagem (detalhes nos [Termos de Uso](/termos), seção 9):
+Quando os Servidores Carmine ficam fora do ar, ou os benefícios do VIP param de chegar ao jogo, por motivos como bloqueio dos tokens pela Valve, atualização do CS2 ou queda da hospedagem (detalhes nos [Termos de Uso](/terms), seção 9):
 
 - **Mais de 24 horas seguidas:** os dias de VIP ficam congelados durante o problema e são devolvidos automaticamente. Você não precisa pedir.
 - **Mais de 7 dias seguidos:** você pode pedir o reembolso proporcional dos dias de VIP ainda não usados, pelo mesmo caminho da seção 2. O valor é calculado assim: valor pago pelo Pacote × dias não usados ÷ dias do Pacote. [VALIDAR COM ADVOGADO]
@@ -64,7 +64,7 @@ Quando os Servidores Carmine ficam fora do ar, ou os benefícios do VIP param de
 
 Se tiver qualquer problema com um pagamento, fale com a gente antes de pedir a devolução ao seu banco ou ao Mercado Pago (por exemplo, pelo MED, o mecanismo de devolução do Pix). Resolvemos mais rápido por aqui.
 
-Quando um pagamento é devolvido por contestação, o VIP correspondente é retirado. Se a contestação for de um pagamento legítimo, feita para ficar com o VIP sem pagar, ela é tratada como fraude nos [Termos de Uso](/termos), seção 10.
+Quando um pagamento é devolvido por contestação, o VIP correspondente é retirado. Se a contestação for de um pagamento legítimo, feita para ficar com o VIP sem pagar, ela é tratada como fraude nos [Termos de Uso](/terms), seção 10.
 
 ## Base legal e fontes
 

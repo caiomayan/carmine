@@ -145,7 +145,7 @@ test.describe('Painel da Staff', () => {
     await expect(notice).toContainText('72 h');
     await expect(notice.getByRole('link', { name: 'Como recorrer' })).toHaveAttribute(
       'href',
-      '/regras#recurso',
+      '/rules#appeal',
     );
     // Banido não muda nada no site.
     const blocked = await page.request.post('/api/presets', {
@@ -432,11 +432,11 @@ test.describe('Servidores com nome de vitrine e código', () => {
   });
 });
 
-test('as Regras de conduta têm o caminho de recurso em /regras#recurso', async ({ page }) => {
-  await page.goto('/regras#recurso');
+test('as Regras de conduta têm o caminho de recurso em /rules#appeal', async ({ page }) => {
+  await page.goto('/rules#appeal');
   await expect(page.getByRole('heading', { level: 1, name: 'Regras de conduta' })).toBeVisible();
-  await expect(page.locator('#recurso')).toBeVisible();
-  await expect(page.locator('#recurso')).toContainText('Recurso');
+  await expect(page.locator('#appeal')).toBeVisible();
+  await expect(page.locator('#appeal')).toContainText('Recurso');
   // Nada de marcador de revisão jurídica cru na página.
   await expect(page.getByText('[VALIDAR COM ADVOGADO]')).toHaveCount(0);
 });
@@ -477,7 +477,7 @@ test.describe('acessibilidade da moderação (axe)', () => {
       await page.goto(`/${player.publicId}`);
       await expect(page.getByTestId('sanction-badges')).toContainText('Silenciado no chat até');
       expect(await axeViolations(page), `Perfil (${theme})`).toEqual([]);
-      await page.goto('/regras');
+      await page.goto('/rules');
       expect(await axeViolations(page), `regras (${theme})`).toEqual([]);
       await owner.page.context().close();
     });

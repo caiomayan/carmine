@@ -37,6 +37,8 @@ export interface Account {
   lastConnectedAt: Date | null;
   /** `!chat off`: não vê o chat dos outros no jogo. */
   chatHidden: boolean;
+  /** A última curiosidade mostrada no connect (S16). */
+  lastCuriosity: string | null;
   /** Anonimizada por um pedido de exclusão de dados (S08); nulo: Conta normal. */
   anonymizedAt: Date | null;
   createdAt: Date;
@@ -48,6 +50,12 @@ export type ConnectedAccount = Pick<
   'publicId' | 'displayName' | 'isFirstConnect' | 'chatHidden'
 > & {
   accountId: string;
+  /** A Conta nasceu neste connect (o analytics mede `conta_criada`). */
+  created: boolean;
+  /** A Conta já entrou no site alguma vez. */
+  claimed: boolean;
+  /** Quando o connect aconteceu (o horário do plugin, se válido): o do fato, não o do envio. */
+  connectedAt: Date;
 };
 
 type AccountRow = typeof accounts.$inferSelect;
@@ -82,13 +90,16 @@ export class AccountsService {
       );
       if (result) {
         this.avatars.refreshInBackground(result.account);
-        const { account, isFirstConnect } = result;
+        const { account, isFirstConnect, created } = result;
         return {
           accountId: account.id,
           publicId: account.publicId,
           displayName: account.displayName,
           isFirstConnect,
           chatHidden: account.chatHidden,
+          created,
+          claimed: account.claimedAt !== null,
+          connectedAt,
         };
       }
     }
@@ -102,7 +113,9 @@ export class AccountsService {
    * fusão. `firstLogin` diz se foi este login que reivindicou a Conta; sob logins simultâneos,
    * só um deles.
    */
-  async claimOnLogin(steamId: string): Promise<{ account: Account; firstLogin: boolean }> {
+  async claimOnLogin(
+    steamId: string,
+  ): Promise<{ account: Account; firstLogin: boolean; created: boolean }> {
     const known = await this.findBySteamId(steamId);
     const summary =
       known && known.anonymizedAt === null ? null : await this.avatars.lookup(steamId);
@@ -165,7 +178,7 @@ export class AccountsService {
     tx: Transaction,
     connect: PlayerConnect,
     connectedAt: Date,
-  ): Promise<{ account: Account; isFirstConnect: boolean } | null> {
+  ): Promise<{ account: Account; isFirstConnect: boolean; created: boolean } | null> {
     const steamId = BigInt(connect.steamId);
     const [found] = await tx
       .select()
@@ -176,7 +189,7 @@ export class AccountsService {
 
     if (existing?.anonymizedAt) {
       // Anonimizada com um ban valendo: o ban continua, mas o nome não volta.
-      return { account: toAccount(existing), isFirstConnect: false };
+      return { account: toAccount(existing), isFirstConnect: false, created: false };
     }
     if (existing) {
       const [updated] = await tx
@@ -197,6 +210,7 @@ export class AccountsService {
       return {
         account: toAccount(updated as AccountRow),
         isFirstConnect: existing.firstConnectedAt === null,
+        created: false,
       };
     }
 
@@ -204,7 +218,7 @@ export class AccountsService {
       firstConnectedAt: connectedAt,
       lastConnectedAt: connectedAt,
     });
-    return created ? { account: created, isFirstConnect: true } : null;
+    return created ? { account: created, isFirstConnect: true, created: true } : null;
   }
 
   /** `null` quando um connect do mesmo jogador criou a Conta no meio do caminho. */
@@ -213,7 +227,7 @@ export class AccountsService {
     steamId: bigint,
     summary: SteamSummary | null,
     now: Date,
-  ): Promise<{ account: Account; firstLogin: boolean } | null> {
+  ): Promise<{ account: Account; firstLogin: boolean; created: boolean } | null> {
     const [found] = await tx
       .select()
       .from(accounts)
@@ -223,14 +237,14 @@ export class AccountsService {
     if (existing) {
       // Anonimizada com um ban valendo: entra só para ver o ban, sem reivindicar nada de novo.
       if (existing.claimedAt !== null || existing.anonymizedAt !== null) {
-        return { account: toAccount(existing), firstLogin: false };
+        return { account: toAccount(existing), firstLogin: false, created: false };
       }
       const [claimed] = await tx
         .update(accounts)
         .set({ claimedAt: now })
         .where(eq(accounts.id, existing.id))
         .returning();
-      return { account: toAccount(claimed as AccountRow), firstLogin: true };
+      return { account: toAccount(claimed as AccountRow), firstLogin: true, created: false };
     }
     const created = await insertAccount(tx, steamId, summary?.personaName ?? '', {
       claimedAt: now,
@@ -238,7 +252,7 @@ export class AccountsService {
       avatarFetchedAt: summary ? now : null,
       steamAvatarUrl: summary?.avatarUrl ?? null,
     });
-    return created ? { account: created, firstLogin: true } : null;
+    return created ? { account: created, firstLogin: true, created: true } : null;
   }
 }
 
@@ -307,6 +321,36 @@ async function insertAccount(
     .onConflictDoNothing({ target: accounts.steamId })
     .returning();
   return created ? toAccount(created) : null;
+}
+
+/**
+ * Garante a Conta de cada SteamID64 humano que chegou em eventos do jogo sem Conta (o connect não
+ * foi registrado, a API estava fora...): quem joga num Servidor Carmine já é uma Conta, não
+ * reivindicada, e tudo dele conta como o de qualquer outra. Cria pelo mesmo caminho do connect
+ * (`insertAccount`, com o ID público novo e o nome fictício, porque o evento não traz nome Steam) e
+ * na transação de quem chamou. Devolve só as Contas criadas agora (SteamID64 → ID da Conta); as que
+ * outra transação criou no meio do caminho são relidas, e esta não as devolve como criadas.
+ */
+export async function createUnclaimedAccounts(
+  tx: Transaction,
+  steamIds: readonly string[],
+): Promise<{ created: Map<string, string>; existing: Map<string, string> }> {
+  const created = new Map<string, string>();
+  const existing = new Map<string, string>();
+  // Ordem fixa, para dois lotes com os mesmos jogadores novos não se travarem um no outro.
+  for (const steamId of [...steamIds].sort()) {
+    const account = await insertAccount(tx, BigInt(steamId), '', {});
+    if (account) {
+      created.set(steamId, account.id);
+      continue;
+    }
+    const [found] = await tx
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(eq(accounts.steamId, BigInt(steamId)));
+    if (found) existing.set(steamId, found.id);
+  }
+  return { created, existing };
 }
 
 /** Próximo `n` da sequência do Postgres: único mesmo entre transações simultâneas. */

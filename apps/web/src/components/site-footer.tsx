@@ -59,13 +59,13 @@ export async function SiteFooter() {
   // O mapa em destaque (o do servidor mais cheio agora) aparece dentro das letras do wordmark.
   const map = featuredMap(servers?.servers);
 
-  const community: FooterLink[] = [{ label: t('links.rules'), href: '/regras' }];
+  const community: FooterLink[] = [{ label: t('links.rules'), href: '/rules' }];
   if (discord) community.push({ label: t('links.discord'), href: discord.href, external: true });
 
   return (
     <footer data-site-footer className="relative overflow-hidden">
       <CurtainController />
-      <div className="container-page pt-12 max-md:pt-8">
+      <div data-ft="top" className="container-page pt-12 max-md:pt-8">
         {/* A faixa viva: o estado dos servidores (resumo ao vivo) e o último acontecimento. */}
         <NextIntlClientProvider
           messages={{ shell: { footer: { status, last } }, activity: messages.activity }}
@@ -75,7 +75,10 @@ export async function SiteFooter() {
             <FooterLastEvent initial={activity} />
           </div>
         </NextIntlClientProvider>
-        <div className="grid grid-cols-2 gap-x-7 gap-y-9 pt-14 pb-10 max-md:gap-x-5 max-md:gap-y-7 max-md:pt-10 max-md:pb-7 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))] lg:gap-10">
+        <div
+          data-ft="links"
+          className="grid grid-cols-2 gap-x-7 gap-y-9 pt-14 pb-10 max-md:gap-x-5 max-md:gap-y-7 max-md:pt-10 max-md:pb-7 lg:grid-cols-[minmax(0,1.5fr)_repeat(3,minmax(0,1fr))] lg:gap-10"
+        >
           <div className="col-span-2 grid content-start gap-4.5 lg:col-span-1">
             <Link
               href="/"
@@ -85,7 +88,10 @@ export async function SiteFooter() {
               <Seal size={44} />
               <Wordmark className="h-6 w-auto overflow-visible" />
             </Link>
-            <p className="max-w-[34ch] text-[13.5px] leading-[1.55] text-muted-foreground">
+            <p
+              data-ft="tagline"
+              className="max-w-[34ch] text-[13.5px] leading-[1.55] text-muted-foreground"
+            >
               {t('tagline')}
             </p>
             {SOCIAL_LINKS.length > 0 ? (
@@ -114,7 +120,7 @@ export async function SiteFooter() {
               title={t('columns.play')}
               links={[
                 { label: t('links.servers'), href: '/' },
-                { label: t('links.inventory'), href: '/inventario' },
+                { label: t('links.inventory'), href: '/inventory' },
                 { label: t('links.ranking'), href: '/ranking' },
               ]}
             />
@@ -122,15 +128,18 @@ export async function SiteFooter() {
             <FooterColumn
               title={t('columns.legal')}
               links={[
-                { label: t('links.terms'), href: '/termos' },
-                { label: t('links.privacy'), href: '/privacidade' },
-                { label: t('links.refund'), href: '/reembolso' },
-                { label: t('links.contact'), href: '/contato' },
+                { label: t('links.terms'), href: '/terms' },
+                { label: t('links.privacy'), href: '/privacy' },
+                { label: t('links.refund'), href: '/refunds' },
+                { label: t('links.contact'), href: '/contact' },
               ]}
             />
           </nav>
         </div>
-        <div className="flex flex-wrap justify-between gap-x-6 gap-y-2 pt-5 pb-9 text-xs text-muted-foreground">
+        <div
+          data-ft="legal"
+          className="flex flex-wrap justify-between gap-x-6 gap-y-2 pt-5 pb-9 text-xs text-muted-foreground"
+        >
           <p>{t('copyright', { year: new Date().getFullYear() })}</p>
           <p className="max-w-[70ch]">{t('disclaimer')}</p>
         </div>

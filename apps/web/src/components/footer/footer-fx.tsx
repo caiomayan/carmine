@@ -14,8 +14,9 @@ import './footer.css';
 
 /**
  * Rodapé fixo atrás e conteúdo que sobe revelando-o no fim da página (a cortina). Só no desktop
- * (1024 px ou mais), sem movimento reduzido e com o rodapé menor que a tela; no celular e com
- * movimento reduzido o rodapé fica no fluxo normal. Mede o rodapé e grava `--footer-h` para o
+ * (1024 px ou mais), sem movimento reduzido e com o rodapé até 85 % da altura da janela; em janela baixa
+ * (notebook) o CSS encolhe os respiros do rodapé para ele caber (`footer.css`). No celular, com
+ * movimento reduzido e onde ainda assim não cabe, o rodapé fica no fluxo normal (no desktop, subindo ao entrar). Mede o rodapé e grava `--footer-h` para o
  * conteúdo deixar essa folga embaixo. `?curtain=0` desliga a cortina (capturas de tela inteira).
  */
 export function CurtainController() {
@@ -131,7 +132,7 @@ export function FooterLastEvent({ initial }: { initial: ActivityView | null }) {
     const poll = async () => {
       if (document.hidden) return;
       try {
-        const response = await fetch('/atividade/recentes', {
+        const response = await fetch('/activity/recent', {
           headers: { accept: 'application/json' },
         });
         if (!response.ok || stopped) return;
