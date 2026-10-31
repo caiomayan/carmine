@@ -12,7 +12,7 @@ Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turbor
 - **Como operar**: [`docs/operacao/`](docs/operacao/) (deploy, homologação, CS2, pagamentos, foto, Discord).
 
 ## Fluxo
-- O trabalho vem de issues: o maestro manda `/implement <issue>`. Um PR por issue, com `Closes #N`. Falha de segurança e dado pessoal nunca entram em issue, porque o repositório é público.
+- O trabalho vem de issues: o maestro manda `/implement <issue>`. Um PR por issue, citando `Issue #N` na descrição; o GitHub só fecha issue sozinho no branch padrão (`main`), então o maestro fecha a issue ao fazer o merge no `dev`. Ao seguir `/implement`, a suíte completa é a CI do PR; localmente, só o leve do pacote. Falha de segurança e dado pessoal nunca entram em issue, porque o repositório é público.
 - Branch curto a partir do `dev`, PR para o `dev`. A **CI do PR é a verificação**: verify, integração, E2E em 3 partes e .NET, agregados no check `node`. Localmente, rode só o leve do pacote que você tocou (lint, typecheck, unit); build e E2E completos ficam para a CI.
 - O `main` é produção e só recebe PR de uma branch de release congelada (`release/<data><letra>`).
 - Commits em português, no formato `tipo(escopo): o que mudou` (`feat(web): ...`, `fix(api): ...`, `test(e2e): ...`, `docs(specs): ...`).

@@ -5,7 +5,7 @@ Issues for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 ## Rules of this repo
 
 - **The repo is public, so issues are public.** Never put a security flaw, personal data, IPs, internal hostnames, key names or tokens in an issue, comment or PR.
-- **One ticket, one PR to `dev`.** The PR closes its ticket with `Closes #N`. Do not use an integration branch: CI on each PR is the verification, and the maestro merges.
+- **One ticket, one PR to `dev`.** The PR body cites `Issue #N`. GitHub only auto-closes from PRs to the default branch (`main`), so the maestro closes the ticket right after merging to `dev`: `gh issue close N --comment "Merged to dev in #PR"`. Do not use an integration branch: CI on each PR is the verification, and the maestro merges.
 - **Order:** tickets are created in priority order. A ticket blocked by another says so in native dependencies or in a `Blocked by` line.
 
 ## Conventions
