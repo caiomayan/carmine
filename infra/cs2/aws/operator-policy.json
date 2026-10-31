@@ -14,16 +14,27 @@
     {
       "Sid": "LigarDesligarSoACarmine",
       "Effect": "Allow",
-      "Action": ["ec2:StartInstances", "ec2:StopInstances"],
+      "Action": [
+        "ec2:StartInstances",
+        "ec2:StopInstances"
+      ],
       "Resource": "arn:aws:ec2:sa-east-1:*:instance/*",
-      "Condition": { "StringEquals": { "aws:ResourceTag/Name": "carmine-cs2-beta" } }
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Name": "carmine-cs2-beta"
+        }
+      }
     },
     {
       "Sid": "TerminalPorSSMSoNaCarmine",
       "Effect": "Allow",
       "Action": "ssm:StartSession",
       "Resource": "arn:aws:ec2:sa-east-1:*:instance/*",
-      "Condition": { "StringEquals": { "aws:ResourceTag/Name": "carmine-cs2-beta" } }
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Name": "carmine-cs2-beta"
+        }
+      }
     },
     {
       "Sid": "SessaoSSMDocumento",
@@ -34,8 +45,39 @@
     {
       "Sid": "EncerrarAPropriaSessao",
       "Effect": "Allow",
-      "Action": ["ssm:TerminateSession", "ssm:ResumeSession"],
+      "Action": [
+        "ssm:TerminateSession",
+        "ssm:ResumeSession"
+      ],
       "Resource": "arn:aws:ssm:*:*:session/${aws:username}-*"
+    },
+    {
+      "Sid": "ComandosPorSSMSoNaCarmine",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": "arn:aws:ec2:sa-east-1:*:instance/*",
+      "Condition": {
+        "StringEquals": {
+          "aws:ResourceTag/Name": "carmine-cs2-beta"
+        }
+      }
+    },
+    {
+      "Sid": "ComandosSoComShell",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": "arn:aws:ssm:sa-east-1::document/AWS-RunShellScript"
+    },
+    {
+      "Sid": "LerResultadoDosComandos",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetCommandInvocation",
+        "ssm:ListCommandInvocations",
+        "ssm:ListCommands",
+        "ssm:CancelCommand"
+      ],
+      "Resource": "*"
     }
   ]
 }
