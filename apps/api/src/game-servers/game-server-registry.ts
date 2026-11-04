@@ -4,7 +4,7 @@ import {
   type ServerRegion,
   serverHostname,
 } from '@carmine/contracts';
-import { and, asc, eq, isNull, like } from 'drizzle-orm';
+import { and, asc, eq, isNull, like, sql } from 'drizzle-orm';
 import { DatabaseError } from 'pg';
 import { z } from 'zod';
 import type { Database } from '../database/database.js';
@@ -96,6 +96,39 @@ export class GameServerRegistry {
       }
       throw error;
     }
+  }
+
+  /**
+   * Cadastra (ou refaz) servidores com chave JÁ conhecida: só para o teste de carga da homologação, onde a
+   * chave é derivada de um segredo (`load-test-servers.ts`). Se o nome existe, vale a chave nova e o servidor
+   * volta a operar. Devolve quantos foram gravados.
+   */
+  async upsertWithKeys(
+    entries: ReadonlyArray<GameServerRegistration & { key: string }>,
+  ): Promise<number> {
+    const rows = entries.map(({ key, ...input }) => {
+      const parsed = registrationSchema.safeParse(input);
+      if (!parsed.success) {
+        throw new GameServerRegistryError(parsed.error.issues.map((i) => i.message).join('; '));
+      }
+      return { ...parsed.data, keyHash: hashServerKey(key) };
+    });
+    for (let start = 0; start < rows.length; start += 100) {
+      await this.db
+        .insert(gameServers)
+        .values(rows.slice(start, start + 100))
+        .onConflictDoUpdate({
+          target: gameServers.name,
+          set: {
+            mode: sql`excluded.mode`,
+            address: sql`excluded.address`,
+            keyHash: sql`excluded.key_hash`,
+            keyRotatedAt: new Date(),
+            retiredAt: null,
+          },
+        });
+    }
+    return rows.length;
   }
 
   /** Troca a chave do servidor; a anterior para de funcionar na hora. */

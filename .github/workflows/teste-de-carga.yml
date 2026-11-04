@@ -1,0 +1,204 @@
+# Teste de carga da homologação (dev.stcarmine.com): sobe a escada de servidores e visitantes simultâneos até
+# achar o limite da VM, de fora dela, como um jogador de verdade (docs/operacao/teste-de-carga.md).
+#
+#   - SÓ manual ("Run workflow"), e SÓ contra a homologação: a URL está fixa abaixo, não é entrada.
+#   - A homologação divide a VM com a produção. Por isso o teste é de madrugada, tem uma sonda da produção que
+#     ABORTA tudo se ela piorar, e este workflow recusa rodar sem o "estou ciente" e sem o deploy da
+#     homologação pausado (um merge no dev no meio do teste redeployaria a pilha).
+#   - O limite de p95 não tem padrão: quem dispara decide e informa (a spec não fixa o número).
+#   - O GitHub só oferece "Run workflow" com este arquivo no branch padrão (como o deploy-hml.yml).
+#
+# Antes de rodar (o dono/maestro, na VM e na Cloudflare; nada disto é feito por este workflow):
+#   secrets  LOADTEST_CF_ACCESS_CLIENT_ID, LOADTEST_CF_ACCESS_CLIENT_SECRET (service token do Access com política
+#            Service Auth em dev.stcarmine.com) e LOADTEST_KEY_SECRET (deriva as chaves dos servidores carga-*);
+#   variável DEPLOY_HML_PAUSED=true;
+#   VM       servidores carga-* cadastrados (`servers load-test`) e RATE_LIMIT_PUBLIC_PER_MINUTE alto no .env.
+name: Teste de carga
+
+on:
+  workflow_dispatch:
+    inputs:
+      ciente:
+        description: "Estou ciente: o teste carrega a VM da produção e o dono sabe (marque para rodar)."
+        required: true
+        type: boolean
+        default: false
+      grupos:
+        description: "Quais escadas, em ordem (coleta, api, paginas), separadas por vírgula."
+        required: true
+        type: string
+        default: "coleta,api,paginas"
+      p95_coleta_ms:
+        description: "Limite de p95 da coleta por round (ms). Sem padrão: decida antes."
+        required: true
+        type: string
+      p95_api_ms:
+        description: "Limite de p95 da leitura da API (ms). Sem padrão: decida antes."
+        required: true
+        type: string
+      p95_paginas_ms:
+        description: "Limite de p95 das páginas (ms). Sem padrão: decida antes."
+        required: true
+        type: string
+      passos_coleta:
+        description: "Servidores simultâneos de cada passo da coleta."
+        required: true
+        type: string
+        default: "10,25,50,100,200"
+      passos_api:
+        description: "Visitantes simultâneos de cada passo da leitura da API."
+        required: true
+        type: string
+        default: "10,25,50,100,200"
+      passos_paginas:
+        description: "Visitantes simultâneos de cada passo das páginas."
+        required: true
+        type: string
+        default: "10,25,50,100"
+      max_erros:
+        description: "Fração de erros que para o passo (0.01 = 1%)."
+        required: true
+        type: string
+        default: "0.01"
+      segura_s:
+        description: "Segundos no patamar de cada passo."
+        required: true
+        type: string
+        default: "120"
+      pausa_s:
+        description: "Segundos de pausa entre passos (a VM respira)."
+        required: true
+        type: string
+        default: "30"
+      fundo:
+        description: "Servidores de fundo batendo o coração durante a leitura da API."
+        required: true
+        type: string
+        default: "40"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: teste-de-carga
+  cancel-in-progress: false
+
+env:
+  K6_VERSION: "2.3.0"
+  # sha256 de k6-v2.3.0-linux-amd64.tar.gz, do arquivo de checksums oficial da release.
+  K6_SHA256: "39c3117b6af817592dcd0ce4242105c0a7af10948c2a425306f0be8f7a8a8ab1"
+  # Fixos de propósito: o teste nunca aponta para outro lugar. A sonda olha a produção, só leitura.
+  BASE_URL: "https://dev.stcarmine.com"
+  PROD_URL: "https://stcarmine.com"
+
+jobs:
+  carga:
+    name: carga
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - name: Conferir as travas
+        env:
+          CIENTE: ${{ inputs.ciente }}
+          PAUSED: ${{ vars.DEPLOY_HML_PAUSED }}
+          HAS_SECRETS: ${{ secrets.LOADTEST_CF_ACCESS_CLIENT_ID != '' && secrets.LOADTEST_CF_ACCESS_CLIENT_SECRET != '' && secrets.LOADTEST_KEY_SECRET != '' }}
+          GRUPOS: ${{ inputs.grupos }}
+        run: |
+          set -euo pipefail
+          [ "$CIENTE" = true ] || { echo "::error::Marque \"Estou ciente\": o teste carrega a VM da produção."; exit 1; }
+          [ "$PAUSED" = true ] || { echo "::error::Pause o deploy da homologação antes (variável DEPLOY_HML_PAUSED=true): um merge no dev no meio do teste redeployaria a pilha."; exit 1; }
+          [ "$HAS_SECRETS" = true ] || { echo "::error::Faltam os secrets LOADTEST_CF_ACCESS_CLIENT_ID, LOADTEST_CF_ACCESS_CLIENT_SECRET e LOADTEST_KEY_SECRET (docs/operacao/teste-de-carga.md)."; exit 1; }
+          for g in ${GRUPOS//,/ }; do
+            case "$g" in coleta|api|paginas) ;; *) echo "::error::grupo desconhecido: $g"; exit 1 ;; esac
+          done
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Instalar o k6 (versão e hash fixos)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o k6.tar.gz "https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz"
+          echo "${K6_SHA256}  k6.tar.gz" | sha256sum -c -
+          tar -xzf k6.tar.gz --strip-components=1 -C "$RUNNER_TEMP" "k6-v${K6_VERSION}-linux-amd64/k6"
+          "$RUNNER_TEMP/k6" version
+
+      - name: Derivar as chaves dos servidores de teste
+        env:
+          LOADTEST_KEY_SECRET: ${{ secrets.LOADTEST_KEY_SECRET }}
+          PASSOS: ${{ inputs.passos_coleta }},${{ inputs.passos_api }},${{ inputs.passos_paginas }}
+          FUNDO: ${{ inputs.fundo }}
+        run: |
+          set -euo pipefail
+          maior=$FUNDO
+          for n in ${PASSOS//,/ }; do [ "$n" -gt "$maior" ] && maior=$n; done
+          # A coleta usa o id da VU como índice (o passo mais a sonda): 10 de folga cobrem.
+          total=$((maior + 10))
+          [ "$total" -le 500 ] || { echo "::error::passo grande demais ($maior): o limite é 490 servidores"; exit 1; }
+          node infra/teste-de-carga/bin/chaves.mjs --count "$total" --out "$RUNNER_TEMP/chaves.txt" --mask
+          echo "CHAVES_TOTAL=$total" >> "$GITHUB_ENV"
+
+      - name: Conferir o acesso à homologação
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.LOADTEST_CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.LOADTEST_CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          for caminho in /api/health /; do
+            codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+              -H "CF-Access-Client-Id: $CF_ACCESS_CLIENT_ID" -H "CF-Access-Client-Secret: $CF_ACCESS_CLIENT_SECRET" \
+              "$BASE_URL$caminho")
+            [ "$codigo" = 200 ] || { echo "::error::$caminho respondeu $codigo (esperado 200): confira o service token e a política Service Auth do Access."; exit 1; }
+          done
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$PROD_URL/api/health")
+          [ "$codigo" = 200 ] || { echo "::error::a produção (sonda) respondeu $codigo: não é hora de testar."; exit 1; }
+
+      - name: Subir as escadas
+        env:
+          CF_ACCESS_CLIENT_ID: ${{ secrets.LOADTEST_CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.LOADTEST_CF_ACCESS_CLIENT_SECRET }}
+          GRUPOS: ${{ inputs.grupos }}
+          P95_COLETA: ${{ inputs.p95_coleta_ms }}
+          P95_API: ${{ inputs.p95_api_ms }}
+          P95_PAGINAS: ${{ inputs.p95_paginas_ms }}
+          PASSOS_COLETA: ${{ inputs.passos_coleta }}
+          PASSOS_API: ${{ inputs.passos_api }}
+          PASSOS_PAGINAS: ${{ inputs.passos_paginas }}
+          MAX_ERROS: ${{ inputs.max_erros }}
+          SEGURA_S: ${{ inputs.segura_s }}
+          PAUSA_S: ${{ inputs.pausa_s }}
+          FUNDO: ${{ inputs.fundo }}
+        run: |
+          set -uo pipefail
+          export K6_BIN="$RUNNER_TEMP/k6" KEYS_FILE="$RUNNER_TEMP/chaves.txt"
+          mkdir -p resultados
+          final=0
+          for grupo in ${GRUPOS//,/ }; do
+            case "$grupo" in
+              coleta) p95=$P95_COLETA; passos=$PASSOS_COLETA ;;
+              api) p95=$P95_API; passos=$PASSOS_API ;;
+              paginas) p95=$P95_PAGINAS; passos=$PASSOS_PAGINAS ;;
+            esac
+            echo "::group::escada $grupo ($passos, p95 < ${p95} ms)"
+            node infra/teste-de-carga/bin/escada.mjs --grupo "$grupo" --passos "$passos" --p95 "$p95" \
+              --max-erros "$MAX_ERROS" --segura "$SEGURA_S" --pausa "$PAUSA_S" --saida resultados
+            codigo=$?
+            echo "::endgroup::"
+            if [ "$codigo" = 3 ]; then
+              echo "::error::A sonda abortou o teste: a produção piorou durante a escada $grupo. Os grupos seguintes não rodaram."
+              final=3; break
+            elif [ "$codigo" != 0 ]; then
+              echo "::error::A escada $grupo falhou por defeito no roteiro (código $codigo)."
+              final=$codigo; break
+            fi
+            sleep "$PAUSA_S"
+          done
+          exit "$final"
+
+      - name: Guardar os resultados
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: resultados-teste-de-carga
+          path: resultados/
+          if-no-files-found: ignore
+          retention-days: 30

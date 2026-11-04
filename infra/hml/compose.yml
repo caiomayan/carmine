@@ -54,6 +54,9 @@ x-api-env: &api-env
   PAYMENTS_DATA_KEY_FILE: /keys/payments-data-key
   SENTRY_ENVIRONMENT: staging
   SENTRY_RELEASE: ${IMAGE_TAG}
+  # Teste de carga (docs/operacao/teste-de-carga.md): o gerador sai de poucos IPs, e o limite `public` conta por IP.
+  # O padrão é o da produção; só durante a rodada o `.env` da VM põe um valor alto (não é segredo) e tira depois.
+  RATE_LIMIT_PUBLIC_PER_MINUTE: ${RATE_LIMIT_PUBLIC_PER_MINUTE:-240}
 
 # O que a demonstração (apps/api/src/demo) lê; a API de verdade não recebe nada disso.
 x-demo-env: &demo-env
