@@ -165,6 +165,7 @@ describe('CLI de Servidores Carmine', () => {
       CARMINE_DEMO: 'homologacao',
       PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
       SENTRY_ENVIRONMENT: 'staging',
+      SENTRY_ENVIRONMENT: 'staging',
       LOADTEST_KEY_SECRET: secret,
     };
 
@@ -198,6 +199,7 @@ describe('CLI de Servidores Carmine', () => {
     const curto = {
       ...producao,
       PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
+      SENTRY_ENVIRONMENT: 'staging',
       LOADTEST_KEY_SECRET: 'curto',
     };
 
