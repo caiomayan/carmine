@@ -138,7 +138,7 @@ Sem `PROD_URL` a sonda não roda. Para ver a sonda abortar: `PROD_URL=<a própri
 
 ## Resultados
 
-**Rodada 1:** 2026-11-05, de madrugada, do notebook do maestro (rede de casa, k6 2.3.0), contra a homologação no commit do  depois do #281. Limites de p95 aprovados pelo dono: coleta 500 ms, API 500 ms, páginas 1.500 ms. Degraus: 10, 25, 50, 100, 200 (coleta e API) e 10, 25, 50, 100 (páginas), com 120 s em cada patamar.
+**Rodada 1:** 2026-11-05, de madrugada, do notebook do maestro (rede de casa, k6 2.3.0), contra a homologação no commit do `dev` depois do #281. Limites de p95 aprovados pelo dono: coleta 500 ms, API 500 ms, páginas 1.500 ms. Degraus: 10, 25, 50, 100, 200 (coleta e API) e 10, 25, 50, 100 (páginas), com 120 s em cada patamar.
 
 ### Limites encontrados
 
@@ -174,7 +174,7 @@ O CPU é a soma dos contêineres, em que 100 equivale a um núcleo (a VM tem 2, 
 _Proposta do maestro, ainda não aprovada pelo dono._ A margem é de metade do último degrau que aguentou, na homologação, que é o piso: a produção tem os mesmos 2 núcleos, com limites de memória maiores.
 
 - **Coleta:** 50 servidores Carmine jogando ao mesmo tempo.
-- **API:** 100 visitantes simultâneos lendo Ranking, Servidores e .
+- **API:** 100 visitantes simultâneos lendo Ranking, Servidores e `/api/me`.
 - **Páginas:** 25 visitantes simultâneos navegando (Home e Ranking).
 
 Com o beta dando uns poucos servidores e o Perfil ainda não medido, o primeiro limite real a vigiar é o das **páginas**.
