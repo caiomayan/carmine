@@ -130,8 +130,19 @@ test('o editor do Servidor devolve o foco, fecha com Esc e o Cancelar limpa o er
   await expect(form.getByRole('alert')).toHaveCount(0);
 
   // Os dois campos começam no mesmo topo e têm a mesma altura.
-  const name = await card.getByTestId('server-showcase-name').boundingBox();
-  const code = await card.getByTestId('server-code-input').boundingBox();
-  expect(Math.abs((name?.y ?? 0) - (code?.y ?? 99))).toBeLessThan(1);
-  expect(Math.abs((name?.height ?? 0) - (code?.height ?? 99))).toBeLessThan(1);
+  // O cartão entra com uma animação de subida (stp-rise) e a fonte pode trocar logo após abrir: mede os dois campos
+  // juntos, no mesmo instante, e repete até assentar, sem afrouxar a tolerância.
+  await expect
+    .poll(
+      async () => {
+        const [name, code] = await Promise.all([
+          card.getByTestId('server-showcase-name').boundingBox(),
+          card.getByTestId('server-code-input').boundingBox(),
+        ]);
+        if (!name || !code) return 99;
+        return Math.max(Math.abs(name.y - code.y), Math.abs(name.height - code.height));
+      },
+      { message: 'os dois campos começam no mesmo topo e têm a mesma altura' },
+    )
+    .toBeLessThan(1);
 });
