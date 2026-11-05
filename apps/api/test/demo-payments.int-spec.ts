@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { count, eq, inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { AccountsService } from '../src/accounts/accounts.service.js';
 import { Catalog } from '../src/catalog/catalog.js';
