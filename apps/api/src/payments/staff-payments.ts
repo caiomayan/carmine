@@ -214,7 +214,12 @@ export class StaffPayments {
       await this.payments.refundByStaff(
         id,
         { actorSteamId: actor.steamId, reason: body.reason },
-        body.days === undefined ? {} : { days: body.days },
+        {
+          ...(body.days === undefined ? {} : { days: body.days }),
+          ...(body.expectedRefundedDays === undefined
+            ? {}
+            : { expectedRefundedDays: body.expectedRefundedDays }),
+        },
       );
     } catch (error) {
       throw translate(error);
