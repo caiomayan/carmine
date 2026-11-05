@@ -10,6 +10,8 @@ import { loadConfig } from '../config/config.js';
 import { DATABASE } from '../database/database.module.js';
 import { Inventory } from '../inventory/inventory.js';
 import { Loadouts } from '../loadout/loadouts.js';
+import { Payments } from '../payments/payments.js';
+import { PAYMENTS_GATEWAY } from '../payments/payments.module.js';
 import { StaffRoles } from '../staff/staff-roles.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import type { DemoSettings } from './demo-guard.js';
@@ -43,6 +45,10 @@ export async function runSeed(settings: DemoSettings, log: (line: string) => voi
           files: get(AvatarFiles),
           moderation: get(AvatarModeration),
           enabled: get(Avatars).enabled,
+        },
+        payments: {
+          payments: get(Payments),
+          gateway: app.get(PAYMENTS_GATEWAY, { strict: false }),
         },
       },
       settings,

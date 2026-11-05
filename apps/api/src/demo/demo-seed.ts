@@ -20,6 +20,7 @@ import {
   weekStatsOf,
 } from './demo-history.js';
 import { demoWardrobe } from './demo-items.js';
+import { type PaymentSeedServices, seedDemoPayments } from './demo-payments.js';
 
 export interface SeedServices {
   db: Database;
@@ -31,6 +32,8 @@ export interface SeedServices {
   catalog: Catalog;
   /** Foto de perfil (R2 de mídia); sem isto, ou com a mídia desligada, a foto de demonstração não é semeada. */
   avatars?: AvatarSeedServices;
+  /** Pagamentos pelo caminho real, com o provedor falso; sem isto, ou com outro provedor, não semeia. */
+  payments?: PaymentSeedServices;
 }
 
 /** Quantos dias de VIP a demonstração concede (renovado quando acaba, a cada deploy). */
@@ -120,6 +123,14 @@ export async function seedDemo(
       now,
       log,
     );
+  }
+
+  if (services.payments) {
+    // Contas sem VIP de partida (o VIP delas nasce da compra): fora a da foto, que já tem o próprio cenário.
+    const buyers = DEMO_PLAYERS.filter((player) => !player.vip && player !== photoPlayer)
+      .slice(0, 3)
+      .map((player) => accountIds.get(player.steamId) as string);
+    await seedDemoPayments(db, services.payments, buyers, owner, now, log);
   }
 
   await insertStats(db, statsRows);
