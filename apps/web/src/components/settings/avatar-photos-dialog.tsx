@@ -12,8 +12,8 @@ import {
 } from '@/components/animate-ui/components/radix/dialog';
 import { Avatar } from '@/components/avatar';
 import { useSession } from '@/components/session/session-provider';
-import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import { parseAvatarState } from '@/lib/api-guards';
 
 type Change = 'chosen' | 'deleted' | 'reverted';

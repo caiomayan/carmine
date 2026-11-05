@@ -21,7 +21,7 @@ Na imagem Docker: `docker run --rm --env-file <...> <imagem> node dist/accounts/
 - **Escolha com cuidado:** não dá para trocar de novo, nem desfazer. O comando recusa ID fora de 1 a 9.999, ID que já é de outra Conta e Conta que já tem ID reservado.
 - **O link antigo continua valendo:** `stcarmine.com/<idAntigo>` responde 301 para `stcarmine.com/<idNovo>` (o web lê a lista de IDs antigos da API e a guarda por 10 s). O histórico fica em `account_public_id_history`; um ID antigo nunca é reaproveitado.
 - **No jogo**, o ID novo vale no próximo connect do amigo.
-- **Auditoria:** a troca vai para o log da Staff (`account_reserved_id`, com o ID de antes e o de depois, o autor e o motivo), visível em `/staff/auditoria`.
+- **Auditoria:** a troca vai para o log da Staff (`account_reserved_id`, com o ID de antes e o de depois, o autor e o motivo), visível na tela Auditoria do painel da Staff.
 
 ## Registro de atritos
 

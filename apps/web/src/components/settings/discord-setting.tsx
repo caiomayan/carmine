@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { siDiscord } from 'simple-icons';
 import { BrandIcon } from '@/components/icons/brand-icon';
 import { useSession } from '@/components/session/session-provider';
-import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import { settingsHref } from '@/lib/settings-nav';
 
 type Loaded =

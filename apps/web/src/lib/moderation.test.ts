@@ -1,13 +1,6 @@
-import type { PublicSanction, SanctionMeasure } from '@carmine/contracts';
+import type { PublicSanction } from '@carmine/contracts';
 import { describe, expect, it } from 'vitest';
-import {
-  activeBadges,
-  durationParts,
-  sameMeasures,
-  sanctionLength,
-  toMinutes,
-  untilKind,
-} from './moderation';
+import { activeBadges, durationParts, sanctionLength, untilKind } from './moderation';
 
 const HOUR = 60;
 const DAY = 24 * HOUR;
@@ -24,12 +17,6 @@ describe('duração de uma Punição', () => {
 
   it('sem duração é permanente', () => {
     expect(durationParts(null)).toEqual({ unit: 'permanent', value: 0 });
-  });
-
-  it('volta para minutos a partir do formulário da Staff', () => {
-    expect(toMinutes(2, 'hour')).toBe(120);
-    expect(toMinutes(7, 'day')).toBe(7 * DAY);
-    expect(toMinutes(15, 'minute')).toBe(15);
   });
 });
 
@@ -98,24 +85,5 @@ describe('duração no histórico público', () => {
         sanction({ startsAt: '2026-10-12T15:00:10Z', endsAt: '2026-10-12T16:00:00Z' }),
       ),
     ).toEqual({ unit: 'hour', value: 1 });
-  });
-});
-
-describe('sugestão da tabela no painel da Staff', () => {
-  const m = (type: SanctionMeasure['type'], durationMinutes: number | null = null) => ({
-    type,
-    durationMinutes,
-  });
-
-  it('é a mesma sugestão em qualquer ordem', () => {
-    expect(
-      sameMeasures([m('gag', 7 * DAY), m('ban', DAY)], [m('ban', DAY), m('gag', 7 * DAY)]),
-    ).toBe(true);
-  });
-
-  it('uma duração ou um tipo diferente é ajuste da Staff', () => {
-    expect(sameMeasures([m('gag', HOUR)], [m('gag', DAY)])).toBe(false);
-    expect(sameMeasures([m('gag', HOUR)], [m('mute', HOUR)])).toBe(false);
-    expect(sameMeasures([m('gag', HOUR)], [m('gag', HOUR), m('ban', DAY)])).toBe(false);
   });
 });

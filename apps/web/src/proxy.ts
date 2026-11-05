@@ -5,6 +5,7 @@ import { PROFILE_PATH_HEADER, parseProfileSegment } from '@/lib/auth-links';
 import { formerPublicId } from '@/lib/former-public-ids';
 import { buildContentSecurityPolicy, generateNonce, NONCE_HEADER } from '@/lib/security-headers';
 import { sentryIngestOrigin, sentryWebConfig } from '@/lib/sentry-config';
+import { staffPanelOrigin, staffPanelRedirect } from '@/lib/staff-panel';
 
 const NUMERIC_PATH = /^\/[0-9]+$/;
 
@@ -13,6 +14,8 @@ const NUMERIC_PATH = /^\/[0-9]+$/;
  *
  * - Define a CSP da resposta com um nonce novo, que o Next lê do cabeçalho da requisição para
  *   marcar os próprios scripts e que o layout usa no script do tema (`NONCE_HEADER`).
+ * - `/staff` e o que vem abaixo redirecionam (307) para o painel da Staff, que é outra aplicação em outro host (S25,
+ *   `PUBLIC_STAFF_URL`, lido em tempo de execução). Sem a variável, o painel não está ligado e o site responde 404.
  * - Caminhos de um segmento só com dígitos são endereços de Perfil (S03):
  *   `stcarmine.com/<SteamID64>` redireciona com 301 para `/<idPúblico>`. Fica aqui porque o
  *   `permanentRedirect` de uma página responde 308. Sem Conta para o SteamID, ou com a API
@@ -23,6 +26,13 @@ const NUMERIC_PATH = /^\/[0-9]+$/;
  *   que caem na mesma rota dinâmica (`/nao-existe`) ficam com o 404 geral.
  */
 export async function proxy(request: NextRequest) {
+  const staffPanel = staffPanelRedirect(
+    request.nextUrl.pathname,
+    request.nextUrl.search,
+    staffPanelOrigin(process.env.PUBLIC_STAFF_URL),
+  );
+  if (staffPanel !== null) return NextResponse.redirect(staffPanel, 307);
+
   const nonce = generateNonce();
   const csp = buildContentSecurityPolicy({
     nonce,

@@ -13,8 +13,8 @@ import {
 } from '@/components/animate-ui/components/radix/dialog';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
 import { useSession } from '@/components/session/session-provider';
-import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import { LabelInput } from '@/components/ui/label-input';
 import { cn } from '@/lib/utils';
 import { AvatarSetting } from './avatar-setting';

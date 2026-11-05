@@ -1,7 +1,7 @@
-import type { PublicSanction, SanctionMeasure, SanctionType } from '@carmine/contracts';
+import type { PublicSanction, SanctionType } from '@carmine/contracts';
 import { isLastingSanction } from '@carmine/contracts/rules';
 
-/** Unidades de duração da Staff e do Perfil. */
+/** Unidades de duração do Perfil. */
 export type DurationUnit = 'minute' | 'hour' | 'day';
 
 const MINUTES: Record<DurationUnit, number> = { minute: 1, hour: 60, day: 24 * 60 };
@@ -14,10 +14,6 @@ export function durationParts(minutes: number | null): DurationParts {
   if (minutes % MINUTES.day === 0) return { unit: 'day', value: minutes / MINUTES.day };
   if (minutes % MINUTES.hour === 0) return { unit: 'hour', value: minutes / MINUTES.hour };
   return { unit: 'minute', value: minutes };
-}
-
-export function toMinutes(value: number, unit: DurationUnit): number {
-  return value * MINUTES[unit];
 }
 
 /** Ordem dos selos: ban é o que mais pesa; depois chat e voz. */
@@ -69,13 +65,4 @@ export function sanctionLength(
     return { unit: 'hour', value: Math.round(minutes / MINUTES.hour) };
   }
   return durationParts(minutes);
-}
-
-const measureKey = (m: SanctionMeasure) => `${m.type}:${m.durationMinutes ?? 'perm'}`;
-
-/** As medidas escolhidas são as da sugestão da tabela (em qualquer ordem)? */
-export function sameMeasures(a: SanctionMeasure[], b: SanctionMeasure[]): boolean {
-  if (a.length !== b.length) return false;
-  const keys = new Set(a.map(measureKey));
-  return b.every((m) => keys.has(measureKey(m)));
 }

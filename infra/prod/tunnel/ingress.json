@@ -3,6 +3,8 @@
     "ingress": [
       { "hostname": "stcarmine.com", "path": "^/api(/|$)", "service": "http://api:3333" },
       { "hostname": "stcarmine.com", "service": "http://web:3000" },
+      { "hostname": "staff.stcarmine.com", "path": "^/api(/|$)", "service": "http://api:3333" },
+      { "hostname": "staff.stcarmine.com", "service": "http://staff:3100" },
       { "hostname": "ssh.stcarmine.com", "service": "ssh://host.docker.internal:22" },
       { "service": "http_status:404" }
     ]

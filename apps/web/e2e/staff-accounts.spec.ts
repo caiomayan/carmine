@@ -11,6 +11,7 @@ import { connectPlayer, createServer, type E2eServer } from './live-servers';
  * sessão; a API é a mesma.
  */
 const STAFF = `http://localhost:${process.env.STAFF_E2E_PORT ?? 3200}`;
+const WEB = `http://localhost:${process.env.WEB_E2E_PORT ?? 3000}`;
 
 test.use({ baseURL: STAFF });
 
@@ -296,6 +297,32 @@ test.describe('Contas no painel', () => {
     await expect(page.getByTestId('role-readonly')).toBeVisible();
     await expect(page.getByText('Só o Dono executa pedidos de exclusão de dados.')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Ver tudo no log' })).toHaveCount(0);
+  });
+
+  test('o Dono executa um pedido de exclusão: a Conta é anonimizada, o Perfil some e a Auditoria guarda o motivo', async ({
+    page,
+    request,
+  }) => {
+    const server = createServer();
+    const { steamId } = await seedPlayer(page, server);
+    await signInAsStaff(page, server, 'owner');
+    await openFile(page, steamId);
+    const publicId = await page.getByTestId('account-file').getAttribute('data-public-id');
+
+    await page.getByTestId('erasure-form-open').click();
+    await page.getByTestId('erasure-form-reason').fill('Pedido pelo contato, protocolo E2E');
+    // Sem volta: sem marcar que entende, não anonimiza.
+    await page.getByTestId('erasure-form-submit').click();
+    await expect(page.getByText('Marque que entende que não tem volta.')).toBeVisible();
+    await expect(page.getByTestId('erasure-done')).toHaveCount(0);
+
+    await page.getByTestId('erasure-understood').check();
+    await page.getByTestId('erasure-form-submit').click();
+    await expect(page.getByTestId('erasure-form-done')).toBeVisible();
+
+    expect((await request.get(`${WEB}/${publicId}`)).status()).toBe(404);
+    await page.goto('/auditoria?acao=account_anonymize');
+    await expect(page.getByTestId('audit-entries').first()).toContainText('protocolo E2E');
   });
 
   test('Auditoria: o Dono filtra pela ação e pelo alvo; o Moderador não vê a tela', async ({
