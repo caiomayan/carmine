@@ -12,9 +12,12 @@ import {
   staffPurchasesUnblockedSchema,
   staffReconcileResultSchema,
 } from '@carmine/contracts';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
+import { payments } from '../src/database/schema.js';
 import type { FakePaymentsGateway } from '../src/payments/fake-gateway.js';
+import { Payments } from '../src/payments/payments.js';
 import { PAYMENTS_GATEWAY } from '../src/payments/payments.module.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
 import { VipPeriods } from '../src/vip/vip-periods.js';
@@ -329,6 +332,82 @@ describe('Pagamentos no painel da Staff (S14)', () => {
           ),
         ),
       ).toBe('payment_not_found');
+    });
+  });
+
+  /**
+   * Issue #285 (achados da revisão do PR #284). Estes testes descrevem o comportamento CERTO e
+   * falham até a correção: o `refundByStaff` chama o provedor antes de travar a linha, não limita o
+   * parcial ao que resta e o gateway de mentira ignora a chave de idempotência.
+   */
+  describe('reembolso: concorrência, limite e idempotência (#285)', () => {
+    const STAFF = { actorSteamId: FOUNDER, reason: 'teste do #285' };
+    const row = async (id: string) => {
+      const [found] = await t.postgres.db.select().from(payments).where(eq(payments.id, id));
+      return found as typeof payments.$inferSelect;
+    };
+
+    it('dois reembolsos parciais iguais ao mesmo tempo: o dinheiro sai uma vez, os dias saem uma vez, uma linha de auditoria', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' }); // 2690 / 90 dias
+      const service = t.app.get(Payments);
+      const providerId = providerIdOf(p);
+
+      await Promise.allSettled([
+        service.refundByStaff(p.id, STAFF, { days: 10 }),
+        service.refundByStaff(p.id, STAFF, { days: 10 }),
+      ]);
+
+      const expectedCents = Math.round((2690 * 10) / 90); // 299
+      // O dinheiro: o provedor devolveu uma vez só.
+      expect((await gateway.getPayment(providerId))?.refundedCents).toBe(expectedCents);
+      // Os dias do Plano e o que o pagamento registra: uma vez só.
+      const after = await row(p.id);
+      expect(after.refundedDays).toBe(10);
+      expect(after.refundedCents).toBe(expectedCents);
+      const end = (await vip.statusOf(buyer.account.id)).endsAt as Date;
+      expect(Math.abs(end.getTime() - (Date.now() + 80 * DAY_MS))).toBeLessThan(60_000);
+      // A auditoria: uma linha só.
+      const audit = (await vip.auditOf(buyer.account.id)).filter(
+        (a) => a.action === 'payment_refund',
+      );
+      expect(audit).toHaveLength(1);
+    });
+
+    it('vários reembolsos parciais nunca devolvem mais que o valor pago (plano 4990 / 180 dias, de 1 dia em 1 dia)', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-6m' }); // 4990 / 180 dias; 1 dia = 28 centavos
+      const service = t.app.get(Payments);
+      const spy = vi.spyOn(gateway, 'refund');
+      try {
+        // 179 × 28 = 5012 > 4990: sem o limite, o 179º pedido passa do que foi pago.
+        for (let i = 0; i < 179; i++) {
+          if ((await row(p.id)).status === 'refunded') break;
+          await service.refundByStaff(p.id, STAFF, { days: 1 });
+          expect((await row(p.id)).refundedCents).toBeLessThanOrEqual(4990);
+        }
+        const asked = spy.mock.calls.reduce((sum, call) => sum + call[1], 0);
+        expect(asked).toBeLessThanOrEqual(4990);
+        expect((await gateway.getPayment(providerIdOf(p)))?.refundedCents).toBeLessThanOrEqual(
+          4990,
+        );
+      } finally {
+        spy.mockRestore();
+      }
+    }, 120_000);
+
+    it('o gateway de mentira respeita a chave de idempotência: a mesma chave é o mesmo reembolso', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' });
+      const providerId = providerIdOf(p);
+
+      await gateway.refund(providerId, 299, 'refund-mesma-chave');
+      await gateway.refund(providerId, 299, 'refund-mesma-chave');
+      expect((await gateway.getPayment(providerId))?.refundedCents).toBe(299);
+
+      // Outra chave é outro reembolso.
+      await gateway.refund(providerId, 100, 'refund-outra-chave');
+      expect((await gateway.getPayment(providerId))?.refundedCents).toBe(399);
     });
   });
 
