@@ -2450,8 +2450,16 @@ a.stp-btn {
 }
 .stp-srv-fields {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px;
+  grid-template-columns: minmax(0, 1fr) 132px;
+  align-items: start;
   gap: 10px;
+}
+/* Rótulo, campo e dica em linhas próprias: a dica do Código quebra em duas linhas sem empurrar o campo. */
+.stp-srv-fields .stp-measure-field {
+  align-content: start;
+}
+.stp-srv-fields .stp-input {
+  min-height: 42px;
 }
 .stp-srv .stp-input {
   background: var(--stp-card);
