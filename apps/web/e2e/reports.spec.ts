@@ -1,16 +1,17 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import type { Browser, Page } from '@playwright/test';
-import { grantStaffRole, newSteamId, signInByRequest } from './accounts';
-import { axeViolations, chooseOption, expect, saveTheme, test } from './fixtures';
+import { chooseSteamAccount, grantStaffRole, newSteamId, signInByRequest } from './accounts';
+import { expect, test } from './fixtures';
 import { connectPlayer, createServer, type E2eServer } from './live-servers';
 
 /**
- * S13 · Denúncias e log de chat: a Denúncia feita no jogo (o `POST /api/server/reports` do
- * Carmine.Core) chega à fila do painel com o chat do momento; a Staff arquiva com motivo ou
- * aplica a Punição, e a regra de evidência de cheat e voz aparece no painel.
+ * S13 · Denúncias e log de chat: a Denúncia feita no jogo (o `POST /api/server/reports` do Carmine.Core) é aceita ou
+ * recusada pela API e chega à fila do painel da Staff (S25, `apps/staff`, outro host) com o chat do momento; a regra de
+ * evidência de cheat e voz aparece no painel. A fila em si (casos, ordenação, arquivar, celular, acessibilidade) tem
+ * E2E próprio em `staff-queues.spec.ts`.
  */
 
-const NOT_FOUND = /404 \(Not Found\)/;
+const STAFF = `http://localhost:${process.env.STAFF_E2E_PORT ?? 3200}`;
 
 /** Quem fala no jogo: o Carmine.Core manda o chat no lote de eventos. */
 async function say(page: Page, server: E2eServer, steamId: string, text: string) {
@@ -52,34 +53,43 @@ async function report(
   return (await response.json()) as { accepted: boolean; message: string; refusal: string | null };
 }
 
-async function staffMember(browser: Browser, server: E2eServer, role: 'owner' | 'moderator') {
-  const context = await browser.newContext();
+/** A Staff entra no painel (outro host) pela Steam falsa, num contexto próprio. */
+async function staffInPanel(browser: Browser, server: E2eServer, role: 'owner' | 'moderator') {
+  const context = await browser.newContext({ baseURL: STAFF });
   const page = await context.newPage();
   const steamId = newSteamId();
   await connectPlayer(page.request, server, steamId, `Staff ${role}`);
   await signInByRequest(page, steamId);
   grantStaffRole(steamId, role);
-  await page.goto('/staff/denuncias');
+  await page.context().clearCookies();
+  await chooseSteamAccount(page.context(), steamId);
+  await page.goto('/entrar');
+  await page.getByRole('link', { name: 'Entrar com a Steam' }).click();
+  await expect(page.getByTestId('stp-home')).toBeVisible();
   return { page, steamId };
 }
 
+/** Abre o caso do alvo na fila de Denúncias do painel. */
+async function openCase(page: Page, targetName: string) {
+  await page.goto('/denuncias');
+  await page.getByTestId('stp-query').fill(targetName);
+  await expect(page.getByTestId('stp-row')).toHaveCount(1);
+  await page.getByTestId('stp-row').first().click();
+  const detail = page.getByTestId('stp-detail');
+  await expect(detail).toBeVisible();
+  return detail;
+}
+
 test.describe('Denúncias', () => {
-  test.beforeEach(({ expectedConsoleErrors }) => {
-    expectedConsoleErrors.push(NOT_FOUND);
-  });
-
-  test('quem não é da Staff recebe 404 na fila', async ({ page }) => {
-    expect((await page.goto('/staff/denuncias'))?.status()).toBe(404);
-  });
-
-  test('a Denúncia do jogo aparece na fila com o chat do momento; a segunda do mesmo alvo é recusada', async ({
+  test('a Denúncia do jogo chega à fila com o chat do momento; a segunda do mesmo alvo é recusada', async ({
     browser,
     page,
   }) => {
     const server = createServer();
     const [reporter, target] = [newSteamId(), newSteamId()];
+    const targetName = `Alvo-${randomInt(100_000, 999_999)}`;
     await connectPlayer(page.request, server, reporter, 'Denunciante E2E');
-    await connectPlayer(page.request, server, target, 'Alvo E2E');
+    await connectPlayer(page.request, server, target, targetName);
     const line = `você é um lixo ${randomInt(1000, 9999)}`;
     await say(page, server, target, line);
 
@@ -91,28 +101,15 @@ test.describe('Denúncias', () => {
     const second = await report(page, server, reporter, target, 'griefing');
     expect(second.accepted).toBe(false);
     expect(second.refusal).toBe('same_target_cooldown');
-    expect(second.message).toMatch(/Tente de novo em \d+ min\./);
+    expect(second.message).toMatch(/Tente de novo em d+ min./);
 
-    const moderator = await staffMember(browser, server, 'moderator');
-    const card = moderator.page.getByRole('article', { name: /Denúncia contra Alvo E2E/ });
-    await expect(card).toHaveCount(1);
-    await expect(card).toContainText('Chat ofensivo');
-    await expect(card).toContainText('de_inferno');
-    await expect(card).toContainText('round 4');
-    await expect(card.getByTestId('report-chat')).toContainText(line);
-    await expect(card.getByTestId('report-chat').locator('[data-from-target]')).toHaveCount(1);
-    await expect(card.getByTestId('report-evidence')).toHaveCount(0);
-
-    // A Staff arquiva com motivo; a Denúncia sai da fila e vai para a aba de arquivadas.
-    await card.getByRole('button', { name: 'Arquivar com motivo' }).click();
-    await card.getByTestId('reason').fill('Provocação leve, sem reincidência');
-    await card.getByRole('button', { name: 'Arquivar Denúncia' }).click();
-    await expect(card).toHaveCount(0);
-    await moderator.page.goto('/staff/denuncias?status=archived');
-    const archived = moderator.page.getByRole('article', { name: /Denúncia contra Alvo E2E/ });
-    await expect(archived.getByTestId('report-resolution')).toContainText(
-      'Provocação leve, sem reincidência',
-    );
+    const moderator = await staffInPanel(browser, server, 'moderator');
+    const detail = await openCase(moderator.page, targetName);
+    await expect(detail).toContainText('Chat ofensivo');
+    await expect(detail).toContainText('de_inferno');
+    await expect(detail.getByTestId('report-chat')).toContainText(line);
+    await expect(detail.getByTestId('report-chat').locator('[data-from-target]')).toHaveCount(1);
+    await expect(detail.getByTestId('report-evidence')).toHaveCount(0);
     await moderator.page.context().close();
   });
 
@@ -122,40 +119,22 @@ test.describe('Denúncias', () => {
   }) => {
     const server = createServer();
     const [reporter, target] = [newSteamId(), newSteamId()];
+    const targetName = `Suspeito-${randomInt(100_000, 999_999)}`;
     await connectPlayer(page.request, server, reporter, 'Denunciante Cheat');
-    await connectPlayer(page.request, server, target, 'Suspeito E2E');
+    await connectPlayer(page.request, server, target, targetName);
     expect((await report(page, server, reporter, target, 'cheat')).accepted).toBe(true);
 
-    const owner = await staffMember(browser, server, 'owner');
-    const card = owner.page.getByRole('article', { name: /Denúncia contra Suspeito E2E/ });
-    await expect(card.getByTestId('report-evidence')).toContainText('sem demo');
+    const owner = await staffInPanel(browser, server, 'owner');
+    const detail = await openCase(owner.page, targetName);
+    await expect(detail.getByTestId('report-evidence')).toContainText('sem demo');
 
-    // O botão leva à ficha da Conta com o formulário já ligado à Denúncia.
-    await card.getByRole('link', { name: 'Aplicar Punição' }).click();
+    // O botão leva à ficha da Conta, no painel, com o formulário já ligado à Denúncia.
+    await owner.page.getByTestId('report-punish').click();
     await expect(owner.page.getByTestId('apply-from-report')).toContainText(
       'clipe enviado no Discord',
     );
-    await chooseOption(owner.page, owner.page.getByTestId('sanction-category'), 'cheat');
-    await expect(owner.page.getByTestId('proof-witness')).toBeVisible();
+    await owner.page.getByTestId('sanction-category').selectOption('cheat');
+    await expect(owner.page.getByTestId('cheat-proof')).toBeVisible();
     await owner.page.context().close();
   });
-
-  for (const theme of ['dark', 'light'] as const) {
-    test(`a fila passa na checagem de acessibilidade (${theme})`, async ({ browser, page }) => {
-      const server = createServer();
-      const [reporter, target] = [newSteamId(), newSteamId()];
-      await connectPlayer(page.request, server, reporter, 'Denunciante A11y');
-      await connectPlayer(page.request, server, target, 'Alvo A11y');
-      await say(page, server, target, 'olá, pessoal');
-      await report(page, server, reporter, target, 'voice');
-
-      const owner = await staffMember(browser, server, 'owner');
-      await saveTheme(owner.page, theme);
-      for (const path of ['/staff/denuncias', '/staff/denuncias?status=archived']) {
-        await owner.page.goto(path);
-        expect(await axeViolations(owner.page), `${path} (${theme})`).toEqual([]);
-      }
-      await owner.page.context().close();
-    });
-  }
 });
