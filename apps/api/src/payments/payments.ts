@@ -40,6 +40,17 @@ export class PurchaseRejection extends Error {
   }
 }
 
+/** A trava do reembolso não liberou a tempo: outro reembolso do mesmo pagamento está andando (a Staff vê um código próprio). */
+export class RefundInProgress extends PurchaseRejection {
+  constructor() {
+    super(
+      'refund_unavailable',
+      'Há um reembolso deste pagamento em andamento; espere terminar e confira a ficha',
+    );
+    this.name = 'RefundInProgress';
+  }
+}
+
 export type ApplyOutcome = 'applied' | 'unchanged' | 'ignored' | 'mismatch';
 
 export interface PaymentsOptions {
@@ -373,6 +384,7 @@ export class Payments {
     // uma vez e os dois descontariam os dias. Não é a trava da linha: o webhook do estorno (e o do falso, que
     // roda dentro da própria chamada) precisa dela. O custo é uma conexão do pool presa até o tempo limite do
     // provedor, só quando a Staff reembolsa o MESMO pagamento ao mesmo tempo (raro).
+    let providerUnknown = false;
     await this.withRefundLock(paymentId, async (tx) => {
       const [row] = await tx.select().from(payments).where(eq(payments.id, paymentId));
       if (!row || !REFUNDABLE.includes(row.status) || !row.providerPaymentId) {
@@ -409,9 +421,11 @@ export class Payments {
         }
       }
       // O total que o PROVEDOR tem é a verdade: numa repetição (timeout depois do estorno, mesma chave) ele
-      // não soma de novo, e somar aqui guardaria centavos a mais. Sem resposta, cai na conta local.
+      // não soma de novo, e somar aqui guardaria centavos a mais. Sem resposta, não chuta: guarda o que a linha já
+      // tem e avisa a Staff (o webhook ou o Conciliar trazem o resto; contar a menos se corrige, a mais não).
       const providerCents =
         amount > 0 ? await this.providerRefundedCents(row.providerPaymentId) : null;
+      if (amount > 0 && providerCents === null) providerUnknown = true;
       const [locked] = await tx
         .select()
         .from(payments)
@@ -422,7 +436,9 @@ export class Payments {
       await this.options.vip.removePackage(tx, row.id, removedDays);
       // O webhook do estorno pode ter chegado antes: parte do que o pagamento já tinha ANTES do estorno.
       const refundedCents = Math.min(
-        Math.max(locked.refundedCents, providerCents ?? row.refundedCents + amount),
+        // Sem a resposta do provedor, conta A MENOS (o que a linha já tem): o webhook ou o Conciliar corrige para
+        // cima; somar aqui guardaria centavos a mais numa repetição, e isso ninguém corrige.
+        Math.max(locked.refundedCents, providerCents ?? locked.refundedCents),
         locked.amountCents,
       );
       await tx
@@ -451,6 +467,13 @@ export class Payments {
         at: now,
       });
     });
+    if (providerUnknown) {
+      await this.safely(() =>
+        this.options.alert?.(
+          `Pagamento ${seen.id}: o estorno saiu, mas o provedor não respondeu o total devolvido; o valor guardado pode estar a menos. Rode Conciliar agora.`,
+        ),
+      );
+    }
     await this.safely(() => this.options.onVipChanged?.(seen.accountId));
     await this.sync(seen.id, now).catch(() => undefined);
     const [after] = await this.db.select().from(payments).where(eq(payments.id, seen.id));
@@ -472,10 +495,7 @@ export class Payments {
       });
     } catch (error) {
       if (isLockTimeout(error)) {
-        throw new PurchaseRejection(
-          'refund_unavailable',
-          'Há um reembolso deste pagamento em andamento; espere terminar e confira a ficha',
-        );
+        throw new RefundInProgress();
       }
       throw error;
     }

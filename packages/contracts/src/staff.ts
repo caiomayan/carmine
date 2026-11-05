@@ -487,6 +487,8 @@ export const STAFF_ERROR_CODES = [
   'payment_not_found',
   /** O reembolso não vale: o pagamento não está aprovado, ou não há dias a devolver. */
   'payment_not_refundable',
+  /** Outro reembolso deste pagamento está andando (a trava não liberou a tempo). */
+  'payment_refund_in_progress',
   /** O provedor de pagamento não confirmou (o estorno não foi feito). */
   'payment_provider_unavailable',
   /** As compras da Conta não estavam bloqueadas. */
@@ -523,6 +525,7 @@ export const STAFF_ERROR_STATUS: Record<StaffErrorCode, number> = {
   no_custom_avatar: 409,
   payment_not_found: 404,
   payment_not_refundable: 409,
+  payment_refund_in_progress: 409,
   payment_provider_unavailable: 502,
   purchases_not_blocked: 409,
   compensation_applied: 409,

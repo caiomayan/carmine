@@ -2,6 +2,15 @@ import type { PaymentMethod, PaymentStatus } from '@carmine/contracts/payments';
 
 /** As regras de tela dos Pagamentos do painel (S25): rótulos, tom do estado e formatação. Puras, sem rede. */
 
+/** O corpo do reembolso: com os dias já devolvidos que a ficha mostrava, para a API recusar um duplo envio. */
+export function refundBody(reason: string, daysValue: number | undefined, refundedDays: number) {
+  return {
+    reason,
+    ...(daysValue !== undefined && { days: daysValue }),
+    expectedRefundedDays: refundedDays,
+  };
+}
+
 export const STATUS_LABEL: Record<PaymentStatus, string> = {
   created: 'Preparando',
   pending: 'Aguardando',

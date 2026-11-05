@@ -14,6 +14,7 @@ import {
 } from '@carmine/contracts';
 import { eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { DiscordWebhook } from '../src/alerts/discord-webhook.js';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
 import { payments } from '../src/database/schema.js';
 import type { FakePaymentsGateway } from '../src/payments/fake-gateway.js';
@@ -591,6 +592,76 @@ describe('Pagamentos no painel da Staff (S14)', () => {
       expect(await providerCents(p)).toBe(299);
       expect(await row(p.id)).toMatchObject({ refundedCents: 299, refundedDays: 10 });
       await expectVipEndsIn(buyer, 80);
+    }, 60_000);
+  });
+
+  describe('reembolso pela Staff: revisão do #295', () => {
+    it('sem resposta do provedor no total, conta a menos (não 598) e avisa a Staff', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' });
+      const service = t.app.get(Payments);
+      const staff = { actorSteamId: FOUNDER, reason: 'teste do #295' };
+      const real = gateway.refund.bind(gateway);
+      const refund = vi.spyOn(gateway, 'refund');
+      refund.mockImplementationOnce(async (...args) => {
+        await real(...args);
+        throw new Error('timeout depois do estorno');
+      });
+      await expect(service.refundByStaff(p.id, staff, { days: 10 })).rejects.toBeDefined();
+      await service.reconcile({ since: new Date(Date.now() - DAY_MS) });
+      refund.mockRestore();
+      const alert = vi
+        .spyOn(DiscordWebhook.prototype, 'send')
+        .mockResolvedValue(undefined as never);
+      const get = vi.spyOn(gateway, 'getPayment');
+      // Só a leitura de dentro do reembolso falha; o sync e o resto seguem.
+      get.mockRejectedValueOnce(new Error('provedor fora'));
+      try {
+        await service.refundByStaff(p.id, staff, { days: 10 });
+        const [row] = await t.postgres.db.select().from(payments).where(eq(payments.id, p.id));
+        expect(row?.refundedCents).toBe(299);
+        expect(row?.refundedDays).toBe(10);
+        expect(alert.mock.calls.some(([m]) => String(m).includes('Conciliar'))).toBe(true);
+      } finally {
+        get.mockRestore();
+        alert.mockRestore();
+      }
+    });
+
+    it('a trava ocupada responde com o código próprio payment_refund_in_progress', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' });
+      const service = t.app.get(Payments);
+      const real = gateway.refund.bind(gateway);
+      let open!: () => void;
+      const opened = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      let calls = 0;
+      const spy = vi.spyOn(gateway, 'refund').mockImplementation(async (...args) => {
+        calls += 1;
+        if (calls === 1) await opened;
+        return real(...args);
+      });
+      try {
+        const first = service.refundByStaff(
+          p.id,
+          { actorSteamId: FOUNDER, reason: 'x' },
+          { days: 10 },
+        );
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        const second = await owner.call('POST', `/api/staff/payments/${p.id}/refund`, {
+          reason: 'espera a trava',
+          days: 10,
+        });
+        expect(second.statusCode, second.body).toBe(409);
+        expect(refusal(second)).toBe('payment_refund_in_progress');
+        open();
+        await first;
+      } finally {
+        open();
+        spy.mockRestore();
+      }
     }, 60_000);
   });
 

@@ -26,6 +26,8 @@ export const STAFF_ERROR_MESSAGES: Record<string, string> = {
   payment_not_found: 'Esse pagamento não existe.',
   payment_not_refundable:
     'Esse pagamento não pode ser reembolsado agora: só se devolve o que está aprovado e ainda tem dias a devolver.',
+  payment_refund_in_progress:
+    'Já há um reembolso deste pagamento em andamento. Espere terminar, recarregue a ficha e confira antes de repetir.',
   payment_provider_unavailable:
     'O provedor de pagamento não confirmou o estorno agora. Isso não prova que nada foi devolvido: confira antes de tentar de novo.',
   purchases_not_blocked: 'As compras dessa Conta não estavam bloqueadas.',

@@ -19,6 +19,7 @@ import {
   OUTCOME_LABEL,
   outcomeTone,
   packageLabel,
+  refundBody,
   STATUS_LABEL,
   shortId,
   stampLong,
@@ -385,7 +386,7 @@ function RefundPanel({
         onSubmit={async (reason) => {
           const result = await staffPost(
             `/api/staff/payments/${detail.payment.id}/refund`,
-            { reason, ...(daysValue !== undefined && { days: daysValue }) },
+            refundBody(reason, daysValue, detail.refundedDays),
             (value) => staffPaymentDetailSchema.parse(value),
           );
           if (result.ok) return result;
