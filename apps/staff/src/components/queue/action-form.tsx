@@ -1,7 +1,8 @@
 'use client';
 
 import { CheckIcon } from 'lucide-react';
-import { type FormEvent, type ReactNode, useEffect, useId, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useId, useRef, useState } from 'react';
+import { arm, type ConfirmGate, disarm, IDLE, isArmed, mayConfirm } from '@/lib/confirm-gate';
 import type { StaffResult } from '@/lib/staff-request';
 
 export const REASON_MIN = 3;
@@ -77,41 +78,71 @@ export function ActionForm<T = unknown>({
   }, [errorField, errorId]);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
-  const [confirming, setConfirming] = useState(false);
+  const [gate, setGate] = useState<ConfirmGate>(IDLE);
+  const confirming = isArmed(gate);
+  // Trava síncrona contra o envio em dobro: `pending` só vale depois da próxima pintura.
+  const sending = useRef(false);
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  /** Valida o motivo e os campos extras; devolve o motivo pronto ou `null` (o erro já está na tela). */
+  const check = (): string | null => {
     const text = reason.trim();
     if (text.length < REASON_MIN) {
       setError(`Escreva o motivo (pelo menos ${REASON_MIN} caracteres).`);
       setErrorField(null);
-      return;
+      return null;
     }
     const found = validate?.() ?? null;
     const extra = typeof found === 'string' ? { message: found } : found;
     if (extra) {
       setError(extra.message);
       setErrorField(extra.fieldId ?? null);
-      return;
+      return null;
     }
     setError(null);
     setErrorField(null);
-    if (confirmation && !confirming) {
-      setConfirming(true);
-      return;
-    }
+    return text;
+  };
+
+  const send = async (text: string) => {
+    if (sending.current) return;
+    sending.current = true;
     setPending(true);
     const result = await onSubmit(text);
+    sending.current = false;
     setPending(false);
     if (!result.ok) {
       setError(result.message);
       setErrorField(null);
-      setConfirming(false);
+      setGate(disarm());
       return;
     }
     setDone(true);
     onSuccess?.(result.data);
     onDone?.();
+  };
+
+  /** Enviar o formulário: sem confirmação, envia; com ela, só a mostra (o Enter nunca confirma). */
+  const submit = (event: FormEvent) => {
+    event.preventDefault();
+    if (confirmation && confirming) return;
+    const text = check();
+    if (text === null) return;
+    if (confirmation) {
+      setGate(arm(Date.now()));
+      return;
+    }
+    void send(text);
+  };
+
+  /** O botão de confirmar é outro botão, e só vale depois do atraso e com os valores ainda válidos. */
+  const confirm = () => {
+    if (!mayConfirm(gate, Date.now())) return;
+    const text = check();
+    if (text === null) {
+      setGate(disarm());
+      return;
+    }
+    void send(text);
   };
 
   if (done) {
@@ -137,7 +168,14 @@ export function ActionForm<T = unknown>({
   }
 
   return (
-    <form className="stp-form" onSubmit={submit} data-testid={testId} noValidate>
+    <form
+      className="stp-form"
+      onSubmit={submit}
+      // Qualquer edição (motivo, dias, chave) desfaz a confirmação: o valor novo pede outra.
+      onChange={() => setGate(disarm())}
+      data-testid={testId}
+      noValidate
+    >
       {description ? <p className="stp-muted">{description}</p> : null}
       {children}
       <label className="stp-label" htmlFor={`${id}-reason`}>
@@ -154,7 +192,6 @@ export function ActionForm<T = unknown>({
         value={reason}
         onChange={(event) => {
           setReason(event.target.value);
-          setConfirming(false);
           if (error) {
             setError(null);
             setErrorField(null);
@@ -181,23 +218,39 @@ export function ActionForm<T = unknown>({
           className="stp-btn"
           onClick={() => {
             setOpen(false);
-            setConfirming(false);
+            setGate(disarm());
             onCancel?.();
           }}
           disabled={pending}
         >
           Cancelar
         </button>
-        <button
-          type="submit"
-          className="stp-btn"
-          data-kind={kind === 'danger' ? 'danger-fill' : 'primary'}
-          disabled={pending}
-          aria-busy={pending || undefined}
-          data-testid={`${testId}-submit`}
-        >
-          {confirmation && confirming ? confirmation.confirmLabel : submitLabel}
-        </button>
+        {confirmation && confirming ? (
+          <button
+            key="confirm"
+            type="button"
+            className="stp-btn"
+            data-kind={kind === 'danger' ? 'danger-fill' : 'primary'}
+            onClick={confirm}
+            disabled={pending}
+            aria-busy={pending || undefined}
+            data-testid={`${testId}-confirm-submit`}
+          >
+            {confirmation.confirmLabel}
+          </button>
+        ) : (
+          <button
+            key="submit"
+            type="submit"
+            className="stp-btn"
+            data-kind={kind === 'danger' ? 'danger-fill' : 'primary'}
+            disabled={pending}
+            aria-busy={pending || undefined}
+            data-testid={`${testId}-submit`}
+          >
+            {submitLabel}
+          </button>
+        )}
       </div>
     </form>
   );

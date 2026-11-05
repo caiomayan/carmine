@@ -4,7 +4,6 @@ import {
   formatBrl,
   monthsOf,
   packageLabel,
-  refundPreviewCents,
   STATUS_LABEL,
   shortId,
   stampLong,
@@ -48,10 +47,5 @@ describe('Pagamentos do painel', () => {
 
   it('a chave da compensação usa o dia de Brasília, não o UTC', () => {
     expect(suggestedCompensationKey(new Date('2026-10-28T01:30:00Z'))).toBe('queda-2026-10-27');
-  });
-
-  it('o aviso do reembolso parcial é proporcional aos dias e não passa do que resta', () => {
-    expect(refundPreviewCents(2970, 90, 30, 2970)).toBe(990);
-    expect(refundPreviewCents(2970, 90, 90, 1000)).toBe(1000);
   });
 });

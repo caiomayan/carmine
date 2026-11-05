@@ -2539,3 +2539,9 @@ a.stp-btn {
 .stp-ops-card p {
   margin: 0;
 }
+.stp-detail-page {
+  position: static;
+  max-width: 760px;
+  max-height: none;
+  overflow: visible;
+}

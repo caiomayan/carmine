@@ -136,6 +136,7 @@ function Compensation({
   const router = useRouter();
   const [days, setDays] = useState('1');
   const [key, setKey] = useState(defaultKey);
+  const [applied, setApplied] = useState<{ accounts: number; days: number } | null>(null);
   const daysValue = Number(days);
   const keyValue = key.trim();
   const { activeVips } = overview;
@@ -157,7 +158,11 @@ function Compensation({
         <ActionForm
           label="Compensar VIPs ativos"
           submitLabel="Compensar"
-          doneLabel="Compensação aplicada. O alerta foi enviado ao Discord."
+          doneLabel={
+            applied
+              ? `Compensação aplicada: ${applied.days} dia(s) para ${applied.accounts} ${applied.accounts === 1 ? 'Conta' : 'Contas'}. O alerta foi enviado ao Discord.`
+              : 'Compensação aplicada. O alerta foi enviado ao Discord.'
+          }
           testId="compensation-form"
           kind="danger"
           validate={() => {
@@ -191,7 +196,10 @@ function Compensation({
               (json) => staffCompensationResultSchema.parse(json),
             )
           }
-          onSuccess={() => router.refresh()}
+          onSuccess={(result) => {
+            setApplied(result);
+            router.refresh();
+          }}
         >
           <label className="stp-label" htmlFor={`${id}-days`}>
             Dias a somar

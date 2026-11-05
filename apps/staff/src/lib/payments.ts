@@ -100,14 +100,3 @@ export const stampLong = (iso: string): string => LONG.format(new Date(iso)).rep
 /** `queda-2026-10-27`: a chave sugerida para a compensação de hoje (data de Brasília). */
 export const suggestedCompensationKey = (now: Date): string =>
   `queda-${new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(now)}`;
-
-/**
- * Quanto a confirmação do reembolso anuncia: valor × dias ÷ dias do Pacote, nunca acima do que resta. É só o aviso antes
- * de confirmar; o valor que vale é o que a API calcula.
- */
-export const refundPreviewCents = (
-  amountCents: number,
-  packageDays: number,
-  days: number,
-  remainingCents: number,
-): number => Math.min(remainingCents, Math.floor((amountCents * days) / packageDays));

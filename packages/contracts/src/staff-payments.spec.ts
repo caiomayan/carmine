@@ -10,6 +10,7 @@ import {
   staffPaymentPageSchema,
   staffPaymentRefundSchema,
   staffReconcileInputSchema,
+  staffRefundAmount,
 } from './staff-payments.js';
 
 const ID = '0b9f8c1e-7a4d-4e2b-9c3a-5d6e7f809102';
@@ -157,5 +158,37 @@ describe('as ações', () => {
     };
 
     expect(staffCompensationOverviewSchema.parse(overview).activeVips).toBe(12);
+  });
+});
+
+describe('staffRefundAmount (a regra única do reembolso da Staff)', () => {
+  // Os preços reais dos Pacotes (VIP_PACKAGES): 30 d R$ 9,90, 90 d R$ 26,90, 180 d R$ 49,90.
+  const pack = (days: number, amountCents: number) => ({
+    days,
+    amountCents,
+    refundedCents: 0,
+    refundedDays: 0,
+  });
+
+  it('sem dias devolve tudo o que resta, em centavos exatos', () => {
+    expect(staffRefundAmount(pack(90, 2690))).toEqual({ days: 90, cents: 2690 });
+  });
+
+  it('parcial: valor × dias ÷ dias do Pacote, arredondado ao centavo mais próximo (R$ 2,99, não 2,98)', () => {
+    expect(staffRefundAmount(pack(90, 2690), 10)).toEqual({ days: 10, cents: 299 });
+    expect(staffRefundAmount(pack(30, 990), 10)).toEqual({ days: 10, cents: 330 });
+    expect(staffRefundAmount(pack(180, 4990), 7)).toEqual({ days: 7, cents: 194 });
+  });
+
+  it('pedir os dias que restam devolve o resto todo, sem sobra de arredondamento', () => {
+    // 10 d já devolvidos (R$ 2,99): os 80 d que restam valem os R$ 23,91 que sobram.
+    const partial = { days: 90, amountCents: 2690, refundedCents: 299, refundedDays: 10 };
+    expect(staffRefundAmount(partial, 80)).toEqual({ days: 80, cents: 2391 });
+    expect(staffRefundAmount(partial)).toEqual({ days: 80, cents: 2391 });
+  });
+
+  it('os dias nunca passam do que resta', () => {
+    const partial = { days: 90, amountCents: 2690, refundedCents: 299, refundedDays: 10 };
+    expect(staffRefundAmount(partial, 500)).toEqual({ days: 80, cents: 2391 });
   });
 });

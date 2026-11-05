@@ -5,6 +5,7 @@ import {
   type StaffPaymentSummary,
   staffPaymentDetailSchema,
   staffPurchasesUnblockedSchema,
+  staffRefundAmount,
 } from '@carmine/contracts/staff-payments';
 import { XIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -18,7 +19,6 @@ import {
   OUTCOME_LABEL,
   outcomeTone,
   packageLabel,
-  refundPreviewCents,
   STATUS_LABEL,
   shortId,
   stampLong,
@@ -36,15 +36,19 @@ const date = (iso: string | null) => (iso ? stampLong(iso) : NONE);
  */
 export function PaymentDetail({
   summary,
+  initial,
   onClose,
   onChange,
 }: {
   summary: StaffPaymentSummary;
-  onClose: () => void;
-  onChange: (next: StaffPaymentSummary) => void;
+  /** A ficha já lida no servidor (a página própria); sem ela, a ficha é buscada ao abrir. */
+  initial?: StaffPaymentDetail;
+  /** Sem `onClose`, a ficha é a página inteira (sem o botão de fechar). */
+  onClose?: () => void;
+  onChange?: (next: StaffPaymentSummary) => void;
 }) {
   const id = useId();
-  const [detail, setDetail] = useState<StaffPaymentDetail | null>(null);
+  const [detail, setDetail] = useState<StaffPaymentDetail | null>(initial ?? null);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -57,24 +61,41 @@ export function PaymentDetail({
   }, [summary.id]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!initial) void load();
+  }, [load, initial]);
 
   const apply = (next: StaffPaymentDetail) => {
     setDetail(next);
-    onChange(next.payment);
+    onChange?.(next.payment);
   };
 
   const payment = detail?.payment ?? summary;
 
   return (
     <>
-      <div className="stp-detail-top">
-        <h2 className="stp-detail-title">Pagamento {shortId(payment.id)}</h2>
-        <button type="button" className="stp-round" aria-label="Fechar o detalhe" onClick={onClose}>
-          <XIcon size={16} aria-hidden="true" />
-        </button>
-      </div>
+      {onClose ? (
+        <div className="stp-detail-top">
+          <h2 className="stp-detail-title">Pagamento {shortId(payment.id)}</h2>
+          <div className="stp-inline">
+            <Link
+              className="stp-btn"
+              href={`/pagamentos/${payment.id}`}
+              prefetch={false}
+              data-testid="payment-open-page"
+            >
+              Abrir em página
+            </Link>
+            <button
+              type="button"
+              className="stp-round"
+              aria-label="Fechar o detalhe"
+              onClick={onClose}
+            >
+              <XIcon size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <p data-testid="payment-status">
         <StatusDot tone={statusTone(payment.status)}>{STATUS_LABEL[payment.status]}</StatusDot>
@@ -155,12 +176,7 @@ function DetailBody({
   onChange: (next: StaffPaymentDetail) => void;
   reload: () => Promise<StaffPaymentDetail | null>;
 }) {
-  const [days, setDays] = useState('');
   const { purchaseBlock } = detail;
-  // Depois do reembolso a API diz que não há mais o que devolver; o painel guarda o que havia ao abrir para o aviso "Reembolso feito" não sumir.
-  const [refundable] = useState(detail.refundable);
-  const stillRefundable = detail.refundable !== null;
-  const daysValue = days.trim() === '' ? undefined : Number(days);
 
   return (
     <>
@@ -263,85 +279,7 @@ function DetailBody({
       </section>
 
       <div className="stp-detail-foot">
-        {refundable ? (
-          <div data-testid="refund-panel">
-            <p className="stp-muted">
-              Devolve pelo provedor e tira os dias do VIP. Dentro dos 7 dias a própria pessoa faz em
-              Minhas compras; aqui é depois dos 7 dias ou parcial, por indisponibilidade.
-            </p>
-            {stillRefundable ? (
-              <p data-testid="refundable">
-                Ainda dá para devolver <b>{refundable.days} dia(s)</b>, até{' '}
-                <b>{formatBrl(refundable.cents)}</b>.
-              </p>
-            ) : null}
-            <ActionForm
-              label="Reembolsar este pagamento"
-              submitLabel="Reembolsar"
-              doneLabel="Reembolso feito. A ficha foi atualizada."
-              testId="refund-form"
-              kind="danger"
-              validate={() =>
-                daysValue === undefined ||
-                (Number.isInteger(daysValue) && daysValue >= 1 && daysValue <= refundable.days)
-                  ? null
-                  : {
-                      message: `Os dias vão de 1 a ${refundable.days}, ou deixe em branco.`,
-                      fieldId: `${sectionId}-days`,
-                    }
-              }
-              confirmation={{
-                title: 'Reembolsar este pagamento?',
-                body: () => {
-                  const d = daysValue ?? refundable.days;
-                  const cents =
-                    daysValue === undefined
-                      ? refundable.cents
-                      : refundPreviewCents(
-                          detail.payment.amountCents,
-                          detail.payment.days,
-                          daysValue,
-                          refundable.cents,
-                        );
-                  return `O provedor devolve até ${formatBrl(cents)}, referentes a ${d} dia(s), e os dias saem do VIP da Conta. O valor exato é o que a API calcula. Não tem volta.`;
-                },
-                confirmLabel: 'Reembolsar agora',
-              }}
-              onCancel={() => setDays('')}
-              onSubmit={(reason) =>
-                staffPost(
-                  `/api/staff/payments/${detail.payment.id}/refund`,
-                  { reason, ...(daysValue !== undefined && { days: daysValue }) },
-                  (value) => staffPaymentDetailSchema.parse(value),
-                )
-              }
-              onSuccess={(next) => {
-                setDays('');
-                onChange(next);
-              }}
-            >
-              <label className="stp-label" htmlFor={`${sectionId}-days`}>
-                Dias a devolver
-                <span className="stp-label-count">em branco devolve o que resta</span>
-              </label>
-              <input
-                id={`${sectionId}-days`}
-                className="stp-input stp-input-narrow"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={refundable.days}
-                value={days}
-                onChange={(event) => setDays(event.target.value)}
-                data-testid="refund-days"
-              />
-            </ActionForm>
-          </div>
-        ) : (
-          <p className="stp-muted" data-testid="refund-unavailable">
-            Não há o que devolver agora: só se reembolsa pagamento aprovado, com dias a devolver.
-          </p>
-        )}
+        <RefundPanel detail={detail} sectionId={sectionId} onChange={onChange} reload={reload} />
 
         {purchaseBlock ? (
           <ActionForm
@@ -361,5 +299,128 @@ function DetailBody({
         ) : null}
       </div>
     </>
+  );
+}
+
+/** Quanto o aviso "Reembolso feito" fica antes de o formulário voltar ao botão (dá para devolver o resto sem recarregar). */
+const REFUND_DONE_MS = 2400;
+
+/**
+ * Reembolsar: dias em branco devolvem o que resta. O valor anunciado na confirmação é o da regra única dos contratos
+ * (`staffRefundAmount`, a mesma da API). Em qualquer erro a ficha é recarregada e a pessoa é mandada conferir antes de
+ * tentar de novo: um timeout do provedor não prova que nada foi devolvido, e outro valor de dias é outra chave de
+ * idempotência no provedor.
+ */
+function RefundPanel({
+  detail,
+  sectionId,
+  onChange,
+  reload,
+}: {
+  detail: StaffPaymentDetail;
+  sectionId: string;
+  onChange: (next: StaffPaymentDetail) => void;
+  reload: () => Promise<StaffPaymentDetail | null>;
+}) {
+  const [days, setDays] = useState('');
+  const [done, setDone] = useState(false);
+  const [round, setRound] = useState(0);
+  const { refundable } = detail;
+  const daysValue = days.trim() === '' ? undefined : Number(days);
+
+  if (!refundable && !done) {
+    return (
+      <p className="stp-muted" data-testid="refund-unavailable">
+        Não há o que devolver agora: só se reembolsa pagamento aprovado, com dias a devolver.
+      </p>
+    );
+  }
+
+  const max = refundable?.days ?? 1;
+  return (
+    <div data-testid="refund-panel">
+      <p className="stp-muted">
+        Devolve pelo provedor e tira os dias do VIP. Dentro dos 7 dias a própria pessoa faz em
+        Minhas compras; aqui é depois dos 7 dias ou parcial, por indisponibilidade.
+      </p>
+      {refundable ? (
+        <p data-testid="refundable">
+          Ainda dá para devolver <b>{refundable.days} dia(s)</b>, até{' '}
+          <b>{formatBrl(refundable.cents)}</b>.
+        </p>
+      ) : null}
+      <ActionForm
+        key={round}
+        label="Reembolsar este pagamento"
+        submitLabel="Reembolsar"
+        doneLabel="Reembolso feito. A ficha foi atualizada."
+        testId="refund-form"
+        kind="danger"
+        validate={() =>
+          daysValue === undefined ||
+          (Number.isInteger(daysValue) && daysValue >= 1 && daysValue <= max)
+            ? null
+            : {
+                message: `Os dias vão de 1 a ${max}, ou deixe em branco.`,
+                fieldId: `${sectionId}-days`,
+              }
+        }
+        confirmation={{
+          title: 'Reembolsar este pagamento?',
+          body: () => {
+            const { days: d, cents } = staffRefundAmount(
+              {
+                amountCents: detail.payment.amountCents,
+                days: detail.payment.days,
+                refundedCents: detail.payment.refundedCents,
+                refundedDays: detail.refundedDays,
+              },
+              daysValue,
+            );
+            return `O provedor devolve ${formatBrl(cents)}, referentes a ${d} dia(s), e os dias saem do VIP da Conta. Não tem volta.`;
+          },
+          confirmLabel: 'Reembolsar agora',
+        }}
+        onCancel={() => setDays('')}
+        onSubmit={async (reason) => {
+          const result = await staffPost(
+            `/api/staff/payments/${detail.payment.id}/refund`,
+            { reason, ...(daysValue !== undefined && { days: daysValue }) },
+            (value) => staffPaymentDetailSchema.parse(value),
+          );
+          if (result.ok) return result;
+          void reload();
+          return {
+            ok: false as const,
+            message: `${result.message} A ficha foi recarregada: confira o estado e rode "Conciliar agora" antes de tentar de novo, porque o provedor pode ter devolvido mesmo sem confirmar.`,
+          };
+        }}
+        onSuccess={(next) => {
+          setDone(true);
+          onChange(next);
+          setTimeout(() => {
+            setDone(false);
+            setDays('');
+            setRound((n) => n + 1);
+          }, REFUND_DONE_MS);
+        }}
+      >
+        <label className="stp-label" htmlFor={`${sectionId}-days`}>
+          Dias a devolver
+          <span className="stp-label-count">em branco devolve o que resta</span>
+        </label>
+        <input
+          id={`${sectionId}-days`}
+          className="stp-input stp-input-narrow"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={max}
+          value={days}
+          onChange={(event) => setDays(event.target.value)}
+          data-testid="refund-days"
+        />
+      </ActionForm>
+    </div>
   );
 }

@@ -51,9 +51,14 @@ export default async function PagamentosPage({
     );
   }
 
+  const signature = page.data.payments
+    .map((payment) => `${payment.id}:${payment.status}:${payment.refundedCents}`)
+    .join(',');
+
   return (
     <>
-      <PaymentsScreen key={filter} initial={page.data} filter={filter} />
+      {/* A chave inclui o estado de cada linha: depois de conciliar, o refresh traz linhas novas e a lista remonta com elas. */}
+      <PaymentsScreen key={`${filter}|${signature}`} initial={page.data} filter={filter} />
       <div className="stp-page">
         <PaymentOperations
           overview={overview.ok ? overview.data : null}
