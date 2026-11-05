@@ -125,7 +125,7 @@ public class DeathmatchPreferencesTests
         var (prefs, api) = Make(_ => StubHandler.Json(HttpStatusCode.OK, """{"key":"hit_sound","enabled":false}"""));
         using var _ = api;
 
-        Assert.True(await prefs.SaveAsync(Player, GamePreferenceKey.Hit_sound, enabled: false, CancellationToken.None));
+        Assert.True(await prefs.EnqueueSave(Player, GamePreferenceKey.Hit_sound, enabled: false, CancellationToken.None));
 
         var sent = Assert.Single(api.Requests);
         Assert.Equal(HttpMethod.Put, sent.Method);
@@ -142,8 +142,50 @@ public class DeathmatchPreferencesTests
         var (unknown, apiUnknown) = Make(_ => new HttpResponseMessage(HttpStatusCode.NotFound));
         using var _2 = apiUnknown;
 
-        Assert.False(await down.SaveAsync(Player, GamePreferenceKey.Kill_sound, true, CancellationToken.None));
-        Assert.False(await unknown.SaveAsync(Player, GamePreferenceKey.Kill_sound, true, CancellationToken.None));
+        Assert.False(await down.EnqueueSave(Player, GamePreferenceKey.Kill_sound, true, CancellationToken.None));
+        Assert.False(await unknown.EnqueueSave(Player, GamePreferenceKey.Kill_sound, true, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Dois_toggles_rapidos_do_mesmo_jogador_e_chave_chegam_a_API_na_ordem()
+    {
+        var order = new List<string>();
+        var (prefs, api) = Make(request =>
+        {
+            lock (order)
+            {
+                order.Add(request.Body.Contains("true") ? "true" : "false");
+            }
+            if (order.Count == 1)
+            {
+                Thread.Sleep(300); // o primeiro PUT demora; sem a fila o segundo passaria na frente
+            }
+            return StubHandler.Json(HttpStatusCode.OK, """{"key":"hit_sound","enabled":true}""");
+        });
+        using var _ = api;
+
+        var first = prefs.EnqueueSave(Player, GamePreferenceKey.Hit_sound, enabled: true, CancellationToken.None);
+        var second = prefs.EnqueueSave(Player, GamePreferenceKey.Hit_sound, enabled: false, CancellationToken.None);
+
+        Assert.True(await first);
+        Assert.True(await second);
+        Assert.Equal(["true", "false"], order);
+    }
+
+    [Fact]
+    public async Task Uma_gravacao_que_falha_nao_trava_a_fila()
+    {
+        var calls = 0;
+        var (prefs, api) = Make(_ => ++calls == 1
+            ? throw new HttpRequestException("Connection refused")
+            : StubHandler.Json(HttpStatusCode.OK, """{"key":"hit_sound","enabled":false}"""));
+        using var _ = api;
+
+        var first = prefs.EnqueueSave(Player, GamePreferenceKey.Hit_sound, true, CancellationToken.None);
+        var second = prefs.EnqueueSave(Player, GamePreferenceKey.Hit_sound, false, CancellationToken.None);
+
+        Assert.False(await first);
+        Assert.True(await second);
     }
 
     [Fact]

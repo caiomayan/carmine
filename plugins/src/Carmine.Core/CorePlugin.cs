@@ -44,7 +44,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private DeathmatchPreferences? _dmPrefs;
     /// <summary>A ponte com o Deathmatch patchado; nula se o plugin não está lá ou não é o patchado.</summary>
     private DeathmatchBridge? _dmBridge;
-    private bool _dmBridgeMissingLogged;
+    private bool _dmBridgeResolved;
     private GameStatsLines? _gameStats;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
@@ -188,6 +188,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         UnloadAddon();
         _dmBridge?.Unsubscribe();
         _dmBridge = null;
+        _dmBridgeResolved = false;
         _dmPrefs = null;
         _awp = null;
         _gameStats = null;
@@ -723,37 +724,41 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         player.ExecuteClientCommandFromServer(AwpRaffle.CommandFor(enabled));
 
     /// <summary>
-    /// Pega a API do Deathmatch depois que todos os plugins carregaram (a capability <c>deathmatch</c> só existe então) e
-    /// passa a levar à Conta o que o jogador muda. Sem o Deathmatch patchado, segue sem a regra e avisa no log.
+    /// Pega a API do Deathmatch <b>uma vez</b>, depois que todos os plugins carregaram (a capability <c>deathmatch</c> só
+    /// existe então). Sem o Deathmatch patchado, ou se a ponte falha, o Core registra no log e o plugin segue com as
+    /// preferências da sessão; o resultado (inclusive a falha) fica guardado e nada é resolvido de novo a cada spawn.
+    /// Um hot reload só do Deathmatch deixa a ponte velha: recarregue o Core junto (ver o ADR 0028).
     /// </summary>
-    public override void OnAllPluginsLoaded(bool hotReload) => EnsureDeathmatchBridge();
+    public override void OnAllPluginsLoaded(bool hotReload) => ResolveDeathmatchBridge();
 
-    private DeathmatchBridge? EnsureDeathmatchBridge()
+    private void ResolveDeathmatchBridge()
     {
-        if (_dmPrefs is null || _dmBridge is not null)
+        if (_dmPrefs is null || _dmBridgeResolved)
         {
-            return _dmBridge;
+            return;
         }
+        _dmBridgeResolved = true;
         object? api = null;
         try
         {
             api = new PluginCapability<object>("deathmatch").Get();
         }
-        catch (KeyNotFoundException)
+        catch (Exception error) when (error is not OutOfMemoryException)
         {
+            Log.DeathmatchBridgeFault(Logger, $"a capability deathmatch não pôde ser lida ({error.GetType().Name})");
         }
-        _dmBridge = DeathmatchBridge.TryCreate(api);
-        if (_dmBridge is null)
+        var bridge = DeathmatchBridge.TryCreate(api, message => Log.DeathmatchBridgeFault(Logger, message));
+        if (bridge is null)
         {
-            if (!_dmBridgeMissingLogged)
-            {
-                _dmBridgeMissingLogged = true;
-                Log.DeathmatchBridgeMissing(Logger);
-            }
-            return null;
+            Log.DeathmatchBridgeMissing(Logger);
+            return;
         }
-        _dmBridge.Subscribe(OnDeathmatchPreferenceChanged);
-        return _dmBridge;
+        if (!bridge.Subscribe(OnDeathmatchPreferenceChanged))
+        {
+            Log.DeathmatchBridgeMissing(Logger);
+            return;
+        }
+        _dmBridge = bridge;
     }
 
     /// <summary>
@@ -762,8 +767,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// </summary>
     private void ApplyDeathmatchPreferences(CCSPlayerController player, IReadOnlyDictionary<string, bool> values)
     {
-        var bridge = EnsureDeathmatchBridge();
-        if (bridge is null)
+        if (_dmBridge is not { } bridge)
         {
             return;
         }
@@ -778,17 +782,24 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         }
     }
 
-    /// <summary>O jogador mudou uma preferência no Deathmatch (menu <c>!dm</c> ou atalho): leva à Conta, sem mensagem.</summary>
-    private void OnDeathmatchPreferenceChanged(CCSPlayerController player, string name, bool value)
+    /// <summary>
+    /// O jogador mudou uma preferência no Deathmatch (menu <c>!dm</c> ou atalho): leva à Conta, sem mensagem. Chega
+    /// pela thread do jogo, e é nela que o PUT entra na fila do jogador e da chave (ordem preservada).
+    /// </summary>
+    private void OnDeathmatchPreferenceChanged(object playerObject, string name, bool value)
     {
-        if (_dmPrefs is not { } prefs || !IsHuman(player) || DeathmatchPreferences.KeyFor(name) is not { } key)
+        if (playerObject is not CCSPlayerController player
+            || _dmPrefs is not { } prefs
+            || !IsHuman(player)
+            || DeathmatchPreferences.KeyFor(name) is not { } key)
         {
             return;
         }
         var steamId = player.SteamID;
-        RunInBackground(async token =>
+        var save = prefs.EnqueueSave(steamId, key, value, _unloading.Token);
+        RunInBackground(async _ =>
         {
-            if (!await prefs.SaveAsync(steamId, key, value, token))
+            if (!await save)
             {
                 Log.DeathmatchPreferenceNotSaved(Logger, steamId, name);
             }

@@ -425,6 +425,30 @@ describe('POST /api/server/player-connects', () => {
       ).toBe(400);
     });
 
+    it('Deathmatch: chave desconhecida (inclusive a do Retake com outro nome) é 400, e nada é gravado', async () => {
+      const steamId = steamIdFor(717);
+      await connectOk({ steamId, steamName: 'dmchave' });
+      const { key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'dm-preferencias-3', mode: 'deathmatch', address: '127.0.0.1:27042' });
+
+      for (const name of ['nao_existe', 'HitSound', 'zeus']) {
+        expect((await preference('PUT', steamId, { enabled: true }, key, name)).statusCode).toBe(
+          400,
+        );
+        expect((await preference('POST', steamId, undefined, key, name)).statusCode).toBe(400);
+      }
+      const dmConnect = await t.app.inject({
+        method: 'POST',
+        url: '/api/server/player-connects',
+        headers: { authorization: `Bearer ${key}` },
+        payload: { steamId, steamName: 'dmchave' },
+      });
+      expect(playerConnectResultSchema.parse(dmConnect.json()).preferences).toEqual(
+        DEFAULT_PREFERENCES,
+      );
+    });
+
     it('Conta que não existe: 404; SteamID, chave ou corpo inválido: 400; sem a chave do servidor: 401', async () => {
       expect((await preference('POST', steamIdFor(715))).statusCode).toBe(404);
       expect((await preference('PUT', steamIdFor(715), { enabled: true })).statusCode).toBe(404);

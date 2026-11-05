@@ -27,6 +27,7 @@ public sealed class DeathmatchPreferences(ICarmineApiClient api)
 
     private readonly Lock _lock = new();
     private readonly Dictionary<ulong, IReadOnlyDictionary<string, bool>> _pending = [];
+    private readonly Dictionary<(ulong SteamId, GamePreferenceKey Key), Task> _tails = [];
 
     /// <summary>A chave da Conta para o nome da preferência no plugin; <c>null</c> se o Carmine não a guarda.</summary>
     public static GamePreferenceKey? KeyFor(string pluginName)
@@ -105,11 +106,52 @@ public sealed class DeathmatchPreferences(ICarmineApiClient api)
     }
 
     /// <summary>
-    /// O jogador mudou uma preferência no Deathmatch: grava o valor explícito na Conta. Sem texto para o jogador;
-    /// se a API não respondeu, a Conta fica com o valor antigo e o plugin com o novo até o próximo connect.
-    /// Roda fora da thread do jogo. Devolve se gravou.
+    /// O jogador mudou uma preferência no Deathmatch: grava o valor explícito na Conta. Chame na thread do jogo, na
+    /// ordem em que o jogador mudou: os PUTs do mesmo jogador e da mesma chave saem um de cada vez, nessa ordem
+    /// (dois toggles rápidos nunca chegam trocados à API, que ficaria com o valor antigo). Sem texto para o jogador;
+    /// se a API não respondeu, a Conta fica com o valor antigo e o plugin com o novo até o próximo connect. A tarefa
+    /// devolve se gravou e nunca lança.
     /// </summary>
-    public async Task<bool> SaveAsync(ulong steamId, GamePreferenceKey key, bool enabled, CancellationToken cancellationToken)
+    public Task<bool> EnqueueSave(ulong steamId, GamePreferenceKey key, bool enabled, CancellationToken cancellationToken)
+    {
+        lock (_lock)
+        {
+            _tails.TryGetValue((steamId, key), out var previous);
+            var next = SaveAfterAsync(previous, steamId, key, enabled, cancellationToken);
+            _tails[(steamId, key)] = next;
+            _ = next.ContinueWith(
+                _ =>
+                {
+                    lock (_lock)
+                    {
+                        if (_tails.TryGetValue((steamId, key), out var tail) && ReferenceEquals(tail, next))
+                        {
+                            _tails.Remove((steamId, key));
+                        }
+                    }
+                },
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+            return next;
+        }
+    }
+
+    private async Task<bool> SaveAfterAsync(
+        Task? previous,
+        ulong steamId,
+        GamePreferenceKey key,
+        bool enabled,
+        CancellationToken cancellationToken)
+    {
+        if (previous is not null)
+        {
+            await previous.ConfigureAwait(false);
+        }
+        return await SaveAsync(steamId, key, enabled, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<bool> SaveAsync(ulong steamId, GamePreferenceKey key, bool enabled, CancellationToken cancellationToken)
     {
         try
         {
@@ -120,8 +162,7 @@ public sealed class DeathmatchPreferences(ICarmineApiClient api)
                 cancellationToken).ConfigureAwait(false);
             return true;
         }
-        catch (Exception error) when (error is ApiException or HttpRequestException
-            || (error is TaskCanceledException && !cancellationToken.IsCancellationRequested))
+        catch (Exception error) when (error is ApiException or HttpRequestException or OperationCanceledException)
         {
             return false;
         }

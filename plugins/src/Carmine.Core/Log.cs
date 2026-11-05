@@ -81,6 +81,9 @@ internal static partial class Log
         Message = "Carmine.Core: o Deathmatch patchado não está carregado; as preferências dos jogadores ficam só na memória do plugin (ADR 0028)")]
     public static partial void DeathmatchBridgeMissing(ILogger logger);
 
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Carmine.Core: ponte com o Deathmatch: {Detail}")]
+    public static partial void DeathmatchBridgeFault(ILogger logger, string detail);
+
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "Carmine.Core: a preferência {Name} de {SteamId} não chegou à Conta; vale no plugin até o próximo connect")]
     public static partial void DeathmatchPreferenceNotSaved(ILogger logger, ulong steamId, string name);
