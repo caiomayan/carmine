@@ -221,3 +221,22 @@ export const staffCompensationResultSchema = z
   .meta({ id: 'StaffCompensationResult' });
 
 export type StaffCompensationResult = z.infer<typeof staffCompensationResultSchema>;
+
+/**
+ * Quanto devolver num reembolso da Staff, em dias e centavos: a regra única da API (que estorna no provedor) e do painel
+ * (que anuncia o valor antes de confirmar). Sem `requestedDays`, devolve o que resta; os dias nunca passam do que resta.
+ * Quando os dias pedidos são todos os que restam, devolve o resto exato em centavos (para o arredondamento das parcelas
+ * nunca deixar sobra); senão, valor × dias ÷ dias do Pacote, arredondado ao centavo mais próximo.
+ */
+export function staffRefundAmount(
+  payment: { amountCents: number; days: number; refundedCents: number; refundedDays: number },
+  requestedDays?: number,
+): { days: number; cents: number } {
+  const remainingDays = payment.days - payment.refundedDays;
+  const days = Math.min(requestedDays ?? remainingDays, remainingDays);
+  const cents =
+    days === remainingDays
+      ? payment.amountCents - payment.refundedCents
+      : Math.round((payment.amountCents * days) / payment.days);
+  return { days, cents };
+}

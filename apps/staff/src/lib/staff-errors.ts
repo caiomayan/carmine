@@ -23,6 +23,14 @@ export const STAFF_ERROR_MESSAGES: Record<string, string> = {
   avatar_not_found: 'Essa foto não existe mais.',
   avatar_not_reviewable: 'Essa foto já foi decidida, trocada ou removida.',
   no_custom_avatar: 'Esta Conta não tem foto própria no ar.',
+  payment_not_found: 'Esse pagamento não existe.',
+  payment_not_refundable:
+    'Esse pagamento não pode ser reembolsado agora: só se devolve o que está aprovado e ainda tem dias a devolver.',
+  payment_provider_unavailable:
+    'O provedor de pagamento não confirmou o estorno agora. Isso não prova que nada foi devolvido: confira antes de tentar de novo.',
+  purchases_not_blocked: 'As compras dessa Conta não estavam bloqueadas.',
+  compensation_applied:
+    'Essa compensação (a chave) já foi aplicada: use outra chave para outra queda.',
   unauthenticated: 'A sua sessão acabou. Entre de novo.',
   unknown: 'Não deu certo agora. Tente de novo em instantes.',
 };

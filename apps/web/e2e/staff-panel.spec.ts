@@ -119,7 +119,7 @@ test.describe('Painel da Staff', () => {
     await page.keyboard.type('pagam');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(`${STAFF}/pagamentos`);
-    await expect(page.getByTestId('stp-coming')).toBeVisible();
+    await expect(page.getByTestId('stp-payments')).toBeVisible();
 
     // O tema e o trilho vão para cookies lidos no servidor: a escolha vale depois de recarregar.
     const panel = page.getByTestId('stp');

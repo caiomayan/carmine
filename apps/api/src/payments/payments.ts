@@ -9,6 +9,7 @@ import {
   type PurchaseEligibility,
   type PurchaseError,
   REFUND_WINDOW_DAYS,
+  staffRefundAmount,
   VIP_MAX_HORIZON_DAYS,
   VIP_PACKAGES,
   type VipPackages,
@@ -364,13 +365,8 @@ export class Payments {
     ) {
       throw new PurchaseRejection('refund_unavailable', 'Só se reembolsa pagamento aprovado');
     }
-    const remainingDays = row.days - row.refundedDays;
-    const days = Math.min(options.days ?? remainingDays, remainingDays);
+    const { days, cents: amount } = staffRefundAmount(row, options.days);
     if (days <= 0) throw new PurchaseRejection('refund_unavailable', 'Não há dias a devolver');
-    const amount =
-      days === remainingDays
-        ? row.amountCents - row.refundedCents
-        : Math.round((row.amountCents * days) / row.days);
     try {
       await gateway.refund(
         row.providerPaymentId,
