@@ -28,6 +28,8 @@ export async function SessionsCard({ sessions }: { sessions: ProfileSessions | n
       />
     );
   }
+  // Perfil que o visitante não pode ver: nada de cartão (uma lista vazia aqui seria dado inventado).
+  if (!sessions.visible) return null;
   if (sessions.sessions.length === 0) {
     return (
       <CollectingCard
@@ -39,6 +41,9 @@ export async function SessionsCard({ sessions }: { sessions: ProfileSessions | n
     );
   }
 
+  const tr = await getTranslations('ranking');
+  const modeLabels = { retake: tr('modes.retake'), deathmatch: tr('modes.deathmatch') };
+
   return (
     <section
       data-testid="profile-sessions"
@@ -47,14 +52,14 @@ export async function SessionsCard({ sessions }: { sessions: ProfileSessions | n
       <h3 className="text-[15px] font-semibold tracking-[-0.01em]">{t('title')}</h3>
       <ul className="-mx-2 grid">
         {sessions.sessions.map((session) => (
-          <SessionRow key={session.id} session={session} />
+          <SessionRow key={session.id} session={session} modeLabel={modeLabels[session.mode]} />
         ))}
       </ul>
     </section>
   );
 }
 
-async function SessionRow({ session }: { session: ProfileSession }) {
+async function SessionRow({ session, modeLabel }: { session: ProfileSession; modeLabel: string }) {
   const t = await getTranslations('profile.sessions');
   const format = await getFormatter();
 
@@ -62,7 +67,6 @@ async function SessionRow({ session }: { session: ProfileSession }) {
     .map((map) => mapDisplayName(map))
     .filter((name): name is string => name !== null);
   const title = maps.length > 0 ? maps.join(' → ') : t('noMap');
-  const mode = (await getTranslations('ranking'))(`modes.${session.mode}`);
   const clock = (iso: string) =>
     format.dateTime(new Date(iso), { hour: '2-digit', minute: '2-digit', timeZone: BRASILIA });
   const day = format.dateTime(new Date(`${session.day}T12:00:00-03:00`), {
@@ -90,7 +94,7 @@ async function SessionRow({ session }: { session: ProfileSession }) {
         <span className="flex min-w-0 items-center gap-2 text-body-sm font-semibold">
           {session.live ? <StatusDot tone="online" pulse /> : null}
           <span className="truncate">
-            {mode} · {title}
+            {modeLabel} · {title}
           </span>
         </span>
         {session.live ? (
@@ -116,13 +120,11 @@ async function SessionRow({ session }: { session: ProfileSession }) {
           <span className="text-caption text-muted-foreground">{when}</span>
         )}
       </div>
-      <span className="shrink-0 text-body-sm tabular-nums text-muted-foreground">
-        {session.seconds === null
-          ? session.live
-            ? ''
-            : t('duration.none')
-          : duration(t, session.seconds)}
-      </span>
+      {session.live ? null : (
+        <span className="shrink-0 text-body-sm tabular-nums text-muted-foreground">
+          {session.seconds === null ? t('duration.none') : duration(t, session.seconds)}
+        </span>
+      )}
     </li>
   );
 }
