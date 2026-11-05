@@ -15498,6 +15498,11 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 3650
+          },
+          "expectedRefundedDays": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 3650
           }
         },
         "required": [
