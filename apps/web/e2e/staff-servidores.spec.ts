@@ -75,7 +75,7 @@ test.describe('Servidores no painel', () => {
     await expect(home.getByRole('heading', { name: 'Retake · Rotação' })).toBeVisible();
     await expect(home.getByTestId('server-code')).toHaveText(code);
     await expect(
-      home.getByRole('link', { name: new RegExp(`Retake · Rotação (${code})`) }),
+      home.getByRole('link', { name: new RegExp(`Retake · Rotação \\(${code}\\)`) }),
     ).toBeVisible();
     await context.close();
 

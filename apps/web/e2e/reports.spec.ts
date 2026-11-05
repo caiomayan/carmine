@@ -101,7 +101,7 @@ test.describe('Denúncias', () => {
     const second = await report(page, server, reporter, target, 'griefing');
     expect(second.accepted).toBe(false);
     expect(second.refusal).toBe('same_target_cooldown');
-    expect(second.message).toMatch(/Tente de novo em d+ min./);
+    expect(second.message).toMatch(/Tente de novo em \d+ min\./);
 
     const moderator = await staffInPanel(browser, server, 'moderator');
     const detail = await openCase(moderator.page, targetName);

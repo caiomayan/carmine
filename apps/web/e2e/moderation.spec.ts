@@ -17,8 +17,8 @@ import { connectPlayer, createServer, heartbeat } from './live-servers';
  * aplica a Punição pela API, como o painel faz, e o `/staff` do site confere o redirecionamento.
  */
 
-const NOT_FOUND = /404 (Not Found)/;
-const UNAUTHORIZED = /401 (Unauthorized)/;
+const NOT_FOUND = /404 \(Not Found\)/;
+const UNAUTHORIZED = /401 \(Unauthorized\)/;
 const STAFF = `http://localhost:${process.env.STAFF_E2E_PORT ?? 3200}`;
 const DAY = 24 * 60;
 
