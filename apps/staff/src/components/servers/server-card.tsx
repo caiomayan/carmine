@@ -2,7 +2,7 @@
 
 import { type StaffServer, staffServerSchema } from '@carmine/contracts/staff';
 import { ArrowRightIcon } from 'lucide-react';
-import { useId, useState } from 'react';
+import { type KeyboardEvent, type MouseEvent, useId, useRef, useState } from 'react';
 import { ActionForm } from '@/components/queue/action-form';
 import { normalizeServerCode, previewHostname } from '@/lib/servers';
 import { staffPost } from '@/lib/staff-request';
@@ -30,9 +30,29 @@ export function ServerCard({ initial }: { initial: StaffServer }) {
   const preview = previewHostname(name, normalized);
   const nameBad = name.trim().length > 0 && previewHostname(name, 'SP·1') === null;
   const codeBad = code.trim().length > 0 && previewHostname('Retake', normalized) === null;
-  const reset = () => {
+  const box = useRef<HTMLDivElement>(null);
+  const nameField = useRef<HTMLInputElement>(null);
+
+  /** Fecha o formulário: desfaz o rascunho e remonta o ActionForm (some o erro e o motivo) com o foco no Editar. */
+  const close = () => {
     setName(server.showcaseName ?? '');
     setCode(server.code ?? '');
+    setRound((n) => n + 1);
+    requestAnimationFrame(() =>
+      box.current?.querySelector<HTMLElement>('[data-testid="server-form-open"]')?.focus(),
+    );
+  };
+
+  /** Esc fecha o formulário aberto, como o Cancelar; o foco do Editar para o primeiro campo ao abrir. */
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && (event.target as HTMLElement).closest('form')) {
+      event.stopPropagation();
+      close();
+    }
+  };
+  const onClick = (event: MouseEvent) => {
+    if ((event.target as HTMLElement).closest('[data-testid="server-form-open"]'))
+      requestAnimationFrame(() => nameField.current?.focus());
   };
 
   return (
@@ -60,66 +80,70 @@ export function ServerCard({ initial }: { initial: StaffServer }) {
           </span>
         ) : null}
       </p>
-      <ActionForm
-        key={round}
-        onCancel={reset}
-        label="Editar"
-        submitLabel="Salvar"
-        doneLabel="Salvo. O hostname muda no jogo em até 10 s."
-        testId="server-form"
-        description="Nome de vitrine e código aparecem na Home, no botão Jogar e no hostname do jogo."
-        validate={() => (preview ? null : 'Confira o nome de vitrine e o código.')}
-        onSubmit={async (reason) => {
-          const result = await staffPost(
-            `/api/staff/servers/${server.id}`,
-            { showcaseName: name.trim(), code: normalized, reason },
-            (value) => staffServerSchema.parse(value),
-            'PATCH',
-          );
-          if (result.ok) {
-            setServer(result.data);
-            setName(result.data.showcaseName ?? '');
-            setCode(result.data.code ?? '');
-            setTimeout(() => setRound((n) => n + 1), SAVED_MS);
-          }
-          return result;
-        }}
-      >
-        <div className="stp-srv-fields">
-          <div className="stp-measure-field">
-            <label className="stp-label" htmlFor={`${id}-name`}>
-              Nome de vitrine
-            </label>
-            <input
-              id={`${id}-name`}
-              className="stp-input"
-              value={name}
-              maxLength={40}
-              aria-invalid={nameBad || undefined}
-              onChange={(event) => setName(event.target.value)}
-              data-testid="server-showcase-name"
-            />
-            <span className="stp-cell-sub">Descreve a variante, ex.: Retake · Rotação</span>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: só delega o Esc e o clique no Editar ao formulário de dentro */}
+      <div ref={box} onKeyDown={onKeyDown} onClick={onClick}>
+        <ActionForm
+          key={round}
+          onCancel={close}
+          label="Editar"
+          submitLabel="Salvar"
+          doneLabel="Salvo. O hostname muda no jogo em até 10 s."
+          testId="server-form"
+          description="Nome de vitrine e código aparecem na Home, no botão Jogar e no hostname do jogo."
+          validate={() => (preview ? null : 'Confira o nome de vitrine e o código.')}
+          onSubmit={async (reason) => {
+            const result = await staffPost(
+              `/api/staff/servers/${server.id}`,
+              { showcaseName: name.trim(), code: normalized, reason },
+              (value) => staffServerSchema.parse(value),
+              'PATCH',
+            );
+            if (result.ok) {
+              setServer(result.data);
+              setName(result.data.showcaseName ?? '');
+              setCode(result.data.code ?? '');
+              setTimeout(() => setRound((n) => n + 1), SAVED_MS);
+            }
+            return result;
+          }}
+        >
+          <div className="stp-srv-fields">
+            <div className="stp-measure-field">
+              <label className="stp-label" htmlFor={`${id}-name`}>
+                Nome de vitrine
+              </label>
+              <input
+                ref={nameField}
+                id={`${id}-name`}
+                className="stp-input"
+                value={name}
+                maxLength={40}
+                aria-invalid={nameBad || undefined}
+                onChange={(event) => setName(event.target.value)}
+                data-testid="server-showcase-name"
+              />
+              <span className="stp-cell-sub">Descreve a variante, ex.: Retake · Rotação</span>
+            </div>
+            <div className="stp-measure-field">
+              <label className="stp-label" htmlFor={`${id}-code`}>
+                Código
+              </label>
+              <input
+                id={`${id}-code`}
+                className="stp-input"
+                value={code}
+                maxLength={8}
+                autoCapitalize="characters"
+                aria-invalid={codeBad || undefined}
+                onChange={(event) => setCode(event.target.value)}
+                onBlur={() => setCode((value) => normalizeServerCode(value))}
+                data-testid="server-code-input"
+              />
+              <span className="stp-cell-sub">Região·número, ex.: SP·1</span>
+            </div>
           </div>
-          <div className="stp-measure-field">
-            <label className="stp-label" htmlFor={`${id}-code`}>
-              Código
-            </label>
-            <input
-              id={`${id}-code`}
-              className="stp-input"
-              value={code}
-              maxLength={8}
-              autoCapitalize="characters"
-              aria-invalid={codeBad || undefined}
-              onChange={(event) => setCode(event.target.value)}
-              onBlur={() => setCode((value) => normalizeServerCode(value))}
-              data-testid="server-code-input"
-            />
-            <span className="stp-cell-sub">Região·número, ex.: SP·1</span>
-          </div>
-        </div>
-      </ActionForm>
+        </ActionForm>
+      </div>
     </li>
   );
 }
