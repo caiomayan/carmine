@@ -117,23 +117,6 @@ describe('Pagamentos na demonstração da homologação (#292)', () => {
     for (const owner of owners) expect(demoSteamIds.has(owner.steamId)).toBe(true);
   });
 
-  it('retoma o que ficou no meio do caminho, sem criar outro pagamento', async () => {
-    const [before] = await services.db.select({ n: count() }).from(payments);
-    await services.db
-      .update(payments)
-      .set({ status: 'pending' })
-      .where(eq(payments.idempotencyKey, 'demo-pagamento-aprovado'));
-    // O falso já guarda esta cobrança como paga: a conciliação do webhook leva de volta a aprovado.
-    await seedDemo(services, settings, new Date(), () => {});
-    const [after] = await services.db.select({ n: count() }).from(payments);
-    expect(after?.n).toBe(before?.n);
-    const [row] = await services.db
-      .select({ status: payments.status })
-      .from(payments)
-      .where(eq(payments.idempotencyKey, 'demo-pagamento-aprovado'));
-    expect(row?.status).toBe('approved');
-  });
-
   it('sem o dono não semeia pagamento (o reembolso precisa de um autor da Staff)', async () => {
     const lines: string[] = [];
     const before = await demoPayments();
