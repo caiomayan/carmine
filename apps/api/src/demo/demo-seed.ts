@@ -9,6 +9,7 @@ import { ItemRules } from '../inventory/item-rules.js';
 import type { Loadouts } from '../loadout/loadouts.js';
 import type { StaffRoles } from '../staff/staff-roles.js';
 import type { VipPeriods } from '../vip/vip-periods.js';
+import { type AvatarSeedServices, seedDemoAvatar } from './demo-avatars.js';
 import { DEMO_PLAYERS, DEMO_SERVER_NAMES, DEMO_SERVERS, demoServerKey } from './demo-cast.js';
 import { assertDemoDatabase, type DemoSettings } from './demo-guard.js';
 import {
@@ -28,6 +29,8 @@ export interface SeedServices {
   vip: VipPeriods;
   staffRoles: StaffRoles;
   catalog: Catalog;
+  /** Foto de perfil (R2 de mídia); sem isto, ou com a mídia desligada, a foto de demonstração não é semeada. */
+  avatars?: AvatarSeedServices;
 }
 
 /** Quantos dias de VIP a demonstração concede (renovado quando acaba, a cada deploy). */
@@ -89,12 +92,14 @@ export async function seedDemo(
     await dress(services, rules, accountId, player.steamId, player.vip);
   }
 
+  let owner: { accountId: string; steamId: string } | null = null;
   if (settings.ownerSteamId !== null) {
     const { account } = await services.accounts.claimOnLogin(settings.ownerSteamId);
     await services.staffRoles.set(account.id, 'owner', {
       actorSteamId: settings.ownerSteamId,
       reason: 'Homologação: o dono da plataforma',
     });
+    owner = { accountId: account.id, steamId: settings.ownerSteamId };
     await ensureVip(services.vip, account.id, now, 90);
     weeks.forEach((weekStart, back) => {
       for (const stats of ownerWeekStats(weekStart, back, fraction)) {
@@ -103,6 +108,18 @@ export async function seedDemo(
     });
     await dress(services, rules, account.id, `dono:${settings.ownerSteamId}`, true, true);
     log('conta do dono: VIP, Dono, estatísticas, inventário e presets');
+  }
+
+  const photoPlayer = DEMO_PLAYERS[1];
+  if (services.avatars && photoPlayer) {
+    await seedDemoAvatar(
+      db,
+      services.avatars,
+      { accountId: accountIds.get(photoPlayer.steamId) as string, steamId: photoPlayer.steamId },
+      owner,
+      now,
+      log,
+    );
   }
 
   await insertStats(db, statsRows);

@@ -2,6 +2,9 @@ import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AccountsService } from '../accounts/accounts.service.js';
 import { AppModule } from '../app.module.js';
+import { AvatarFiles } from '../avatars/avatar-files.js';
+import { AvatarModeration } from '../avatars/avatar-moderation.js';
+import { Avatars } from '../avatars/avatars.js';
 import { Catalog } from '../catalog/catalog.js';
 import { loadConfig } from '../config/config.js';
 import { DATABASE } from '../database/database.module.js';
@@ -36,6 +39,11 @@ export async function runSeed(settings: DemoSettings, log: (line: string) => voi
         vip: get(VipPeriods),
         staffRoles: get(StaffRoles),
         catalog: get(Catalog),
+        avatars: {
+          files: get(AvatarFiles),
+          moderation: get(AvatarModeration),
+          enabled: get(Avatars).enabled,
+        },
       },
       settings,
       new Date(),
