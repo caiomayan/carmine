@@ -135,9 +135,17 @@ export type StaffPaymentDetail = z.infer<typeof staffPaymentDetailSchema>;
  * `POST /api/staff/payments/{id}/refund`: reembolso pela Staff (depois dos 7 dias, ou parcial por
  * indisponibilidade). `days` é quantos dias do Pacote devolver (o valor é valor × dias ÷ dias do
  * Pacote); sem ele, devolve o que resta. Os dias saem do VIP. Responde com a ficha atualizada.
+ *
+ * `expectedRefundedDays` (opcional) é quantos dias já estavam devolvidos quando o formulário leu a ficha: se a
+ * ficha andou desde então (duplo envio, retry do cliente), a API recusa com 409 `payment_not_refundable`
+ * em vez de fazer um segundo reembolso.
  */
 export const staffPaymentRefundSchema = z
-  .strictObject({ reason: staffReasonSchema, days: z.int().min(1).max(3650).optional() })
+  .strictObject({
+    reason: staffReasonSchema,
+    days: z.int().min(1).max(3650).optional(),
+    expectedRefundedDays: z.int().min(0).max(3650).optional(),
+  })
   .meta({ id: 'StaffPaymentRefund' });
 
 export type StaffPaymentRefund = z.infer<typeof staffPaymentRefundSchema>;

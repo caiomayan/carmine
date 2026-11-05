@@ -22,7 +22,7 @@ import {
 } from '../database/schema.js';
 import { StaffRejection } from '../staff/staff-errors.js';
 import { CompensationAlreadyApplied, type VipCompensation } from '../vip/vip-compensation.js';
-import { type Payments, PurchaseRejection } from './payments.js';
+import { type Payments, PurchaseRejection, RefundInProgress } from './payments.js';
 
 type PaymentRow = typeof payments.$inferSelect;
 
@@ -214,7 +214,12 @@ export class StaffPayments {
       await this.payments.refundByStaff(
         id,
         { actorSteamId: actor.steamId, reason: body.reason },
-        body.days === undefined ? {} : { days: body.days },
+        {
+          ...(body.days === undefined ? {} : { days: body.days }),
+          ...(body.expectedRefundedDays === undefined
+            ? {}
+            : { expectedRefundedDays: body.expectedRefundedDays }),
+        },
       );
     } catch (error) {
       throw translate(error);
@@ -324,6 +329,9 @@ export class StaffPayments {
 
 /** As recusas do pagamento e da compensação viram o código estável do painel. */
 function translate(error: unknown): unknown {
+  if (error instanceof RefundInProgress) {
+    return new StaffRejection('payment_refund_in_progress', error.message);
+  }
   if (error instanceof PurchaseRejection) {
     switch (error.code) {
       case 'not_found':

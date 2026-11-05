@@ -11069,6 +11069,7 @@
               "no_custom_avatar",
               "payment_not_found",
               "payment_not_refundable",
+              "payment_refund_in_progress",
               "payment_provider_unavailable",
               "purchases_not_blocked",
               "compensation_applied"
@@ -15497,6 +15498,11 @@
           "days": {
             "type": "integer",
             "minimum": 1,
+            "maximum": 3650
+          },
+          "expectedRefundedDays": {
+            "type": "integer",
+            "minimum": 0,
             "maximum": 3650
           }
         },

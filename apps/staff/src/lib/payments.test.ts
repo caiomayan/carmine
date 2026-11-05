@@ -4,6 +4,7 @@ import {
   formatBrl,
   monthsOf,
   packageLabel,
+  refundBody,
   STATUS_LABEL,
   shortId,
   stampLong,
@@ -11,6 +12,20 @@ import {
   suggestedCompensationKey,
   TAB_LABEL,
 } from './payments';
+
+describe('o corpo do reembolso (#291)', () => {
+  it('leva os dias já devolvidos da ficha, com ou sem dias pedidos', () => {
+    expect(refundBody('motivo', 10, 20)).toEqual({
+      reason: 'motivo',
+      days: 10,
+      expectedRefundedDays: 20,
+    });
+    expect(refundBody('motivo', undefined, 0)).toEqual({
+      reason: 'motivo',
+      expectedRefundedDays: 0,
+    });
+  });
+});
 
 describe('Pagamentos do painel', () => {
   it('todo estado do contrato tem rótulo, aba e tom', () => {

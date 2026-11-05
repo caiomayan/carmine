@@ -161,6 +161,16 @@ describe('as ações', () => {
   });
 });
 
+describe('o corpo do reembolso aceita expectedRefundedDays (#291)', () => {
+  it('guarda quantos dias já estavam devolvidos quando o formulário leu a ficha; negativo não vale', () => {
+    const body = { reason: 'duplo envio', days: 10, expectedRefundedDays: 0 };
+    expect(staffPaymentRefundSchema.parse(body)).toEqual(body);
+    expect(staffPaymentRefundSchema.safeParse({ ...body, expectedRefundedDays: -1 }).success).toBe(
+      false,
+    );
+  });
+});
+
 describe('staffRefundAmount (a regra única do reembolso da Staff)', () => {
   // Os preços reais dos Pacotes (VIP_PACKAGES): 30 d R$ 9,90, 90 d R$ 26,90, 180 d R$ 49,90.
   const pack = (days: number, amountCents: number) => ({
