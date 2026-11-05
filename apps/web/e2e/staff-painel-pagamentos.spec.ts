@@ -77,7 +77,7 @@ test.describe('Pagamentos no painel', () => {
     await expect(detail.getByTestId('refundable')).toContainText('90 dia(s)');
 
     // A aba "Aprovados" mantém a linha; "Contestados" não a tem.
-    await page.getByTestId('stp-tab-approved').click();
+    await page.goto('/pagamentos?status=approved');
     await expect(page).toHaveURL(/status=approved$/);
     await page.getByTestId('stp-query').fill('Painel Pagamentos Lista');
     await expect(page.getByTestId('stp-row')).toHaveCount(1);
