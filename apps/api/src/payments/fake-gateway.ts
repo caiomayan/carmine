@@ -41,6 +41,8 @@ interface FakeCharge {
   method: PaymentMethod;
   status: Exclude<PaymentStatus, 'created'>;
   refundedCents: number;
+  /** Chaves de idempotência dos estornos já feitos: a mesma chave é o mesmo estorno, como no provedor. */
+  refundKeys?: string[];
   expiresAt: string;
   approvedAt: string | null;
   paid: boolean;
@@ -132,12 +134,19 @@ export class FakePaymentsGateway implements PaymentsGateway {
     if (charge?.status === 'pending') await this.save({ ...charge, status: 'cancelled' });
   }
 
-  async refund(providerPaymentId: string, amountCents: number): Promise<void> {
+  async refund(
+    providerPaymentId: string,
+    amountCents: number,
+    idempotencyKey: string,
+  ): Promise<void> {
     const charge = await this.load(providerPaymentId);
     if (!charge || !['approved', 'partially_refunded'].includes(charge.status)) {
       throw new Error('o falso só estorna pagamento aprovado');
     }
-    await this.refundNow(charge, amountCents);
+    // Como o Mercado Pago: a chave vale junto com o valor.
+    const key = `${idempotencyKey}:${amountCents}`;
+    if (charge.refundKeys?.includes(key)) return;
+    await this.refundNow(charge, amountCents, key);
     await this.notify(charge.id);
   }
 
@@ -215,11 +224,18 @@ export class FakePaymentsGateway implements PaymentsGateway {
     });
   }
 
-  private async refundNow(charge: FakeCharge, amountCents: number): Promise<void> {
+  private async refundNow(
+    charge: FakeCharge,
+    amountCents: number,
+    idempotencyKey?: string,
+  ): Promise<void> {
     const refundedCents = Math.min(charge.refundedCents + amountCents, charge.amountCents);
     await this.save({
       ...charge,
       refundedCents,
+      refundKeys: idempotencyKey
+        ? [...(charge.refundKeys ?? []), idempotencyKey]
+        : charge.refundKeys,
       status: refundedCents >= charge.amountCents ? 'refunded' : 'partially_refunded',
     });
   }

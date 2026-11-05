@@ -17,8 +17,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { SESSION_COOKIE } from '../src/auth/session-cookies.js';
 import { payments } from '../src/database/schema.js';
 import type { FakePaymentsGateway } from '../src/payments/fake-gateway.js';
-import { PAYMENTS_GATEWAY } from '../src/payments/payments.module.js';
 import { Payments } from '../src/payments/payments.js';
+import { PAYMENTS_GATEWAY } from '../src/payments/payments.module.js';
 import { StaffRoles } from '../src/staff/staff-roles.js';
 import { VipPeriods } from '../src/vip/vip-periods.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
@@ -388,7 +388,9 @@ describe('Pagamentos no painel da Staff (S14)', () => {
         }
         const asked = spy.mock.calls.reduce((sum, call) => sum + call[1], 0);
         expect(asked).toBeLessThanOrEqual(4990);
-        expect((await gateway.getPayment(providerIdOf(p)))?.refundedCents).toBeLessThanOrEqual(4990);
+        expect((await gateway.getPayment(providerIdOf(p)))?.refundedCents).toBeLessThanOrEqual(
+          4990,
+        );
       } finally {
         spy.mockRestore();
       }

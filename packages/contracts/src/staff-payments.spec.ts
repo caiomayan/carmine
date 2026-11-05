@@ -191,4 +191,12 @@ describe('staffRefundAmount (a regra única do reembolso da Staff)', () => {
     const partial = { days: 90, amountCents: 2690, refundedCents: 299, refundedDays: 10 };
     expect(staffRefundAmount(partial, 500)).toEqual({ days: 80, cents: 2391 });
   });
+
+  it('o parcial nunca passa do que resta em centavos (plano 4990 / 180 d: 1 dia arredonda para 28)', () => {
+    // 178 × 28 = 4984; o 179º dia valeria 28, mas só restam 6.
+    const nearEnd = { days: 180, amountCents: 4990, refundedCents: 4984, refundedDays: 178 };
+    expect(staffRefundAmount(nearEnd, 1)).toEqual({ days: 1, cents: 6 });
+    const all = { days: 180, amountCents: 4990, refundedCents: 4990, refundedDays: 179 };
+    expect(staffRefundAmount(all, 1)).toEqual({ days: 1, cents: 0 });
+  });
 });

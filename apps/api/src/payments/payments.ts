@@ -22,6 +22,7 @@ import type { VipPeriods } from '../vip/vip-periods.js';
 import type { PaymentsGateway, ProviderPayment, WebhookRequest } from './gateway.js';
 import { decryptDocument, encryptDocument, last3Of, maskDocument } from './payer-document.js';
 
+const REFUNDABLE = ['approved', 'partially_refunded'];
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
 
@@ -356,27 +357,45 @@ export class Payments {
     now = this.clock(),
   ): Promise<Purchase> {
     const gateway = this.options.gateway;
-    const [row] = await this.db.select().from(payments).where(eq(payments.id, paymentId));
-    if (!row) throw new PurchaseRejection('not_found', 'Pagamento não encontrado');
-    if (
-      !['approved', 'partially_refunded'].includes(row.status) ||
-      !row.providerPaymentId ||
-      gateway === null
-    ) {
+    // O retrato que o pedido viu. Se outro reembolso andar antes de chegar a vez deste, o pedido está velho.
+    const [seen] = await this.db.select().from(payments).where(eq(payments.id, paymentId));
+    if (!seen) throw new PurchaseRejection('not_found', 'Pagamento não encontrado');
+    if (!REFUNDABLE.includes(seen.status) || !seen.providerPaymentId || gateway === null) {
       throw new PurchaseRejection('refund_unavailable', 'Só se reembolsa pagamento aprovado');
     }
-    const { days, cents: amount } = staffRefundAmount(row, options.days);
-    if (days <= 0) throw new PurchaseRejection('refund_unavailable', 'Não há dias a devolver');
-    try {
-      await gateway.refund(
-        row.providerPaymentId,
-        amount,
-        `refund-${row.id}-${row.refundedDays + days}`,
-      );
-    } catch {
-      throw new PurchaseRejection('provider_unavailable', 'O provedor não confirmou o estorno');
-    }
+    // Serializa os reembolsos DESTE pagamento com uma trava consultiva, presa durante a chamada ao provedor
+    // de propósito: sem isso dois pedidos leem o mesmo estado, o provedor (idempotente) devolve o dinheiro
+    // uma vez e os dois descontariam os dias. Não é a trava da linha: o webhook do estorno (e o do falso, que
+    // roda dentro da própria chamada) precisa dela. O custo é uma conexão do pool presa até o tempo limite do
+    // provedor, só quando a Staff reembolsa o MESMO pagamento ao mesmo tempo (raro).
     await this.db.transaction(async (tx) => {
+      // Quem espera a vez não espera para sempre (o pool tem poucas conexões).
+      await tx.execute(sql`select set_config('lock_timeout', '15000', true)`);
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${paymentId}, 19))`);
+      const [row] = await tx.select().from(payments).where(eq(payments.id, paymentId));
+      if (!row || !REFUNDABLE.includes(row.status) || !row.providerPaymentId) {
+        throw new PurchaseRejection('refund_unavailable', 'Só se reembolsa pagamento aprovado');
+      }
+      if (row.refundedDays !== seen.refundedDays) {
+        throw new PurchaseRejection(
+          'refund_unavailable',
+          'Outro reembolso deste pagamento andou enquanto o pedido chegava; confira o estado e tente de novo',
+        );
+      }
+      const { days, cents: amount } = staffRefundAmount(row, options.days);
+      if (days <= 0) throw new PurchaseRejection('refund_unavailable', 'Não há dias a devolver');
+      // Sem centavos a devolver (o valor já saiu todo pelo provedor): só faltam os dias, sem chamar o provedor.
+      if (amount > 0) {
+        try {
+          await gateway.refund(
+            row.providerPaymentId,
+            amount,
+            `refund-${row.id}-${row.refundedDays + days}`,
+          );
+        } catch {
+          throw new PurchaseRejection('provider_unavailable', 'O provedor não confirmou o estorno');
+        }
+      }
       const [locked] = await tx
         .select()
         .from(payments)
@@ -416,9 +435,9 @@ export class Payments {
         at: now,
       });
     });
-    await this.safely(() => this.options.onVipChanged?.(row.accountId));
-    await this.sync(row.id, now).catch(() => undefined);
-    const [after] = await this.db.select().from(payments).where(eq(payments.id, row.id));
+    await this.safely(() => this.options.onVipChanged?.(seen.accountId));
+    await this.sync(seen.id, now).catch(() => undefined);
+    const [after] = await this.db.select().from(payments).where(eq(payments.id, seen.id));
     return this.viewOf(after as PaymentRow, now);
   }
 
