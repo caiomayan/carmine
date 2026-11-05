@@ -13,25 +13,71 @@ export type GameMode = z.infer<typeof gameModeSchema>;
 /**
  * Preferência de jogo (ADR 0028): uma escolha do jogador que um plugin de jogo guarda por servidor e
  * que o Carmine guarda na Conta, para valer em todo servidor do Modo. Cada chave nova entra aqui, com
- * o padrão e os Modos onde vale. `awp_raffle`: o jogador está no sorteio da AWP do Retake.
+ * o padrão e os Modos onde vale. `awp_raffle`: o jogador está no sorteio da AWP do Retake. As nove do
+ * Deathmatch espelham as preferências do plugin (sons, mensagens, `!hs`, `!noprimary`).
  */
-export const gamePreferenceKeySchema = z.enum(['awp_raffle']).meta({ id: 'GamePreferenceKey' });
+export const gamePreferenceKeySchema = z
+  .enum([
+    'awp_raffle',
+    'kill_sound',
+    'headshot_kill_sound',
+    'knife_kill_sound',
+    'hit_sound',
+    'new_mode_sound',
+    'no_primary',
+    'only_headshot',
+    'hud_messages',
+    'damage_info',
+  ])
+  .meta({ id: 'GamePreferenceKey' });
 
 export type GamePreferenceKey = z.infer<typeof gamePreferenceKeySchema>;
 
-/** O valor de cada chave quando a Conta nunca a mudou (decisão do dono, 2026-10-29: fora do sorteio da AWP). */
+/**
+ * O valor de cada chave quando a Conta nunca a mudou. `awp_raffle`: decisão do dono, 2026-10-29 (fora
+ * do sorteio). Deathmatch: decisão do maestro, 2026-11-05 (os padrões do `Deathmatch.json` de hoje).
+ */
 export const GAME_PREFERENCE_DEFAULTS: Record<GamePreferenceKey, boolean> = {
   awp_raffle: false,
+  kill_sound: false,
+  headshot_kill_sound: true,
+  knife_kill_sound: false,
+  hit_sound: true,
+  new_mode_sound: true,
+  no_primary: false,
+  only_headshot: false,
+  hud_messages: true,
+  damage_info: true,
 };
 
 /** Os Modos onde cada chave existe; fora deles a API recusa a escrita e o plugin não aplica nada. */
 export const GAME_PREFERENCE_MODES: Record<GamePreferenceKey, readonly GameMode[]> = {
   awp_raffle: ['retake'],
+  kill_sound: ['deathmatch'],
+  headshot_kill_sound: ['deathmatch'],
+  knife_kill_sound: ['deathmatch'],
+  hit_sound: ['deathmatch'],
+  new_mode_sound: ['deathmatch'],
+  no_primary: ['deathmatch'],
+  only_headshot: ['deathmatch'],
+  hud_messages: ['deathmatch'],
+  damage_info: ['deathmatch'],
 };
 
 /** As Preferências de jogo de uma Conta, com o padrão no lugar do que ela nunca mudou. */
 export const gamePreferencesSchema = z
-  .strictObject({ awpRaffle: z.boolean() })
+  .strictObject({
+    awpRaffle: z.boolean(),
+    killSound: z.boolean(),
+    headshotKillSound: z.boolean(),
+    knifeKillSound: z.boolean(),
+    hitSound: z.boolean(),
+    newModeSound: z.boolean(),
+    noPrimary: z.boolean(),
+    onlyHeadshot: z.boolean(),
+    hudMessages: z.boolean(),
+    damageInfo: z.boolean(),
+  })
   .meta({ id: 'GamePreferences' });
 
 export type GamePreferences = z.infer<typeof gamePreferencesSchema>;

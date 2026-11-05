@@ -37,7 +37,20 @@ export class GamePreferencesStore {
         and(eq(accountGamePreferences.accountId, accountId), eq(accountGamePreferences.mode, mode)),
       );
     const stored = new Map(rows.map((row) => [row.key, row.value]));
-    return { awpRaffle: booleanOf(stored.get('awp_raffle'), GAME_PREFERENCE_DEFAULTS.awp_raffle) };
+    const stateOf = (key: GamePreferenceKey): boolean =>
+      booleanOf(stored.get(key), GAME_PREFERENCE_DEFAULTS[key]);
+    return {
+      awpRaffle: stateOf('awp_raffle'),
+      killSound: stateOf('kill_sound'),
+      headshotKillSound: stateOf('headshot_kill_sound'),
+      knifeKillSound: stateOf('knife_kill_sound'),
+      hitSound: stateOf('hit_sound'),
+      newModeSound: stateOf('new_mode_sound'),
+      noPrimary: stateOf('no_primary'),
+      onlyHeadshot: stateOf('only_headshot'),
+      hudMessages: stateOf('hud_messages'),
+      damageInfo: stateOf('damage_info'),
+    };
   }
 
   /** Grava o valor explícito. `null` se a Conta não existe (ou foi anonimizada). */
