@@ -187,7 +187,7 @@ describe('Pagamentos na demonstração da homologação (#292)', () => {
       expect(row.payerDocumentEncrypted).not.toContain(FAKE_PAYER.document);
       expect(service.revealDocument(row)).toBe(FAKE_PAYER.document);
       const view = await service.get(row.accountId, row.id);
-      expect(view.payerDocumentMasked).toBe('***.***.909-**');
+      expect(view.payerDocumentMasked).toBe('***.***.**9-09');
       expect(JSON.stringify(view)).not.toContain(FAKE_PAYER.document);
     }
   });
