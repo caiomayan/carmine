@@ -29,10 +29,10 @@ export function runApiCli(script: string, args: string[]): string {
 }
 
 /**
- * Dá à Conta uma foto própria no ar (as fotos não têm armazenamento no E2E, então só a linha existe: o que vale é o
+ * Dá à Conta uma foto própria no ar, e com `withPastRemoval` também uma remoção anterior (as fotos não têm armazenamento no E2E, então só a linha existe: o que vale é o
  * estado da ficha da Staff). Insere direto no banco do E2E pelo `pg` da API.
  */
-export function seedCustomAvatar(steamId: string): void {
+export function seedCustomAvatar(steamId: string, opts: { withPastRemoval?: boolean } = {}): void {
   execFileSync(
     process.execPath,
     [
@@ -41,10 +41,18 @@ export function seedCustomAvatar(steamId: string): void {
        (async () => {
          const c = new Client({ connectionString: process.env.DATABASE_URL });
          await c.connect();
-         await c.query("insert into account_avatars (account_id) select id from accounts where steam_id = $1", [process.argv[1]]);
+         const steamId = process.argv[1];
+         if (process.argv[2] === 'removal') {
+           await c.query(
+             "insert into account_avatars (account_id, status, taken_down_at, retired_at, decision, decided_at, decided_by_steam_id, decision_reason, decision_note) select id, 'removed', now(), now(), 'remove', now(), steam_id, 'violence', 'Imagem violenta.' from accounts where steam_id = $1",
+             [steamId],
+           );
+         }
+         await c.query("insert into account_avatars (account_id) select id from accounts where steam_id = $1", [steamId]);
          await c.end();
        })().catch((e) => { console.error(e); process.exit(1); });`,
       steamId,
+      ...(opts.withPastRemoval ? ['removal'] : []),
     ],
     { cwd: API_DIR, env: { ...process.env, DATABASE_URL: E2E_DATABASE_URL } },
   );
