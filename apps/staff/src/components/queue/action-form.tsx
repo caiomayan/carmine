@@ -29,6 +29,7 @@ export function ActionForm<T = unknown>({
   onDone,
   onCancel,
   onSuccess,
+  confirmation,
   children,
 }: {
   label: string;
@@ -47,6 +48,11 @@ export function ActionForm<T = unknown>({
   onCancel?: () => void;
   /** Recebe o que a API devolveu (ex.: a ficha atualizada). */
   onSuccess?: (data: T) => void;
+  /**
+   * Ação que mexe em dinheiro ou não tem volta: depois de preencher, o primeiro envio mostra o que vai acontecer (com os
+   * números, lidos na hora) e só o segundo envia. Mudar o motivo desfaz a confirmação.
+   */
+  confirmation?: { title: string; body: () => string; confirmLabel: string };
   children?: ReactNode;
 }) {
   const id = useId();
@@ -71,6 +77,7 @@ export function ActionForm<T = unknown>({
   }, [errorField, errorId]);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -89,12 +96,17 @@ export function ActionForm<T = unknown>({
     }
     setError(null);
     setErrorField(null);
+    if (confirmation && !confirming) {
+      setConfirming(true);
+      return;
+    }
     setPending(true);
     const result = await onSubmit(text);
     setPending(false);
     if (!result.ok) {
       setError(result.message);
       setErrorField(null);
+      setConfirming(false);
       return;
     }
     setDone(true);
@@ -142,6 +154,7 @@ export function ActionForm<T = unknown>({
         value={reason}
         onChange={(event) => {
           setReason(event.target.value);
+          setConfirming(false);
           if (error) {
             setError(null);
             setErrorField(null);
@@ -151,6 +164,12 @@ export function ActionForm<T = unknown>({
         aria-describedby={error && !errorField ? errorId : undefined}
         data-testid={`${testId}-reason`}
       />
+      {confirmation && confirming ? (
+        <fieldset className="stp-confirm" data-testid={`${testId}-confirm`}>
+          <legend className="stp-confirm-title">{confirmation.title}</legend>
+          <p>{confirmation.body()}</p>
+        </fieldset>
+      ) : null}
       {error ? (
         <p id={errorId} className="stp-field-error" role="alert">
           {error}
@@ -162,6 +181,7 @@ export function ActionForm<T = unknown>({
           className="stp-btn"
           onClick={() => {
             setOpen(false);
+            setConfirming(false);
             onCancel?.();
           }}
           disabled={pending}
@@ -176,7 +196,7 @@ export function ActionForm<T = unknown>({
           aria-busy={pending || undefined}
           data-testid={`${testId}-submit`}
         >
-          {submitLabel}
+          {confirmation && confirming ? confirmation.confirmLabel : submitLabel}
         </button>
       </div>
     </form>

@@ -2523,3 +2523,19 @@ a.stp-btn {
 .stp-avatar-removals-wrap {
   margin-top: 16px;
 }
+
+/* ---------- pagamentos: operações em lote ---------- */
+.stp-ops {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.stp-ops-card {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+.stp-ops-card p {
+  margin: 0;
+}

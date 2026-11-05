@@ -50,6 +50,8 @@ A homologação (`dev.stcarmine.com`) vende com o **provedor falso**: a página 
 
 ## Painel da Staff nos pagamentos (S14)
 
+> **S25:** a tela também existe no painel novo (`apps/staff`, `/pagamentos`; `staff-dev.stcarmine.com` na homologação), com as mesmas regras abaixo: só Dono e Admin, CPF só mascarado, reembolso com motivo e confirmação, compensação confirmada pelos números. A ficha abre ao lado da lista; "Conciliar agora" não pede motivo (a API só recebe os dias). Enquanto `/staff/pagamentos` do site não é removido, as duas telas coexistem. E2E do painel: `apps/web/e2e/staff-painel-pagamentos.spec.ts`.
+
 - **Onde:** `/staff/pagamentos`, aba **Pagamentos** do painel. **Só o Dono e o Admin** (permissão `payments.manage`); Moderador e jogador recebem 404, e o Moderador nem vê a aba.
 - **Lista:** do mais recente ao mais antigo, com abas por estado e a contagem de cada um (sempre o total, não só a página). Cada linha mostra o estado, a Conta, o valor, o Pacote, o meio e a data; "Carregar mais" pagina pelo cursor.
 - **Ficha** (`/staff/pagamentos/<id>`): valores, Pacote, Conta beneficiada, Pagador (CPF mascarado), provedor e id lá, o fim do Período VIP gerado, os **webhooks recebidos** (quando, tópico, assinatura, o que a API fez) e o que a Staff já fez nesse pagamento.
