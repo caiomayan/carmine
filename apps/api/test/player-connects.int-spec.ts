@@ -11,6 +11,20 @@ import { vipPeriods } from '../src/database/schema.js';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
 import { startTestApp, steamIdFor, type TestApp } from './support/app.js';
 
+/** As Preferências de jogo de uma Conta que nunca mudou nada (padrões do contrato). */
+const DEFAULT_PREFERENCES = {
+  awpRaffle: false,
+  killSound: false,
+  headshotKillSound: true,
+  knifeKillSound: false,
+  hitSound: true,
+  newModeSound: true,
+  noPrimary: false,
+  onlyHeadshot: false,
+  hudMessages: true,
+  damageInfo: true,
+};
+
 describe('POST /api/server/player-connects', () => {
   let t: TestApp;
 
@@ -75,7 +89,7 @@ describe('POST /api/server/player-connects', () => {
       vipEndsAt: null,
       sanctions: [],
       chatHidden: false,
-      preferences: { awpRaffle: false },
+      preferences: DEFAULT_PREFERENCES,
       greeting: 'Bem-vindo, FalleN.\n!awp coloca você no sorteio da AWP.',
     });
   });
@@ -293,9 +307,9 @@ describe('POST /api/server/player-connects', () => {
 
     it('a Conta nasce fora do sorteio; o !awp alterna e a escolha volta em todo connect', async () => {
       const steamId = steamIdFor(710);
-      expect((await connectOk({ steamId, steamName: 'sniper' })).preferences).toEqual({
-        awpRaffle: false,
-      });
+      expect((await connectOk({ steamId, steamName: 'sniper' })).preferences).toEqual(
+        DEFAULT_PREFERENCES,
+      );
 
       const entered = await preference('POST', steamId);
       expect(entered.statusCode, entered.body).toBe(200);
@@ -364,6 +378,51 @@ describe('POST /api/server/player-connects', () => {
       expect((await preference('POST', steamId, undefined, key)).statusCode).toBe(400);
       expect((await preference('PUT', steamId, { enabled: true }, key)).statusCode).toBe(400);
       expect((await connectOk({ steamId, steamName: 'dm' })).preferences.awpRaffle).toBe(false);
+    });
+
+    it('Deathmatch: as nove chaves nascem com os padrões do plugin, alternam e valem só no Modo deathmatch (ADR 0028)', async () => {
+      const steamId = steamIdFor(716);
+      await connectOk({ steamId, steamName: 'dmprefs' });
+      const { key } = await t.app
+        .get(GameServerRegistry)
+        .register({ name: 'dm-preferencias-2', mode: 'deathmatch', address: '127.0.0.1:27041' });
+
+      const dmConnect = await t.app.inject({
+        method: 'POST',
+        url: '/api/server/player-connects',
+        headers: { authorization: `Bearer ${key}` },
+        payload: { steamId, steamName: 'dmprefs' },
+      });
+      expect(playerConnectResultSchema.parse(dmConnect.json()).preferences).toEqual(
+        DEFAULT_PREFERENCES,
+      );
+
+      const hit = await preference('POST', steamId, undefined, key, 'hit_sound');
+      expect(gamePreferenceValueSchema.parse(hit.json())).toEqual({
+        key: 'hit_sound',
+        enabled: false,
+      });
+      const kill = await preference('PUT', steamId, { enabled: true }, key, 'kill_sound');
+      expect(gamePreferenceValueSchema.parse(kill.json())).toEqual({
+        key: 'kill_sound',
+        enabled: true,
+      });
+      const again = await t.app.inject({
+        method: 'POST',
+        url: '/api/server/player-connects',
+        headers: { authorization: `Bearer ${key}` },
+        payload: { steamId, steamName: 'dmprefs' },
+      });
+      expect(playerConnectResultSchema.parse(again.json()).preferences).toEqual({
+        ...DEFAULT_PREFERENCES,
+        hitSound: false,
+        killSound: true,
+      });
+
+      // Num Retake a chave do Deathmatch é recusada.
+      expect(
+        (await preference('POST', steamId, undefined, t.serverKey, 'hit_sound')).statusCode,
+      ).toBe(400);
     });
 
     it('Conta que não existe: 404; SteamID, chave ou corpo inválido: 400; sem a chave do servidor: 401', async () => {

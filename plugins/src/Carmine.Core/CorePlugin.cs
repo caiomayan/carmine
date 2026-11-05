@@ -2,6 +2,7 @@ using Carmine.Api.Client;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes;
+using CounterStrikeSharp.API.Core.Capabilities;
 using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Cvars;
 using CounterStrikeSharp.API.Modules.Timers;
@@ -39,6 +40,11 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     private PendingGreetings? _greetings;
     /// <summary>O sorteio da AWP do Retake (Preferência de jogo, ADR 0028); nulo fora do Retake.</summary>
     private AwpRaffle? _awp;
+    /// <summary>As Preferências de jogo do Deathmatch (ADR 0028); nulo fora do Deathmatch.</summary>
+    private DeathmatchPreferences? _dmPrefs;
+    /// <summary>A ponte com o Deathmatch patchado; nula se o plugin não está lá ou não é o patchado.</summary>
+    private DeathmatchBridge? _dmBridge;
+    private bool _dmBridgeMissingLogged;
     private GameStatsLines? _gameStats;
     private VipInfo? _vipInfo;
     private HeartbeatReporter? _heartbeat;
@@ -108,6 +114,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         {
             _awp = new AwpRaffle(client);
         }
+        if (Config.ReservedSlotsMode == ReservedSlotsMode.Deathmatch)
+        {
+            _dmPrefs = new DeathmatchPreferences(client);
+        }
         _heartbeat = new HeartbeatReporter(client);
         _gameStats = new GameStatsLines(client);
         _chat = new ChatPreferences(client);
@@ -176,6 +186,9 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         _sync = null;
         _greetings = null;
         UnloadAddon();
+        _dmBridge?.Unsubscribe();
+        _dmBridge = null;
+        _dmPrefs = null;
         _awp = null;
         _gameStats = null;
         _heartbeat = null;
@@ -244,6 +257,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
                 {
                     ApplyAwp(current, awpEnabled);
                 }
+                if (_dmPrefs?.TakeOnSpawn(current.SteamID) is { } dmValues)
+                {
+                    ApplyDeathmatchPreferences(current, dmValues);
+                }
                 if (_loadoutNotices.TakeOnSpawn(current.SteamID))
                 {
                     current.SendChat(LoadoutNotices.Message);
@@ -270,6 +287,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
             _greetings?.OnDisconnect(player.SteamID);
             _welcome?.OnDisconnect(player.SteamID);
             _awp?.OnDisconnect(player.SteamID);
+            _dmPrefs?.OnDisconnect(player.SteamID);
             _sanctions.Forget(player.SteamID);
             _chat?.OnDisconnect(player.SteamID);
             _vipInfo?.OnDisconnect(player.SteamID);
@@ -430,6 +448,7 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         var greetingNow = _greetings?.OnConnectResult(steamId, result.Greeting, isAlive: playing);
         var cardNow = _welcome?.OnConnectResult(steamId, isAlive: playing) == true;
         var awpNow = _awp?.OnConnectResult(steamId, result.Preferences.AwpRaffle, isAlive: playing);
+        var dmNow = _dmPrefs?.OnConnectResult(steamId, result.Preferences, isAlive: playing);
         if (player is null)
         {
             return;
@@ -452,6 +471,10 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
         if (awpNow is { } awpEnabled)
         {
             ApplyAwp(player, awpEnabled);
+        }
+        if (dmNow is not null)
+        {
+            ApplyDeathmatchPreferences(player, dmNow);
         }
     }
 
@@ -698,6 +721,79 @@ public sealed partial class CorePlugin : BasePlugin, IPluginConfig<CoreConfig>
     /// <summary>Deixa a preferência de AWP do alocador no estado da Conta (ver <see cref="AwpRaffle"/>).</summary>
     private static void ApplyAwp(CCSPlayerController player, bool enabled) =>
         player.ExecuteClientCommandFromServer(AwpRaffle.CommandFor(enabled));
+
+    /// <summary>
+    /// Pega a API do Deathmatch depois que todos os plugins carregaram (a capability <c>deathmatch</c> só existe então) e
+    /// passa a levar à Conta o que o jogador muda. Sem o Deathmatch patchado, segue sem a regra e avisa no log.
+    /// </summary>
+    public override void OnAllPluginsLoaded(bool hotReload) => EnsureDeathmatchBridge();
+
+    private DeathmatchBridge? EnsureDeathmatchBridge()
+    {
+        if (_dmPrefs is null || _dmBridge is not null)
+        {
+            return _dmBridge;
+        }
+        object? api = null;
+        try
+        {
+            api = new PluginCapability<object>("deathmatch").Get();
+        }
+        catch (KeyNotFoundException)
+        {
+        }
+        _dmBridge = DeathmatchBridge.TryCreate(api);
+        if (_dmBridge is null)
+        {
+            if (!_dmBridgeMissingLogged)
+            {
+                _dmBridgeMissingLogged = true;
+                Log.DeathmatchBridgeMissing(Logger);
+            }
+            return null;
+        }
+        _dmBridge.Subscribe(OnDeathmatchPreferenceChanged);
+        return _dmBridge;
+    }
+
+    /// <summary>
+    /// Deixa o Deathmatch igual à Conta: grava cada valor de forma explícita, sem aviso ao jogador (ADR 0028). Se o
+    /// plugin ainda não tem os dados do jogador, guarda para o próximo spawn.
+    /// </summary>
+    private void ApplyDeathmatchPreferences(CCSPlayerController player, IReadOnlyDictionary<string, bool> values)
+    {
+        var bridge = EnsureDeathmatchBridge();
+        if (bridge is null)
+        {
+            return;
+        }
+        var applied = true;
+        foreach (var (name, value) in values)
+        {
+            applied &= bridge.TrySet(player, name, value);
+        }
+        if (!applied && _dmPrefs is { } prefs)
+        {
+            prefs.Requeue(player.SteamID, values);
+        }
+    }
+
+    /// <summary>O jogador mudou uma preferência no Deathmatch (menu <c>!dm</c> ou atalho): leva à Conta, sem mensagem.</summary>
+    private void OnDeathmatchPreferenceChanged(CCSPlayerController player, string name, bool value)
+    {
+        if (_dmPrefs is not { } prefs || !IsHuman(player) || DeathmatchPreferences.KeyFor(name) is not { } key)
+        {
+            return;
+        }
+        var steamId = player.SteamID;
+        RunInBackground(async token =>
+        {
+            if (!await prefs.SaveAsync(steamId, key, value, token))
+            {
+                Log.DeathmatchPreferenceNotSaved(Logger, steamId, name);
+            }
+        });
+    }
 
     /// <summary>Placar, chat e kill feed leem o nome do controller (ADR 0008).</summary>
     private static void ApplyName(CCSPlayerController player, string name)

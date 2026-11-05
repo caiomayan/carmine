@@ -109,6 +109,7 @@ Melhorias de dentro do jogo nos servidores abertos (Retake e Deathmatch), saída
 **8. Deathmatch: mapas e sons**
 - O pool passa de 3 para 5 mapas, com `de_ancient` e `de_anubis` (os dois já estão no pool do Retake). O plugin não traz arquivo de spawns desses dois e usa os pontos nativos de deathmatch da Valve (`info_deathmatch_spawn`), sem coordenada nossa; se faltar espalhamento no jogo, gravamos com o editor do plugin (`css_dm_spawns`). A votação mostra 3, e 1 fica em cooldown.
 - Os sons de hit e de headshot ficam **ligados por padrão** (`Deathmatch.json`). Cada jogador desliga por `!hitsound` (acerto) e `!hssound` (headshot), ou em `!dm` → Menu de sons. O `!hud` não cobre os sons: ele só liga e desliga as mensagens na tela, e cada preferência do plugin tem o seu atalho (v1.3.6, `Menus.cs`), sem um comando que ligue várias.
+- Os sons, as mensagens na tela, o `!hs` e o `!noprimary` são **Preferências de jogo**: ficam na Conta e valem em todo servidor de Deathmatch (nove chaves, com os padrões acima e os de hoje do `Deathmatch.json`; tabela no [ADR 0028](../adr/0028-preferencias-de-jogo-na-conta.md)). O Core aplica o valor da Conta no primeiro spawn, sem mensagem, e guarda em silêncio o que o jogador muda. As armas do `!guns` do DM ficam para a issue "Preferências de jogo, parte 2b".
 
 **9. Retake: 50 rounds por mapa**
 - `mp_maxrounds` vai de 30 para **50**, uns 35 a 40 min por mapa. A votação de fim de mapa continua 2 rounds antes do fim.

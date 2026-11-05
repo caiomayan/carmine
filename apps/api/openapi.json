@@ -8104,10 +8104,46 @@
         "properties": {
           "awpRaffle": {
             "type": "boolean"
+          },
+          "killSound": {
+            "type": "boolean"
+          },
+          "headshotKillSound": {
+            "type": "boolean"
+          },
+          "knifeKillSound": {
+            "type": "boolean"
+          },
+          "hitSound": {
+            "type": "boolean"
+          },
+          "newModeSound": {
+            "type": "boolean"
+          },
+          "noPrimary": {
+            "type": "boolean"
+          },
+          "onlyHeadshot": {
+            "type": "boolean"
+          },
+          "hudMessages": {
+            "type": "boolean"
+          },
+          "damageInfo": {
+            "type": "boolean"
           }
         },
         "required": [
-          "awpRaffle"
+          "awpRaffle",
+          "killSound",
+          "headshotKillSound",
+          "knifeKillSound",
+          "hitSound",
+          "newModeSound",
+          "noPrimary",
+          "onlyHeadshot",
+          "hudMessages",
+          "damageInfo"
         ],
         "additionalProperties": false
       },
@@ -8149,7 +8185,16 @@
       "GamePreferenceKey": {
         "type": "string",
         "enum": [
-          "awp_raffle"
+          "awp_raffle",
+          "kill_sound",
+          "headshot_kill_sound",
+          "knife_kill_sound",
+          "hit_sound",
+          "new_mode_sound",
+          "no_primary",
+          "only_headshot",
+          "hud_messages",
+          "damage_info"
         ]
       },
       "GamePreferenceSet": {
