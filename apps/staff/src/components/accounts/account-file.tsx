@@ -1,6 +1,7 @@
 'use client';
 
 import type { StaffAccountDetail, StaffSanction } from '@carmine/contracts';
+import type { StaffAccountAvatar } from '@carmine/contracts/avatar';
 import { staffAccountDetailSchema, staffCan } from '@carmine/contracts/staff';
 import { ArrowLeftIcon, CheckIcon, CopyIcon, ExternalLinkIcon } from 'lucide-react';
 import Link from 'next/link';
@@ -17,6 +18,7 @@ import {
   sanctionGuard,
   sanctionState,
 } from '@/lib/staff-rules';
+import { AccountAvatarPanel } from './account-avatar';
 import { ErasurePanel, RankingPanel, RolePanel, VipPanel } from './account-panels';
 import { ApplySanctionForm, type ReportOrigin } from './apply-sanction-form';
 
@@ -38,19 +40,22 @@ const sinceText = (iso: string | null) => (iso ? `Último connect ${stamp(iso)}`
 /**
  * A ficha de uma Conta no painel (S25): quem é, o que vale agora, aplicar Punição com a sugestão da tabela, o histórico
  * completo (com o motivo interno), o reset do Nome de exibição e as ações da Staff sobre ela. Cada mutação devolve a ficha
- * atualizada. VIP, Ranking, papel e a exclusão de dados ainda ficam na ficha do site.
+ * atualizada. a foto de perfil, VIP, Ranking, papel e a exclusão de dados.
  */
 export function AccountFile({
   initial,
   viewer,
   report,
   siteUrl,
+  avatar,
 }: {
   initial: StaffAccountDetail;
   viewer: StaffViewer;
   /** A Denúncia da fila que originou a visita (S13): a Punição aplicada fecha o caso. */
   report?: ReportOrigin;
   siteUrl: string;
+  /** A foto de perfil da Conta; ausente para quem não modera fotos ou se a API não respondeu. */
+  avatar?: StaffAccountAvatar;
 }) {
   const [detail, setDetail] = useState(initial);
   const { account } = detail;
@@ -115,6 +120,7 @@ export function AccountFile({
             <DisplayNamePanel detail={detail} onChange={setDetail} />
           ) : null}
 
+          {avatar ? <AccountAvatarPanel publicId={account.publicId} initial={avatar} /> : null}
           <RankingPanel detail={detail} viewer={viewer} onChange={setDetail} />
           <RolePanel detail={detail} viewer={viewer} onChange={setDetail} />
           <ErasurePanel detail={detail} viewer={viewer} />
