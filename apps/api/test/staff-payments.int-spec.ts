@@ -411,6 +411,189 @@ describe('Pagamentos no painel da Staff (S14)', () => {
     });
   });
 
+  /**
+   * Issue #291 (achados da revisão adversarial do #289). Escritos por quem NÃO implementa, descrevem o
+   * comportamento CERTO e falham até a correção. Cada caso prende o provedor (o falso) de um jeito que a
+   * produção só vê raramente: timeout depois do estorno, duplo envio, trava ocupada.
+   */
+  describe('reembolso pela Staff: retry, duplo envio e travas (#291)', () => {
+    const STAFF = { actorSteamId: FOUNDER, reason: 'teste do #291' };
+    const row = async (id: string) => {
+      const [found] = await t.postgres.db.select().from(payments).where(eq(payments.id, id));
+      return found as typeof payments.$inferSelect;
+    };
+    const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+    const refundCall = (who: Person, id: string, body: object) =>
+      who.call('POST', `/api/staff/payments/${id}/refund`, body);
+    const providerCents = async (p: Purchase) =>
+      (await gateway.getPayment(providerIdOf(p)))?.refundedCents;
+    const expectVipEndsIn = async (who: Person, days: number) => {
+      const end = (await vip.statusOf(who.account.id)).endsAt as Date;
+      expect(Math.abs(end.getTime() - (Date.now() + days * DAY_MS))).toBeLessThan(60_000);
+    };
+    /** Uma porta que o teste abre quando quiser: prende o `gateway.refund` até lá. */
+    const door = () => {
+      let open!: () => void;
+      const opened = new Promise<void>((resolve) => {
+        open = resolve;
+      });
+      return { opened, open };
+    };
+
+    it('retry depois de timeout: o estorno saiu no provedor mas a transação desfez; repetir com a mesma chave não registra centavos a mais', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' }); // 2690 / 90 dias; 10 dias = 299
+      const service = t.app.get(Payments);
+      const real = gateway.refund.bind(gateway);
+      const spy = vi.spyOn(gateway, 'refund');
+      try {
+        // Tentativa 1: o provedor estorna e o nosso lado perde a resposta (timeout), então a transação desfaz.
+        spy.mockImplementationOnce(async (...args) => {
+          await real(...args);
+          throw new Error('timeout depois do estorno');
+        });
+        await expect(service.refundByStaff(p.id, STAFF, { days: 10 })).rejects.toBeDefined();
+        // O webhook (ou a conciliação) traz o estorno para a linha; os dias do Plano continuam todos.
+        await service.reconcile({ since: new Date(Date.now() - DAY_MS) });
+        expect(await providerCents(p)).toBe(299);
+        expect(await row(p.id)).toMatchObject({ refundedCents: 299, refundedDays: 0 });
+
+        // Tentativa 2: a Staff repete (mesma chave de idempotência, o provedor trata como repetição).
+        await service.refundByStaff(p.id, STAFF, { days: 10 });
+      } finally {
+        spy.mockRestore();
+      }
+
+      // O valor guardado é o que o provedor tem (299), nunca 598.
+      expect(await providerCents(p)).toBe(299);
+      const after = await row(p.id);
+      expect(after.refundedCents).toBe(299);
+      expect(after.refundedDays).toBe(10);
+      expect(after.status).toBe('partially_refunded');
+      await expectVipEndsIn(buyer, 80);
+    });
+
+    it('duplo envio depois do primeiro commit não vira um segundo reembolso (expectedRefundedDays)', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' });
+      // O formulário leu a ficha com 0 dia devolvido e manda isso junto do pedido.
+      const body = { reason: 'duplo envio', days: 10, expectedRefundedDays: 0 };
+
+      const first = await refundCall(owner, p.id, body);
+      expect(first.statusCode, first.body).toBe(200);
+      const second = await refundCall(owner, p.id, body); // o mesmo pedido de novo (clique duplo, retry do cliente)
+      expect(second.statusCode, second.body).toBe(409);
+      expect(refusal(second)).toBe('payment_not_refundable');
+
+      expect(await providerCents(p)).toBe(299);
+      expect(await row(p.id)).toMatchObject({ refundedCents: 299, refundedDays: 10 });
+      const audit = (await vip.auditOf(buyer.account.id)).filter(
+        (a) => a.action === 'payment_refund',
+      );
+      expect(audit).toHaveLength(1);
+      await expectVipEndsIn(buyer, 80);
+    });
+
+    it('lock_timeout na espera da trava vira "reembolso em andamento" (409), não 500', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' });
+      const service = t.app.get(Payments);
+      const real = gateway.refund.bind(gateway);
+      const hold = door();
+      let calls = 0;
+      const spy = vi.spyOn(gateway, 'refund').mockImplementation(async (...args) => {
+        calls += 1;
+        if (calls === 1) await hold.opened; // o primeiro reembolso fica preso no provedor, com a trava
+        return real(...args);
+      });
+      try {
+        const first = service.refundByStaff(p.id, STAFF, { days: 10 });
+        await sleep(500);
+        // O segundo pedido espera a trava até o lock_timeout (15 s) e então desiste.
+        const second = await refundCall(owner, p.id, { reason: 'espera a trava', days: 10 });
+        expect(second.statusCode, second.body).toBe(409);
+        expect(staffErrorSchema.parse(second.json()).message).toMatch(/em andamento/i);
+
+        hold.open();
+        await first;
+      } finally {
+        hold.open();
+        spy.mockRestore();
+      }
+      // O primeiro seguiu a vida: o dinheiro saiu uma vez e foi registrado.
+      expect(await providerCents(p)).toBe(299);
+      expect(await row(p.id)).toMatchObject({ refundedCents: 299, refundedDays: 10 });
+    }, 60_000);
+
+    it('o FOR UPDATE depois do provedor não perde o registro: com a linha ocupada além do lock_timeout, espera e grava', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' });
+      const service = t.app.get(Payments);
+      const real = gateway.refund.bind(gateway);
+      const release = door();
+      let rowLockHeld: Promise<unknown> = Promise.resolve();
+      const spy = vi.spyOn(gateway, 'refund').mockImplementation(async (...args) => {
+        await real(...args); // o dinheiro já saiu (e o webhook já passou)...
+        // ...e só então outra transação (ex.: um webhook lento) pega a linha e a segura além dos 15 s.
+        const taken = door();
+        rowLockHeld = t.postgres.db.transaction(async (tx) => {
+          await tx.select().from(payments).where(eq(payments.id, p.id)).for('update');
+          taken.open();
+          await release.opened;
+        });
+        await taken.opened;
+        setTimeout(release.open, 17_000);
+      });
+      try {
+        // Hoje o FOR UPDATE estoura (55P03) com o dinheiro já fora: a transação desfaz e o registro se perde.
+        await service.refundByStaff(p.id, STAFF, { days: 10 });
+      } finally {
+        release.open();
+        await rowLockHeld;
+        spy.mockRestore();
+      }
+      expect(await providerCents(p)).toBe(299);
+      expect(await row(p.id)).toMatchObject({ refundedCents: 299, refundedDays: 10 });
+      await expectVipEndsIn(buyer, 80);
+    }, 60_000);
+
+    it('o reembolso do próprio jogador (7 dias) usa a mesma trava: nunca se estorna mais que o pago', async () => {
+      const buyer = await member(null);
+      const p = await buyAndPay(buyer, { package: 'vip-3m' }); // 2690 / 90 dias
+      const service = t.app.get(Payments);
+      const real = gateway.refund.bind(gateway);
+      const hold = door();
+      let calls = 0;
+      const spy = vi.spyOn(gateway, 'refund').mockImplementation(async (...args) => {
+        calls += 1;
+        if (calls === 1) await hold.opened; // o da Staff fica preso no provedor
+        return real(...args);
+      });
+      try {
+        const staff = service.refundByStaff(p.id, STAFF, { days: 10 });
+        await sleep(300);
+        // O jogador pede o reembolso dos 7 dias enquanto o da Staff ainda não terminou.
+        const player = buyer.call('POST', `/api/me/purchases/${p.id}/refund`);
+        await sleep(300);
+        hold.open();
+        await staff;
+        // Quando chega a vez dele o pagamento já é parcial: o jogador é recusado, não estorna de novo.
+        const playerResponse = await player;
+        expect(playerResponse.statusCode, playerResponse.body).toBe(409);
+
+        const asked = spy.mock.calls.reduce((sum, call) => sum + call[1], 0);
+        expect(asked).toBeLessThanOrEqual(2690);
+      } finally {
+        hold.open();
+        spy.mockRestore();
+      }
+      // O dinheiro e os dias batem: 299 centavos e 10 dias; o resto do Plano continua.
+      expect(await providerCents(p)).toBe(299);
+      expect(await row(p.id)).toMatchObject({ refundedCents: 299, refundedDays: 10 });
+      await expectVipEndsIn(buyer, 80);
+    }, 60_000);
+  });
+
   describe('contestação e reabrir as compras', () => {
     it('a contestação bloqueia a Conta; a Staff reabre depois de revisar, uma vez só', async () => {
       const buyer = await member(null);
