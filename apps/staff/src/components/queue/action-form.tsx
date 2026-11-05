@@ -135,8 +135,9 @@ export function ActionForm<T = unknown>({
   };
 
   /** O botão de confirmar é outro botão, e só vale depois do atraso e com os valores ainda válidos. */
-  const confirm = () => {
-    if (!mayConfirm(gate, Date.now())) return;
+  const confirm = (clicks: number) => {
+    // Um clique que faz parte de um duplo clique (detail > 1) nunca confirma, qualquer que seja o atraso do sistema.
+    if (clicks > 1 || !mayConfirm(gate, Date.now())) return;
     const text = check();
     if (text === null) {
       setGate(disarm());
@@ -231,7 +232,7 @@ export function ActionForm<T = unknown>({
             type="button"
             className="stp-btn"
             data-kind={kind === 'danger' ? 'danger-fill' : 'primary'}
-            onClick={confirm}
+            onClick={(event) => confirm(event.detail)}
             disabled={pending}
             aria-busy={pending || undefined}
             data-testid={`${testId}-confirm-submit`}

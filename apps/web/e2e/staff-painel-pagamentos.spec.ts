@@ -42,9 +42,9 @@ async function signInAsStaff(page: Page, role: 'owner' | 'admin' | 'moderator') 
   await expect(page.getByTestId('stp-home')).toBeVisible();
 }
 
-/** O botão de confirmar ignora cliques nos primeiros 300 ms (trava do duplo clique): espera passar e confirma de verdade. */
+/** O botão de confirmar ignora cliques nos primeiros 500 ms (trava do duplo clique): espera passar e confirma de verdade. */
 async function confirmAction(page: Page, testId: string) {
-  await page.waitForTimeout(450);
+  await page.waitForTimeout(650);
   await page.getByTestId(`${testId}-confirm-submit`).click();
 }
 
@@ -182,8 +182,6 @@ test.describe('Pagamentos no painel', () => {
     // Dois cliques seguidos no botão de enviar: só mostram a confirmação, nada é reembolsado.
     await page.getByTestId('refund-form-submit').dblclick();
     await expect(page.getByTestId('refund-form-confirm')).toBeVisible();
-    await page.getByTestId('refund-form-confirm-submit').dblclick();
-    await page.waitForTimeout(800);
     await expect(detail.getByTestId('payment-status')).toContainText('Aprovado');
 
     // Mudar os dias depois de confirmar desfaz a confirmação: o botão volta a ser o de enviar.

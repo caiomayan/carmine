@@ -6,7 +6,7 @@
  * - qualquer mudança no formulário (motivo, dias, chave) desfaz a confirmação, para nunca enviar um valor que a pessoa
  *   não viu confirmado.
  */
-export const CONFIRM_DELAY_MS = 300;
+export const CONFIRM_DELAY_MS = 500;
 
 export type ConfirmGate = { armedAt: number | null };
 

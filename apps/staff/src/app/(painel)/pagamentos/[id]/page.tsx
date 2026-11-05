@@ -1,5 +1,5 @@
 import { staffCan } from '@carmine/contracts/staff';
-import type { StaffPaymentDetail } from '@carmine/contracts/staff-payments';
+import { staffPaymentDetailSchema } from '@carmine/contracts/staff-payments';
 import { ArrowLeftIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -26,8 +26,11 @@ export default async function PagamentoPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   if (!UUID.test(id)) notFound();
 
-  const result = await apiGet<StaffPaymentDetail>(`/api/staff/payments/${id}`);
+  const result = await apiGet<unknown>(`/api/staff/payments/${id}`);
   if (result.status === 401 || result.status === 403 || result.status === 404) notFound();
+
+  // A resposta é validada pelo contrato: uma ficha fora do formato vira "Sem dado", nunca um número inventado.
+  const detail = result.ok ? staffPaymentDetailSchema.safeParse(result.data) : null;
 
   return (
     <div className="stp-page" data-testid="stp-payment-page">
@@ -39,9 +42,9 @@ export default async function PagamentoPage({ params }: { params: Promise<{ id: 
           <h1>Pagamento {shortId(id)}</h1>
         </div>
       </div>
-      {result.ok ? (
+      {detail?.success ? (
         <div className="stp-card stp-detail stp-detail-page">
-          <PaymentDetail summary={result.data.payment} initial={result.data} />
+          <PaymentDetail summary={detail.data.payment} initial={detail.data} />
         </div>
       ) : (
         <div className="stp-card">
