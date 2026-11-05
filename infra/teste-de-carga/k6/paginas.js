@@ -63,10 +63,8 @@ export function visitante(dados) {
   abre('/', 'home');
   pensa(2, 5);
   abre('/ranking', 'ranking');
-  if (dados.perfis.length > 0) {
-    pensa(2, 5);
-    abre(`/${sorteia(dados.perfis)}`, 'perfil');
-  }
+  pensa(2, 5);
+  abre(`/${sorteia(dados.perfis)}`, 'perfil');
   pensa(3, 8);
 }
 

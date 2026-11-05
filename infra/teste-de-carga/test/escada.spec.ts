@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { classificaPasso, ehProducao, limiteDoGrupo, tabelaDoGrupo } from '../lib/escada.mjs';
+import {
+  classificaPasso,
+  ehProducao,
+  limiteDoGrupo,
+  rotasSemRequisicao,
+  tabelaDoGrupo,
+} from '../lib/escada.mjs';
 
 const resultado = (extra = {}) => ({
   ok: true,
@@ -62,5 +68,28 @@ describe('guarda contra a produção', () => {
     expect(ehProducao('não é url', undefined)).toBe(true);
     expect(ehProducao('https://dev.stcarmine.com', 'https://stcarmine.com')).toBe(false);
     expect(ehProducao('http://localhost:3333', undefined)).toBe(false);
+  });
+});
+
+describe('rota esperada sem requisição', () => {
+  const metricas = (contagens: Record<string, number>) =>
+    Object.fromEntries(
+      Object.entries(contagens).map(([rota, contagem]) => [
+        `http_reqs{scenario:carga,endpoint:${rota}}`,
+        { contagem },
+      ]),
+    );
+
+  it('aponta a rota com 0 requisições ou sem contador (o p95 0 ms do Perfil na rodada 1)', () => {
+    const api = metricas({ me: 40, servidores: 40, ranking: 40, perfil: 0 });
+    expect(rotasSemRequisicao(api, 'api')).toEqual(['perfil']);
+    expect(rotasSemRequisicao({}, 'paginas')).toEqual(['home', 'ranking', 'perfil']);
+    expect(rotasSemRequisicao(metricas({ eventos: 3, batimento: 3 }), 'coleta')).toEqual([]);
+  });
+
+  it('o passo vira defeito do roteiro, não limite nem ok', () => {
+    const r = resultado({ ok: false, violados: ['x'], semRequisicao: ['perfil'] });
+    expect(classificaPasso({ codigoDeSaida: 0, resultado: r })).toBe('erro');
+    expect(classificaPasso({ codigoDeSaida: 99, resultado: r })).toBe('erro');
   });
 });

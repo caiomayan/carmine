@@ -16,9 +16,29 @@ export function classificaPasso({ codigoDeSaida, resultado }) {
   if (resultado?.abortouPelaSonda) return 'producao';
   if (codigoDeSaida === SAIDA_K6.abortadoPorScript) return resultado ? 'producao' : 'erro';
   if (!resultado) return 'erro';
+  // Rota esperada sem nenhuma requisição: o p95 dela seria 0 ms e enganaria. É defeito do roteiro.
+  if (resultado.semRequisicao?.length > 0) return 'erro';
   if (codigoDeSaida === SAIDA_K6.ok && resultado.ok) return 'ok';
   if (codigoDeSaida === SAIDA_K6.limiarEstourado || !resultado.ok) return 'limite';
   return 'erro';
+}
+
+/** As rotas medidas por grupo (tag `endpoint`, no cenário `carga`). Cada uma precisa de ao menos 1 requisição. */
+export const ROTAS_ESPERADAS = {
+  coleta: ['eventos', 'batimento'],
+  api: ['me', 'servidores', 'ranking', 'perfil'],
+  paginas: ['home', 'ranking', 'perfil'],
+};
+
+/**
+ * As rotas esperadas do grupo que saíram com 0 requisições (ou sem contador no resumo). Um p95 de 0 ms nessas
+ * rotas não é velocidade, é rota não pedida: a rodada 1 do #266 passou assim pelo Perfil.
+ */
+export function rotasSemRequisicao(metricas, grupo) {
+  return (ROTAS_ESPERADAS[grupo] ?? []).filter((rota) => {
+    const contagem = metricas?.[`http_reqs{scenario:carga,endpoint:${rota}}`]?.contagem;
+    return !(contagem > 0);
+  });
 }
 
 const ms = (valor) => (typeof valor === 'number' ? `${Math.round(valor)} ms` : '—');
