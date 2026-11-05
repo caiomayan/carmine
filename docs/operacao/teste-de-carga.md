@@ -148,7 +148,7 @@ Sem `PROD_URL` a sonda não roda. Para ver a sonda abortar: `PROD_URL=<a própri
 | Leitura da API (visitantes) | 200 (ranking p95 102 ms, servidores 130 ms, 59,3 req/s) | nenhum até 200 | — |
 | Páginas (visitantes) | 50 (Home p95 569 ms, Ranking 424 ms, 8,2 req/s) | 100 | Home p95 1.640 ms e Ranking 1.496 ms, 0% de erro |
 
-**Ressalva:** o p95 do Perfil saiu 0 ms na API e nas páginas, ou seja, o roteiro não chegou a pedir Perfis. O Perfil não foi medido e fica para a próxima rodada, depois de corrigir o roteiro.
+**Ressalva:** o p95 do Perfil saiu 0 ms na API e nas páginas, ou seja, o roteiro não chegou a pedir Perfis. Causa: o `setup` lia `entrada.publicId` do Ranking, mas o id está em `entrada.player.publicId`; a lista saía vazia e o roteiro pulava o Perfil em silêncio (#266). Corrigido: agora o roteiro para se não achar Perfis (`PERFIS=1,2,3` fixa a lista à mão) e o resumo marca como erro do roteiro qualquer rota esperada com 0 requisições. O Perfil continua sem medida até a próxima rodada.
 
 ### Folga da VM
 

@@ -98,10 +98,8 @@ export function visitante(dados) {
     `${BASE_URL}/api/ranking/${Math.random() < 0.7 ? 'retake' : 'deathmatch'}`,
     params('ranking'),
   );
-  if (dados.perfis.length > 0) {
-    pensa(2, 5);
-    http.get(`${BASE_URL}/api/profiles/${sorteia(dados.perfis)}`, params('perfil'));
-  }
+  pensa(2, 5);
+  http.get(`${BASE_URL}/api/profiles/${sorteia(dados.perfis)}`, params('perfil'));
   pensa(2, 5);
 }
 

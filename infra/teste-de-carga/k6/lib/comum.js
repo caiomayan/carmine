@@ -4,6 +4,7 @@
 // Um processo do k6 roda UM passo (N servidores ou N visitantes simultâneos). Quem sobe a escada
 // (10, 25, 50...) é bin/escada.mjs, que roda um passo por vez e para no primeiro que estoura o limite. Assim
 // os limiares do k6 valem só para o passo corrente, sem diluir nas amostras dos passos anteriores.
+import { rotasSemRequisicao } from '../../lib/escada.mjs';
 import { sonda } from './sonda.js';
 
 const E = __ENV;
@@ -98,7 +99,12 @@ export function limiares(limites, ver = []) {
     delayAbortEval: atraso,
   });
   poe('http_reqs{scenario:carga}', 'count>=0');
-  for (const metrica of ver) poe(metrica, 'max>=0');
+  for (const metrica of ver) {
+    poe(metrica, 'max>=0');
+    // Também o contador de requisições da rota, para o resumo provar que ela foi pedida.
+    const rota = /^http_req_duration\{scenario:carga,endpoint:([^}]+)\}$/.exec(metrica);
+    if (rota) poe(`http_reqs{scenario:carga,endpoint:${rota[1]}}`, 'count>=0');
+  }
   return saida;
 }
 
@@ -140,10 +146,13 @@ export function resumo(data, grupo) {
     }
   }
   const abortouPelaSonda = Boolean(metricas.sonda_abortos && metricas.sonda_abortos.contagem > 0);
+  const semRequisicao = rotasSemRequisicao(metricas, grupo);
+  for (const rota of semRequisicao) violados.push(`rota "${rota}" sem nenhuma requisição`);
   const resultado = {
     grupo,
     passo: PASSO,
     ok: violados.length === 0 && !abortouPelaSonda,
+    semRequisicao,
     violados,
     abortouPelaSonda,
     limites: { p95Ms: P95_MS, maxErros: MAX_ERROS },
