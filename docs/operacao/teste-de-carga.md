@@ -138,28 +138,43 @@ Sem `PROD_URL` a sonda não roda. Para ver a sonda abortar: `PROD_URL=<a própri
 
 ## Resultados
 
-> **A preencher depois da rodada.** Nenhum número abaixo existe ainda; a regra é não inventar dado (`AGENTS.md`). Cada tabela vem da execução do workflow, que a monta sozinha no resumo.
-
-**Rodada:** _data, commit, limites de p95 usados._
+**Rodada 1:** 2026-11-05, de madrugada, do notebook do maestro (rede de casa, k6 2.3.0), contra a homologação no commit do `dev` depois do #281. Limites de p95 aprovados pelo dono: coleta 500 ms, API 500 ms, páginas 1.500 ms. Degraus: 10, 25, 50, 100, 200 (coleta e API) e 10, 25, 50, 100 (páginas), com 120 s em cada patamar.
 
 ### Limites encontrados
 
 | Cenário | Último degrau que aguentou | Primeiro que estourou | Quem cedeu primeiro (rota, p95, erro) |
 | --- | --- | --- | --- |
-| Coleta por round (servidores) | | | |
-| Leitura da API (visitantes) | | | |
-| Páginas (visitantes) | | | |
+| Coleta por round (servidores) | 100 (eventos p95 108 ms, 23,6 req/s) | 200 | eventos p95 1.235 ms e batimento 913 ms, 0% de erro; a vazão caiu para 19,2 req/s |
+| Leitura da API (visitantes) | 200 (ranking p95 102 ms, servidores 130 ms, 59,3 req/s) | nenhum até 200 | — |
+| Páginas (visitantes) | 50 (Home p95 569 ms, Ranking 424 ms, 8,2 req/s) | 100 | Home p95 1.640 ms e Ranking 1.496 ms, 0% de erro |
+
+**Ressalva:** o p95 do Perfil saiu 0 ms na API e nas páginas, ou seja, o roteiro não chegou a pedir Perfis. O Perfil não foi medido e fica para a próxima rodada, depois de corrigir o roteiro.
 
 ### Folga da VM
 
+O CPU é a soma dos contêineres, em que 100 equivale a um núcleo (a VM tem 2, teto 200); os valores são o pico de cada janela.
+
 | Momento | CPU da homologação | CPU da produção | Memória usada da VM | Carga 1 min |
 | --- | --- | --- | --- | --- |
-| Antes (sem carga) | | | | |
-| No último degrau que aguentou | | | | |
-| No degrau que estourou | | | | |
+| Antes (sem carga) | 0 | 26 | 2,0 GB de 11,9 GB | 0,4 |
+| Coleta, 100 servidores (aguentou) | 97 | 6 | 2,1 GB | 0,7 |
+| Coleta, 200 servidores (estourou) | 87 | 2 | 2,3 GB | 2,0 |
+| API, 200 visitantes (aguentou) | 69 | 26 | 2,2 GB | 1,8 |
+| Páginas, 50 visitantes (aguentou) | 133 | 16 | 2,3 GB | 2,0 |
+| Páginas, 100 visitantes (estourou) | 159 | 1 | 2,2 GB | 1,0 |
 
-A produção piorou em algum momento (a sonda)? _sim/não, quando._
+- **A produção piorou em algum momento (a sonda)?** Não. A sonda não abortou nenhum degrau, e a Home da produção começou em 315 ms.
+- **Leitura:**
+  - Na coleta, a VM ainda tinha CPU livre quando o p95 estourou. Quem cede é o processo único da API (perto de um núcleo inteiro), não a VM. Mais processos da API, ou um cluster, subiriam esse limite.
+  - Nas páginas, quem cede é a renderização do web, que usa a CPU da VM (até 159 de 200).
+  - A memória sobrou em todos os cenários: no máximo 2,3 GB usados dos 11,9 GB.
 
 ### Proposta de referência de capacidade
 
-_Para o dono aprovar e entrar na spec do beta aberto (PR #278): quantos servidores e quantos visitantes simultâneos a VM sustenta com folga, derivados do último degrau que aguentou, com a margem decidida pelo dono. A homologação é o piso; a produção tem mais memória e CPU livres._
+_Proposta do maestro, ainda não aprovada pelo dono._ A margem é de metade do último degrau que aguentou, na homologação, que é o piso: a produção tem os mesmos 2 núcleos, com limites de memória maiores.
+
+- **Coleta:** 50 servidores Carmine jogando ao mesmo tempo.
+- **API:** 100 visitantes simultâneos lendo Ranking, Servidores e `/api/me`.
+- **Páginas:** 25 visitantes simultâneos navegando (Home e Ranking).
+
+Com o beta dando uns poucos servidores e o Perfil ainda não medido, o primeiro limite real a vigiar é o das **páginas**.
