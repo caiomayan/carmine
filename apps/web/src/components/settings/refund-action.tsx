@@ -64,6 +64,7 @@ export function RefundAction({
       <Button
         variant="quiet"
         size="sm"
+        className="h-auto max-w-full flex-wrap justify-start gap-x-2 gap-y-0 whitespace-normal py-1.5 text-left"
         onClick={() => {
           setError(null);
           setOpen(true);
