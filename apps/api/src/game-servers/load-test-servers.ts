@@ -4,6 +4,9 @@ import { createHmac } from 'node:crypto';
 export const LOAD_TEST_DEFAULT_PREFIX = 'carga-';
 
 /** Teto de servidores por rodada (o nome tem 3 dígitos e o endereço de documentação acaba em 250 por porta). */
+/** O prefixo tem de começar com `carga-`: o upsert sobrescreve servidor de mesmo nome, e "" ou `retake-` pisaria nos reais. */
+export const LOAD_TEST_PREFIX_PATTERN = /^carga-[a-z0-9-]*$/;
+
 export const LOAD_TEST_MAX_SERVERS = 500;
 
 export const LOAD_TEST_SECRET_MIN_LENGTH = 32;

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  LOAD_TEST_PREFIX_PATTERN,
   loadTestServerAddress,
   loadTestServerKey,
   loadTestServerName,
@@ -23,5 +24,12 @@ describe('servidores do teste de carga', () => {
     );
     expect(loadTestServerKey(secret, 'carga-001')).not.toBe(loadTestServerKey(secret, 'carga-002'));
     expect(loadTestServerKey(secret, 'carga-001')).toMatch(/^cmk_[A-Za-z0-9_-]{43}$/);
+  });
+
+  it('só aceita prefixo que começa com carga- (nunca pisa em servidor real)', () => {
+    for (const bom of ['carga-', 'carga-hml-', 'carga-2'])
+      expect(LOAD_TEST_PREFIX_PATTERN.test(bom)).toBe(true);
+    for (const ruim of ['', 'retake-', 'carga', 'Carga-', 'carga-../x', 'x-carga-'])
+      expect(LOAD_TEST_PREFIX_PATTERN.test(ruim)).toBe(false);
   });
 });

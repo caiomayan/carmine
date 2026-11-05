@@ -8,7 +8,7 @@ Os roteiros, o workflow e os geradores moram em `infra/teste-de-carga/` e `.gith
 
 - **k6**, rodando num runner do GitHub Actions: o gerador de carga fica **fora** da VM, como um jogador de verdade, e não come os 2 núcleos que estão sendo medidos.
 - **Escada**: cada cenário sobe em degraus (10, 25, 50, 100, 200 servidores ou visitantes simultâneos). Um processo do k6 por degrau; o degrau **para** quando o p95 passa do limite combinado ou os erros passam de 1% (`bin/escada.mjs`). O último degrau que aguentou e o primeiro que estourou dão o limite: "entre 100 e 200".
-- **Sonda da produção**, dentro de cada degrau: a cada 5 s pede a Home e `/api/health` da produção. Mede a Home por 20 s antes de a carga começar; o limite é o maior entre 3 vezes essa mediana e 1000 ms. **Aborta o teste todo** se a mediana das últimas 6 Homes passar do limite ou se 3 pedidos seguidos falharem. Os grupos seguintes não rodam. Ajustes: `SONDA_FATOR`, `SONDA_PISO_MS`, `SONDA_JANELA`, `SONDA_FALHAS`.
+- **Sonda da produção**, dentro de cada degrau: a cada 5 s pede a Home e `/api/health` da produção. Mede a Home por 20 s antes de a carga começar; o limite é o maior entre 3 vezes essa mediana e 1000 ms. **Aborta o teste todo** se a mediana das últimas 6 Homes passar do limite ou se 3 pedidos seguidos falharem. Os grupos seguintes não rodam. Ajustes: `SONDA_FATOR`, `SONDA_PISO_MS`, `SONDA_JANELA`, `SONDA_FALHAS`. **Ela só vigia durante cada degrau**: nas pausas entre degraus e entre cenários ninguém olha a produção (cada degrau começa medindo a Home de novo antes de carregar).
 - O limite de p95 **não tem padrão** (nem a spec nem o monitoramento fixam um número): quem dispara informa no formulário do workflow.
 
 ### Os três cenários (em ordem)
@@ -66,7 +66,25 @@ O `infra/hml/compose.yml` lê `RATE_LIMIT_PUBLIC_PER_MINUTE` do `.env` da VM (pa
 
 O limite continua ligado (o custo do GCRA no Valkey entra na medida), só deixa de cortar.
 
-## Rodar
+## Rodar do notebook (caminho principal até o workflow chegar ao main)
+
+O workflow só aparece em *Run workflow* depois de estar no `main`, e ir ao `main` é release de produção. Até lá o mesmo teste roda do notebook de quem dispara: mesmo k6, mesma escada, mesmas variáveis. As travas do workflow ficam por conta de quem roda: ok do dono, deploy da homologação pausado, de madrugada, "Antes de rodar" cumprido.
+
+```bash
+# k6 2.x instalado como binário (https://grafana.com/docs/k6/latest/set-up/install-k6/) e Node 24, no repositório.
+export LOADTEST_KEY_SECRET=<o mesmo valor usado na VM>     # leia com read -rs, sem deixar no histórico
+export BASE_URL=https://dev.stcarmine.com PROD_URL=https://stcarmine.com
+export CF_ACCESS_CLIENT_ID=<service token> CF_ACCESS_CLIENT_SECRET=<service token>
+export KEYS_FILE=chaves.txt                                # não commitar; apague ao terminar
+node infra/teste-de-carga/bin/chaves.mjs --count 210 --out "$KEYS_FILE"   # maior passo + 10 (ver acima)
+for g in coleta api paginas; do
+  node infra/teste-de-carga/bin/escada.mjs --grupo $g --passos 10,25,50,100,200 --p95 <ms do grupo> --saida resultados || break
+done
+```
+
+Saída 3 = a sonda abortou (pare tudo); 4 = defeito no roteiro. `--max-erros`, `--segura` e `--pausa` fazem o papel das entradas de mesmo nome do workflow; `FUNDO` (padrão 40) é variável de ambiente. As tabelas saem em `resultados/escada-<grupo>.md`. O workflow roda de um runner do GitHub e o notebook, da rede de casa: a latência da rede entra na medida, então compare números do mesmo caminho. Para abortar, `Ctrl+C`. O coletor da VM, "Depois" e o resto valem igual.
+
+## Rodar pelo workflow (quando estiver no `main`)
 
 1. Actions > **Teste de carga** > *Run workflow* (o arquivo precisa estar no `main`; o GitHub só oferece o botão assim, como no deploy da homologação).
 2. Preencha: "Estou ciente", os **três limites de p95** (sem padrão), e, se quiser, os degraus. Os padrões são 10, 25, 50, 100, 200 (coleta e API) e 10, 25, 50, 100 (páginas), 120 s no patamar e 30 s de pausa entre degraus. Uma rodada completa dura de 40 a 70 minutos.

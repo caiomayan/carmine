@@ -212,6 +212,11 @@ describe('CLI de Servidores Carmine', () => {
       errors: expect.stringMatching(/LOADTEST_KEY_SECRET/),
     });
     expect((await cliWithEnv(curto, 'load-test', '--count', '0')).exitCode).toBe(1);
+    const valido = { ...curto, LOADTEST_KEY_SECRET: producao.LOADTEST_KEY_SECRET };
+    for (const prefixo of ['', 'retake-'])
+      expect(
+        (await cliWithEnv(valido, 'load-test', '--count', '1', '--prefix', prefixo)).exitCode,
+      ).toBe(1);
     expect(await registry.list()).not.toContainEqual(
       expect.objectContaining({ name: 'carga-001' }),
     );

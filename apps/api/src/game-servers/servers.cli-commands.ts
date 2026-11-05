@@ -5,6 +5,7 @@ import { type GameServerRegistry, GameServerRegistryError } from './game-server-
 import {
   LOAD_TEST_DEFAULT_PREFIX,
   LOAD_TEST_MAX_SERVERS,
+  LOAD_TEST_PREFIX_PATTERN,
   LOAD_TEST_SECRET_MIN_LENGTH,
   loadTestServerAddress,
   loadTestServerKey,
@@ -178,6 +179,10 @@ async function loadTest(args: string[], deps: ServersCliDeps): Promise<number> {
 ${USAGE}`);
   }
   const prefix = typeof values.prefix === 'string' ? values.prefix : LOAD_TEST_DEFAULT_PREFIX;
+  if (!LOAD_TEST_PREFIX_PATTERN.test(prefix)) {
+    throw new UsageError(`--prefix precisa começar com "carga-" (só minúsculas, dígitos e hífen)
+${USAGE}`);
+  }
   const mode = (typeof values.mode === 'string' ? values.mode : 'retake') as GameMode;
   const env = deps.env ?? {};
   assertSandboxEnvironment(env);

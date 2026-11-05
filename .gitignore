@@ -12,6 +12,7 @@ coverage/
 bin/
 !infra/prod/bin/
 !infra/hml/bin/
+!infra/teste-de-carga/bin/
 obj/
 *.user
 

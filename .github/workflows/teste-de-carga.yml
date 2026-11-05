@@ -129,8 +129,11 @@ jobs:
           FUNDO: ${{ inputs.fundo }}
         run: |
           set -euo pipefail
-          maior=$FUNDO
-          for n in ${PASSOS//,/ }; do [ "$n" -gt "$maior" ] && maior=$n; done
+          maior=0
+          for n in ${PASSOS//,/ } $FUNDO; do
+            [[ $n =~ ^[0-9]+$ ]] || { echo "::error::'$n' não é número inteiro (passos_* e fundo: números separados por vírgula)"; exit 1; }
+            [ "$n" -gt "$maior" ] && maior=$n
+          done
           # A coleta usa o id da VU como índice (o passo mais a sonda): 10 de folga cobrem.
           total=$((maior + 10))
           [ "$total" -le 500 ] || { echo "::error::passo grande demais ($maior): o limite é 490 servidores"; exit 1; }
@@ -202,3 +205,14 @@ jobs:
           path: resultados/
           if-no-files-found: ignore
           retention-days: 30
+
+      - name: Lembrete de limpeza
+        if: always()
+        run: |
+          {
+            echo '### Limpeza depois do teste (o workflow não mexe na VM nem no Cloudflare)'
+            echo '- [ ] Na VM: `servers retire --prefix carga-` e zerar o banco da homologação'
+            echo '- [ ] Na VM: tirar `RATE_LIMIT_PUBLIC_PER_MINUTE` do `.env` da homologação'
+            echo '- [ ] No GitHub: desligar a variável `DEPLOY_HML_PAUSED`'
+            echo '- [ ] No Cloudflare: revogar o service token do teste'
+          } >> "$GITHUB_STEP_SUMMARY"
