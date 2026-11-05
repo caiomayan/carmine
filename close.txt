@@ -1,0 +1,3 @@
+**U4 FECHADA (2026-10-23, dev 621b031):** R1–R5 (#76/#78), L1–L3 (#79), orçamento de JS do editor 283,7 → 272,9 kB (#80), L4 (#81) reconferidos no portal: editor em 390 sem estouro, Ranking/Loadout/Inventário limpos no axe, header com Tab só entre itens, seta para baixo entra no painel, Esc devolve o foco, hover abre/fecha e o clique navega, foco não é mais roubado. A varredura completa fica por conta do E2E da CI (axe e 390 px).
+
+## Fazendo
