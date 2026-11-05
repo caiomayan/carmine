@@ -24,8 +24,9 @@ describe('origem do painel', () => {
 });
 
 describe('redirecionamento do /staff antigo', () => {
-  it('/staff era a tela de Contas', () => {
-    expect(staffPanelRedirect('/staff', '', PANEL)).toBe(`${PANEL}/contas`);
+  it('/staff puro vai para o Início; com busca, que era a tela de Contas, para Contas', () => {
+    expect(staffPanelRedirect('/staff', '', PANEL)).toBe(`${PANEL}/`);
+    expect(staffPanelRedirect('/staff/', '', PANEL)).toBe(`${PANEL}/`);
     expect(staffPanelRedirect('/staff/', '?q=10016', PANEL)).toBe(`${PANEL}/contas?q=10016`);
   });
 

@@ -4,7 +4,7 @@
 #   - NENHUMA porta publicada (`ports:`). O Docker publica por cima do iptables da VM; o único
 #     caminho até o web e a API é o túnel. Um web acessível por fora aceitaria um CF-Connecting-IP
 #     forjado (docs/operacao/rate-limit-e-ip-real.md).
-#   - `edge` tem IPs fixos para o cloudflared e o web; a API confia só nesses dois (/32).
+#   - `edge` tem IPs fixos para o cloudflared, o web e o painel da Staff; a API confia só nesses três (/32).
 #   - `data` é interna (sem rota para fora): Postgres e Valkey nunca falam com a internet.
 #   - Limites de memória somam 7,8 GB dos 12 GB da VM, com folga para o sistema, o Docker e picos.
 #

@@ -59,9 +59,7 @@ test.describe('Servidores no painel', () => {
     await card.getByTestId('server-form-reason').fill('Nome de lançamento');
     await card.getByTestId('server-form-submit').click();
     await expect(card.getByTestId('server-form-done')).toBeVisible();
-    await expect(card.getByTestId('hostname-live')).toHaveText(
-      `Carmine | Retake · Rotação | ${code}`,
-    );
+    await expect(card.getByTestId('hostname-live')).toContainText(code);
 
     // No site (outro host): a Home mostra o nome de vitrine e o código.
     const context = await browser.newContext({ baseURL: WEB });

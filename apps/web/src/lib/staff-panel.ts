@@ -18,13 +18,15 @@ export function staffPanelOrigin(raw: string | undefined): string | null {
 
 /**
  * Para onde vai um caminho do `/staff` antigo, ou `null` se ele não é da Staff (ou o painel não está ligado).
- * `/staff` era a tela de Contas, que no painel é `/contas`; o resto mantém o caminho (`/staff/auditoria` →
- * `/auditoria`, `/staff/contas/10016` → `/contas/10016`). A consulta (`?q=`, `?alvo=`) segue junto.
+ * O `/staff` puro (o atalho do menu) vai para o Início do painel; com busca (`/staff?q=`, que era a tela de Contas),
+ * para `/contas`. O resto mantém o caminho (`/staff/auditoria` → `/auditoria`, `/staff/contas/10016` →
+ * `/contas/10016`), e a consulta (`?q=`, `?alvo=`) segue junto.
  */
 export function staffPanelRedirect(pathname: string, search: string, origin: string | null) {
   if (origin === null) return null;
   const match = /^\/staff(\/.*)?$/.exec(pathname);
   if (!match) return null;
   const rest = (match[1] ?? '').replace(/\/+$/, '');
-  return `${origin}${rest === '' ? '/contas' : rest}${search}`;
+  const path = rest !== '' ? rest : search === '' ? '/' : '/contas';
+  return `${origin}${path}${search}`;
 }

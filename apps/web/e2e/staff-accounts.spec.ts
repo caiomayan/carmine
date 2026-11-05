@@ -318,7 +318,7 @@ test.describe('Contas no painel', () => {
 
     await page.getByTestId('erasure-understood').check();
     await page.getByTestId('erasure-form-submit').click();
-    await expect(page.getByTestId('erasure-form-done')).toBeVisible();
+    await expect(page.getByTestId('erasure-done')).toBeVisible();
 
     expect((await request.get(`${WEB}/${publicId}`)).status()).toBe(404);
     await page.goto('/auditoria?acao=account_anonymize');

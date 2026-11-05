@@ -78,8 +78,10 @@ test.describe('Punições, vistas do site', () => {
   }) => {
     const home = await request.get('/staff', { maxRedirects: 0 });
     expect(home.status()).toBe(307);
-    // Era a tela de Contas; o resto do caminho e a consulta seguem para o painel.
-    expect(home.headers().location).toBe(`${STAFF}/contas`);
+    // O atalho vai para o Início do painel; a busca antiga, para Contas; o resto mantém o caminho e a consulta.
+    expect(home.headers().location).toBe(`${STAFF}/`);
+    const search = await request.get('/staff?q=10016', { maxRedirects: 0 });
+    expect(search.headers().location).toBe(`${STAFF}/contas?q=10016`);
     const audit = await request.get('/staff/auditoria?acao=vip_grant', { maxRedirects: 0 });
     expect(audit.headers().location).toBe(`${STAFF}/auditoria?acao=vip_grant`);
     const account = await request.get('/staff/contas/10016', { maxRedirects: 0 });
@@ -138,13 +140,12 @@ test.describe('Punições, vistas do site', () => {
     const noticeButton = await notice.getByRole('link').first().boundingBox();
     expect(Math.abs((noticeButton?.x ?? -99) - (noticeText?.x ?? 99))).toBeLessThanOrEqual(1);
     await expect(notice).toContainText('Motivo: Griefing');
+    await expect(notice).toContainText(reason);
     await expect(notice).toContainText('72 h');
     await expect(notice.getByRole('link', { name: 'Como recorrer' })).toHaveAttribute(
       'href',
       '/rules#appeal',
     );
-    // O motivo livre é interno da Staff: o jogador não o vê.
-    await expect(notice).not.toContainText(reason);
     // Banido não muda nada no site.
     const blocked = await page.request.post('/api/presets', {
       headers: { 'x-csrf-token': await csrfToken(page.context()) },
