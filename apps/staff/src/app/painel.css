@@ -2480,3 +2480,46 @@ a.stp-btn {
     animation: stp-fade 180ms ease both;
   }
 }
+
+/* Foto de perfil na ficha da Conta */
+.stp-avatar-panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 16px;
+}
+.stp-avatar-panel:not(:has(.stp-photo-sm)) {
+  grid-template-columns: 1fr;
+}
+.stp-photo-sm {
+  width: 112px;
+  max-width: none;
+  border-radius: 20px;
+}
+.stp-avatar-info {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  align-content: start;
+}
+.stp-avatar-info p {
+  margin: 0;
+}
+.stp-avatar-removals {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stp-avatar-removals p {
+  margin: 2px 0 0;
+}
+@media (max-width: 520px) {
+  .stp-avatar-panel {
+    grid-template-columns: 1fr;
+  }
+}
+.stp-avatar-removals-wrap {
+  margin-top: 16px;
+}
