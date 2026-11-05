@@ -199,7 +199,8 @@ export function AccountControl({ labels }: { labels: AccountControlLabels }) {
           <DropdownMenuSeparator />
           {staffRole ? (
             <DropdownMenuItem
-              onSelect={go('/staff')}
+              // O painel é outro host (S25): o /staff do site redireciona para ele, então a ida é navegação inteira.
+              onSelect={() => window.location.assign('/staff')}
               className={ITEM}
               data-testid="staff-panel-link"
             >

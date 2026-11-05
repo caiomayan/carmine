@@ -45,7 +45,7 @@ Depois dos créditos o custo da instância parada continua: encerrar o beta é t
 
 ## Consumo de recursos da VM (Oracle A1)
 
-Limites de memória do `infra/prod/compose.yml`: Postgres 2,5 GB, API 1,5 GB, web 1,5 GB, backup 0,5 GB, migração 0,5 GB (só durante o deploy), Valkey 0,4 GB, cloudflared 0,25 GB: **7,3 GB de 12 GB**, deixando ~4,7 GB para o sistema, o Docker e picos. Consumo real em repouso (smoke test local): ~0,4 GB no total. Disco: 96 GB; o Postgres e o Valkey são pequenos, e o que cresce é o log do Docker (limitado a 3 × 10 MB por serviço) e as imagens (podadas no deploy).
+Limites de memória do `infra/prod/compose.yml`: Postgres 2,5 GB, API 1,5 GB, web 1,5 GB, painel da Staff 0,5 GB, backup 0,5 GB, migração 0,5 GB (só durante o deploy), Valkey 0,4 GB, cloudflared 0,25 GB: **7,8 GB de 12 GB**, deixando ~4,2 GB para o sistema, o Docker e picos. Consumo real em repouso (smoke test local): ~0,4 GB no total. Disco: 96 GB; o Postgres e o Valkey são pequenos, e o que cresce é o log do Docker (limitado a 3 × 10 MB por serviço) e as imagens (podadas no deploy).
 
 ## Riscos que viram custo
 

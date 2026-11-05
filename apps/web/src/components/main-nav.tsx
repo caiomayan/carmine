@@ -27,7 +27,7 @@ export function MainNav({
   onIntent?: (href: Route, source: 'pointer' | 'focus') => void;
 }) {
   const pathname = usePathname();
-  // O item mais específico ganha: em /staff/auditoria, "Auditoria" e não "Contas" (/staff).
+  // O item mais específico ganha: entre os que batem com a rota, o de href mais longo.
   const current =
     items
       .filter((item) => isCurrentPath(pathname, item.href))

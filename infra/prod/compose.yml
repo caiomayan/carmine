@@ -4,9 +4,9 @@
 #   - NENHUMA porta publicada (`ports:`). O Docker publica por cima do iptables da VM; o único
 #     caminho até o web e a API é o túnel. Um web acessível por fora aceitaria um CF-Connecting-IP
 #     forjado (docs/operacao/rate-limit-e-ip-real.md).
-#   - `edge` tem IPs fixos para o cloudflared e o web; a API confia só nesses dois (/32).
+#   - `edge` tem IPs fixos para o cloudflared, o web e o painel da Staff; a API confia só nesses três (/32).
 #   - `data` é interna (sem rota para fora): Postgres e Valkey nunca falam com a internet.
-#   - Limites de memória somam 7,3 GB dos 12 GB da VM, com folga para o sistema, o Docker e picos.
+#   - Limites de memória somam 7,8 GB dos 12 GB da VM, com folga para o sistema, o Docker e picos.
 #
 # Uso (feito pelo deploy, infra/prod/bin/deploy.sh):
 #   IMAGE_TAG=sha-<commit> docker compose -p carmine --env-file /opt/carmine/.env -f compose.yml up -d --wait
@@ -28,8 +28,11 @@ x-api-env: &api-env
   DATABASE_URL: postgres://carmine:${POSTGRES_PASSWORD:?}@postgres:5432/carmine
   VALKEY_URL: redis://:${VALKEY_PASSWORD:?}@valkey:6379
   PUBLIC_WEB_URL: https://stcarmine.com
-  # Só o cloudflared e o web (/32): o gateway da rede e qualquer outro contêiner ficam de fora.
-  TRUSTED_PROXIES: 172.30.0.10/32,172.30.0.11/32
+  # O painel da Staff (S25): outro host, com login Steam próprio e sessão própria (ADR 0015). Só funciona depois do
+  # roteiro do dono (docs/operacao/painel-da-staff.md): o Access e as rotas do túnel.
+  PUBLIC_STAFF_URL: https://staff.stcarmine.com
+  # Só o cloudflared, o web e o painel (/32): o gateway da rede e qualquer outro contêiner ficam de fora.
+  TRUSTED_PROXIES: 172.30.0.10/32,172.30.0.11/32,172.30.0.12/32
   STEAM_WEB_API_KEY: ${STEAM_WEB_API_KEY:-}
   DISCORD_ALERT_WEBHOOK_URL: ${DISCORD_ALERT_WEBHOOK_URL:-}
   STAFF_REPORTS_WEBHOOK_URL: ${STAFF_REPORTS_WEBHOOK_URL:-}
@@ -104,6 +107,8 @@ services:
       # Os Server Components falam com a API pela rede interna (ADR 0015).
       API_URL: http://api:3333
       NODE_OPTIONS: --max-old-space-size=1024
+      # O /staff do site redireciona para o painel da Staff (S25); lido em tempo de execução.
+      PUBLIC_STAFF_URL: https://staff.stcarmine.com
       SENTRY_DSN: ${WEB_SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: production
       SENTRY_RELEASE: ${IMAGE_TAG}
@@ -123,6 +128,27 @@ services:
       api:
         condition: service_healthy
     mem_limit: 1536m
+    restart: unless-stopped
+    logging: *logging
+
+  # O painel da Staff (S25, apps/staff): staff.stcarmine.com, atrás do Access. Serve o próprio /api pelo túnel (mesmo padrão
+  # do site, ADR 0015). Só fica acessível depois do roteiro do dono (docs/operacao/painel-da-staff.md): sem a rota no
+  # túnel, o contêiner sobe e ninguém chega nele (nenhuma porta publicada).
+  staff:
+    image: ghcr.io/caiomayan/carmine-staff:${IMAGE_TAG}
+    environment:
+      NODE_ENV: production
+      API_URL: http://api:3333
+      # Onde fica o site: o painel leva ao Perfil público da Conta.
+      SITE_URL: https://stcarmine.com
+      NODE_OPTIONS: --max-old-space-size=384
+    networks:
+      edge:
+        ipv4_address: 172.30.0.12
+    depends_on:
+      api:
+        condition: service_healthy
+    mem_limit: 512m
     restart: unless-stopped
     logging: *logging
 

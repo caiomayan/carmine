@@ -35,7 +35,7 @@ describe('staticEntries', () => {
     ]);
   });
 
-  it('o Painel da Staff é só da Staff', () => {
+  it('o Painel da Staff é só da Staff (o /staff do site só redireciona para ele)', () => {
     expect(ids(player)).not.toContain('staff');
     expect(ids(visitor)).not.toContain('staff');
     expect(ids(staff)).toContain('staff');

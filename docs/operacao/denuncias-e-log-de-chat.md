@@ -4,7 +4,7 @@ Como o `!report` chega à Staff, onde ficam o chat e as Denúncias, quanto tempo
 
 ## O que a Staff vê
 
-- **Painel `/staff/denuncias`** (qualquer papel de Staff): as abertas, das mais antigas (o prazo de 72 h corre desde a primeira), com o motivo, o alvo, quem denunciou, o servidor, o mapa, o round e as últimas linhas do chat (as do denunciado em destaque). Ações: **Abrir a Conta** (histórico de Punições, VIP, auditoria), **Aplicar Punição** (leva à ficha da Conta com o formulário ligado à Denúncia, que é fechada como "punida" ao aplicar) e **Arquivar com motivo**. Tudo vai para o log de auditoria (`report_archive`; a Punição, como qualquer outra, em `sanction_apply` com o `reportId`). As abas "Arquivadas" e "Punidas" são o histórico.
+- **Painel da Staff, tela Denúncias** (`/denuncias`; qualquer papel de Staff): as abertas, das mais antigas (o prazo de 72 h corre desde a primeira), com o motivo, o alvo, quem denunciou, o servidor, o mapa, o round e as últimas linhas do chat (as do denunciado em destaque). Ações: **Abrir a Conta** (histórico de Punições, VIP, auditoria), **Aplicar Punição** (leva à ficha da Conta com o formulário ligado à Denúncia, que é fechada como "punida" ao aplicar) e **Arquivar com motivo**. Tudo vai para o log de auditoria (`report_archive`; a Punição, como qualquer outra, em `sanction_apply` com o `reportId`). As abas "Arquivadas" e "Punidas" são o histórico.
 - **Cheat e voz:** o painel avisa que, sem demo, a Denúncia sozinha não gera Punição. A API recusa (`report_needs_evidence`) uma Punição vinda de uma Denúncia de cheat ou voz sem testemunha ou link da evidência.
 - **CLI** (`pnpm --filter @carmine/api staff ...`; na imagem, `node dist/staff/staff.cli.js ...`):
 

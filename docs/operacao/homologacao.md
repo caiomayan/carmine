@@ -150,6 +150,6 @@ O painel da Staff (`apps/staff`) é um segundo app na mesma pilha: serviço `sta
 - [ ] **3. DNS.** O registro do `staff-dev` é criado pelo próprio painel do túnel ao salvar a rota (CNAME proxied para o túnel); confira em DNS > Records.
 - [ ] **4. Conferir.** Abra `https://staff-dev.stcarmine.com`, passe pelo PIN do Access, clique em *Entrar com a Steam*. Uma Conta **sem** papel de Staff volta para a tela de entrada com "sem acesso" e nenhuma sessão; a sua Conta (papel de Dono) entra no Início.
 
-A Punição, a revogação e o reset do nome já são feitos **dentro do painel** (tela Contas). A variável `SITE_URL` do serviço `staff` (já no compose, `https://dev.stcarmine.com`) só leva ao Perfil público; VIP, Ranking, papel, exclusão de dados e a Auditoria também já são do painel. O que ainda mora no site é a foto de perfil na ficha, Pagamentos e Servidores (a sessão do site é outra, então a Staff entra no site uma vez para usá-los).
+As telas da Staff (Contas, Denúncias, Fotos, Pagamentos, Servidores e Auditoria) são todas do painel; o site não tem mais nenhuma. O `/staff` do site redireciona para o painel (307) pela variável `PUBLIC_STAFF_URL` do serviço `web` (já no compose, lida em tempo de execução). A variável `SITE_URL` do serviço `staff` só leva ao Perfil público.
 
-**Produção (`staff.stcarmine.com`)** entra num PR seguinte, com o mesmo roteiro **na mesma ordem** (primeiro o Access `staff.stcarmine.com`, só depois as rotas `staff` e `staff/api` no túnel `carmine-prod`, para o endereço nunca ficar público sem a primeira trava), depois que a homologação estiver validada.
+**Produção (`staff.stcarmine.com`)**: o roteiro, na mesma ordem (primeiro o Access, só depois as rotas), está em [painel-da-staff.md](painel-da-staff.md).

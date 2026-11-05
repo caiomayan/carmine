@@ -12,7 +12,7 @@ O pedido chega pelo e-mail do encarregado ou pela página de [contato](/contact)
 
 ## 2. Executar
 
-Pelo painel (`/staff`, só o Dono): abra a Conta, "Exclusão de dados" → "Anonimizar a Conta", com o motivo (ex.: `Pedido de exclusão pelo contato, protocolo 12`).
+Pelo painel da Staff (tela Contas, só o Dono): abra a Conta, "Exclusão de dados" → "Anonimizar a Conta", com o motivo (ex.: `Pedido de exclusão pelo contato, protocolo 12`).
 
 Pelo CLI:
 

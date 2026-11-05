@@ -20,8 +20,8 @@ import {
   DialogTitle,
 } from '@/components/animate-ui/components/radix/dialog';
 import { useSession } from '@/components/session/session-provider';
-import { FieldError } from '@/components/staff/fields';
 import { Button } from '@/components/ui/button';
+import { FieldError } from '@/components/ui/field-error';
 import {
   AVATAR_PICK_MAX_PIXELS,
   loadAvatarContracts,

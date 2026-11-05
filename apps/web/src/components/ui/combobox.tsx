@@ -31,7 +31,7 @@ const EMPTY_KEY = '__empty__';
  * `emptyLabel` vira o primeiro item da lista ("Todas").
  *
  * Os textos de busca vêm de `common.combobox`: a rota precisa entregar o namespace `common` às
- * mensagens do cliente (como fazem os layouts de `(itens)` e `staff`).
+ * mensagens do cliente (como faz o layout de `(itens)`).
  */
 export function Combobox({
   id,

@@ -116,6 +116,8 @@ export default defineConfig({
       env: {
         CARMINE_UI_GALLERY: '1',
         API_URL: `http://localhost:${API_PORT}`,
+        // O /staff do site redireciona para o painel (S25, apps/staff): o E2E confere o redirecionamento.
+        PUBLIC_STAFF_URL: `http://localhost:${STAFF_PORT}`,
         // Qualquer erro de i18n derruba a página (src/i18n/request.ts).
         CARMINE_STRICT_I18N: '1',
       },

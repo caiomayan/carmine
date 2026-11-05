@@ -294,7 +294,9 @@ function PaletteBody({
       case 'entry': {
         const { entry } = row;
         if (entry.kind === 'link') {
-          go(entry.id === 'signIn' ? signInHref(pathname) : entry.href);
+          // O painel da Staff é outro host (S25): o /staff do site redireciona para ele, então a ida é navegação inteira.
+          if (entry.id === 'staff') goToAnchor(entry.href);
+          else go(entry.id === 'signIn' ? signInHref(pathname) : entry.href);
         } else if (entry.id === 'theme') {
           remember();
           onClose();

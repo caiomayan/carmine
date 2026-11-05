@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { Switch } from '@/components/animate-ui/components/radix/switch';
 import { useSession } from '@/components/session/session-provider';
-import { FieldError } from '@/components/staff/fields';
+import { FieldError } from '@/components/ui/field-error';
 import { setParticipation } from '@/lib/analytics-participation';
 
 /**
