@@ -75,3 +75,20 @@ export function limiteDoGrupo(passos) {
     .find((p) => p.classe === 'ok' && (!estourou || p.passo < estourou.passo));
   return { aguentou: aguentou?.passo ?? null, estourou: estourou?.passo ?? null };
 }
+
+/** Hosts da produção: o teste nunca aponta para eles (a homologação é dev.stcarmine.com). */
+const HOSTS_PRODUCAO = new Set(['stcarmine.com', 'www.stcarmine.com']);
+
+/** `true` se a URL é da produção: o domínio sem subdomínio, o `www` ou o mesmo host da sonda (`PROD_URL`). */
+export function ehProducao(baseUrl, prodUrl) {
+  const host = (url) => {
+    try {
+      return new URL(url).hostname.toLowerCase().replace(/[.]$/, '');
+    } catch {
+      return null;
+    }
+  };
+  const alvo = host(baseUrl);
+  if (alvo === null) return true; // sem URL válida não há como provar que não é produção
+  return HOSTS_PRODUCAO.has(alvo) || alvo === host(prodUrl ?? '');
+}

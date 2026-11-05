@@ -21,6 +21,10 @@ obj/
 .env.*
 !.env.example
 
+# Teste de carga (docs/operacao/teste-de-carga.md): chaves e resultados da rodada local
+/chaves.txt
+/resultados/
+
 # Ferramentas locais
 .maestri/
 .playwright-mcp/

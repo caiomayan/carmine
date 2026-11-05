@@ -82,7 +82,7 @@ for g in coleta api paginas; do
 done
 ```
 
-Saída 3 = a sonda abortou (pare tudo); 4 = defeito no roteiro. `--max-erros`, `--segura` e `--pausa` fazem o papel das entradas de mesmo nome do workflow; `FUNDO` (padrão 40) é variável de ambiente. As tabelas saem em `resultados/escada-<grupo>.md`. O workflow roda de um runner do GitHub e o notebook, da rede de casa: a latência da rede entra na medida, então compare números do mesmo caminho. Para abortar, `Ctrl+C`. O coletor da VM, "Depois" e o resto valem igual.
+Saída 3 = a sonda abortou (pare tudo); 4 = defeito no roteiro. `--max-erros`, `--segura` e `--pausa` fazem o papel das entradas de mesmo nome do workflow; `FUNDO` (padrão 40) é variável de ambiente. As tabelas saem em `resultados/escada-<grupo>.md`. O workflow roda de um runner do GitHub e o notebook, da rede de casa: a latência da rede entra na medida, então compare números do mesmo caminho. O `escada.mjs` **recusa** (saída 4) um `BASE_URL` da produção (`stcarmine.com`, `www` ou o host da `PROD_URL`) ou ausente; só `dev.stcarmine.com` e a pilha local passam. `chaves.txt` e `resultados/` na raiz estão no `.gitignore`. Para abortar, `Ctrl+C`. No fim, limpe o ambiente: `unset LOADTEST_KEY_SECRET CF_ACCESS_CLIENT_ID CF_ACCESS_CLIENT_SECRET KEYS_FILE BASE_URL PROD_URL`. O coletor da VM, "Depois" e o resto valem igual.
 
 ## Rodar pelo workflow (quando estiver no `main`)
 
@@ -116,7 +116,8 @@ Uma linha por contêiner (homologação **e** produção) a cada 10 s: CPU (100 
 2. **Tirar `RATE_LIMIT_PUBLIC_PER_MINUTE` do `.env`** da VM.
 3. **Zerar o banco da homologação** (Actions > *Deploy homologação* > `zerar_banco`): as ~2.000 Contas de teste e as Estatísticas delas aparecem no Ranking da homologação (jogam mais que qualquer pessoa). O seed recria a demonstração. Este deploy também faz a API reler o `.env` sem o limite alto.
 4. Revogar o service token do teste e despausar o deploy (`DEPLOY_HML_PAUSED`).
-5. Preencher "Resultados" abaixo (só números, sem dado de infraestrutura).
+5. **Apagar o `chaves.txt`** (e, no notebook, dar `unset` nos secrets exportados; ver acima).
+6. Preencher "Resultados" abaixo (só números, sem dado de infraestrutura).
 
 ## Rodar na máquina (validar um roteiro)
 

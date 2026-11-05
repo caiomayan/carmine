@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classificaPasso, limiteDoGrupo, tabelaDoGrupo } from '../lib/escada.mjs';
+import { classificaPasso, ehProducao, limiteDoGrupo, tabelaDoGrupo } from '../lib/escada.mjs';
 
 const resultado = (extra = {}) => ({
   ok: true,
@@ -49,5 +49,18 @@ describe('escada do teste de carga', () => {
     const tabela = tabelaDoGrupo('coleta', [{ passo: 10, classe: 'ok', resultado: resultado() }]);
     expect(tabela).toContain('| Passo | Resultado | Req/s | Erros | p95 eventos |');
     expect(tabela).toContain('| 10 | dentro do limite | 12.3 | 0.50% | 123 ms |');
+  });
+});
+
+describe('guarda contra a produção', () => {
+  it('recusa a produção, o www, o host da sonda e URL inválida; aceita homologação e local', () => {
+    expect(ehProducao('https://stcarmine.com', 'https://stcarmine.com')).toBe(true);
+    expect(ehProducao('https://STCARMINE.com/', undefined)).toBe(true);
+    expect(ehProducao('https://www.stcarmine.com', undefined)).toBe(true);
+    expect(ehProducao('https://outro.exemplo', 'https://outro.exemplo')).toBe(true);
+    expect(ehProducao(undefined, undefined)).toBe(true);
+    expect(ehProducao('não é url', undefined)).toBe(true);
+    expect(ehProducao('https://dev.stcarmine.com', 'https://stcarmine.com')).toBe(false);
+    expect(ehProducao('http://localhost:3333', undefined)).toBe(false);
   });
 });

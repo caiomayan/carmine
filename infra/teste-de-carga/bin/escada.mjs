@@ -12,7 +12,7 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { classificaPasso, limiteDoGrupo, tabelaDoGrupo } from '../lib/escada.mjs';
+import { classificaPasso, ehProducao, limiteDoGrupo, tabelaDoGrupo } from '../lib/escada.mjs';
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const { values: v } = parseArgs({
@@ -40,6 +40,12 @@ if (
   passos.some((n, i) => i > 0 && n <= passos[i - 1])
 ) {
   console.error('--passos: inteiros positivos em ordem crescente');
+  process.exit(4);
+}
+if (ehProducao(process.env.BASE_URL, process.env.PROD_URL)) {
+  console.error(
+    'BASE_URL ausente, inválida ou da produção: o teste de carga só roda contra a homologação (dev.stcarmine.com).',
+  );
   process.exit(4);
 }
 mkdirSync(v.saida, { recursive: true });
