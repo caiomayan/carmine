@@ -13,8 +13,10 @@ import { Loadouts } from '../loadout/loadouts.js';
 import { Payments } from '../payments/payments.js';
 import { PAYMENTS_GATEWAY } from '../payments/payments.module.js';
 import { StaffRoles } from '../staff/staff-roles.js';
+import { VipHold } from '../vip/vip-hold.js';
 import { VipPeriods } from '../vip/vip-periods.js';
 import type { DemoSettings } from './demo-guard.js';
+import { createSeedPayments } from './demo-payments.js';
 import { seedDemo } from './demo-seed.js';
 
 /**
@@ -23,12 +25,10 @@ import { seedDemo } from './demo-seed.js';
  * a API inteira.
  */
 export async function runSeed(settings: DemoSettings, log: (line: string) => void): Promise<void> {
-  const app = await NestFactory.createApplicationContext(
-    AppModule.forRoot(loadConfig(process.env)),
-    {
-      logger: ['error', 'warn'],
-    },
-  );
+  const config = loadConfig(process.env);
+  const app = await NestFactory.createApplicationContext(AppModule.forRoot(config), {
+    logger: ['error', 'warn'],
+  });
   try {
     const get = <T>(token: abstract new (...args: never[]) => T) =>
       app.get(token, { strict: false });
@@ -47,8 +47,20 @@ export async function runSeed(settings: DemoSettings, log: (line: string) => voi
           enabled: get(Avatars).enabled,
         },
         payments: {
-          payments: get(Payments),
+          // O Payments do app avisa o Discord; o do seed não (ver createSeedPayments).
+          payments: createSeedPayments({
+            db: app.get(DATABASE, { strict: false }),
+            gateway: app.get(PAYMENTS_GATEWAY, { strict: false }),
+            vip: get(VipPeriods),
+            enabled: config.payments.enabled,
+            dataKey: config.payments.dataKey,
+            publicWebUrl: config.publicWebUrl,
+            onVipChanged: (accountId) => get(VipHold).syncAccount(accountId),
+          }),
           gateway: app.get(PAYMENTS_GATEWAY, { strict: false }),
+          restoreSink: async (request) => {
+            await get(Payments).handleWebhook(request);
+          },
         },
       },
       settings,

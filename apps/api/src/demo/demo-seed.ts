@@ -126,11 +126,7 @@ export async function seedDemo(
   }
 
   if (services.payments) {
-    // Contas sem VIP de partida (o VIP delas nasce da compra): fora a da foto, que já tem o próprio cenário.
-    const buyers = DEMO_PLAYERS.filter((player) => !player.vip && player !== photoPlayer)
-      .slice(0, 3)
-      .map((player) => accountIds.get(player.steamId) as string);
-    await seedDemoPayments(db, services.payments, buyers, owner, now, log);
+    await seedDemoPayments(db, services.payments, accountIds, owner, log);
   }
 
   await insertStats(db, statsRows);
