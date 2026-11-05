@@ -4,7 +4,7 @@ export type CollectingKind = 'heatmap' | 'radar' | 'sessions';
 
 /**
  * Cena quieta de um bloco que ainda não tem dado: um esboço apagado do que vai ser (mapa de calor, radar, lista
- * de sessões) e a explicação. Os números de atividade por dia, de abates por arma e lado e das Sessões ainda não
+ * de sessões) e a explicação. Os números de atividade por dia e de abates por arma e lado ainda não
  * são guardados (S12b); aqui não há nenhum valor, só o desenho do lugar onde eles vão aparecer.
  */
 export function CollectingCard({

@@ -17,10 +17,10 @@ import { BrandIcon } from '@/components/icons/brand-icon';
 import { ShowcaseGrid } from '@/components/loadout/showcase-grid';
 import { SanctionBadges, SanctionHistory } from '@/components/moderation/profile-sanctions';
 import { AvatarReportButton } from '@/components/profile/avatar-report';
-import { CollectingCard } from '@/components/profile/collecting-card';
 import { PresenceChip } from '@/components/profile/presence-chip';
 import { ProfileEmpty } from '@/components/profile/profile-empty';
 import { ProfileStats } from '@/components/profile/profile-stats';
+import { SessionsCard } from '@/components/profile/sessions-card';
 import { SectionTitle } from '@/components/section-title';
 import { Button } from '@/components/ui/button';
 import { ambientFor, type SkinPalette } from '@/components/vida/skin-ambient';
@@ -28,6 +28,7 @@ import { findPublicIdBySteamId } from '@/lib/api-base';
 import {
   getProfile,
   getProfileSeries,
+  getProfileSessions,
   getProfileStats,
   getServerSession,
   type ProfileResult,
@@ -229,7 +230,7 @@ export default async function ProfilePage({
               </section>
             </div>
 
-            {profile.isPrivate && !isOwner ? null : <Activity />}
+            {profile.isPrivate && !isOwner ? null : <Activity publicId={profile.publicId} />}
           </div>
         )}
 
@@ -239,17 +240,13 @@ export default async function ProfilePage({
   );
 }
 
-/** A coluna da direita: as Sessões de jogo, que ainda não são registradas (S12b). */
-async function Activity() {
+/** A coluna da direita: as Sessões de jogo, com a que está em andamento no alto. */
+async function Activity({ publicId }: { publicId: number }) {
   const t = await getTranslations('profile.stats.collecting');
+  const sessions = await getProfileSessions(publicId);
   return (
     <aside className="grid content-start gap-4" aria-label={t('asideLabel')}>
-      <CollectingCard
-        kind="sessions"
-        title={t('sessions.title')}
-        status={t('status')}
-        body={t('sessions.body')}
-      />
+      <SessionsCard sessions={sessions} />
     </aside>
   );
 }

@@ -875,9 +875,24 @@
         },
         "sessions": {
           "title": "Sessões de jogo",
-          "body": "As sessões ainda não são registradas. Quando forem, as últimas aparecem aqui."
+          "body": "Ainda não registramos nenhuma Sessão de jogo desta Conta. As últimas aparecem aqui quando ela jogar num Servidor Carmine."
         },
         "asideLabel": "Atividade"
+      }
+    },
+    "sessions": {
+      "title": "Sessões de jogo",
+      "live": "Jogando agora",
+      "liveAt": "Jogando agora em",
+      "since": "desde as {time}",
+      "range": "{start} às {end}",
+      "unavailableStatus": "Indisponível",
+      "unavailableBody": "Não deu para carregar as Sessões agora. Tente de novo em instantes.",
+      "noMap": "Mapa não informado",
+      "duration": {
+        "hoursMinutes": "{hours} h {minutes, number, ::integer-width/2} min",
+        "minutes": "{minutes} min",
+        "none": "—"
       }
     },
     "editProfile": "Editar perfil",

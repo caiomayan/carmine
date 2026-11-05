@@ -75,12 +75,17 @@ test('Perfil com jogos: os quatro números da semana, o seletor, os cartões por
   await clickHydrated(page.locator('[data-period-option="week"]'));
   await expect(numbers).toHaveAttribute('data-period', 'week');
 
-  // Mapa de calor, radar e Sessões ainda não têm dado: cenas quietas, sem nenhum número.
-  for (const kind of ['heatmap', 'radar', 'sessions']) {
+  // Mapa de calor e radar ainda não têm dado: cenas quietas, sem nenhum número.
+  for (const kind of ['heatmap', 'radar']) {
     const card = page.getByTestId(`collecting-${kind}`);
     await expect(card).toContainText('Coletando');
     await expect(card.getByText(/\d/)).toHaveCount(0);
   }
+
+  // As Sessões mostram a lista ou, sem nenhuma registrada, a cena 'coletando': nunca um cartão em branco.
+  await expect(
+    page.getByTestId('profile-sessions').or(page.getByTestId('collecting-sessions')),
+  ).toBeVisible();
 
   // Uma Conta não reivindicada com jogos mostra o convite e as Estatísticas ao mesmo tempo.
   await expect(page.getByTestId('claim-invite')).toBeVisible();
@@ -170,6 +175,7 @@ test('Perfil privado: o visitante vê o aviso no lugar dos números; o dono vê 
   await expect(visitor.locator('[data-stat]')).toHaveCount(0);
   await expect(visitor.getByTestId('profile-charts')).toHaveCount(0);
   await expect(visitor.getByTestId('collecting-sessions')).toHaveCount(0);
+  await expect(visitor.getByTestId('profile-sessions')).toHaveCount(0);
   await expect(visitor.getByTestId('collecting-heatmap')).toHaveCount(0);
   await visitorContext.close();
 });
