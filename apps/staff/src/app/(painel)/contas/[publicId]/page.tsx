@@ -47,10 +47,15 @@ export default async function ContaPage({
     );
   }
 
-  // A foto de perfil (ADR 0022) é do papel que modera fotos; sem a resposta, a ficha segue sem a seção.
-  const avatar = staffCan(session.session.staffRole, 'avatars.moderate')
+  // A foto de perfil (ADR 0022) é do papel que modera fotos.
+  // 403 e 404 (sem a foto para mostrar) somem; qualquer outra falha vira o aviso de que o dado não veio.
+  const avatarResult = staffCan(session.session.staffRole, 'avatars.moderate')
     ? await apiGet<StaffAccountAvatar>(`/api/staff/accounts/${publicId}/avatar`)
     : null;
+  const avatar =
+    avatarResult && !avatarResult.ok && (avatarResult.status === 403 || avatarResult.status === 404)
+      ? null
+      : avatarResult;
 
   const { denuncia, evidencia } = await searchParams;
   const report: ReportOrigin | undefined =
@@ -64,7 +69,7 @@ export default async function ContaPage({
       initial={result.data}
       viewer={{ steamId: session.session.account.steamId, role: session.session.staffRole }}
       siteUrl={SITE_URL}
-      {...(avatar?.ok && { avatar: avatar.data })}
+      {...(avatar && { avatar: avatar.ok ? avatar.data : ('unavailable' as const) })}
       {...(report && { report })}
     />
   );

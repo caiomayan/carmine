@@ -1,11 +1,14 @@
 'use client';
 
 import { CheckIcon } from 'lucide-react';
-import { type FormEvent, type ReactNode, useId, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useId, useState } from 'react';
 import type { StaffResult } from '@/lib/staff-request';
 
 export const REASON_MIN = 3;
 export const REASON_MAX = 500;
+
+/** Erro de um campo extra: `fieldId` é o campo que recebe o foco e o `aria-invalid`; sem ele, o erro é da Nota. */
+export type FieldError = { message: string; fieldId?: string };
 
 /**
  * Uma ação da Staff que pede um motivo (arquivar a Denúncia, manter ou remover a foto): o botão abre o formulário no
@@ -36,8 +39,8 @@ export function ActionForm<T = unknown>({
   reasonLabel?: string;
   /** Explica a ação ao abrir o formulário. */
   description?: string;
-  /** Erro dos campos extras, ou `null` se está tudo certo. */
-  validate?: () => string | null;
+  /** Erro dos campos extras, ou `null` se está tudo certo. Com `fieldId`, o foco e o `aria-invalid` vão a esse campo. */
+  validate?: () => string | FieldError | null;
   onSubmit: (reason: string) => Promise<StaffResult<T>>;
   onDone?: () => void;
   /** Chamado ao cancelar (o formulário fecha); quem tem campos extras desfaz o rascunho aqui. */
@@ -50,6 +53,22 @@ export function ActionForm<T = unknown>({
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
+  // O campo extra com erro: ele aponta para a mensagem (`aria-describedby`) e recebe o foco.
+  const [errorField, setErrorField] = useState<string | null>(null);
+  const errorId = `${id}-error`;
+
+  useEffect(() => {
+    if (!errorField) return;
+    const field = document.getElementById(errorField);
+    if (!field) return;
+    field.setAttribute('aria-invalid', 'true');
+    field.setAttribute('aria-describedby', errorId);
+    field.focus();
+    return () => {
+      field.removeAttribute('aria-invalid');
+      field.removeAttribute('aria-describedby');
+    };
+  }, [errorField, errorId]);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -58,19 +77,24 @@ export function ActionForm<T = unknown>({
     const text = reason.trim();
     if (text.length < REASON_MIN) {
       setError(`Escreva o motivo (pelo menos ${REASON_MIN} caracteres).`);
+      setErrorField(null);
       return;
     }
-    const extra = validate?.() ?? null;
+    const found = validate?.() ?? null;
+    const extra = typeof found === 'string' ? { message: found } : found;
     if (extra) {
-      setError(extra);
+      setError(extra.message);
+      setErrorField(extra.fieldId ?? null);
       return;
     }
     setError(null);
+    setErrorField(null);
     setPending(true);
     const result = await onSubmit(text);
     setPending(false);
     if (!result.ok) {
       setError(result.message);
+      setErrorField(null);
       return;
     }
     setDone(true);
@@ -118,14 +142,17 @@ export function ActionForm<T = unknown>({
         value={reason}
         onChange={(event) => {
           setReason(event.target.value);
-          if (error) setError(null);
+          if (error) {
+            setError(null);
+            setErrorField(null);
+          }
         }}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
+        aria-invalid={error && !errorField ? true : undefined}
+        aria-describedby={error && !errorField ? errorId : undefined}
         data-testid={`${testId}-reason`}
       />
       {error ? (
-        <p id={`${id}-error`} className="stp-field-error" role="alert">
+        <p id={errorId} className="stp-field-error" role="alert">
           {error}
         </p>
       ) : null}

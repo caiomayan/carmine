@@ -1,6 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { expect, type Page, test } from '@playwright/test';
 import { chooseSteamAccount, grantStaffRole, newSteamId, signInByRequest } from './accounts';
+import { seedCustomAvatar } from './api-cli';
 import { axeViolations } from './fixtures';
 import { connectPlayer, createServer, type E2eServer } from './live-servers';
 
@@ -176,6 +177,43 @@ test.describe('Contas no painel', () => {
     await page.getByRole('button', { name: 'Resetar nome' }).click();
     await expect(page.getByTestId('name-reset-done')).toBeVisible();
     await expect(page.getByTestId('audit-entries')).toContainText('Resetou o nome');
+  });
+
+  test('foto de perfil: remover com motivo e dias, com os erros no campo certo e a remoção listada', async ({
+    page,
+  }) => {
+    const server = createServer();
+    const { steamId } = await seedPlayer(page, server);
+    seedCustomAvatar(steamId);
+    await signInAsStaff(page, server, 'owner');
+    await openFile(page, steamId);
+
+    const panel = page.getByTestId('account-avatar');
+    await expect(panel.getByTestId('account-avatar-state')).toContainText('Foto própria no ar');
+    await panel.getByTestId('remove-avatar-open').click();
+    await panel.getByTestId('remove-avatar-submit').click();
+    await expect(panel.getByRole('alert')).toContainText('pelo menos 3 caracteres');
+
+    await panel.getByTestId('remove-avatar-reason').fill('Imagem violenta.');
+    await panel.getByTestId('remove-avatar-submit').click();
+    // O erro do motivo é do select: ele recebe o foco e o aria-invalid.
+    await expect(panel.getByRole('alert')).toContainText('Escolha o motivo da remoção');
+    await expect(panel.getByTestId('avatar-remove-reason')).toBeFocused();
+    await expect(panel.getByTestId('avatar-remove-reason')).toHaveAttribute('aria-invalid', 'true');
+
+    await panel.getByTestId('avatar-remove-reason').selectOption({ label: 'Violência' });
+    await panel.getByTestId('avatar-remove-days').fill('e');
+    await panel.getByTestId('remove-avatar-submit').click();
+    await expect(panel.getByRole('alert')).toContainText('O bloqueio vai de 0 a');
+    await expect(panel.getByTestId('avatar-remove-days')).toBeFocused();
+
+    await panel.getByTestId('avatar-remove-days').fill('3');
+    await panel.getByTestId('remove-avatar-submit').click();
+    await expect(panel.getByTestId('remove-avatar-done')).toBeVisible();
+    await expect(panel.getByTestId('account-avatar-state')).toContainText('foto da Steam');
+    await expect(panel.getByTestId('account-avatar-blocked')).toContainText('bloqueado até');
+    await expect(panel.getByTestId('account-avatar-removals')).toContainText('Violência');
+    await expect(panel.getByTestId('account-avatar-removals')).toContainText('Imagem violenta.');
   });
 
   test('da Denúncia para a ficha: a Punição aplicada fecha o caso como punido', async ({

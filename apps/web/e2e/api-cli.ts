@@ -27,3 +27,25 @@ export function runApiCli(script: string, args: string[]): string {
     },
   );
 }
+
+/**
+ * Dá à Conta uma foto própria no ar (as fotos não têm armazenamento no E2E, então só a linha existe: o que vale é o
+ * estado da ficha da Staff). Insere direto no banco do E2E pelo `pg` da API.
+ */
+export function seedCustomAvatar(steamId: string): void {
+  execFileSync(
+    process.execPath,
+    [
+      '-e',
+      `const { Client } = require('pg');
+       (async () => {
+         const c = new Client({ connectionString: process.env.DATABASE_URL });
+         await c.connect();
+         await c.query("insert into account_avatars (account_id) select id from accounts where steam_id = $1", [process.argv[1]]);
+         await c.end();
+       })().catch((e) => { console.error(e); process.exit(1); });`,
+      steamId,
+    ],
+    { cwd: API_DIR, env: { ...process.env, DATABASE_URL: E2E_DATABASE_URL } },
+  );
+}

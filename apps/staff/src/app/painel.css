@@ -2520,6 +2520,6 @@ a.stp-btn {
     grid-template-columns: 1fr;
   }
 }
-.stp-avatar-panel + div {
+.stp-avatar-removals-wrap {
   margin-top: 16px;
 }

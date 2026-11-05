@@ -39,8 +39,8 @@ const sinceText = (iso: string | null) => (iso ? `Último connect ${stamp(iso)}`
 
 /**
  * A ficha de uma Conta no painel (S25): quem é, o que vale agora, aplicar Punição com a sugestão da tabela, o histórico
- * completo (com o motivo interno), o reset do Nome de exibição e as ações da Staff sobre ela. Cada mutação devolve a ficha
- * atualizada. a foto de perfil, VIP, Ranking, papel e a exclusão de dados.
+ * completo (com o motivo interno), o reset do Nome de exibição e as ações da Staff sobre ela: foto de perfil, VIP, Ranking, papel e exclusão de dados. Cada
+ * mutação devolve a ficha atualizada.
  */
 export function AccountFile({
   initial,
@@ -54,8 +54,8 @@ export function AccountFile({
   /** A Denúncia da fila que originou a visita (S13): a Punição aplicada fecha o caso. */
   report?: ReportOrigin;
   siteUrl: string;
-  /** A foto de perfil da Conta; ausente para quem não modera fotos ou se a API não respondeu. */
-  avatar?: StaffAccountAvatar;
+  /** A foto de perfil: ausente para quem não modera fotos; `'unavailable'` quando a API não respondeu. */
+  avatar?: StaffAccountAvatar | 'unavailable';
 }) {
   const [detail, setDetail] = useState(initial);
   const { account } = detail;
@@ -120,7 +120,18 @@ export function AccountFile({
             <DisplayNamePanel detail={detail} onChange={setDetail} />
           ) : null}
 
-          {avatar ? <AccountAvatarPanel publicId={account.publicId} initial={avatar} /> : null}
+          {avatar === 'unavailable' ? (
+            <section className="stp-card" aria-labelledby="foto-indisponivel">
+              <h2 id="foto-indisponivel" className="stp-card-h">
+                Foto de perfil
+              </h2>
+              <p className="stp-muted" role="alert" data-testid="account-avatar-unavailable">
+                Não foi possível carregar a foto. Recarregue a página para tentar de novo.
+              </p>
+            </section>
+          ) : avatar ? (
+            <AccountAvatarPanel publicId={account.publicId} initial={avatar} />
+          ) : null}
           <RankingPanel detail={detail} viewer={viewer} onChange={setDetail} />
           <RolePanel detail={detail} viewer={viewer} onChange={setDetail} />
           <ErasurePanel detail={detail} viewer={viewer} />

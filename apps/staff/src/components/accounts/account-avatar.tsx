@@ -9,10 +9,31 @@ import {
   type StaffAccountAvatar,
   staffAccountAvatarSchema,
 } from '@carmine/contracts/avatar';
+import Link from 'next/link';
 import { useId, useState } from 'react';
 import { ActionForm } from '@/components/queue/action-form';
 import { stamp } from '@/components/queue/bits';
 import { staffPost } from '@/lib/staff-request';
+
+/**
+ * Confere o motivo e os dias de bloqueio da remoção. Os dias vêm como texto: em branco vale 0 (sem bloqueio), e o que
+ * não é um inteiro de 0 ao máximo é erro (nunca vira 0 em silêncio).
+ */
+export function validateAvatarRemoval(
+  reason: string,
+  blockDays: string,
+): { days: number } | { field: 'reason' | 'days'; message: string } {
+  if (!reason) return { field: 'reason', message: 'Escolha o motivo da remoção.' };
+  const text = blockDays.trim();
+  const days = text === '' ? 0 : Number(text);
+  if (!(Number.isInteger(days) && days >= 0 && days <= AVATAR_BLOCK_DAYS_MAX)) {
+    return {
+      field: 'days',
+      message: `O bloqueio vai de 0 a ${AVATAR_BLOCK_DAYS_MAX} dias.`,
+    };
+  }
+  return { days };
+}
 
 /**
  * A foto de perfil na ficha da Conta (ADR 0022, S25): a atual (a imagem vem da rota da Staff), o bloqueio de
@@ -28,19 +49,17 @@ export function AccountAvatarPanel({
   const id = useId();
   const [data, setData] = useState(initial);
   // O formulário fica montado depois de remover, para o aviso de feito não sumir junto com a foto.
-  const [offerRemove, setOfferRemove] = useState(initial.current !== null);
+  const [offerRemove] = useState(initial.current !== null);
   const [reason, setReason] = useState<AvatarReason | ''>('');
   const [blockDays, setBlockDays] = useState(String(AVATAR_BLOCK_DAYS_SUGGESTED));
-  if (data.current && !offerRemove) setOfferRemove(true);
+  const reasonId = `${id}-reason`;
+  const daysId = `${id}-days`;
 
-  // Em branco vale 0: sem bloqueio.
-  const days = blockDays.trim() === '' ? 0 : Number(blockDays);
   const validate = () => {
-    if (!reason) return 'Escolha o motivo da remoção.';
-    if (!(Number.isInteger(days) && days >= 0 && days <= AVATAR_BLOCK_DAYS_MAX)) {
-      return `O bloqueio vai de 0 a ${AVATAR_BLOCK_DAYS_MAX} dias.`;
-    }
-    return null;
+    const checked = validateAvatarRemoval(reason, blockDays);
+    return 'message' in checked
+      ? { message: checked.message, fieldId: checked.field === 'reason' ? reasonId : daysId }
+      : null;
   };
 
   return (
@@ -63,11 +82,22 @@ export function AccountAvatarPanel({
         ) : null}
         <div className="stp-avatar-info">
           <p data-testid="account-avatar-state">
-            {data.current
-              ? data.current.status === 'suspended'
-                ? `Foto própria fora do ar (suspensa por denúncias), enviada em ${stamp(data.current.uploadedAt)}. Decida na fila de fotos.`
-                : `Foto própria no ar, enviada em ${stamp(data.current.uploadedAt)}.`
-              : 'A Conta usa a foto da Steam.'}
+            {data.current ? (
+              data.current.status === 'suspended' ? (
+                <>
+                  Foto própria fora do ar (suspensa por denúncias), enviada em{' '}
+                  {stamp(data.current.uploadedAt)}. Decida na{' '}
+                  <Link href="/fotos" prefetch={false} className="stp-link">
+                    fila de fotos
+                  </Link>
+                  .
+                </>
+              ) : (
+                `Foto própria no ar, enviada em ${stamp(data.current.uploadedAt)}.`
+              )
+            ) : (
+              'A Conta usa a foto da Steam.'
+            )}
           </p>
           {data.uploadBlockedUntil ? (
             <p data-testid="account-avatar-blocked">
@@ -87,17 +117,17 @@ export function AccountAvatarPanel({
               onSubmit={(note) =>
                 staffPost(
                   `/api/staff/accounts/${publicId}/avatar/remove`,
-                  { decision: 'remove', reason, note, blockDays: days },
+                  { decision: 'remove', reason, note, blockDays: Number(blockDays.trim() || 0) },
                   (value) => staffAccountAvatarSchema.parse(value),
                 )
               }
               onSuccess={setData}
             >
-              <label className="stp-label" htmlFor={`${id}-reason`}>
+              <label className="stp-label" htmlFor={reasonId}>
                 Motivo da remoção
               </label>
               <select
-                id={`${id}-reason`}
+                id={reasonId}
                 className="stp-select"
                 value={reason}
                 onChange={(event) => setReason(event.target.value as AvatarReason)}
@@ -110,20 +140,18 @@ export function AccountAvatarPanel({
                   </option>
                 ))}
               </select>
-              <label className="stp-label" htmlFor={`${id}-days`}>
+              <label className="stp-label" htmlFor={daysId}>
                 Dias sem poder enviar outra foto
                 <span className="stp-label-count">
                   0 não bloqueia; sugerido {AVATAR_BLOCK_DAYS_SUGGESTED}
                 </span>
               </label>
               <input
-                id={`${id}-days`}
+                id={daysId}
                 className="stp-input"
-                type="number"
+                type="text"
                 inputMode="numeric"
-                min={0}
-                max={AVATAR_BLOCK_DAYS_MAX}
-                step={1}
+                autoComplete="off"
                 value={blockDays}
                 onChange={(event) => setBlockDays(event.target.value)}
                 data-testid="avatar-remove-days"
@@ -133,7 +161,7 @@ export function AccountAvatarPanel({
         </div>
       </div>
       {data.removals.length > 0 ? (
-        <div>
+        <div className="stp-avatar-removals-wrap">
           <h3 className="stp-section">Remoções anteriores</h3>
           <ol className="stp-avatar-removals" data-testid="account-avatar-removals">
             {data.removals.map((removal) => (
