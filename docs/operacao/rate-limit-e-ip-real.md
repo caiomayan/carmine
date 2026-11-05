@@ -19,6 +19,7 @@ Cada rota limitada declara uma política com `@RateLimit('<nome>')` (`apps/api/s
 - IPv6 conta pelo /64: o provedor entrega uma rede /64 ao cliente, e trocar de endereço dentro dela é de graça.
 - No `/api/me`, o limite conta antes da autenticação: quem não tem sessão também gasta.
 - Nas rotas de plugin, uma chave inválida é recusada (401) antes de contar: sem servidor, não há balde.
+- **Teste de carga:** na homologação o `RATE_LIMIT_PUBLIC_PER_MINUTE` vem do `.env` da VM (`infra/hml/compose.yml`, padrão 240) e sobe só durante a rodada, porque o gerador sai de poucos IPs (`docs/operacao/teste-de-carga.md`). Produção não tem essa variável no compose.
 - **CGNAT:** as operadoras móveis brasileiras põem muitos clientes atrás do mesmo IPv4. Os padrões são folgados por isso; se aparecer 429 legítimo nos logs, suba o limite antes de mexer em outra coisa.
 
 ### Falha segura (Valkey fora)

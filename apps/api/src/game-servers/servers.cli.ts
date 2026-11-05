@@ -12,6 +12,7 @@ try {
     registry: new GameServerRegistry(createDatabase(pool)),
     out: (line) => console.log(line),
     err: (line) => console.error(line),
+    env: process.env,
   });
 } finally {
   await pool.end();

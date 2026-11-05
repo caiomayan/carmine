@@ -34,8 +34,12 @@ export interface DemoSettings {
 
 type Env = Readonly<Record<string, string | undefined>>;
 
-/** As configurações da demonstração, ou {@link DemoNotAllowed} se o ambiente não é de homologação. */
-export function demoSettings(env: Env): DemoSettings {
+/**
+ * As três primeiras chaves da trava (`CARMINE_DEMO`, `PUBLIC_WEB_URL` de homologação, `SENTRY_ENVIRONMENT`),
+ * que também liberam o que é só da homologação sem ser a demonstração (os servidores do teste de carga).
+ * Devolve o `PUBLIC_WEB_URL`, ou {@link DemoNotAllowed} se o ambiente não é de homologação.
+ */
+export function assertSandboxEnvironment(env: Env): string {
   if (env.CARMINE_DEMO !== 'homologacao') {
     throw new DemoNotAllowed('CARMINE_DEMO não é "homologacao"');
   }
@@ -52,6 +56,12 @@ export function demoSettings(env: Env): DemoSettings {
   if ((env.SENTRY_ENVIRONMENT ?? '').trim().toLowerCase() === 'production') {
     throw new DemoNotAllowed('SENTRY_ENVIRONMENT é production');
   }
+  return publicWebUrl;
+}
+
+/** As configurações da demonstração, ou {@link DemoNotAllowed} se o ambiente não é de homologação. */
+export function demoSettings(env: Env): DemoSettings {
+  const publicWebUrl = assertSandboxEnvironment(env);
   const secret = (env.DEMO_SEED_SECRET ?? '').trim();
   if (secret.length < 32) {
     throw new DemoNotAllowed('DEMO_SEED_SECRET ausente ou curto (mínimo 32 caracteres)');

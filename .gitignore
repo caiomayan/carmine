@@ -12,6 +12,7 @@ coverage/
 bin/
 !infra/prod/bin/
 !infra/hml/bin/
+!infra/teste-de-carga/bin/
 obj/
 *.user
 
@@ -19,6 +20,10 @@ obj/
 .env
 .env.*
 !.env.example
+
+# Teste de carga (docs/operacao/teste-de-carga.md): chaves e resultados da rodada local
+/chaves.txt
+/resultados/
 
 # Ferramentas locais
 .maestri/

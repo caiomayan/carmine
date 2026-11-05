@@ -1,18 +1,31 @@
 import { type ParseArgsOptionsConfig, parseArgs } from 'node:util';
 import type { GameMode } from '@carmine/contracts';
+import { assertSandboxEnvironment, DemoNotAllowed } from '../demo/demo-guard.js';
 import { type GameServerRegistry, GameServerRegistryError } from './game-server-registry.js';
+import {
+  LOAD_TEST_DEFAULT_PREFIX,
+  LOAD_TEST_MAX_SERVERS,
+  LOAD_TEST_PREFIX_PATTERN,
+  LOAD_TEST_SECRET_MIN_LENGTH,
+  loadTestServerAddress,
+  loadTestServerKey,
+  loadTestServerName,
+} from './load-test-servers.js';
 
 export interface ServersCliDeps {
   registry: GameServerRegistry;
   out: (line: string) => void;
   err: (line: string) => void;
+  /** O ambiente do processo; só o `load-test` lê (`LOADTEST_KEY_SECRET` e a trava da homologação). */
+  env?: Readonly<Record<string, string | undefined>>;
 }
 
 const USAGE = `Uso:
   servers create --name <nome> --mode <retake|deathmatch> --address <host:porta>
   servers rotate-key --name <nome>
   servers retire (--name <nome> | --prefix <início do nome>)
-  servers list [--all]`;
+  servers list [--all]
+  servers load-test --count <n> [--prefix carga-] [--mode retake|deathmatch]   (só na homologação)`;
 
 class UsageError extends Error {}
 
@@ -29,12 +42,18 @@ export async function runServersCli(argv: string[], deps: ServersCliDeps): Promi
         return await retire(rest, deps);
       case 'list':
         return await list(rest, deps);
+      case 'load-test':
+        return await loadTest(rest, deps);
       default:
         deps.err(USAGE);
         return 1;
     }
   } catch (error) {
-    if (error instanceof GameServerRegistryError || error instanceof UsageError) {
+    if (
+      error instanceof GameServerRegistryError ||
+      error instanceof UsageError ||
+      error instanceof DemoNotAllowed
+    ) {
       deps.err(`Erro: ${error.message}`);
       return 1;
     }
@@ -140,5 +159,52 @@ async function list(args: string[], deps: ServersCliDeps): Promise<number> {
       ].join('\t'),
     );
   }
+  return 0;
+}
+
+/**
+ * Cadastra (ou refaz) `--count` servidores do teste de carga, `carga-001`... (docs/operacao/teste-de-carga.md).
+ * As chaves saem de `LOADTEST_KEY_SECRET` e não são impressas: o gerador de carga as deriva do mesmo
+ * segredo. Só roda na homologação (a mesma trava da demonstração). Depois do teste: `retire --prefix carga-`.
+ */
+async function loadTest(args: string[], deps: ServersCliDeps): Promise<number> {
+  const { values } = parse(args, {
+    count: { type: 'string' },
+    prefix: { type: 'string' },
+    mode: { type: 'string' },
+  });
+  const count = Number(values.count);
+  if (!Number.isInteger(count) || count < 1 || count > LOAD_TEST_MAX_SERVERS) {
+    throw new UsageError(`--count precisa ser um inteiro de 1 a ${LOAD_TEST_MAX_SERVERS}
+${USAGE}`);
+  }
+  const prefix = typeof values.prefix === 'string' ? values.prefix : LOAD_TEST_DEFAULT_PREFIX;
+  if (!LOAD_TEST_PREFIX_PATTERN.test(prefix)) {
+    throw new UsageError(`--prefix precisa começar com "carga-" (só minúsculas, dígitos e hífen)
+${USAGE}`);
+  }
+  const mode = (typeof values.mode === 'string' ? values.mode : 'retake') as GameMode;
+  const env = deps.env ?? {};
+  assertSandboxEnvironment(env);
+  const secret = (env.LOADTEST_KEY_SECRET ?? '').trim();
+  if (secret.length < LOAD_TEST_SECRET_MIN_LENGTH) {
+    throw new UsageError(
+      `LOADTEST_KEY_SECRET ausente ou curto (mínimo ${LOAD_TEST_SECRET_MIN_LENGTH} caracteres)`,
+    );
+  }
+  const entries = Array.from({ length: count }, (_, i) => {
+    const name = loadTestServerName(prefix, i + 1);
+    return {
+      name,
+      mode,
+      address: loadTestServerAddress(i + 1),
+      key: loadTestServerKey(secret, name),
+    };
+  });
+  const written = await deps.registry.upsertWithKeys(entries);
+  deps.out(
+    `${written} servidor(es) do teste de carga prontos (${entries[0]?.name} a ${entries.at(-1)?.name}).`,
+  );
+  deps.out(`Ao terminar: servers retire --prefix ${prefix}`);
   return 0;
 }

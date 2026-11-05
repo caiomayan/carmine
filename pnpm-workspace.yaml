@@ -1,6 +1,7 @@
 packages:
   - apps/*
   - packages/*
+  - infra/teste-de-carga
 
 # Versões compartilhadas entre os pacotes (usadas como "catalog:").
 catalog:

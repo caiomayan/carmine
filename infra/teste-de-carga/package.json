@@ -1,0 +1,16 @@
+{
+  "name": "@carmine/teste-de-carga",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Roteiros k6 e geradores do teste de carga da homologação (docs/operacao/teste-de-carga.md).",
+  "type": "module",
+  "scripts": {
+    "lint": "biome check .",
+    "test": "vitest run",
+    "test:unit": "vitest run"
+  },
+  "devDependencies": {
+    "@carmine/contracts": "workspace:*",
+    "vitest": "catalog:"
+  }
+}

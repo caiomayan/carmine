@@ -57,6 +57,10 @@ Ligada **só na homologação**, para o dono validar o fluxo inteiro (enviar, re
 - **Nenhum passo manual:** o túnel segue com as duas rotas de sempre (`/api` e o resto para o web); as fotos passam pelo web, atrás do Access como o resto do `dev.stcarmine.com`.
 - Os arquivos sobrevivem aos deploys; o `reset` (que apaga o banco) apaga o volume junto.
 
+## Teste de carga
+
+A homologação é onde se acha o limite da VM antes da divulgação do beta aberto: roteiros k6 num workflow manual, com uma sonda que aborta se a produção piorar. Os servidores `carga-*` que o teste cadastra **fazem o seed da demonstração recusar o próximo deploy** até serem aposentados, e o deploy automático fica pausado durante a rodada. Tudo em `docs/operacao/teste-de-carga.md`.
+
 ## As vitrines /dev/*
 
 O web da homologação roda com `CARMINE_UI_GALLERY=1` (só em `infra/hml/compose.yml`; a produção não tem a variável e as rotas respondem 404). É por onde o dono vê **protótipos de tela** antes de a tela existir de verdade: cada protótipo é uma vitrine `/dev/<nome>` no `dev` (hoje `/dev/componentes`, `/dev/servidor`), com dados fixos de exemplo e a mesma CI dos outros PRs. Protótipo = vitrine no `dev`, não branch solto.

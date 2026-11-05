@@ -119,6 +119,10 @@ _Evitar_: modalidade, game mode
 O sinal periódico de um Servidor Carmine com mapa e jogadores conectados.
 _Evitar_: ping, keepalive, status do servidor
 
+**Servidor de teste de carga**:
+Servidor Carmine fictício (`carga-001`...) cadastrado só na homologação para o teste de carga (issue #266), com chave derivada de um segredo e endereço de documentação. Gera Contas não reivindicadas e Estatísticas de mentira; é aposentado e o banco zerado ao fim da rodada. Não conta como Servidor Carmine de verdade em nenhum número.
+_Evitar_: servidor de teste (ambíguo com o servidor da demonstração e o dos E2E)
+
 **Presença** (`Presence`):
 O estado ao vivo de um Servidor Carmine e de quem está nele, derivado dos Batimentos.
 _Evitar_: status do servidor, online/offline (são estados da Presença, não ela)

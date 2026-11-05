@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { GameServerRegistry } from '../src/game-servers/game-server-registry.js';
+import { loadTestServerKey } from '../src/game-servers/load-test-servers.js';
 import { runServersCli } from '../src/game-servers/servers.cli-commands.js';
 import { startPostgres, type TestPostgres } from './support/postgres.js';
 
@@ -94,10 +95,15 @@ describe('CLI de Servidores Carmine', () => {
   });
 
   async function cli(...argv: string[]) {
+    return cliWithEnv({}, ...argv);
+  }
+
+  async function cliWithEnv(env: Record<string, string>, ...argv: string[]) {
     const lines: string[] = [];
     const errors: string[] = [];
     const exitCode = await runServersCli(argv, {
       registry,
+      env,
       out: (line) => lines.push(line),
       err: (line) => errors.push(line),
     });
@@ -151,6 +157,69 @@ describe('CLI de Servidores Carmine', () => {
     expect(none.exitCode).toBe(1);
     expect(none.errors).toMatch(/nenhum servidor/i);
     expect(both.exitCode).toBe(1);
+  });
+
+  it('load-test cadastra servidores com chave derivada do segredo, só na homologação, e é refeito sem erro', async () => {
+    const secret = 'segredo-de-teste-com-pelo-menos-32-caracteres';
+    const homologacao = {
+      CARMINE_DEMO: 'homologacao',
+      PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
+      SENTRY_ENVIRONMENT: 'staging',
+      LOADTEST_KEY_SECRET: secret,
+    };
+
+    const first = await cliWithEnv(homologacao, 'load-test', '--count', '3');
+    expect(first).toMatchObject({ exitCode: 0, output: expect.stringContaining('3 servidor') });
+    expect(first.output).not.toMatch(/cmk_/);
+    for (const name of ['carga-001', 'carga-002', 'carga-003']) {
+      expect(await registry.authenticate(loadTestServerKey(secret, name))).toMatchObject({
+        name,
+        mode: 'retake',
+      });
+    }
+
+    // Aposentar e refazer devolve o servidor à operação com a mesma chave.
+    await cli('retire', '--prefix', 'carga-');
+    expect(await registry.authenticate(loadTestServerKey(secret, 'carga-001'))).toBeNull();
+    const again = await cliWithEnv(homologacao, 'load-test', '--count', '3');
+    expect(again.exitCode).toBe(0);
+    expect(await registry.authenticate(loadTestServerKey(secret, 'carga-001'))).not.toBeNull();
+    await cli('retire', '--prefix', 'carga-');
+  });
+
+  it('load-test recusa produção, segredo curto e contagem inválida', async () => {
+    const producao = {
+      CARMINE_DEMO: 'homologacao',
+      PUBLIC_WEB_URL: 'https://stcarmine.com',
+      SENTRY_ENVIRONMENT: 'production',
+      LOADTEST_KEY_SECRET: 'segredo-de-teste-com-pelo-menos-32-caracteres',
+    };
+    const semTrava = { ...producao, CARMINE_DEMO: '' };
+    const curto = {
+      ...producao,
+      PUBLIC_WEB_URL: 'https://dev.stcarmine.com',
+      SENTRY_ENVIRONMENT: 'staging',
+      LOADTEST_KEY_SECRET: 'curto',
+    };
+
+    expect(await cliWithEnv(producao, 'load-test', '--count', '3')).toMatchObject({
+      exitCode: 1,
+      errors: expect.stringMatching(/stcarmine\.com/),
+    });
+    expect((await cliWithEnv(semTrava, 'load-test', '--count', '3')).exitCode).toBe(1);
+    expect(await cliWithEnv(curto, 'load-test', '--count', '3')).toMatchObject({
+      exitCode: 1,
+      errors: expect.stringMatching(/LOADTEST_KEY_SECRET/),
+    });
+    expect((await cliWithEnv(curto, 'load-test', '--count', '0')).exitCode).toBe(1);
+    const valido = { ...curto, LOADTEST_KEY_SECRET: producao.LOADTEST_KEY_SECRET };
+    for (const prefixo of ['', 'retake-'])
+      expect(
+        (await cliWithEnv(valido, 'load-test', '--count', '1', '--prefix', prefixo)).exitCode,
+      ).toBe(1);
+    expect(await registry.list()).not.toContainEqual(
+      expect.objectContaining({ name: 'carga-001' }),
+    );
   });
 
   it('falha com código 1 e mensagem clara para comando ou argumento inválido', async () => {
