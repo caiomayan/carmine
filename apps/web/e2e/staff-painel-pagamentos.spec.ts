@@ -81,7 +81,7 @@ test.describe('Pagamentos no painel', () => {
     await expect(page).toHaveURL(/status=approved$/);
     await page.getByTestId('stp-query').fill('Painel Pagamentos Lista');
     await expect(page.getByTestId('stp-row')).toHaveCount(1);
-    await page.getByTestId('stp-tab-charged_back').click();
+    await page.goto('/pagamentos?status=charged_back');
     await page.getByTestId('stp-query').fill('Painel Pagamentos Lista');
     await expect(page.getByTestId('stp-row')).toHaveCount(0);
     await bought.context.close();
