@@ -8,6 +8,7 @@ import type {
   PresetList,
   Profile,
   ProfileSeries,
+  ProfileSessions,
   ProfileStats,
   Ranking,
   RecentActivity,
@@ -31,6 +32,7 @@ import {
   profileStatsSchema,
   weekSummarySchema,
 } from '@carmine/contracts/stats';
+import { profileSessionsSchema } from '@carmine/contracts/stats-detail';
 import { cookies, headers } from 'next/headers';
 import { cache } from 'react';
 import { apiGet, VISITOR_IP_HEADER } from './api-base';
@@ -288,6 +290,23 @@ export const getProfileSeries = cache(async (publicId: number): Promise<ProfileS
     return null;
   }
 });
+
+/** As Sessões de jogo do Perfil (S12b); nulo com a API fora (a tela avisa, não inventa uma lista vazia). */
+export const getProfileSessions = cache(
+  async (publicId: number): Promise<ProfileSessions | null> => {
+    try {
+      const cookie = await sessionCookie();
+      const response = await apiGet(`/profiles/${publicId}/sessions`, {
+        ...(cookie && { cookie }),
+        visitorIp: await visitorIp(),
+      });
+      if (!response.ok) return null;
+      return profileSessionsSchema.parse(await response.json());
+    } catch {
+      return null;
+    }
+  },
+);
 
 /**
  * As prévias dos painéis do header (U3e), com a sessão repassada (a parte pessoal só vem com ela).
