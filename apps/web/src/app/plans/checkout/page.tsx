@@ -42,6 +42,7 @@ export default async function ConfirmPage({
       pack={pack}
       account={account}
       vipEndsAt={vip.active ? vip.endsAt : null}
+      currentPlan={vip.active ? (vip.plan ?? 'capo') : null}
       block={state.kind === 'blocked' ? state.reason : null}
       now={new Date()}
     />

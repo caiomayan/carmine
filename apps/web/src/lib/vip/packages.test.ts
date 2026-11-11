@@ -1,9 +1,11 @@
 import { VIP_PACKAGES } from '@carmine/contracts/payments';
+import { PLAN_PACKAGES } from '@carmine/contracts/plans';
 import { describe, expect, it } from 'vitest';
 import {
   bestValueId,
   buyState,
   formatBrl,
+  packagesByPlan,
   perMonthCents,
   purchaseHref,
   savingsPercent,
@@ -74,5 +76,42 @@ describe('buyState', () => {
 describe('purchaseHref', () => {
   it('é a confirmação do Pacote', () => {
     expect(purchaseHref('vip-3m')).toBe('/plans/checkout?pacote=vip-3m');
+  });
+});
+
+describe('packagesByPlan', () => {
+  it('agrupa os Pacotes por plano, Capo primeiro, com os 3 de cada', () => {
+    const groups = packagesByPlan({
+      packages: [...VIP_PACKAGES],
+      planPackages: [...PLAN_PACKAGES],
+    });
+    expect(groups.map((group) => [group.plan, group.packages.map((pack) => pack.id)])).toEqual([
+      ['capo', ['vip-1m', 'vip-3m', 'vip-6m']],
+      ['padrinho', ['padrinho-1m', 'padrinho-3m', 'padrinho-6m']],
+    ]);
+  });
+
+  it('uma API sem planPackages (de antes da S20) só tem o Capo, com os Pacotes de sempre', () => {
+    const groups = packagesByPlan({ packages: [...VIP_PACKAGES] });
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.plan).toBe('capo');
+    expect(groups[0]?.packages.map((pack) => pack.priceCents)).toEqual([990, 2690, 4990]);
+  });
+
+  it('a economia e o melhor preço se calculam dentro de cada plano, nunca entre eles', () => {
+    for (const { packages } of packagesByPlan({
+      packages: [...VIP_PACKAGES],
+      planPackages: [...PLAN_PACKAGES],
+    })) {
+      const [one, three, six] = packages;
+      expect(savingsPercent(one as never, packages)).toBe(0);
+      expect(savingsPercent(three as never, packages)).toBeGreaterThanOrEqual(9);
+      expect(savingsPercent(six as never, packages)).toBeGreaterThanOrEqual(16);
+      expect(bestValueId(packages)).toBe(six?.id);
+    }
+  });
+
+  it('o endereço da confirmação aceita os Pacotes dos dois planos', () => {
+    expect(purchaseHref('padrinho-6m')).toBe('/plans/checkout?pacote=padrinho-6m');
   });
 });

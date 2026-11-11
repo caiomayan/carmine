@@ -18,7 +18,10 @@ describe('packageFromParam', () => {
   it('acha o Pacote pelo id; ausente ou desconhecido, nulo', () => {
     expect(packageFromParam('vip-3m')?.days).toBe(90);
     expect(packageFromParam(['vip-1m', 'vip-6m'])?.id).toBe('vip-1m');
+    expect(packageFromParam('padrinho-3m')).toMatchObject({ plan: 'padrinho', days: 90 });
+    expect(packageFromParam('vip-3m')?.plan).toBe('capo');
     expect(packageFromParam('vip-9m')).toBeNull();
+    expect(packageFromParam('capo-1m')).toBeNull();
     expect(packageFromParam(undefined)).toBeNull();
   });
 });

@@ -18,6 +18,8 @@ export const vipStatusSchema = z
     plan: planSchema.nullable().optional(),
     /** O trecho de agora é de teste do beta (ninguém paga de verdade). */
     test: z.boolean().optional(),
+    /** Quando o plano de agora acaba ou muda (o Capo guardado volta depois do Padrinho); `endsAt` é o fim de tudo. */
+    planEndsAt: z.iso.datetime({ offset: true }).nullable().optional(),
   })
   .meta({ id: 'VipStatus' });
 

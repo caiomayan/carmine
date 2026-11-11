@@ -140,6 +140,28 @@
   color: var(--on-map-muted);
 }
 
+/* os planos e seus Pacotes */
+.vp-plan-group + .vp-plan-group {
+  margin-top: 40px;
+}
+.vp-plan-group-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  padding-bottom: 14px;
+}
+.vp-plan-group-name {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.vp-plan-group-lead {
+  max-width: 60ch;
+  font-size: 14.5px;
+  color: var(--on-map-muted);
+}
+
 /* os Pacotes */
 .vp-packages {
   display: grid;
@@ -219,7 +241,7 @@
 /* o que muda */
 .vp-compare {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 @media (max-width: 900px) {

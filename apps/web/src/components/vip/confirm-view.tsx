@@ -3,8 +3,8 @@ import {
   type PurchaseEligibility,
   REFUND_WINDOW_DAYS,
   VIP_MAX_HORIZON_DAYS,
-  type VipPackage,
 } from '@carmine/contracts/payments';
+import type { Plan, PlanPackageItem } from '@carmine/contracts/plans';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { NextIntlClientProvider } from 'next-intl';
@@ -34,20 +34,24 @@ export async function ConfirmView({
   pack,
   account,
   vipEndsAt,
+  currentPlan = null,
   block,
   now,
   demo = false,
 }: {
-  pack: VipPackage;
+  pack: PlanPackageItem;
   account: ConfirmAccount;
-  /** O fim do VIP ativo da Conta; nulo se não tem VIP ativo. */
+  /** O fim do plano ativo da Conta (de tudo, com a fila); nulo se não tem plano ativo. */
   vipEndsAt: string | null;
+  /** O plano ativo agora; nulo sem plano. Diz o que a troca faz (Padrinho sobre Capo, Capo sobre Padrinho). */
+  currentPlan?: Plan | null;
   block: ConfirmBlock | null;
   now: Date;
   /** Vitrine: o formulário não chama a API. */
   demo?: boolean;
 }) {
   const t = await getTranslations('vip.confirm');
+  const tp = await getTranslations('vip.plans');
   const format = await getFormatter();
   const messages = await getMessages();
   const day = (date: Date | string) =>
@@ -56,6 +60,12 @@ export async function ConfirmView({
   const end = projectedVipEnd(vipEndsAt, pack.days, now);
   const overHorizon = exceedsHorizon(end, now);
   const price = formatBrl(pack.priceCents);
+  const swap =
+    pack.plan === 'padrinho' && currentPlan === 'capo'
+      ? 'padrinhoOverCapo'
+      : pack.plan === 'capo' && currentPlan === 'padrinho'
+        ? 'capoOverPadrinho'
+        : null;
 
   return (
     <div className="container-page pb-24" data-testid="vip-confirm">
@@ -97,7 +107,7 @@ export async function ConfirmView({
             <dl className="vc-rows">
               <div>
                 <dt>{t('summary.package')}</dt>
-                <dd>{t('summary.packageValue', { months: pack.months })}</dd>
+                <dd>{t('summary.packageValue', { plan: tp(pack.plan), months: pack.months })}</dd>
               </div>
               <div>
                 <dt>{t('summary.duration')}</dt>
@@ -118,6 +128,11 @@ export async function ConfirmView({
               {vipEndsAt ? `${t('summary.adds', { date: day(vipEndsAt) })} ` : ''}
               {t('summary.starts')}
             </p>
+            {swap ? (
+              <p className="vc-note" data-testid="vip-swap" data-swap={swap}>
+                {t(`summary.${swap}`)}
+              </p>
+            ) : null}
             <p className="vc-once">{t('summary.once')}</p>
           </section>
         </div>

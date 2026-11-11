@@ -1,5 +1,6 @@
 import type { VipStatus } from '@carmine/contracts';
 import { VIP_PACKAGES, type VipPackages } from '@carmine/contracts/payments';
+import { PLAN_PACKAGES } from '@carmine/contracts/plans';
 
 /**
  * Os estados da página do VIP com dados de exemplo, para a vitrine `/dev/vip` (só com CARMINE_UI_GALLERY=1) e os
@@ -52,6 +53,7 @@ const packages = (over: Partial<VipPackages> = {}): VipPackages => ({
   enabled: true,
   sandbox: false,
   packages: VIP_PACKAGES.map((pack) => ({ ...pack })),
+  planPackages: PLAN_PACKAGES.map((pack) => ({ ...pack })),
   eligibility: 'ok',
   ...over,
 });

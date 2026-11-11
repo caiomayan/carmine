@@ -33,7 +33,9 @@ export async function PurchasePage({
           <span>{t('sandbox')}</span>
         </aside>
       ) : null}
-      <NextIntlClientProvider messages={{ vip: { purchase: messages.vip.purchase } }}>
+      <NextIntlClientProvider
+        messages={{ vip: { purchase: messages.vip.purchase, plans: messages.vip.plans } }}
+      >
         <PurchaseStatus
           initial={purchase}
           returnedFromCard={returnedFromCard}

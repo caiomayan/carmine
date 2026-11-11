@@ -1,20 +1,22 @@
 import type { VipStatus } from '@carmine/contracts';
 import { REFUND_WINDOW_DAYS, type VipPackages } from '@carmine/contracts/payments';
+import { type Plan, presetLimitFor } from '@carmine/contracts/plans';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { getFormatter, getTranslations } from 'next-intl/server';
 import { EmptyState } from '@/components/empty-state';
 import { RefreshCWIcon } from '@/components/icons/animated/refresh-cw';
 import { VipNotice } from '@/components/loadout/vip-notice';
-import { bestValueId, buyState } from '@/lib/vip/packages';
+import { bestValueId, buyState, packagesByPlan } from '@/lib/vip/packages';
 import { Compare } from './compare';
 import { PackageCard } from './package-card';
 import '@/app/plans/vip.css';
 
 /**
- * A página do VIP (S14b): o que é grátis e o que é VIP, os Pacotes e como a compra funciona. Só apresenta: os Pacotes
- * e o estado da compra (aberta, "Em breve", se esta Conta pode comprar) vêm da API (`packages`) e o VIP da Conta, da
- * sessão (`vip`); nada de preço escrito à mão. A confirmação da compra é outra página (`/plans/checkout`). A vitrine
+ * A página dos planos (S14b, S20): o que é grátis, o que é Capo e o que é Padrinho, os Pacotes de cada plano e como a
+ * compra funciona. Só apresenta: os Pacotes e o estado da compra (aberta, "Em breve", se esta Conta pode comprar) vêm da
+ * API (`packages`) e o plano da Conta, da sessão (`vip`); nada de preço escrito à mão. A confirmação da compra é outra
+ * página (`/plans/checkout`). Na compra de teste do beta (provedor falso) o aviso fixo aparece no topo. A vitrine
  * `/dev/vip` mostra cada estado com dados de exemplo.
  */
 export async function VipView({
@@ -24,7 +26,7 @@ export async function VipView({
 }: {
   packages: VipPackages | null;
   vip: VipStatus | null;
-  /** `vipHoldDays` da sessão: nulo com a guarda dos Itens VIP desligada. */
+  /** `vipHoldDays` da sessão: nulo com a guarda dos Itens exclusivos desligada. */
   holdDays?: number | null;
 }) {
   const t = await getTranslations('vip');
@@ -33,7 +35,11 @@ export async function VipView({
 
   const data = packages;
   const state = data ? buyState(data) : null;
-  const best = data ? bestValueId(data.packages) : null;
+  const groups = data ? packagesByPlan(data) : [];
+  const plan: Plan = vip?.plan ?? 'capo';
+  // O Padrinho com o Capo guardado depois: o plano de agora acaba antes do fim de tudo.
+  const comesBack =
+    vip?.plan === 'padrinho' && vip.planEndsAt && vip.endsAt && vip.planEndsAt < vip.endsAt;
 
   return (
     <div className="container-page vp pb-24" data-testid="vip-page">
@@ -52,20 +58,29 @@ export async function VipView({
               className="vp-slot"
             />
           ))}
-          <i className="vp-slot vp-slot-vip">VIP</i>
+          <i className="vp-slot vp-slot-vip">{t('slotLabel')}</i>
         </div>
       </header>
 
       {data?.sandbox ? (
         <aside role="note" className="vp-sandbox" data-testid="vip-sandbox">
-          <b>{t('sandbox.title')}</b>
-          <span>{t('sandbox.body')}</span>
+          <b>{t('betaNotice')}</b>
         </aside>
       ) : null}
 
       {vip?.active && vip.endsAt ? (
-        <div className="vp-yours" data-testid="vip-yours">
-          <p className="vp-yours-title">{t('yours.active', { date: day(vip.endsAt) })}</p>
+        <div className="vp-yours" data-testid="vip-yours" data-plan={plan}>
+          <p className="vp-yours-title">
+            {t('yours.active', {
+              plan: t(`plans.${plan}`),
+              date: day(comesBack ? (vip.planEndsAt as string) : vip.endsAt),
+            })}
+          </p>
+          {comesBack ? (
+            <p data-testid="vip-yours-next">
+              {t('yours.next', { plan: t('plans.capo'), date: day(vip.endsAt) })}
+            </p>
+          ) : null}
           <p>{t('yours.activeBody')}</p>
           <VipNotice vip={vip} holdDays={holdDays} className="mt-1" />
         </div>
@@ -91,18 +106,39 @@ export async function VipView({
         {data && state ? (
           <>
             <Notice state={state} />
-            <ul aria-label={t('packages.listLabel')} className="vp-packages">
-              {data.packages.map((pack, index) => (
-                <PackageCard
-                  key={pack.id}
-                  pack={pack}
-                  packages={data.packages}
-                  best={pack.id === best}
-                  state={state}
-                  index={index}
-                />
-              ))}
-            </ul>
+            {groups.map(({ plan: groupPlan, packages: list }) => {
+              const best = bestValueId(list);
+              return (
+                <div
+                  key={groupPlan}
+                  className="vp-plan-group"
+                  data-testid="vip-plan-group"
+                  data-plan={groupPlan}
+                >
+                  <div className="vp-plan-group-head">
+                    <h3 className="vp-plan-group-name">{t(`plans.${groupPlan}`)}</h3>
+                    <p className="vp-plan-group-lead">
+                      {t(`packages.planLead.${groupPlan}`, { presets: presetLimitFor(groupPlan) })}
+                    </p>
+                  </div>
+                  <ul
+                    aria-label={t('packages.listLabel', { plan: t(`plans.${groupPlan}`) })}
+                    className="vp-packages"
+                  >
+                    {list.map((pack, index) => (
+                      <PackageCard
+                        key={pack.id}
+                        pack={pack}
+                        packages={list}
+                        best={pack.id === best}
+                        state={state}
+                        index={index}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
           </>
         ) : (
           <div data-testid="vip-unavailable">
@@ -124,6 +160,7 @@ export async function VipView({
         <ul className="vp-how">
           <li>{t('how.once')}</li>
           <li>{t('how.starts')}</li>
+          <li>{t('how.swap')}</li>
           <li>{t('how.payer')}</li>
           <li>
             {t('how.refund', { days: REFUND_WINDOW_DAYS })}{' '}

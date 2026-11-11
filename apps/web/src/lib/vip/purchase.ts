@@ -4,9 +4,8 @@ import {
   PURCHASE_PROCESSING_MINUTES,
   type PurchaseError,
   VIP_MAX_HORIZON_DAYS,
-  VIP_PACKAGES,
-  type VipPackage,
 } from '@carmine/contracts/payments';
+import { PLAN_PACKAGES, type PlanPackageItem } from '@carmine/contracts/plans';
 
 /**
  * A lógica da confirmação e da página da compra, sem React: o Pacote escolhido na URL, o novo fim do VIP, o limite à
@@ -18,9 +17,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
 
 /** O Pacote do `?pacote=` da confirmação; nulo se faltar ou for desconhecido (a página volta ao `/plans`). */
-export function packageFromParam(value: string | string[] | undefined): VipPackage | null {
+export function packageFromParam(value: string | string[] | undefined): PlanPackageItem | null {
   const id = Array.isArray(value) ? value[0] : value;
-  return VIP_PACKAGES.find((pack) => pack.id === id) ?? null;
+  const found = PLAN_PACKAGES.find((pack) => pack.id === id);
+  return found ? { ...found } : null;
 }
 
 /**

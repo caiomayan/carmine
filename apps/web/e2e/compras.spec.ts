@@ -29,8 +29,10 @@ test('sem compras: estado vazio, a seção no menu e o aviso do ambiente de test
 
   await expect(page.getByTestId('settings-compras')).toBeVisible();
   await expect(page.getByTestId('purchases-empty')).toContainText('Nenhuma compra ainda');
-  // O provedor do E2E é o falso: a tela avisa que o pagamento é de mentira.
-  await expect(page.getByTestId('purchases-sandbox')).toContainText('ninguém é cobrado');
+  // O provedor do E2E é o falso: a tela traz o aviso fixo do beta.
+  await expect(page.getByTestId('purchases-sandbox')).toHaveText(
+    'Beta: compra de teste. Nada é cobrado.',
+  );
   await expect(
     page.getByRole('navigation', { name: 'Seções das configurações' }).getByRole('link', {
       name: 'Compras',

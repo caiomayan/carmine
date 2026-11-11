@@ -33,7 +33,7 @@ test.describe('confirmação (vitrine)', () => {
       page.getByTestId('vip-beneficiary').getByRole('link', { name: 'Ver perfil' }),
     ).toHaveAttribute('href', '/1042');
     const summary = page.getByTestId('vip-summary');
-    await expect(summary).toContainText('VIP, 3 meses');
+    await expect(summary).toContainText('Capo, 3 meses');
     await expect(summary).toContainText('90 dias');
     await expect(page.getByTestId('vip-confirm-price')).toHaveText(/R\$\s26,90/);
     await expect(summary).toContainText('Pagamento único, sem renovação automática');
@@ -42,7 +42,7 @@ test.describe('confirmação (vitrine)', () => {
     await expect(page.getByTestId('vip-new-end')).toContainText(String(end.getFullYear()));
     // O aviso do ban permanente e o do reembolso, antes do pagamento.
     const ban = page.getByTestId('vip-ban-notice');
-    await expect(ban).toContainText('ban permanente encerra o VIP');
+    await expect(ban).toContainText('ban permanente encerra o plano');
     await expect(ban).toContainText('não são reembolsados');
     await expect(ban).toContainText('7 dias');
     // Pix vem marcado; a declaração, desmarcada; o botão diz o valor.
@@ -55,7 +55,7 @@ test.describe('confirmação (vitrine)', () => {
     page,
   }) => {
     await page.goto(confirm('vip-ativo', 'vip-1m'));
-    await expect(page.getByTestId('vip-summary')).toContainText('Soma ao seu VIP atual');
+    await expect(page.getByTestId('vip-summary')).toContainText('Soma ao seu plano atual');
     const end = new Date(Date.now() + 71 * 86_400_000);
     await expect(page.getByTestId('vip-new-end')).toContainText(String(end.getFullYear()));
   });
@@ -138,7 +138,7 @@ test.describe('página da compra (vitrine)', () => {
   test('cada estado final diz o que aconteceu e o que fazer', async ({ page }) => {
     const cases: [string, string, string, string | null][] = [
       ['em-analise', 'in_review', 'Pagamento em análise', null],
-      ['aprovada', 'approved', 'VIP liberado', '/loadout'],
+      ['aprovada', 'approved', 'Plano liberado', '/loadout'],
       ['recusada', 'rejected', 'Pagamento recusado', '/plans/checkout?pacote=vip-3m'],
       ['expirada', 'expired', 'O prazo acabou', '/plans/checkout?pacote=vip-3m'],
       ['cancelada', 'cancelled', 'Compra cancelada', '/plans/checkout?pacote=vip-3m'],
@@ -154,7 +154,7 @@ test.describe('página da compra (vitrine)', () => {
       if (link) await expect(outcome.locator(`a[href="${link}"]`).first()).toBeVisible();
     }
     await page.goto(purchase('aprovada'));
-    await expect(page.getByTestId('vip-until')).toContainText('Seu VIP vai até');
+    await expect(page.getByTestId('vip-until')).toContainText('Seu plano vai até');
   });
 });
 

@@ -71,6 +71,9 @@ const envSchema = z
     // falso só sobe num host de homologação). A chave de dados (32 bytes em base64) cifra o CPF do Pagador.
     PAYMENTS_ENABLED: z.enum(['true', 'false']).default('false'),
     PAYMENTS_PROVIDER: z.enum(['', 'fake', 'mercadopago']).default(''),
+    // Beta da S20: a compra de teste em produção. Liga o provedor falso em `stcarmine.com` (ninguém paga de verdade) e
+    // só vale com `PAYMENTS_PROVIDER=fake`; nunca junto do Mercado Pago. Desligue no dia em que a cobrança real ligar.
+    PAYMENTS_BETA_TEST: z.enum(['true', 'false']).default('false'),
     PAYMENTS_DATA_KEY: z.string().trim().default(''),
     PAYMENTS_SWEEP_SECONDS: z.coerce.number().int().nonnegative().default(60),
     // Guarda dos Itens VIP (S14, D3): nasce DESLIGADA e liga junto com os Termos novos (que dizem que os
@@ -226,6 +229,8 @@ export interface PaymentsConfig {
   enabled: boolean;
   /** Nulo: nenhum provedor configurado (a compra fica indisponível mesmo ligada). */
   provider: 'fake' | 'mercadopago' | null;
+  /** Beta da S20: o provedor falso roda em produção, com a compra de teste aberta a todos (ninguém é cobrado). */
+  betaTest: boolean;
   /** Cifra o CPF do Pagador (AES-256-GCM); nulo sem a chave. */
   dataKey: Buffer | null;
   mercadopago: { accessToken: string; webhookSecret: string } | null;
@@ -395,6 +400,7 @@ export function loadConfig(rawEnv: Record<string, string | undefined>): AppConfi
     payments: {
       enabled: e.PAYMENTS_ENABLED === 'true',
       provider: e.PAYMENTS_PROVIDER === '' ? null : e.PAYMENTS_PROVIDER,
+      betaTest: e.PAYMENTS_BETA_TEST === 'true',
       dataKey: e.PAYMENTS_DATA_KEY === '' ? null : Buffer.from(e.PAYMENTS_DATA_KEY, 'base64'),
       mercadopago:
         e.MERCADOPAGO_ACCESS_TOKEN === '' || e.MERCADOPAGO_WEBHOOK_SECRET === ''
@@ -449,16 +455,26 @@ function isHomologation(env: Env): boolean {
 
 /**
  * Pagamentos (S14): o provedor falso só sobe num host de homologação e nunca com
- * `SENTRY_ENVIRONMENT=production` (mesmo com a cobrança desligada); ligada, a cobrança exige provedor,
- * chave de dados e, no Mercado Pago, o token e o segredo do webhook.
+ * `SENTRY_ENVIRONMENT=production` (mesmo com a cobrança desligada), **a não ser** no beta da S20
+ * (`PAYMENTS_BETA_TEST=true`), a compra de teste em produção, que exige o provedor falso e proíbe o Mercado
+ * Pago; ligada, a cobrança exige provedor, chave de dados e, no Mercado Pago, o token e o segredo do webhook.
  */
 function checkPayments(env: Env, ctx: z.RefinementCtx): void {
   const issue = (path: string, message: string) =>
     ctx.addIssue({ code: 'custom', path: [path], message });
-  if (env.PAYMENTS_PROVIDER === 'fake') {
+  if (env.PAYMENTS_BETA_TEST === 'true' && env.PAYMENTS_PROVIDER !== 'fake') {
+    issue(
+      'PAYMENTS_BETA_TEST',
+      'a compra de teste do beta exige PAYMENTS_PROVIDER=fake (nunca junto do Mercado Pago)',
+    );
+  }
+  if (env.PAYMENTS_PROVIDER === 'fake' && env.PAYMENTS_BETA_TEST !== 'true') {
     const host = new URL(env.PUBLIC_WEB_URL).hostname;
     if (!SANDBOX_HOSTS.has(host) || env.SENTRY_ENVIRONMENT.toLowerCase() === 'production') {
-      issue('PAYMENTS_PROVIDER', `o provedor falso não roda em ${host}: só em host de homologação`);
+      issue(
+        'PAYMENTS_PROVIDER',
+        `o provedor falso não roda em ${host}: só em host de homologação (ou com PAYMENTS_BETA_TEST=true)`,
+      );
     }
   }
   if (env.PAYMENTS_DATA_KEY !== '' && Buffer.from(env.PAYMENTS_DATA_KEY, 'base64').length !== 32) {

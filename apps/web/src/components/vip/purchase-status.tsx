@@ -1,6 +1,7 @@
 'use client';
 
-import { type Purchase, purchaseSchema, VIP_PACKAGES } from '@carmine/contracts/payments';
+import { type Purchase, purchaseSchema } from '@carmine/contracts/payments';
+import { PLAN_PACKAGES } from '@carmine/contracts/plans';
 import type { Route } from 'next';
 import Link from 'next/link';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -52,6 +53,7 @@ export function PurchaseStatus({
   nowMs: number;
 }) {
   const t = useTranslations('vip.purchase');
+  const tp = useTranslations('vip.plans');
   const format = useFormatter();
   const [purchase, setPurchase] = useState(initial);
   const [now, setNow] = useState(() => new Date(nowMs));
@@ -98,7 +100,10 @@ export function PurchaseStatus({
     <div className="vs" data-testid="vip-purchase" data-status={purchase.status} data-view={view}>
       <p className="vs-summary">
         {t('summary', {
-          package: t('packageName', { months: monthsOf(purchase) }),
+          package: t('packageName', {
+            plan: tp(planOf(purchase)),
+            months: monthsOf(purchase),
+          }),
           price,
         })}
       </p>
@@ -122,9 +127,14 @@ export function PurchaseStatus({
   );
 }
 
-/** Os meses do Pacote da compra (o nome "VIP, 3 meses"). */
+/** Os meses do Pacote da compra (o nome "Capo, 3 meses"). */
 function monthsOf(purchase: Purchase) {
-  return VIP_PACKAGES.find((pack) => pack.id === purchase.package)?.months ?? 1;
+  return PLAN_PACKAGES.find((pack) => pack.id === purchase.package)?.months ?? 1;
+}
+
+/** O plano do Pacote da compra. */
+function planOf(purchase: Purchase) {
+  return PLAN_PACKAGES.find((pack) => pack.id === purchase.package)?.plan ?? 'capo';
 }
 
 function PixWaiting({ purchase, now }: { purchase: Purchase; now: Date }) {

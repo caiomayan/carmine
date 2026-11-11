@@ -1,4 +1,4 @@
-import { PRESETS_FREE_LIMIT, PRESETS_VIP_LIMIT } from '@carmine/contracts/rules';
+import { presetLimitFor } from '@carmine/contracts/plans';
 import { useTranslations } from 'next-intl';
 
 function Check() {
@@ -21,24 +21,30 @@ function Check() {
 }
 
 /**
- * "O que muda com o VIP": o plano grátis ao lado do VIP. Só entra o que o produto já faz (limites de Preset das
- * regras compartilhadas, Itens que exigem VIP, a Vaga reservada e o cargo no Discord).
+ * "O que muda com um plano": o plano grátis ao lado do Capo e do Padrinho. Só entra o que o produto já faz (limites de
+ * Preset por plano, Itens exclusivos, a Vaga reservada e o cargo no Discord): o que ainda não existe (Salas, modo
+ * anônimo, o assistente) entra quando cada fatia entrar.
  */
 export function Compare() {
   const t = useTranslations('vip.compare');
   const free = [
     t('freeItems.skins'),
     t('freeItems.attachments'),
-    t('freeItems.preset', { count: PRESETS_FREE_LIMIT }),
+    t('freeItems.preset', { count: presetLimitFor(null) }),
     t('freeItems.servers'),
   ];
-  const vip = [
-    t('vipItems.all'),
-    t('vipItems.reserved'),
-    t('vipItems.presets', { count: PRESETS_VIP_LIMIT }),
-    t('vipItems.agents'),
-    t('vipItems.attributes'),
-    t('vipItems.discord'),
+  const capo = [
+    t('capoItems.all'),
+    t('capoItems.reserved'),
+    t('capoItems.presets', { count: presetLimitFor('capo') }),
+    t('capoItems.agents'),
+    t('capoItems.attributes'),
+    t('capoItems.discord'),
+  ];
+  const padrinho = [
+    t('padrinhoItems.all'),
+    t('padrinhoItems.presets', { count: presetLimitFor('padrinho') }),
+    t('padrinhoItems.discord'),
   ];
 
   return (
@@ -47,33 +53,41 @@ export function Compare() {
         {t('title')}
       </h2>
       <div className="vp-compare">
-        <div className="vp-plan">
-          <h3 className="vp-plan-name">{t('free')}</h3>
-          <ul className="vp-list">
-            {free.map((item) => (
-              <li key={item}>
-                <Check />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="vp-plan vp-plan-vip">
-          <h3 className="vp-plan-name">
-            <span aria-hidden="true" className="vp-dot" />
-            {t('vip')}
-          </h3>
-          <ul className="vp-list">
-            {vip.map((item) => (
-              <li key={item}>
-                <Check />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="vp-plan-note">{t('reservedNote')}</p>
-        </div>
+        <Column name={t('free')} items={free} plan="free" />
+        <Column name={t('capo')} items={capo} plan="capo" />
+        <Column name={t('padrinho')} items={padrinho} plan="padrinho" note={t('reservedNote')} />
       </div>
     </section>
+  );
+}
+
+function Column({
+  name,
+  items,
+  plan,
+  note,
+}: {
+  name: string;
+  items: string[];
+  plan: 'free' | 'capo' | 'padrinho';
+  note?: string;
+}) {
+  const paid = plan !== 'free';
+  return (
+    <div className={paid ? 'vp-plan vp-plan-vip' : 'vp-plan'} data-plan={plan}>
+      <h3 className="vp-plan-name">
+        {paid ? <span aria-hidden="true" className="vp-dot" /> : null}
+        {name}
+      </h3>
+      <ul className="vp-list">
+        {items.map((item) => (
+          <li key={item}>
+            <Check />
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      {note ? <p className="vp-plan-note">{note}</p> : null}
+    </div>
   );
 }
