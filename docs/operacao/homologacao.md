@@ -1,5 +1,7 @@
 # Homologação (dev.stcarmine.com)
 
+> **Standby (2026-11-13, ADR 0032):** este ambiente está desligado; o texto abaixo vale para a volta.
+
 Uma cópia do site, atualizada sozinha a cada merge no `dev`, para o dono validar as telas pelo celular sem depender do notebook. Roda na **mesma VM Oracle A1 da produção**, em uma segunda pilha totalmente separada, atrás do Cloudflare Access (só o e-mail do dono entra). Arquivos: `infra/hml/` (compose, scripts), `.github/workflows/deploy-hml.yml`, `apps/api/src/demo/` (a demonstração).
 
 ## Visão geral

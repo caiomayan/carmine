@@ -1,0 +1,22 @@
+# Carmine em standby (2026-11-13): só o túnel e uma página de pausa. O SSH pelo túnel continua.
+name: carmine-pausa
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.1
+    command: tunnel --no-autoupdate --metrics 127.0.0.1:2000 run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:?}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: 128m
+    restart: unless-stopped
+  pausa:
+    image: nginx:1.29-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      default:
+        aliases: [web, api, staff]
+    mem_limit: 64m
+    restart: unless-stopped
