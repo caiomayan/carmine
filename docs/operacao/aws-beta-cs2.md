@@ -1,5 +1,7 @@
 # Servidores CS2 do beta na AWS (sa-east-1)
 
+> **Standby (2026-11-13, ADR 0032):** este ambiente está desligado; o texto abaixo vale para a volta.
+
 Runbook do dono. Decisão: no beta (até ~10 amigos, até ~26/11/2026) os servidores Retake (27015) e Deathmatch (27016) rodam numa instância EC2 em **São Paulo**, paga com os créditos (US$ 72) e **ligada só nas sessões de jogo**. A VPS brasileira definitiva (ADR 0009) vem no fim de 2026 e usa **o mesmo instalador** (`infra/cs2/linux/`), sem nada da AWS nele.
 
 Preços abaixo: lista de preços pública da AWS (Linux sob demanda, sa-east-1), lida em 2026-10-15. Confira na [calculadora](https://calculator.aws/) antes de gastar; marcado *estimativa* o que não é tarifa publicada.

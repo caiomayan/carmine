@@ -1,5 +1,7 @@
 # Deploy e rollback
 
+> **Standby (2026-11-13, ADR 0032):** este ambiente está desligado; o texto abaixo vale para a volta.
+
 Como o código do `main` chega à produção (Oracle A1, Docker Compose atrás do Cloudflare Tunnel) e como voltar atrás. Arquivos: `infra/prod/` (compose, scripts), `.github/workflows/deploy.yml`.
 
 ## Visão geral

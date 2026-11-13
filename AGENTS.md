@@ -2,6 +2,8 @@
 
 Plataforma brasileira de servidores comunitários de CS2. Monorepo pnpm + Turborepo: `apps/api` (NestJS, Fastify, Drizzle, Postgres, Valkey), `apps/web` (Next 16, Tailwind), `packages/contracts` (Zod, fonte única dos contratos), `plugins/` (C#, CounterStrikeSharp), `infra/` (Docker, perfis dos servidores de CS2, homologação, produção).
 
+> **Em standby desde 2026-11-13** ([ADR 0032](docs/adr/0032-carmine-em-standby.md)): produção, homologação e servidores de CS2 estão desligados e os deploys desativados. Nada de trabalho novo sem o dono retomar o projeto; a volta começa pelo ADR 0032.
+
 ## Antes de mexer
 - **O que fazer**: a issue do GitHub, que aponta para a fatia na spec viva, [`docs/specs/beta-aberto.md`](docs/specs/beta-aberto.md). [`docs/specs/mvp.md`](docs/specs/mvp.md) é o histórico das fatias S00 a S15, entregues; vale onde a beta-aberto não muda nada.
 - **Por que algo é assim**: [`docs/adr/`](docs/adr/). Mudar uma decisão registrada pede um ADR novo, que cita o antigo.
